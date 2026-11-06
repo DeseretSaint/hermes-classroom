@@ -111,9 +111,12 @@ class SchemaConformanceTest(KernelCase):
 class MigrationRunnerTest(KernelCase):
     def test_schema_version_is_recorded_with_a_checksum(self) -> None:
         applied = self.rows("SELECT version, checksum, applied_at FROM schema_migrations ORDER BY version")
-        self.assertEqual([row["version"] for row in applied], [db.target_schema_version()])
-        self.assertRegex(applied[0]["checksum"], r"^sha256:[a-f0-9]{64}$")
-        self.assertTrue(applied[0]["applied_at"])
+        self.assertEqual([row["version"] for row in applied],
+                         [db.migration_version(path) for path in db.migration_files()])
+        self.assertEqual(max(row["version"] for row in applied), db.target_schema_version())
+        for row in applied:
+            self.assertRegex(row["checksum"], r"^sha256:[a-f0-9]{64}$")
+            self.assertTrue(row["applied_at"])
 
     def test_migrate_is_idempotent(self) -> None:
         before = self.scalar("SELECT MAX(version) FROM schema_migrations")

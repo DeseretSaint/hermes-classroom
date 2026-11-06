@@ -371,7 +371,8 @@ class V2AmendmentTest(unittest.TestCase):
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
 
-        response = api.dispatch(_envelope("library.list", {"filter": "all"}))
+        # ``pack.preview`` is still Lattice's; the seam must refuse rather than fake it.
+        response = api.dispatch(_envelope("pack.preview", {"staged_id": "stg_12345678"}))
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
 
@@ -401,12 +402,18 @@ class V2AmendmentTest(unittest.TestCase):
                 "applied_filter": "all",
             }
 
+        # The kernel registers the real handler; swap in a contract-shaped fake and restore it, so
+        # this stays a test of the dispatch seam rather than of the database.
+        saved = api.METHOD_HANDLERS.get("library.list")
         api.register_handler("library.list", handler)
         try:
             response = api.dispatch(_envelope("library.list", {"filter": "all"}))
             self.assertTrue(response["ok"], response)
         finally:
-            api.METHOD_HANDLERS.pop("library.list", None)
+            if saved is not None:
+                api.METHOD_HANDLERS["library.list"] = saved
+            else:
+                api.METHOD_HANDLERS.pop("library.list", None)
 
 
 if __name__ == "__main__":
