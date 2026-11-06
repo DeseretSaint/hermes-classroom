@@ -657,7 +657,7 @@ function StatusRow({ label, value, detail }) {
         children: [
           jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: label }),
           detail
-            ? jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-tertiary)', children: detail })
+            ? jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-secondary)', children: detail })
             : null
         ]
       }),
@@ -703,7 +703,7 @@ function EvidenceLine({ summary }) {
     total > 0 ? `${total} objective${total === 1 ? '' : 's'}` : null
   ].filter(Boolean)
   return jsx('div', {
-    className: 'mt-1.5 text-xs text-(--ui-text-tertiary)',
+    className: 'mt-1.5 text-xs text-(--ui-text-secondary)',
     children: parts.join(' · ')
   })
 }
@@ -712,7 +712,7 @@ function ErrorLine({ error }) {
   if (!error) return null
   const code = error.code ? `${error.code}: ` : ''
   return jsx('div', {
-    className: 'mt-2 text-xs text-(--ui-text-tertiary)',
+    className: 'mt-2 text-xs text-(--ui-text-secondary)',
     children: `${code}${describeError(error)}`
   })
 }
@@ -747,7 +747,7 @@ function BackendUnavailable({ error, reload }) {
         })
       }),
       jsx('div', {
-        className: 'text-center text-xs text-(--ui-text-tertiary)',
+        className: 'text-center text-xs text-(--ui-text-secondary)',
         children: error && error.code
           ? `${error.code}: ${describeError(error)}`
           : describeError(error)
@@ -809,7 +809,7 @@ function Orientation() {
         className: 'flex flex-col',
         children: [
           jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: title }),
-          jsx('div', { className: 'mt-0.5 max-w-prose text-xs text-(--ui-text-tertiary)', children: description })
+          jsx('div', { className: 'mt-0.5 max-w-prose text-xs text-(--ui-text-secondary)', children: description })
         ]
       })
     )
@@ -824,7 +824,7 @@ function supportNote(implemented) {
   if (!implemented || !implemented.has('jobs.create')) missing.push('plan generation jobs')
   if (missing.length === 0) return null
   return jsx('div', {
-    className: 'mt-4 text-xs text-(--ui-text-tertiary)',
+    className: 'mt-4 text-xs text-(--ui-text-secondary)',
     children: `Not in this backend build yet: ${missing.join(', ')}. Nothing here is sample data, so those actions are absent rather than faked.`
   })
 }
@@ -841,7 +841,7 @@ function FirstRun({ implemented, onCreate }) {
         children: 'Build a course around what you want to do.'
       }),
       jsx('p', {
-        className: 'mt-2 max-w-prose text-sm leading-relaxed text-(--ui-text-tertiary)',
+        className: 'mt-2 max-w-prose text-sm leading-relaxed text-(--ui-text-secondary)',
         children:
           'Your courses will appear here. Progress and personal answers stay on this profile.'
       }),
@@ -964,7 +964,7 @@ function PackPreview({ preview, existing }) {
         children: [
           jsx('h3', { className: 'text-sm font-semibold', children: manifest.title }),
           manifest.subtitle
-            ? jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-tertiary)', children: manifest.subtitle })
+            ? jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-secondary)', children: manifest.subtitle })
             : null,
           jsxs('div', {
             className: 'mt-2 flex flex-wrap items-center gap-2',
@@ -983,7 +983,7 @@ function PackPreview({ preview, existing }) {
           }),
           existing.length
             ? jsx('div', {
-                className: 'mt-2 text-xs text-(--ui-text-tertiary)',
+                className: 'mt-2 text-xs text-(--ui-text-secondary)',
                 children:
                   `Installed on this profile as ${existing.map((row) => `v${row.pack_version || '?'}`).join(', ')}. ` +
                   'Importing this version adds content, never a second copy; progress is chosen in the next step.'
@@ -1038,18 +1038,18 @@ function PackPreview({ preview, existing }) {
                   className: 'flex flex-col',
                   children: [
                     jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: label.replaceAll('_', ' ') }),
-                    jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-tertiary)', children: TRUST_COPY[label] || '' })
+                    jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-secondary)', children: TRUST_COPY[label] || '' })
                   ]
                 },
                 label
               )
             )
-          : jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'No trust label was recorded. That is not a pass.' })
+          : jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'No trust label was recorded. That is not a pass.' })
       }),
       labels.includes('human_review_recorded')
         ? null
         : jsx('div', {
-            className: 'text-xs text-(--ui-text-tertiary)',
+            className: 'text-xs text-(--ui-text-secondary)',
             children:
               'No human review is recorded for this pack. Passing automated checks is not a claim that the content is true.'
           }),
@@ -1059,7 +1059,7 @@ function PackPreview({ preview, existing }) {
             children: [
               jsx(sdk.PanelSectionLabel, { children: 'CONTENT NOTES' }),
               ...manifest.content_notes.map((note, index) =>
-                jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-tertiary)', children: note }, `note-${index}`)
+                jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: note }, `note-${index}`)
               )
             ]
           })
@@ -1070,7 +1070,7 @@ function PackPreview({ preview, existing }) {
             children: [
               jsx(sdk.PanelSectionLabel, { children: 'SAFETY NOTES' }),
               ...manifest.safety_notes.map((note, index) =>
-                jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-tertiary)', children: note }, `safety-${index}`)
+                jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: note }, `safety-${index}`)
               )
             ]
           })
@@ -1096,7 +1096,7 @@ function PackPreview({ preview, existing }) {
                     })
                   ]
                 }),
-                jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-tertiary)', children: (objective.evidence_criteria || []).join(' · ') })
+                jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-secondary)', children: (objective.evidence_criteria || []).join(' · ') })
               ]
             },
             objective.objective_id
@@ -1116,7 +1116,7 @@ function PackPreview({ preview, existing }) {
                     children: [
                       jsx('div', { className: 'text-xs', children: source.title }),
                       jsxs('div', {
-                        className: 'mt-0.5 flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                        className: 'mt-0.5 flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
                         children: [
                           jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status || 'unassessed' }),
                           jsx('span', { children: source.publisher || source.source_type }),
@@ -1143,7 +1143,7 @@ function PackPreview({ preview, existing }) {
               children: [
                 jsx('div', { className: 'min-w-0 break-all text-xs', children: file.path }),
                 jsxs('div', {
-                  className: 'flex shrink-0 items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                  className: 'flex shrink-0 items-center gap-2 text-xs text-(--ui-text-secondary)',
                   children: [
                     jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: file.role }),
                     jsx('span', { children: file.mime }),
@@ -1284,7 +1284,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
           children: [
             jsx('div', { className: 'text-sm font-medium', children: 'Choose a pack archive' }),
             jsx('div', {
-              className: 'max-w-prose text-xs text-(--ui-text-tertiary)',
+              className: 'max-w-prose text-xs text-(--ui-text-secondary)',
               children:
                 'Pick the folder that holds the .zip a pack arrived in. Coursebook reads it in a staging area, ' +
                 'checks every file and hash, and shows the review below before anything is adopted.'
@@ -1301,12 +1301,12 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
               variant: 'default',
               children: folder ? 'Choose another folder' : 'Choose folder…'
             }),
-            folder ? jsx('span', { className: 'text-xs text-(--ui-text-tertiary)', children: folder.name }) : null,
+            folder ? jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: folder.name }) : null,
             jsx(sdk.Button, { onClick: onCancel, size: 'sm', variant: 'secondary', children: 'Cancel' })
           ]
         }),
         folder && entries.length === 0
-          ? jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'No .zip archive in that folder.' })
+          ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'No .zip archive in that folder.' })
           : null,
         entries.length
           ? jsxs('div', {
@@ -1362,7 +1362,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
       children: [
         jsx('div', { className: 'text-sm font-medium', children: 'Resume or start fresh' }),
         jsx('div', {
-          className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-tertiary)',
+          className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
           children:
             'The pack content is immutable and shared. The choice is about progress only: resume continues the ' +
             'classroom already on this profile, fresh starts a new course with its own evidence.'
@@ -1375,7 +1375,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
               children: `Resume the existing classroom (${existing.length} on this profile)`
             })
           : jsx('div', {
-              className: 'text-xs text-(--ui-text-tertiary)',
+              className: 'text-xs text-(--ui-text-secondary)',
               children: 'No classroom for this pack is on this profile yet, so there is nothing to resume.'
             }),
         jsx(sdk.Button, {
@@ -1402,7 +1402,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
           ]
         }),
         jsx('div', {
-          className: 'text-xs text-(--ui-text-tertiary)',
+          className: 'text-xs text-(--ui-text-secondary)',
           children: parentResult
             ? 'It appears under Parent Studio with the parent guide and answer guide; learner pages carry no answers.'
             : 'It appears in Courses and Library. Lesson pages are the pack’s own text, not a rephrasing.'
@@ -1468,7 +1468,7 @@ function PackExportPanel({ row, onClose }) {
     return jsxs('div', {
       className: 'flex flex-col gap-2',
       children: [
-        jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-tertiary)', children:
+        jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children:
           'The file list for this pack was not reviewed in this session. A pack is exported only against the ' +
           'content hash that was shown at review, so this build will not export blind. Re-import the same archive ' +
           'to review it again; the installed content is immutable, so nothing is duplicated.' }),
@@ -1482,7 +1482,7 @@ function PackExportPanel({ row, onClose }) {
     children: [
       jsx('div', { className: 'text-sm font-semibold', children: 'Review the export' }),
       jsx('div', {
-        className: 'text-xs text-(--ui-text-tertiary)',
+        className: 'text-xs text-(--ui-text-secondary)',
         children:
           'Every file below is included. Transcripts, attempts, notebook notes, evidence and provider settings ' +
           'are not part of a pack and are excluded by construction.'
@@ -1497,7 +1497,7 @@ function PackExportPanel({ row, onClose }) {
               children: [
                 jsx('div', { className: 'min-w-0 break-all text-xs', children: file.path }),
                 jsxs('div', {
-                  className: 'flex shrink-0 items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                  className: 'flex shrink-0 items-center gap-2 text-xs text-(--ui-text-secondary)',
                   children: [
                     jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: file.role }),
                     jsx('span', { children: bytesLabel(file.bytes) })
@@ -1567,7 +1567,7 @@ function PackExportPanel({ row, onClose }) {
                         })
                       }),
                       jsx('div', {
-                        className: 'mt-1 text-xs leading-relaxed text-(--ui-text-tertiary)',
+                        className: 'mt-1 text-xs leading-relaxed text-(--ui-text-secondary)',
                         children:
                           'The link is the host route the backend named: the session is checked there, the handle ' +
                           'expires in five minutes, and a filesystem path never leaves the backend. The file you ' +
@@ -1636,7 +1636,7 @@ function PackDeletePanel({ row, onClose, onDeleted }) {
     children: [
       jsx('div', { className: 'text-sm font-semibold', children: 'Remove this pack' }),
       jsx('div', {
-        className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-tertiary)',
+        className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
         children:
           'Deleting a pack freezes its content so it cannot be imported again. Courses, attempts, notebook notes ' +
           'and earlier exports are kept, so evidence does not disappear with the pack.'
@@ -1652,7 +1652,7 @@ function PackDeletePanel({ row, onClose, onDeleted }) {
               jsx(PackReviewLine, { label: 'Evidence kept', value: (scope.preserved || {}).evidence ? 'yes' : 'no' }),
               jsx(PackReviewLine, { label: 'Attempts kept', value: (scope.preserved || {}).attempts ? 'yes' : 'no' }),
               jsx(PackReviewLine, { label: 'Notebook notes kept', value: (scope.preserved || {}).notebook_entries ? 'yes' : 'no' }),
-              jsx('div', { className: 'mt-2 text-xs text-(--ui-text-tertiary)', children: scope.summary })
+              jsx('div', { className: 'mt-2 text-xs text-(--ui-text-secondary)', children: scope.summary })
             ]
           }),
       error ? jsx('div', { className: 'text-xs', children: error.message }) : null,
@@ -1732,13 +1732,13 @@ function CourseRow({ row, implemented, onResume, onArchive, onDelete, onOpen }) 
         jsx(EvidenceLine, { summary: row.evidence_summary }),
         warning
           ? jsx('div', {
-              className: 'mt-1 max-w-prose text-xs text-(--ui-text-tertiary)',
+              className: 'mt-1 max-w-prose text-xs text-(--ui-text-secondary)',
               children: warning.detail
             })
           : null,
         row.provenance && row.provenance.pack_id
           ? jsx('div', {
-              className: 'mt-1 text-xs text-(--ui-text-tertiary)',
+              className: 'mt-1 text-xs text-(--ui-text-secondary)',
               children: `From ${row.provenance.source === 'bundled' ? 'a bundled pack' : row.provenance.source === 'community' ? 'a community pack' : 'a local pack'}${
                 row.provenance.pack_version ? ` · v${row.provenance.pack_version}` : ''
               }`
@@ -1923,7 +1923,7 @@ function CoursesView({ implemented, onStartCreate, createOpen, onOpen }) {
               className: 'mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-(--ui-stroke-tertiary) pb-2',
               children: [
                 jsx('div', {
-                  className: 'text-xs text-(--ui-text-tertiary)',
+                  className: 'text-xs text-(--ui-text-secondary)',
                   children: 'Reconnecting. Showing the last courses that were read; changes are paused.'
                 }),
                 jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: reload, children: 'Retry now' })
@@ -1978,7 +1978,7 @@ function CoursesView({ implemented, onStartCreate, createOpen, onOpen }) {
         ),
         Number(data.total || 0) > rows.length
           ? jsx('div', {
-              className: 'pt-3 text-xs text-(--ui-text-tertiary)',
+              className: 'pt-3 text-xs text-(--ui-text-secondary)',
               children: `${rows.length} of ${data.total} courses shown. Narrow the filter to see the rest.`
             })
           : null
@@ -2101,7 +2101,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
       }),
       warning
         ? jsx('div', {
-            className: 'text-xs text-(--ui-text-tertiary)',
+            className: 'text-xs text-(--ui-text-secondary)',
             children: warning.detail
           })
         : null,
@@ -2139,7 +2139,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
           })
         : null,
       jsx('div', {
-        className: 'mt-2 text-xs leading-relaxed text-(--ui-text-tertiary)',
+        className: 'mt-2 text-xs leading-relaxed text-(--ui-text-secondary)',
         children:
           'Sources, rights, checks and file integrity come from the pack preview command. This build ' +
           'shows only what the backend recorded for this pack, so nothing here is inferred.'
@@ -2276,7 +2276,7 @@ function LibraryView({ implemented, createOpen }) {
       children: [
         stale
           ? jsx('div', {
-              className: 'mb-2 text-xs text-(--ui-text-tertiary)',
+              className: 'mb-2 text-xs text-(--ui-text-secondary)',
               children: 'Reconnecting. Showing the last packs that were read.'
             })
           : null,
@@ -2324,7 +2324,7 @@ function LibraryView({ implemented, createOpen }) {
         className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
         children: [
           jsx('div', {
-            className: 'max-w-prose text-xs text-(--ui-text-tertiary)',
+            className: 'max-w-prose text-xs text-(--ui-text-secondary)',
             children: 'Packs installed on this profile, by where they came from. No marketplace ranking and no verified badge.'
           }),
           jsx(sdk.SegmentedControl, {
@@ -2490,7 +2490,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
       children: [
         jsx('h2', { className: 'text-sm font-semibold', children: 'Course created' }),
         jsxs('div', {
-          className: 'text-xs leading-relaxed text-(--ui-text-tertiary)',
+          className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
           children: [
             'Your course and its enrolment exist on this profile. The plan is a draft: objective ' +
               'generation is not wired in this build, so no lesson can start yet. Nothing was generated ' +
@@ -2563,7 +2563,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                     value: goal
                   }),
                   jsx('div', {
-                    className: 'text-xs text-(--ui-text-tertiary)',
+                    className: 'text-xs text-(--ui-text-secondary)',
                     id: 'cb-goal-help',
                     children: goal.trim().length === 0 ? 'Be specific about the situation you want to handle.' : `${goal.trim().length} characters`
                   })
@@ -2599,7 +2599,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                     }, id)
                   ),
                   jsx('div', {
-                    className: 'mt-1 text-xs text-(--ui-text-tertiary)',
+                    className: 'mt-1 text-xs text-(--ui-text-secondary)',
                     children: 'Preparing lessons for a child goes to Parent Studio, not a learner course.'
                   })
                 ]
@@ -2643,7 +2643,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                 ]
               }),
               jsx('div', {
-                className: 'text-xs leading-relaxed text-(--ui-text-tertiary)',
+                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children:
                   'Creating this course writes one course and one draft plan on this profile, then an ' +
                   'enrolment for you. It makes no model call and fetches nothing from the network. ' +
@@ -2758,7 +2758,7 @@ function Hairline() {
 }
 
 function QuietNote({ children }) {
-  return jsx('p', { className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-tertiary)', children })
+  return jsx('p', { className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)', children })
 }
 
 function whenLabel(value) {
@@ -3007,7 +3007,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
               }),
               jsx('p', {
                 id: 'cb-attempt-help',
-                className: 'text-xs leading-relaxed text-(--ui-text-tertiary)',
+                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: supports('check.get')
                   ? 'The question and any choices are shown above; this field records what you answered.'
                   : 'The question and any choices are in the teaching chat. This field records your answer and the backend grades it once.'
@@ -3447,7 +3447,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                   : null,
                 section && section.last_opened_at
                   ? jsx('span', {
-                      className: 'text-xs text-(--ui-text-tertiary)',
+                      className: 'text-xs text-(--ui-text-secondary)',
                       children: `Last opened ${whenLabel(section.last_opened_at)}`
                     })
                   : null,
@@ -3547,7 +3547,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                         children: jsx(sdk.MessageTextContent, { text: segment.text })
                       }),
                       segment.source_id
-                        ? jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: `Source ${segment.source_id}` })
+                        ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `Source ${segment.source_id}` })
                         : null
                     ]
                   },
@@ -3633,7 +3633,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                       children: [
                         jsx('span', { className: 'min-w-0 break-words text-(--ui-text-secondary)', children: source.title }),
                         jsxs('span', {
-                          className: 'flex items-center gap-2 text-(--ui-text-tertiary)',
+                          className: 'flex items-center gap-2 text-(--ui-text-secondary)',
                           children: [
                             jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status }),
                             jsx('span', { children: source.fetched_at ? `fetched ${whenLabel(source.fetched_at)}` : '' })
@@ -3859,7 +3859,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
                               entry.overdue ? jsx(sdk.Badge, { size: 'xs', variant: 'warn', children: `overdue ${entry.overdue_days || 0}d` }) : null,
                               entry.last_opened_at
                                 ? jsx('span', {
-                                    className: 'text-xs text-(--ui-text-tertiary)',
+                                    className: 'text-xs text-(--ui-text-secondary)',
                                     children: `last opened ${whenLabel(entry.last_opened_at)}`
                                   })
                                 : null
@@ -4093,7 +4093,7 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
                       ? jsx('p', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: entry.note })
                       : null,
                     jsxs('div', {
-                      className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                      className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
                       children: [
                         jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: entry.kind }),
                         (entry.tags || []).map((item) => jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: item }, item)),
@@ -4327,7 +4327,7 @@ function QuizzesView({ row, quizzes, implemented, onOpenSection, onChanged }) {
                           children: [
                             jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: VERDICT_COPY[attempt.verdict] || attempt.verdict }),
                             jsx(EvidenceClassText, { value: attempt.evidence_class }),
-                            jsx('span', { className: 'text-xs text-(--ui-text-tertiary)', children: whenLabel(attempt.committed_at || attempt.created_at) })
+                            jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: whenLabel(attempt.committed_at || attempt.created_at) })
                           ]
                         }),
                         jsx(sdk.Button, {
@@ -4529,7 +4529,7 @@ function PlanView({ row, review, notebooks, outline, page, implemented, onOpenSe
                       ]
                     }),
                     jsxs('div', {
-                      className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                      className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
                       children: [
                         entry.evidence_target ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: entry.evidence_target }) : null,
                         item ? jsx('span', { children: `next review ${whenLabel(item.due_at)}` }) : null,
@@ -4584,7 +4584,7 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
                     className: 'flex flex-col gap-0.5 py-1',
                     children: [
                       jsx('div', { className: 'text-sm text-(--ui-text-secondary)', children: item.text }),
-                      jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: `basis: ${item.basis}` })
+                      jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `basis: ${item.basis}` })
                     ]
                   },
                   `${item.kind}-${index}`
@@ -4660,7 +4660,7 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
                 jsx(
                   'div',
                   {
-                    className: 'flex flex-wrap items-center justify-between gap-2 py-1 text-xs text-(--ui-text-tertiary)',
+                    className: 'flex flex-wrap items-center justify-between gap-2 py-1 text-xs text-(--ui-text-secondary)',
                     children: jsxs('span', {
                       className: 'flex items-center gap-2',
                       children: [jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: event.kind }), jsx('span', { children: whenLabel(event.created_at) })]
@@ -4708,7 +4708,7 @@ function SourcesView({ page }) {
           children: [
             jsx('div', { className: 'text-sm font-medium', children: source.title }),
             jsxs('div', {
-              className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+              className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
               children: [
                 jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.source_type }),
                 jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: source.support_status }),
@@ -4718,7 +4718,7 @@ function SourcesView({ page }) {
             }),
             source.url
               ? jsx('div', {
-                  className: 'text-xs text-(--ui-text-tertiary)',
+                  className: 'text-xs text-(--ui-text-secondary)',
                   children: 'External content opens only when you choose it; the URL is shown, not fetched.'
                 })
               : null
@@ -4941,7 +4941,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
                 children: [
                   jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: (RECIPE_COPY[row.recipe] || {}).title || row.recipe }),
                   row.warning ? jsx(WarningBadge, { warning: row.warning }) : null,
-                  jsx('span', { className: 'text-xs text-(--ui-text-tertiary)', children: currentTitle })
+                  jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: currentTitle })
                 ]
               })
             ]
@@ -5233,7 +5233,7 @@ function LessonPaneBody({ binding, storedId }) {
       }),
 
       jsxs('div', {
-        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
         children: [
           jsx('span', {
             children: review.data
@@ -5436,7 +5436,7 @@ function StudioField({ id, label, hint, children, error }) {
       error
         ? jsx('p', { className: 'text-xs text-(--ui-text-secondary)', children: error })
         : hint
-          ? jsx('p', { className: 'text-xs text-(--ui-text-tertiary)', children: hint })
+          ? jsx('p', { className: 'text-xs text-(--ui-text-secondary)', children: hint })
           : null
     ]
   })
@@ -5501,7 +5501,7 @@ function JobStateText({ job }) {
   const progress = job.progress || {}
   const message = progress.message ? ` — ${progress.message}` : ''
   if (job.state === 'queued') {
-    return jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'Queued. The job runner picks it up on its next tick; nothing is spent until it starts.' })
+    return jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Queued. The job runner picks it up on its next tick; nothing is spent until it starts.' })
   }
   if (job.state === 'running' || job.state === 'cancel_requested' || job.state === 'cancelling') {
     return jsx('div', {
@@ -5523,7 +5523,7 @@ function JobStateText({ job }) {
     className: 'flex flex-col gap-1 text-xs text-(--ui-text-secondary)',
     children: [
       jsx('div', { children: `Failed${error.code ? ` (${error.code})` : ''}.` }),
-      error.message ? jsx('div', { className: 'text-(--ui-text-tertiary)', children: error.message }) : null
+      error.message ? jsx('div', { className: 'text-(--ui-text-secondary)', children: error.message }) : null
     ]
   })
 }
@@ -5622,7 +5622,7 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
   return jsxs('div', {
     className: 'flex flex-col',
     children: [
-      jsx('div', { className: 'pb-1 text-xs text-(--ui-text-tertiary)', children: `${rows.length} authored course${rows.length === 1 ? '' : 's'}` }),
+      jsx('div', { className: 'pb-1 text-xs text-(--ui-text-secondary)', children: `${rows.length} authored course${rows.length === 1 ? '' : 's'}` }),
       ...rows.map((row) =>
         jsx(
           sdk.ListRow,
@@ -5910,7 +5910,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
             className: 'flex flex-col gap-1 text-xs text-(--ui-text-secondary)',
             children: [
               jsx('div', { children: `${error.code ? error.code + ': ' : ''}${error.message}` }),
-              jsx('div', { className: 'text-(--ui-text-tertiary)', children: 'The brief was not saved and no job was queued.' })
+              jsx('div', { className: 'text-(--ui-text-secondary)', children: 'The brief was not saved and no job was queued.' })
             ]
           })
         : null,
@@ -5928,7 +5928,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
         ]
       }),
       !supported
-        ? jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'This backend does not register parent.brief.create.' })
+        ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'This backend does not register parent.brief.create.' })
         : null
     ]
   })
@@ -5987,7 +5987,7 @@ function StudioReviewBanner({ approval, exportStatus }) {
           'The lesson set you approved no longer matches the current pages.'
       }),
       jsx('div', {
-        className: 'text-xs text-(--ui-text-tertiary)',
+        className: 'text-xs text-(--ui-text-secondary)',
         children: exportStatus && exportStatus.blocked_reason
           ? EXPORT_BLOCKED_COPY[exportStatus.blocked_reason] || `Export is blocked (${exportStatus.blocked_reason}).`
           : 'Approve the current lesson set before exporting.'
@@ -6059,7 +6059,7 @@ function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplic
               jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: 'A note from your last reflection' }),
               jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: latestProposal.revisit_note }),
               jsx('div', {
-                className: 'text-xs text-(--ui-text-tertiary)',
+                className: 'text-xs text-(--ui-text-secondary)',
                 children: 'It is shown here as a proposal. It is not applied to any brief unless you copy one.'
               })
             ]
@@ -6320,7 +6320,7 @@ function StudioPlanView({
             className: 'flex flex-wrap items-center gap-2',
             children: [
               jsx(PlanStateBadge, { plan }),
-              jsx('span', { className: 'text-xs text-(--ui-text-tertiary)', children: `plan ${String(planHash || '').slice(0, 19)}…` })
+              jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: `plan ${String(planHash || '').slice(0, 19)}…` })
             ]
           }),
           jsxs('div', {
@@ -6376,7 +6376,7 @@ function StudioPlanView({
 
       !isDraft && contentReady
         ? jsx('div', {
-            className: 'text-xs text-(--ui-text-tertiary)',
+            className: 'text-xs text-(--ui-text-secondary)',
             children:
               'Re-running generation reuses every lesson already authored at this plan version and only authors what is missing. Nothing is paid for twice.'
           })
@@ -6404,7 +6404,7 @@ function StudioPlanView({
                           jsx('div', {
                             className: 'flex min-w-0 items-baseline gap-2',
                             children: [
-                              jsx('span', { className: 'shrink-0 text-xs tabular-nums text-(--ui-text-tertiary)', children: String(objective.ordinal).padStart(2, '0') }),
+                              jsx('span', { className: 'shrink-0 text-xs tabular-nums text-(--ui-text-secondary)', children: String(objective.ordinal).padStart(2, '0') }),
                               editing
                                 ? jsx(sdk.Input, {
                                     'aria-label': `Objective ${objective.ordinal} title`,
@@ -6495,7 +6495,7 @@ function StudioPlanView({
                         ]
                       }),
                       jsx('div', {
-                        className: 'text-xs text-(--ui-text-tertiary)',
+                        className: 'text-xs text-(--ui-text-secondary)',
                         children: `State: ${objective.state} · check: ${objective.check_state}`
                       })
                     ]
@@ -6583,7 +6583,7 @@ function StudioPlanView({
                   'Sources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here.'
               }),
               sources.length === 0
-                ? jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'No sources recorded for this course.' })
+                ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'No sources recorded for this course.' })
                 : jsxs('div', {
                     className: 'flex flex-col',
                     children: sources.slice(0, 8).map((source) =>
@@ -6594,7 +6594,7 @@ function StudioPlanView({
                           children: [
                             jsx('div', { className: 'min-w-0 break-words text-xs', children: source.title }),
                             jsxs('div', {
-                              className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                              className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
                               children: [
                                 jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status }),
                                 source.url ? jsx('span', { className: 'min-w-0 break-all', children: source.url }) : null
@@ -6613,7 +6613,7 @@ function StudioPlanView({
                   })
                 : null,
               jsx('div', {
-                className: 'text-xs leading-relaxed text-(--ui-text-tertiary)',
+                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: 'A draft plan can be edited freely. An approved plan is changed only by starting a new version, so what you approved stays exact.'
               })
             ]
@@ -6655,7 +6655,7 @@ function StudioBlueprintView({ book }) {
       jsx(StudioViewPicker, { id: 'cb-studio-tab', label: 'Tab', value: tab, options: STUDIO_TABS, onChange: setTab }),
       jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: notice }),
       jsxs('div', {
-        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
         children: [
           jsx('span', { children: `${files.length} file${files.length === 1 ? '' : 's'} in this tab` }),
           jsx('span', { children: `content hash ${String(data.content_hash || '').slice(0, 19)}…` })
@@ -6663,7 +6663,7 @@ function StudioBlueprintView({ book }) {
       }),
       tab === 'sources'
         ? sources.length === 0
-          ? jsx('div', { className: 'py-4 text-xs text-(--ui-text-tertiary)', children: 'No sources were recorded for this course.' })
+          ? jsx('div', { className: 'py-4 text-xs text-(--ui-text-secondary)', children: 'No sources were recorded for this course.' })
           : jsx('div', {
               className: 'flex flex-col',
               children: sources.map((source) =>
@@ -6674,7 +6674,7 @@ function StudioBlueprintView({ book }) {
                     children: [
                       jsx('div', { className: 'min-w-0 break-words text-sm', children: source.title }),
                       jsxs('div', {
-                        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
                         children: [
                           jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status }),
                           source.url ? jsx('a', { className: 'min-w-0 break-all underline', href: source.url, children: source.url }) : null,
@@ -6710,7 +6710,7 @@ function StudioBlueprintView({ book }) {
                         children: [
                           jsx('h3', { className: 'min-w-0 break-words text-sm font-semibold', children: file.title }),
                           jsxs('div', {
-                            className: 'flex shrink-0 items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                            className: 'flex shrink-0 items-center gap-2 text-xs text-(--ui-text-secondary)',
                             children: [
                               jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: file.role }),
                               jsx('span', { children: bytesLabel(file.bytes) }),
@@ -6724,7 +6724,7 @@ function StudioBlueprintView({ book }) {
                         children: jsx(sdk.MessageTextContent, { text: file.text })
                       }),
                       jsxs('div', {
-                        className: 'text-xs break-all text-(--ui-text-tertiary)',
+                        className: 'text-xs break-all text-(--ui-text-secondary)',
                         children: [`sha256 ${file.sha256}`, file.truncated ? ' · the served text was clipped at the tab limit' : '']
                       })
                     ]
@@ -6911,7 +6911,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
               }),
               error.problems
                 ? jsxs('div', {
-                    className: 'flex flex-col gap-0.5 text-(--ui-text-tertiary)',
+                    className: 'flex flex-col gap-0.5 text-(--ui-text-secondary)',
                     children: [
                       jsx('div', { children: 'The pack minima reported these problems:' }),
                       ...error.problems.map((problem, index) =>
@@ -6929,7 +6929,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
             children: [
               jsx(sdk.PanelSectionLabel, { children: 'EXPORTED FILES' }),
               jsx('div', {
-                className: 'text-xs text-(--ui-text-tertiary)',
+                className: 'text-xs text-(--ui-text-secondary)',
                 children: `Export ${exported.export_id} · ${whenLabel(exported.exported_at)} · content hash ${exported.content_hash}`
               }),
               jsxs('div', {
@@ -6942,7 +6942,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
                 )
               }),
               jsxs('div', {
-                className: 'flex flex-col gap-1 text-xs leading-relaxed text-(--ui-text-tertiary)',
+                className: 'flex flex-col gap-1 text-xs leading-relaxed text-(--ui-text-secondary)',
                 children: [
                   jsx('div', {
                     children:
@@ -6962,7 +6962,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
                         className: 'flex flex-wrap items-baseline justify-between gap-2',
                         children: [
                           jsx('div', { className: 'text-xs font-medium', children: `${artifact.kind} · ${artifact.mime} · ${bytesLabel(artifact.bytes)}` }),
-                          jsx('div', { className: 'min-w-0 break-all text-xs text-(--ui-text-tertiary)', children: artifact.content_hash })
+                          jsx('div', { className: 'min-w-0 break-all text-xs text-(--ui-text-secondary)', children: artifact.content_hash })
                         ]
                       }),
                       facts && facts.download
@@ -6989,7 +6989,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
                         : null,
                       facts && facts.download
                         ? jsx('div', {
-                            className: 'text-xs text-(--ui-text-tertiary)',
+                            className: 'text-xs text-(--ui-text-secondary)',
                             children: facts.download.requires_session
                               ? 'Session-bound, expiring link served by this host’s artifact route. A filesystem path never leaves the backend.'
                               : 'Host artifact route.'
@@ -7108,7 +7108,7 @@ function StudioReflectionView({ course, reflections, supported, onDuplicate, onS
         : null,
       jsx(sdk.PanelSectionLabel, { children: `REFLECTIONS (${list.length})` }),
       list.length === 0
-        ? jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'No reflections recorded for this course yet.' })
+        ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'No reflections recorded for this course yet.' })
         : jsx('div', {
             className: 'flex flex-col',
             children: list.map((item, index) =>
@@ -7121,7 +7121,7 @@ function StudioReflectionView({ course, reflections, supported, onDuplicate, onS
                       className: 'flex flex-wrap items-center gap-2 text-xs',
                       children: [
                         jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: (STUDIO_DIFFICULTIES.find((entry) => entry.id === item.difficulty) || {}).label || item.difficulty }),
-                        jsx('span', { className: 'text-(--ui-text-tertiary)', children: `parent-reported · ${whenLabel(item.created_at)}` }),
+                        jsx('span', { className: 'text-(--ui-text-secondary)', children: `parent-reported · ${whenLabel(item.created_at)}` }),
                         item.apply_to_next_draft ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: 'for next draft' }) : null
                       ]
                     }),
@@ -7244,7 +7244,7 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
             ]
           }),
           jsx('div', {
-            className: 'text-xs text-(--ui-text-tertiary)',
+            className: 'text-xs text-(--ui-text-secondary)',
             children: `You are the operator · revision ${revision}`
           })
         ]
@@ -7470,7 +7470,7 @@ function CoursebookPage() {
                 children: [
                   jsx('div', { className: 'text-sm font-semibold', children: ROUTE_TITLE }),
                   jsx('div', {
-                    className: 'mt-0.5 text-xs text-(--ui-text-tertiary)',
+                    className: 'mt-0.5 text-xs text-(--ui-text-secondary)',
                     children:
                       destination === 'studio' && !studioSeed
                         ? studioCourse
@@ -7621,7 +7621,7 @@ function CoursebookPane() {
     'data-cb-binding-id': (state.binding && state.binding.binding_id) || '',
     children: [
       jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }),
-      bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-tertiary)', children: bindNote }) : null,
+      bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-secondary)', children: bindNote }) : null,
       body
     ]
   })
@@ -7719,7 +7719,7 @@ function ContractList() {
   if (state.status === 'loading') return jsx(sdk.Loader, { label: 'Reading the contract inventory' })
   if (state.status === 'unavailable') {
     return jsx('div', {
-      className: 'text-xs text-(--ui-text-tertiary)',
+      className: 'text-xs text-(--ui-text-secondary)',
       children: `Contract inventory unavailable. ${describeError(state.error)}`
     })
   }
@@ -7780,7 +7780,7 @@ function CoursebookSettings() {
     className: 'flex flex-col gap-3',
     children: [
       jsx('div', {
-        className: 'text-xs text-(--ui-text-tertiary)',
+        className: 'text-xs text-(--ui-text-secondary)',
         children:
           'Preferences appear here only when the code that reads them ships. The inventory below is ' +
           'read-only and shows the exact contracts this backend speaks.'
