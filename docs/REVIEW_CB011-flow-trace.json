@@ -1,0 +1,781 @@
+{
+  "wire": {
+    "backend_package": "coursebook_plugin_backend",
+    "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_4255b696",
+    "wire_contract": "cb.rpc",
+    "wire_version": 6,
+    "contract_methods": 51,
+    "implemented_methods": [
+      "artifact.get",
+      "attempt.dispute",
+      "attempt.override",
+      "attempt.submit",
+      "binding.abandon",
+      "binding.get",
+      "check.get",
+      "check.open",
+      "course.create",
+      "course.get",
+      "course.outline",
+      "enrollment.create",
+      "enrollment.delete",
+      "enrollment.update",
+      "evidence.disputes",
+      "evidence.inspect",
+      "health.get",
+      "jobs.cancel",
+      "jobs.create",
+      "jobs.get",
+      "jobs.list",
+      "lesson.assist",
+      "lesson.begin",
+      "lesson.page",
+      "library.list",
+      "notebook.delete",
+      "notebook.list",
+      "notebook.save",
+      "notebook.update",
+      "pack.delete",
+      "pack.export",
+      "pack.import",
+      "pack.inspect",
+      "pack.list",
+      "pack.preview",
+      "parent.blueprint.read",
+      "parent.brief.create",
+      "parent.brief.get",
+      "parent.export",
+      "parent.final.approve",
+      "parent.plan.edit",
+      "parent.reflection.list",
+      "parent.reflection.record",
+      "plan.approve",
+      "plan.replan",
+      "progression.challenge_out",
+      "quiz.history",
+      "review.action",
+      "review.queue",
+      "schema.get",
+      "usage.summary"
+    ],
+    "contract_problems": [],
+    "db_path": "/home/deseretsaint/.hermes/coursebook-test/home/plugin-data/coursebook/data.db",
+    "single_home_flag": "HERMES_COURSEBOOK_SINGLE_HOME",
+    "single_home_host": true,
+    "single_home_pinned": false,
+    "single_home_pin": null
+  },
+  "calls": [
+    {
+      "method": "parent.brief.get",
+      "request": {
+        "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-brief-get-1793979423856215042",
+        "revision": 0,
+        "result": {
+          "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+          "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+          "brief": {
+            "title": "Kitchen fractions for a 9-year-old",
+            "goal": "Halves, quarters and eighths of a real object, taught at the kitchen table with a knife and a measuring cup. The parent demonstrates, the child explains what they did.",
+            "starting_point": "Counts to 100, reads a recipe with help, knows what a half looks like on a clock.",
+            "age_band": "8-10",
+            "reading_level": "Year 3, short sentences, decodable words",
+            "duration_minutes": 25,
+            "setting": "home",
+            "materials": [
+              "one apple",
+              "plastic knife",
+              "measuring cup",
+              "paper plate"
+            ],
+            "exclusions": [
+              "no knife work by the child",
+              "no nuts",
+              "no timed pressure"
+            ],
+            "supervision": "An adult holds the knife; the child places pieces and explains each cut.",
+            "desired_pages": 3,
+            "desired_visuals": "diagrams",
+            "narration": "script",
+            "locale": "en",
+            "egress_acknowledged": true,
+            "redaction_requested": false
+          },
+          "plan_job": {
+            "job_id": "job_bed378ec08884398a15b6cb0afe75b36",
+            "kind": "plan",
+            "state": "completed",
+            "submitted_at": "2026-11-06T15:34:15Z"
+          },
+          "created_at": "2026-11-06T15:34:15.571287+00:00"
+        }
+      }
+    },
+    {
+      "method": "parent.brief.get",
+      "request": {
+        "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-brief-get-1793979423859593992",
+        "revision": 0,
+        "result": {
+          "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+          "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+          "brief": {
+            "title": "Kitchen fractions for a 9-year-old",
+            "goal": "Halves, quarters and eighths of a real object, taught at the kitchen table with a knife and a measuring cup. The parent demonstrates, the child explains what they did.",
+            "starting_point": "Counts to 100, reads a recipe with help, knows what a half looks like on a clock.",
+            "age_band": "8-10",
+            "reading_level": "Year 3, short sentences, decodable words",
+            "duration_minutes": 25,
+            "setting": "home",
+            "materials": [
+              "one apple",
+              "plastic knife",
+              "measuring cup",
+              "paper plate"
+            ],
+            "exclusions": [
+              "no knife work by the child",
+              "no nuts",
+              "no timed pressure"
+            ],
+            "supervision": "An adult holds the knife; the child places pieces and explains each cut.",
+            "desired_pages": 3,
+            "desired_visuals": "diagrams",
+            "narration": "script",
+            "locale": "en",
+            "egress_acknowledged": true,
+            "redaction_requested": false
+          },
+          "plan_job": {
+            "job_id": "job_bed378ec08884398a15b6cb0afe75b36",
+            "kind": "plan",
+            "state": "completed",
+            "submitted_at": "2026-11-06T15:34:15Z"
+          },
+          "created_at": "2026-11-06T15:34:15.571287+00:00"
+        }
+      }
+    },
+    {
+      "method": "course.outline",
+      "request": {
+        "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-course-outline-1793979423862608306",
+        "revision": 0,
+        "result": {
+          "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+          "plan": {
+            "plan_id": "dbbb508ee1191d18",
+            "version": 1,
+            "state": "draft",
+            "plan_hash": "sha256:7fd45cbb67cca4308195b7309c8f56cd1956eb9ea5ea661f8f4895f83a8f84aa"
+          },
+          "objectives": [
+            {
+              "objective_id": "81c3865ea1928504",
+              "ordinal": 1,
+              "title": "Name the parts: half, quarter and eighth",
+              "evidence_target": "recall",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "5dcbaba99dc508d3",
+              "ordinal": 2,
+              "title": "Explain that fair shares must be equal in size",
+              "evidence_target": "comprehension",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "eccdb72cfb0b82eb",
+              "ordinal": 3,
+              "title": "Cut a soft food into halves and then quarters with a table knife",
+              "evidence_target": "procedure",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "4dc25504e52068ef",
+              "ordinal": 4,
+              "title": "Measure half, quarter and eighth of a cup",
+              "evidence_target": "discrimination",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "1379f5a0b09adc30",
+              "ordinal": 5,
+              "title": "Explain the steps they took, in order",
+              "evidence_target": "production",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "75c1d8432f062825",
+              "ordinal": 6,
+              "title": "Apply halves and quarters to a new food or a small set of objects",
+              "evidence_target": "transfer",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            }
+          ],
+          "total": 6,
+          "truncated": false
+        }
+      }
+    },
+    {
+      "method": "parent.blueprint.read",
+      "request": {
+        "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-blueprint-read-1793979423865467451",
+        "revision": 0,
+        "result": {
+          "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+          "recipe": "parent",
+          "plan": {
+            "plan_id": "dbbb508ee1191d18",
+            "version": 1,
+            "state": "draft",
+            "plan_hash": "sha256:959d22d626f53b0d19d7b484f7714bc9031e205548387fd9896363ed526f104a"
+          },
+          "approval": {
+            "state": "none",
+            "plan_hash": null,
+            "content_hash": null,
+            "approved_at": null,
+            "invalidated_reason": null
+          },
+          "content_hash": "sha256:5ef477fe0cb19ed4133301944e3b00d386b811d82cecfb21c4340ef6815b56c5",
+          "export": {
+            "ready": false,
+            "blocked_reason": "plan_not_approved"
+          },
+          "tabs": {
+            "parent_guide": [],
+            "learner_pages": [],
+            "answers": [],
+            "narration": []
+          },
+          "sources": []
+        }
+      }
+    },
+    {
+      "method": "parent.plan.edit",
+      "request": {
+        "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+        "plan_id": "dbbb508ee1191d18",
+        "expected_plan_hash": "sha256:959d22d626f53b0d19d7b484f7714bc9031e205548387fd9896363ed526f104a",
+        "objective_edits": [
+          {
+            "objective_id": "81c3865ea1928504",
+            "title": "Name the parts: half, quarter and eighth (kitchen table)"
+          }
+        ]
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-plan-edit-1793979423868392015",
+        "revision": 1,
+        "result": {
+          "plan_id": "dbbb508ee1191d18",
+          "plan_version": 2,
+          "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb",
+          "objective_ids": [
+            "81c3865ea1928504",
+            "5dcbaba99dc508d3",
+            "eccdb72cfb0b82eb",
+            "4dc25504e52068ef",
+            "1379f5a0b09adc30",
+            "75c1d8432f062825"
+          ],
+          "changes_need_review": true,
+          "revision": 1
+        }
+      }
+    },
+    {
+      "method": "course.outline",
+      "request": {
+        "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-course-outline-1793979423903345860",
+        "revision": 0,
+        "result": {
+          "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+          "plan": {
+            "plan_id": "dbbb508ee1191d18",
+            "version": 2,
+            "state": "draft",
+            "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
+          },
+          "objectives": [
+            {
+              "objective_id": "81c3865ea1928504",
+              "ordinal": 1,
+              "title": "Name the parts: half, quarter and eighth (kitchen table)",
+              "evidence_target": "recall",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "5dcbaba99dc508d3",
+              "ordinal": 2,
+              "title": "Explain that fair shares must be equal in size",
+              "evidence_target": "comprehension",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "eccdb72cfb0b82eb",
+              "ordinal": 3,
+              "title": "Cut a soft food into halves and then quarters with a table knife",
+              "evidence_target": "procedure",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "4dc25504e52068ef",
+              "ordinal": 4,
+              "title": "Measure half, quarter and eighth of a cup",
+              "evidence_target": "discrimination",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "1379f5a0b09adc30",
+              "ordinal": 5,
+              "title": "Explain the steps they took, in order",
+              "evidence_target": "production",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "75c1d8432f062825",
+              "ordinal": 6,
+              "title": "Apply halves and quarters to a new food or a small set of objects",
+              "evidence_target": "transfer",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            }
+          ],
+          "total": 6,
+          "truncated": false
+        }
+      }
+    },
+    {
+      "method": "plan.approve",
+      "request": {
+        "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+        "plan_id": "dbbb508ee1191d18",
+        "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-plan-approve-1793979423907178407",
+        "revision": 2,
+        "result": {
+          "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "method": "course.outline",
+      "request": {
+        "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-course-outline-1793979423941392048",
+        "revision": 0,
+        "result": {
+          "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+          "plan": {
+            "plan_id": "dbbb508ee1191d18",
+            "version": 2,
+            "state": "approved",
+            "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
+          },
+          "objectives": [
+            {
+              "objective_id": "81c3865ea1928504",
+              "ordinal": 1,
+              "title": "Name the parts: half, quarter and eighth (kitchen table)",
+              "evidence_target": "recall",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "5dcbaba99dc508d3",
+              "ordinal": 2,
+              "title": "Explain that fair shares must be equal in size",
+              "evidence_target": "comprehension",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "eccdb72cfb0b82eb",
+              "ordinal": 3,
+              "title": "Cut a soft food into halves and then quarters with a table knife",
+              "evidence_target": "procedure",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "4dc25504e52068ef",
+              "ordinal": 4,
+              "title": "Measure half, quarter and eighth of a cup",
+              "evidence_target": "discrimination",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "1379f5a0b09adc30",
+              "ordinal": 5,
+              "title": "Explain the steps they took, in order",
+              "evidence_target": "production",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            },
+            {
+              "objective_id": "75c1d8432f062825",
+              "ordinal": 6,
+              "title": "Apply halves and quarters to a new food or a small set of objects",
+              "evidence_target": "transfer",
+              "state": "not_started",
+              "check_state": "none",
+              "attempt_count": 0,
+              "independent": false,
+              "last_opened_at": null
+            }
+          ],
+          "total": 6,
+          "truncated": false
+        }
+      }
+    },
+    {
+      "method": "jobs.create",
+      "request": {
+        "kind": "plan",
+        "brief": {
+          "stage": "lessons",
+          "plan_id": "dbbb508ee1191d18"
+        }
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-create-1793979423945652531",
+        "revision": 0,
+        "result": {
+          "job_id": "job_b26a4b9203f24d4a870e28959b5ccada",
+          "state": "queued"
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_b26a4b9203f24d4a870e28959b5ccada"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979423973950944",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_b26a4b9203f24d4a870e28959b5ccada",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979423945652531",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:03Z",
+            "updated_at": "2026-11-06T15:37:03Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_b26a4b9203f24d4a870e28959b5ccada"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979428977211372",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_b26a4b9203f24d4a870e28959b5ccada",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979423945652531",
+            "attempt_id": "att_2cf653d0edfa4d79b68bdd796545c92d",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:39:08Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:03Z",
+            "updated_at": "2026-11-06T15:37:08Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_b26a4b9203f24d4a870e28959b5ccada"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979433980767702",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_b26a4b9203f24d4a870e28959b5ccada",
+            "kind": "plan",
+            "state": "interrupted_requires_retry",
+            "operation_id": "cb011-jobs-create-1793979423945652531",
+            "attempt_id": "att_2cf653d0edfa4d79b68bdd796545c92d",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:03Z",
+            "updated_at": "2026-11-06T15:37:13Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "parent.blueprint.read",
+      "request": {
+        "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-blueprint-read-1793979434010269634",
+        "revision": 0,
+        "result": {
+          "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+          "recipe": "parent",
+          "plan": {
+            "plan_id": "dbbb508ee1191d18",
+            "version": 2,
+            "state": "approved",
+            "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
+          },
+          "approval": {
+            "state": "none",
+            "plan_hash": null,
+            "content_hash": null,
+            "approved_at": null,
+            "invalidated_reason": null
+          },
+          "content_hash": "sha256:06d0c98a0f7a6f6f05bc74e42dd76ba657adf2fba839b000acfc749db759ee6f",
+          "export": {
+            "ready": false,
+            "blocked_reason": "no_generated_content"
+          },
+          "tabs": {
+            "parent_guide": [],
+            "learner_pages": [],
+            "answers": [],
+            "narration": []
+          },
+          "sources": []
+        }
+      }
+    }
+  ],
+  "result": {
+    "wire_version": 6,
+    "phase": "full",
+    "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+    "brief": {
+      "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+      "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+      "brief": {
+        "title": "Kitchen fractions for a 9-year-old",
+        "goal": "Halves, quarters and eighths of a real object, taught at the kitchen table with a knife and a measuring cup. The parent demonstrates, the child explains what they did.",
+        "starting_point": "Counts to 100, reads a recipe with help, knows what a half looks like on a clock.",
+        "age_band": "8-10",
+        "reading_level": "Year 3, short sentences, decodable words",
+        "duration_minutes": 25,
+        "setting": "home",
+        "materials": [
+          "one apple",
+          "plastic knife",
+          "measuring cup",
+          "paper plate"
+        ],
+        "exclusions": [
+          "no knife work by the child",
+          "no nuts",
+          "no timed pressure"
+        ],
+        "supervision": "An adult holds the knife; the child places pieces and explains each cut.",
+        "desired_pages": 3,
+        "desired_visuals": "diagrams",
+        "narration": "script",
+        "locale": "en",
+        "egress_acknowledged": true,
+        "redaction_requested": false
+      },
+      "plan_job": {
+        "job_id": "job_bed378ec08884398a15b6cb0afe75b36",
+        "kind": "plan",
+        "state": "completed",
+        "submitted_at": "2026-11-06T15:34:15Z"
+      },
+      "created_at": "2026-11-06T15:34:15.571287+00:00"
+    },
+    "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+    "revision": 2,
+    "book": {
+      "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+      "recipe": "parent",
+      "plan": {
+        "plan_id": "dbbb508ee1191d18",
+        "version": 2,
+        "state": "approved",
+        "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
+      },
+      "approval": {
+        "state": "none",
+        "plan_hash": null,
+        "content_hash": null,
+        "approved_at": null,
+        "invalidated_reason": null
+      },
+      "content_hash": "sha256:06d0c98a0f7a6f6f05bc74e42dd76ba657adf2fba839b000acfc749db759ee6f",
+      "export": {
+        "ready": false,
+        "blocked_reason": "no_generated_content"
+      },
+      "tabs": {
+        "parent_guide": [],
+        "learner_pages": [],
+        "answers": [],
+        "narration": []
+      },
+      "sources": []
+    },
+    "plan": {
+      "plan_id": "dbbb508ee1191d18",
+      "version": 1,
+      "state": "draft",
+      "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
+    },
+    "job_id": "job_b26a4b9203f24d4a870e28959b5ccada"
+  }
+}
