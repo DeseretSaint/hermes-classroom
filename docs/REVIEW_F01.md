@@ -129,6 +129,15 @@ Rig note: the audit window on CDP 9351 was not usable for this pass — its rend
 / ~7 GB and answered no CDP domain (`Runtime.enable` timed out), consistent with audit §F-07
 (host tile-memory pressure). This pass therefore ran on its own isolated window.
 
+## Host fix applied
+
+The host token owner decision is recorded here: light `--ui-text-tertiary` moved from 54 % to
+66 % at `apps/desktop/src/styles.css` (a light-only `:root:not(.dark)` override; dark keeps 54 %).
+The host was rebuilt and packed, and the same isolated F-01 harness now reports
+`totalFailures: 0` across the seven states; the raw run is `audit/ux/f01-host66.json`. The
+repo-local host checkout at `~/.hermes/hermes-agent` and the desktop fork at
+`~/Projects/hermes-fork` both carry the source change.
+
 ## Gates
 
 - `python3 -m unittest discover -s tests -t .` → **Ran 664 tests, OK**

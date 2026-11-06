@@ -1,0 +1,83 @@
+{
+  "label": "host66",
+  "states": {
+    "lesson-ready": {
+      "mode": "light",
+      "contrastTotal": 0,
+      "contrastListed": 0,
+      "contrastBySize": {},
+      "contrast": [],
+      "contrastAll": [],
+      "textLength": 776,
+      "snippet": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nRecall",
+      "at": "2026-11-06T21:02:46.776Z"
+    },
+    "no-courses": {
+      "mode": "light",
+      "contrastTotal": 0,
+      "contrastListed": 0,
+      "contrastBySize": {},
+      "contrast": [],
+      "contrastAll": [],
+      "textLength": 2450,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection an",
+      "at": "2026-11-06T21:02:54.593Z"
+    },
+    "no-search-results": {
+      "mode": "light",
+      "contrastTotal": 0,
+      "contrastListed": 0,
+      "contrastBySize": {},
+      "contrast": [],
+      "contrastAll": [],
+      "textLength": 279,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYou",
+      "at": "2026-11-06T21:03:03.618Z"
+    },
+    "backend-off": {
+      "mode": "light",
+      "contrastTotal": 0,
+      "contrastListed": 0,
+      "contrastBySize": {},
+      "contrast": [],
+      "contrastAll": [],
+      "textLength": 2450,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection an",
+      "at": "2026-11-06T21:03:12.935Z"
+    },
+    "degraded-db": {
+      "mode": "light",
+      "contrastTotal": 0,
+      "contrastListed": 0,
+      "contrastBySize": {},
+      "contrast": [],
+      "contrastAll": [],
+      "textLength": 2450,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection an",
+      "at": "2026-11-06T21:03:20.750Z"
+    },
+    "unsupported-backend": {
+      "mode": "light",
+      "contrastTotal": 0,
+      "contrastListed": 0,
+      "contrastBySize": {},
+      "contrast": [],
+      "contrastAll": [],
+      "textLength": 2450,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection an",
+      "at": "2026-11-06T21:03:28.563Z"
+    },
+    "demo-fixture-mode": {
+      "mode": "light",
+      "contrastTotal": 0,
+      "contrastListed": 0,
+      "contrastBySize": {},
+      "contrast": [],
+      "contrastAll": [],
+      "textLength": 2450,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection an",
+      "at": "2026-11-06T21:03:36.378Z"
+    }
+  },
+  "totalFailures": 0
+}
