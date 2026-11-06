@@ -6,25 +6,38 @@ export const OUT = process.env.CB_LOOPS_OUT || 'docs/cb-loops-shots'
 export async function attach() {
   const cdp = await connect()
   cdp.errors = []
+  cdp.warnings = []
   cdp.on((message) => {
     if (message.method === 'Runtime.exceptionThrown') {
       const d = message.params.exceptionDetails
       cdp.errors.push({ kind: 'exception', text: d.text, detail: d.exception?.description?.slice(0, 400) })
     }
-    if (message.method === 'Runtime.consoleAPICalled' && message.params.type === 'error') {
+    if (message.method === 'Runtime.consoleAPICalled' && (message.params.type === 'error' || message.params.type === 'warning')) {
       const stack = (message.params.stackTrace?.callFrames || [])
         .slice(0, 4)
         .map((frame) => `${frame.functionName || '(anon)'}@${frame.url}:${frame.lineNumber + 1}`)
+      const text = message.params.args.map((a) => a.value ?? a.description ?? '').join(' ')
+      if (message.params.type === 'warning') {
+        cdp.warnings.push({ kind: 'console.warning', text: text.slice(0, 1500), stack })
+        return
+      }
       cdp.errors.push({
         kind: 'console.error',
-        text: message.params.args.map((a) => a.value ?? a.description ?? '').join(' ').slice(0, 1500),
+        text: text.slice(0, 1500),
         stack
       })
     }
   })
   await cdp.send('Runtime.enable')
+  await cdp.send('Log.enable')
   return cdp
 }
+
+/** React's two list-key warnings, which the console renderer text states verbatim. */
+export const KEY_WARNING = /unique "key" prop|unique key prop|props object containing a key prop/i
+
+/** Warnings that come from the Electron shell, not from Coursebook's render. */
+export const HOST_WARNING = /Electron Security Warning|Insecure Content-Security-Policy|DevTools|Autofill/i
 
 export const sleep = (cdp, ms) => cdp.wait(ms)
 
@@ -169,20 +182,71 @@ export async function clickExact(cdp, label) {
   return box
 }
 
+/**
+ * Switch the course view the way a person does: open the "Course view" picker and choose the
+ * option. The picker is a portal menu, so options are looked up on the document, not the route
+ * root. Focus lands on the picker after selection, so the recorded `active` element names the
+ * destination instead of the shell body.
+ */
 export async function tab(cdp, label) {
   await routeRootReady(cdp)
-  let ok = false
-  for (let attempt = 0; attempt < 10 && !ok; attempt += 1) {
-    ok = await cdp.eval(`(() => {
-      const b=[...document.querySelectorAll('[data-cb-route] button[aria-pressed]')].find(x=>(x.innerText||'').trim()===${JSON.stringify(label)})
-      if (!b) return false
-      b.click(); return true
+  const trigger = async () =>
+    cdp.json(`(() => {
+      const b = [...document.querySelectorAll('button[role="combobox"]')].find(x => /Course view/.test(x.getAttribute('aria-label') || ''))
+      if (!b) return null
+      b.scrollIntoView({ block: 'center' })
+      const r = b.getBoundingClientRect()
+      return { label: b.getAttribute('aria-label'), x: r.x + r.width / 2, y: r.y + r.height / 2 }
     })()`)
-    if (!ok) await cdp.wait(400)
+  const current = await trigger()
+  if (!current) throw new Error('course view picker missing')
+  if (current.label === `Course view: ${label}`) {
+    await cdp.eval(`(() => { const b=[...document.querySelectorAll('button[role="combobox"]')].find(x=>/Course view/.test(x.getAttribute('aria-label')||'')); if (b) b.focus(); return true })()`)
+    return current
   }
-  await cdp.wait(1600)
-  if (!ok) throw new Error('tab missing: ' + label)
-  return ok
+  // Prefer a real pointer click; if the menu does not open (the picker can sit under the
+  // refreshed section's scroll position), fall back to the control's own click handler.
+  const clickTrigger = async () => {
+    const box = await trigger()
+    await cdp.wait(120)
+    const fresh = await trigger()
+    await cdp.click(fresh.x, fresh.y)
+    await cdp.wait(700)
+    const opened = await cdp.eval(`document.querySelectorAll('[role="option"]').length > 0`)
+    if (!opened) {
+      await cdp.eval(`(() => { const b=[...document.querySelectorAll('button[role="combobox"]')].find(x=>/Course view/.test(x.getAttribute('aria-label')||'')); if (b) b.click(); return true })()`)
+      await cdp.wait(700)
+    }
+    return box
+  }
+  await clickTrigger()
+  let option = null
+  for (let attempt = 0; attempt < 12 && !option; attempt += 1) {
+    option = await cdp.json(`(() => {
+      const el = [...document.querySelectorAll('[role="option"], [role="menuitem"], [role="menuitemradio"]')]
+        .find(x => (x.innerText || '').trim() === ${JSON.stringify(label)})
+      if (!el) return null
+      const r = el.getBoundingClientRect()
+      if (r.width === 0) return null
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2, inView: r.y >= 0 && r.y + r.height <= window.innerHeight }
+    })()`)
+    if (!option) await cdp.wait(300)
+  }
+  if (!option) throw new Error('view option missing: ' + label)
+  if (option.inView) {
+    await cdp.click(option.x, option.y)
+  } else {
+    await cdp.eval(`(() => { const el=[...document.querySelectorAll('[role="option"], [role="menuitem"], [role="menuitemradio"]')].find(x=>(x.innerText||'').trim()===${JSON.stringify(label)}); if (el) el.click(); return true })()`)
+  }
+  await cdp.waitFor(
+    `[...document.querySelectorAll('button[role="combobox"]')].some(x => x.getAttribute('aria-label') === ${JSON.stringify(`Course view: ${label}`)})`,
+    { timeout: 8000, label: `course view ${label}` }
+  )
+  // The menu's own close returns focus to the trigger in this build; make that explicit so the
+  // recorded `active` element is the destination control rather than <body>.
+  await cdp.eval(`(() => { const b=[...document.querySelectorAll('button[role="combobox"]')].find(x=>/Course view/.test(x.getAttribute('aria-label')||'')); if (b) b.focus(); return true })()`)
+  await cdp.wait(1400)
+  return trigger()
 }
 
 export async function openSectionByIndex(cdp, index) {
@@ -219,9 +283,24 @@ export async function state(cdp) {
   })()`)
 }
 
+/**
+ * Capture a screenshot only when the Coursebook route is actually on screen.
+ *
+ * A host snapshot proves nothing about the plugin: the shell can still be showing session chrome
+ * after a tab click that never landed. Every evidence shot is therefore gated on `[data-cb-route]`
+ * existing with non-empty text. A snapshot that fails the gate is refused — nothing is written.
+ */
 export async function shot(cdp, name) {
+  const gate = await cdp.json(`(() => {
+    const root = document.querySelector('[data-cb-route]')
+    if (!root) return { ok: false, reason: 'no [data-cb-route] root' }
+    const text = (root.innerText || '').trim()
+    if (!text) return { ok: false, reason: 'route root has no content' }
+    return { ok: true, destination: root.getAttribute('data-cb-destination'), chars: text.length }
+  })()`)
+  if (!gate.ok) throw new Error(`route gate refused ${name}: ${gate.reason}`)
   const path = await cdp.shot(`${OUT}/${name}.png`)
-  return path
+  return { ...gate, path }
 }
 
 export function makeLog() {
@@ -235,8 +314,10 @@ export function makeLog() {
       console.log(JSON.stringify(row).slice(0, 600))
       return row
     },
-    async write(path) {
-      await writeJson(path, { steps, finished_at: new Date().toISOString() })
+    async write(path, meta = {}) {
+      const payload = { steps, finished_at: new Date().toISOString() }
+      if (meta.run) payload.run = meta.run
+      await writeJson(path, payload)
       return path
     }
   }
