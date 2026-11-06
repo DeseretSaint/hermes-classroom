@@ -105,7 +105,103 @@ methods. `NOT_IMPLEMENTED` is the defensive answer for a declared method that ha
 in this process; it is not what an unknown method gets, and no path returns a plausible success for
 work the backend cannot do.
 
-## 6. What this build deliberately does not contain
+## 6. Stored lesson text: the one-time repair and its marker
+
+`cb.rpc` v6 caps one lesson segment at 8,000 characters (`lesson.page` →
+`segments.items.text.maxLength`) and one page at 500 segments, while the pack manifest allows a
+section file of up to 32 MB (`max_single_file_bytes: 33554432`). Those numbers were never
+reconciled until D1 (`e3d6770`): the writer stored a whole section file as *one* teaching row, so an
+objective with a long chapter imported cleanly and then returned `INTERNAL_ERROR` on every
+`lesson.page` (`segments/0/text`) — a permanent, unretryable unreadable section.
+
+`coursebook/segments.py` now owns the cap: imports cut over-cap text into ordered pieces, and
+`db.ensure_schema()` repairs text that an older build already stored. Two things come with that and
+are named here because nothing else in the tree owns them: a per-database marker, and a mutation of
+learner content that a chat turn can reach.
+
+### 6.1 `PRAGMA user_version` is a data-repair marker, not a schema version
+
+The schema version authority is unchanged: `schema_migrations`, declared by `cb.db`
+(`migration_table`, `schema_version`), written one transaction per migration by `db.migrate()`,
+and reported verbatim by `db.health()`. `PRAGMA user_version` carries no schema meaning in this
+build. It holds `db.SEGMENT_REPAIR_MARKER = 1` once stored lesson text has been re-cut to the cap,
+and `0` for a database that has never been repaired. It is read and written only by
+`db._repair_lesson_segments_once()`; no migration and no handler treats it as a version, and the
+tests only assert the marker's value (`tests/test_segment_cap.py`). A future schema change must bump
+`cb.db`, not this marker, and nothing may reuse `user_version` for a second purpose without
+superseding this one.
+
+### 6.2 `ensure_schema()` runs one in-place repair of `lesson_segments`
+
+`db.ensure_schema()` migrates when needed, then calls `segments.repair_stored()`. That function,
+for every `lesson_run_id` holding a `kind='teaching'` row longer than the cap:
+
+* splits the text at semantic boundaries — after a blank line, else after a line, else after a word,
+  then a hard cut — moving the cut out of an open code fence and off a trailing heading where the
+  boundary allows, so that `"".join(pieces) == original` — no character added, dropped or rewritten.
+  A single fence longer than the cap is still cut; it is bounded and exact like any other text;
+* keeps the original row's `id`, `created_at`, `artifact_id` and `source_id` for the **first**
+  piece, and inserts the remaining pieces as new rows with new ids and the same `created_at`;
+* renumbers the run's ordinals contiguously in two passes (`ordinal + 1000000`, then back down) so
+  the `UNIQUE (lesson_run_id, ordinal)` fence never collides mid-renumber and the page renders in
+  reading order;
+* leaves every other row's text alone: inside a run it does touch, rows already within the cap and
+  non-teaching rows keep their content and only take a new ordinal, and a run with nothing over the
+  cap is not written at all.
+
+A course imported before the fix therefore becomes readable on the next command without a
+re-import. `segments.stored_overlong(connection)` reports `(lesson_run_id, length)` for stored text
+over the cap and is read-only diagnostics.
+
+**Why the fence is `BEGIN IMMEDIATE`.** The repair is read-decide-write across every run: it scans
+for over-cap rows, then rewrites and renumbers. `db.transaction()` issues `BEGIN IMMEDIATE`
+(`BUSY_TIMEOUT_MS = 5000`), taking the write lock before the scan, so two processes can neither
+split the same rows concurrently nor interleave ordinal renumbering; and the marker write commits in
+the *same* transaction as the split, so there is no state where the marker says "repaired" while
+the rows are not.
+
+**Idempotent.** After the marker is set, the cost of `ensure_schema()` is one `PRAGMA` read per
+command. Every piece a run writes is within the cap, so even a re-run with the marker cleared would
+find nothing to repair; the test asserts the lesson's row count is unchanged after a second call.
+
+**Lock contention skips, and never fails a command.** `_repair_lesson_segments_once()` catches
+`sqlite3.OperationalError` — the write lock still held after the busy timeout, or a read-only
+store — and returns `0` with the marker left unset. The caller's command is unaffected, and the
+next command retries. The consequence is stated plainly: on a contended or read-only database the
+D1 repair stays pending, so over-cap text there stays unreadable until a command gets the lock.
+
+### 6.3 The lifecycle fence, and why this path is a documented exception
+
+`PREBUILD_SPEC.md` ("Lifecycle hooks never provision storage") and CB-014-R1 fence the
+chat-lifecycle paths (`pre_llm_call`, `post_llm_call`, `post_tool_call`) and plugin import from
+provisioning or mutating the store: a chat turn is not Coursebook use. The repair sits inside that
+fence in one respect and outside it in another, and both halves are stated deliberately.
+
+* **It cannot provision.** `pre_llm_call` returns before touching anything when `db.store_exists()`
+  is false, so an unprovisioned profile never grows a database from a chat turn. The repair only
+  runs against a store that already exists.
+* **On an existing store, a chat turn can reach it.** When a chat is bound to a lesson and the turn
+  carries a real answer (or an explicit skip/override), `pre_llm_call` grades it by dispatching
+  `attempt.submit`/`attempt.override` on the same `api.dispatch` path the UI uses, and those domain
+  handlers call `db.ensure_schema()` first. The first such turn after an upgrade therefore performs
+  the one-time repair.
+
+That is why this is the first lifecycle-reachable path that mutates stored learner content, and why
+it is written down rather than left to be discovered: the boundary CB-014-R1 draws is about
+provisioning and about hooks writing state of their own, and this is neither a provisioning path nor
+a hook-authored write, but it does rewrite rows while a turn is in flight. The mutation stays
+narrow and deterministic: no row is written for text already within the cap, the text is never
+rewritten (`"".join(pieces) == original`), and no table other than `lesson_segments` is touched. On
+a database that is already repaired, or that holds nothing over the cap, the cost to that turn is
+the single `PRAGMA` read.
+
+Evidence: `tests/test_segment_cap.py`, 12 tests passing at `1b623dd`. `StoredTextRepairTest`
+reproduces the old writer exactly (one 24,000-character teaching row, marker cleared), then asserts
+the page reads, every piece is within the cap, the pieces join back to the original text, the marker
+is set, and a second read adds no rows. `RepairScopeTest` asserts a fresh database reads `0`, moves
+to `1` after `ensure_schema()`, and stays `1` after a second call.
+
+## 7. What this build deliberately does not contain
 
 - Image and speech generation. Media policy, the content-addressed artifact store and the
   text-fallback path ship, and lesson generation emits declarative media specs with text

@@ -147,7 +147,8 @@ Coursebook has not established that it improves learning. Parent observations ar
 ## Documentation
 
 - `docs/INSTALL.md`: install, enable, verify, uninstall, troubleshooting.
-- `docs/ARCHITECTURE.md`: verified SDK seams, spec to SDK corrections, failure states.
+- `docs/ARCHITECTURE.md`: verified SDK seams, spec to SDK corrections, failure states, and the
+  stored-lesson-text repair marker.
 - `docs/CONTRACTS.md`: the seven frozen contracts and their open questions.
 - `docs/GENERATION.md`: the plan and lesson pipeline, research ledger and validation pass.
 - `docs/WORK_PACKAGES.md`: file ownership and merge order.
