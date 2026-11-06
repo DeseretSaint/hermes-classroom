@@ -4,7 +4,9 @@ Deadline: November 11, 2026, 5:00 PM EST. Submission is three things, not one: a
 request against `hermes-agent`, a public X post with the demo that tags @NousResearch, and the
 contest form. A demo over 90 seconds fails regardless of quality.
 
-Status key: `[x]` verified on this branch, `[ ]` open, `[~]` blocked on another owner.
+Status key: `[x]` verified on this branch, `[ ]` open, `[~]` blocked on another owner or on an open
+defect. A gate is not `[x]` because code exists; it is `[x]` because a command ran against this
+commit and passed.
 
 ## 0. Hard operator gate
 
@@ -23,19 +25,24 @@ invalidates the earlier evidence.
 | --- | --- | --- | --- | --- |
 | 1 | Contracts frozen | Atlas | `contracts/*.json`, `docs/REVIEW_CB001.md` | [x] |
 | 2 | Platform skeleton passes admission | Sable | `bash scripts/validate.sh` | [x] |
-| 3 | Backend kernel with migrations | Cinder | `db.ready:true` from `/health`, migration tests | [ ] |
-| 4 | Packs import and export | Lattice | pack round-trip tests, export allowlist test | [ ] |
-| 5 | Desktop shell with real views | Vellum | `node --check`, pane states on a live backend | [ ] |
-| 6 | Probes answer the three open questions | Sentinel | `PROBES.md` | [~] |
+| 3 | Backend kernel with migrations | Cinder | `db.ready:true`, `schema_version: 3` from `/health`; migrations `0001`-`0003`; 636 tests | [x] |
+| 4 | Packs import and export | Lattice | pack round-trip and export hash in the mounted trace; P17/P18/P20 PASS (`tests/adversarial/evidence/attack-packs.json`) | [x] |
+| 5 | Desktop shell with real views | Vellum | `node --check` passes and every view is authored, but `#/coursebook` renders the session home, so no view is verified on a live backend | [~] CB-QA-09 |
+| 6 | Probes answer the three open questions | Sentinel | `PROBES.md`: 7 probes run, `pre_llm_call` replay FAIL, compression and Desktop render segments BLOCKED | [~] |
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md` rows for every demo shot | [ ] |
-| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/DEMO.md` | [x] for the skeleton, re-run at release |
+| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/DEMO.md`, `docs/PRIVACY_EGRESS.md`, `docs/ARCHITECTURE.md` | [x] at `97fff42`+docs commit; `docs/REVIEW_CB014.md` registry line is Sentinel's card |
 | 9 | License present | DeseretSaint | `LICENSE` at repository root | [ ] |
 | 10 | Public repository pushed | DeseretSaint | pushed commit, approval required | [ ] |
-| 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml`, validator output | [~] blocked on 3 to 8 |
+| 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml`, validator output | [~] blocked on 5, 7 and 10 |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
 | 13 | Demo recorded and approved | Harbor, DeseretSaint | file under 90 seconds, approval | [ ] |
 | 14 | X post published | DeseretSaint | post URL, tags @NousResearch | [ ] |
 | 15 | Contest form submitted | DeseretSaint | confirmation | [ ] |
+
+Gate 5 stays `[~]` for one reason and it is not missing code: on the installed candidate the
+`/coursebook` route renders the session home instead of the page (CB-QA-09, retested on
+`f4a42f3`, `docs/REVIEW_CB014.md`). Until it mounts, the course library, create/import, Parent
+Studio and Activity cannot be checked as views, and gates 7 and 13 cannot start.
 
 ## 2. Release verification
 
@@ -48,19 +55,26 @@ hermes plugins doctor .
 hermes plugins doctor coursebook
 ```
 
-Expected at 0.1.0: 46 tests pass, `desktop/plugin.js` syntax OK, `validate` passes all 16 checks,
-doctor reports 1 tool and 3 hooks. At release, the test count changes and the doctor output must
-still show declared capabilities matching registrations.
+Expected at 0.1.0 on the CB-014 tree: **636 tests pass** (`Ran 636 tests ... OK`),
+`desktop/plugin.js` syntax OK, `hermes plugins validate .` passes all **16** admission checks with
+one warning (private core imports, see section 3), doctor reports **1 tool and 3 hooks**, the
+mounted backend trace passes **31/31** expectations, and the script ends `Validation passed.` with
+exit 0.
 
-Fresh install path, in a throwaway `HERMES_HOME`:
+Fresh install path, in a throwaway home:
 
 ```
-HERMES_HOME=$(mktemp -d) bash scripts/install-dev.sh
-HERMES_HOME=<same dir> hermes plugins enable coursebook
-HERMES_HOME=<same dir> hermes plugins doctor coursebook
+bash scripts/install-local.sh --home /tmp/coursebook-home
 ```
 
-Then uninstall and confirm the checkout is intact. This was run for 0.1.0; repeat it at release.
+Observed: `6/6 admission gates`, `registrations: 1 tool(s), 3 hook(s)`, then `Installed.` Doctor
+against that home reports `manifest: coursebook 0.1.0 (standalone)` and the same registration
+count. Teardown is `bash scripts/uninstall-local.sh --home /tmp/coursebook-home`, which disables,
+unlinks both halves, leaves the checkout intact and **keeps** `plugin-data/coursebook`.
+
+An equivalent linked dev install (`HERMES_HOME=<tmp> bash scripts/install-dev.sh`, then
+`hermes plugins enable coursebook`) was run for 0.1.0 as well; `scripts/install-dev.sh` does not
+enable anything.
 
 ## 3. Catalog entry requirements
 
@@ -71,8 +85,8 @@ The entry is judged by the catalog validator and by a human reviewer. The rules 
 | --- | --- | --- |
 | `name` | `[a-z0-9_-]{1,64}` | `coursebook` |
 | `repo` | `https://` URL | Set; repository not pushed yet |
-| `sha` | exactly 40 lowercase hex characters | Placeholder pin, must be re-pinned at release |
-| `description` | non-empty; carries the disclosure lines | Drafted for the skeleton |
+| `sha` | exactly 40 lowercase hex characters | `e1f1cab…` — the **skeleton** commit, a placeholder that must be re-pinned to the release commit |
+| `description` | non-empty; carries the disclosure lines | Rewritten for the 0.1.0 candidate (host seams, per-operation providers, local SQLite, no telemetry). It describes the candidate, not `e1f1cab`, so the pin and the text disagree until the re-pin |
 | `maintainer` | non-empty | `DeseretSaint` |
 | `tier` | `official`, `verified`, `community` | `community`; only Nous sets the other two |
 | `category` | one of the nine shelves | `desktop` |
@@ -90,6 +104,12 @@ Additional admission rules that apply to this plugin:
 - No core overrides. The plugin uses hooks and the documented registration APIs only.
 - Credentials come through Hermes. Coursebook declares no `requires_env` and stores no secrets.
 - Risky behavior is disclosed in the description and in `docs/PRIVACY_EGRESS.md`.
+- **Known warning, disclosed:** `hermes plugins validate .` prints one warning for private core
+  imports — `coursebook/db.py` opens SQLite through `hermes_cli.sqlite_util.open_db`, and the
+  `probes/scripts/` harnesses import `hermes_bootstrap` and `agent.plugin_llm` helpers. It is a
+  warning, not a rejection, and it can break on a Hermes upgrade.
+- Metadata gates disclosure rather than behavior: the entry must not claim image or speech
+  generation (absent), reminders (absent), or a working Desktop page (CB-QA-09 open).
 
 Validate the entry with the current catalog validator from a `hermes-agent` checkout:
 
@@ -116,6 +136,10 @@ OK: 1 file(s) valid
 
 ## 5. Demo gates
 
+Gate status: **NOT MET.** No shot can be recorded until CB-QA-09 is fixed and Sentinel passes the
+demo scenarios on the exact build being recorded, and no recording happens without DeseretSaint's
+approval.
+
 - Every shot in `docs/DEMO.md` has a passing Sentinel scenario on the release commit.
 - Two precomputed segments are captioned on screen: Parent Studio pages and cached lesson media.
 - Total runtime under 90 seconds, measured on the exported file, not the edit timeline.
@@ -135,8 +159,16 @@ OK: 1 file(s) valid
 
 | Blocker | Why it blocks | Owner |
 | --- | --- | --- |
-| No course, grading, export or Parent Studio code | Gates 3 to 7 cannot pass, so there is nothing to demo | Cinder, Lattice, Vellum |
-| Three open architecture questions | Pack staging, aux grader lane and workspace topology are unresolved | Sentinel, Atlas |
-| No license file | Redistribution and catalog listing are unsafe without one | DeseretSaint |
+| `#/coursebook` renders the session home (CB-QA-09) | The product's primary surface does not mount, so no UI view is verified, gates 5 and 7 stay open and the demo cannot be recorded honestly | Vellum (`t_bfe339b2`) |
+| `evidence.inspect` returns an open check's reference answer (CB-QA-10) | The answer key crosses the client boundary while the check is open; the UI does not render it, the RPC does | Cinder |
+| Auxiliary grader accepts a persuaded pass (CB-QA-11) | The open-response lane cannot distinguish an honest pass from an injected one, so the lane ships disabled | Cinder |
+| Demo gate not met | Sentinel's demo scenarios have not passed on the release commit, and recording needs operator approval | Sentinel, DeseretSaint |
+| License absent | Redistribution and catalog listing are unsafe without one | DeseretSaint |
 | Repository not pushed | No commit sha to pin, no README at a public URL | DeseretSaint |
-| Catalog pin is a placeholder | Re-pinning must happen after the last code merge | Harbor |
+| Catalog pin is the skeleton commit | The entry's text describes 0.1.0; the sha still points at `e1f1cab`, so the entry must be re-pinned after the last code merge and the docs commit | Harbor, DeseretSaint |
+
+Verified on this branch, so they are not blockers: 51/51 `cb.rpc` v6 methods mounted with no
+contract problems, schema v3 from migrations `0001`-`0003`, 636 tests and 31/31 mounted backend
+expectations under `scripts/validate.sh`, pack round-trip and export hash matching, and eight
+`parent.*` methods. Those paths are implemented and tested; they are unreachable from the UI while
+CB-QA-09 is open.

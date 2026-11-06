@@ -13,6 +13,9 @@ contest vertical slice. Owners are the specialists who fix; I do not patch produ
 | CB-QA-06 | Medium | Atlas | `/compress` cannot rotate or compact local gateway sessions (`in_place` off); post-compaction state unverifiable |
 | CB-QA-07 | Low | Atlas | Plugin hot reload can leave `pre_llm_call` unregistered while other hooks fire |
 | CB-QA-08 | Info | Sable / Cinder | A plugin tool's `MEDIA:` tag is not auto-delivered by the messaging gateway (allowlist) |
+| CB-QA-09 | P1 | Vellum | `#/coursebook` renders the session home on the installed candidate; the route page never mounts. Reproduction: `docs/REVIEW_CB014.md` |
+| CB-QA-10 | P2 | Cinder (domain/evidence) | `evidence.inspect` returns `l2.objectives[].criteria[].check_spec.reference` (the answer key) while the check is still open. Evidence: `tests/adversarial/evidence/attack-state.json` (`results.S07`) |
+| CB-QA-11 | P2 (lane disabled) | Cinder (grader) | With the aux grader enabled, learner text reaches the grader and a "pass" carrying instructor-style injection is accepted; no structural cross-check exists for open responses. Evidence: `attack-state.json` (`results.S13`, BLOCKED while the lane is disabled) |
 
 ---
 

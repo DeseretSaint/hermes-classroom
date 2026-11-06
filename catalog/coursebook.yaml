@@ -1,25 +1,31 @@
 # Draft catalog entry for Coursebook. Not submitted.
 #
-# The sha below is the commit this draft was validated against: the release skeleton commit
-# that contains README.md and the install guide. It is a placeholder for the PR pin. Before the
-# catalog pull request, merge every code change, then set sha to the release commit and version
-# to the matching label in the same change. See docs/SUBMISSION.md sections 3 and 4.
+# The sha below is the skeleton commit this draft was first validated against. It is a placeholder
+# for the PR pin and it does NOT contain the 0.1.0 candidate the description now describes. Before
+# the catalog pull request, merge every code change, then set sha to the release commit, point
+# docs_url at the same commit, and keep version in step with the pinned code — all in one change.
+# See docs/SUBMISSION.md sections 3 and 4. Do not submit this file while sha and description
+# disagree; gate 11 is exactly that check.
 name: coursebook
 repo: https://github.com/DeseretSaint/hermes-classroom
 sha: e1f1cab7087c19e8f4eacd09cc7dabf50633fee1
 description: >-
   A native Hermes Desktop learning workspace where a lesson is governed state rather than chat:
-  one objective at a time, typed checks, bounded grading, transactional transitions,
-  inspectable evidence, and sourced visuals and audio, plus parent-prepared lesson packs.
-  This 0.1.0 pin is the skeleton release: both halves load, the backend serves the frozen v1
-  wire contract and reports health honestly, and every unimplemented command answers
-  NOT_IMPLEMENTED, so no course can be created, graded or exported yet. Disclosure - the
-  skeleton makes no network calls of its own and stores nothing; in the planned release, lesson
-  chat reaches the selected chat provider and any configured external memory provider, planning
-  and grading reach the configured auxiliary provider, research reaches configured search and
-  fetch services and the named sites, image and speech reach their respective providers, state
-  persists in profile-scoped SQLite under $HERMES_HOME, and pack export writes a local file and
-  performs no upload. No telemetry, no credential storage, no self-update.
+  one objective at a time, typed checks, bounded grading, transactional transitions, inspectable
+  evidence, and sourced visuals and audio, plus parent-prepared lesson packs. Coursebook 0.1.0
+  holds no vendor credentials, makes no outbound HTTP request of its own and declares no required
+  environment variables: every provider call goes through a seam the Hermes profile already
+  configures. Disclosure - lesson chat reaches the selected chat provider and any configured
+  external memory provider; plan and lesson generation, and Parent Studio planning, reach the host
+  plugin LLM route with the goal or parent brief, dials, locale, bounded research queries and
+  source excerpts; research reaches the host web_search and web_extract tools, so the configured
+  search backend and the named sites; closed checks are graded locally against a stored reference;
+  the auxiliary open-response grader lane is disabled, so an open answer is sent nowhere; image
+  and speech generation are not implemented and no media provider is wired; state persists in
+  profile-scoped SQLite under $HERMES_HOME; pack import reads a local file and pack export writes
+  a local downloadable archive, and neither uploads; parent briefs require an acknowledged egress
+  disclosure before a course is created. No telemetry, no usage reporting, no credential storage,
+  no self-update.
 maintainer: DeseretSaint
 title: Coursebook
 tier: community
@@ -30,8 +36,12 @@ docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/e1f1cab7087c19e8
 readme: true
 platforms: []
 known_issues:
-  - "Skeleton release: no course creation, grading, export, Parent Studio or reminders yet; unimplemented commands return NOT_IMPLEMENTED."
-  - "The SQLite schema is not migrated in this pin; the pane reports 'not migrated' instead of showing an empty course list."
+  - "Desktop route #/coursebook renders the session home instead of the Coursebook page (CB-QA-09); the course library, course creation, Parent Studio and Activity are unreachable from the UI on this candidate."
+  - "Research runs inside plan jobs only; there is no standalone research command."
+  - "Image and speech generation are absent: lesson generation emits declarative media specs with text equivalents and no provider is wired."
+  - "Reminders are absent: no command, no job kind and no storage."
+  - "The auxiliary open-response grader lane is disabled; closed checks are graded locally against a stored reference."
+  - "evidence.inspect returns an open check's reference answer in the L2 projection (CB-QA-10); the UI does not render it."
 capabilities:
   provides_tools:
     - coursebook_status

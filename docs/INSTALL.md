@@ -1,12 +1,17 @@
-# Installing Coursebook (0.1.0 skeleton)
+# Installing Coursebook (0.1.0)
 
-This guide covers the only install path that exists today: a linked development install from a
-local checkout. Catalog install is not available yet. Every command below was executed on the
-baseline commit and the observed result is stated next to it.
+This guide covers the two install paths that exist today: a linked development install from a local
+checkout, and a scripted single-home install that does the same thing plus enable and verification.
+Catalog install is not available yet. Every command below was executed on the CB-014 candidate
+(`97fff42`) in a throwaway `HERMES_HOME`, and the observed result is stated next to it.
+
+Read the status table in `README.md` before installing. The package installs and its backend
+answers, but the Desktop page does not mount on this candidate (CB-QA-09), so the course library,
+course creation, Parent Studio and Activity are not reachable from the UI yet.
 
 ## Requirements
 
-- Hermes Agent 0.23.0 or newer. Verified against Hermes Agent v0.23.0 (2026.9.24), stable.
+- Hermes Agent 0.23.0 or newer. Verified against the installed Hermes on this machine, stable.
 - Hermes Desktop, for the pane. The backend half works without it.
 - Python 3.11 or newer on the interpreter Hermes runs. `scripts/test.sh` honours
   `COURSEBOOK_PYTHON` if you need to point it elsewhere.
@@ -46,7 +51,7 @@ linked $HERMES_HOME/plugins/coursebook -> /path/to/hermes-classroom
 
 next:
   hermes plugins enable coursebook   # backend half (imports plugin_api.py)
-  restart the gateway, then enable the Desktop half in Capabilities -> Plugins
+  restart the gateway, then enable the Desktop half in Capabilities → Plugins
   hermes plugins doctor coursebook
 ```
 
@@ -54,8 +59,8 @@ The script symlinks the checkout rather than copying it, because a linked packag
 editing `desktop/plugin.js` re-syncs the Desktop copy and hot-reloads it. A copied install only
 picks up changes on rescan, update or restart.
 
-It refuses to run outside a Coursebook checkout and refuses to replace an existing real
-directory. Both refusals are errors, not prompts.
+It refuses to run outside a Coursebook checkout and refuses to replace an existing real directory.
+Both refusals are errors, not prompts. It does not enable anything.
 
 ## 3. Enable the agent half
 
@@ -64,63 +69,166 @@ hermes plugins enable coursebook
 hermes gateway restart
 ```
 
-Observed: `Plugin coursebook enabled.` followed by a restart instruction. The flag lives in
-`config.yaml` under `plugins.enabled`.
+Observed: `✓ Plugin coursebook enabled.` followed by `Restart the gateway for the plugin to take
+effect:`. The flag lives in `config.yaml` under `plugins.enabled`.
 
 ## 4. Enable the Desktop half
 
-In the Desktop app: Capabilities, Plugins, Coursebook, on. The two halves are separate on
-purpose. If only the Desktop half is on, the pane shows "Coursebook needs its agent plugin" and
-offers the enable path; it never renders an empty course list as if you had no courses.
+In the Desktop app: Capabilities, Plugins, Coursebook, on. The two halves are separate on purpose.
+If only the Desktop half is on, the pane shows "Coursebook needs its agent plugin" and offers the
+enable path; it never renders an empty course list as if you had no courses.
 
-## 5. Verify
+On this candidate the sidebar item, pane and settings page register, but `#/coursebook` renders the
+session home instead of the Coursebook page (CB-QA-09, `docs/REVIEW_CB014.md`). That is a known
+defect of this build, not an install failure.
+
+## 5. Or: one scripted install into a dedicated home
+
+`scripts/install-local.sh` links the agent half, materializes the Desktop copy with its
+`.hermes-package.json` marker, writes the single-home flag, enables the plugin in that home and runs
+the admission gates. It defaults to `~/.hermes/coursebook-test/home`, never the root profile:
+
+```
+bash scripts/install-local.sh --home /tmp/coursebook-home
+```
+
+Observed output, abbreviated to the lines that carry meaning:
+
+```
+source : /path/to/hermes-classroom (97fff42)
+home   : /tmp/coursebook-home
+
+== 1/6 agent half: link the package ==
+/path/to/hermes-classroom
+
+== 2/6 desktop half: materialize the app root copy ==
+marker: /tmp/coursebook-home/desktop-plugins/coursebook/.hermes-package.json
+
+== 3/6 single-home flag for an isolated backend ==
+wrote /tmp/coursebook-home/coursebook-single-home.env
+start the backend with it:  set -a; . /tmp/coursebook-home/coursebook-single-home.env; HERMES_HOME=/tmp/coursebook-home hermes serve --isolated --port 44219
+
+== 4/6 enable the agent half in this home ==
+✓ Plugin coursebook enabled.
+Restart the gateway for the plugin to take effect:
+  hermes gateway restart
+
+== 5/6 discover it in this home ==
+discovered: coursebook
+
+== 6/6 admission gates ==
+Validation passed.
+  manifest: coursebook 0.1.0 (standalone)
+  OK: runtime discovery, manifest parsing, import, and registration passed
+  registrations: 1 tool(s), 3 hook(s)
+
+Installed.
+```
+
+Exit codes: `0` installed and verified, `1` refused (not a checkout, a real directory in the way, a
+gate failed), `2` bad usage.
+
+## 6. Verify
 
 ```
 bash scripts/test.sh
 ```
 
-Observed on the baseline: `Ran 46 tests ... OK`, then `desktop/plugin.js: syntax OK`.
+Observed: `Ran 636 tests in 55.335s`, `OK`, then `desktop/plugin.js: syntax OK` and
+`All checks passed.`
 
 ```
 bash scripts/validate.sh
 ```
 
-Observed on the baseline: 46 tests OK, syntax OK, `hermes plugins validate .` passes all 16
-checks with no schema errors, `hermes plugins doctor .` reports `1 tool(s), 3 hook(s)` and
-`Validation passed.`
+Observed: 636 tests OK, `desktop/plugin.js: syntax OK`, `hermes plugins validate .` passes all 16
+admission checks with one warning (private core imports, see below), `hermes plugins doctor .`
+reports `1 tool(s), 3 hook(s)`, the mounted backend trace passes all 31 expectations against an
+isolated `HERMES_HOME`, and the script ends `Validation passed.` with exit 0.
 
 ```
 hermes plugins doctor coursebook
 ```
 
-Observed: manifest `coursebook 0.1.0 (standalone)`, runtime discovery, manifest parsing, import
-and registration OK.
+Observed:
 
-## 6. What a correct first run looks like
+```
+Plugin Doctor:
+/path/to/hermes-classroom
+  manifest: coursebook 0.1.0 (standalone)
+  OK: runtime discovery, manifest parsing, import, and registration passed
+  registrations: 1 tool(s), 3 hook(s)
+```
 
-The pane shows, and only shows:
+`plugins validate` prints one warning rather than an error: `coursebook/db.py` opens SQLite through
+`hermes_cli.sqlite_util.open_db`, and the `probes/scripts/` harnesses import `hermes_bootstrap` and
+`agent.plugin_llm` helpers. Those are private core surfaces, they can break on a Hermes upgrade, and
+they are listed here rather than hidden. Catalog rule 9 treats them as a warning, not a rejection.
 
-| Row | Value | Meaning |
+## 7. What a correct first run looks like
+
+Ask the agent to run `coursebook_status`. On a home whose backend has served `/health` at least
+once (opening the pane does that), the observed shape is:
+
+| Field | Value | Meaning |
 | --- | --- | --- |
-| Backend | `cb.rpc v1`, plugin 0.1.0 | The contract is loaded and the backend answered |
-| Database | `not migrated` | No migration has shipped yet, so no course data can be stored |
-| Courses | `none yet` | No courses exist in this build, and none are simulated |
+| `plugin_version` | `0.1.0` | The package on disk is the one that answered |
+| `contract_version` | `6` | `cb.rpc` v6 is loaded |
+| `db.ready` | `true` | The store is provisioned and migrated |
+| `db.schema_version` | `3` | Migrations `0001`-`0003` applied |
+| `implemented_methods` | 51 names | Every method `cb.rpc` v6 declares has a handler |
+| `contracts` | 7 entries | Each frozen contract with its version and hash |
 
-`Database: not migrated` is the expected state for 0.1.0, not a broken install. It becomes a
-schema version once the backend kernel work package lands migrations.
+The pane reports the same health block: backend `cb.rpc v6`, plugin 0.1.0, database ready at schema
+v3, and `Courses: none yet` until you create or import one. With no chat bound to an enrollment it
+offers `Open Coursebook` and says no durable chat is bound yet.
 
-Ask the agent to run `coursebook_status` to see the same block as JSON:
-`plugin_version`, `contract_version`, `db.ready` (false today), and the contract inventory.
+Provisioning is deliberate and narrow: `GET /health` (and `health.get` over RPC) creates the store
+and applies migrations on first contact. Enabling the plugin, loading it, and the three chat hooks do
+not create anything (CB-014-R1). So on a brand-new home, `coursebook_status` asked **before** any
+health check reports `db.ready: false` and `schema_version: null`; that is an unprovisioned profile,
+not a broken install. Open the pane, or call `health.get`, once and it reports ready at v3.
 
-## 7. Development loop
+The route still does not mount on this candidate: `#/coursebook` renders the session home instead of
+the Coursebook page (CB-QA-09). Nothing above depends on the route rendering.
 
-Because the package is linked, edits to `desktop/plugin.js` reload in the Desktop app. Python
-changes are picked up by the gateway, which needs a restart to re-import the backend.
+## 8. Development loop
 
-Run `bash scripts/validate.sh` before proposing a merge. It is the admission gate and covers
-tests, module syntax, catalog admission and runtime registration.
+Because the package is linked, edits to `desktop/plugin.js` reload in the Desktop app. Python changes
+are picked up by the gateway, which needs a restart to re-import the backend.
 
-## 8. Uninstall and revoke
+Run `bash scripts/validate.sh` before proposing a merge. It is the admission gate and covers tests,
+module syntax, catalog admission, runtime registration and the mounted backend trace.
+
+## 9. Uninstall and revoke
+
+```
+bash scripts/uninstall-local.sh --home /tmp/coursebook-home
+```
+
+Observed on a scripted install:
+
+```
+== 1/4 remove the credential copy ==
+no credential copy at /tmp/coursebook-home/auth.json
+
+== 2/4 disable ==
+⊘ Plugin coursebook disabled.
+
+== 3/4 remove the package ==
+unlinked /tmp/coursebook-home/plugins/coursebook (the checkout it pointed at is untouched)
+removed the Desktop app-root copy /tmp/coursebook-home/desktop-plugins/coursebook
+
+== 4/4 verify the home no longer lists it, and holds no credential copy ==
+unlisted
+no credential copy remains
+
+Plugin data under /tmp/coursebook-home/plugin-data/coursebook was kept.
+Deleting the whole disposable home is the operator's call, not this script's.
+```
+
+The script refuses to guess which home to tear down, refuses the machine-level `~/.hermes`, and
+deletes exactly the credential copy rather than a tree. A linked dev install can be removed by hand:
 
 ```
 hermes plugins disable coursebook
@@ -128,28 +236,31 @@ rm "$HERMES_HOME/plugins/coursebook"
 hermes gateway restart
 ```
 
-The `rm` removes the symlink only; the checkout stays intact. Verified in an isolated
-`HERMES_HOME`. If you installed by copy rather than link, remove the copied directory instead,
-or use `hermes plugins remove coursebook`, which is TODO to verify for a symlinked dev install
-(owner: Harbor). Nothing is written to `$HERMES_HOME/plugin-data/coursebook` in 0.1.0, so there
-is no data directory to delete. That changes when migrations land.
+The `rm` removes the symlink only; the checkout stays intact. Coursebook state is **not** deleted by
+either path: it lives at `$HERMES_HOME/plugin-data/coursebook/data.db` and survives package removal.
+Delete that directory yourself if you want the courses gone; deleting an enrollment from inside the
+app is the scoped, previewed data deletion (`enrollment.delete`).
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 | Symptom | Meaning | Fix |
 | --- | --- | --- |
 | `run this from the coursebook checkout (plugin.yaml not found)` | `install-dev.sh` was run outside the repository root | `cd` to the checkout, rerun |
 | `$TARGET already exists and is not a symlink; refusing to replace it.` | A real directory already occupies the plugin slot | Inspect and remove that directory yourself; the script will not do it |
 | Pane says "Coursebook needs its agent plugin" | Desktop half is on, backend half is not enabled or the gateway has not restarted | `hermes plugins enable coursebook`, `hermes gateway restart` |
-| `NOT_IMPLEMENTED` from any RPC call | The method is frozen in `contracts/rpc.v1.json` but has no handler in this build | Expected in 0.1.0. Nothing is broken |
-| `Database: not migrated` | No schema exists yet | Expected in 0.1.0 |
+| `#/coursebook` shows the session list instead of Coursebook | CB-QA-09: the route does not mount on this candidate | Nothing to fix at install time; see `docs/REVIEW_CB014.md` |
+| `VALIDATION_FAILED` naming a method as "not one of [...]" | The method is not in `cb.rpc` v6. Unknown methods are refused before any handler runs | Use one of the 51 declared methods; the error lists them |
+| `NOT_IMPLEMENTED` from an RPC call | A method declared in `cb.rpc` has no handler in this process. Not expected when all 51 are mounted | Check `/runtime` for the mounted list; a partial install or a stale gateway is the usual cause |
+| `db.ready: false` in the status tool | Either the store is unprovisioned (no `/health` call yet) or a migration did not complete | Call `health.get` once; if it stays false, check the gateway log for the migration error |
 | `hermes plugins validate` fails the capability probe | `jsonschema` is missing from the Hermes interpreter | `hermes plugins validate . --install-deps` |
 | `hermes plugins doctor` reports a hook or tool mismatch | `plugin.yaml` declarations drifted from `register()` | Fix the declaration or the registration; admission compares the two |
 
 If the pane cannot reach the backend at all, it shows the error code with a Check again button.
-Those codes come from `contracts/errors.v1.json`; they are contract values, not prose.
+Those codes come from `contracts/errors.v2.json`; they are contract values, not prose.
 
-## 10. What this install does not give you
+## 11. What this install does not give you
 
-A course app. See the status table in `README.md` and section 6 of `docs/ARCHITECTURE.md`. The
-install is real; the feature set is a skeleton.
+A working Desktop page. The backend, pack pipeline and Parent Studio authoring are implemented and
+tested, but the route does not mount (CB-QA-09), image and speech generation and reminders are
+absent, and research runs only inside plan jobs. See the status table in `README.md` for the full,
+row-by-row state of this build.
