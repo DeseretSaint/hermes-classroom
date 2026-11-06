@@ -371,8 +371,13 @@ class V2AmendmentTest(unittest.TestCase):
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
 
-        # ``pack.preview`` is still Lattice's; the seam must refuse rather than fake it.
-        response = api.dispatch(_envelope("pack.preview", {"staged_id": "stg_12345678"}))
+        # With CB-010 every frozen method has a handler. The seam must still refuse honestly when
+        # one is absent, so the absence is simulated instead of asserted about a real method.
+        saved = api.METHOD_HANDLERS.pop("pack.preview")
+        try:
+            response = api.dispatch(_envelope("pack.preview", {"staged_id": "stg_12345678"}))
+        finally:
+            api.METHOD_HANDLERS["pack.preview"] = saved
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
 

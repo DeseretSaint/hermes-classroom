@@ -158,7 +158,9 @@ def main() -> int:
         binding_unmigrated,
     )
 
-    later = client.post("/api/plugins/coursebook/rpc", json=envelope("library.list", {}))
+    # CB-010: every frozen method now has a handler, so this probe uses a method name that is not
+    # in the contract at all — the envelope must be refused, never silently accepted.
+    later = client.post("/api/plugins/coursebook/rpc", json=envelope("course.teleport", {}))
     record(
         "POST /rpc for a method not in the mounted contract is refused, never faked",
         later.json().get("ok") is False,

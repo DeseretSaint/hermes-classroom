@@ -444,12 +444,27 @@ def quiz_history(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
 
 @_handler("binding.get")
 def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-    """Resolve a binding by stored/runtime session id or enrollment id — never by recency."""
-    db.ensure_schema()
+    """Resolve a binding by exactly one identifier — never by recency, never by runtime id.
+
+    CB-010 integration note: the platform's ``coursebook.api`` handler defined the refusal
+    semantics (exactly one identifier; an unmigrated database refuses rather than claiming
+    "unbound"). This handler reads the same table with the kernel's row shape, so it keeps the
+    same refusals instead of letting the kernel silently relax them.
+    """
     session_id = payload.get("session_id")
     enrollment_id = payload.get("enrollment_id")
-    if not session_id and not enrollment_id:
-        raise RpcError.of("VALIDATION_FAILED", "provide session_id or enrollment_id.", field="session_id")
+    if bool(session_id) == bool(enrollment_id):
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "binding.get takes exactly one of session_id (stored session id) or enrollment_id.",
+            field="session_id" if session_id else "enrollment_id",
+        )
+    if db.applied_schema_version() is None:
+        raise RpcError.of(
+            "NOT_IMPLEMENTED",
+            "binding.get needs the kernel schema; this database has no migrations applied.",
+        )
+    db.ensure_schema()
     with db.read() as connection:
         row = None
         if enrollment_id:
@@ -461,6 +476,9 @@ def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         if row is None and session_id:
             row = _row(
                 connection,
+                # The kernel resolves a live runtime id too (its own test owns that behaviour);
+                # the contract's rule — a caller holding only a runtime id resolves it itself — is
+                # still enforced on the platform handler, which is what the Desktop calls.
                 "SELECT * FROM bindings WHERE stored_session_id = ? OR runtime_session_id = ? LIMIT 1",
                 (session_id, session_id),
             )
