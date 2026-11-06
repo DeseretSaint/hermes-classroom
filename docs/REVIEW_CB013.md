@@ -106,24 +106,47 @@ course_id crs_6ca4b609e412456c96fbf2168c782b16
 enrollment_id enr_d3e84830f3f14b9eb25ec92a87574ff4   revision 0
 ```
 
-## 5. What is NOT verified in this pass (honest limit)
+## 5. Run 48 — the window is attached; the remaining wall is profile scoping
 
-The isolated Electron window refused to attach to the test backend: it starts in
-`launchMode: "primary"` with `connections.json → {"primary":"local"}`, and this build ignores
-`HERMES_DESKTOP_REMOTE_URL`/`_TOKEN` unless the window has no saved connection route
-(`electron/main.ts:8807` — `envOverride = key ? false : Boolean(...)`; `desktop-remote-route.ts:117`
-— the env route is only reached when no primary connection is selected). Removing
-`connections.json` + `active-profile.json` from a fresh user-data dir did not change it; the status
-strip stayed "Backend offline / CONNECTING".
+The "Backend offline" diagnosis above was **wrong in its cause**, and run 48 fixed it. The window
+never needed a `connections.json` entry or a gateway cycle. Three separate walls:
 
-Consequently **not claimed**: the five pane states (awaiting_input, graded, needs_retry,
+1. **CORS on the isolated serve.** `hermes serve --isolated` only answers
+   `Access-Control-Allow-Origin: http://127.0.0.1:5174` when it is started with
+   `HERMES_DESKTOP_DEV_SERVER=http://127.0.0.1:5174`. Run 47's server (port 44219) was started
+   without it, so the renderer's fetch failed (`Failed to fetch`) and its websocket closed 1006
+   before open — which the app reports as "Could not connect to Hermes gateway". Vellum's 44119
+   server has the variable and works. Verified with `curl -D-` against both ports, same token
+   path, one header apart.
+2. **The desktop half ships opt-in.** `desktop-plugins/coursebook/.hermes-package.json` makes the
+   runtime loader pass `defaultEnabled: false` (`src/contrib/runtime-loader.ts`, the unified-package
+   marker branch). The plugin loaded in status `disabled`, contributed no route, and `#/coursebook`
+   redirected to `#/`. Setting the decision in
+   `localStorage['hermes.desktop.pluginDecisions.v2'] = {"coursebook":true}` and reloading gives the
+   sidebar entry, and the route renders its own copy (`docs/cb013-shots/01-coursebook-route.png`).
+   **This is a packaging decision worth keeping:** an installed package should not silently enable a
+   pane; but the install script should say so, and `install-local.sh` currently does not.
+3. **Profile scoping (open).** With the pane rendering, the library is empty while the backend has
+   the CB-010 enrollment:
+   ```
+   POST /api/plugins/coursebook/rpc                       → items[1]  enr_d3e84830f3f14b9eb25ec92a87574ff4
+   POST /api/plugins/coursebook/rpc?profile=default       → items[]    empty_reason=no_courses
+   POST /api/plugins/coursebook/rpc?profile=coursebook-test → {"detail":"Profile 'coursebook-test' does not exist."}
+   ```
+   The app appends `?profile=default` because the descriptor reports `sharedRemote: true`;
+   `_plugin_route_secret_scope()` (`hermes_cli/web_server_dashboard.py:996`) resolves that to a
+   different home from the launch home, so the Desktop reads `~/.hermes/plugin-data/coursebook/data.db`
+   while the seed wrote `~/.hermes/coursebook-test/home/plugin-data/coursebook/data.db`. The backend
+   was never empty — the scope was. Every earlier run mistook this for a dead UI.
+
+Resolution order for the next run: either seed through `?profile=default` (writes a demo course into
+the **root profile**, needs operator approval) or stop the app scoping an isolated backend by profile
+(the connection block carries `remoteProfile`, accepted by `buildRemoteBlock`). The second is the
+correct one for a dedicated install.
+
+Consequently **still not claimed**: the five pane states (awaiting_input, graded, needs_retry,
 overridden, detached) with screenshots, a section page from an approved plan, chat↔pane one-attempt
-reconciliation, and restart-resume in the live window. The code paths that produce them are now
-reachable (the seam exists and the probe drives it), but reachable-by-test is not photographed.
-
-Next attempt should either (a) write a `connections.json` v2 entry of `kind: "remote"` with the
-server URL and let the app encrypt the token through its own settings IPC, or (b) capture on the
-machine-level gateway after its cycle, using the operator's already-connected window.
+reconciliation, and restart-resume in the live window.
 
 ## 7. Gateway cycle — blocked by the approval policy, not attempted
 
