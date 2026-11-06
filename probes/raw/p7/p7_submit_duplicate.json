@@ -1,0 +1,11 @@
+{
+  "status": "duplicate",
+  "key": "k1",
+  "verdict": {
+    "result": "pass",
+    "rubric_version": "r1",
+    "evidence_class": "cold",
+    "next_action": "continue_lesson"
+  },
+  "durable": true
+}

@@ -1,0 +1,26 @@
+{
+  "scenario": "realistic",
+  "timeout": null,
+  "ok": true,
+  "elapsed_s": 3.148,
+  "content_type": "json",
+  "parsed": {
+    "verdict": "partial",
+    "criteria": [
+      "States that six times seven is forty-two (6*7=42).",
+      "Method is incorrect: 6+6+6+6+6+6 has six addends and equals 36, not 42; a correct repeated-addition method would use seven 6s.",
+      "Uses a single clear sentence."
+    ]
+  },
+  "provider": "nous",
+  "model": "deepseek/deepseek-v4.1-flash-1017",
+  "usage": 1403,
+  "text_head": "{\"verdict\":\"partial\",\"criteria\":[\"States that six times seven is forty-two (6*7=42).\",\"Method is incorrect: 6+6+6+6+6+6 has six addends and equals 36, not 42; a correct repeated-addition method would ",
+  "audit": {
+    "plugin_id": "cb-probe",
+    "purpose": "qa-probe-grade",
+    "profile": "",
+    "schema_name": "coursebook_grade",
+    "task": "cb_grader"
+  }
+}

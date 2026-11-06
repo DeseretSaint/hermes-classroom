@@ -1,0 +1,10 @@
+RESULT probe=p1-compaction BLOCKED compressor no-op/refusal on the available transcript; post_compaction never fired
+RESULT probe=p1 PASS session id stable, turn id per-turn, gateway cwd not session cwd
+RESULT probe=p2-replay FAIL model saw the sentinel on a resumed turn where injection was disabled
+RESULT probe=p2 FAIL pre_llm_call injection persisted in api_content and replayed; docs claim ephemerality
+RESULT probe=p3 PASS isolated/outside/ignore-rules load only the intended policy; in-repo parent policy leaks (documented constraint)
+RESULT probe=p4 PASS normal grading is fast and fail-closed; see p4/assert.json for outage/model-substitution caveat
+RESULT probe=p5 PASS artifact+text fallback exist and MEDIA tag parses on plain text; Desktop renderer is provenance-scoped
+RESULT probe=p5-render BLOCKED no renderer contribution in the skeleton and no Electron session driven in this pass; host contract verified only
+RESULT probe=p6 PASS omitted=local, explicit target stored verbatim, duplicate names create duplicates (plugin must dedupe)
+RESULT probe=p7 PASS submit_attempt idempotent/durable with no hook; hook fails open and a timed-out hook stops firing

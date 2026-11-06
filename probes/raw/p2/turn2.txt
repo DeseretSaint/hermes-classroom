@@ -1,0 +1,5 @@
+↪ restored workspace dir: /home/deseretsaint/.hermes/profiles/cbqa/test-root/isolated_course
+↻ Resumed session local-6c67c5a2ddd1c815c8eabe86495d4303a642440d54d840642755b2ce961965ab "Reply OK #20" (1 user message, 2 total messages)
+PRESENT
+
+session_id: local-6c67c5a2ddd1c815c8eabe86495d4303a642440d54d840642755b2ce961965ab

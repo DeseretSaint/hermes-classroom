@@ -1,0 +1,19 @@
+{
+  "python": "3.14.9",
+  "executable": "/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/bin/python3",
+  "jsonschema": "4.26.0",
+  "with_jsonschema": {
+    "error_type": "ValueError",
+    "error": "Plugin LLM structured output did not match schema: 'fail' is not one of ['pass']"
+  },
+  "non_json_text": {
+    "parsed": null,
+    "content_type": "text"
+  },
+  "without_jsonschema": {
+    "parsed": {
+      "verdict": "fail"
+    },
+    "content_type": "json"
+  }
+}

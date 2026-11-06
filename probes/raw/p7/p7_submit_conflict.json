@@ -1,0 +1,6 @@
+{
+  "status": "conflict",
+  "key": "k1",
+  "conflict": "idempotency_key_reused_with_other_payload",
+  "durable": true
+}

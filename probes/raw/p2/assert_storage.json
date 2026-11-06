@@ -1,0 +1,10 @@
+{
+  "probe": "p2",
+  "status": "FAIL",
+  "checks": {
+    "injected_text_persisted_in_api_content": true,
+    "display_content_left_clean": true,
+    "user_rows": 1
+  },
+  "note": "FAIL = pre_llm_call injection is not ephemeral on this runtime: it is stored in api_content and replayed."
+}

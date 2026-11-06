@@ -1,0 +1,26 @@
+{
+  "probe": "p3",
+  "status": "PASS",
+  "checks": {
+    "isolated": true,
+    "repo_course": true,
+    "repo_root": true,
+    "outside": true,
+    "ignore_rules": true
+  },
+  "observed": {
+    "isolated": [
+      "CB_CTX_COURSE"
+    ],
+    "repo_course": [
+      "CB_CTX_COURSE",
+      "CB_CTX_REPO"
+    ],
+    "repo_root": [
+      "CB_CTX_REPO"
+    ],
+    "outside": [],
+    "ignore_rules": []
+  },
+  "note": "repo_course expects repo policy to leak on this runtime; that is why a course workspace must live outside git roots."
+}

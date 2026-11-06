@@ -1,0 +1,18 @@
+{
+  "artifact_exists": true,
+  "artifact_bytes": 70,
+  "text_fallback_exists": true,
+  "text_fallback_head": "# Coursebook text alternative\n\nA 1x1 probe image stands in for a sourced visual. Text lessons remain complete without it",
+  "extract_media_plain_text": [
+    "/home/deseretsaint/.hermes/profiles/cbqa/test-root/artifacts/cli_p5.png"
+  ],
+  "extract_media_from_json_tool_result": [],
+  "auto_append_allowlist": [
+    "image_generate",
+    "text_to_speech",
+    "text_to_speech_tool"
+  ],
+  "auto_append_for_plugin_tool": [],
+  "plugin_tool_is_allowlisted": false,
+  "voice_directive": false
+}
