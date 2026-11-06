@@ -34,6 +34,7 @@ from . import (
     bindings,
     db,
     evidence,
+    generation,
     grading,
     job_service,
     jobs as jobs_contract,
@@ -661,6 +662,21 @@ def plan_replan(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             )
         plan = _row(connection, "SELECT * FROM plans WHERE id = ?", (new_plan_id,))
         connection.execute("UPDATE plans SET plan_hash = ? WHERE id = ?", (_plan_hash(connection, plan), new_plan_id))
+        # A replan edits the plan, not the authored outline. Without carrying the outline the new
+        # version can never produce lessons (``run_lesson_job`` loads the document by ``plan_id``)
+        # and the course is stuck one approval short of export forever. The carry refuses whenever
+        # the change set is not a faithful remap (a structural add has no authored section to copy).
+        section_targets = {
+            int(by_id[source_id]["ordinal"]): index
+            for index, (source_id, _title, _change) in enumerate(ordinals, start=1)
+        }
+        generation.carry_plan_outline(
+            connection,
+            new_plan_id,
+            source_plan_id=str(current["id"]),
+            section_targets=section_targets,
+            now=None,
+        )
         connection.execute(
             "UPDATE plans SET state = 'superseded' WHERE course_id = ? AND state = 'approved'",
             (enrollment["course_id"],),

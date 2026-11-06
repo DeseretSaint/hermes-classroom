@@ -1811,6 +1811,180 @@ def plan_document(connection: sqlite3.Connection, plan_id: str) -> dict[str, Any
     }
 
 
+#: Fingerprint namespace for an outline carried onto a new plan version. It is deliberately not
+#: the request fingerprint the plan-job reuse cache computes: that cache is keyed by
+#: ``course_id + fingerprint(goal, recipe, dials, locale)``, so a carried outline can never be
+#: mistaken for "this brief was already authored". It is only ever read back by ``plan_id``.
+CARRY_FINGERPRINT_PREFIX = "carry.v1:"
+
+
+def carry_plan_outline(
+    connection: sqlite3.Connection,
+    plan_id: str,
+    *,
+    source_plan_id: str | None = None,
+    section_targets: dict[int, int] | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any] | None:
+    """Copy an authored outline onto a replanned version when it still maps one section per objective.
+
+    ``plan.replan`` writes new ``plans`` and ``objectives`` rows but cannot author prose: the
+    outline (``gen_plan_documents`` + ``gen_plan_sections``) is only ever written by the plan job.
+    Without this carry a replanned version has no document, ``run_lesson_job`` refuses it, and the
+    course can never reach export again. The carry is **structural only** and refuses to guess:
+
+    * the target plan must not already have a document;
+    * its objectives must be contiguous ordinals starting at 1;
+    * every source section must name exactly one objective (the authored rule) and every target
+      objective must be covered by exactly one copied section. ``section_targets`` maps a source
+      objective ordinal to its target ordinal, which is how a removal renumbers the copies;
+    * an objective the source never had (a structural add) has no section to copy, so nothing is
+      carried. Authoring a genuinely new outline is the plan job's work, not a silent rename.
+
+    The document bytes (``document_json``/``research_json``/``validation_id``) and the generation
+    digest are copied verbatim: lessons join on the digest and read objective titles from the
+    ``objectives`` table, so a retitle does not need the document rewritten. Section rows get new
+    ids, which is what makes ``gen_lessons`` re-author under its ``(section_id, plan_hash,
+    version)`` key instead of reusing a page written for different bytes.
+
+    Returns a small summary on success and ``None`` when no faithful carry exists. Never raises for
+    an unmappable outline; the caller keeps its own transaction.
+    """
+    ensure_schema(connection)
+    plan = _row_dict(connection.execute("SELECT * FROM plans WHERE id = ?", (str(plan_id),)).fetchone())
+    if plan is None:
+        return None
+    if _load_plan_document(connection, str(plan_id)) is not None:
+        return None
+
+    objectives = [
+        int(row["ordinal"])
+        for row in connection.execute(
+            "SELECT ordinal FROM objectives WHERE plan_id = ? ORDER BY ordinal", (str(plan["id"]),)
+        ).fetchall()
+    ]
+    if objectives != list(range(1, len(objectives) + 1)) or not objectives:
+        return None
+
+    source = None
+    if source_plan_id is not None:
+        source = _row_dict(
+            connection.execute(
+                "SELECT * FROM plans WHERE id = ? AND course_id = ?",
+                (str(source_plan_id), str(plan["course_id"])),
+            ).fetchone()
+        )
+    if source is None:
+        source = _row_dict(
+            connection.execute(
+                "SELECT p.* FROM plans p JOIN gen_plan_documents d ON d.plan_id = p.id"
+                " WHERE p.course_id = ? AND p.version < ? ORDER BY p.version DESC LIMIT 1",
+                (str(plan["course_id"]), int(plan["version"])),
+            ).fetchone()
+        )
+    if source is None or str(source["id"]) == str(plan["id"]):
+        return None
+
+    document_row = _row_dict(
+        connection.execute(
+            "SELECT * FROM gen_plan_documents WHERE plan_id = ?", (str(source["id"]),)
+        ).fetchone()
+    )
+    if document_row is None:
+        return None
+    digest = str(document_row["plan_hash"] or "")
+    if not digest:
+        return None
+    sections = [
+        dict(row)
+        for row in connection.execute(
+            "SELECT * FROM gen_plan_sections WHERE plan_id = ? ORDER BY ordinal", (str(source["id"]),)
+        ).fetchall()
+    ]
+    if not sections:
+        return None
+
+    if section_targets is None:
+        targets = {int(section["ordinal"]): int(section["ordinal"]) for section in sections}
+    else:
+        targets = {int(source_ordinal): int(target) for source_ordinal, target in section_targets.items()}
+
+    copied: list[tuple[dict[str, Any], int]] = []
+    claimed: set[int] = set()
+    for section in sections:
+        refs = _load_json(section.get("objective_refs_json"), [])
+        if not isinstance(refs, list) or len(refs) != 1:
+            return None
+        try:
+            source_ordinal = int(refs[0])
+        except (TypeError, ValueError):
+            return None
+        if source_ordinal not in targets:
+            # A removed objective's section has no target; drop it rather than refuse the carry.
+            continue
+        target_ordinal = targets[source_ordinal]
+        if target_ordinal in claimed:
+            return None
+        claimed.add(target_ordinal)
+        copied.append((section, target_ordinal))
+    if sorted(claimed) != objectives:
+        return None
+
+    timestamp = _now_iso(now)
+    result = _load_json(document_row["result_json"], {})
+    if not isinstance(result, dict):
+        result = {}
+    result = {
+        **result,
+        "plan_id": str(plan["id"]),
+        "plan_version": int(plan["version"]),
+        "carried_from_plan_id": str(source["id"]),
+    }
+    fingerprint = CARRY_FINGERPRINT_PREFIX + sha256_of_text(
+        f"{document_row['request_fingerprint']}|{source['id']}|{plan['id']}"
+    )
+    connection.execute(
+        "INSERT INTO gen_plan_documents (id, plan_id, course_id, request_fingerprint, plan_hash,"
+        " document_json, research_json, generation_state, validation_id, result_json, created_at)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            _new_id(),
+            str(plan["id"]),
+            str(plan["course_id"]),
+            fingerprint,
+            digest,
+            document_row["document_json"],
+            document_row["research_json"],
+            document_row["generation_state"],
+            document_row["validation_id"],
+            _json(result),
+            timestamp,
+        ),
+    )
+    for section, target_ordinal in copied:
+        connection.execute(
+            "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title, lesson_intent,"
+            " objective_refs_json, context_needs_json, source_ids_json) VALUES (?,?,?,?,?,?,?,?,?)",
+            (
+                _new_id(),
+                str(plan["id"]),
+                int(target_ordinal),
+                digest,
+                section["title"],
+                section["lesson_intent"],
+                _json([int(target_ordinal)]),
+                section["context_needs_json"],
+                section["source_ids_json"],
+            ),
+        )
+    return {
+        "plan_id": str(plan["id"]),
+        "carried_from_plan_id": str(source["id"]),
+        "plan_hash": digest,
+        "sections": len(copied),
+    }
+
+
 def _record_usage(connection: sqlite3.Connection, job_id: str | None, usage: _Usage, now: datetime | None) -> None:
     if not usage.calls:
         return
@@ -2476,6 +2650,31 @@ def run_lesson_job(
     ]
     if not section_rows:
         raise GenerationRejected(f"plan {plan_id!r} has no sections to author")
+
+    # A replanned (or draft-edited) plan can carry an outline that no longer covers its objectives —
+    # for example an objective added after the carry. Authoring only the covered sections would
+    # leave a lesson set that exports with an objective silently missing, so refuse instead.
+    objective_ordinals = sorted(
+        int(row["ordinal"])
+        for row in connection.execute(
+            "SELECT ordinal FROM objectives WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
+        ).fetchall()
+    )
+    section_refs: list[int] = []
+    for section in section_rows:
+        refs = section.get("objective_refs") or []
+        if len(refs) != 1:
+            raise GenerationRejected(
+                f"plan {plan_id!r} section {section.get('ordinal')} must name exactly one objective;"
+                " re-author the plan"
+            )
+        section_refs.append(int(refs[0]))
+    if sorted(section_refs) != objective_ordinals:
+        raise GenerationRejected(
+            f"plan {plan_id!r} outline covers objectives {sorted(section_refs)} but the plan has"
+            f" objectives {objective_ordinals}; the plan structure changed after it was authored."
+            " Re-author the plan before generating lessons."
+        )
 
     # Budget sized to *this* plan: every section gets two attempts of generate + validate. A
     # fixed ceiling below that floor failed jobs that were behaving exactly as designed.
