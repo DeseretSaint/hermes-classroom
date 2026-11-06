@@ -1,0 +1,22 @@
+== commit ==
+d3888fecdd8526d7ff284008a8c779557b6d668d CB-013: add the missing session-binding write seam and fix the schema-count gate
+
+== gates (scripts/validate.sh) ==
+Ran 557 tests in 45.237s
+OK
+desktop/plugin.js: syntax OK
+Validation passed.
+All 31 backend expectations passed against an isolated HERMES_HOME.
+Validation passed.
+
+== backend probe binding expectations ==
+  test_lesson_generation_is_idempotent_per_plan_section_version (tests.test_generation.LessonJobTest.test_lesson_generation_is_idempotent_per_plan_section_version) ... ok
+  test_migrate_is_idempotent (tests.test_kernel_schema.MigrationRunnerTest.test_migrate_is_idempotent) ... ok
+  test_recovery_is_idempotent (tests.test_kernel_transitions.RecoveryTest.test_recovery_is_idempotent) ... ok
+  test_register_is_idempotent_and_registers_every_hook_once (tests.test_manifest.ManifestTest.test_register_is_idempotent_and_registers_every_hook_once) ... ok
+  test_reimporting_the_same_pack_is_idempotent (tests.test_packs_roundtrip.RoundtripTests.test_reimporting_the_same_pack_is_idempotent) ... ok
+  test_repeating_the_same_bind_is_idempotent (tests.test_session_bind.BindSessionCase.test_repeating_the_same_bind_is_idempotent) ... ok
+  POST /sessions/bind writes the active binding the pane and the pre-turn gate read
+  binding.get answers by the stored id the seam wrote, not by recency
+  repeating the same bind is idempotent — one row, never a second chat
+  a runtime id is never accepted as the stored id
