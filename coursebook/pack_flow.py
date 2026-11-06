@@ -42,7 +42,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from . import PACKAGE_ID, __version__, api, db
-from . import archive, packs
+from . import archive, packs, segments
 from . import parent_authoring as authoring
 from .api import RpcError
 from .archive import PackRejected, PackLibrary, StagingArea
@@ -374,6 +374,10 @@ def validate_and_audit(staged: archive.StagedPack) -> dict[str, Any]:
     problems = packs.audit_bundle(staged.directory)
     if problems:
         raise PackRejected("pack content audit failed: " + "; ".join(problems))
+    # A lesson page returns segments of at most 8,000 characters (cb.rpc v6). Long section files
+    # are split at import; a lesson that could never fit the page's segment budget is refused here,
+    # before the first database write, naming the file and its length (D1).
+    segments.audit_objective_texts(manifest, staged.directory)
     # A pack may not hold content for a role it does not declare, and no manifest may carry a
     # private field. Both are checked on the document itself, not only on the archive.
     leaked = packs.contains_private_fields(manifest)
@@ -461,7 +465,10 @@ def _write_lesson_page(
 ) -> None:
     """Materialize the pack's own section text as a durable lesson page.
 
-    The learner reads the authored content; nothing is generated or paraphrased on import.
+    The learner reads the authored content; nothing is generated or paraphrased on import. A
+    section file longer than the ``cb.rpc`` per-segment cap is cut into ordered pieces at paragraph
+    (then line, then word) boundaries — see :mod:`coursebook.segments` — because one segment over
+    the cap made the whole lesson page unreadable.
     """
     run_id = _new_id("run")
     now = _now()
@@ -470,6 +477,7 @@ def _write_lesson_page(
         " updated_at, last_opened_at) VALUES (?, ?, ?, 'active', 0, ?, ?, ?)",
         (run_id, enrollment_id, objective_row_id, now, now, now),
     )
+    limit = segments.max_segment_chars()
     ordinal = 0
     for section in objective.get("sections") or []:
         path = str(section.get("path") or "")
@@ -479,12 +487,13 @@ def _write_lesson_page(
         if not candidate.is_file():
             continue
         text = candidate.read_text(encoding="utf-8")
-        ordinal += 1
-        connection.execute(
-            "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, created_at)"
-            " VALUES (?, ?, ?, 'teaching', ?, ?)",
-            (_new_id("seg"), run_id, ordinal, text, now),
-        )
+        for piece in segments.split_text(text, limit):
+            ordinal += 1
+            connection.execute(
+                "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, created_at)"
+                " VALUES (?, ?, ?, 'teaching', ?, ?)",
+                (_new_id("seg"), run_id, ordinal, piece, now),
+            )
     for check in objective.get("checks") or []:
         ordinal += 1
         connection.execute(

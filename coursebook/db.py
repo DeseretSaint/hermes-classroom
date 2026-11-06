@@ -372,9 +372,42 @@ def ensure_schema() -> int:
     lifecycle hook calls this (CB-014-R1 R1/R5).
     """
     version = applied_schema_version()
-    if version is not None and version >= target_schema_version():
-        return version
-    return migrate()
+    if version is None or version < target_schema_version():
+        version = migrate()
+    _repair_lesson_segments_once()
+    return version
+
+
+#: ``PRAGMA user_version`` marker: stored lesson text has been re-cut to the ``cb.rpc`` segment cap.
+#:
+#: The schema version lives in ``schema_migrations``; this marker is not a schema version, it only
+#: makes the one-time data repair cost a single PRAGMA read per command instead of a full text scan
+#: of ``lesson_segments``. A database that has never been repaired reads ``0``.
+SEGMENT_REPAIR_MARKER = 1
+
+
+def _repair_lesson_segments_once() -> int:
+    """Cut already-stored teaching text over the segment cap in place (D1), once per database.
+
+    A course imported before the cap existed keeps its rows and becomes readable without a
+    re-import. Idempotent: after the marker is set this is one ``PRAGMA`` read. If the write lock is
+    unavailable the repair is skipped rather than failing the caller — the marker stays unset, so
+    the next command retries.
+    """
+    from . import segments
+
+    try:
+        with read() as connection:
+            marker = int(connection.execute("PRAGMA user_version").fetchone()[0])
+        if marker >= SEGMENT_REPAIR_MARKER:
+            return 0
+        with transaction() as connection:
+            repaired = segments.repair_stored(connection)
+            connection.execute(f"PRAGMA user_version = {SEGMENT_REPAIR_MARKER}")
+        return repaired
+    except sqlite3.OperationalError:
+        # Contention or a read-only store: never turn a repair into a failed legitimate command.
+        return 0
 
 
 def recover_interrupted() -> dict[str, int]:

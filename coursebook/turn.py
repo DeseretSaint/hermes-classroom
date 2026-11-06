@@ -25,7 +25,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from . import api, db, evidence
+from . import api, db, evidence, segments
 
 # ── classification ──────────────────────────────────────────────────────────
 
@@ -579,16 +579,21 @@ def record_assistant_snapshot(*, session_id: str, assistant_response: str, nonce
             (binding["lesson_run_id"],),
         ).fetchone()
     ordinal = int(ordinal_row["ordinal"]) + 1
+    # One assistant turn is one teaching snapshot, but a segment over the cb.rpc cap made the
+    # lesson page unreadable (D1). Long turns are stored as ordered pieces instead of truncated.
+    pieces = segments.split_text(assistant_response[:20000])
     with db.transaction() as connection:
         current = connection.execute(
             "SELECT revision FROM enrollments WHERE id = ?", (binding["enrollment_id"],)
         ).fetchone()
         if current is None or int(current["revision"]) != int(revision):
             return False
-        connection.execute(
-            "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, artifact_id, source_id, created_at)"
-            " VALUES (?, ?, ?, 'teaching', ?, NULL, NULL, ?)",
-            (_random_evidence_id().replace("evd_", "seg_"), binding["lesson_run_id"], ordinal,
-             assistant_response[:20000], db.utcnow()),
-        )
+        for piece in pieces:
+            connection.execute(
+                "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, artifact_id, source_id, created_at)"
+                " VALUES (?, ?, ?, 'teaching', ?, NULL, NULL, ?)",
+                (_random_evidence_id().replace("evd_", "seg_"), binding["lesson_run_id"], ordinal,
+                 piece, db.utcnow()),
+            )
+            ordinal += 1
     return True
