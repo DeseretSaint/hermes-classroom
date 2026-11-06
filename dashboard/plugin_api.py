@@ -21,6 +21,9 @@ Host seams beside the frozen RPC contract (never new RPC methods):
 * ``GET  /artifacts/{handle}`` -> streams one export after re-verifying it. The host's own auth
   middleware (``/api/`` session token / OAuth gate) authenticates the request; the handle is the
   only credential in the URL, is expiring, and never names a path.
+* ``POST /sessions/bind``     -> the write half of ``binding.get``: the Desktop binds the focused
+  chat's *stored* session id to the lesson run it opened. Never a runtime id, never recency.
+  Refusals are HTTP 200 ``{ok:false, code, message}``.
 
 No module-global process state lives here: SQLite is the source of truth, and the same package
 may be imported twice by different loaders in one gateway process.
@@ -230,6 +233,11 @@ def _pack_flow() -> Any:
     return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.pack_flow")
 
 
+def _bindings() -> Any:
+    _load_backend()
+    return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.bindings")
+
+
 def _refusal_types() -> tuple[type[BaseException], ...]:
     """Exception types that mean "refused by policy", as opposed to a bug in this process."""
     _load_backend()
@@ -251,6 +259,47 @@ def _message(exc: BaseException) -> str:
     if isinstance(error, dict) and error.get("message"):
         return str(error["message"])
     return str(exc)
+
+
+@router.post("/sessions/bind")
+async def sessions_bind(body: dict[str, Any] = Body(...)) -> Any:
+    """Bind the host's focused chat to the lesson run the Desktop just opened.
+
+    The durable stored session id does not exist until a fresh chat's first turn, so the Desktop
+    cannot send it inside ``lesson.begin`` (``cb.rpc`` is frozen at v5 and that payload has no
+    session field). This seam is the write half of ``binding.get``: the Desktop arms the run it
+    started, and once the chat has a stored id it asks for exactly that bind. The rule lives in
+    ``coursebook.bindings`` so it is unit-testable; this route only adapts HTTP.
+
+    Refusals are HTTP 200 ``{ok:false, code, message}`` because they are policy, not transport:
+    a chat already bound to another lesson, an enrollment with an active chat, or a run that is no
+    longer active. The caller renders the reason; it never retries blindly.
+    """
+    bindings = _bindings()
+    try:
+        outcome = bindings.bind_session(
+            stored_session_id=body.get("stored_session_id"),
+            enrollment_id=body.get("enrollment_id"),
+            objective_id=body.get("objective_id"),
+            lesson_run_id=body.get("lesson_run_id"),
+            profile=body.get("profile"),
+            runtime_session_id=body.get("runtime_session_id"),
+            connection_id=body.get("connection_id"),
+            cwd_fingerprint=body.get("cwd_fingerprint"),
+        )
+    except _refusal_types() as exc:
+        return {"ok": False, "code": _code(exc), "message": _message(exc)}
+    except Exception:  # noqa: BLE001 - internal failure, not a policy refusal
+        logger.exception("coursebook: session bind failed outside a policy refusal")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "code": "INTERNAL_ERROR",
+                "message": "the lesson chat could not be bound; nothing was written",
+            },
+        )
+    return {"ok": True, **outcome}
 
 
 @router.get("/runtime")

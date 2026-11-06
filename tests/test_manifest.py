@@ -137,6 +137,8 @@ class PackageLayoutTest(unittest.TestCase):
                 "/packs/intake",
                 "/packs/grant",
                 "/artifacts/{handle}",
+                # CB-013: the write half of binding.get — a stored session id is never an RPC field.
+                "/sessions/bind",
             },
         )
 

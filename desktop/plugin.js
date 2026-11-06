@@ -150,6 +150,68 @@ let backendWire = { contractVersion: 1, implemented: null, error: null }
 const intentListeners = new Set()
 let pendingIntent = null
 
+/**
+ * A fresh run this Desktop opened, waiting for its chat to get a durable id.
+ *
+ * `lesson.begin` returns the run before the chat exists; a draft has no stored session id until
+ * its first turn. The pane therefore arms the exact run it started (never "the newest run") and
+ * calls the `POST /sessions/bind` host seam once the focused chat has a stored id. One arming is
+ * one attempt: the intent is consumed by the bind call, expires after 15 minutes, and never
+ * survives a reload as a guess about which chat the user meant.
+ */
+const PENDING_BIND_TTL_MS = 15 * 60 * 1000
+let pendingBind = null
+
+function armPendingBind({ enrollmentId, objectiveId, lessonRunId, profile }) {
+  if (!enrollmentId || !objectiveId || !lessonRunId) {
+    pendingBind = null
+    return null
+  }
+  pendingBind = {
+    enrollmentId,
+    objectiveId,
+    lessonRunId,
+    profile: profile || null,
+    armedAt: Date.now()
+  }
+  return pendingBind
+}
+
+function pendingBindFor(profile) {
+  if (!pendingBind) return null
+  if (Date.now() - pendingBind.armedAt > PENDING_BIND_TTL_MS) {
+    pendingBind = null
+    return null
+  }
+  if (pendingBind.profile && profile && pendingBind.profile !== profile) return null
+  return pendingBind
+}
+
+/**
+ * Bind the focused chat to the armed run. Returns the seam response, or null when nothing is
+ * armed. The seam — not this file — decides whether the bind is legal, so a refusal is rendered
+ * as the seam's own code and message.
+ */
+async function bindPendingChat(storedSessionId, profile) {
+  const intent = pendingBindFor(profile)
+  if (!intent || !storedSessionId || !pluginContext) return null
+  pendingBind = null
+  try {
+    return await pluginContext.rest('/sessions/bind', {
+      method: 'POST',
+      body: {
+        stored_session_id: storedSessionId,
+        enrollment_id: intent.enrollmentId,
+        objective_id: intent.objectiveId,
+        lesson_run_id: intent.lessonRunId,
+        profile: intent.profile || profile || currentScope().profile || undefined
+      }
+    })
+  } catch (error) {
+    return { ok: false, code: 'HOST_UNAVAILABLE', message: describeError(error) }
+  }
+}
+
 function requestIntent(intent) {
   pendingIntent = intent
   intentListeners.forEach((listener) => listener(intent))
@@ -3158,6 +3220,14 @@ function SectionPage({ row, objectiveId, page, implemented, onBack, onStartFresh
         setNotice(opened.ok ? 'Resumed the existing bound chat.' : opened.message)
         return
       }
+      // The chat that is about to open has no stored id yet: arm the exact run and let the pane
+      // bind it on the first turn. A resume path already had a binding, so it never arms.
+      armPendingBind({
+        enrollmentId: row.enrollment_id,
+        objectiveId,
+        lessonRunId: outcome.lesson_run_id,
+        profile: row.profile || currentScope().profile
+      })
       const started = startLessonChat(row.profile || currentScope().profile)
       setNotice(
         started
@@ -4552,6 +4622,12 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
         setNotice(opened.ok ? 'Resumed the bound lesson chat.' : opened.message)
         return
       }
+      armPendingBind({
+        enrollmentId: row.enrollment_id,
+        objectiveId: target,
+        lessonRunId: outcome.lesson_run_id,
+        profile: profile || currentScope().profile
+      })
       const started = startLessonChat(profile || currentScope().profile)
       setNotice(
         started
@@ -4798,6 +4874,13 @@ function LessonPaneBody({ binding, storedId }) {
       setNotice(`${response.error.code}: ${describeError(response.error)}`)
       return
     }
+    const outcome = response.result
+    armPendingBind({
+      enrollmentId: binding.enrollment_id,
+      objectiveId,
+      lessonRunId: outcome.lesson_run_id,
+      profile
+    })
     const started = startLessonChat(profile)
     setNotice(
       started
@@ -5114,7 +5197,34 @@ function CoursebookPage() {
  * never guesses one from recency.
  */
 function CoursebookPane() {
-  const { state } = useSessionBinding()
+  const { state, storedId, reload } = useSessionBinding()
+  const scopeProfile = currentScope().profile
+  const [bindNote, setBindNote] = useState(null)
+  const attemptedBind = useRef(null)
+
+  useEffect(() => {
+    // A run this Desktop opened is armed. Bind it to the focused chat once that chat has a
+    // durable id and no binding of its own — by the exact stored id, never the runtime id and
+    // never "the newest chat". One attempt per stored id; the seam decides legality.
+    if (!storedId || attemptedBind.current === storedId) return undefined
+    if (state.status !== 'ready' || state.binding) return undefined
+    if (!pendingBindFor(scopeProfile)) return undefined
+    let cancelled = false
+    attemptedBind.current = storedId
+    bindPendingChat(storedId, scopeProfile).then((response) => {
+      if (cancelled || !response) return
+      if (response.ok) {
+        setBindNote('This lesson is bound to this chat.')
+        reload()
+      } else {
+        setBindNote(`${response.code}: ${response.message || 'this chat could not be bound.'}`)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [storedId, state.status, state.binding, scopeProfile, reload])
+
   const openCoursebook = useCallback(() => {
     host.navigate(ROUTE_PATH)
   }, [])
@@ -5165,12 +5275,16 @@ function CoursebookPane() {
       action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
     })
   } else {
-    body = jsx(LessonPaneBody, { binding: state.binding, storedId: state.storedId })
+    body = jsx(LessonPaneBody, { binding: state.binding, storedId })
   }
 
   return jsxs('div', {
     className: 'flex h-full min-h-0 flex-col px-3 py-2',
-    children: [jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }), body]
+    children: [
+      jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }),
+      bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-tertiary)', children: bindNote }) : null,
+      body
+    ]
   })
 }
 
@@ -5187,6 +5301,8 @@ function useSessionBinding() {
   const storedId = useHostValue(host.state.focusedStoredSessionId)
   const runtimeId = useHostValue(host.state.focusedSessionId)
   const [state, setState] = useState({ status: 'idle', binding: null, error: null })
+  const [ticket, setTicket] = useState(0)
+  const reload = useCallback(() => setTicket((value) => value + 1), [])
 
   useEffect(() => {
     if (!storedId) {
@@ -5216,9 +5332,9 @@ function useSessionBinding() {
     return () => {
       cancelled = true
     }
-  }, [storedId])
+  }, [storedId, ticket])
 
-  return { storedId, runtimeId, state }
+  return { storedId, runtimeId, state, reload }
 }
 
 function ContractList() {
