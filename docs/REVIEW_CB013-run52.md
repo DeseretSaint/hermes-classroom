@@ -84,14 +84,39 @@ window reconnected on its own and still reported `Backend ready`; the same enrol
 revision and attempt rows were served from the same `data.db`
 (`~/.hermes/coursebook-test/home/plugin-data/coursebook/data.db`). No gateway, no root profile.
 
+## Lifecycle in this topology (executed after the fix)
+
+```
+$ bash scripts/uninstall-local.sh --home ~/.hermes/coursebook-test/home
+== 1/4 remove the credential copy ==
+deleted the copied credential file /home/deseretsaint/.hermes/coursebook-test/home/auth.json
+== 2/4 disable ==   ⊘ Plugin coursebook disabled.
+== 3/4 remove the package ==
+unlinked …/plugins/coursebook (the checkout it pointed at is untouched)
+removed the Desktop app-root copy …/desktop-plugins/coursebook
+== 4/4 verify ==   unlisted / no credential copy remains
+
+$ ls …/home/auth.json        → No such file or directory
+$ bash scripts/install-local.sh
+Validation passed. … registrations: 1 tool(s), 3 hook(s)
+Installed.
+```
+
+Fresh install works without manual repo edits, and teardown leaves no credential copy behind.
+
+## Gates on the final tree
+
+`bash scripts/validate.sh` → **Validation passed.** Unit suite plus **31/31** mounted-backend
+expectations against an isolated `HERMES_HOME` (pack grant/preview/import/export/download, the
+`/sessions/bind` seam, binding.get by stored id, resume vs fresh reimport, tampered archive
+refused). `node --check desktop/plugin.js` OK. `tests.test_session_bind` 16/16.
+
 ## Not claimed in this run
 
-* `revoke / disable / re-enable / uninstall` were green in run 47 (`scripts/lifecycle.sh`), but the
-  **teardown was not re-executed after this run's changes** — `scripts/uninstall-local.sh` now
-  removes the copied `auth.json` and fails if it survives; that specific proof is pending.
-* `scripts/validate.sh` (full unit suite + mounted-backend probe) was not re-run on this final tree;
-  only the focused `tests.test_session_bind` (16/16) was.
 * No screen recording; screenshots + this transcript stand in.
 * Two cosmetic shell/plugin defects observed and not fixed (not this card): the pane prints a bare
   `missing` label under "Last opened", and an out-of-band enrollment mutation leaves the pane on
   `STALE_REVISION` until the window reloads.
+* The isolated capture home still exists (`~/.hermes/coursebook-test/`): removing it is an operator
+  action, not something the package does to the machine it was installed on.
+
