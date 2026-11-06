@@ -1,8 +1,10 @@
 # CB-019 review packet — governed generation + independent validation
 
 Branch: `wt/cb-019-quill` · Owner: Quill · Base: `0c323be` (CB-001 skeleton)
-Code commits: **54b8fbc** (modules, tests, fixtures, `docs/GENERATION.md`) and **6c73600**
-(atomic persistence of the plan and lesson bundles). This packet is the following commit.
+Code commits: **54b8fbc** (modules, tests, fixtures, `docs/GENERATION.md`), **6c73600** (atomic
+persistence of the plan and lesson bundles), **bbf91de** (no stale validator report across
+attempts). This packet file is updated by the branch-tip commit; `git log --oneline` on
+`wt/cb-019-quill` is authoritative.
 Status: **not merged**. Atlas integrates.
 
 ## 1. What landed
