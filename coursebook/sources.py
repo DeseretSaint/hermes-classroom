@@ -1,0 +1,345 @@
+"""Source ledger and staleness propagation.
+
+``PREBUILD_SPEC.md`` §9, §12 and ``AUDIT.md`` R6 draw the line this module keeps: provenance is not
+support, a fetched page is untrusted content, and an updated source marks dependent generated
+checks stale pending review instead of silently rewriting evidence.
+
+Staleness is *derived*, never a second source of truth: the ``sources`` row keeps the
+contract vocabulary (``model_assessed``/``conflicting``/``stale``/...), and dependent
+objectives/checks/artifacts are resolved from the recorded research runs, plan sections and
+artifact provenance. That is why no extra table or column was invented for it.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any, Iterable
+
+from . import research
+from .api import RpcError
+
+#: Statuses that mean "a learner-facing check must not silently grade against this".
+REVIEW_REQUIRED = ("stale", "unreachable")
+
+
+def _now(moment: datetime | None = None) -> datetime:
+    return moment or datetime.now(timezone.utc)
+
+
+def _iso(moment: datetime) -> str:
+    return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _loads(value: str | None, default: Any) -> Any:
+    if not value:
+        return default
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def ledger(connection, course_id: str) -> list[dict[str, Any]]:
+    """The ledger as the UI may show it: URL/title/fetch/publication dates + support status."""
+    rows = connection.execute(
+        "SELECT * FROM sources WHERE course_id = ? ORDER BY fetched_at DESC, id", (course_id,)
+    ).fetchall()
+    stale_ids = {item["source_id"] for item in stale_sources(connection, course_id)}
+    return [
+        {
+            "source_id": row["id"],
+            "url": row["url"],
+            "title": row["title"],
+            "source_type": row["source_type"],
+            "fetched_at": row["fetched_at"],
+            "published_at": row["published_at"],
+            "support_status": row["support_status"],
+            "claim_count": int(row["claim_count"] or 0),
+            "stale": row["support_status"] in REVIEW_REQUIRED or row["id"] in stale_ids,
+        }
+        for row in rows
+    ]
+
+
+def stale_sources(connection, course_id: str) -> list[dict[str, Any]]:
+    rows = connection.execute(
+        "SELECT id AS source_id, url, title, support_status FROM sources"
+        " WHERE course_id = ? AND support_status IN ('stale', 'unreachable')",
+        (course_id,),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+# ── dependency resolution ──────────────────────────────────────────────────
+
+
+def _latest_run_sources(connection, course_id: str) -> dict[str, dict[str, Any]]:
+    """Latest recorded hash per source URL/ID, from the immutable research-run snapshots."""
+    try:
+        rows = connection.execute(
+            "SELECT sources_json FROM gen_research_runs WHERE course_id = ? ORDER BY created_at DESC",
+            (course_id,),
+        ).fetchall()
+    except Exception:  # noqa: BLE001 - the table exists only after generation ran; absence is honest
+        return {}
+    latest: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        for entry in _loads(row["sources_json"], []):
+            if not isinstance(entry, dict):
+                continue
+            for key in (entry.get("source_id"), entry.get("url")):
+                if key and key not in latest:
+                    latest[str(key)] = entry
+    return latest
+
+
+def _plan_objective_ordinals(connection, course_id: str) -> dict[str, dict[int, str]]:
+    """plan_id -> {ordinal: objective_id} for the course's current plans."""
+    try:
+        rows = connection.execute(
+            "SELECT pl.id AS plan_id, o.ordinal, o.id AS objective_id FROM plans pl"
+            " JOIN objectives o ON o.plan_id = pl.id WHERE pl.course_id = ?",
+            (course_id,),
+        ).fetchall()
+    except Exception:  # noqa: BLE001
+        return {}
+    mapping: dict[str, dict[int, str]] = {}
+    for row in rows:
+        mapping.setdefault(str(row["plan_id"]), {})[int(row["ordinal"])] = str(row["objective_id"])
+    return mapping
+
+
+def _sections_citing(connection, course_id: str, source_id: str, url: str | None) -> list[dict[str, Any]]:
+    keys = {source_id, url or ""} - {""}
+    try:
+        rows = connection.execute(
+            "SELECT plan_id, objective_refs_json, source_ids_json FROM gen_plan_sections"
+            " WHERE plan_id IN (SELECT id FROM plans WHERE course_id = ?)",
+            (course_id,),
+        ).fetchall()
+    except Exception:  # noqa: BLE001
+        return []
+    citing = []
+    for row in rows:
+        source_ids = {str(item) for item in _loads(row["source_ids_json"], [])}
+        if source_ids & keys:
+            citing.append(
+                {
+                    "plan_id": row["plan_id"],
+                    "objective_refs": _loads(row["objective_refs_json"], []),
+                }
+            )
+    return citing
+
+
+def impact(connection, source_id: str) -> dict[str, Any]:
+    """Everything that depends on this source: objectives, open checks, artifacts, lessons."""
+    row = connection.execute("SELECT * FROM sources WHERE id = ?", (source_id,)).fetchone()
+    if row is None:
+        raise RpcError.of("NOT_FOUND", f"source {source_id} does not exist.", source_id=source_id)
+    course_id = str(row["course_id"])
+    ordinals = _plan_objective_ordinals(connection, course_id)
+    objective_ids: set[str] = set()
+    for section in _sections_citing(connection, course_id, source_id, row["url"]):
+        plan_map = ordinals.get(str(section["plan_id"]), {})
+        for ref in section["objective_refs"]:
+            if isinstance(ref, int) and ref in plan_map:
+                objective_ids.add(plan_map[ref])
+            elif isinstance(ref, str):
+                objective_ids.add(ref)
+    check_ids: list[str] = []
+    if objective_ids:
+        placeholders = ",".join("?" for _ in objective_ids)
+        checks = connection.execute(
+            f"SELECT id FROM checks WHERE objective_id IN ({placeholders}) AND state != 'superseded'",
+            tuple(objective_ids),
+        ).fetchall()
+        check_ids = [str(item["id"]) for item in checks]
+    lessons: list[Any] = []
+    try:
+        lessons = connection.execute(
+            "SELECT id FROM gen_lessons WHERE plan_id IN (SELECT id FROM plans WHERE course_id = ?)",
+            (course_id,),
+        ).fetchall()
+    except Exception:  # noqa: BLE001 - generation tables exist only after a plan was generated
+        lessons = []
+    artifacts = connection.execute(
+        "SELECT id FROM artifacts WHERE course_id = ? AND provenance_json LIKE ?",
+        (course_id, f'%"{source_id}"%'),
+    ).fetchall()
+    return {
+        "source_id": source_id,
+        "course_id": course_id,
+        "objective_ids": sorted(objective_ids),
+        "check_ids": check_ids,
+        "artifact_ids": [str(item["id"]) for item in artifacts],
+        "lesson_ids": [str(item["id"]) for item in lessons],
+        "support_status": row["support_status"],
+    }
+
+
+# ── refresh / update ────────────────────────────────────────────────────────
+
+
+@dataclass
+class RefreshResult:
+    source_id: str
+    changed: bool
+    fetched_at: str
+    support_status: str
+    previous_hash: str | None
+    content_hash: str | None
+    impact: dict[str, Any]
+    review_required: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "source_id": self.source_id,
+            "changed": self.changed,
+            "fetched_at": self.fetched_at,
+            "support_status": self.support_status,
+            "previous_hash": self.previous_hash,
+            "content_hash": self.content_hash,
+            "impact": self.impact,
+            "review_required": self.review_required,
+        }
+
+
+def refresh(
+    connection,
+    source_id: str,
+    fetched: dict[str, Any] | None,
+    *,
+    now: datetime | None = None,
+    reason: str | None = None,
+) -> RefreshResult:
+    """Record a re-fetch of an existing source and propagate staleness.
+
+    ``fetched`` is the seam's return shape (``content``…). ``None`` means the source was
+    unreachable: it stays historical evidence but is marked ``unreachable`` so reuse triggers
+    review. A changed content hash marks the row ``stale``; dependent checks are then refused for
+    grading until re-audited. Nothing migrates learner evidence.
+    """
+    moment = _now(now)
+    row = connection.execute("SELECT * FROM sources WHERE id = ?", (source_id,)).fetchone()
+    if row is None:
+        raise RpcError.of("NOT_FOUND", f"source {source_id} does not exist.", source_id=source_id)
+    previous = _latest_run_sources(connection, str(row["course_id"]))
+    prior = previous.get(source_id) or previous.get(str(row["url"] or "")) or None
+    previous_hash = str(prior["content_hash"]) if prior and prior.get("content_hash") else None
+
+    if fetched is None:
+        connection.execute(
+            "UPDATE sources SET support_status = 'unreachable' WHERE id = ?", (source_id,)
+        )
+        return RefreshResult(
+            source_id=source_id,
+            changed=False,
+            fetched_at=str(row["fetched_at"]),
+            support_status="unreachable",
+            previous_hash=previous_hash,
+            content_hash=None,
+            impact=impact(connection, source_id),
+            review_required=True,
+        )
+
+    text = str(fetched.get("content") or "")
+    bounded = " ".join(text.split())[:40000]
+    content_hash = research.sha256_of_text(bounded) if bounded else None
+    changed = bool(previous_hash and content_hash and previous_hash != content_hash)
+    stamp = _iso(moment)
+    if changed:
+        status = "stale"
+    elif str(row["support_status"]) == "stale":
+        # Re-fetched and identical: the row is historical again, but a human still reviews the
+        # impact list before the dependent checks are re-audited.
+        status = "stale"
+    else:
+        status = str(row["support_status"])
+    connection.execute(
+        "UPDATE sources SET fetched_at = ?, title = COALESCE(?, title), support_status = ? WHERE id = ?",
+        (stamp, fetched.get("title"), status, source_id),
+    )
+    return RefreshResult(
+        source_id=source_id,
+        changed=changed,
+        fetched_at=stamp,
+        support_status=status,
+        previous_hash=previous_hash,
+        content_hash=content_hash,
+        impact=impact(connection, source_id),
+        review_required=status in REVIEW_REQUIRED,
+    )
+
+
+def apply_run(connection, course_id: str, run: research.ResearchRun) -> dict[str, Any]:
+    """Upsert a research run's sources and mark changed ones stale.
+
+    Called from the generation pipeline *after* it persists the immutable run snapshot, so the
+    previous content hash is always available for comparison.
+    """
+    marked: list[dict[str, Any]] = []
+    previous = _latest_run_sources(connection, course_id)
+    for source in run.sources:
+        existing = connection.execute(
+            "SELECT * FROM sources WHERE course_id = ? AND url = ?", (course_id, source.url)
+        ).fetchone()
+        if existing is None:
+            continue
+        prior = previous.get(source.source_id) or previous.get(source.url)
+        prior_hash = str(prior["content_hash"]) if prior and prior.get("content_hash") else None
+        if prior_hash and source.content_hash and prior_hash != source.content_hash:
+            connection.execute(
+                "UPDATE sources SET support_status = 'stale', fetched_at = ? WHERE id = ?",
+                (source.fetched_at, existing["id"]),
+            )
+            marked.append(
+                {
+                    "source_id": existing["id"],
+                    "previous_hash": prior_hash,
+                    "content_hash": source.content_hash,
+                    "impact": impact(connection, str(existing["id"])),
+                }
+            )
+    return {"stale": marked}
+
+
+# ── grading gate ────────────────────────────────────────────────────────────
+
+
+def check_staleness(connection, check_id: str) -> dict[str, Any] | None:
+    """Return the stale-source impact for a check's objective, or ``None`` when current."""
+    row = connection.execute(
+        "SELECT o.id AS objective_id, pl.course_id AS course_id FROM checks c"
+        " JOIN objectives o ON o.id = c.objective_id JOIN plans pl ON pl.id = o.plan_id WHERE c.id = ?",
+        (check_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    course_id = str(row["course_id"])
+    for source in stale_sources(connection, course_id):
+        affected = impact(connection, str(source["source_id"]))
+        if str(row["objective_id"]) in affected["objective_ids"]:
+            return {
+                "source_id": source["source_id"],
+                "source_title": source["title"],
+                "support_status": source["support_status"],
+                "objective_id": row["objective_id"],
+            }
+    return None
+
+
+def assert_check_current(connection, check_id: str) -> None:
+    """Refuse grading a check whose objective depends on a stale/unreachable source."""
+    stale = check_staleness(connection, check_id)
+    if stale is None:
+        return
+    raise RpcError.of(
+        "CHECK_STALE",
+        "This check's source changed; it is paused for review instead of grading against stale content.",
+        check_id=check_id,
+        **stale,
+    )
