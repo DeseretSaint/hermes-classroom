@@ -159,7 +159,7 @@ def main() -> int:
         binding_unmigrated,
     )
 
-    later = client.post("/api/plugins/coursebook/rpc", json=envelope("library.list", {}))
+    later = client.post("/api/plugins/coursebook/rpc", json=envelope("pack.preview", {}))
     record(
         "POST /rpc for a frozen method with no handler is refused, never faked",
         later.json().get("ok") is False,
