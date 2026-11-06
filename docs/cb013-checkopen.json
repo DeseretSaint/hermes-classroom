@@ -1,0 +1,11 @@
+{
+  "contract": "cb.rpc",
+  "contract_version": 5,
+  "method": "check.open",
+  "operation_id": "cb013-probe-checkopen-transfer",
+  "payload": {
+    "enrollment_id": "enr_d3e84830f3f14b9eb25ec92a87574ff4",
+    "objective_id": "obj_d48391ea434d4e6685e1fb45afe239d1"
+  },
+  "expected_revision": 3
+}

@@ -142,6 +142,19 @@ def bind_session(
             )
             if same_lesson:
                 return {"binding": _view(existing), "created": False}
+            if str(existing["enrollment_id"]) == str(enrollment["id"]):
+                # The same chat moving to another section of the same course is the Reattach
+                # flow: move the binding with it (one row per chat, history kept by revision)
+                # instead of demanding a second row the enrollment-wide rule would refuse.
+                connection.execute(
+                    "UPDATE bindings SET lesson_run_id = ?, objective_id = ?, profile = ?,"
+                    " status = 'active', revision = revision + 1, updated_at = ? WHERE id = ?",
+                    (run["id"], objective_id, profile_name, db.utcnow(), existing["id"]),
+                )
+                row = connection.execute(
+                    "SELECT * FROM bindings WHERE id = ?", (existing["id"],)
+                ).fetchone()
+                return {"binding": _view(row), "created": False}
             raise api.RpcError.of(
                 "VALIDATION_FAILED",
                 "this chat is already bound to another lesson; use the chat that owns it, or abandon it first.",
@@ -156,12 +169,22 @@ def bind_session(
             (enrollment["id"],),
         ).fetchone()
         if active is not None:
-            raise api.RpcError.of(
-                "VALIDATION_FAILED",
-                "this lesson already has an active chat; resume it or abandon it before binding another.",
-                field="enrollment_id",
-                reason="enrollment_already_bound",
-                binding_id=str(active["id"]),
+            same_section = str(active["objective_id"] or "") == str(objective_id)
+            if same_section:
+                raise api.RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this lesson already has an active chat; resume it or abandon it before binding another.",
+                    field="enrollment_id",
+                    reason="enrollment_already_bound",
+                    binding_id=str(active["id"]),
+                )
+            # A different section of the same course: the learner moved on. One section keeps one
+            # authoritative chat, so the superseded section's binding is detached — never deleted —
+            # and the new run keeps the new chat. Cross-course migration stays refused above.
+            connection.execute(
+                "UPDATE bindings SET status = 'detached', revision = revision + 1, updated_at = ?"
+                " WHERE id = ?",
+                (db.utcnow(), active["id"]),
             )
 
         now = db.utcnow()

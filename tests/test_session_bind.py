@@ -177,6 +177,72 @@ class BindSessionCase(KernelCase):
         second = self.bind(stored_session_id="sess_durable_2")
         self.assertTrue(second["created"])
 
+    # ── moving between sections of one course ───────────────────────────
+
+    def add_section(self) -> dict:
+        """A second objective in the same plan, with its own active run."""
+        import json
+
+        objective_id = "obj_test_transfer"
+        self.execute(
+            "INSERT INTO objectives (id, plan_id, ordinal, title, evidence_target,"
+            " evidence_criteria_json, state, version, created_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                objective_id,
+                self.lesson["plan_id"],
+                2,
+                "Transfer",
+                "transfer",
+                json.dumps([{"id": "c1", "description": "explains the change"}]),
+                "not_started",
+                1,
+                db.utcnow(),
+            ),
+        )
+        run = self.ok(
+            "lesson.begin",
+            {
+                "enrollment_id": self.lesson["enrollment_id"],
+                "objective_id": objective_id,
+                "mode": "fresh",
+            },
+            idempotency_key=f"begin-{objective_id}",
+        )["result"]
+        return {"objective_id": objective_id, "run_id": run["lesson_run_id"]}
+
+    def test_a_new_sections_chat_supersedes_the_previous_sections_chat(self) -> None:
+        """One section keeps one authoritative chat; the old one detaches, it is not deleted."""
+        first = self.bind()
+        other = self.add_section()
+        second = self.bind(
+            stored_session_id="sess_durable_2",
+            objective_id=other["objective_id"],
+            lesson_run_id=other["run_id"],
+        )
+        self.assertTrue(second["created"])
+        rows = self.binding_rows()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["id"], first["binding"]["id"])
+        self.assertEqual(rows[0]["status"], "detached")
+        self.assertEqual(rows[1]["status"], "active")
+        self.assertEqual(rows[1]["objective_id"], other["objective_id"])
+        self.assertEqual(rows[1]["lesson_run_id"], other["run_id"])
+
+    def test_the_same_chat_moves_with_the_learner_to_the_next_section(self) -> None:
+        """Reattach: the focused chat follows the learner instead of needing a second row."""
+        first = self.bind()
+        other = self.add_section()
+        moved = self.bind(
+            objective_id=other["objective_id"], lesson_run_id=other["run_id"]
+        )
+        self.assertFalse(moved["created"])
+        self.assertEqual(moved["binding"]["id"], first["binding"]["id"])
+        self.assertEqual(moved["binding"]["objective_id"], other["objective_id"])
+        self.assertEqual(moved["binding"]["lesson_run_id"], other["run_id"])
+        self.assertEqual(moved["binding"]["status"], "active")
+        self.assertEqual(len(self.binding_rows()), 1)
+
     def prepare_lesson_second(self) -> dict:
         lesson = self.prepare_lesson()
         run = self.ok(
