@@ -25,14 +25,14 @@ invalidates the earlier evidence.
 | --- | --- | --- | --- | --- |
 | 1 | Contracts frozen | Atlas | `contracts/*.json`, `docs/REVIEW_CB001.md` | [x] |
 | 2 | Platform skeleton passes admission | Sable | `bash scripts/validate.sh` | [x] |
-| 3 | Backend kernel with migrations | Cinder | `db.ready:true`, `schema_version: 3` from `/health`; migrations `0001`-`0003`; 636 tests | [x] |
+| 3 | Backend kernel with migrations | Cinder | `db.ready:true`, `schema_version: 4` from `/health`; migrations `0001`-`0004`; 674 tests | [x] |
 | 4 | Packs import and export | Lattice | pack round-trip and export hash in the mounted trace; P17/P18/P20 PASS (`tests/adversarial/evidence/attack-packs.json`) | [x] |
-| 5 | Desktop shell with real views | Vellum | `node --check` passes and every view is authored, but `#/coursebook` renders the session home, so no view is verified on a live backend | [~] CB-QA-09 |
+| 5 | Desktop shell with real views | Vellum | `node --check` passes; with a reachable backend `#/coursebook` mounts the library, `New course`, Parent Studio and a course card (`docs/CB016-RELEASE-VERIFICATION.md` §3b); a window whose isolated gateway cannot start renders the session list for every route (§3a) | [~] CB-QA-09 |
 | 6 | Probes answer the three open questions | Sentinel | `PROBES.md`: 7 probes run, `pre_llm_call` replay FAIL, compression and Desktop render segments BLOCKED | [~] |
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md` rows for every demo shot | [ ] |
-| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/DEMO.md`, `docs/PRIVACY_EGRESS.md`, `docs/ARCHITECTURE.md` | [x] at `97fff42`+docs commit; `docs/REVIEW_CB014.md` registry line is Sentinel's card |
-| 9 | License present | DeseretSaint | `LICENSE` at repository root | [ ] |
-| 10 | Public repository pushed | DeseretSaint | pushed commit, approval required | [ ] |
+| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/DEMO.md`, `docs/PRIVACY_EGRESS.md`, `docs/ARCHITECTURE.md`, `docs/CB016-RELEASE-VERIFICATION.md` | [x] at `e93b8c5` gates; doc commit re-run required after it lands |
+| 9 | License present | DeseretSaint | `LICENSE` at repository root | [ ] owner decision — no license chosen yet |
+| 10 | Public repository pushed | DeseretSaint | source backup is pushed to the private `DeseretSaint/hermes-classroom` remote; making it public is publication and stays closed | [~] 0.1.0 source pushed |
 | 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml`, validator output | [~] blocked on 5, 7 and 10 |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
 | 13 | Demo recorded and approved | Harbor, DeseretSaint | file under 90 seconds, approval | [ ] |
@@ -97,11 +97,12 @@ longer changes the verdict, while an uncommitted edit to a tracked file still fa
 1, 2, 4 and 5 (tests, `node --check`, doctor, mounted backend trace) run against the checkout as
 before.
 
-Expected at 0.1.0 on the CB-014 tree: **636 tests pass** (`Ran 636 tests ... OK`; 652 on master at
-`caa7cde`), `desktop/plugin.js` syntax OK, `hermes plugins validate` passes all **16** admission
-checks with one warning (private core imports, see section 3), doctor reports **1 tool and 3
-hooks**, the mounted backend trace passes **31/31** expectations, and `validate.sh` ends
-`Validation passed.` with exit 0.
+Expected at 0.1.0 on the `e93b8c5` tree: **674 tests pass** (`Ran 674 tests ... OK`; 636 on the
+CB-014 tree at `e5b9686`), `desktop/plugin.js` syntax OK, `hermes plugins validate` passes all **16**
+admission checks with one warning (private core imports, see section 3), doctor reports **1 tool and
+3 hooks**, the mounted backend trace passes **31/31** expectations, and `validate.sh` ends
+`Validation passed.` with exit 0. `validate-plugin.sh` on the same commit ends
+`Release gate passed: 3/3 checks on e93b8c5ad7ac642bc7da64832d8c5d53b539e599 (787 files).`
 
 Fresh install path, in a throwaway home:
 
@@ -201,7 +202,7 @@ approval.
 
 | Blocker | Why it blocks | Owner |
 | --- | --- | --- |
-| `#/coursebook` renders the session home (CB-QA-09) | The product's primary surface does not mount, so no UI view is verified, gates 5 and 7 stay open and the demo cannot be recorded honestly | Vellum (`t_bfe339b2`) |
+| Isolated-home gateway cannot start, so the route falls back to the session list (CB-QA-09) | One gateway per host: `hermes gateway run --force` is refused while profile `default` owns it. A window without a gateway renders the session list for every route, so the chat shots and gates 5 and 7 stay open. The same commit's `desktop/plugin.js` mounts the library and Parent Studio when the window reaches a backend (`docs/CB016-RELEASE-VERIFICATION.md` §3) | Vellum / Atlas (`t_bfe339b2`) |
 | `evidence.inspect` returns an open check's reference answer (CB-QA-10) | The answer key crosses the client boundary while the check is open; the UI does not render it, the RPC does | Cinder |
 | Auxiliary grader accepts a persuaded pass (CB-QA-11) | The open-response lane cannot distinguish an honest pass from an injected one, so the lane ships disabled | Cinder |
 | Demo gate not met | Sentinel's demo scenarios have not passed on the release commit, and recording needs operator approval | Sentinel, DeseretSaint |
@@ -209,8 +210,8 @@ approval.
 | Repository not pushed | No commit sha to pin, no README at a public URL | DeseretSaint |
 | Catalog pin is the skeleton commit | The entry's text describes 0.1.0; the sha still points at `e1f1cab`, so the entry must be re-pinned after the last code merge and the docs commit | Harbor, DeseretSaint |
 
-Verified on this branch, so they are not blockers: 51/51 `cb.rpc` v6 methods mounted with no
-contract problems, schema v3 from migrations `0001`-`0003`, 636 tests and 31/31 mounted backend
+Verified on this branch, so they are not blockers: 52/52 `cb.rpc` v7 methods mounted with no
+contract problems, schema v4 from migrations `0001`-`0004`, 674 tests and 31/31 mounted backend
 expectations under `scripts/validate.sh`, pack round-trip and export hash matching, and eight
-`parent.*` methods. Those paths are implemented and tested; they are unreachable from the UI while
-CB-QA-09 is open.
+`parent.*` methods. Those paths are implemented and tested; the UI halves are unverified until the
+gateway condition in the first row is fixed or explained.

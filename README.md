@@ -11,35 +11,40 @@ change what happens next. In Coursebook the model teaches, while the plugin owns
 the attempt, the rubric, the evidence, the next permitted transition, and the durable record.
 
 This repository is the 0.1.0 contest candidate. The backend, the pack pipeline and the Parent
-Studio authoring surface are implemented and tested. The Desktop page does not mount yet
-(CB-QA-09), so the UI is not shippable. Read the status table before installing.
+Studio authoring surface are implemented and tested. The Desktop route is condition-dependent: it
+mounts when the window reaches a backend that can serve the session, and the shell falls back to
+the session list when an isolated home's gateway cannot start (CB-QA-09, verdict open — evidence
+in `docs/CB016-RELEASE-VERIFICATION.md`). No demo has been recorded. Read the status table before
+installing.
 
 ## Status
 
-Version 0.1.0. The release candidate and its gate results are in `docs/REVIEW_CB014.md`
-(candidate `f4a42f34`). That report is a NO-GO on the Desktop route, not on the backend.
+Version 0.1.0. The release gates and the route evidence for this commit are in
+`docs/CB016-RELEASE-VERIFICATION.md` (commit `e93b8c5`); the adversarial report on the previous
+candidate is `docs/REVIEW_CB014.md` (candidate `f4a42f34`, NO-GO on the Desktop route, not on the
+backend).
 
 Three states are used below. **Working** means a command was run against this build and passed.
-**Implemented, unreachable** means the backend path is implemented and tested but cannot be
-reached from the Desktop while `#/coursebook` renders the session home (CB-QA-09). **Absent**
-means there is no code path at all.
+**Implemented, unverified in the UI** means the backend path is implemented and tested, and the
+Desktop surface exists, but this release pass did not drive it through the UI. **Absent** means
+there is no code path at all.
 
 | Surface | State in this build |
 | --- | --- |
 | One installable package (agent half plus Desktop half) | Working: `scripts/install-local.sh` installs both halves; `hermes plugins validate` and `hermes plugins doctor` pass |
 | `coursebook_status` agent tool (read-only health) | Working: the single registered tool |
 | Backend routes `/health`, `/schema`, `/rpc`, `/runtime`, `/packs/*`, `/artifacts/<handle>` | Working: 31/31 backend expectations pass in `scripts/probe-backend.py` |
-| Frozen contracts: `cb.rpc` v6, `cb.db` v3, `cb.jobs` v2, `cb.errors` v2, `cb.pack` v1, `cb.projection` v1, `cb.vocabulary` v1 | Working: 51 declared methods, 51 handlers, no contract problems from `/runtime` |
-| Profile-scoped SQLite schema and migrations `0001`-`0003` | Working: `health.get` answers `db.ready: true`, `schema_version: 3` on a fresh home |
-| Desktop route `#/coursebook`, sidebar entry, pane, command palette, settings page | Not working: every registration exists, but the route renders the session home instead of the page (CB-QA-09, open) |
-| Course creation, plans, lessons, grading, transitions, evidence | Implemented, unreachable: 636-test suite, plus adversarial S01/S02/S10-S12 (duplicate submit, stale revision, invalid/hung/throwing grader) all pass |
-| Notebooks, quiz history, review queue, usage accounting | Implemented, unreachable: `notebook.save/list/update/delete`, `quiz.history`, `review.queue/action` and `usage.summary` are in the mounted registry |
-| Pack import and export, Parent Studio authoring | Implemented, unreachable: `pack.import/export/preview/inspect/list/delete` and eight `parent.*` methods; P17/P18/P20 pass, and export reproduces the reviewed content hash |
+| Frozen contracts: `cb.rpc` v7, `cb.db` v4, `cb.jobs` v2, `cb.errors` v2, `cb.pack` v1, `cb.projection` v1, `cb.vocabulary` v1 | Working: 52 declared methods, 52 handlers, no contract problems from `/runtime` |
+| Profile-scoped SQLite schema and migrations `0001`-`0004` | Working: `health.get` answers `db.ready: true`, `schema_version: 4` on a fresh home |
+| Desktop route `#/coursebook`, sidebar entry, pane, command palette, settings page | Condition-dependent: mounts in a window that reaches a gateway-backed backend (library, `New course`, Parent Studio and a course card rendered); renders the session list when an isolated home's gateway cannot start. Evidence: `docs/CB016-RELEASE-VERIFICATION.md` §3 |
+| Course creation, plans, lessons, grading, transitions, evidence | Implemented, unverified in the UI: 674-test suite, plus adversarial S01/S02/S10-S12 (duplicate submit, stale revision, invalid/hung/throwing grader) all pass |
+| Notebooks, quiz history, review queue, usage accounting | Implemented, unverified in the UI: `notebook.save/list/update/delete`, `quiz.history`, `review.queue/action` and `usage.summary` are in the mounted registry |
+| Pack import and export, Parent Studio authoring | Implemented, unverified in the UI: `pack.import/export/preview/inspect/list/delete` and eight `parent.*` methods; P17/P18/P20 pass, and export reproduces the reviewed content hash |
 | Research | Implemented inside plan jobs: bounded, query-capped and ledgered through the host `web_search`/`web_extract` seam; records `unavailable` rather than inventing a source. No standalone RPC |
 | Image and speech generation | Absent: the media policy, content-addressed artifact store and text-fallback path ship, but no image or TTS provider is wired, and lesson generation emits declarative media specs, never generated media |
 | Reminders | Absent: no RPC, no job runner, no storage |
 
-Every method declared by `cb.rpc` v6 has a handler in this build, so there is no command that
+Every method declared by `cb.rpc` v7 has a handler in this build, so there is no command that
 answers a plausible success for work it cannot do. A method outside the contract is refused with
 `VALIDATION_FAILED`; a handler that cannot answer returns a contract error rather than a
 fabricated result. Two backend defects are open and recorded in `docs/REVIEW_CB014.md`:
@@ -95,11 +100,13 @@ Open Coursebook in the Desktop sidebar. The plugin loads: the sidebar item, the 
 command-palette entries register, and the settings page registers when the host exposes a
 settings-page seam. With no chat bound to an enrollment, the pane offers `Open Coursebook` and
 reports that no durable chat is bound yet. The backend it reads answers `health.get` with
-`db.ready: true` and `schema_version: 3`.
+`db.ready: true` and `schema_version: 4`.
 
-The route itself does not mount on this candidate: `#/coursebook` renders the session home
-instead of the Coursebook page (CB-QA-09). Until that is fixed, the course library, the create
-and import flows, Parent Studio and Activity cannot be reached from the UI.
+The route is condition-dependent, and one of the two conditions is not shippable. In a window that
+reaches a gateway-backed backend, `#/coursebook` mounts the course library, the `New course` action
+and Parent Studio (`docs/CB016-RELEASE-VERIFICATION.md` §3b). In a window whose isolated home cannot
+start a gateway, the shell renders the session home for every hash instead (CB-QA-09, §3a). A demo
+that shows the chat side needs the second condition fixed, because a lesson binds to a chat.
 
 Ask the agent to run `coursebook_status` to get the health block as JSON. If the backend is not
 mounted, the pane names the enable path and offers Check again instead of showing an empty
@@ -130,8 +137,10 @@ the host level: `docs/PRIVACY_EGRESS.md`.
 
 This candidate is not shippable as a Desktop product.
 
-- `#/coursebook` renders the session home instead of the page (CB-QA-09). Every UI surface is
-  unverified until it mounts, and nothing in this README is a UI acceptance claim.
+- The route mount is condition-dependent (CB-QA-09, verdict open). It mounts when the window
+  reaches a gateway-backed backend; on an isolated home whose gateway cannot start, the shell shows
+  the session list for every route. The chat side of the demo cannot be recorded until the second
+  case is fixed or explained (`docs/CB016-RELEASE-VERIFICATION.md`).
 - Image and speech generation, and reminders, are absent. Research runs only inside plan jobs.
 - The auxiliary open-response grader is disabled. Closed checks are graded against a stored
   reference; with the lane enabled, an answer that persuades an obedient grader is accepted
@@ -154,6 +163,8 @@ Coursebook has not established that it improves learning. Parent observations ar
 - `docs/WORK_PACKAGES.md`: file ownership and merge order.
 - `docs/PRIVACY_EGRESS.md`: per-operation disclosure.
 - `docs/DEMO.md`: the demo script and its precomputed/live split.
+- `docs/CB016-RELEASE-VERIFICATION.md`: gates, clean install and the two route captures for `e93b8c5`.
+- `CHANGELOG.md`: what 0.1.0 contains and what it does not.
 - `docs/SUBMISSION.md`: submission checklist, owners and gates.
 - `docs/REVIEW_CB014.md`: the release-gate report on this candidate.
 - `PREBUILD_SPEC.md`, `UX_SPEC.md`, `PLAN.md`: the frozen design, interface contract and plan.
@@ -169,7 +180,7 @@ bash scripts/validate-plugin.sh # release gate: admission on a git archive expor
 ```
 
 Run `scripts/validate.sh` before any merge into master. It is the pre-merge gate, and it passes
-on this tree: 652 tests OK, node check OK, 31/31 backend expectations. Its admission step validates
+on this tree: 674 tests OK, node check OK, 31/31 backend expectations. Its admission step validates
 an export of the tracked tree (`scripts/lib/gate-export.sh`), not the checkout root, so the
 gitignored `.worktrees/` farm is never scanned and an uncommitted edit to a tracked file still fails
 that step. `scripts/validate-plugin.sh` is the release gate for one pinned commit.
