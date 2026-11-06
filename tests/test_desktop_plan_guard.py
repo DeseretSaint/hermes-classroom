@@ -60,6 +60,15 @@ class PlanDocumentGuardTest(unittest.TestCase):
         source = _source()
         self.assertRegex(source, r"setLessonDocumentGap\(null\), \[planIdOnScreen\]")
 
+    def test_approve_rereads_the_plan_digest_instead_of_trusting_the_render(self) -> None:
+        """An edit changes the digest; a render can still hold the pre-edit one."""
+        source = _source()
+        self.assertIn("Read the digest directly at approve time instead of trusting the render.", source)
+        approve = source[source.index("const approvePlan = useCallback"):]
+        self.assertIn("const fresh = await rpc('parent.blueprint.read'", approve)
+        self.assertIn("plan_hash: hash", approve)
+        self.assertIn("press Approve plan again.", approve)
+
 
 if __name__ == "__main__":
     unittest.main()

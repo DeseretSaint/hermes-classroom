@@ -6304,17 +6304,35 @@ function StudioPlanView({
     if (!plan) return
     setBusy(true)
     setError(null)
+    // `plan.approve` fences on the digest recomputed from the plan rows, and an edit changes it the
+    // moment it is saved. The page's `book` query can still hold the pre-edit digest for a render or
+    // two, and submitting that is refused `VALIDATION_FAILED: the approved hash does not match the
+    // current plan content`. Read the digest directly at approve time instead of trusting the render.
+    let hash = planHash
+    if (supported('parent.blueprint.read')) {
+      const fresh = await rpc('parent.blueprint.read', { course_id: course.course_id })
+      const freshHash = fresh && fresh.ok && fresh.result && fresh.result.plan ? fresh.result.plan.plan_hash : null
+      if (freshHash) hash = freshHash
+    }
+    if (!hash) {
+      setBusy(false)
+      setError('The plan digest is not available yet. Re-read the plan and try again.')
+      return
+    }
     const response = await rpc(
       'plan.approve',
-      { enrollment_id: course.enrollment_id, plan_id: plan.plan_id, plan_hash: planHash },
+      { enrollment_id: course.enrollment_id, plan_id: plan.plan_id, plan_hash: hash },
       { expectedRevision: revision, idempotencyKey: newOperationId('plan-approve') }
     )
     setBusy(false)
     if (!response.ok) {
       const nextRevision = staleRevision(response)
       if (nextRevision !== null) onRevision(nextRevision)
+      const hashMismatch = /plan content/i.test((response.error && response.error.message) || '')
+      if (hashMismatch) onChanged()
       setError(
         `${response.error.code}: ${describeError(response.error)}` +
+          (hashMismatch ? ' The plan was re-read; press Approve plan again.' : '') +
           (nextRevision !== null ? ' The course revision was refreshed; press Approve plan again.' : '')
       )
       return
@@ -6322,7 +6340,7 @@ function StudioPlanView({
     onRevision(response.result.revision)
     setNotice('Plan approved. The outline and activities are now fixed; the generated pages are a separate approval.')
     onChanged()
-  }, [plan, course.enrollment_id, revision, onRevision, onChanged])
+  }, [plan, course.enrollment_id, course.course_id, planHash, revision, onRevision, onChanged, supported])
 
   const generateLessons = useCallback(async () => {
     if (!plan) return
