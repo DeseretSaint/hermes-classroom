@@ -1,0 +1,15 @@
+== python3 -m unittest discover -s tests -t . (master a3442fc)
+Ran 568 tests in 47.916s
+
+OK
+== node --check desktop/plugin.js
+node --check OK
+== hermes plugins validate .
+subcommands are wired into the local CLI parser)
+
+Validation passed.
+== hermes plugins doctor .
+Plugin Doctor: /home/deseretsaint/Projects/hermes-classroom
+  manifest: coursebook 0.1.0 (standalone)
+  OK: runtime discovery, manifest parsing, import, and registration passed
+  registrations: 1 tool(s), 3 hook(s)
