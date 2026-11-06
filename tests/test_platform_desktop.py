@@ -253,10 +253,21 @@ class DesktopRegistrationTest(unittest.TestCase):
     def test_settings_page_does_not_use_async_profile_routes_during_render(self) -> None:
         # Regression pin for D1: the route inventory is a Promise. Rendering the settings page
         # must not call it synchronously (that is the `routes.find is not a function` crash).
+        #
+        # Two shapes satisfy the pin, and the shipped one is the cache: either `await` the
+        # inventory, or resolve it once into an array cache that the synchronous scope lookup
+        # reads. What is forbidden is `.find` on the Promise itself.
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        self.assertIn("await host.profileRoutes()", source)
         self.assertNotIn("host.profileRoutes() || []", source)
-        self.assertNotIn("currentScope()", source)
+        self.assertTrue(
+            "await host.profileRoutes()" in source or "Array.isArray(profileRouteCache)" in source,
+            "the async route inventory must be awaited or resolved into a guarded array cache",
+        )
+        # `currentScope()` may stay synchronous, but its body must read the cache, never the host.
+        scope_body = source.split("function currentScope()", 1)
+        self.assertEqual(len(scope_body), 2, "currentScope must exist")
+        self.assertNotIn("host.profileRoutes()", scope_body[1].split("}", 1)[0])
+        self.assertIn("Array.isArray(profileRouteCache)", scope_body[1].split("}", 1)[0])
 
 
 @unittest.skipUnless(node_available(), "node is required to evaluate a runtime desktop plugin")

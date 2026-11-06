@@ -25,6 +25,24 @@ def _contract(name: str) -> dict:
     return json.loads((ROOT / "contracts" / name).read_text(encoding="utf-8"))
 
 
+def _latest_rpc() -> dict:
+    """The newest frozen cb.rpc document on disk (`rpc.v5.json` today)."""
+    versions = sorted((ROOT / "contracts").glob("rpc.v*.json"), key=lambda path: int(re.findall(r"v(\d+)", path.name)[0]))
+    return json.loads(versions[-1].read_text(encoding="utf-8"))
+
+
+#: Methods the Desktop gates on that the frozen contract does not define. Empty since cb.rpc v5
+#: (CB-026, Atlas) froze `course.outline`, `check.get` and `lesson.assist`: the gate on each is now
+#: a runtime gate — `/runtime.implemented_methods` decides, and the honest "not in this build" state
+#: expires by itself when Cinder's handlers land. Keeping the (now empty) allowlist means a typo in
+#: a gated method name still fails here.
+PENDING_CONTRACT_METHODS: set[str] = set()
+
+#: The three v5 surfaces this workspace depends on; asserted present so a rename cannot silently
+#: turn a real control back into a permanently gated one.
+LEARNING_WORKSPACE_METHODS = {"check.get", "course.outline", "lesson.assist"}
+
+
 def _string_list(source: str, marker: str) -> list[str]:
     """The single-quoted string literals of the array literal that follows `marker`."""
     start = source.index(marker)
@@ -65,16 +83,24 @@ class DesktopContractMirrorTest(unittest.TestCase):
         # One static segment: no nested or parameterised coursebook route literal.
         self.assertNotRegex(source, r"'/coursebook[/:]")
 
+    def test_the_learning_workspace_methods_are_frozen(self) -> None:
+        # cb.rpc v5 (CB-026) froze the three surfaces this workspace was originally built to gate.
+        methods = set(_latest_rpc()["$defs"]["method"]["enum"])
+        self.assertEqual(sorted(LEARNING_WORKSPACE_METHODS - methods), [])
+
     def test_every_gated_control_names_a_contract_method(self) -> None:
-        # A control gated on a method that the contract does not define could never light up.
-        rpc = _contract("rpc.v2.json")
+        # A control gated on a method that the contract does not define could never light up —
+        # except for the explicitly filed forward amendments, which render an honest gated state.
+        rpc = _latest_rpc()
         methods = set(rpc["$defs"]["method"]["enum"])
         source = _source()
         named = set(re.findall(r"supports\('([a-z_]+\.[a-z_]+)'\)", source))
         named |= set(re.findall(r"implemented\.has\('([a-z_]+\.[a-z_]+)'\)", source))
         named |= set(re.findall(r"backendSupports\('([a-z_]+\.[a-z_]+)'\)", source))
         self.assertTrue(named, "no gated controls found")
-        self.assertEqual(sorted(named - methods), [])
+        self.assertEqual(sorted(named - methods - PENDING_CONTRACT_METHODS), [])
+        # Every pending gate must still be used, so the allowlist cannot rot into dead weight.
+        self.assertEqual(sorted(PENDING_CONTRACT_METHODS - named), [])
 
 
 if __name__ == "__main__":

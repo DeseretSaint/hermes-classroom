@@ -429,10 +429,15 @@ class V2AmendmentTest(unittest.TestCase):
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
 
-        response = api.dispatch(_envelope("library.list", {"filter": "all"}))
-        # Whether a handler exists is a branch fact, not an invariant: this file must pass on the
-        # contract branch (no handler) and on the kernel branch (real handler) alike.
-        self.assertTrue(response["ok"] or response["error"]["code"] == "NOT_IMPLEMENTED", response.get("error"))
+        # With CB-010 every frozen method has a handler. The seam must still refuse honestly when
+        # one is absent, so the absence is simulated instead of asserted about a real method.
+        saved = api.METHOD_HANDLERS.pop("pack.preview")
+        try:
+            response = api.dispatch(_envelope("pack.preview", {"staged_id": "stg_12345678"}))
+        finally:
+            api.METHOD_HANDLERS["pack.preview"] = saved
+        self.assertFalse(response["ok"])
+        self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
 
         def handler(payload, envelope):
             return 3, {
@@ -460,8 +465,8 @@ class V2AmendmentTest(unittest.TestCase):
                 "applied_filter": "all",
             }
 
-        # Save and restore: on a branch where the real handler exists, popping it would leave the
-        # rest of the suite dispatching a frozen method with no handler.
+        # The kernel registers the real handler; swap in a contract-shaped fake and restore it, so
+        # this stays a test of the dispatch seam rather than of the database.
         saved = api.METHOD_HANDLERS.get("library.list")
         api.register_handler("library.list", handler)
         try:
@@ -601,8 +606,10 @@ class V3AmendmentTest(unittest.TestCase):
             "objective_id": "obj_12345678",
             "action": "snooze",
         }, expected_revision=4, idempotency_key="idem-review-action-1"))
-        # The envelope rule is the invariant; whether a handler answers is a branch fact.
-        self.assertTrue(fenced["ok"] or fenced["error"]["code"] in {"NOT_IMPLEMENTED", "NOT_FOUND"})
+        self.assertFalse(fenced["ok"])
+        # The handler is registered now, so a well-formed fenced envelope reaches it; the
+        # unknown enrollment is the handler's refusal, not the seam's.
+        self.assertEqual(fenced["error"]["code"], "NOT_FOUND")
         self.assertNotIn("revision", fenced.get("result") or {})
         self.assertTrue(expected <= set(rule[0]["then"]["required"]))
 
@@ -733,9 +740,9 @@ class V3AmendmentTest(unittest.TestCase):
             ("evidence.disputes", {"enrollment_id": "enr_12345678"}),
         ):
             with self.subTest(method=method):
-                # Only the schema is the invariant here. Whether a handler exists (or refuses a
-                # nonexistent enrollment) is a branch fact; the payload gate is already asserted.
-                contracts.validate_request_payload(method, payload)
+                response = api.dispatch(_envelope(method, payload))
+                self.assertFalse(response["ok"])
+                self.assertEqual(response["error"]["code"], "NOT_FOUND")
 
         def handler(payload, envelope):
             return 7, {
@@ -749,6 +756,8 @@ class V3AmendmentTest(unittest.TestCase):
                 "cap": 10,
             }
 
+        # Swap in a contract-shaped fake and restore the kernel's real handler afterwards, so
+        # this stays a test of the dispatch seam rather than of the database.
         saved = api.METHOD_HANDLERS.get("review.queue")
         api.register_handler("review.queue", handler)
         try:
