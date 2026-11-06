@@ -42,7 +42,9 @@ SDK_STUB = textwrap.dedent(
         focusedSessionProfile: atom('default'),
         profile: atom('default')
       },
-      profileRoutes: () => [],
+      profileRoutes: async () => [
+        { connectionId: 'local', mode: 'local', profile: 'default', targetProfile: 'default' }
+      ],
       navigate: (path) => calls.push(['navigate', path]),
       notify: (payload) => calls.push(['notify', payload]),
       openSession: (id, options) => calls.push(['openSession', id, options]),
@@ -65,11 +67,16 @@ HARNESS = textwrap.dedent(
     const ctx = {
       source: 'plugin:coursebook',
       register: (contribution) => {
-        registrations.push({ id: contribution.id, area: contribution.area, data: contribution.data || null })
+        registrations.push({
+          id: contribution.id,
+          area: contribution.area,
+          data: contribution.data || null,
+          render: contribution.render || null
+        })
         return () => {}
       },
       registerSettingsPage: (page) => {
-        settingsPages.push({ id: page.id, title: page.title })
+        settingsPages.push({ id: page.id, title: page.title, render: page.render })
         return () => {}
       },
       rest: async (path, options) => {
@@ -92,6 +99,38 @@ HARNESS = textwrap.dedent(
     plugin.register(ctx)
     await new Promise((resolve) => setTimeout(resolve, 25))
 
+    // Render every contributed surface the way the Desktop does: invoke the render function,
+    // then walk the element tree so function components actually execute. The React stub makes
+    // hooks inert, which is enough to catch a synchronous await-less call in a component body
+    // (the `routes.find` defect) without needing a real renderer.
+    function renderNode(node) {
+      if (node === null || node === undefined || typeof node !== 'object') return
+      if (Array.isArray(node)) {
+        for (const child of node) renderNode(child)
+        return
+      }
+      if (typeof node.type === 'function') {
+        renderNode(node.type(node.props || {}))
+        return
+      }
+      if (node.props && node.props.children !== undefined) renderNode(node.props.children)
+    }
+
+    const renderResults = []
+    const surfaces = [
+      ...registrations.map((entry) => ({ id: entry.id, render: entry.render })),
+      ...settingsPages.map((page) => ({ id: page.id, render: page.render }))
+    ]
+    for (const surface of surfaces) {
+      if (typeof surface.render !== 'function') continue
+      try {
+        renderNode(surface.render())
+        renderResults.push({ id: surface.id, rendered: true, error: null })
+      } catch (error) {
+        renderResults.push({ id: surface.id, rendered: false, error: String((error && error.message) || error) })
+      }
+    }
+
     const module = await import('./plugin.js')
     console.log(JSON.stringify({
       id: module.default.id,
@@ -100,7 +139,8 @@ HARNESS = textwrap.dedent(
       settingsPages,
       restCalls,
       disposers: disposers.length,
-      hostCalls: host.calls
+      hostCalls: host.calls,
+      renderResults
     }))
     """
 )
@@ -202,6 +242,20 @@ class DesktopRegistrationTest(unittest.TestCase):
 
     def test_disposers_are_available(self) -> None:
         self.assertGreaterEqual(self.payload["disposers"], 1)
+
+    def test_every_contributed_surface_renders(self) -> None:
+        results = {entry["id"]: entry for entry in self.payload["renderResults"]}
+        for surface in ("page", "pane", "coursebook-settings"):
+            self.assertIn(surface, results, f"{surface} must expose a render function")
+            self.assertTrue(results[surface]["rendered"], f"{surface}: {results[surface]['error']}")
+
+    def test_settings_page_does_not_use_async_profile_routes_during_render(self) -> None:
+        # Regression pin for D1: the route inventory is a Promise. Rendering the settings page
+        # must not call it synchronously (that is the `routes.find is not a function` crash).
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        self.assertIn("await host.profileRoutes()", source)
+        self.assertNotIn("host.profileRoutes() || []", source)
+        self.assertNotIn("currentScope()", source)
 
 
 @unittest.skipUnless(node_available(), "node is required to evaluate a runtime desktop plugin")

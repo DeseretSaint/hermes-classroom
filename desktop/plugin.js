@@ -160,20 +160,37 @@ async function loadBackendWire() {
 }
 
 /**
- * Which profile/connection this pane is acting for.
+ * Which profile this pane is acting for.
  *
  * Explicit and read-only: the focused chat's owning profile first (a tile can show another
- * profile than the launch one), then the window's active profile. `connectionId` comes from the
- * registry route for that profile, or stays null — it is never inferred from a URL.
+ * profile than the launch one), then the window's active profile. This half is synchronous
+ * because it only reads host atoms.
  */
-function currentScope() {
+function currentProfile() {
   const focused = host.state.focusedSessionProfile && host.state.focusedSessionProfile.get()
-  const profile = String(focused || (host.state.profile && host.state.profile.get()) || '').trim() || null
+  return String(focused || (host.state.profile && host.state.profile.get()) || '').trim() || null
+}
+
+/**
+ * The profile/connection pair, resolved against the live route registry.
+ *
+ * `host.profileRoutes()` is **async** (SDK `apps/desktop/src/sdk/index.ts`), and it rejects on
+ * desktops whose Electron shell has no connection routing. Both facts are handled here: the
+ * list is awaited, and an unavailable inventory leaves `connectionId` null. It is never
+ * inferred from a URL — a guessed connection would send a scoped RPC to the wrong backend.
+ */
+async function resolveScope(profile = currentProfile()) {
   let connectionId = null
-  if (typeof host.profileRoutes === 'function') {
-    const routes = host.profileRoutes() || []
-    const match = routes.find((route) => route && route.profile === profile)
-    if (match && match.connectionId) connectionId = match.connectionId
+  if (profile && typeof host.profileRoutes === 'function') {
+    try {
+      const routes = await host.profileRoutes()
+      const match = Array.isArray(routes)
+        ? routes.find((route) => route && route.profile === profile)
+        : null
+      if (match && match.connectionId) connectionId = match.connectionId
+    } catch {
+      connectionId = null
+    }
   }
   return { profile, connectionId }
 }
@@ -216,8 +233,9 @@ async function resumeBoundSession(binding) {
   if (typeof host.openSession !== 'function') {
     return { ok: false, reason: 'unsupported', message: 'Update Hermes Desktop to resume a bound lesson.' }
   }
+  const scope = binding.profile ? null : await resolveScope()
   await host.openSession(binding.stored_session_id, {
-    profile: binding.profile || currentScope().profile || undefined
+    profile: binding.profile || (scope && scope.profile) || undefined
   })
   return { ok: true, storedSessionId: binding.stored_session_id }
 }
@@ -425,6 +443,9 @@ function CoursebookPage() {
 /** `useValue` with a non-reactive fallback for hosts too old to export it. */
 const useHostValue = typeof sdk.useValue === 'function' ? sdk.useValue : (atom) => atom.get()
 
+/** Placeholder for an optional host-state slice an older shell does not expose. */
+const EMPTY_ATOM = { get: () => null }
+
 /**
  * The focused chat's binding, read by its STORED id only.
  *
@@ -612,8 +633,30 @@ function ContractList() {
 function SessionDiagnostics() {
   const runtimeId = useHostValue(host.state.focusedSessionId)
   const storedId = useHostValue(host.state.focusedStoredSessionId)
-  const scope = currentScope()
+  const focusedProfile = useHostValue(host.state.focusedSessionProfile || EMPTY_ATOM)
+  const windowProfile = useHostValue(host.state.profile || EMPTY_ATOM)
+  const profile = String(focusedProfile || windowProfile || '').trim() || null
+  // The registry inventory is async: resolve it in an effect and render the resolved pair.
+  // Calling the async `profileRoutes` during render is exactly the defect this replaces.
+  const [scope, setScope] = useState({ status: 'loading', profile, connectionId: null })
   const implemented = backendWire.implemented ? Array.from(backendWire.implemented).sort() : null
+
+  useEffect(() => {
+    let cancelled = false
+    setScope({ status: 'loading', profile, connectionId: null })
+    resolveScope(profile).then(
+      (resolved) => {
+        if (!cancelled) setScope({ status: 'ready', ...resolved })
+      },
+      () => {
+        if (!cancelled) setScope({ status: 'ready', profile, connectionId: null })
+      }
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [profile])
+
   return jsxs('div', {
     className: 'flex flex-col',
     children: [
@@ -632,7 +675,11 @@ function SessionDiagnostics() {
       jsx(StatusRow, {
         label: 'Scope',
         value: scope.profile || 'unknown profile',
-        detail: scope.connectionId ? `connection ${scope.connectionId}` : 'local source'
+        detail: scope.connectionId
+          ? `connection ${scope.connectionId}`
+          : scope.status === 'loading'
+            ? 'reading the connection registry…'
+            : 'no registry route for this profile'
       }),
       jsx(StatusRow, {
         label: 'Wire contract',

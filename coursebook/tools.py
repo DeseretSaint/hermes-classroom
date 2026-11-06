@@ -61,8 +61,15 @@ def status_schema() -> dict[str, Any]:
     }
 
 
-def status_handler(**_kwargs: Any) -> str:
-    """Return a JSON string; the shape is the ``health.get`` response body plus diagnostics."""
+def status_handler(args: dict[str, Any] | None = None, **_kwargs: Any) -> str:
+    """Return a JSON string; the shape is the ``health.get`` response body plus diagnostics.
+
+    The host dispatches every registered tool as ``entry.handler(args, **kwargs)`` — the model's
+    argument dict arrives **positionally** (``tools/registry.py::dispatch``), and only the
+    context kwargs the signature names are forwarded. ``args`` is accepted here because the tool
+    schema declares no parameters; naming it positionally, rather than only as ``**kwargs``, is
+    what keeps ``coursebook_status`` callable through the registry at all.
+    """
     payload = {
         "plugin_version": __version__,
         "contract_version": api.RPC_CONTRACT_VERSION,
