@@ -815,11 +815,11 @@ function FirstRun({ implemented, onCreate }) {
     className: 'mx-auto flex w-full max-w-2xl flex-col py-2',
     children: [
       jsx('h2', {
-        className: 'text-[length:var(--conversation-text-font-size)] font-semibold',
+        className: 'text-lg font-semibold tracking-tight',
         children: 'Build a course around what you want to do.'
       }),
       jsx('p', {
-        className: 'mt-1 max-w-prose text-xs leading-relaxed text-(--ui-text-tertiary)',
+        className: 'mt-2 max-w-prose text-sm leading-relaxed text-(--ui-text-tertiary)',
         children:
           'Your courses will appear here. Progress and personal answers stay on this profile.'
       }),
@@ -3373,7 +3373,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
 
         runtime && !bindingActive
           ? jsxs('div', {
-              className: 'flex flex-wrap items-center justify-between gap-2 border border-(--ui-stroke-tertiary) px-3 py-2',
+              className: 'flex flex-wrap items-center justify-between gap-2 border-l border-(--ui-stroke-secondary) pl-3',
               children: [
                 jsx('div', {
                   className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -3456,9 +3456,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                           })
                         ]
                       }),
-                      jsx('p', {
-                        className: 'max-w-prose whitespace-pre-wrap break-words text-sm leading-relaxed',
-                        children: segment.text
+                      jsx('div', {
+                        className: 'max-w-3xl',
+                        children: jsx(sdk.MessageTextContent, { text: segment.text })
                       }),
                       segment.source_id
                         ? jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: `Source ${segment.source_id}` })
@@ -3951,7 +3951,7 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
       error ? jsx(ErrorLine, { error }) : null,
       undo
         ? jsxs('div', {
-            className: 'flex flex-wrap items-center justify-between gap-2 border border-(--ui-stroke-tertiary) px-3 py-2',
+            className: 'flex flex-wrap items-center justify-between gap-2 border-l border-(--ui-stroke-secondary) pl-3',
             children: [
               jsx('div', {
                 className: 'text-xs text-(--ui-text-secondary)',
@@ -3996,9 +3996,9 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
                 {
                   className: 'flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) py-2 last:border-b-0',
                   children: [
-                    jsx('p', {
-                      className: 'max-w-prose whitespace-pre-wrap break-words text-sm leading-relaxed',
-                      children: entry.excerpt || entry.note || entry.kind
+                    jsx('div', {
+                      className: 'max-w-3xl',
+                      children: jsx(sdk.MessageTextContent, { text: entry.excerpt || entry.note || entry.kind })
                     }),
                     entry.note && entry.excerpt
                       ? jsx('p', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: entry.note })
@@ -5064,7 +5064,7 @@ function LessonPaneBody({ binding, storedId }) {
 
       bindingStatus !== 'active'
         ? jsxs('div', {
-            className: 'flex flex-col gap-1 border border-(--ui-stroke-tertiary) px-2 py-1.5',
+            className: 'flex flex-col gap-1 border-l border-(--ui-stroke-secondary) pl-3',
             children: [
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -5772,7 +5772,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
 
       jsx(sdk.PanelSectionLabel, { children: 'BEFORE YOU PASTE: PROVIDER AND EGRESS' }),
       jsxs('div', {
-        className: 'flex flex-col gap-2 border-l-2 border-(--ui-stroke-secondary) pl-3',
+        className: 'flex flex-col gap-2 border-l border-(--ui-stroke-secondary) pl-3',
         children: [
           jsx('p', {
             className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -5874,7 +5874,7 @@ const APPROVAL_INVALIDATION_COPY = {
 function StudioReviewBanner({ approval, exportStatus }) {
   if (!approval || approval.state !== 'superseded') return null
   return jsxs('div', {
-    className: 'flex flex-col gap-1 border-l-2 border-(--ui-stroke-secondary) pl-3',
+    className: 'flex flex-col gap-1 border-l border-(--ui-stroke-secondary) pl-3',
     role: 'status',
     children: [
       jsx('div', { className: 'text-xs font-semibold', children: 'Changes need review' }),
@@ -6618,8 +6618,8 @@ function StudioBlueprintView({ book }) {
                         ]
                       }),
                       jsx('div', {
-                        className: 'max-w-prose whitespace-pre-wrap break-words text-sm leading-relaxed',
-                        children: file.text
+                        className: 'max-w-3xl',
+                        children: jsx(sdk.MessageTextContent, { text: file.text })
                       }),
                       jsxs('div', {
                         className: 'text-xs break-all text-(--ui-text-tertiary)',

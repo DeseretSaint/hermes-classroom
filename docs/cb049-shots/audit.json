@@ -1,0 +1,344 @@
+{
+  "capturedAt": "2026-11-06T18:26:30.685Z",
+  "shots": [
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/030-overview-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/031-textbook-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/032-section-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/033-notebook-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/034-quizzes-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/035-courses-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/036-library-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/037-studio-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/040-overview-light.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/041-section-light.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/042-notebook-light.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/043-quizzes-light.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/044-courses-light.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/045-library-light.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/046-studio-light.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/050-section-narrow-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/051-section-text200-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_49cfffa0/docs/cb049-shots/052-section-reduced-motion-dark.png"
+  ],
+  "audits": [
+    {
+      "label": "overview-dark",
+      "mode": "dark",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs leading-4 text-foreground outl",
+          "shadow": "color(srgb 0 0 0 / 0.38) 0px 1px 1px 0px inset"
+        }
+      ],
+      "heavy": [],
+      "borderedCount": 4,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "textbook-dark",
+      "mode": "dark",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs leading-4 text-foreground outl",
+          "shadow": "color(srgb 0 0 0 / 0.38) 0px 1px 1px 0px inset"
+        }
+      ],
+      "heavy": [],
+      "borderedCount": 3,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "section-dark",
+      "mode": "dark",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs leading-4 text-foreground outl",
+          "shadow": "color(srgb 0 0 0 / 0.38) 0px 1px 1px 0px inset"
+        },
+        {
+          "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border text-xs leading-4 text-foregrou",
+          "shadow": "color(srgb 0 0 0 / 0.38) 0px 1px 1px 0px inset"
+        }
+      ],
+      "heavy": [
+        {
+          "cls": "border-s-2 border-(--ui-stroke-tertiary) ps-3 text-muted-foreground italic",
+          "w": [
+            0,
+            0,
+            0,
+            2
+          ]
+        },
+        {
+          "cls": "border-s-2 border-(--ui-stroke-tertiary) ps-3 text-muted-foreground italic",
+          "w": [
+            0,
+            0,
+            0,
+            2
+          ]
+        }
+      ],
+      "borderedCount": 10,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "notebook-dark",
+      "mode": "dark",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs leading-4 text-foreground outl",
+          "shadow": "color(srgb 0 0 0 / 0.38) 0px 1px 1px 0px inset"
+        },
+        {
+          "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs leading-4 text-foreground outl",
+          "shadow": "color(srgb 0 0 0 / 0.38) 0px 1px 1px 0px inset"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        }
+      ],
+      "heavy": [],
+      "borderedCount": 8,
+      "nested": [
+        {
+          "child": "aui-md-table my-2 max-w-full overflow-x-auto rounded-[0.375rem] border border-(--ui-stroke",
+          "parent": "flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) py-2 last:border-b-0"
+        },
+        {
+          "child": "m-0 bg-muted/35 text-muted-foreground",
+          "parent": "aui-md-table my-2 max-w-full overflow-x-auto rounded-[0.375rem] border border-(--ui-stroke"
+        },
+        {
+          "child": "aui-md-table my-2 max-w-full overflow-x-auto rounded-[0.375rem] border border-(--ui-stroke",
+          "parent": "flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) py-2 last:border-b-0"
+        },
+        {
+          "child": "m-0 bg-muted/35 text-muted-foreground",
+          "parent": "aui-md-table my-2 max-w-full overflow-x-auto rounded-[0.375rem] border border-(--ui-stroke"
+        }
+      ],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "quizzes-dark",
+      "mode": "dark",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs leading-4 text-foreground outl",
+          "shadow": "color(srgb 0 0 0 / 0.38) 0px 1px 1px 0px inset"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        }
+      ],
+      "heavy": [],
+      "borderedCount": 9,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "courses-dark",
+      "mode": "dark",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        }
+      ],
+      "heavy": [],
+      "borderedCount": 2,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "library-dark",
+      "mode": "dark",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        }
+      ],
+      "heavy": [],
+      "borderedCount": 0,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "studio-dark",
+      "mode": "dark",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        }
+      ],
+      "heavy": [],
+      "borderedCount": 0,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "overview-light",
+      "mode": "light",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs leading-4 text-foreground outl",
+          "shadow": "color(srgb 0 0 0 / 0.1) 0px 1px 1px 0px inset"
+        }
+      ],
+      "heavy": [],
+      "borderedCount": 4,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.121569 0.137255 0.156863 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "section-light",
+      "mode": "light",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        },
+        {
+          "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs leading-4 text-foreground outl",
+          "shadow": "color(srgb 0 0 0 / 0.1) 0px 1px 1px 0px inset"
+        },
+        {
+          "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border text-xs leading-4 text-foregrou",
+          "shadow": "color(srgb 0 0 0 / 0.1) 0px 1px 1px 0px inset"
+        }
+      ],
+      "heavy": [
+        {
+          "cls": "border-s-2 border-(--ui-stroke-tertiary) ps-3 text-muted-foreground italic",
+          "w": [
+            0,
+            0,
+            0,
+            2
+          ]
+        },
+        {
+          "cls": "border-s-2 border-(--ui-stroke-tertiary) ps-3 text-muted-foreground italic",
+          "w": [
+            0,
+            0,
+            0,
+            2
+          ]
+        }
+      ],
+      "borderedCount": 10,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.121569 0.137255 0.156863 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "label": "studio-light",
+      "mode": "light",
+      "shadows": [
+        {
+          "cls": "flex items-center justify-center gap-1 rounded-[3px] px-2.5 py-0.5 text-[0.6875rem] font-m",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0"
+        }
+      ],
+      "heavy": [],
+      "borderedCount": 0,
+      "nested": [],
+      "markdownResidue": [],
+      "textColor": "color(srgb 0.121569 0.137255 0.156863 / 0.94)",
+      "bg": "rgba(0, 0, 0, 0)"
+    }
+  ]
+}
