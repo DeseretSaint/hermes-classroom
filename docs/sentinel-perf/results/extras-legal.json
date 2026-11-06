@@ -1,0 +1,78 @@
+{
+  "course": "legal",
+  "rows": [
+    {
+      "id": "idle-cadence",
+      "label": "idle requestAnimationFrame cadence (1s)",
+      "frames": 176,
+      "medianFrameMs": 5.7,
+      "p95FrameMs": 5.8,
+      "worstFrameMs": 5.9,
+      "impliedHz": 175
+    },
+    {
+      "id": "leak-repeat-nav",
+      "label": "10 × open long lesson → return to index, heap after forced GC",
+      "series": [
+        {
+          "cycle": 0,
+          "usedMb": 258.28,
+          "nodes": 578
+        },
+        {
+          "cycle": 1,
+          "usedMb": 257.96,
+          "nodes": 578
+        },
+        {
+          "cycle": 2,
+          "usedMb": 257.89,
+          "nodes": 578
+        },
+        {
+          "cycle": 3,
+          "usedMb": 258.16,
+          "nodes": 578
+        },
+        {
+          "cycle": 4,
+          "usedMb": 258.18,
+          "nodes": 578
+        },
+        {
+          "cycle": 5,
+          "usedMb": 257.98,
+          "nodes": 578
+        },
+        {
+          "cycle": 6,
+          "usedMb": 258.22,
+          "nodes": 578
+        },
+        {
+          "cycle": 7,
+          "usedMb": 258.21,
+          "nodes": 578
+        },
+        {
+          "cycle": 8,
+          "usedMb": 258.01,
+          "nodes": 578
+        },
+        {
+          "cycle": 9,
+          "usedMb": 258.25,
+          "nodes": 578
+        },
+        {
+          "cycle": 10,
+          "usedMb": 258.25,
+          "nodes": 578
+        }
+      ],
+      "growthMb": -0.03,
+      "peakMb": 258.28,
+      "growthPerCycleMb": -0.003
+    }
+  ]
+}

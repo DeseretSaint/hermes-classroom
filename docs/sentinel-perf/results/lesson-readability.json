@@ -1,0 +1,33 @@
+{
+  "legal-60": {
+    "enrollment_id": "enr_e3464043da494c20a66257c7d340f898",
+    "objectives": 60,
+    "readable": 60,
+    "failed": 0,
+    "failures": [],
+    "max_segment_chars": 7789
+  },
+  "overcap-55": {
+    "enrollment_id": "enr_5b8683c2286945399f34992af7f68351",
+    "objectives": 55,
+    "readable": 53,
+    "failed": 2,
+    "failures": [
+      {
+        "ordinal": 1,
+        "objective_id": "obj_da7aa07a61364a0a863026f4324691ec",
+        "code": "INTERNAL_ERROR",
+        "path": "segments/0/text",
+        "retryable": false
+      },
+      {
+        "ordinal": 55,
+        "objective_id": "obj_f46bf28802884fd6ab2d0731fb060c34",
+        "code": "INTERNAL_ERROR",
+        "path": "segments/0/text",
+        "retryable": false
+      }
+    ],
+    "max_segment_chars": 2197
+  }
+}

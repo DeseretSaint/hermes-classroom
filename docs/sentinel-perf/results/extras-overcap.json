@@ -1,0 +1,22 @@
+{
+  "course": "overcap",
+  "rows": [
+    {
+      "id": "idle-cadence",
+      "label": "idle requestAnimationFrame cadence (1s)",
+      "frames": 176,
+      "medianFrameMs": 5.7,
+      "p95FrameMs": 5.8,
+      "worstFrameMs": 5.8,
+      "impliedHz": 175
+    },
+    {
+      "id": "overcap-ui",
+      "label": "section > 8000 chars in the lesson pane",
+      "text": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — a deliberately long title that must wrap without clipping the row or the objective header at 200% text\nResume lesson\nView\nTextbook\nAll sections\nThis section could not be read\n\nINTERNAL_ERROR: lesson.page produced a non-contract result: lesson.page handler returned a result outside the contract at segments/0/text: '## Objective 1: register in context 1\\n\\nA register ",
+      "pres": 0,
+      "hasRetry": true,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_19da8432/docs/sentinel-perf/shots/overcap-lesson-error.png"
+    }
+  ]
+}
