@@ -402,7 +402,13 @@ class RegistryTest(unittest.TestCase):
         # be wired when this branch is merged; everything the kernel owns must be present, and
         # nothing may be invented. Explicit allowance beats silently dropping the check.
         pack_methods = {"pack.preview", "pack.import", "pack.export", "pack.list", "pack.inspect"}
-        expected = set(method_names()) - pack_methods
+        # cb.rpc v6 (CB-011) froze the Parent Studio family; t_a356c8a8 registered all eight
+        # handlers, so this allowance is empty. It stays here as the explicit wiring assertion:
+        # a v6 method that loses its handler fails this test instead of silently answering
+        # NOT_IMPLEMENTED.
+        pending_v6: set[str] = set()
+        self.assertTrue(pending_v6 <= set(method_names()), "allowance names a non-contract method")
+        expected = set(method_names()) - pack_methods - pending_v6
         implemented = set(api.implemented_methods())
         self.assertTrue(expected <= implemented, f"unregistered: {sorted(expected - implemented)}")
         self.assertTrue(implemented <= set(method_names()), "a handler exists for a non-contract method")

@@ -199,6 +199,10 @@ def _binding_row(session_id: str) -> Any:
     """
     if not session_id:
         return None
+    if not db.store_exists():
+        # No store, no binding: an unprovisioned profile is not governed. Opening a connection
+        # here would create an empty database and then fail on a missing table.
+        return None
     with db.read() as connection:
         return connection.execute(
             "SELECT * FROM bindings WHERE stored_session_id = ?"
@@ -511,6 +515,9 @@ def reconcile_binding(session_id: str, *, cwd_fingerprint: str | None = None,
     opened rather than the most recent chat (``AUDIT.md`` R1).
     """
     if not session_id:
+        return {"status": "unbound", "changed": False, "binding_id": None}
+    if not db.store_exists():
+        # Absent store means unbound, not failed: reconciliation is not a provisioning step.
         return {"status": "unbound", "changed": False, "binding_id": None}
     with db.transaction() as connection:
         binding = connection.execute(

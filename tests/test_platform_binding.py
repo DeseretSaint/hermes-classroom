@@ -101,6 +101,12 @@ class MigrationPresentTest(_ApiBindingHandlerIsolated):
         self.assertEqual(binding["id"], "bnd_active")
         self.assertEqual(binding["stored_session_id"], "stored_1")
         self.assertEqual(binding["matched_column"], "stored_session_id")
+        # cb.db v1 has no lesson_runs: the section fields are answered as null, not omitted, so a
+        # client can distinguish "no bound section" from "this build did not answer".
+        self.assertIn("objective_id", binding)
+        self.assertIn("lesson_run_id", binding)
+        self.assertIsNone(binding["objective_id"])
+        self.assertIsNone(binding["lesson_run_id"])
 
     def test_runtime_id_is_not_a_substitute_for_a_stored_id(self) -> None:
         # rt_live_1 exists in runtime_session_id, but resume is stored-id-only by contract.
@@ -140,6 +146,78 @@ class MigrationPresentTest(_ApiBindingHandlerIsolated):
         self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
 
 
+class SectionIdentityTest(_ApiBindingHandlerIsolated):
+    """``cb.db`` v2 bindings store the section; the platform seam must report it.
+
+    CB-009's pane can only scope by enrollment when ``binding.get`` withholds these two fields, so a
+    chat bound to section 3 rendered section 1's page and section 1's detached run.
+    """
+
+    BINDING_V2_DDL = """
+    CREATE TABLE bindings (
+        id TEXT PRIMARY KEY,
+        enrollment_id TEXT NOT NULL,
+        profile TEXT NOT NULL,
+        connection_id TEXT,
+        runtime_session_id TEXT,
+        stored_session_id TEXT,
+        cwd_fingerprint TEXT,
+        compression_tip TEXT,
+        status TEXT NOT NULL,
+        revision INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        lesson_run_id TEXT,
+        objective_id TEXT
+    )
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        def seeded_v2() -> sqlite3.Connection:
+            connection = sqlite3.connect(":memory:")
+            connection.row_factory = sqlite3.Row
+            connection.execute(self.BINDING_V2_DDL)
+            connection.executemany(
+                "INSERT INTO bindings VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                [
+                    (
+                        "bnd_section", "enr_1", "default", None, "rt_live_1", "stored_1",
+                        None, None, "active", 2, "2026-01-02T00:00:00Z",
+                        "run_section_3", "obj_section_3",
+                    ),
+                    (
+                        "bnd_legacy", "enr_2", "default", None, None, "stored_legacy",
+                        None, None, "detached", 1, "2026-01-01T00:00:00Z", None, None,
+                    ),
+                ],
+            )
+            return connection
+
+        patcher_version = mock.patch.object(db, "applied_schema_version", return_value=2)
+        patcher_connect = mock.patch.object(db, "connect", side_effect=seeded_v2)
+        patcher_version.start()
+        patcher_connect.start()
+        self.addCleanup(patcher_version.stop)
+        self.addCleanup(patcher_connect.stop)
+
+    def test_reports_the_bound_section(self) -> None:
+        response = api.dispatch(request("binding.get", {"session_id": "stored_1"}))
+        self.assertTrue(response["ok"], response)
+        binding = response["result"]["binding"]
+        self.assertEqual(binding["objective_id"], "obj_section_3")
+        self.assertEqual(binding["lesson_run_id"], "run_section_3")
+        # Additive only: the row's own status is still what the pane renders for this chat.
+        self.assertEqual(binding["status"], "active")
+
+    def test_a_legacy_binding_reports_no_section(self) -> None:
+        response = api.dispatch(request("binding.get", {"session_id": "stored_legacy"}))
+        self.assertTrue(response["ok"], response)
+        binding = response["result"]["binding"]
+        self.assertIsNone(binding["objective_id"])
+        self.assertIsNone(binding["lesson_run_id"])
+        self.assertEqual(binding["status"], "detached")
+
+
 class KernelBindingHandlerTest(unittest.TestCase):
     """CB-012: ``coursebook.domain`` owns ``binding.get`` once the kernel is present.
 
@@ -176,6 +254,9 @@ class KernelBindingHandlerTest(unittest.TestCase):
         self.assertEqual(binding["binding_id"], "bnd_active")
         self.assertEqual(binding["stored_session_id"], "stored_1")
         self.assertEqual(binding["revision"], 3)
+        # The section fields exist on every answer; a v1-shaped row has no section to name.
+        self.assertIsNone(binding["objective_id"])
+        self.assertIsNone(binding["lesson_run_id"])
 
     def test_runtime_id_does_not_resolve_a_binding(self) -> None:
         # A runtime id is a live-gateway id, not durable identity (AUDIT.md R1); the Desktop

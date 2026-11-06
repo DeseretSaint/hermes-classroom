@@ -30,8 +30,8 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v2.json",
-    "cb.rpc": "rpc.v5.json",
-    "cb.db": "db.v2.json",
+    "cb.rpc": "rpc.v6.json",
+    "cb.db": "db.v3.json",
     "cb.jobs": "jobs.v2.json",
     "cb.pack": "pack-manifest.v1.json",
     "cb.projection": "projection.v1.json",
@@ -39,7 +39,7 @@ CONTRACT_FILES: dict[str, str] = {
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 5
+WIRE_CONTRACT_VERSION = 6
 
 
 class ContractError(Exception):
@@ -224,8 +224,13 @@ def is_retryable(code: str) -> bool:
     return bool(error_catalog()[code]["retryable"])
 
 
-def build_error(code: str, message: str, **details: Any) -> dict[str, Any]:
-    """Build a contract-legal error object; raises ``ContractError`` for an unknown code."""
+def build_error(code: str, message: str, *, retryable: bool | None = None, **details: Any) -> dict[str, Any]:
+    """Build a contract-legal error object; raises ``ContractError`` for an unknown code.
+
+    ``retryable`` defaults to the code's catalogue value. A caller that knows *this* failure is
+    deterministic (a constraint violation, a non-contract handler result) passes ``False``: the
+    catalogue describes the code in general, not the specific failure.
+    """
     catalog = error_catalog()
     if code not in catalog:
         raise ContractError(f"unknown error code {code!r}", contract_id="cb.errors")
@@ -233,7 +238,7 @@ def build_error(code: str, message: str, **details: Any) -> dict[str, Any]:
         "code": code,
         "category": catalog[code]["category"],
         "message": message,
-        "retryable": catalog[code]["retryable"],
+        "retryable": bool(catalog[code]["retryable"]) if retryable is None else bool(retryable),
     }
     if details:
         error["details"] = {k: v for k, v in details.items() if v is not None}

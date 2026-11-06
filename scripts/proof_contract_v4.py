@@ -156,7 +156,8 @@ class V4PackReadProof(KernelCase):
         # Version-agnostic: v5 supersedes v4 additively, so a later version must not fail this proof.
         self.assertGreaterEqual(contracts.WIRE_CONTRACT_VERSION, 4)
         self.assertEqual(contracts.contract_version("cb.rpc"), contracts.WIRE_CONTRACT_VERSION)
-        self.assertEqual(contracts.contract_version("cb.db"), 2)
+        # cb.db v3 (CB-011) is additive over the v2 snapshot this proof froze against.
+        self.assertGreaterEqual(contracts.contract_version("cb.db"), 2)
         self.assertEqual(contracts.contract_version("cb.errors"), 2)
         self.assertEqual(contracts.contract_version("cb.projection"), 1)
 

@@ -1,0 +1,100 @@
+{
+  "startedAt": "2026-11-06T14:13:27.672Z",
+  "sessionId": "20261106_070925_0df5fc",
+  "sectionIndex": 0,
+  "steps": [
+    {
+      "step": "resume-chat",
+      "hash": "#/20261106_070925_0df5fc",
+      "paneBound": true,
+      "phases": [
+        "check"
+      ],
+      "hasAnswer": false,
+      "submitDisabled": null,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nCURRENT CHECK\n\nThere is no open check for this objective yet. Opening the section asks the backend for one.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n0 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nhermes-agent\nhooks\nimage_cache\nimages\ninstalls\nkanban\nlocks\nlogs\nlsp\nmemories\nopenviking\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "section-page",
+      "hash": "#/coursebook",
+      "paneBound": false,
+      "phases": [
+        "check",
+        "graded"
+      ],
+      "hasAnswer": true,
+      "answerDisabled": false,
+      "submitDisabled": true,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\n\nNo durable chat yet\n\nA new chat gets its stored session id after its first turn. Coursebook binds a lesson to that stored id — never to the live runtime id and never to \"the most recent chat\".\n\nOpen Coursebook\nTERMINAL\n127.0.0.1:44219\nBackend\nready\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "pane-check",
+      "hash": "#/20261106_070925_0df5fc",
+      "paneBound": true,
+      "phases": [
+        "check"
+      ],
+      "hasAnswer": true,
+      "answerDisabled": false,
+      "submitDisabled": true,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v2\ndiscrimination\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nSubmit answer\nEdit answer\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nhermes-agent\nhooks\nimage_cache\nimages\ninstalls\nkanban\nlocks\nlogs\nlsp\nmemories\nopenviking\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "pane-typed",
+      "hash": "#/20261106_070925_0df5fc",
+      "paneBound": true,
+      "phases": [
+        "check"
+      ],
+      "hasAnswer": true,
+      "answerDisabled": false,
+      "submitDisabled": false,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v2\ndiscrimination\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nSubmit answer\nEdit answer\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nhermes-agent\nhooks\nimage_cache\nimages\ninstalls\nkanban\nlocks\nlogs\nlsp\nmemories\nopenviking\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "pane-verdict",
+      "hash": "#/20261106_070925_0df5fc",
+      "paneBound": true,
+      "phases": [
+        "check",
+        "graded"
+      ],
+      "hasAnswer": false,
+      "submitDisabled": null,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v2\ndiscrimination\nHinted\nNot yet\ndoes not match an accepted answer\n\nThe backend recorded the next action.\n\nTry a new example\nExplain the difference\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nhermes-agent\nhooks\nimage_cache\nimages\ninstalls\nkanban\nlocks\nlogs\nlsp\nmemories\nopenviking\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "narrow",
+      "hash": "#/20261106_070925_0df5fc",
+      "paneBound": true,
+      "phases": [
+        "check",
+        "graded"
+      ],
+      "hasAnswer": false,
+      "submitDisabled": null,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v2\ndiscrimination\nHinted\nNot yet\ndoes not match an accepted answer\n\nThe backend recorded the next action.\n\nTry a new example\nExplain the difference\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "text200",
+      "hash": "#/20261106_070925_0df5fc",
+      "paneBound": true,
+      "phases": [
+        "check",
+        "graded"
+      ],
+      "hasAnswer": false,
+      "submitDisabled": null,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v2\ndiscrimination\nHinted\nNot yet\ndoes not match an accepted answer\n\nThe backend recorded the next action.\n\nTry a new example\nExplain the difference\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nhermes-agent\nhooks\nimage_cache\nimages\ninstalls\nkanban\nlocks\nlogs\nlsp\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    }
+  ],
+  "shots": [
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane-10-resumed-chat.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane-11-section-page-bound.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane-12-pane-check.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane-13-pane-answer-typed.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane-14-pane-verdict.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane-15-narrow-chat-pane.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane-16-text200-chat-pane.png"
+  ]
+}

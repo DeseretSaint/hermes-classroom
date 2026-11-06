@@ -129,6 +129,13 @@ here after a supervisor query of the live file:
 * So the accurate claim is "no course data in the root profile", not "the file was never written".
   The telemetry-in-root behaviour is filed as its own follow-up card rather than silently accepted.
 
+**Resolved in CB-014** (`wt/cb-014-telemetry-cinder`, `docs/REVIEW_CB014-telemetry.md`):
+`post_tool_call` now records a `usage_events` row only for a session the pre-turn gate bound to an
+enrollment, and returns before opening any connection for an unbound chat. `tests/test_hook_usage_telemetry.py`
+proves an unbound tool call writes zero rows and does not create plugin storage, and that a bound
+chat's row lands in the single-home scope only. The 48 historical rows above remain in the operator's
+store — removing operator data needs an explicit go-ahead.
+
 ## Not claimed in this run
 
 * No screen recording; screenshots + this transcript stand in.

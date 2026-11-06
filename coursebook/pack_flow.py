@@ -43,6 +43,7 @@ from typing import Any, Mapping
 
 from . import PACKAGE_ID, __version__, api, db
 from . import archive, packs
+from . import parent_authoring as authoring
 from .api import RpcError
 from .archive import PackRejected, PackLibrary, StagingArea
 
@@ -841,38 +842,372 @@ def pack_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
     size = destination.stat().st_size
     file_digest = "sha256:" + hashlib.sha256(destination.read_bytes()).hexdigest()
     with db.transaction() as connection:
-        artifact_id = _new_id("art")
-        connection.execute(
-            "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime, provenance_json,"
-            " ref_count, created_at) VALUES (?, ?, 'export', ?, ?, ?, 'application/zip', ?, 1, ?)",
-            (
-                artifact_id,
-                course["id"],
-                file_digest,
-                str(destination),
-                size,
-                json.dumps(
-                    {
-                        "generator": "coursebook.pack_flow",
-                        "model": None,
-                        "prompt_hash": None,
-                        "source_ids": [],
-                        "notes": (
-                            f"export of {pack_id} {version} from enrollment {enrollment['id']}; "
-                            f"pack content_hash {document['content_hash']}"
-                        ),
-                    },
-                    sort_keys=True,
-                ),
-                _now(),
-            ),
+        # ``artifacts`` is unique on (content_hash, kind): a second export of unchanged bytes is
+        # the same artifact, not a new one. Reuse the row and count the reference; only content
+        # that actually changed produces a new digest and therefore a new row.
+        existing = _row(
+            connection,
+            "SELECT * FROM artifacts WHERE content_hash = ? AND kind = 'export'",
+            (file_digest,),
         )
+        if existing is not None:
+            artifact_id = str(existing["id"])
+            recorded = Path(str(existing["path"]))
+            if not recorded.is_file() or recorded.stat().st_size != size:
+                # The row outlived its file (reconciliation, manual cleanup): repoint it at the
+                # archive just verified, so a reused artifact always resolves to real bytes.
+                connection.execute(
+                    "UPDATE artifacts SET path = ?, bytes = ?, ref_count = ref_count + 1 WHERE id = ?",
+                    (str(destination), size, artifact_id),
+                )
+            else:
+                connection.execute(
+                    "UPDATE artifacts SET ref_count = ref_count + 1 WHERE id = ?", (artifact_id,)
+                )
+        else:
+            artifact_id = _new_id("art")
+            connection.execute(
+                "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime, provenance_json,"
+                " ref_count, created_at) VALUES (?, ?, 'export', ?, ?, ?, 'application/zip', ?, 1, ?)",
+                (
+                    artifact_id,
+                    course["id"],
+                    file_digest,
+                    str(destination),
+                    size,
+                    json.dumps(
+                        {
+                            "generator": "coursebook.pack_flow",
+                            "model": None,
+                            "prompt_hash": None,
+                            "source_ids": [],
+                            "notes": (
+                                f"export of {pack_id} {version} from enrollment {enrollment['id']}; "
+                                f"pack content_hash {document['content_hash']}"
+                            ),
+                        },
+                        sort_keys=True,
+                    ),
+                    _now(),
+                ),
+            )
     return 0, {
         "artifact_id": artifact_id,
         "content_hash": str(document["content_hash"]),
         "file_count": len(review),
         "bytes": size,
     }
+
+
+# ── authored parent export (cb.rpc v6) ────────────────────────────────────
+
+
+def _blocked(reason: str, message: str, **details: Any) -> RpcError:
+    """A policy refusal the studio renders as an export blocker."""
+    return RpcError.of("POLICY_VIOLATION", message, reason=reason, **details)
+
+
+def _adopt_artifact(
+    connection,
+    *,
+    course_id: str,
+    kind: str,
+    mime: str,
+    path: Path,
+    data_hash: str,
+    size: int,
+    notes: str,
+) -> str:
+    """Record (or reuse) one artifact row for bytes that already exist on disk.
+
+    ``artifacts`` is unique on ``(content_hash, kind)``, so exporting unchanged bytes twice
+    reuses the row and only bumps ``ref_count``. Same rule as ``pack.export`` (CB-013).
+    """
+    existing = _row(
+        connection,
+        "SELECT * FROM artifacts WHERE content_hash = ? AND kind = ?",
+        (data_hash, kind),
+    )
+    if existing is not None:
+        artifact_id = str(existing["id"])
+        recorded = Path(str(existing["path"]))
+        if not recorded.is_file() or recorded.stat().st_size != size:
+            connection.execute(
+                "UPDATE artifacts SET path = ?, bytes = ?, ref_count = ref_count + 1 WHERE id = ?",
+                (str(path), size, artifact_id),
+            )
+        else:
+            connection.execute(
+                "UPDATE artifacts SET ref_count = ref_count + 1 WHERE id = ?", (artifact_id,)
+            )
+        return artifact_id
+    artifact_id = _new_id("art")
+    connection.execute(
+        "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime, provenance_json,"
+        " ref_count, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)",
+        (
+            artifact_id,
+            course_id,
+            kind,
+            data_hash,
+            str(path),
+            size,
+            mime,
+            json.dumps(
+                {
+                    "generator": "coursebook.parent_export",
+                    "model": None,
+                    "prompt_hash": None,
+                    "source_ids": [],
+                    "notes": notes,
+                },
+                sort_keys=True,
+            ),
+            _now(),
+        ),
+    )
+    return artifact_id
+
+
+def _artifact_ref(connection, artifact_id: str) -> dict[str, Any]:
+    row = _row(connection, "SELECT * FROM artifacts WHERE id = ?", (artifact_id,))
+    if row is None:
+        raise RpcError.of("INTERNAL_ERROR", "an exported artifact row disappeared inside its own transaction")
+    return {
+        "artifact_id": str(row["id"]),
+        "kind": str(row["kind"]),
+        "mime": str(row["mime"]),
+        "bytes": int(row["bytes"]),
+        "content_hash": str(row["content_hash"]),
+    }
+
+
+def parent_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """``parent.export``: authored pack + low-ink selectable-text PDF.
+
+    Refusal is the feature. The export runs only while the **active** ``final_approvals`` row's
+    ``content_hash`` equals the recomputed one; otherwise nothing is written and the caller gets
+    ``POLICY_VIOLATION`` with the same reason the blueprint's ``export.blocked_reason`` shows.
+
+    Work order (PREBUILD_SPEC §12 / AUDIT R2): short read → build bytes with **no transaction
+    open** → short write transaction that re-checks the hash and adopts the artifacts. A content
+    change between the two re-checks discards the files and refuses.
+    """
+    db.ensure_schema()
+    method = "parent.export"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    if not key:
+        raise RpcError.of("VALIDATION_FAILED", "parent.export requires an idempotency_key.",
+                          field="idempotency_key")
+    formats = [str(item) for item in (payload.get("formats") or ["pack", "pdf"])]
+    want_pdf = "pdf" in formats
+    enrollment_id = str(payload["enrollment_id"])
+
+    with db.read() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _row(connection, "SELECT * FROM enrollments WHERE id = ?", (enrollment_id,))
+        if enrollment is None:
+            raise RpcError.of("NOT_FOUND", "enrollment not found", enrollment_id=enrollment_id)
+        course = _row(connection, "SELECT * FROM courses WHERE id = ?", (enrollment["course_id"],))
+        if course is None or course["status"] == "deleted":
+            raise RpcError.of("NOT_FOUND", "course not found", course_id=enrollment["course_id"])
+        if course["pack_id"] is not None:
+            raise _blocked(
+                "course_pack_backed",
+                "this course was imported from a pack; use pack.export for its stored content.",
+                course_id=str(course["id"]),
+            )
+        plan = authoring.current_plan(connection, str(course["id"]))
+        if plan is None or str(plan["state"]) != "approved":
+            raise _blocked(
+                "plan_not_approved",
+                "the plan must be approved before the authored course can be exported.",
+                course_id=str(course["id"]),
+            )
+        approval = _row(
+            connection,
+            "SELECT * FROM final_approvals WHERE course_id = ? AND state = 'active'"
+            " ORDER BY approved_at DESC LIMIT 1",
+            (course["id"],),
+        )
+        if approval is None:
+            raise _blocked(
+                "no_final_approval",
+                "the generated lessons have not been approved; approve them before exporting.",
+                course_id=str(course["id"]),
+            )
+        plan_digest = authoring.plan_hash(connection, plan)
+        composed = authoring.sections(connection, course, plan)
+        if not authoring.ready_sections(composed):
+            raise _blocked(
+                "no_generated_content",
+                "this course has no generated lesson content to export.",
+                course_id=str(course["id"]),
+            )
+        current_content = authoring.content_hash(
+            str(course["id"]), str(plan["id"]), plan_digest, composed
+        )
+        if str(approval["content_hash"]) != current_content:
+            raise _blocked(
+                "changes_need_review",
+                "the authored content changed since it was approved; re-approve before exporting.",
+                current_content_hash=current_content,
+                approved_content_hash=str(approval["content_hash"]),
+            )
+        course_id = str(course["id"])
+        plan_id = str(plan["id"])
+
+    # Build and stage the bytes with no transaction open.
+    try:
+        with db.read() as build_connection:
+            course = _row(build_connection, "SELECT * FROM courses WHERE id = ?", (course_id,))
+            plan = _row(build_connection, "SELECT * FROM plans WHERE id = ?", (plan_id,))
+            composed = authoring.sections(build_connection, course, plan)
+            manifest, files = authoring.build_pack(build_connection, course, plan, composed)
+    except authoring.AuthoredExportBlocked as exc:
+        raise _blocked(exc.reason, str(exc), problems=exc.problems) from exc
+    except PackRejected as exc:
+        raise _blocked("export_not_exportable", f"the authored pack is not exportable: {exc}") from exc
+
+    root = export_root()
+    root.mkdir(parents=True, exist_ok=True)
+    digest = str(manifest["content_hash"]).split(":", 1)[1]
+    destination = root / f"{manifest['pack_id']}-{manifest['pack_version']}-{digest[:16]}.zip"
+    temporary = destination.with_name(destination.stem + ".partial.zip")
+    try:
+        archive.write_archive(temporary, manifest, files)
+        os.replace(temporary, destination)
+        written = _rehash_written_archive(destination)
+    except (PackRejected, OSError) as exc:
+        temporary.unlink(missing_ok=True)
+        destination.unlink(missing_ok=True)
+        raise _blocked("export_write_failed", f"the authored pack could not be written: {exc}") from exc
+    if str(written["content_hash"]) != str(manifest["content_hash"]):
+        destination.unlink(missing_ok=True)
+        raise RpcError.of("INTERNAL_ERROR", "the exported archive does not re-hash to its manifest")
+
+    pdf_path: Path | None = None
+    if want_pdf:
+        pdf_path = root / f"{manifest['pack_id']}-{manifest['pack_version']}-{digest[:16]}.pdf"
+        temporary_pdf = pdf_path.with_name(pdf_path.stem + ".partial.pdf")
+        try:
+            temporary_pdf.write_bytes(authoring.pdf_bytes(course, plan, composed))
+            os.replace(temporary_pdf, pdf_path)
+        except OSError as exc:
+            destination.unlink(missing_ok=True)
+            temporary_pdf.unlink(missing_ok=True)
+            raise _blocked("export_write_failed", f"the handout PDF could not be written: {exc}") from exc
+
+    # Read the written bytes and digest them with no transaction open: the adopt transaction must
+    # stay short (no file I/O under BEGIN IMMEDIATE).
+    zip_bytes = destination.read_bytes()
+    pack_hash = packs.file_sha256(zip_bytes)
+    pdf_data: bytes | None = None
+    if pdf_path is not None:
+        pdf_data = pdf_path.read_bytes()
+
+    now = _now()
+    export_id = _new_id("exp")
+    try:
+        with db.transaction() as connection:
+            replay = _idempotent_lookup(connection, key, method, payload_hash)
+            if replay is not None:
+                # A racing retry already adopted this export; drop our staged duplicate path only.
+                return replay
+            # Re-check against storage: the approval may have been superseded while we wrote bytes.
+            enrollment = _row(connection, "SELECT * FROM enrollments WHERE id = ?", (enrollment_id,))
+            course_row = _row(connection, "SELECT * FROM courses WHERE id = ?", (enrollment["course_id"],))
+            plan_row = _row(connection, "SELECT * FROM plans WHERE id = ?", (plan_id,))
+            active = _row(
+                connection,
+                "SELECT * FROM final_approvals WHERE course_id = ? AND state = 'active'"
+                " ORDER BY approved_at DESC LIMIT 1",
+                (course_row["id"],),
+            )
+            fresh = authoring.sections(connection, course_row, plan_row)
+            fresh_hash = authoring.content_hash(
+                str(course_row["id"]), str(plan_row["id"]),
+                authoring.plan_hash(connection, plan_row), fresh,
+            )
+            if active is None or str(active["content_hash"]) != fresh_hash:
+                raise _blocked(
+                    "changes_need_review",
+                    "the authored content changed while exporting; nothing was adopted.",
+                    current_content_hash=fresh_hash,
+                )
+            pack_artifact = _adopt_artifact(
+                connection,
+                course_id=str(course_row["id"]),
+                kind="pack",
+                mime="application/zip",
+                path=destination,
+                data_hash=pack_hash,
+                size=len(zip_bytes),
+                notes=f"authored parent pack for course {course_row['id']}; manifest {manifest['content_hash']}",
+            )
+            artifact_ids = [pack_artifact]
+            if pdf_path is not None:
+                pdf_bytes_written = pdf_data or b""
+                artifact_ids.append(
+                    _adopt_artifact(
+                        connection,
+                        course_id=str(course_row["id"]),
+                        kind="pdf",
+                        mime="application/pdf",
+                        path=pdf_path,
+                        data_hash=packs.file_sha256(pdf_bytes_written),
+                        size=len(pdf_bytes_written),
+                        notes=(
+                            "selectable-text low-ink handout for course "
+                            f"{course_row['id']}; manifest {manifest['content_hash']}"
+                        ),
+                    )
+                )
+            export_artifact = _adopt_artifact(
+                connection,
+                course_id=str(course_row["id"]),
+                kind="export",
+                mime="application/zip",
+                path=destination,
+                data_hash=pack_hash,
+                size=len(zip_bytes),
+                notes=(
+                    f"parent.export of course {course_row['id']} from enrollment {enrollment['id']}; "
+                    f"content_hash {fresh_hash}"
+                ),
+            )
+            artifact_ids.append(export_artifact)
+            result = {
+                "export_id": export_id,
+                "pack": {
+                    "pack_id": str(manifest["pack_id"]),
+                    "pack_version": str(manifest["pack_version"]),
+                    "manifest_hash": str(manifest["content_hash"]),
+                },
+                "files": [
+                    {
+                        "role": str(record["role"]),
+                        "name": str(record["path"]),
+                        "sha256": str(record["sha256"]),
+                        "bytes": int(record["bytes"]),
+                        "mime": str(record["mime"]),
+                    }
+                    for record in manifest["files"]
+                ],
+                "artifacts": [_artifact_ref(connection, artifact_id) for artifact_id in artifact_ids],
+                "content_hash": fresh_hash,
+                "exported_at": now,
+            }
+            _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
+    except RpcError:
+        destination.unlink(missing_ok=True)
+        if pdf_path is not None:
+            pdf_path.unlink(missing_ok=True)
+        raise
+    return 0, result
 
 
 # ── installed-pack reads (cb.rpc v4) ───────────────────────────────────────

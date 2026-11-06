@@ -13,6 +13,13 @@ import unittest
 
 from coursebook import api, contracts
 
+#: Handler registration happens when a module is imported, and the dispatch seam answers
+#: NOT_IMPLEMENTED until then. Importing the two registering modules here keeps this module's
+#: seam assertions independent of test discovery order (they used to depend on another module
+#: having imported them first).
+import coursebook.domain  # noqa: E402,F401  (registers the kernel methods)
+import coursebook.pack_flow  # noqa: E402,F401  (registers the pack methods)
+
 #: Added in cb.rpc v2. Every one of these must stay schema-complete and bounded.
 V2_NEW_METHODS = (
     "library.list",
@@ -46,6 +53,19 @@ V5_NEW_METHODS = (
     "course.outline",
     "check.get",
     "lesson.assist",
+)
+
+#: Added in cb.rpc v6 (CB-011): the Parent Studio authoring surface (brief, draft edit, final
+#: approval, blueprint read, authored export, reflections).
+V6_NEW_METHODS = (
+    "parent.brief.create",
+    "parent.brief.get",
+    "parent.plan.edit",
+    "parent.final.approve",
+    "parent.blueprint.read",
+    "parent.export",
+    "parent.reflection.record",
+    "parent.reflection.list",
 )
 
 
@@ -156,11 +176,11 @@ class ContractSetTest(unittest.TestCase):
                 self.assertRegex(entry["sha256"], r"^sha256:[a-f0-9]{64}$")
                 self.assertEqual(entry["version"], contracts.contract_version(entry["id"]))
 
-    def test_wire_contract_is_v5(self) -> None:
+    def test_wire_contract_is_v6(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 5)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 6)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v5"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v6"))
         # Every place the wire version is echoed (both response envelopes, health.get) must agree.
         # A missed constant is an envelope the plugin itself produces and cannot validate.
         echo = _wire_echoes(contracts.contract("cb.rpc"))
@@ -400,7 +420,9 @@ class V2AmendmentTest(unittest.TestCase):
         self.assertFalse(catalog["retryable"])
 
     def test_db_v2_adds_durable_lesson_storage_with_a_migration_plan(self) -> None:
-        db = contracts.contract("cb.db")
+        # The v2 snapshot, not the live inventory: cb.db moved on to v3 under CB-011, and this
+        # test is a fact about what v2 froze.
+        db = _document("db.v2.json")
         self.assertEqual(db["schema_version"], 2)
         tables = db["tables"]
         for table in ("lesson_runs", "lesson_segments"):
@@ -492,8 +514,10 @@ class V3AmendmentTest(unittest.TestCase):
         v3_methods = set(_document("rpc.v3.json")["$defs"]["method"]["enum"])
         self.assertEqual(v3_methods, v2_methods | set(V3_NEW_METHODS))
         self.assertEqual(len(v3_methods), 38)
-        # v4 carries every v3 method verbatim and adds only the installed-pack reads.
-        self.assertEqual(set(contracts.method_names()), v3_methods | set(V4_NEW_METHODS) | set(V5_NEW_METHODS))
+        # v4/v5 carry every v3 method verbatim, so the chain is append-only. (v6 appended the
+        # Parent Studio family afterwards; the live inventory is asserted in V6AmendmentTest.)
+        v5_methods = set(_document("rpc.v5.json")["$defs"]["method"]["enum"])
+        self.assertEqual(v5_methods, v3_methods | set(V4_NEW_METHODS) | set(V5_NEW_METHODS))
         for method in V3_NEW_METHODS:
             with self.subTest(method=method):
                 schema = contracts.method_schema(method)
@@ -506,11 +530,12 @@ class V3AmendmentTest(unittest.TestCase):
 
     def test_v3_claims_no_new_storage_and_no_new_error_code(self) -> None:
         # Decision: the queue is derived from committed evidence + learner action events, and a
-        # dispute lives inside the attempt's provenance. Neither gets a table in v3, so cb.db and
-        # cb.errors stay at v2 and no migration is implied.
-        self.assertEqual(contracts.contract_version("cb.db"), 2)
+        # dispute lives inside the attempt's provenance. Neither gets a table, so cb.db stayed at
+        # the v2 snapshot v3 froze against and no migration was implied. (cb.db has since moved to
+        # v3 for CB-011's Parent Studio tables; that later delta is CB-011's, not this one's.)
+        self.assertEqual(_document("db.v2.json")["x-contract-version"], 2)
         self.assertEqual(contracts.contract_version("cb.errors"), 2)
-        tables = contracts.contract("cb.db")["tables"]
+        tables = _document("db.v2.json")["tables"]
         for absent in ("review_schedule", "review_items", "disputes"):
             self.assertNotIn(absent, tables)
         v2_codes = set(_document("errors.v2.json")["code_catalog"])
@@ -796,8 +821,11 @@ class V4AmendmentTest(unittest.TestCase):
 
     def test_v4_adds_only_the_installed_pack_read_surface(self) -> None:
         v4_methods = set(_document("rpc.v4.json")["$defs"]["method"]["enum"])
-        self.assertEqual(set(contracts.method_names()), v4_methods | set(V5_NEW_METHODS))
-        self.assertEqual(len(contracts.method_names()), 43)
+        # v5 is the snapshot that carries v4 verbatim; the live inventory (v6) is asserted in
+        # V6AmendmentTest, where the Parent Studio family is the only later delta.
+        v5_methods = set(_document("rpc.v5.json")["$defs"]["method"]["enum"])
+        self.assertEqual(v5_methods, v4_methods | set(V5_NEW_METHODS))
+        self.assertEqual(len(v5_methods), 43)
         for method in V4_NEW_METHODS:
             with self.subTest(method=method):
                 schema = contracts.method_schema(method)
@@ -887,8 +915,9 @@ class V4AmendmentTest(unittest.TestCase):
 
     def test_v4_claims_no_new_storage_and_no_new_error_code(self) -> None:
         # Both methods read what adoption and pack.delete already write: the library index and the
-        # packs row. No table, no column, no migration, no error code.
-        self.assertEqual(contracts.contract_version("cb.db"), 2)
+        # packs row. No table, no column, no migration, no error code — the storage snapshot this
+        # amendment froze against is cb.db v2.
+        self.assertEqual(_document("db.v2.json")["x-contract-version"], 2)
         self.assertEqual(contracts.contract_version("cb.errors"), 2)
         v2_codes = set(_document("errors.v2.json")["code_catalog"])
         self.assertEqual(set(contracts.error_codes()), v2_codes)
@@ -1136,6 +1165,14 @@ FROZEN_RPC_SHA256 = {
     "rpc.v2.json": "sha256:4afc3c5fe0248c32733884dc68295f4a3aff916df7782f437945a8862e4352f4",
     "rpc.v3.json": "sha256:006232ae71b642fd44d6461ce0e0f83f7fd40cf6dfeb4b0730fc4283cb6aad9a",
     "rpc.v4.json": "sha256:b910c5e4a02015db6d35131e283b10582a4a8d400a24b9f3a6f8b242b538ad49",
+    "rpc.v5.json": "sha256:e4dfea0e031b32698e9e354f640b25acfcdf68244ec819a3cedc375e8bd8b156",
+}
+
+#: The superseded storage snapshots stay on disk and stay byte-identical: a later amendment is a
+#: new file, never an edit to one a client or a migration already recorded.
+FROZEN_DB_SHA256 = {
+    "db.v1.json": "sha256:e4ad371ba64a8dc76a3055a46c7a127160028d17c36ec07413e542d0f9a8d53a",
+    "db.v2.json": "sha256:873fd56c4ea0a7229721ce9eb6065dd2a9370cc5563099852c88858e0413c0d7",
 }
 
 
@@ -1153,19 +1190,22 @@ class V5AmendmentTest(unittest.TestCase):
             with self.subTest(filename=filename):
                 digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
                 self.assertEqual(f"sha256:{digest}", expected)
-        for version in (1, 2, 3, 4):
+        for version in (1, 2, 3, 4, 5):
             # Not in the inventory, and not silently repurposed: history stays history.
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v5.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v6.json")
 
     def test_v5_adds_only_the_outline_check_and_assist_surface(self) -> None:
+        # The v5 snapshot, not the live inventory: v6 appended the Parent Studio family afterwards.
         v4 = _document("rpc.v4.json")
         v4_methods = list(v4["$defs"]["method"]["enum"])
         self.assertEqual(len(v4_methods), 40)
-        self.assertEqual(set(contracts.method_names()), set(v4_methods) | set(V5_NEW_METHODS))
-        self.assertEqual(len(contracts.method_names()), 43)
+        v5 = _document("rpc.v5.json")
+        v5_methods = list(v5["$defs"]["method"]["enum"])
+        self.assertEqual(set(v5_methods), set(v4_methods) | set(V5_NEW_METHODS))
+        self.assertEqual(len(v5_methods), 43)
         # Append-only: the v4 order survives as a prefix, so a client diffing enums sees no churn.
-        self.assertEqual(list(contracts.method_names())[: len(v4_methods)], v4_methods)
+        self.assertEqual(v5_methods[: len(v4_methods)], v4_methods)
         for method in V5_NEW_METHODS:
             with self.subTest(method=method):
                 schema = contracts.method_schema(method)
@@ -1378,7 +1418,9 @@ class V5AmendmentTest(unittest.TestCase):
         self.assertNotIn("expected_revision", schema["request"]["properties"])
 
     def test_v5_claims_no_new_storage_and_no_new_error_code(self) -> None:
-        self.assertEqual(contracts.contract_version("cb.db"), 2)
+        # The v5 surface reads and writes the storage snapshot it froze against, cb.db v2. (cb.db
+        # moved to v3 afterwards for CB-011's Parent Studio tables, not for anything v5 added.)
+        self.assertEqual(_document("db.v2.json")["x-contract-version"], 2)
         self.assertEqual(contracts.contract_version("cb.errors"), 2)
         self.assertEqual(set(contracts.error_codes()),
                          set(_document("errors.v2.json")["code_catalog"]))
@@ -1406,6 +1448,511 @@ class V5AmendmentTest(unittest.TestCase):
             "evidence",
             # the honest omission, recorded rather than silently dropped
             "section_titles",
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+
+def _parent_brief(**overrides) -> dict:
+    brief = {
+        "title": "Kitchen chemistry for a seven-year-old",
+        "goal": "Explain why baking soda fizzes and predict what changes it",
+        "starting_point": None,
+        "age_band": "7-9",
+        "reading_level": "early reader, short sentences",
+        "duration_minutes": 45,
+        "setting": "home",
+        "materials": ["baking soda", "vinegar", "two bowls"],
+        "exclusions": ["no open flame"],
+        "supervision": "An adult pours the vinegar; the child measures and writes.",
+        "desired_pages": 6,
+        "desired_visuals": "diagrams",
+        "narration": "script",
+        "locale": "en-US",
+        "egress_acknowledged": True,
+        "redaction_requested": False,
+    }
+    brief.update(overrides)
+    return brief
+
+
+def _blueprint_file(**overrides) -> dict:
+    item = {
+        "role": "parent_guide",
+        "title": "Parent guide — all sections",
+        "objective_id": None,
+        "text": "Ask the child to predict first, then measure.",
+        "sha256": "sha256:" + "a" * 64,
+        "bytes": 1200,
+        "source": "authored",
+        "truncated": False,
+    }
+    item.update(overrides)
+    return item
+
+
+def _blueprint_result(**overrides) -> dict:
+    result = {
+        "course_id": "crs_12345678",
+        "recipe": "parent",
+        "plan": {"plan_id": "pln_12345678", "version": 2, "state": "approved",
+                 "plan_hash": "sha256:" + "b" * 64},
+        "approval": {"state": "active", "plan_hash": "sha256:" + "b" * 64,
+                     "content_hash": "sha256:" + "c" * 64,
+                     "approved_at": "2026-11-06T00:00:00+00:00", "invalidated_reason": None},
+        "content_hash": "sha256:" + "c" * 64,
+        "export": {"ready": True, "blocked_reason": None},
+        "tabs": {
+            "parent_guide": [_blueprint_file()],
+            "learner_pages": [_blueprint_file(role="learner_page", title="Section 1")],
+            "answers": [_blueprint_file(role="answer_guide", title="Answer guide — section 1")],
+            "narration": [_blueprint_file(role="narration", title="Narration transcript — section 1")],
+        },
+        "sources": [
+            {"source_id": "src_12345678", "title": "Why does baking soda fizz?",
+             "url": None, "publisher": None, "support_status": "unassessed",
+             "fetched_at": "2026-11-06T00:00:00+00:00"}
+        ],
+    }
+    result.update(overrides)
+    return result
+
+
+def _export_result(**overrides) -> dict:
+    result = {
+        "export_id": "exp_12345678",
+        "pack": {"pack_id": "crs_12345678_parent", "pack_version": "1.0.0",
+                 "manifest_hash": "sha256:" + "d" * 64},
+        "files": [
+            {"role": "parent_guide", "name": "parent-guide.md",
+             "sha256": "sha256:" + "a" * 64, "bytes": 1200, "mime": "text/markdown"},
+            {"role": "learner_page", "name": "learner/page-01.md",
+             "sha256": "sha256:" + "b" * 64, "bytes": 900, "mime": "text/markdown"},
+            {"role": "answer_guide", "name": "answer-guide.md",
+             "sha256": "sha256:" + "c" * 64, "bytes": 700, "mime": "text/markdown"},
+            {"role": "narration", "name": "narration.md",
+             "sha256": "sha256:" + "e" * 64, "bytes": 500, "mime": "text/markdown"},
+        ],
+        "artifacts": [
+            {"artifact_id": "art_12345678", "kind": "pack", "mime": "application/zip",
+             "bytes": 4000, "content_hash": "sha256:" + "f" * 64},
+            {"artifact_id": "art_87654321", "kind": "pdf", "mime": "application/pdf",
+             "bytes": 3000, "content_hash": "sha256:" + "1" * 64},
+        ],
+        "content_hash": "sha256:" + "c" * 64,
+        "exported_at": "2026-11-06T00:00:00+00:00",
+    }
+    result.update(overrides)
+    return result
+
+
+def _reflection(**overrides) -> dict:
+    item = {
+        "reflection_id": "rfl_12345678",
+        "difficulty": "about_right",
+        "revisit_note": "He lost interest at the measuring step; revisit with a smaller bowl.",
+        "apply_to_next_draft": True,
+        "plan_hash": "sha256:" + "b" * 64,
+        "content_hash": "sha256:" + "c" * 64,
+        "created_at": "2026-11-06T00:00:00+00:00",
+    }
+    item.update(overrides)
+    return item
+
+
+class V6AmendmentTest(unittest.TestCase):
+    """CB-011: the Parent Studio authoring surface, and what it may hold that a learner surface may not.
+
+    The studio cannot be built on v5: a queued plan job had no typed brief, a draft plan had no
+    edit command, a lesson-set approval had nowhere to live, authored content had no export and the
+    five blueprint tabs had no read. v6 adds eight methods, two additive cb.db v3 tables and no
+    error code. The answers tab is the one place answer text legitimately reaches the wire, and it
+    is reachable only here.
+    """
+
+    def test_superseded_documents_are_byte_identical(self) -> None:
+        for filename, expected in {**FROZEN_RPC_SHA256, **FROZEN_DB_SHA256}.items():
+            with self.subTest(filename=filename):
+                digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
+                self.assertEqual(f"sha256:{digest}", expected)
+        for version in (1, 2, 3, 4, 5):
+            self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
+        for version in (1, 2):
+            self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v6.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v3.json")
+
+    def test_v6_adds_only_the_parent_studio_surface(self) -> None:
+        v5 = _document("rpc.v5.json")
+        v5_methods = list(v5["$defs"]["method"]["enum"])
+        self.assertEqual(len(v5_methods), 43)
+        self.assertEqual(set(contracts.method_names()), set(v5_methods) | set(V6_NEW_METHODS))
+        self.assertEqual(len(contracts.method_names()), 51)
+        # Append-only: the v5 order survives as a prefix, so a client diffing enums sees no churn.
+        self.assertEqual(list(contracts.method_names())[: len(v5_methods)], v5_methods)
+        self.assertEqual(
+            sorted(set(contracts.method_names()) - set(v5_methods)), sorted(V6_NEW_METHODS)
+        )
+        for method in V6_NEW_METHODS:
+            with self.subTest(method=method):
+                schema = contracts.method_schema(method)
+                for side in ("request", "response"):
+                    self.assertEqual(schema[side]["type"], "object", side)
+                    self.assertIs(schema[side].get("additionalProperties"), False, side)
+                    self.assertEqual(_schema_problems(schema[side]), [], f"{method}.{side}")
+
+    def test_every_v1_to_v5_method_schema_is_carried_over_verbatim(self) -> None:
+        current = contracts.contract("cb.rpc")
+        for version in (1, 2, 3, 4, 5):
+            document = _document(f"rpc.v{version}.json")
+            for method in document["$defs"]["method"]["enum"]:
+                with self.subTest(version=version, method=method):
+                    original = document["$defs"]["methods"]["properties"][method]
+                    carried = json.loads(json.dumps(current["$defs"]["methods"]["properties"][method]))
+                    if method == "health.get":
+                        carried["response"]["properties"]["contract_version"] = {
+                            "const": original["response"]["properties"]["contract_version"]["const"]
+                        }
+                    self.assertEqual(original, carried)
+            self.assertEqual(
+                document["$defs"]["envelope_request"]["properties"]["contract_version"]["const"], version
+            )
+        self.assertEqual(
+            current["$defs"]["methods"]["properties"]["health.get"]["response"]["properties"]
+            ["contract_version"]["const"],
+            contracts.WIRE_CONTRACT_VERSION,
+        )
+        for path, value in _wire_echoes(current):
+            self.assertEqual(value, contracts.WIRE_CONTRACT_VERSION, path)
+
+    def test_parent_brief_is_typed_and_cannot_skip_the_egress_disclosure(self) -> None:
+        schema = contracts.method_schema("parent.brief.create")
+        self.assertEqual(set(schema["request"]["required"]), {"brief"})
+        brief = contracts.contract("cb.rpc")["$defs"]["parent_brief"]
+        for required in (
+            "title", "goal", "age_band", "reading_level", "duration_minutes", "setting",
+            "materials", "exclusions", "supervision", "desired_pages", "desired_visuals",
+            "narration", "egress_acknowledged",
+        ):
+            self.assertIn(required, brief["required"], required)
+        # Acknowledgement is a wire-level fact: a brief that has not seen the disclosure does not
+        # validate, so no course can be created under an unacknowledged paste.
+        self.assertEqual(brief["properties"]["egress_acknowledged"]["const"], True)
+        names = _property_names(brief)
+        for forbidden in ("provider", "model", "api_key", "credentials", "tools", "transcript"):
+            self.assertNotIn(forbidden, names, forbidden)
+        # The brief is readable, which is what makes "duplicate brief" a copy and not a re-render.
+        read = contracts.method_schema("parent.brief.get")
+        self.assertEqual(set(read["request"]["required"]), {"course_id"})
+        self.assertEqual(set(read["response"]["required"]),
+                         {"course_id", "enrollment_id", "brief", "plan_job", "created_at"})
+        self.assertEqual(read["response"]["properties"]["brief"], {"$ref": "#/$defs/parent_brief"})
+
+    def test_final_approval_is_a_different_fact_from_plan_approval(self) -> None:
+        tables = contracts.contract("cb.db")["tables"]
+        # The plan-level gate is unchanged: plans.state still has exactly the three v2 values.
+        self.assertEqual(set(tables["plans"]["columns"]["state"]["enum"]),
+                         {"draft", "approved", "superseded"})
+        # The lesson-set approval is its own row about its own hashes.
+        approval = tables["final_approvals"]["columns"]
+        for column in ("id", "course_id", "plan_id", "plan_hash", "content_hash", "state",
+                       "invalidation_reason", "approved_at", "superseded_at"):
+            self.assertIn(column, approval, column)
+        self.assertEqual(set(approval["state"]["enum"]), {"active", "superseded"})
+        self.assertEqual(approval["state"]["default"], "active")
+        self.assertEqual(
+            set(approval["invalidation_reason"]["enum"]),
+            {"plan_edited", "content_changed", "course_edited", "replaced"},
+        )
+        self.assertTrue(approval["invalidation_reason"]["nullable"])
+
+        approve = contracts.method_schema("parent.final.approve")
+        self.assertEqual(
+            set(approve["request"]["required"]),
+            {"enrollment_id", "plan_id", "plan_hash", "content_hash"},
+        )
+        # plan.approve binds one hash; final approval binds the plan hash AND the content hash.
+        plan_approve = contracts.method_schema("plan.approve")
+        self.assertNotIn("content_hash", plan_approve["request"]["properties"])
+        self.assertEqual(approve["response"]["properties"]["state"], {"const": "active"})
+
+        # The studio's read of the same fact, including how it stopped binding.
+        status = contracts.contract("cb.rpc")["$defs"]["parent_approval_status"]
+        self.assertEqual(set(status["properties"]["state"]["enum"]),
+                         {"none", "active", "superseded"})
+        self.assertEqual(
+            set(status["properties"]["invalidated_reason"]["oneOf"][0]["enum"]),
+            {"plan_edited", "content_changed", "course_edited", "replaced"},
+        )
+        self.assertEqual(status["properties"]["invalidated_reason"]["oneOf"][1], {"type": "null"})
+
+    def test_final_approval_invalidation_is_storable_and_gates_export(self) -> None:
+        db = contracts.contract("cb.db")
+        self.assertEqual(db["schema_version"], 3)
+        self.assertEqual(contracts.contract_version("cb.db"), 3)
+        migration = [entry for entry in db["migration_plan"] if entry["version"] == 3]
+        self.assertEqual(len(migration), 1)
+        self.assertEqual(migration[0]["migration"],
+                         "0003_parent_studio_approvals_and_reflections.sql")
+        self.assertTrue(any("Additive only" in line for line in migration[0]["impact"]))
+        # The migration the contract names is on disk and creates exactly those tables.
+        sql = (contracts.CONTRACT_DIR.parent / "coursebook" / "migrations"
+               / migration[0]["migration"]).read_text(encoding="utf-8")
+        for table in ("final_approvals", "parent_reflections"):
+            self.assertIn(f"CREATE TABLE {table}", sql)
+        self.assertIn("CHECK (state IN ('active', 'superseded'))", sql)
+        self.assertIn("'plan_edited', 'content_changed', 'course_edited', 'replaced'", sql)
+
+        # "Changes need review" is a stored value plus a wire blocker, not a UI guess.
+        export = contracts.method_schema("parent.export")["response"]
+        self.assertIn("content_hash", export["required"])
+        studio = contracts.method_schema("parent.blueprint.read")["response"]
+        self.assertIn("content_hash", studio["required"])
+        status = contracts.contract("cb.rpc")["$defs"]["parent_export_status"]
+        self.assertEqual(
+            set(status["properties"]["blocked_reason"]["oneOf"][0]["enum"]),
+            {"no_final_approval", "changes_need_review", "plan_not_approved", "no_generated_content"},
+        )
+        self.assertEqual(status["properties"]["ready"]["type"], "boolean")
+
+    def test_blueprint_read_serves_declared_text_and_never_a_path(self) -> None:
+        rpc = contracts.contract("cb.rpc")
+        file_schema = rpc["$defs"]["blueprint_file"]
+        self.assertEqual(set(file_schema["required"]),
+                         {"role", "title", "text", "sha256", "bytes", "source", "truncated"})
+        self.assertEqual(set(file_schema["properties"]["role"]["enum"]),
+                         {"parent_guide", "learner_page", "answer_guide", "narration"})
+        self.assertEqual(set(file_schema["properties"]["source"]["enum"]), {"authored", "pack"})
+        self.assertLessEqual(file_schema["properties"]["text"]["maxLength"], 20000)
+
+        response = contracts.method_schema("parent.blueprint.read")["response"]
+        names = _property_names(response)
+        for forbidden in ("path", "directory", "local_path", "file_path", "absolute_path"):
+            self.assertNotIn(forbidden, names, forbidden)
+        self.assertEqual(set(response["properties"]["tabs"]["required"]),
+                         {"parent_guide", "learner_pages", "answers", "narration"})
+        self.assertIn("sources", response["required"])
+
+        # Every tab is present and bounded; a long course must be able to say it was clipped.
+        for tab, schema in response["properties"]["tabs"]["properties"].items():
+            self.assertEqual(schema["type"], "array", tab)
+            self.assertIn("maxItems", schema, tab)
+
+    def test_the_answers_tab_exception_is_scoped_to_the_studio(self) -> None:
+        # The one surface allowed to carry answer text is the parent's own authoring view. The
+        # learner surfaces must still not name it in any spelling.
+        studio_file = contracts.contract("cb.rpc")["$defs"]["blueprint_file"]
+        self.assertEqual(
+            set(studio_file["properties"]["role"]["enum"]),
+            {"parent_guide", "learner_page", "answer_guide", "narration"},
+        )
+        self.assertIn("text", studio_file["required"])
+        for method in ("lesson.page", "check.get", "course.outline", "evidence.inspect"):
+            names = _property_names(contracts.method_schema(method)["response"])
+            for forbidden in ("answer_guide", "reference_answer", "accepted_answers",
+                              "rubric", "answer_text"):
+                self.assertNotIn(forbidden, names, f"{method} must not carry {forbidden}")
+        # And the studio has no field that could hand an answer to a learner binding.
+        self.assertNotIn("enrollment_id", contracts.method_schema("parent.blueprint.read")["request"]["required"])
+
+    def test_parent_export_reuses_the_pack_vocabulary_and_a_pdf_artifact(self) -> None:
+        pack_roles = set(contracts.contract("cb.pack")["properties"]["files"]["items"]
+                         ["properties"]["role"]["enum"])
+        export_files = contracts.contract("cb.rpc")["$defs"]["parent_export_file"]
+        roles = set(export_files["properties"]["role"]["enum"])
+        self.assertEqual(roles, {"parent_guide", "learner_page", "answer_guide", "narration"})
+        self.assertTrue(roles <= pack_roles, sorted(roles - pack_roles))
+        # A pack-internal name, not a local path.
+        self.assertIn("not", export_files["properties"]["name"])
+        self.assertNotIn("path", export_files["properties"])
+        response = contracts.method_schema("parent.export")["response"]
+        for required in ("export_id", "pack", "files", "artifacts", "content_hash", "exported_at"):
+            self.assertIn(required, response["required"])
+        self.assertLessEqual(response["properties"]["files"]["maxItems"], 200)
+        kinds = set(contracts.contract("cb.rpc")["$defs"]["artifact_ref"]["properties"]["kind"]["enum"])
+        self.assertIn("pdf", kinds)
+        self.assertIn("pack", kinds)
+        # Export is content-fenced: the request names the enrollment, the response names the hash
+        # that was approved, so a stale panel cannot export bytes nobody approved.
+        self.assertEqual(set(contracts.method_schema("parent.export")["request"]["required"]),
+                         {"enrollment_id"})
+
+    def test_v6_payloads_validate(self) -> None:
+        contracts.validate_request_payload("parent.brief.create", {"brief": _parent_brief()})
+        contracts.validate_request_payload("parent.brief.get", {"course_id": "crs_12345678"})
+        contracts.validate_request_payload(
+            "parent.plan.edit",
+            {
+                "enrollment_id": "enr_12345678",
+                "plan_id": "pln_12345678",
+                "expected_plan_hash": "sha256:" + "b" * 64,
+                "objective_edits": [
+                    {"objective_id": "obj_12345678", "title": "Predict, then measure",
+                     "evidence_target": "comprehension", "criteria": [{"id": "c1"}]}
+                ],
+                "add_objectives": [{"title": "Write the result down", "evidence_target": "production"}],
+                "remove_objective_ids": [],
+                "order": ["obj_12345678"],
+            },
+        )
+        contracts.validate_request_payload(
+            "parent.final.approve",
+            {"enrollment_id": "enr_12345678", "plan_id": "pln_12345678",
+             "plan_hash": "sha256:" + "b" * 64, "content_hash": "sha256:" + "c" * 64},
+        )
+        contracts.validate_request_payload("parent.blueprint.read", {"course_id": "crs_12345678"})
+        contracts.validate_request_payload(
+            "parent.export", {"enrollment_id": "enr_12345678", "formats": ["pack", "pdf"]}
+        )
+        contracts.validate_request_payload(
+            "parent.reflection.record",
+            {"course_id": "crs_12345678", "difficulty": "too_hard", "apply_to_next_draft": True},
+        )
+        contracts.validate_request_payload("parent.reflection.list", {"course_id": "crs_12345678"})
+
+        contracts.validate_response_payload(
+            "parent.brief.create",
+            {"course_id": "crs_12345678", "enrollment_id": "enr_12345678",
+             "job_id": "job_12345678", "state": "queued", "revision": 0},
+        )
+        contracts.validate_response_payload(
+            "parent.brief.get",
+            {"course_id": "crs_12345678", "enrollment_id": "enr_12345678",
+             "brief": _parent_brief(), "plan_job": None,
+             "created_at": "2026-11-06T00:00:00+00:00"},
+        )
+        contracts.validate_response_payload(
+            "parent.plan.edit",
+            {"plan_id": "pln_12345678", "plan_version": 3, "plan_hash": "sha256:" + "d" * 64,
+             "objective_ids": ["obj_12345678"], "changes_need_review": True, "revision": 8},
+        )
+        contracts.validate_response_payload(
+            "parent.final.approve",
+            {"approval_id": "apr_12345678", "state": "active",
+             "plan_hash": "sha256:" + "b" * 64, "content_hash": "sha256:" + "c" * 64,
+             "approved_at": "2026-11-06T00:00:00+00:00", "revision": 9},
+        )
+        contracts.validate_response_payload("parent.blueprint.read", _blueprint_result())
+        contracts.validate_response_payload("parent.blueprint.read", _blueprint_result(
+            plan=None, approval={"state": "none", "plan_hash": None, "content_hash": None,
+                                 "approved_at": None, "invalidated_reason": None},
+            export={"ready": False, "blocked_reason": "no_final_approval"},
+        ))
+        contracts.validate_response_payload("parent.export", _export_result())
+        contracts.validate_response_payload(
+            "parent.reflection.record",
+            {"reflection_id": "rfl_12345678", "difficulty": "easy",
+             "plan_hash": None, "content_hash": None,
+             "created_at": "2026-11-06T00:00:00+00:00"},
+        )
+        contracts.validate_response_payload(
+            "parent.reflection.list", {"reflections": [_reflection()], "total": 1}
+        )
+        # A reflection cannot claim evidence: there is no field for one.
+        self.assertEqual(
+            set(contracts.contract("cb.rpc")["$defs"]["parent_reflection"]["required"]),
+            {"reflection_id", "difficulty", "revisit_note", "apply_to_next_draft",
+             "plan_hash", "content_hash", "created_at"},
+        )
+
+    def test_v6_refuses_the_payloads_that_would_make_it_dishonest(self) -> None:
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "parent.brief.create", {"brief": _parent_brief(egress_acknowledged=False)}
+            )
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "parent.reflection.record",
+                {"course_id": "crs_12345678", "difficulty": "mastered"},
+            )
+        with self.assertRaises(contracts.ContractError):
+            # A path, absolute or traversing, is not a pack-internal name.
+            contracts.validate_response_payload("parent.export", _export_result(
+                files=[{"role": "parent_guide", "name": "../../etc/passwd",
+                        "sha256": "sha256:" + "a" * 64, "bytes": 10, "mime": "text/markdown"}]
+            ))
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_response_payload("parent.export", _export_result(
+                files=[{"role": "transcript", "name": "chat.md",
+                        "sha256": "sha256:" + "a" * 64, "bytes": 10, "mime": "text/markdown"}]
+            ))
+        with self.assertRaises(contracts.ContractError):
+            # The answer text may ride in `text`, never as an unexplained extra field.
+            leaked = _blueprint_result()
+            leaked["tabs"]["answers"][0]["reference_answer"] = "carbon dioxide"
+            contracts.validate_response_payload("parent.blueprint.read", leaked)
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_response_payload(
+                "parent.plan.edit",
+                {"plan_id": "pln_12345678", "plan_version": 3, "plan_hash": "sha256:" + "d" * 64,
+                 "objective_ids": [], "changes_need_review": False, "revision": 8},
+            )
+
+    def test_v6_payloads_validate_before_any_handler(self) -> None:
+        for method, payload in (
+            ("parent.brief.create", {}),
+            ("parent.brief.create", {"brief": _parent_brief(egress_acknowledged=False)}),
+            ("parent.brief.get", {}),
+            ("parent.plan.edit", {"enrollment_id": "enr_12345678", "plan_id": "pln_12345678"}),
+            ("parent.final.approve", {"enrollment_id": "enr_12345678", "plan_id": "pln_12345678",
+                                      "plan_hash": "sha256:" + "b" * 64}),
+            ("parent.blueprint.read", {"course_id": "x"}),
+            ("parent.export", {"format": "pdf"}),
+            ("parent.reflection.record", {"course_id": "crs_12345678", "difficulty": "hard"}),
+            ("parent.reflection.list", {"course_id": "crs_12345678", "limit": 201}),
+        ):
+            with self.subTest(method=method, payload=payload):
+                response = api.dispatch(_envelope(method, payload))
+                self.assertFalse(response["ok"])
+                self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
+
+    def test_v6_commands_are_fenced_and_reads_are_not(self) -> None:
+        envelope = contracts.contract("cb.rpc")["$defs"]["envelope_request"]
+        rules = {
+            tuple(rule["if"]["properties"]["method"]["enum"]): set(rule["then"]["required"])
+            for rule in envelope["allOf"]
+        }
+        self.assertEqual(rules[("parent.brief.create",)], {"idempotency_key"})
+        self.assertEqual(rules[("parent.plan.edit",)], {"idempotency_key", "expected_revision"})
+        self.assertEqual(rules[("parent.final.approve",)], {"idempotency_key", "expected_revision"})
+        self.assertEqual(rules[("parent.export",)], {"idempotency_key"})
+        self.assertEqual(rules[("parent.reflection.record",)], {"idempotency_key"})
+        for method in ("parent.brief.get", "parent.blueprint.read", "parent.reflection.list"):
+            self.assertNotIn((method,), rules, f"{method} is a read and must not be fenced")
+        # Export must not bump a revision: bumping would refuse an answer that is being graded.
+        self.assertNotIn("revision", contracts.method_schema("parent.export")["response"]["required"])
+
+    def test_v6_adds_no_error_code_and_no_job_kind(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.errors"), 2)
+        self.assertEqual(set(contracts.error_codes()),
+                         set(_document("errors.v2.json")["code_catalog"]))
+        # The one thing this card could not add: `lesson` as a job family. cb.vocabulary stays v1
+        # because every pack manifest embeds a reference to it, so lesson generation runs as the
+        # `plan` family with `brief.stage = lessons`. The decision is recorded in the docs.
+        job_kind = contracts.contract("cb.vocabulary")["$defs"]["job_kind"]["enum"]
+        self.assertNotIn("lesson", job_kind)
+        self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
+        self.assertEqual(contracts.contract_version("cb.jobs"), 2)
+        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_docs_publish_the_v6_surface_and_the_invalidation_rule(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for method in V6_NEW_METHODS:
+            self.assertIn(method, text, f"CONTRACTS.md does not document {method}")
+        for needle in (
+            "rpc.v6.json",
+            "db.v3.json",
+            "final_approvals",
+            "parent_reflections",
+            "content_hash",
+            "changes_need_review",
+            "invalidated_reason",
+            # the UX §10 mapping row must name the studio methods, not the old v1 guess
+            "parent.brief.create",
+            "parent.blueprint.read",
+            "parent.export",
+            # and the decision this card could not take must be written down, not implied
+            "brief.stage",
         ):
             self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
 

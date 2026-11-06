@@ -1,6 +1,7 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v5** (CB-026 additive amendment; v4 = CB-024, v3 = CB-022, v2 = CB-018).
+Status: **frozen at v6** (CB-011 additive amendment; v5 = CB-026, v4 = CB-024, v3 = CB-022,
+v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
 contract: **Atlas**. Implementers are the specialists named below.
 
@@ -15,17 +16,18 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v2.json` | 2 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v5.json` | 5 | Cinder (kernel + learning-loop methods), Sable (transport), Lattice (`pack.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v2.json` | 2 | Cinder | migrations, every command, evidence views |
+| `cb.rpc` | `contracts/rpc.v6.json` | 6 | Cinder (kernel + learning-loop + `parent.*` methods), Sable (transport), Lattice (`pack.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.db` | `contracts/db.v3.json` | 3 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v2.json` | 2 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v4** files for `cb.rpc`, `cb.errors`, `cb.db` and `cb.jobs` remain on disk, unmodified,
+The v1 **to v5** files for `cb.rpc`, the v1 **to v4** files for `cb.db`, and the v1 files for
+`cb.errors` and `cb.jobs` remain on disk, unmodified,
 as immutable history. `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
-`tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json`, so "additive" is a
-fact about the bytes rather than a claim about a diff.
+`tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so
+"additive" is a fact about the bytes rather than a claim about a diff.
 
 Each document carries `$id` (versioned URI), `x-contract-id`, `x-contract-version`, `x-owner`
 and, where superseded, `x-supersedes`. `tests/test_contracts.py` asserts that the id, the
@@ -36,7 +38,7 @@ version in the URI and the declared version agree for every file.
 `cb.rpc` is transport-neutral. The root schema validates a **request envelope**:
 
 ```json
-{ "contract": "cb.rpc", "contract_version": 5,
+{ "contract": "cb.rpc", "contract_version": 6,
   "method": "attempt.submit", "operation_id": "op-...", "idempotency_key": "...",
   "expected_revision": 12, "payload": { } }
 ```
@@ -50,7 +52,8 @@ something outside the contract becomes `INTERNAL_ERROR` — it is never rendered
 Envelope-level requirements added by v2, v3 and v5 (enforced by the schema before any handler runs).
 v4 adds none: both of its methods are reads, so they carry neither `idempotency_key` nor
 `expected_revision`. `course.outline` and `check.get` (v5) are reads for the same reason; only
-`lesson.assist` is a command:
+`lesson.assist` is a command. v6 adds the Parent Studio family; its three reads stay unfenced and
+its five commands are fenced as the table below says:
 
 | Method(s) | Required envelope fields |
 |---|---|
@@ -60,6 +63,14 @@ v4 adds none: both of its methods are reads, so they carry neither `idempotency_
 | `enrollment.update`, `notebook.update`, `binding.abandon` | `expected_revision` |
 | `review.action` | `idempotency_key`, `expected_revision` |
 | `lesson.assist` | `idempotency_key`, `expected_revision` |
+| `parent.brief.create`, `parent.export`, `parent.reflection.record` | `idempotency_key` (a double click must not mint two courses, two exports or two reflections) |
+| `parent.plan.edit`, `parent.final.approve` | `idempotency_key`, `expected_revision` |
+| `parent.brief.get`, `parent.blueprint.read`, `parent.reflection.list` | none — reads |
+
+Two v6 commands deliberately carry **no** `expected_revision`: `parent.export` is fenced by the
+approved content hash instead (bumping the enrollment revision would refuse an answer that is being
+graded), and `parent.reflection.record` appends a parent-reported note that no evidence
+classification depends on.
 
 `POST /api/plugins/coursebook/rpc` always answers **HTTP 200** with a contract envelope. A refused
 command is `ok:false` with an error code; a transport failure is the only reason a client sees an
@@ -460,6 +471,43 @@ No table, no column, no migration and no error code is added: every field is der
 `plans`/`objectives`/`checks`/`lesson_runs`/`attempts`, or written to the existing `evidence` table
 (`cb.db` v2). `cb.errors`, `cb.db`, `cb.jobs`, `cb.pack` and `cb.projection` stay at their versions.
 
+### `binding.get` section identity (additive within v5 — CB-009 pane scope)
+
+CB-009 found that `binding.get` returned neither `bindings.objective_id` nor `bindings.lesson_run_id`
+even though `cb.db` v2 stores both, so the Coursebook pane could scope only by enrollment: it had to
+render `library_item.evidence_summary.current_objective_id`, the enrollment's *current* section. A
+chat bound to section 3 therefore displayed section 1's page and section 1's detached run. Live
+evidence at the time: chat `20261106_072357_ad7e67` was bound active to `obj_9b596207…`
+(`bind_eacdfd2382ed494582a00539e84b3465`) while the pane rendered `obj_2ec4b8ec…`.
+
+The `binding` member of the `binding.get` response is declared as an **open object**
+(`{"type": "object"}`, no `additionalProperties: false`) in `rpc.v5.json`, and `cb.db` v2 already
+carries both columns. Emitting two fields the schema already permits is therefore additive within
+v5: **no v6, no schema file change, no version bump.** `rpc.v5.json` is untouched on disk, so the
+sha256 pins in `tests/test_contracts.py` still hold and every other v5 payload is byte-identical.
+
+Both fields are required on **every** non-null `binding` answer:
+
+| Field | Source | Meaning |
+|---|---|---|
+| `objective_id` | `bindings.objective_id` | the one section this chat governs; `null` for a legacy/course-level binding |
+| `lesson_run_id` | `bindings.lesson_run_id` | the run that section was opened under; `null` when the binding never named a run |
+
+Rules:
+
+* **Status semantics are unchanged.** `status` is still the row's own status (`active`, `paused`,
+  `detached`, `branched`, `orphaned`, `completed`) for the chat the request named. The section fields
+  do not derive, override or relax it; a detached binding still refuses a submit.
+* **`null` means "no section", never "this build did not answer".** A `cb.db` v1 binding table has no
+  `lesson_runs`; the platform seam answers both fields as `null` there rather than omitting them,
+  because every v1 binding is a course-level chat. A client can then tell a course-level chat from
+  an unanswered field.
+* **The write half already agrees.** `coursebook.bindings._view` has emitted both fields since
+  CB-013; this amendment makes the read half (`binding.get`) match the row `bind_session` wrote, so
+  there is one shape for a binding on the wire and not two.
+* The value is read from the row, never recomputed from "the current section" or from recency: the
+  pane scopes to the bound section, which is the point (AUDIT R1).
+
 ### What these three methods may not return
 
 This is the reason the methods are small. Each one is a *view*, and a view that leaks the grading
@@ -605,6 +653,244 @@ all three responses from the resulting rows under the rules above, and validates
 revision moves, and the next committed attempt is classified `hinted`). On a branch without that
 kernel the module skips with a stated reason rather than passing.
 
+## v6 delta (CB-011) — Parent Studio authoring surface
+
+`UX_SPEC.md` §10 describes a parent authoring workflow: brief → research/review → plan approval →
+generation → **final approval** of the generated learner pages, answer guide, narration transcript
+and activity instructions → pack/PDF export → reflection. The v5 wire could not serve it, and
+`docs/REVIEW_CB011-GAP.md` (Vellum, `wt/cb-011-vellum` @ `cbed40b`) recorded why with commands and
+line numbers: a queued `plan`/`lesson` job had **no typed brief** reachable from the wire, a draft
+plan had **no edit command**, a lesson-set approval had **no state**, an authored course could not
+be **exported** (`pack.export` refuses `course_not_pack_backed`, `make_pdf` had no caller) and the
+five blueprint tabs had **no read**.
+
+v6 adds eight methods, two additive `cb.db` v3 tables, and no error code; every v1–v5 method and
+payload is preserved byte-identically (asserted in `tests/test_contracts.py`, which also pins the
+sha256 of every superseded `rpc.v*.json` and `db.v*.json`).
+
+| New method | Purpose | Request (required fields) | Response (required fields) |
+|---|---|---|---|
+| `parent.brief.create` | Create the course (`recipe: parent`), its enrollment and the queued `plan` job in one fenced call, carrying the full §10 brief | `brief` (`parent_brief`), envelope `idempotency_key` | `course_id`, `enrollment_id`, `job_id`, `state`, `revision` |
+| `parent.brief.get` | Read the brief back so **Duplicate brief** copies real values, plus the plan job's state | `course_id` | `course_id`, `enrollment_id`, `brief`, `plan_job`, `created_at` |
+| `parent.plan.edit` | Draft-only plan field edits (title/target/criteria per objective, add, remove, reorder, course title/goal) fenced on the plan hash the parent saw | `enrollment_id`, `plan_id`, `expected_plan_hash`, optional `course_title`/`goal`/`objective_edits`/`add_objectives`/`remove_objective_ids`/`order` | `plan_id`, `plan_version`, `plan_hash`, `objective_ids`, `changes_need_review` (const `true`), `revision` |
+| `parent.final.approve` | Approve the exact generated content set by hash — **distinct from `plan.approve`** | `enrollment_id`, `plan_id`, `plan_hash`, `content_hash`, optional `note` | `approval_id`, `state` (const `active`), `plan_hash`, `content_hash`, `approved_at`, `revision` |
+| `parent.blueprint.read` | The five tabs as declared file **text**, plus the approval/export state the studio banners render | `course_id`, optional `limit` | `course_id`, `recipe`, `plan`, `approval`, `content_hash`, `export`, `tabs`, `sources` |
+| `parent.export` | Authored parent pack + selectable-text PDF from the export allowlist, with the exact file list | `enrollment_id`, optional `formats` | `export_id`, `pack`, `files`, `artifacts`, `content_hash`, `exported_at` |
+| `parent.reflection.record` | Parent-reported easy/about-right/too-hard + revisit note, outside every exported pack | `course_id`, `difficulty`, optional `enrollment_id`/`plan_id`/`revisit_note`/`apply_to_next_draft` | `reflection_id`, `difficulty`, `plan_hash`, `content_hash`, `created_at` |
+| `parent.reflection.list` | Bounded read of the reflections that seed the next brief | `course_id`, optional `limit` | `reflections`, `total` |
+
+### The one answer-text exception, stated exactly
+
+Previous amendments say "no reference answer in any RPC response". That rule protects the **learner**
+surfaces, and it still does: `lesson.page`, `check.get`, `course.outline`, `evidence.inspect` and
+`course.get` are unchanged and still carry no answer text. UX §10 requires an **Answers** tab and an
+approval that covers the answer guide, so v6 carves one narrow exception:
+
+* `parent.blueprint.read` serves `answer_guide` content, and it is addressed by `course_id` only —
+  there is no `enrollment_id`, no binding and no session in the request, so it cannot be reached
+  from a learner's lesson surface.
+* The answer text rides in the declared `text` field of a `blueprint_file`, never as a typed
+  `reference_answer` field. `additionalProperties: false` means a handler that passes stored JSON
+  through fails response validation instead of rendering an answer key.
+* `parent.export` writes the answer guide into a file with role `answer_guide`, which is **not** one
+  of `packs.LEARNER_FACING_ROLES` (`section`, `learner_page`, `visual`, `narration`), so an exported
+  pack keeps the answer key out of the learner page by construction.
+
+### `parent.brief.create` / `parent.brief.get`
+
+* The brief is stored as `jobs.brief_json` — the same row the plan executor reads. There is no
+  `parent_briefs` table: a second copy of the brief would be a second authority.
+* `egress_acknowledged` is `const: true` in the contract. A parent who has not seen the
+  provider/egress disclosure cannot produce a valid request, so no course is created under a paste
+  nobody disclosed. `redaction_requested` records the optional redaction answer.
+* The call creates `courses` (recipe `parent`, status `draft`), `enrollments` (active, revision 0)
+  and a `jobs` row of kind **`plan`** in state `queued`, then returns all three ids. It is fenced by
+  `idempotency_key` because a double click must not mint two courses; `expected_revision` is
+  meaningless for a course that does not exist yet.
+* `parent.brief.get` returns the brief, the enrollment it was created with (stored in the brief) and
+  the plan job's `{job_id, kind, state, submitted_at}`. The typed brief is what makes "duplicate
+  brief" a copy rather than a re-render of a form.
+* `jobs.get` already returns the raw `brief` object (`_job_view`), but its v1 response schema is an
+  open object; v6 does **not** tighten that preserved payload. `parent.brief.get` is the typed read.
+
+### `parent.plan.edit`
+
+* **Draft only.** An edit against an `approved` plan is refused with `POLICY_VIOLATION` /
+  `reason: plan_not_draft`; editing an approved plan is `plan.replan`'s job (which creates a new
+  draft version and supersedes the old approval). Editing a `superseded` plan is refused the same
+  way. This keeps "approval binds exact bytes" true for plans as well as content.
+* **Fenced on the hash, then on the revision.** `expected_plan_hash` is compared with
+  `_plan_hash(plan)` and a mismatch is `VALIDATION_FAILED` with `current_plan_hash`; the enrollment
+  revision fence follows. Two fences because there are two ways to be stale: the parent saw a
+  different plan, or another command moved the aggregate.
+* Edits are applied to the draft row: objective `title` / `evidence_target` / `criteria`, additions,
+  removals, and a full `order` permutation of the surviving objective ids. `plans.version` and
+  `objectives.version` bump, `plans.plan_hash` is recomputed inside the same transaction, the
+  enrollment revision bumps, and the response carries the new hash plus
+  `objective_ids` in ordinal order so the studio can address what it just created.
+* `changes_need_review` is `const: true` in the response: an edited draft is by definition not
+  approved. It is not a hint — a handler that returns `false` fails response validation.
+* The write reuses `domain.record_objective` for additions so ordinals and hashes stay consistent;
+  it must not insert objective rows itself.
+* **Not in v6:** editing generated page prose or activity instructions per lesson. Those live in the
+  generation staging rows (`gen_lessons.page_json`) and change by regenerating after a plan change.
+  Freezing a per-page edit command without a storage decision for it would be a promise the kernel
+  cannot keep; it is listed under deliberate omissions.
+
+### `parent.final.approve` and the invalidation rule
+
+Approving a plan is not approving a course. `plans.state` stays exactly `draft | approved |
+superseded` (`plan.approve` is unchanged), and the lesson-set approval is a separate row in
+`final_approvals` (`cb.db` v3):
+
+| Column | Meaning |
+|---|---|
+| `plan_id`, `plan_hash` | the plan version whose generated content was approved |
+| `content_hash` | the exact generated content set (definition below) |
+| `state` | `active` while it binds; `superseded` once anything it covered changed |
+| `invalidation_reason` | `plan_edited` / `content_changed` / `course_edited` / `replaced` |
+| `approved_at`, `superseded_at` | when it started and stopped binding |
+
+`content_hash` is defined, not chosen by the handler:
+
+```
+content_hash = packs.canonical_json_bytes({
+    "course_id": <id>, "plan_id": <id>, "plan_hash": "sha256:...",
+    "sections": [
+        {"objective_id": <id>, "ordinal": <n>,
+         "files": {"parent_guide": {"sha256": ..., "bytes": ...},
+                   "learner_page": {...}, "answer_guide": {...}, "narration": {...}}},
+        ... in ordinal order ...
+    ]})
+```
+
+Each `sha256` is over the exact text `parent.blueprint.read` serves for that tab entry, so the parent
+approves the bytes they read. `parent.blueprint.read` returns the current `content_hash`, the studio
+sends it back to `parent.final.approve`, and the handler refuses a mismatch with
+`VALIDATION_FAILED` + `current_content_hash`. `parent.export` recomputes it and refuses any row that
+is not `active` with that hash — `reason: changes_need_review`.
+
+**Invalidation is a kernel invariant, not a UI rule.** In one transaction with the edit that causes
+it:
+
+* a draft edit or a `plan.replan`/new plan version supersedes the course's **active** final approval
+  with reason `plan_edited` (a replan also supersedes the approved plan, as it already does);
+* regenerating content (a `lesson` stage job producing a different `content_hash`) supersedes it with
+  reason `content_changed`;
+* a course-level edit the approval covered (`courses.title` / `goal` through `parent.plan.edit`)
+  supersedes it with reason `course_edited`;
+* recording a new final approval supersedes the previous active row with reason `replaced`.
+
+There is at most one `active` row per course — a kernel invariant, because SQLite cannot express a
+partial unique index in the contract's `unique` vocabulary. An approval row is never deleted by an
+edit, so the studio can always say what was approved and when it stopped applying. `plans.approved_at`
+remains the plan's own timestamp; the two approvals never share a row.
+
+### `parent.blueprint.read`
+
+* **Five tabs, declared text only.** `tabs.parent_guide`, `tabs.learner_pages`, `tabs.answers`,
+  `tabs.narration` are arrays of `blueprint_file`; `sources` is answered by the same read because
+  the Sources tab must render before any lesson page exists. Each file carries `role`, `title`,
+  optional `objective_id`, `text`, `sha256`, `bytes`, `source` (`authored` / `pack`) and `truncated`.
+* **There is no path property anywhere in the response.** A pack-backed blueprint resolves its
+  declared file *inside* the already-validated manifest and returns its text; an authored course
+  composes text from the generation staging rows and `sources`. A generic
+  `pack.file.read({pack_id, pack_version, path})` was considered and rejected: a path-addressed read
+  is a filesystem-adjacent primitive that widens the surface for one consumer, while the tabs are a
+  closed enum that the contract can bound. This is decision (c) of the CB-011 card.
+* Bounds: `limit` (default 100, max 100) files per tab, `text` max 20000 characters with an explicit
+  `truncated` flag, `sources` max 200. A long course says it was clipped; it never silently shortens.
+* Read-only and unfenced: no revision bump, no idempotency key, activity revision `0`.
+* It derives and returns `approval` (`parent_approval_status`: state, the approved hashes, timestamp,
+  `invalidated_reason`) and `export` (`parent_export_status`: `ready` plus exactly one
+  `blocked_reason` from `no_final_approval` / `changes_need_review` / `plan_not_approved` /
+  `no_generated_content`) so the studio renders "Changes need review" from storage.
+
+### `parent.export`
+
+* **One pack builder, no new manifest vocabulary.** The export assembles a `cb.pack` v1 document from
+  `packs.export_allowlist()` and declares exactly the four roles the parent pack needs —
+  `parent_guide`, `learner_page`, `answer_guide`, `narration` — all of which already exist in
+  `cb.pack`'s role enum. No stored manifest is copied, so `packs.PRIVATE_FIELDS` (attempts, notebook
+  text, reflections, transcripts, provider settings, paths) cannot ride along even if a handler tries.
+* **Refusal is the feature.** `parent.export` runs only when the active final approval's
+  `content_hash` equals the recomputed one; otherwise `POLICY_VIOLATION` with
+  `reason: changes_need_review` (or `no_final_approval`, `plan_not_approved`). A stale studio cannot
+  export bytes nobody approved.
+* **Artifacts.** Exactly one `kind: pack` artifact and (when `formats` includes `pdf`, the default)
+  one `kind: pdf` artifact with `mime: application/pdf`, produced through `artifacts.make_pdf`. The
+  PDF is a document artifact — selectable text, low-ink layout, no image-of-a-page and no
+  colour-only answer — and the handler records the export as an `artifacts` row of kind `export`
+  like `pack.export` already does. `artifact_ref.kind` already names `pack` and `pdf`, so no artifact
+  enum changes.
+* The response's `files` is the exact file list the UX §10 preview renders: `role`, pack-internal
+  `name` (relative, no leading slash, no `..` — enforced by the schema's `not` pattern), `sha256`,
+  `bytes`, `mime`. It is the manifest's file list, not a second authority.
+* `export_id` is minted per accepted call, and a repeated call with the same `idempotency_key`
+  replays the stored result instead of re-writing artifacts.
+
+### Reflections
+
+`parent_reflections` (`cb.db` v3) stores `difficulty` (`easy` / `about_right` / `too_hard`), an
+optional `revisit_note`, `apply_to_next_draft`, and the `plan_hash`/`content_hash` that were current
+when it was written. It has **no** `evidence_class`, verdict or objective-state column, so a
+reflection cannot become evidence of learning; `reflection` is already in `packs.PRIVATE_FIELDS`, so
+neither the table nor a rendered reflection can enter an exported pack. `parent.reflection.list` is
+the read that seeds the next brief.
+
+### Storage read and written
+
+| Method | Rows |
+|---|---|
+| `parent.brief.create` | writes `courses`, `enrollments`, `jobs` (kind `plan`, state `queued`, `brief_json`) |
+| `parent.brief.get` | reads `courses`, `jobs` |
+| `parent.plan.edit` | reads `enrollments`, `plans`, `objectives`; writes `plans` + `objectives`, supersedes an active `final_approvals` row; bumps `enrollments.revision` |
+| `parent.final.approve` | reads `enrollments`, `plans`, `objectives`; writes one `final_approvals` row, supersedes the previous active one; bumps `enrollments.revision` |
+| `parent.blueprint.read` | reads `courses`, `plans`, `objectives`, `sources`, generation staging (`gen_lessons`, `gen_lesson_checks`, `gen_plan_sections`), `packs` + stored manifest for a pack-backed course, `final_approvals` |
+| `parent.export` | reads the same set + `packs`; writes `artifacts` (kind `pack`, `pdf`, `export`) and the pack directory through `packs`/`pack_flow` builders |
+| `parent.reflection.record` / `parent.reflection.list` | writes / reads `parent_reflections` |
+
+### Who executes `plan` and `lesson` generation (decision (e))
+
+`generation.run_plan_job` / `run_lesson_job` and `job_service.run_pending(resolvers)` exist; nothing
+in a production path registers a resolver or pumps the queue, so a queued job never moves. That is
+not a wire gap and is **not** fixed by v6: the executor is the agent-side job tick and belongs to
+Cinder (sibling card, `t_a356c8a8`). The contract fixes the seam it needs:
+
+* A `plan` kind job's `brief.stage` selects the work: absent or `plan` means "author the plan",
+  `brief.stage = lessons` with `plan_id` means "materialise lessons for this approved plan". This is
+  deliberately **not** a new job kind: `cb.vocabulary#job_kind` is referenced by every pack manifest,
+  so adding `lesson` would force a `cb.pack` v2 that rejects already-installed `$schema` v1 packs.
+  `jobs.list`'s `kind` filter therefore shows authoring jobs as `plan`; the progress `stage` on the
+  row says which stage is running. When a coordinated pack-manifest revision is affordable, `lesson`
+  becomes its own family and this paragraph is deleted.
+* The executor registers one resolver per kind it serves, drives `run_pending` from a bounded tick,
+  and keeps the existing lease/checkpoint/cancel semantics. `parent.brief.create` only *queues*.
+
+### Handlers Cinder must register (after this freeze)
+
+| Method | Register in | Backing code | Handler must do |
+|---|---|---|---|
+| `parent.brief.create` | `coursebook/domain.py` (`@_handler`) | `course.create`/`enrollment.create`/`jobs.create` bodies, `_idempotent_lookup`, `_remember` | one transaction: replay the key; insert course (`recipe: parent`), enrollment, queued `plan` job with the brief (including `enrollment_id` and `stage: plan`); return the three ids |
+| `parent.brief.get` | same | `jobs` row, `_job_view` | read the newest `plan` job for the course; return the typed brief + job summary |
+| `parent.plan.edit` | same | `_plan_hash`, `record_objective`, `_bump_enrollment`, `_require_revision` | fence on `expected_plan_hash` then revision; refuse non-draft; apply edits; bump `plans.version`/objective versions; recompute hash; supersede active approval; return new hash + ordered ids |
+| `parent.final.approve` | same | `final_approvals`, content-hash builder (shared with `parent.blueprint.read`) | fence on revision; verify `plan_hash` and `content_hash`; supersede previous active row (`replaced`); insert active row; bump revision |
+| `parent.blueprint.read` | `coursebook/domain.py` or `pack_flow.py` for the pack-backed branch | `final_approvals`, generation staging, `packs` manifest | one read; build the five tabs from the closed allowlist; compute `content_hash`; derive `approval`/`export`; never emit a path |
+| `parent.export` | `coursebook/pack_flow.py` (builder) + `domain.py` (handler) | `packs.export_allowlist`, `packs.FILE_ROLES`, `packs.PRIVATE_FIELDS`, `artifacts.make_pdf`, `pack_flow` pack writer | refuse unless the active approval's `content_hash` matches; build pack + PDF; return the manifest's exact file list and both artifact refs |
+| `parent.reflection.record` / `parent.reflection.list` | `coursebook/domain.py` | `parent_reflections` | insert with the current hashes / bounded read ordered by `created_at` |
+
+Until registration lands, `api.dispatch` answers `NOT_IMPLEMENTED` for all eight (the payload is
+still validated first), and the Desktop gates on `/runtime.implemented_methods`. Vellum's CB-011 UI
+consumes this contract; it does not need a second amendment.
+
+### Migration impact (cb.db v3)
+
+Migration `0003_parent_studio_approvals_and_reflections.sql` creates `final_approvals` and
+`parent_reflections` with their indexes. Additive only: no v2 table, column, index or unique key is
+dropped or retyped. No backfill — a plan approved before this migration is not a content approval and
+the migration does not invent one; a course with no row reports approval state `none` and export
+blocked by `no_final_approval`.
+
 ## UX screen → method mapping
 
 Every screen in §6, §7, §8, §10 and §11 is implementable against a method or a documented payload.
@@ -622,7 +908,7 @@ Every screen in §6, §7, §8, §10 and §11 is implementable against a method o
 | §7 | Sources: provenance, support, staleness, claim count | `course.get` `course` payload (below); `lesson.page.sources` |
 | §8 | Lesson workspace: objective/check pane, attempt states, feedback, continue, detached banner | `course.outline` (which section is current); `lesson.page`; `check.get` (structured prompt, format, choices); `check.open`; `attempt.submit`; `lesson.assist` (Hint / Show answer as layer-1 events); `attempt.override` (Skip); `binding.get`; `lesson.begin`; `binding.abandon` |
 | §9 | Library and pack trust: preview, import, keep/review/refuse update | `pack.list` (installed packs, enrolled or not, with state and revision); `pack.inspect` (manifest, integrity, trust of an installed pack without a new upload); `pack.preview`; `pack.import`; `pack.export`; `artifact.get`; `library.list` `provenance.source` |
-| §10 | Parent Studio: brief, research/review, approval, pack preview/export | `course.create` (`recipe: parent`); `jobs.create` (`kind: research` / `plan`) with the brief; `jobs.get`; `plan.approve`; `pack.preview` (manifest, integrity, trust); `pack.inspect` (re-open a pack generated in an earlier session); `pack.export`; `artifact.get` (tabs: parent guide, learner pages, answers, audio/visuals, sources are manifest file roles) |
+| §10 | Parent Studio: brief, research/review, plan editing, plan **and** final approval, blueprint tabs, pack/PDF export, reflection | `parent.brief.create` (course + enrollment + queued `plan` job with the typed brief); `parent.brief.get` (duplicate brief, job state); `jobs.get` (progress); `parent.plan.edit` (draft edits + `changes_need_review`); `plan.approve` (the plan-level gate); `parent.final.approve` (the lesson-set gate, hash-fenced); `parent.blueprint.read` (the five tabs: parent guide, learner pages, answers, narration, sources — declared text only, no path); `parent.export` (authored pack + PDF, exact file list); `artifact.get` (fetch both artifacts); `parent.reflection.record` / `parent.reflection.list`; `pack.preview` / `pack.inspect` for an imported blueprint |
 | §11 | Activity, jobs, recovery: running/failed/stale/delivery/recovery/usage | `jobs.list` (states, progress, errors, checkpoints); `jobs.get`; `jobs.cancel`; `usage.summary` |
 
 ### `course.get` payload (documented, not re-schemaed)
@@ -647,7 +933,7 @@ course: {
 Cinder may implement that payload incrementally; the screen mapping above names exactly which
 fields each §7 tab renders.
 
-## Migration impact (cb.db v2)
+## Migration impact (cb.db v3)
 
 Migration `0002_lesson_runs_segments_and_revisions.sql`:
 
@@ -664,10 +950,16 @@ Additive only: no v1 column is dropped or retyped, and no table is renamed. Dele
 into evidence, attempts or notebook entries, and never claims to erase Hermes' own transcripts,
 backups, provider-side data, or artifacts referenced by another course.
 
+Migration `0003_parent_studio_approvals_and_reflections.sql` (cb.db v3, CB-011) creates
+`final_approvals` (one row per approved content set: plan hash, content hash, `state`
+`active`/`superseded`, `invalidation_reason`, timestamps) and `parent_reflections` (parent-reported
+difficulty + revisit note, no evidence columns), with their indexes. No v2 table, column, index or
+unique key changes, and there is no backfill.
+
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
-2. Add a new file (`rpc.v5.json`, `projection.v1.json`) and bump
+2. Add a new file (`rpc.v6.json`, `db.v3.json`, `projection.v1.json`) and bump
    `$id`/`x-contract-version`/`x-supersedes`. Never edit a
    shipped version in a way that changes meaning; clients cache by version.
 3. Update `CONTRACT_FILES` in `coursebook/contracts.py` and run
@@ -683,6 +975,8 @@ backups, provider-side data, or artifacts referenced by another course.
 | v4 | 2026-11-06 | CB-024 additive amendment. 40 RPC methods (+pack.list, pack.inspect) reading the existing library index and `packs` row; no new table, column, migration or error code. New contract `cb.projection` v1 freezes the pack-check → check-spec mapping (six audit rules, deterministic projection, conformance vectors) with two importer divergences recorded for Lattice. |
 | v4 (projection closure) | 2026-11-06 | CB-025 (importer commits `577d268`, `725ffbf`) closed both `cb.projection` v1 divergences: R5 gained the non-empty guard and R6 withholds a check its manifest declares failed, so the bundled Japanese pack's `obj-register-transfer` opens through the dispatcher. `x-known-divergences` now records both as `resolved` with the implementing commit, the `declared_failed_withholds` vector reports the ordinary `import_audit_failed` problem, and `$defs.check_spec.declared_audit_state` is narrowed to `passed`/`unreviewed`. No RPC method, table, migration, wire constant or handler changed; `cb.projection` stays v1. |
 | v5 | 2026-11-06 | CB-026 additive amendment. 43 RPC methods (+course.outline, check.get, lesson.assist) so CB-009 can render the Textbook section list, the Plan tab, the structured check prompt and the pane's Hint/Show answer; `lesson.assist` is fenced in the envelope. No new table, column, migration or error code — every field is derived from `plans`/`objectives`/`checks`/`lesson_runs`/`attempts`, and the assist event is the layer-1 `evidence` row the chat hook already writes. `section_titles` deliberately omitted (no heading storage). Superseded files pinned by sha256. |
+| v5 (binding scope) | 2026-11-06 | CB-009 finding: `binding.get` now answers `objective_id` and `lesson_run_id` from the `bindings` row so the pane scopes to the bound section instead of the enrollment's current one. Additive inside v5 because `binding` is an open object in `rpc.v5.json` and `cb.db` v2 already stores both columns: **no v6, no schema edit, no version bump, no status-semantics change**. `null` = legacy/course-level binding; the platform seam answers `null` on a v1 binding table rather than omitting the fields. |
+| v6 | 2026-11-06 | CB-011 additive amendment. 51 RPC methods (+parent.brief.create, parent.brief.get, parent.plan.edit, parent.final.approve, parent.blueprint.read, parent.export, parent.reflection.record, parent.reflection.list) so the Parent Studio can be built without reading SQLite. cb.db **v3** adds `final_approvals` (lesson-set approval bound to plan hash + content hash, with the vocabulary value that invalidates it) and `parent_reflections` via migration 0003; no column changes, no new error code, `cb.vocabulary`/`cb.jobs`/`cb.pack`/`cb.projection` unchanged. Rejected: a generic path-addressed `pack.file.read` (role-scoped tabs instead), a `lesson` job kind (would force a `cb.pack` v2 and reject installed packs), and per-lesson prose editing (no storage decision yet). The Parent Studio answers tab is the one scoped exception to "no answer text on the wire". |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
@@ -693,8 +987,12 @@ backups, provider-side data, or artifacts referenced by another course.
 * No numeric attainment estimate field. Schedule arithmetic and attainment uncertainty are separate
   (R9); an estimate, if ever shown, is a `model_estimate` with limits, not a contract field.
 * No transcript or notebook text in the pack schema, and none is obtainable by export options.
-* No reference answer, rubric internals or raw grader output in any evidence view
-  (`evidence.inspect`, `evidence.disputes`, `lesson.page`, `course.get`).
+* No reference answer, rubric internals or raw grader output in any **learner** view
+  (`evidence.inspect`, `evidence.disputes`, `lesson.page`, `course.get`, `check.get`,
+  `course.outline`). The one scoped exception is `parent.blueprint.read`, the parent's own authoring
+  view: it is addressed by `course_id`, has no binding or enrollment, and carries answer text only
+  as the declared `text` of an `answer_guide` file. A pack's `answer_guide` role is never
+  learner-facing (`packs.LEARNER_FACING_ROLES`).
 * No `review_schedule` table and no stored "what is due" copy: the queue is derived from committed
   evidence plus learner action events, and `cap` bounds rows, never the counts.
 * No completeness/retention percentage and no persona field: L3 recommendations carry a `basis`,
@@ -722,6 +1020,21 @@ backups, provider-side data, or artifacts referenced by another course.
 * No mutation in `lesson.page`; navigation cannot change evidence.
 * No "delete everything" method. Archive, delete enrollment and delete imported pack are separate
   scopes with separate, server-returned data scope.
+* No path-addressed pack read (`pack.file.read({pack_id, pack_version, path})`). The Parent Studio
+  tabs are a closed enum (`parent_guide` / `learner_pages` / `answers` / `narration` + `sources`),
+  resolved server-side inside the validated manifest; a path parameter would be the one wire field
+  whose value is a filesystem-shaped string, for one consumer.
+* No `lesson` job kind while `cb.vocabulary` is v1. Every pack manifest references the vocabulary
+  document, so an added `job_kind` value forces a `cb.pack` v2 that would reject already-installed
+  `$schema` .../pack-manifest/v1 packs. Lesson generation runs as a `plan` job with
+  `brief.stage = lessons` until a coordinated pack revision exists.
+* No per-lesson prose edit command. Generated page text lives in the generation staging rows and
+  changes by regenerating from an edited, re-approved plan; there is no approved storage decision
+  for editing one page's bytes in place.
+* No second brief store. The brief is `jobs.brief_json`, read by the executor and by
+  `parent.brief.get`; a `parent_briefs` table would be a competing authority.
+* No `mastered`/`verified` claim on a final approval. It says which bytes the parent signed off,
+  not that the course teaches well; that is what the reflection and the evidence views are for.
 
 ## Open questions for Atlas (blocking a *feature*, not this amendment)
 

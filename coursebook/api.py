@@ -9,6 +9,7 @@ rather than a silent success.
 
 from __future__ import annotations
 
+import sqlite3
 from typing import Any, Callable
 
 from . import __version__
@@ -61,6 +62,20 @@ def implemented_methods() -> tuple[str, ...]:
 
 
 def _health_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Report plugin/db health, provisioning the store on first contact.
+
+    **This GET mutates, deliberately.** "Migrate on first use" means the first use is the user
+    opening Coursebook, and the pane's first request is ``health.get``; a pure read here would
+    leave a fresh install permanently ``Degraded`` with no path to ``course.create``. Chat
+    lifecycle hooks never provision (CB-014-R1 R1), so this handler is the seam (R4).
+
+    ``db.health()`` itself stays a pure read. A migration failure is swallowed here and shows up
+    honestly as ``db.ready: false`` with the version still on disk — never raised, never faked.
+    """
+    try:
+        db.ensure_schema()
+    except Exception:  # noqa: BLE001 - health must answer, and must not claim ready on failure
+        pass
     return 0, {
         "plugin_version": __version__,
         "contract_version": RPC_CONTRACT_VERSION,
@@ -93,7 +108,7 @@ register_handler("schema.get", _schema_get)
 # A caller holding only a runtime id must resolve it first (`host.state.focusedStoredSessionId`
 # on the Desktop half); this backend does not accept a runtime id as a stand-in.
 
-BINDING_COLUMNS = (
+BINDING_COLUMNS: tuple[str, ...] = (
     "id",
     "enrollment_id",
     "profile",
@@ -106,6 +121,12 @@ BINDING_COLUMNS = (
     "revision",
     "updated_at",
 )
+
+#: Section identity, added by the ``cb.db`` v2 migration. A v1 binding table has neither column and
+#: every binding there is a course-level chat, so the fields are answered as ``null`` rather than
+#: omitted: the pane must be able to tell "this chat is bound to no single section" from "this build
+#: did not answer". The ``bindings`` object is an open object in ``cb.rpc`` v5.
+BINDING_SECTION_COLUMNS: tuple[str, ...] = ("lesson_run_id", "objective_id")
 
 
 def _binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
@@ -134,15 +155,20 @@ def _binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
     from contextlib import closing
 
     with closing(db.connect()) as connection:
+        present = {info[1] for info in connection.execute("PRAGMA table_info(bindings)")}
+        selected: list[str] = list(BINDING_COLUMNS)
+        columns: list[str] = list(BINDING_COLUMNS) + list(BINDING_SECTION_COLUMNS)
+        for name in BINDING_SECTION_COLUMNS:
+            selected.append(name if name in present else f"NULL AS {name}")
         row = connection.execute(
-            f"SELECT {', '.join(BINDING_COLUMNS)} FROM bindings WHERE {column} = ? "
+            f"SELECT {', '.join(selected)} FROM bindings WHERE {column} = ? "
             "ORDER BY (status = 'active') DESC, updated_at DESC LIMIT 1",
             (value,),
         ).fetchone()
 
     if row is None:
         return 0, {"binding": None}
-    binding = {name: row[name] for name in BINDING_COLUMNS}
+    binding = {name: row[name] for name in columns}
     binding["matched_column"] = column
     return 0, {"binding": binding}
 
@@ -210,7 +236,19 @@ def dispatch(request: Any) -> dict[str, Any]:
     except ContractError as exc:
         return error_response(
             operation_id,
-            build_error("INTERNAL_ERROR", f"{method} produced a non-contract result: {exc}", path=exc.path or None),
+            build_error(
+                "INTERNAL_ERROR",
+                f"{method} produced a non-contract result: {exc}",
+                retryable=False,
+                path=exc.path or None,
+            ),
+        )
+    except sqlite3.IntegrityError as exc:
+        # A constraint violation replays identically on every retry. Advertising it as retryable
+        # would invite an automatic loop that can never succeed; it is a backend bug to fix.
+        return error_response(
+            operation_id,
+            build_error("INTERNAL_ERROR", f"{method} failed: {type(exc).__name__}", retryable=False),
         )
     except Exception as exc:  # noqa: BLE001 - one handler must not break the surface
         return error_response(
