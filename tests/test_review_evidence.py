@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import unittest
 from datetime import datetime, timedelta, timezone
 
@@ -345,6 +346,42 @@ class LearningLoopHandlerTest(ReviewCase):
         self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
         # The refused command wrote nothing and did not move the fence.
         self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM evidence WHERE kind = 'review_snooze'")), 0)
+
+    def test_evidence_inspect_never_carries_the_reference_answer(self) -> None:
+        lesson = self.prepare_multi(1)
+        objective_id = lesson["objective_ids"][0]
+        opened = self.ok(
+            "check.open", {"enrollment_id": lesson["enrollment_id"], "objective_id": objective_id},
+            expected_revision=self.revision(lesson["enrollment_id"]),
+        )["result"]
+        self.assertEqual(self.scalar("SELECT state FROM checks WHERE id = ?", (opened["check_id"],)), "open")
+
+        response = self.ok("evidence.inspect", {"enrollment_id": lesson["enrollment_id"]})
+        contracts.validate_response_payload("evidence.inspect", response["result"])
+        result = response["result"]
+
+        def reference_objects(node, path=""):
+            found = []
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key == "reference" and isinstance(value, dict) \
+                            and any(k in value for k in ("value", "answers", "tolerance")):
+                        found.append(f"{path}/{key}")
+                    found.extend(reference_objects(value, f"{path}/{key}"))
+            elif isinstance(node, list):
+                for index, value in enumerate(node):
+                    found.extend(reference_objects(value, f"{path}[{index}]"))
+            return found
+
+        self.assertEqual(reference_objects(result), [])
+        blob = json.dumps(result)
+        self.assertNotIn("check_spec", blob)
+        self.assertNotIn("42.7", blob)  # the numeric_spec reference value
+        # The criterion's identity and description survive; only the spec is withheld.
+        criteria = result["l2"]["objectives"][0]["criteria"]
+        self.assertEqual([entry["id"] for entry in criteria], ["c1"])
+        self.assertEqual(criteria[0]["description"], "graded criterion")
+        self.assertNotIn("check_spec", criteria[0])
 
     def test_evidence_inspect_maps_limit_onto_layer1_and_bounds_disputes(self) -> None:
         lesson = self.due_lesson()
