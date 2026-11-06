@@ -61,7 +61,14 @@ def call(method: str, payload: dict, *, expected_revision: int | None = None,
     if idempotency_key is not None:
         body["idempotency_key"] = idempotency_key
     response = _request("POST", "/api/plugins/coursebook/rpc?profile=", body)
-    LOG.append({"method": method, "request": payload, "response": response})
+    LOG.append({
+        "method": method,
+        "contract_version": VERSION,
+        "expected_revision": expected_revision,
+        "idempotency_key": idempotency_key,
+        "request": payload,
+        "response": response,
+    })
     flag = "ok " if response.get("ok") else "REFUSED"
     detail = ""
     if not response.get("ok"):
