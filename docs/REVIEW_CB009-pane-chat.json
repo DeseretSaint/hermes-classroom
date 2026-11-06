@@ -1,0 +1,127 @@
+{
+  "startedAt": "2026-11-06T14:23:47.081Z",
+  "sectionIndex": 2,
+  "steps": [
+    {
+      "step": "start-route",
+      "hash": "#/coursebook",
+      "rightSidebar": true,
+      "paneBound": false,
+      "phases": [],
+      "hasAnswer": false,
+      "submitDisabled": null,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\n\nNo durable chat yet\n\nA new chat gets its stored session id after its first turn. Coursebook binds a lesson to that stored id — never to the live runtime id and never to \"the most recent chat\".\n\nOpen Coursebook\nTERMINAL\n127.0.0.1:44219\nBackend\nready\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "start-section",
+      "hash": "#/coursebook",
+      "rightSidebar": true,
+      "paneBound": false,
+      "phases": [
+        "detached",
+        "check",
+        "graded"
+      ],
+      "hasAnswer": true,
+      "answerDisabled": true,
+      "submitDisabled": true,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\n\nNo durable chat yet\n\nA new chat gets its stored session id after its first turn. Coursebook binds a lesson to that stored id — never to the live runtime id and never to \"the most recent chat\".\n\nOpen Coursebook\nTERMINAL\n127.0.0.1:44219\nBackend\nready\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "fresh-chat",
+      "hash": "#/",
+      "rightSidebar": true,
+      "paneBound": false,
+      "phases": [],
+      "hasAnswer": false,
+      "submitDisabled": null,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\n\nNo durable chat yet\n\nA new chat gets its stored session id after its first turn. Coursebook binds a lesson to that stored id — never to the live runtime id and never to \"the most recent chat\".\n\nOpen Coursebook\nTERMINAL\n127.0.0.1:44219\nBackend\nready\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "chat-sent",
+      "composerText": "I am ready for this section. Remind me what the difference is between casual and polite affection, then give me the check."
+    },
+    {
+      "step": "after-turn",
+      "hash": "#/20261106_072357_ad7e67",
+      "rightSidebar": true,
+      "paneBound": true,
+      "phases": [
+        "detached",
+        "check"
+      ],
+      "hasAnswer": true,
+      "answerDisabled": true,
+      "submitDisabled": true,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nbinding detached\nThis lesson’s chat binding is detached. Submit is disabled until it is reconciled.\nReattach\nStart a new run\nAbandon binding\nCURRENT CHECK\nCheck v2\ndiscrimination\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\n\nSubmit answer\nEdit answer\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nhermes-agent\nhooks\nimage_cache\nimages\ninstalls\nkanban\nlocks\nlogs\nlsp\nmemories\nopenviking\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "pane-typed",
+      "hash": "#/20261106_072357_ad7e67",
+      "rightSidebar": true,
+      "paneBound": true,
+      "phases": [
+        "detached",
+        "check"
+      ],
+      "hasAnswer": true,
+      "answerDisabled": true,
+      "submitDisabled": true,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nbinding detached\nThis lesson’s chat binding is detached. Submit is disabled until it is reconciled.\nReattach\nStart a new run\nAbandon binding\nCURRENT CHECK\nCheck v2\ndiscrimination\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\n\nSubmit answer\nEdit answer\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nhermes-agent\nhooks\nimage_cache\nimages\ninstalls\nkanban\nlocks\nlogs\nlsp\nmemories\nopenviking\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "pane-verdict",
+      "hash": "#/20261106_072357_ad7e67",
+      "rightSidebar": true,
+      "paneBound": true,
+      "phases": [
+        "detached",
+        "check"
+      ],
+      "hasAnswer": true,
+      "answerDisabled": true,
+      "submitDisabled": true,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nbinding detached\nThis lesson’s chat binding is detached. Submit is disabled until it is reconciled.\nReattach\nStart a new run\nAbandon binding\nCURRENT CHECK\nCheck v2\ndiscrimination\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\n\nSubmit answer\nEdit answer\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nhermes-agent\nhooks\nimage_cache\nimages\ninstalls\nkanban\nlocks\nlogs\nlsp\nmemories\nopenviking\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "narrow",
+      "hash": "#/20261106_072357_ad7e67",
+      "rightSidebar": true,
+      "paneBound": true,
+      "phases": [
+        "detached",
+        "check"
+      ],
+      "hasAnswer": true,
+      "answerDisabled": true,
+      "submitDisabled": true,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nbinding detached\nThis lesson’s chat binding is detached. Submit is disabled until it is reconciled.\nReattach\nStart a new run\nAbandon binding\nCURRENT CHECK\nCheck v2\ndiscrimination\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\n\nSubmit answer\nEdit answer\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    },
+    {
+      "step": "text200",
+      "hash": "#/20261106_072357_ad7e67",
+      "rightSidebar": true,
+      "paneBound": true,
+      "phases": [
+        "detached",
+        "check"
+      ],
+      "hasAnswer": true,
+      "answerDisabled": true,
+      "submitDisabled": true,
+      "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nbinding detached\nThis lesson’s chat binding is detached. Submit is disabled until it is reconciled.\nReattach\nStart a new run\nAbandon binding\nCURRENT CHECK\nCheck v2\ndiscrimination\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\n\nSubmit answer\nEdit answer\n\nHints and shown answers are recorded against the next attempt.\n\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nhermes-agent\nhooks\nimage_cache\nimages\ninstalls\nkanban\nlocks\nlogs\nlsp\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nToday 59%\nSmart\nclient v0.23.0\nbackend v0.23.0"
+    }
+  ],
+  "shots": [
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane3-01-section-detached.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane3-02-bound-chat-pane.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane3-04-pane-answer-typed.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane3-05-pane-verdict.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane3-06-bound-chat-narrow.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_61fcfa6e/docs/cb009-shots/pane3-07-bound-chat-text200.png"
+  ],
+  "identity": {
+    "hash": "#/20261106_072357_ad7e67",
+    "pane": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nbinding detached\nThis lesson’s chat binding is detached. Submit is disabled until it is reconciled.\nReattach\nStart a new run\nAbandon binding\nCURRENT CHECK\nCheck v2\ndiscrimination\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nThis lesson’s chat binding is detached, s"
+  }
+}

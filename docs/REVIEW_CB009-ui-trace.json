@@ -1,0 +1,222 @@
+{
+  "capturedAt": "2026-11-06T13:54:29.987Z",
+  "steps": [
+    {
+      "step": "route-mounted",
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "ll | In progress | Review due | Archived | Japanese affection and register — an L0 demonstration classroom | Casual | Continue Explain why register changes with the relationship | 2 independent · 4 objectives | From a local pack · v1.0.0 | Open | Resume lesson | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "course-detail-overview",
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "HIS COURSE | Recipe | casual | Enrollment | revision 11 | active | Evidence | 4 objectives · 0 due | 2 independent | Provenance | japanese-affection-context-l0 v1.0.0 | Local pack | Exporting the pack is a Library action; it never includes your answers or notes. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "view-textbook",
+      "hasBody": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "min ago | Open section | Recall the intimate declaration in a new context | Independent evidence | recall | last opened 46 min ago | Open section | Explain why register changes with the relationship | Overridden | transfer | last opened 30 min ago | Open section | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "view-notebook",
+      "hasBody": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "ab53b recorded from the pane | Supervisor notebook proof: the pane states were captured live in the isolated window. | personal_note | supervisor-proof | saved 17 min ago | Open in textbook | Continue from here | Edit note and tags | Remove from notebook | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "view-quizzes",
+      "hasBody": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "愛してる (aishiteru) | Passed | Cold attempt | 32 min ago | Open attempt | 好きです (suki desu) | Not yet | Override — not independent evidence | 33 min ago | Open attempt | Not yet | Cold attempt | 35 min ago | Open attempt | Suki means love, so both lines are the same. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "view-plan",
+      "hasBody": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "hanges with the relationship | Overridden | transfer | Open section | Challenge out | Evidence criteria, attempt counts and dial edits need the objective read/write commands that this build does not publish yet; nothing is invented to fill the gap. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "view-evidence",
+      "hasBody": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": " min ago | Not yet | Override — not independent evidence | 27 min ago | Grading failed | Cold attempt | 32 min ago | Passed | Cold attempt | 32 min ago | Passed | Cold attempt | 33 min ago | Not yet | Override — not independent evidence | 35 min ago | Not yet | Cold attempt | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "view-sources",
+      "hasBody": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "its evidence and the next permitted action. | New course | Courses | Library | All courses | Japanese affection and register — an L0 demonstration classroom | Casual | Continue Explain why register changes with the relationship | Resume lesson | View | Sources | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "section-page",
+      "opened": "opened",
+      "checkVisible": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "— 好き (suki) | model_assessed | fetched 14 hr ago | Wiktionary — 愛する (aisuru) | model_assessed | fetched 14 hr ago | Learn how to say \"I love you\" in Japanese | model_assessed | fetched 14 hr ago | Honorific speech in Japanese | model_assessed | fetched 14 hr ago | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "notebook-dialog",
+      "hash": "#/coursebook",
+      "focused": "Save to notebook",
+      "hasDialog": true,
+      "tail": "speech in Japanese | model_assessed | fetched 14 hr ago | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0 | Save to notebook | Saved excerpts and personal notes stay on this profile. They never enter a shared pack. | Excerpt | Your note (optional) | Tags (comma separated) | Cancel | Save to notebook | Close"
+    },
+    {
+      "step": "notebook-save-submitted",
+      "dialogClosed": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "— 好き (suki) | model_assessed | fetched 14 hr ago | Wiktionary — 愛する (aisuru) | model_assessed | fetched 14 hr ago | Learn how to say \"I love you\" in Japanese | model_assessed | fetched 14 hr ago | Honorific speech in Japanese | model_assessed | fetched 14 hr ago | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "notebook-list",
+      "entries": 4,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "ab53b recorded from the pane | Supervisor notebook proof: the pane states were captured live in the isolated window. | personal_note | supervisor-proof | saved 17 min ago | Open in textbook | Continue from here | Edit note and tags | Remove from notebook | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "notebook-edit-open",
+      "noteValue": "Daisuki / aishiteru: warmth and intimacy sit above suki desu in weight.",
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "ab53b recorded from the pane | Supervisor notebook proof: the pane states were captured live in the isolated window. | personal_note | supervisor-proof | saved 17 min ago | Open in textbook | Continue from here | Edit note and tags | Remove from notebook | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "notebook-edit-saved",
+      "formClosed": true,
+      "updated": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "ab53b recorded from the pane | Supervisor notebook proof: the pane states were captured live in the isolated window. | personal_note | supervisor-proof | saved 17 min ago | Open in textbook | Continue from here | Edit note and tags | Remove from notebook | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "notebook-tag-filter",
+      "tagClick": "picked",
+      "rows": 1,
+      "hash": "#/coursebook",
+      "focused": "Filter by tag",
+      "hasDialog": false,
+      "tail": "ariation is real. | Suki desu: the polite choice for a respected, not-yet-close addressee (reviewed). | lesson_segment | polite | first-confession | reviewed | saved just now | Open in textbook | Continue from here | Edit note and tags | Remove from notebook | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "notebook-search-empty",
+      "empty": true,
+      "hash": "#/coursebook",
+      "focused": "Filter by tag",
+      "hasDialog": false,
+      "tail": "stration classroom | Casual | Choose the polite expression for a first confession | Resume lesson | View | Notebook | reviewed | Recently saved | Oldest first | No saved moment matches | Your saved moments are still here; this search or tag just excludes them. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "notebook-search-cleared",
+      "restored": false,
+      "hash": "#/coursebook",
+      "focused": "Filter by tag",
+      "hasDialog": false,
+      "tail": "stration classroom | Casual | Choose the polite expression for a first confession | Resume lesson | View | Notebook | reviewed | Recently saved | Oldest first | No saved moment matches | Your saved moments are still here; this search or tag just excludes them. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "continue-from-here",
+      "sectionLoaded": true,
+      "title": [
+        "Reattach",
+        "Resume this section",
+        "Start a fresh run",
+        "All sections"
+      ],
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "— 好き (suki) | model_assessed | fetched 14 hr ago | Wiktionary — 愛する (aisuru) | model_assessed | fetched 14 hr ago | Learn how to say \"I love you\" in Japanese | model_assessed | fetched 14 hr ago | Honorific speech in Japanese | model_assessed | fetched 14 hr ago | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "quizzes-list",
+      "attempts": 6,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "愛してる (aishiteru) | Passed | Cold attempt | 32 min ago | Open attempt | 好きです (suki desu) | Not yet | Override — not independent evidence | 34 min ago | Open attempt | Not yet | Cold attempt | 36 min ago | Open attempt | Suki means love, so both lines are the same. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "quiz-review",
+      "readOnlyCopy": true,
+      "disputeField": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "愛してる (aishiteru) | Passed | Cold attempt | 32 min ago | Open attempt | 好きです (suki desu) | Not yet | Override — not independent evidence | 34 min ago | Open attempt | Not yet | Cold attempt | 36 min ago | Open attempt | Suki means love, so both lines are the same. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "quiz-dispute",
+      "history": true,
+      "notice": true,
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "愛してる (aishiteru) | Passed | Cold attempt | 32 min ago | Open attempt | 好きです (suki desu) | Not yet | Override — not independent evidence | 34 min ago | Open attempt | Not yet | Cold attempt | 36 min ago | Open attempt | Suki means love, so both lines are the same. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "quiz-new-version",
+      "notice": false,
+      "error": "swer shown\nOverride\nVALIDATION_FAILED: no unused, audited variant of this check exists; a replay would not be a challenge.\nNot yet\nOverride — not independent evidence\n27 min ago\nCl",
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "愛してる (aishiteru) | Passed | Cold attempt | 32 min ago | Open attempt | 好きです (suki desu) | Not yet | Override — not independent evidence | 34 min ago | Open attempt | Not yet | Cold attempt | 36 min ago | Open attempt | Suki means love, so both lines are the same. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "narrow-view",
+      "width": 460,
+      "picker": true,
+      "hash": "#/coursebook",
+      "focused": "1\nCoursebook\nOne objective, its evidence and the next permit",
+      "hasDialog": false,
+      "tail": "愛してる (aishiteru) | Passed | Cold attempt | 32 min ago | Open attempt | 好きです (suki desu) | Not yet | Override — not independent evidence | 34 min ago | Open attempt | Not yet | Cold attempt | 36 min ago | Open attempt | Suki means love, so both lines are the same. | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "text-200",
+      "rootFontSize": "32px",
+      "hash": "#/coursebook",
+      "focused": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "hasDialog": false,
+      "tail": "min ago | Open section | Recall the intimate declaration in a new context | Independent evidence | recall | last opened 47 min ago | Open section | Explain why register changes with the relationship | Overridden | transfer | last opened 31 min ago | Open section | 127.0.0.1:44219 | Backend | ready | deseretsaint | Smart | client v0.23.0 | backend v0.23.0"
+    },
+    {
+      "step": "a11y-snapshot",
+      "a11y": {
+        "visibleButtons": 95,
+        "namelessButtons": [
+          "<button class=\"inline-flex h-full items-center gap-1 rounded-none text-[0.6875rem] text-(-"
+        ],
+        "visibleFields": 2,
+        "unlabelledFields": [],
+        "headings": [
+          "H2:Japanese affection and register — an L0 demonstrat"
+        ],
+        "focusRingClasses": true
+      }
+    }
+  ]
+}
