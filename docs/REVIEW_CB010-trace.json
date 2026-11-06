@@ -77,7 +77,7 @@
     "status": 200,
     "body": {
       "backend_package": "coursebook_plugin_backend",
-      "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_27f18c22",
+      "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0b7715dc",
       "wire_contract": "cb.rpc",
       "wire_version": 2,
       "contract_methods": 34,
@@ -118,7 +118,7 @@
         "usage.summary"
       ],
       "contract_problems": [],
-      "db_path": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/coursebook-probe-home-8mdcx53d/plugin-data/coursebook/data.db"
+      "db_path": "/home/deseretsaint/.hermes/profiles/sable/cache/scratch/coursebook-probe-home-g4fn7awi/plugin-data/coursebook/data.db"
     }
   },
   {
@@ -234,13 +234,14 @@
     }
   },
   {
-    "step": "GET /packs/intake answers the host intake capability",
+    "step": "GET /packs/intake answers the host intake capability and its output-only staging hint",
     "ok": true,
     "status": 200,
     "body": {
       "ok": true,
       "available": true,
-      "can_grant": true
+      "can_grant": true,
+      "staging_root": "/home/deseretsaint/.hermes/profiles/sable/cache/scratch/coursebook-probe-home-g4fn7awi/plugin-data/coursebook/pack-staging"
     }
   },
   {
@@ -254,12 +255,42 @@
     }
   },
   {
+    "step": "POST /packs/grant refuses a URL instead of fetching it",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": false,
+      "code": "PACK_REJECTED",
+      "message": "local file grant requires a path, not a URL"
+    }
+  },
+  {
     "step": "POST /packs/grant mints a staged_id for a real archive",
     "ok": true,
     "status": 200,
     "body": {
       "ok": true,
-      "staged_id": "stg-425e9c04420f741682bd7971cf0b41b8"
+      "staged_id": "stg-4c3b0a18c9e163ee12ea88bfe7c26a48"
+    }
+  },
+  {
+    "step": "POST /packs/grant refuses a symlink instead of following it",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": false,
+      "code": "PACK_REJECTED",
+      "message": "local file grant must not be a symbolic link"
+    }
+  },
+  {
+    "step": "POST /packs/grant refuses an absolute path that is not a file",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": false,
+      "code": "PACK_REJECTED",
+      "message": "local file grant is not a regular file: /home/deseretsaint/.hermes/profiles/sable/cache/scratch/coursebook-probe-home-g4fn7awi/absent.zip"
     }
   },
   {
@@ -616,8 +647,8 @@
       "revision": 0,
       "result": {
         "pack_id": "japanese-affection-context-l0",
-        "course_id": "crs_021ac146237846ee908bf2d43fe4e9ba",
-        "enrollment_id": "enr_c5f7c46a550f4101af4406e693ace5f3",
+        "course_id": "crs_8fce22d477a44419b57ec1a7c7136a0b",
+        "enrollment_id": "enr_2223e24c07c444d48cbabf86c06a4291",
         "revision": 0
       }
     }
@@ -632,7 +663,7 @@
       "operation_id": "probe-pack-export",
       "revision": 0,
       "result": {
-        "artifact_id": "art_800c9e5d260f4c64a70d70c21f400c2c",
+        "artifact_id": "art_4af44ccdcfc149f3822cec7785f46a2a",
         "content_hash": "sha256:638ce371db6bf2340a7b6a37a75a9762e0e9e6c3f723e55b0a0a5103a8376d7f",
         "file_count": 5,
         "bytes": 14548
@@ -648,6 +679,41 @@
       "content_type": "application/zip",
       "bytes": 14548,
       "sha256": "sha256:503f331675566ae7a8000558c1eeb78a9ffd6a740263ccdf4f40322d3815cd97"
+    },
+    "headers": {
+      "content-type": "application/zip",
+      "content-length": "14548",
+      "content-disposition": "attachment; filename=\"japanese-affection-context-l0-1.0.0.zip\"",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff"
+    }
+  },
+  {
+    "step": "the download is an attachment named <pack_id>-<version>.zip and is never cached",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "binary": true,
+      "content_type": "application/zip",
+      "bytes": 14548,
+      "sha256": "sha256:503f331675566ae7a8000558c1eeb78a9ffd6a740263ccdf4f40322d3815cd97"
+    },
+    "headers": {
+      "content-type": "application/zip",
+      "content-length": "14548",
+      "content-disposition": "attachment; filename=\"japanese-affection-context-l0-1.0.0.zip\"",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff"
+    }
+  },
+  {
+    "step": "GET /artifacts/<expired-handle> is a 404 JSON refusal, not bytes",
+    "ok": true,
+    "status": 404,
+    "body": {
+      "ok": false,
+      "code": "NOT_FOUND",
+      "message": "this download handle expired; ask artifact.get again"
     }
   },
   {
@@ -656,7 +722,18 @@
     "status": 404,
     "body": {
       "ok": false,
+      "code": "NOT_FOUND",
       "message": "artifact not found"
+    }
+  },
+  {
+    "step": "GET /artifacts/<handle> refuses a stored file that no longer matches its record",
+    "ok": true,
+    "status": 500,
+    "body": {
+      "ok": false,
+      "code": "INTERNAL_ERROR",
+      "message": "artifact file size does not match its record"
     }
   },
   {
@@ -670,8 +747,8 @@
       "revision": 0,
       "result": {
         "pack_id": "japanese-affection-context-l0",
-        "course_id": "crs_021ac146237846ee908bf2d43fe4e9ba",
-        "enrollment_id": "enr_c5f7c46a550f4101af4406e693ace5f3",
+        "course_id": "crs_8fce22d477a44419b57ec1a7c7136a0b",
+        "enrollment_id": "enr_2223e24c07c444d48cbabf86c06a4291",
         "revision": 0
       }
     }
@@ -687,8 +764,8 @@
       "revision": 0,
       "result": {
         "pack_id": "japanese-affection-context-l0",
-        "course_id": "crs_2cb896617efa42fca86c35be6e2efe2a",
-        "enrollment_id": "enr_f2e286062a6b4860965c9472b94e9969",
+        "course_id": "crs_38e41a007a2c4458a5c88abe241d95ce",
+        "enrollment_id": "enr_8acd1003f0c9482fbe1027fc591dd82e",
         "revision": 0
       }
     }

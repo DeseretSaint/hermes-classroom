@@ -13,6 +13,15 @@ Transport decisions (frozen for v1):
   the command was refused, which the Desktop half renders from ``error.code``. Transport-level
   failures (no backend, unmounted route) are the only reason a client sees an HTTP error.
 
+Host seams beside the frozen RPC contract (never new RPC methods):
+
+* ``GET  /packs/intake``      -> whether this host can mint a local file grant.
+* ``POST /packs/grant``       -> the only door a filesystem path may enter through; the result is a
+  ``staged_id`` and nothing else. Refusals are HTTP 200 ``{ok:false, code:"PACK_REJECTED"}``.
+* ``GET  /artifacts/{handle}`` -> streams one export after re-verifying it. The host's own auth
+  middleware (``/api/`` session token / OAuth gate) authenticates the request; the handle is the
+  only credential in the URL, is expiring, and never names a path.
+
 No module-global process state lives here: SQLite is the source of truth, and the same package
 may be imported twice by different loaders in one gateway process.
 """
@@ -22,6 +31,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import logging
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -117,32 +127,53 @@ async def packs_intake() -> dict[str, Any]:
     Reports whether this backend can mint a local file grant. The Desktop shows its import
     picker only when this answers true, so a host without the door is told plainly instead of
     rendering a control that cannot work.
+
+    ``staging_root`` is an output-only hint (where grants are expanded). The client never sends a
+    path back from it: a path only enters through ``POST /packs/grant`` after the user picks it.
     """
     pack_flow = _pack_flow()
     available = callable(getattr(pack_flow, "grant_local_file", None))
-    return {
-        "ok": True,
-        "available": available,
-        "can_grant": available,
-    }
+    response: dict[str, Any] = {"ok": True, "available": available, "can_grant": available}
+    if available:
+        try:
+            response["staging_root"] = str(pack_flow.staging_root())
+        except Exception:  # noqa: BLE001 - a diagnostics field must not fail the probe
+            logger.warning("coursebook: could not resolve the staging root for the intake probe")
+    return response
 
 
 @router.post("/packs/grant")
-async def packs_grant(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+async def packs_grant(body: dict[str, Any] = Body(...)) -> Any:
     """Grant one host-chosen archive and return its ``staged_id`` (CB-010).
 
     This is the only door a filesystem path may enter through; the RPC contract itself never
     accepts one. ``grant_local_file`` refuses URLs, relative paths and symlinks, and the refusal
-    is returned as data (HTTP 200, ``ok: false``) so the Desktop renders the reason.
+    is returned as data (HTTP 200, ``ok: false``) so the Desktop renders the reason. Anything
+    else is a bug in this process, and is reported as a 500 rather than disguised as a rejection.
     """
     pack_flow = _pack_flow()
     path = body.get("path")
-    if not isinstance(path, str) or not path:
-        return {"ok": False, "code": "PACK_REJECTED", "message": "a local file grant needs an absolute path"}
+    if not isinstance(path, str) or not path.strip():
+        return {
+            "ok": False,
+            "code": "PACK_REJECTED",
+            "message": "a local file grant needs an absolute path",
+        }
+    refusals = _refusal_types()
     try:
         staged_id = pack_flow.grant_local_file(path)
-    except Exception as exc:  # noqa: BLE001 - a refused grant is data, not a transport failure
-        return {"ok": False, "code": "PACK_REJECTED", "message": str(exc)}
+    except refusals as exc:
+        return {"ok": False, "code": "PACK_REJECTED", "message": _message(exc)}
+    except Exception:  # noqa: BLE001 - internal failure, not a policy refusal
+        logger.exception("coursebook: pack grant failed outside a policy refusal")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "code": "INTERNAL_ERROR",
+                "message": "the pack grant failed; nothing was staged",
+            },
+        )
     return {"ok": True, "staged_id": staged_id}
 
 
@@ -151,25 +182,75 @@ async def artifact_download(handle: str) -> Any:
     """Stream one exported pack by its expiring, session-bound handle (CB-010).
 
     ``artifact.get`` mints the handle; ``pack_flow.open_artifact`` re-verifies expiry, size and
-    sha256 against the artifacts row before a byte leaves. A filesystem path never crosses the
-    wire, and the response is never cached.
+    sha256 against the artifacts row before a byte leaves. The request is authenticated by the
+    host's ``/api/`` auth middleware (session token or OAuth gate) — there is no token in the URL,
+    and the handle never names a filesystem path. A policy refusal is a 404; an integrity
+    mismatch is a 500; neither carries a path or a traceback.
     """
     pack_flow = _pack_flow()
+    refusals = _refusal_types()
     try:
         path, mime, _size = pack_flow.open_artifact(handle)
-    except Exception as exc:  # noqa: BLE001 - shaped as a refusal, never a traceback
-        return JSONResponse(status_code=404, content={"ok": False, "message": str(exc)})
+    except refusals as exc:
+        code = _code(exc)
+        return JSONResponse(
+            status_code=404 if code == "NOT_FOUND" else 500,
+            content={"ok": False, "code": code, "message": _message(exc)},
+        )
+    except Exception:  # noqa: BLE001 - internal failure, never a traceback over the wire
+        logger.exception("coursebook: artifact download failed outside a policy refusal")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "ok": False,
+                "code": "INTERNAL_ERROR",
+                "message": "the artifact could not be read",
+            },
+        )
     return FileResponse(
         path,
         media_type=mime,
-        filename=path.name,
+        filename=_download_name(path),
         headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
     )
+
+
+#: Export files are written as ``<pack_id>-<version>-<digest16>.zip``; the download is named for a
+#: human, so the digest suffix is dropped. Anything unexpected keeps its on-disk name.
+_EXPORT_NAME = re.compile(r"^(?P<stem>.+)-[0-9a-f]{16}\.zip$")
+
+
+def _download_name(path: Path) -> str:
+    match = _EXPORT_NAME.match(path.name)
+    return f"{match.group('stem')}.zip" if match else path.name
 
 
 def _pack_flow() -> Any:
     _load_backend()
     return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.pack_flow")
+
+
+def _refusal_types() -> tuple[type[BaseException], ...]:
+    """Exception types that mean "refused by policy", as opposed to a bug in this process."""
+    _load_backend()
+    packs = importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.packs")
+    api = importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.api")
+    return (packs.PackRejected, api.RpcError)
+
+
+def _code(exc: BaseException) -> str:
+    error = getattr(exc, "error", None)
+    if isinstance(error, dict):
+        return str(error.get("code") or "INTERNAL_ERROR")
+    return "PACK_REJECTED"
+
+
+def _message(exc: BaseException) -> str:
+    """The refusal's own message. Contract errors carry it in the error object, not ``str()``."""
+    error = getattr(exc, "error", None)
+    if isinstance(error, dict) and error.get("message"):
+        return str(error["message"])
+    return str(exc)
 
 
 @router.get("/runtime")

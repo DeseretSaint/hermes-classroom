@@ -92,6 +92,17 @@ def main() -> int:
                 "bytes": len(response.content),
                 "sha256": "sha256:" + hashlib.sha256(response.content).hexdigest(),
             }
+            entry["headers"] = {
+                key: response.headers[key]
+                for key in (
+                    "content-type",
+                    "content-length",
+                    "content-disposition",
+                    "cache-control",
+                    "x-content-type-options",
+                )
+                if key in response.headers
+            }
         trace.append(entry)
         print(json.dumps(entry, ensure_ascii=False, sort_keys=True))
         if not expectation:
@@ -184,9 +195,15 @@ def main() -> int:
     from coursebook import archive as pack_archive
 
     intake = client.get("/api/plugins/coursebook/packs/intake")
+    intake_body = intake.json()
     record(
-        "GET /packs/intake answers the host intake capability",
-        intake.status_code == 200 and intake.json().get("can_grant") is True,
+        "GET /packs/intake answers the host intake capability and its output-only staging hint",
+        intake.status_code == 200
+        and intake_body.get("ok") is True
+        and intake_body.get("available") is True
+        and intake_body.get("can_grant") is True
+        and isinstance(intake_body.get("staging_root"), str)
+        and bool(intake_body.get("staging_root")),
         None,
         intake,
     )
@@ -197,6 +214,16 @@ def main() -> int:
         bad_grant.status_code == 200 and bad_grant.json().get("ok") is False,
         None,
         bad_grant,
+    )
+
+    url_grant = client.post(
+        "/api/plugins/coursebook/packs/grant", json={"path": "file:///tmp/pack.zip"}
+    )
+    record(
+        "POST /packs/grant refuses a URL instead of fetching it",
+        url_grant.status_code == 200 and url_grant.json().get("ok") is False,
+        None,
+        url_grant,
     )
 
     source = ROOT / "bundled" / "packs" / "japanese-affection-context-l0"
@@ -212,6 +239,27 @@ def main() -> int:
     )
 
     staged_id = granted.json().get("staged_id", "")
+
+    link = Path(home.name) / "pack-link.zip"
+    link.symlink_to(bundle)
+    link_grant = client.post("/api/plugins/coursebook/packs/grant", json={"path": str(link)})
+    record(
+        "POST /packs/grant refuses a symlink instead of following it",
+        link_grant.status_code == 200 and link_grant.json().get("ok") is False,
+        None,
+        link_grant,
+    )
+
+    absent_grant = client.post(
+        "/api/plugins/coursebook/packs/grant", json={"path": str(Path(home.name) / "absent.zip")}
+    )
+    record(
+        "POST /packs/grant refuses an absolute path that is not a file",
+        absent_grant.status_code == 200 and absent_grant.json().get("ok") is False,
+        None,
+        absent_grant,
+    )
+
     preview = client.post("/api/plugins/coursebook/rpc", json=envelope("pack.preview", {"staged_id": staged_id}))
     record(
         "pack.preview returns the manifest, integrity and separate trust labels",
@@ -271,6 +319,25 @@ def main() -> int:
         None,
         download,
     )
+    disposition = download.headers.get("content-disposition", "")
+    record(
+        "the download is an attachment named <pack_id>-<version>.zip and is never cached",
+        download.headers.get("content-length") == str(len(download.content))
+        and download.headers.get("cache-control") == "no-store"
+        and download.headers.get("x-content-type-options") == "nosniff"
+        and disposition.startswith("attachment;")
+        and f'filename="{manifest["pack_id"]}-{manifest["pack_version"]}.zip"' in disposition,
+        None,
+        download,
+    )
+
+    expired = client.get("/api/plugins/coursebook/artifacts/art_" + "0" * 32 + "_1000000000")
+    record(
+        "GET /artifacts/<expired-handle> is a 404 JSON refusal, not bytes",
+        expired.status_code == 404 and expired.json().get("code") == "NOT_FOUND",
+        None,
+        expired,
+    )
 
     missing = client.get("/api/plugins/coursebook/artifacts/art_" + "0" * 32 + "_99999999999")
     record(
@@ -279,6 +346,24 @@ def main() -> int:
         None,
         missing,
     )
+
+    # The route re-hashes the stored file; a byte added on disk must be an integrity 500, not a
+    # truncated or silently-served download, and the body must not name a filesystem location.
+    exports = sorted(Path(home.name).rglob(f"{manifest['pack_id']}-{manifest['pack_version']}-*.zip"))
+    if exports:
+        exports[0].write_bytes(exports[0].read_bytes() + b"\x00")
+        corrupted = client.get(f"/api/plugins/coursebook/artifacts/{handle}")
+        record(
+            "GET /artifacts/<handle> refuses a stored file that no longer matches its record",
+            corrupted.status_code == 500
+            and corrupted.json().get("code") == "INTERNAL_ERROR"
+            and "path" not in corrupted.text.lower()
+            and str(home.name) not in corrupted.text,
+            None,
+            corrupted,
+        )
+    else:
+        record("the export artifact is on disk where the probe expects it", False, None, expired)
 
     # ── reimport: resume keeps progress, fresh separates it; a tampered pack leaves no residue ──
     def library_total() -> int:
