@@ -1972,6 +1972,8 @@ def run_plan_job(
             "usage": usage.summary(),
         }
 
+        # One write transaction for the whole bundle: a plan must never exist without its document,
+        # its ledger and its validation record. Provider calls already finished above.
         with _transaction(connection):
             version_row = connection.execute(
                 "SELECT COALESCE(MAX(version), 0) AS v FROM plans WHERE course_id = ?", (course_id,)
@@ -2033,34 +2035,33 @@ def run_plan_job(
                     ),
                 )
 
-        run_id = _persist_research(
-            connection,
-            course_id=course_id,
-            job_id=job_id,
-            run=research_run,
-            plan=plan,
-            now=now,
-        )
-        validation_id: str | None = None
-        if validation_request is not None and validation_response is not None:
-            validation_id = _record_validation(
+            run_id = _persist_research(
                 connection,
-                subject_kind="plan",
-                subject_id=plan_id,
-                subject_hash=digest,
-                generation_request=plan_request,
-                validation_request=validation_request,
-                response=validation_response,
-                verdict=verdict,
+                course_id=course_id,
+                job_id=job_id,
+                run=research_run,
+                plan=plan,
                 now=now,
             )
-        result["validation_id"] = validation_id
-        result["plan_version"] = version
-        result["research_id"] = run_id
-        if generation_state == "needs_review":
-            result["rejection_reasons"] = rejection_reasons
+            validation_id: str | None = None
+            if validation_request is not None and validation_response is not None:
+                validation_id = _record_validation(
+                    connection,
+                    subject_kind="plan",
+                    subject_id=plan_id,
+                    subject_hash=digest,
+                    generation_request=plan_request,
+                    validation_request=validation_request,
+                    response=validation_response,
+                    verdict=verdict,
+                    now=now,
+                )
+            result["validation_id"] = validation_id
+            result["plan_version"] = version
+            result["research_id"] = run_id
+            if generation_state == "needs_review":
+                result["rejection_reasons"] = rejection_reasons
 
-        with _transaction(connection):
             connection.execute(
                 "INSERT OR REPLACE INTO gen_plan_documents (id, plan_id, course_id, request_fingerprint, plan_hash, "
                 "document_json, research_json, generation_state, validation_id, result_json, created_at) "
@@ -2430,6 +2431,9 @@ def _author_section(
     timestamp = _now_iso(now)
     objective_id = str(objective["id"]) if objective else plan_id
 
+    validation_id: str | None = None
+    # One transaction: the lesson row, its check, the check link and the validation record land
+    # together, so a validated lesson can never exist without the pass that allowed it.
     with _transaction(connection):
         connection.execute(
             "INSERT INTO gen_lessons (id, plan_id, section_id, plan_hash, version, state, page_json, media_json, "
@@ -2477,20 +2481,18 @@ def _author_section(
             (lesson_id, check_id, objective_ordinal),
         )
 
-    validation_id: str | None = None
-    if validation_request is not None and validation_response is not None:
-        validation_id = _record_validation(
-            connection,
-            subject_kind="lesson",
-            subject_id=lesson_id,
-            subject_hash=sha256_of_text(canonical_json(page)),
-            generation_request=request,
-            validation_request=validation_request,
-            response=validation_response,
-            verdict=verdict,
-            now=now,
-        )
-        with _transaction(connection):
+        if validation_request is not None and validation_response is not None:
+            validation_id = _record_validation(
+                connection,
+                subject_kind="lesson",
+                subject_id=lesson_id,
+                subject_hash=sha256_of_text(canonical_json(page)),
+                generation_request=request,
+                validation_request=validation_request,
+                response=validation_response,
+                verdict=verdict,
+                now=now,
+            )
             connection.execute("UPDATE gen_lessons SET validation_id = ? WHERE id = ?", (validation_id, lesson_id))
 
     summary: dict[str, Any] = {
