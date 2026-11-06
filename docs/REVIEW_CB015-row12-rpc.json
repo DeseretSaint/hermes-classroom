@@ -1,0 +1,2272 @@
+{
+  "proof": 12,
+  "title": "source stale -> impact banner, old evidence kept",
+  "rig": {
+    "base": "http://127.0.0.1:44219",
+    "wire_version": 7,
+    "db": "/home/deseretsaint/.hermes/coursebook-test/home/plugin-data/coursebook/data.db",
+    "cdp_port": null
+  },
+  "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+  "started_at": "2026-11-06T21:59:42Z",
+  "stages": {
+    "before": {
+      "at": "2026-11-06T21:59:42Z",
+      "library_row": {
+        "title": "Japanese affection and register — an L0 demonstration classroom",
+        "revision": 0,
+        "warning": null,
+        "next_step": {
+          "kind": "resume_lesson",
+          "label": "Resume Explain why register changes with the relationship"
+        }
+      },
+      "attempts": [],
+      "evidence": [],
+      "db_counts": {
+        "attempts": 31,
+        "transitions": 61,
+        "evidence": 43
+      }
+    },
+    "pre_attempt": {
+      "at": "2026-11-06T21:59:42Z",
+      "check_open_ok": true,
+      "attempt": {
+        "check_id": "chk_e5d74106de12466faa2389efebf0671d",
+        "check_version": 1,
+        "nonce": "cb015-p12-pre-1794002382722319113",
+        "answer": "B",
+        "response_ok": true,
+        "verdict": "pass",
+        "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+        "error": null
+      },
+      "attempts_after_commit": [
+        {
+          "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+          "check_id": "chk_e5d74106de12466faa2389efebf0671d",
+          "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+          "verdict": "pass",
+          "evidence_class": "cold",
+          "answered_at": "2026-11-06T21:59:42.726174+00:00"
+        }
+      ],
+      "db_counts": {
+        "attempts": 32,
+        "transitions": 63,
+        "evidence": 45
+      }
+    },
+    "baseline": {
+      "at": "2026-11-06T21:59:42Z",
+      "fetched_content": "CB-015 proof 12 captured page (baseline) — Marugoto starter contents, recorded at 2026-11-06T21:59:42Z.",
+      "result": {
+        "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+        "changed": false,
+        "fetched_at": "2026-11-06T21:59:42Z",
+        "support_status": "authoritative_documentation",
+        "previous_hash": null,
+        "content_hash": "sha256:80b448a3ebd73f5d85a789e29057f7e9e2c8890f37c1229787f3f2cd4839ba6c",
+        "impact": {
+          "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+          "course_id": "crs_d117cd2aded74e199d1ac75e31b69f3e",
+          "objective_ids": [],
+          "check_ids": [],
+          "artifact_ids": [],
+          "lesson_ids": [],
+          "support_status": "authoritative_documentation"
+        },
+        "review_required": false
+      },
+      "error": null
+    },
+    "changed": {
+      "at": "2026-11-06T21:59:42Z",
+      "fetched_content": "CB-015 proof 12 captured page (materially revised) — the publisher replaced the table of contents and moved the cited activity; captured at 2026-11-06T21:59:42Z.",
+      "result": {
+        "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+        "changed": true,
+        "fetched_at": "2026-11-06T21:59:42Z",
+        "support_status": "stale",
+        "previous_hash": "sha256:80b448a3ebd73f5d85a789e29057f7e9e2c8890f37c1229787f3f2cd4839ba6c",
+        "content_hash": "sha256:19d8c0e620017bd6c698b1629661992755b47268c9d03d96c82dc40205aca189",
+        "impact": {
+          "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+          "course_id": "crs_d117cd2aded74e199d1ac75e31b69f3e",
+          "objective_ids": [],
+          "check_ids": [],
+          "artifact_ids": [],
+          "lesson_ids": [],
+          "support_status": "stale"
+        },
+        "review_required": true
+      },
+      "error": null
+    },
+    "library_after": {
+      "at": "2026-11-06T21:59:42Z",
+      "library_row": {
+        "title": "Japanese affection and register — an L0 demonstration classroom",
+        "revision": 2,
+        "warning": "stale_source"
+      }
+    },
+    "after": {
+      "at": "2026-11-06T21:59:42Z",
+      "stale_submit": null,
+      "db_counts_before_refusal": {
+        "attempts": 32,
+        "transitions": 63,
+        "evidence": 45
+      },
+      "db_counts_after": {
+        "attempts": 32,
+        "transitions": 63,
+        "evidence": 45
+      },
+      "attempts": [
+        {
+          "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+          "check_id": "chk_e5d74106de12466faa2389efebf0671d",
+          "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+          "verdict": "pass",
+          "evidence_class": "cold",
+          "answered_at": "2026-11-06T21:59:42.726174+00:00"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "evd_16c1300e2ff84373932eb6c5b45e44fa",
+          "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+          "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+          "check_id": null,
+          "class": "cold",
+          "kind": "independent_evidence",
+          "recorded_at": "2026-11-06T21:59:42.726263+00:00"
+        },
+        {
+          "evidence_id": "evd_85fccd9b4d8649a184444388a8e0f728",
+          "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+          "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+          "check_id": null,
+          "class": "cold",
+          "kind": "attempt",
+          "recorded_at": "2026-11-06T21:59:42.726244+00:00"
+        }
+      ]
+    }
+  },
+  "steps": [
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "library.list",
+      "request": {
+        "filter": "all"
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-library-list-1794002382677662947",
+      "ok": true,
+      "revision": 0,
+      "result": {
+        "items": [
+          {
+            "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+            "course_id": "crs_d117cd2aded74e199d1ac75e31b69f3e",
+            "title": "Japanese affection and register — an L0 demonstration classroom",
+            "subtitle": null,
+            "recipe": "casual",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "active",
+            "provenance": {
+              "source": "local",
+              "pack_id": "japanese-affection-context-l0",
+              "pack_version": "1.0.0"
+            },
+            "next_step": {
+              "kind": "resume_lesson",
+              "label": "Resume Explain why register changes with the relationship"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "obj_db66a657db894d0cb1d98f03a1f38979"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T21:59:42.550564+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_3ed3a5d246314551ae210df92e89dc30",
+            "course_id": "crs_65e78f5847624177ab86674128f3c101",
+            "title": "Japanese affection and register — an L0 demonstration classroom",
+            "subtitle": null,
+            "recipe": "casual",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "active",
+            "provenance": {
+              "source": "local",
+              "pack_id": "japanese-affection-context-l0",
+              "pack_version": "1.0.0"
+            },
+            "next_step": {
+              "kind": "resolve_review_due",
+              "label": "Review 1 objective(s)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 1,
+              "total_objectives": 4,
+              "current_objective_id": "obj_238b920f830142d9a299e6f87d280485"
+            },
+            "warning": "stale_source",
+            "updated_at": "2026-11-06T21:59:25.279583+00:00",
+            "revision": 3
+          },
+          {
+            "enrollment_id": "enr_544f0aba033e4fc0a2f50fb61aceda25",
+            "course_id": "crs_650052975ca7406aaddda22122c89bad",
+            "title": "Japanese affection and register — an L0 demonstration classroom",
+            "subtitle": null,
+            "recipe": "casual",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "active",
+            "provenance": {
+              "source": "local",
+              "pack_id": "japanese-affection-context-l0",
+              "pack_version": "1.0.0"
+            },
+            "next_step": {
+              "kind": "resolve_review_due",
+              "label": "Review 3 objective(s)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 3,
+              "total_objectives": 4,
+              "current_objective_id": "obj_2ec4b8ec075e459ab158f3f356717b68"
+            },
+            "warning": "stale_source",
+            "updated_at": "2026-11-06T21:58:27.360192+00:00",
+            "revision": 49
+          },
+          {
+            "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+            "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+            "title": "Japanese café basics, revised",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen (revised)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "obj_8d05513da1204c45885f419f386d7ebb"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T21:34:17.877127+00:00",
+            "revision": 5
+          },
+          {
+            "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb",
+            "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+            "title": "Japanese café basics",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "659f64346eec5e0d"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:42:10.516443+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_176897ff32584282955b085634837b2b",
+            "course_id": "crs_e58e8ef3fcb54777ac4d8c17636307e5",
+            "title": "Japanese café basics",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "3e76000b29ae121f"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:41:50.536648+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+            "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name the parts: half, quarter and eighth (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "81c3865ea1928504"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:38:28.425696+00:00",
+            "revision": 3
+          },
+          {
+            "enrollment_id": "enr_f7979943032a4e4c8ea244910780e966",
+            "course_id": "crs_66dfba72ef9e4182b05bc250b7d5f097",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 5,
+              "current_objective_id": "04b1feaec24e256b"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:27:09.299041+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_784e5e696f674e77be99b80d061dd32f",
+            "course_id": "crs_1f27d4072f774876adc62c369502593f",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "35add4bc254a5d4e"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:18:55.458728+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_6810b5a559f94c628caaa7e2f31b556d",
+            "course_id": "crs_d45c75b0d6a540e8bc5d890812866305",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:09:17.908595+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_35245a0815e647048882369b6252afd8",
+            "course_id": "crs_5b00a07f93ee44f880f57d3cb51d777e",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:04:11.418029+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_3ef0ef2f18e4450e925382eb2ad5d5df",
+            "course_id": "crs_0425a98fcbb546f8b4b2e0b014bf1a6f",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:58:24.932524+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_a18e081a3379458cb8dc58e8bc0b510c",
+            "course_id": "crs_ef4b1721bb574db2ab0a1113484f744a",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "0281a4687d05e389"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:53:19.398013+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_6fd46e75b5f245e4b4a0c1f7453194a5",
+            "course_id": "crs_88e1ec88b4944a50a1b180cd33f3936c",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:49:53.301413+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_36daa3bf81e24bfca20e464c8d961f88",
+            "course_id": "crs_ffa47ef1ca2c48bd98881fc0d280aa4d",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:47:28.324648+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_460d2db6585f41aa9b04fb4fe8e0799c",
+            "course_id": "crs_7df0a98d00d34ff488b3dde2d599c3db",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:29:58.302444+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_0d6e90f945734098a2245276d79c28d5",
+            "course_id": "crs_2eab8b4076624f2daa945ffec14901a8",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:29:22.784574+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_a7463e5310774324a934032d802460e5",
+            "course_id": "crs_1e75a5483bee4d90a8ab0ce32caf35a0",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:26:44.549306+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_403017b82b3940a5b1c276bef9d98079",
+            "course_id": "crs_2fcca2cd77fd499cb5a38606f82cf083",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:25:11.084538+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_5927318c52ae4055b340dfc9f9e04eed",
+            "course_id": "crs_058ea2a0d3744d1c9596607d3b71c06e",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "bb10a864fc34c668"
+            },
+            "warning": "plan_update",
+            "updated_at": "2026-11-06T15:23:50.548924+00:00",
+            "revision": 0
+          }
+        ],
+        "next_cursor": null,
+        "total": 20,
+        "empty_reason": null,
+        "applied_filter": "all"
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "quiz.history",
+      "request": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf"
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-quiz-history-1794002382685292587",
+      "ok": true,
+      "revision": 0,
+      "result": {
+        "attempts": []
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "evidence.inspect",
+      "request": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+        "limit": 100
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-evidence-inspect-1794002382688125228",
+      "ok": true,
+      "revision": 0,
+      "result": {
+        "l1": {
+          "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+          "objective_id": null,
+          "attempts": [],
+          "events": []
+        },
+        "l2": {
+          "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+          "objective_id": null,
+          "objectives": [
+            {
+              "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+              "title": "Tell everyday affection from a direct romantic declaration",
+              "ordinal": 1,
+              "evidence_target": "discrimination",
+              "state": "not_started",
+              "independent": false,
+              "delayed": false,
+              "L2_evidence_ids": [],
+              "independent_at": null,
+              "attempt_classes": {},
+              "criteria": [
+                {
+                  "id": "pack_objective",
+                  "description": "obj-context-discrimination"
+                },
+                {
+                  "id": "target1",
+                  "description": "Names which line is the romantic confession"
+                },
+                {
+                  "id": "target2",
+                  "description": "Names which line is affection between friends"
+                },
+                {
+                  "id": "target3",
+                  "description": "Points at the cue (form or request) that changes the reading"
+                },
+                {
+                  "id": "chk-discrimination-1",
+                  "description": "automated audit of chk-discrimination-1"
+                }
+              ]
+            },
+            {
+              "objective_id": "obj_94aa0b6004d740cab7057e8484982a49",
+              "title": "Choose the polite expression for a first confession",
+              "ordinal": 2,
+              "evidence_target": "comprehension",
+              "state": "not_started",
+              "independent": false,
+              "delayed": false,
+              "L2_evidence_ids": [],
+              "independent_at": null,
+              "attempt_classes": {},
+              "criteria": [
+                {
+                  "id": "pack_objective",
+                  "description": "obj-polite-selection"
+                },
+                {
+                  "id": "target1",
+                  "description": "Selects the polite line for a first confession"
+                },
+                {
+                  "id": "target2",
+                  "description": "Relates the choice to the addressee and setting"
+                },
+                {
+                  "id": "chk-polite-selection-1",
+                  "description": "automated audit of chk-polite-selection-1"
+                }
+              ]
+            },
+            {
+              "objective_id": "obj_df4062b5b2f54b80b65ba9bb4af4a7bd",
+              "title": "Recall the intimate declaration in a new context",
+              "ordinal": 3,
+              "evidence_target": "recall",
+              "state": "not_started",
+              "independent": false,
+              "delayed": false,
+              "L2_evidence_ids": [],
+              "independent_at": null,
+              "attempt_classes": {},
+              "criteria": [
+                {
+                  "id": "pack_objective",
+                  "description": "obj-intimate-recall"
+                },
+                {
+                  "id": "target1",
+                  "description": "Produces the intimate line in a new, non-identical context"
+                },
+                {
+                  "id": "target2",
+                  "description": "Does not reuse the first-confession line for a settled partnership"
+                },
+                {
+                  "id": "chk-intimate-recall-1",
+                  "description": "automated audit of chk-intimate-recall-1"
+                }
+              ]
+            },
+            {
+              "objective_id": "obj_70327ddd55a348858228a15590a664da",
+              "title": "Explain why register changes with the relationship",
+              "ordinal": 4,
+              "evidence_target": "transfer",
+              "state": "not_started",
+              "independent": false,
+              "delayed": false,
+              "L2_evidence_ids": [],
+              "independent_at": null,
+              "attempt_classes": {},
+              "criteria": [
+                {
+                  "id": "pack_objective",
+                  "description": "obj-register-transfer"
+                },
+                {
+                  "id": "target1",
+                  "description": "Explains the change in terms of addressee, relationship and setting"
+                },
+                {
+                  "id": "target2",
+                  "description": "Transfers the reasoning to a third situation without a model answer"
+                },
+                {
+                  "id": "chk-register-transfer-1",
+                  "description": "automated audit of chk-register-transfer-1"
+                }
+              ]
+            }
+          ]
+        },
+        "l3": {
+          "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+          "recommendations": [
+            {
+              "kind": "needs_independent_evidence",
+              "text": "4 objective(s) have no cold independent evidence yet.",
+              "objective_ids": [
+                "obj_db66a657db894d0cb1d98f03a1f38979",
+                "obj_94aa0b6004d740cab7057e8484982a49",
+                "obj_df4062b5b2f54b80b65ba9bb4af4a7bd",
+                "obj_70327ddd55a348858228a15590a664da"
+              ],
+              "basis": "layer2.independent == false"
+            }
+          ],
+          "as_of": null,
+          "is_persona": false
+        },
+        "disputes": {
+          "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+          "disputes": [],
+          "count": 0,
+          "truncated": false
+        }
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "course.outline",
+      "request": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf"
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-course-outline-1794002382692135232",
+      "ok": true,
+      "revision": 0,
+      "result": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+        "plan": {
+          "plan_id": "pln_e61ce6fc31174d3ebe474a029eced1cd",
+          "version": 1,
+          "state": "approved",
+          "plan_hash": "sha256:0984a9866d0e2a01be55b108b7e52eb76880b540c4cc6cfc76e91a9ebe30f879"
+        },
+        "objectives": [
+          {
+            "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+            "ordinal": 1,
+            "title": "Tell everyday affection from a direct romantic declaration",
+            "evidence_target": "discrimination",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": "2026-11-06T21:59:42.551025+00:00"
+          },
+          {
+            "objective_id": "obj_94aa0b6004d740cab7057e8484982a49",
+            "ordinal": 2,
+            "title": "Choose the polite expression for a first confession",
+            "evidence_target": "comprehension",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": "2026-11-06T21:59:42.551124+00:00"
+          },
+          {
+            "objective_id": "obj_df4062b5b2f54b80b65ba9bb4af4a7bd",
+            "ordinal": 3,
+            "title": "Recall the intimate declaration in a new context",
+            "evidence_target": "recall",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": "2026-11-06T21:59:42.551160+00:00"
+          },
+          {
+            "objective_id": "obj_70327ddd55a348858228a15590a664da",
+            "ordinal": 4,
+            "title": "Explain why register changes with the relationship",
+            "evidence_target": "transfer",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": "2026-11-06T21:59:42.551185+00:00"
+          }
+        ],
+        "total": 4,
+        "truncated": false
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "lesson.page",
+      "request": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+        "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979"
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-lesson-page-1794002382695285621",
+      "ok": true,
+      "revision": 0,
+      "result": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+        "course": {
+          "course_id": "crs_d117cd2aded74e199d1ac75e31b69f3e",
+          "title": "Japanese affection and register — an L0 demonstration classroom"
+        },
+        "section": {
+          "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+          "title": "Tell everyday affection from a direct romantic declaration",
+          "ordinal": 1,
+          "state": "not_started",
+          "evidence_target": "discrimination",
+          "last_opened_at": "2026-11-06T21:59:42.551025+00:00"
+        },
+        "runtime": {
+          "lesson_run_id": "run_18b7ac7b441447e4a65ade2e9bbf6cb4",
+          "binding_id": null,
+          "binding_status": "detached",
+          "session_state": "missing",
+          "last_active_at": null
+        },
+        "segments": [
+          {
+            "segment_id": "seg_99f6ed953d0f4cd8a14bdd0a64516cb9",
+            "ordinal": 1,
+            "kind": "teaching",
+            "text": "# Lesson 1 — two ways of saying it\n\nThis is a demonstration lesson for an adult beginner (L0). Every Japanese line is followed by\nromaji and an English meaning. Romaji is a scaffold: it helps you hear the shape of the line, and\nit is not evidence that you can read Japanese.\n\n## Dialogue A — two friends, after a film\n\nMika: たのしかったね。 (tanoshikatta ne.) — \"That was fun, wasn't it?\"\nJun: うん。また行こう。 (un. mata ikou.) — \"Yeah. Let's go again.\"\nMika: うん、好きだよ。 (un, suki da yo.) — \"Yeah, I like you.\"\n\n`好き` (suki) is a na-adjective: it describes the person or thing that is liked, not an action\nthe speaker performs. `好きだよ` (suki da yo) is the casual form, used with friends and people you\nare already close to. The final `よ` (yo) softens the statement and offers it as new information.\n\n## Dialogue B — a confession\n\nAoi: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"\n\nThis is the shape of a **告白** (kokuhaku), a romantic confession. The polite form `好きです`\n(suki desu) carries the seriousness of the moment, and `付き合ってください` (tsukiatte kudasai)\nis the request to start seeing each other.\n\n`です` (desu) is the polite copula; it marks that the addressee is being addressed politely\n(丁寧語, teineigo). It does not by itself make a sentence romantic. The romantic reading comes\nfrom the situation and from the request that follows.\n\n## What changes between A and B?\n\n| | Dialogue A | Dialogue B |\n|---|---|---|\n| Who is speaking | friends | two people not yet a couple |\n| Setting | casual, after an outing | private, deliberate |\n| Form | 好きだよ (suki da yo) | 好きです — polite (suki desu) |\n| What it does | states affection | makes a romantic confession |\n\nThe words are close; the relationship and the setting decide how the line is heard. A literal\ntranslation of English \"I love you\" is not enough to choose between them.\n\n## Note on the sources\n\nThe A1 curriculum reference used here teaches `すきです` (suki desu) as a basic sentence pattern,\nand it presents beginner Japanese with romaji alongside kana. That is a curriculum fact, not a\nclaim that any one phrase is the only natural choice. See `source-notes.md` for every link and\nfor what each source does and does not support.\n",
+            "artifact_id": null,
+            "source_id": null,
+            "created_at": "2026-11-06T21:59:42.551025+00:00"
+          },
+          {
+            "segment_id": "seg_fb2ab31f14124c3a80bacdcbd4c676df",
+            "ordinal": 2,
+            "kind": "check_prompt",
+            "text": "Two lines are shown. A: うん、好きだよ。 (un, suki da yo.) said to a friend after an outing. B: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) said privately to someone the speaker is not yet close to. Which line is the romantic confession, and which cue makes it one?",
+            "artifact_id": null,
+            "source_id": null,
+            "created_at": "2026-11-06T21:59:42.551025+00:00"
+          }
+        ],
+        "sources": [
+          {
+            "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+            "title": "Marugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents",
+            "url": "https://marugoto.jpf.go.jp/en/assets/docs/about/starter_activities_contents_en.pdf",
+            "publisher": null,
+            "source_type": "course_material",
+            "support_status": "authoritative_documentation",
+            "published_at": null,
+            "fetched_at": "2026-11-06"
+          },
+          {
+            "source_id": "src_cb8a02a8fd5b4ce4a0ed55c1900aea78",
+            "title": "How to teach with Marugoto (teacher FAQ)",
+            "url": "https://marugoto.jpf.go.jp/en/teacher/qateaching/",
+            "publisher": null,
+            "source_type": "course_material",
+            "support_status": "authoritative_documentation",
+            "published_at": null,
+            "fetched_at": "2026-11-06"
+          },
+          {
+            "source_id": "src_11d1c10458794597a99f9ebf1a757742",
+            "title": "Wiktionary — 好き (suki)",
+            "url": "https://en.wiktionary.org/wiki/%E5%A5%BD%E3%81%8D",
+            "publisher": null,
+            "source_type": "reference",
+            "support_status": "model_assessed",
+            "published_at": null,
+            "fetched_at": "2026-11-06"
+          },
+          {
+            "source_id": "src_d1a305eb120f4c6bba8bd7771695ba0c",
+            "title": "Wiktionary — 愛する (aisuru)",
+            "url": "https://en.wiktionary.org/wiki/%E6%84%9B%E3%81%99%E3%82%8B",
+            "publisher": null,
+            "source_type": "reference",
+            "support_status": "model_assessed",
+            "published_at": null,
+            "fetched_at": "2026-11-06"
+          },
+          {
+            "source_id": "src_2b62110c437046519260324f8641e06f",
+            "title": "Learn how to say \"I love you\" in Japanese",
+            "url": "https://www.sng.ac.jp/sng-news/learn-say-love-japanese/",
+            "publisher": null,
+            "source_type": "secondary",
+            "support_status": "model_assessed",
+            "published_at": null,
+            "fetched_at": "2026-11-06"
+          },
+          {
+            "source_id": "src_de3d152d87994fbdb377f3ea08e4e4df",
+            "title": "Honorific speech in Japanese",
+            "url": "https://en.wikipedia.org/wiki/Honorific_speech_in_Japanese",
+            "publisher": null,
+            "source_type": "reference",
+            "support_status": "model_assessed",
+            "published_at": null,
+            "fetched_at": "2026-11-06"
+          }
+        ],
+        "artifacts": [],
+        "checks": [],
+        "notebook_entries": [],
+        "attempts": [],
+        "state": "not_started",
+        "revision": 0
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "check.open",
+      "request": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+        "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979"
+      },
+      "expected_revision": 0,
+      "idempotency_key": "cb015-p12-check-open-1794002382699026686",
+      "ok": true,
+      "revision": 1,
+      "result": {
+        "check_id": "chk_e5d74106de12466faa2389efebf0671d",
+        "check_version": 1,
+        "evidence_target": "discrimination",
+        "revision": 1
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "attempt.submit",
+      "request": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+        "check_id": "chk_e5d74106de12466faa2389efebf0671d",
+        "check_version": 1,
+        "attempt_nonce": "cb015-p12-pre-1794002382722319113",
+        "answer": {
+          "kind": "text",
+          "text": "B",
+          "selection": [
+            "B"
+          ]
+        }
+      },
+      "expected_revision": 1,
+      "idempotency_key": "cb015-p12-chk_e5d74106de12466faa2389efebf0671d-cb015-p12-pre-1794002382722319113",
+      "ok": true,
+      "revision": 2,
+      "result": {
+        "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+        "verdict": "pass",
+        "evidence_class": "cold",
+        "criteria": [
+          {
+            "id": "c1",
+            "observed": "matches an accepted answer",
+            "met": true
+          }
+        ],
+        "next_action": "complete_objective",
+        "revision": 2
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "quiz.history",
+      "request": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf"
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-quiz-history-1794002382747296719",
+      "ok": true,
+      "revision": 2,
+      "result": {
+        "attempts": [
+          {
+            "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+            "check_id": "chk_e5d74106de12466faa2389efebf0671d",
+            "check_version": 1,
+            "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+            "answer_kind": "text",
+            "answer": {
+              "kind": "text",
+              "selection": [
+                "B"
+              ],
+              "text": "B"
+            },
+            "verdict": "pass",
+            "evidence_class": "cold",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "matches an accepted answer"
+              }
+            ],
+            "state": "committed",
+            "grading_provenance": {
+              "grader": "deterministic:exact",
+              "reference_sha256": "sha256:27b733065ec950e03744be903e05bc900b939204aa2d8f0db5b47378a0647b86"
+            },
+            "disputes": [],
+            "created_at": "2026-11-06T21:59:42.726173+00:00",
+            "committed_at": "2026-11-06T21:59:42.726174+00:00"
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "source.revalidate",
+      "request": {
+        "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+        "fetched": {
+          "content": "CB-015 proof 12 captured page (baseline) — Marugoto starter contents, recorded at 2026-11-06T21:59:42Z."
+        }
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-source-revalidate-1794002382751073774",
+      "ok": true,
+      "revision": 0,
+      "result": {
+        "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+        "changed": false,
+        "fetched_at": "2026-11-06T21:59:42Z",
+        "support_status": "authoritative_documentation",
+        "previous_hash": null,
+        "content_hash": "sha256:80b448a3ebd73f5d85a789e29057f7e9e2c8890f37c1229787f3f2cd4839ba6c",
+        "impact": {
+          "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+          "course_id": "crs_d117cd2aded74e199d1ac75e31b69f3e",
+          "objective_ids": [],
+          "check_ids": [],
+          "artifact_ids": [],
+          "lesson_ids": [],
+          "support_status": "authoritative_documentation"
+        },
+        "review_required": false
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "source.revalidate",
+      "request": {
+        "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+        "fetched": {
+          "content": "CB-015 proof 12 captured page (materially revised) — the publisher replaced the table of contents and moved the cited activity; captured at 2026-11-06T21:59:42Z.",
+          "title": "Marugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents"
+        }
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-source-revalidate-1794002382774618559",
+      "ok": true,
+      "revision": 0,
+      "result": {
+        "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+        "changed": true,
+        "fetched_at": "2026-11-06T21:59:42Z",
+        "support_status": "stale",
+        "previous_hash": "sha256:80b448a3ebd73f5d85a789e29057f7e9e2c8890f37c1229787f3f2cd4839ba6c",
+        "content_hash": "sha256:19d8c0e620017bd6c698b1629661992755b47268c9d03d96c82dc40205aca189",
+        "impact": {
+          "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+          "course_id": "crs_d117cd2aded74e199d1ac75e31b69f3e",
+          "objective_ids": [],
+          "check_ids": [],
+          "artifact_ids": [],
+          "lesson_ids": [],
+          "support_status": "stale"
+        },
+        "review_required": true
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "library.list",
+      "request": {
+        "filter": "all"
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-library-list-1794002382798011955",
+      "ok": true,
+      "revision": 0,
+      "result": {
+        "items": [
+          {
+            "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+            "course_id": "crs_d117cd2aded74e199d1ac75e31b69f3e",
+            "title": "Japanese affection and register — an L0 demonstration classroom",
+            "subtitle": null,
+            "recipe": "casual",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "active",
+            "provenance": {
+              "source": "local",
+              "pack_id": "japanese-affection-context-l0",
+              "pack_version": "1.0.0"
+            },
+            "next_step": {
+              "kind": "resume_lesson",
+              "label": "Resume Explain why register changes with the relationship"
+            },
+            "evidence_summary": {
+              "independent": 1,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "obj_94aa0b6004d740cab7057e8484982a49"
+            },
+            "warning": "stale_source",
+            "updated_at": "2026-11-06T21:59:42.726138+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_3ed3a5d246314551ae210df92e89dc30",
+            "course_id": "crs_65e78f5847624177ab86674128f3c101",
+            "title": "Japanese affection and register — an L0 demonstration classroom",
+            "subtitle": null,
+            "recipe": "casual",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "active",
+            "provenance": {
+              "source": "local",
+              "pack_id": "japanese-affection-context-l0",
+              "pack_version": "1.0.0"
+            },
+            "next_step": {
+              "kind": "resolve_review_due",
+              "label": "Review 1 objective(s)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 1,
+              "total_objectives": 4,
+              "current_objective_id": "obj_238b920f830142d9a299e6f87d280485"
+            },
+            "warning": "stale_source",
+            "updated_at": "2026-11-06T21:59:25.279583+00:00",
+            "revision": 3
+          },
+          {
+            "enrollment_id": "enr_544f0aba033e4fc0a2f50fb61aceda25",
+            "course_id": "crs_650052975ca7406aaddda22122c89bad",
+            "title": "Japanese affection and register — an L0 demonstration classroom",
+            "subtitle": null,
+            "recipe": "casual",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "active",
+            "provenance": {
+              "source": "local",
+              "pack_id": "japanese-affection-context-l0",
+              "pack_version": "1.0.0"
+            },
+            "next_step": {
+              "kind": "resolve_review_due",
+              "label": "Review 3 objective(s)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 3,
+              "total_objectives": 4,
+              "current_objective_id": "obj_2ec4b8ec075e459ab158f3f356717b68"
+            },
+            "warning": "stale_source",
+            "updated_at": "2026-11-06T21:58:27.360192+00:00",
+            "revision": 49
+          },
+          {
+            "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+            "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+            "title": "Japanese café basics, revised",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen (revised)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "obj_8d05513da1204c45885f419f386d7ebb"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T21:34:17.877127+00:00",
+            "revision": 5
+          },
+          {
+            "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb",
+            "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+            "title": "Japanese café basics",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "659f64346eec5e0d"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:42:10.516443+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_176897ff32584282955b085634837b2b",
+            "course_id": "crs_e58e8ef3fcb54777ac4d8c17636307e5",
+            "title": "Japanese café basics",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "3e76000b29ae121f"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:41:50.536648+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+            "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name the parts: half, quarter and eighth (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "81c3865ea1928504"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:38:28.425696+00:00",
+            "revision": 3
+          },
+          {
+            "enrollment_id": "enr_f7979943032a4e4c8ea244910780e966",
+            "course_id": "crs_66dfba72ef9e4182b05bc250b7d5f097",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 5,
+              "current_objective_id": "04b1feaec24e256b"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:27:09.299041+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_784e5e696f674e77be99b80d061dd32f",
+            "course_id": "crs_1f27d4072f774876adc62c369502593f",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "35add4bc254a5d4e"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:18:55.458728+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_6810b5a559f94c628caaa7e2f31b556d",
+            "course_id": "crs_d45c75b0d6a540e8bc5d890812866305",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:09:17.908595+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_35245a0815e647048882369b6252afd8",
+            "course_id": "crs_5b00a07f93ee44f880f57d3cb51d777e",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:04:11.418029+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_3ef0ef2f18e4450e925382eb2ad5d5df",
+            "course_id": "crs_0425a98fcbb546f8b4b2e0b014bf1a6f",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:58:24.932524+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_a18e081a3379458cb8dc58e8bc0b510c",
+            "course_id": "crs_ef4b1721bb574db2ab0a1113484f744a",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "0281a4687d05e389"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:53:19.398013+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_6fd46e75b5f245e4b4a0c1f7453194a5",
+            "course_id": "crs_88e1ec88b4944a50a1b180cd33f3936c",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:49:53.301413+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_36daa3bf81e24bfca20e464c8d961f88",
+            "course_id": "crs_ffa47ef1ca2c48bd98881fc0d280aa4d",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:47:28.324648+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_460d2db6585f41aa9b04fb4fe8e0799c",
+            "course_id": "crs_7df0a98d00d34ff488b3dde2d599c3db",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:29:58.302444+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_0d6e90f945734098a2245276d79c28d5",
+            "course_id": "crs_2eab8b4076624f2daa945ffec14901a8",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:29:22.784574+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_a7463e5310774324a934032d802460e5",
+            "course_id": "crs_1e75a5483bee4d90a8ab0ce32caf35a0",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:26:44.549306+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_403017b82b3940a5b1c276bef9d98079",
+            "course_id": "crs_2fcca2cd77fd499cb5a38606f82cf083",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:25:11.084538+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_5927318c52ae4055b340dfc9f9e04eed",
+            "course_id": "crs_058ea2a0d3744d1c9596607d3b71c06e",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "bb10a864fc34c668"
+            },
+            "warning": "plan_update",
+            "updated_at": "2026-11-06T15:23:50.548924+00:00",
+            "revision": 0
+          }
+        ],
+        "next_cursor": null,
+        "total": 20,
+        "empty_reason": null,
+        "applied_filter": "all"
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "quiz.history",
+      "request": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf"
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-quiz-history-1794002382806664048",
+      "ok": true,
+      "revision": 2,
+      "result": {
+        "attempts": [
+          {
+            "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+            "check_id": "chk_e5d74106de12466faa2389efebf0671d",
+            "check_version": 1,
+            "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+            "answer_kind": "text",
+            "answer": {
+              "kind": "text",
+              "selection": [
+                "B"
+              ],
+              "text": "B"
+            },
+            "verdict": "pass",
+            "evidence_class": "cold",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "matches an accepted answer"
+              }
+            ],
+            "state": "committed",
+            "grading_provenance": {
+              "grader": "deterministic:exact",
+              "reference_sha256": "sha256:27b733065ec950e03744be903e05bc900b939204aa2d8f0db5b47378a0647b86"
+            },
+            "disputes": [],
+            "created_at": "2026-11-06T21:59:42.726173+00:00",
+            "committed_at": "2026-11-06T21:59:42.726174+00:00"
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "at": "2026-11-06T21:59:42Z",
+      "method": "evidence.inspect",
+      "request": {
+        "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+        "limit": 100
+      },
+      "expected_revision": null,
+      "idempotency_key": "cb015-p12-evidence-inspect-1794002382809694158",
+      "ok": true,
+      "revision": 2,
+      "result": {
+        "l1": {
+          "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+          "objective_id": null,
+          "attempts": [
+            {
+              "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+              "check_id": "chk_e5d74106de12466faa2389efebf0671d",
+              "check_version": 1,
+              "answer": {
+                "kind": "text",
+                "selection": [
+                  "B"
+                ],
+                "text": "B"
+              },
+              "answer_hash": "sha256:fa3fb392f4db55248ffbbf848d619ee2f62aeafd53575e911ffe1ca41a13bfcd",
+              "verdict": "pass",
+              "evidence_class": "cold",
+              "criteria": [
+                {
+                  "id": "c1",
+                  "met": true,
+                  "observed": "matches an accepted answer"
+                }
+              ],
+              "state": "committed",
+              "provenance": {
+                "grader": "deterministic:exact"
+              },
+              "dispute_count": 0,
+              "created_at": "2026-11-06T21:59:42.726173+00:00",
+              "committed_at": "2026-11-06T21:59:42.726174+00:00"
+            }
+          ],
+          "events": [
+            {
+              "evidence_id": "evd_16c1300e2ff84373932eb6c5b45e44fa",
+              "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+              "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+              "layer": 2,
+              "kind": "independent_evidence",
+              "evidence_class": "cold",
+              "is_action": false,
+              "created_at": "2026-11-06T21:59:42.726263+00:00"
+            },
+            {
+              "evidence_id": "evd_85fccd9b4d8649a184444388a8e0f728",
+              "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+              "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+              "layer": 1,
+              "kind": "attempt",
+              "evidence_class": "cold",
+              "is_action": false,
+              "created_at": "2026-11-06T21:59:42.726244+00:00"
+            }
+          ]
+        },
+        "l2": {
+          "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+          "objective_id": null,
+          "objectives": [
+            {
+              "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+              "title": "Tell everyday affection from a direct romantic declaration",
+              "ordinal": 1,
+              "evidence_target": "discrimination",
+              "state": "independent_evidence",
+              "independent": true,
+              "delayed": false,
+              "L2_evidence_ids": [
+                "evd_16c1300e2ff84373932eb6c5b45e44fa"
+              ],
+              "independent_at": "2026-11-06T21:59:42.726263+00:00",
+              "attempt_classes": {
+                "cold": 1
+              },
+              "criteria": [
+                {
+                  "id": "pack_objective",
+                  "description": "obj-context-discrimination"
+                },
+                {
+                  "id": "target1",
+                  "description": "Names which line is the romantic confession"
+                },
+                {
+                  "id": "target2",
+                  "description": "Names which line is affection between friends"
+                },
+                {
+                  "id": "target3",
+                  "description": "Points at the cue (form or request) that changes the reading"
+                },
+                {
+                  "id": "chk-discrimination-1",
+                  "description": "automated audit of chk-discrimination-1"
+                }
+              ]
+            },
+            {
+              "objective_id": "obj_94aa0b6004d740cab7057e8484982a49",
+              "title": "Choose the polite expression for a first confession",
+              "ordinal": 2,
+              "evidence_target": "comprehension",
+              "state": "not_started",
+              "independent": false,
+              "delayed": false,
+              "L2_evidence_ids": [],
+              "independent_at": null,
+              "attempt_classes": {},
+              "criteria": [
+                {
+                  "id": "pack_objective",
+                  "description": "obj-polite-selection"
+                },
+                {
+                  "id": "target1",
+                  "description": "Selects the polite line for a first confession"
+                },
+                {
+                  "id": "target2",
+                  "description": "Relates the choice to the addressee and setting"
+                },
+                {
+                  "id": "chk-polite-selection-1",
+                  "description": "automated audit of chk-polite-selection-1"
+                }
+              ]
+            },
+            {
+              "objective_id": "obj_df4062b5b2f54b80b65ba9bb4af4a7bd",
+              "title": "Recall the intimate declaration in a new context",
+              "ordinal": 3,
+              "evidence_target": "recall",
+              "state": "not_started",
+              "independent": false,
+              "delayed": false,
+              "L2_evidence_ids": [],
+              "independent_at": null,
+              "attempt_classes": {},
+              "criteria": [
+                {
+                  "id": "pack_objective",
+                  "description": "obj-intimate-recall"
+                },
+                {
+                  "id": "target1",
+                  "description": "Produces the intimate line in a new, non-identical context"
+                },
+                {
+                  "id": "target2",
+                  "description": "Does not reuse the first-confession line for a settled partnership"
+                },
+                {
+                  "id": "chk-intimate-recall-1",
+                  "description": "automated audit of chk-intimate-recall-1"
+                }
+              ]
+            },
+            {
+              "objective_id": "obj_70327ddd55a348858228a15590a664da",
+              "title": "Explain why register changes with the relationship",
+              "ordinal": 4,
+              "evidence_target": "transfer",
+              "state": "not_started",
+              "independent": false,
+              "delayed": false,
+              "L2_evidence_ids": [],
+              "independent_at": null,
+              "attempt_classes": {},
+              "criteria": [
+                {
+                  "id": "pack_objective",
+                  "description": "obj-register-transfer"
+                },
+                {
+                  "id": "target1",
+                  "description": "Explains the change in terms of addressee, relationship and setting"
+                },
+                {
+                  "id": "target2",
+                  "description": "Transfers the reasoning to a third situation without a model answer"
+                },
+                {
+                  "id": "chk-register-transfer-1",
+                  "description": "automated audit of chk-register-transfer-1"
+                }
+              ]
+            }
+          ]
+        },
+        "l3": {
+          "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+          "recommendations": [
+            {
+              "kind": "needs_independent_evidence",
+              "text": "3 objective(s) have no cold independent evidence yet.",
+              "objective_ids": [
+                "obj_94aa0b6004d740cab7057e8484982a49",
+                "obj_df4062b5b2f54b80b65ba9bb4af4a7bd",
+                "obj_70327ddd55a348858228a15590a664da"
+              ],
+              "basis": "layer2.independent == false"
+            }
+          ],
+          "as_of": "2026-11-06T21:59:42.726263+00:00",
+          "is_persona": false
+        },
+        "disputes": {
+          "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+          "disputes": [],
+          "count": 0,
+          "truncated": false
+        }
+      },
+      "error": null
+    }
+  ],
+  "chosen": {
+    "objective_id": "obj_db66a657db894d0cb1d98f03a1f38979",
+    "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+    "source": {
+      "source_id": "src_f4da58f3e9fe4635b0d03bf3ba879d4f",
+      "title": "Marugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents",
+      "url": "https://marugoto.jpf.go.jp/en/assets/docs/about/starter_activities_contents_en.pdf",
+      "publisher": null,
+      "source_type": "course_material",
+      "support_status": "authoritative_documentation",
+      "published_at": null,
+      "fetched_at": "2026-11-06"
+    }
+  },
+  "impact_note": {
+    "objective_ids": [],
+    "check_ids": [],
+    "lesson_ids": [],
+    "artifact_ids": [],
+    "observed": "populated from gen_plan_sections.source_ids_json citations"
+  },
+  "retained": {
+    "attempts_before": 0,
+    "attempts_after": 1,
+    "attempts_missing_after_transition": [],
+    "attempts_retained": [],
+    "attempt_rows_with_changed_verdict_or_class": [],
+    "evidence_before": 0,
+    "evidence_missing_after_transition": [],
+    "db_counts_unchanged_by_revalidation": true,
+    "pre_transition_attempt": {
+      "check_id": "chk_e5d74106de12466faa2389efebf0671d",
+      "check_version": 1,
+      "nonce": "cb015-p12-pre-1794002382722319113",
+      "answer": "B",
+      "response_ok": true,
+      "verdict": "pass",
+      "attempt_id": "att_774c1a97d154437b9ec4918418493756",
+      "error": null
+    }
+  },
+  "ok": true,
+  "finished_at": "2026-11-06T21:59:42Z"
+}
