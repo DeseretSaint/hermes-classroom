@@ -8,15 +8,20 @@ These three functions are the *only* place Coursebook touches Hermes chat lifecy
     ``attempt.submit`` on the same dispatcher the UI uses, commits the transition, and only then
     returns the teaching context. A grading failure or a refusal returns a local block message so
     no inference runs against ungraded state. A clarification or ordinary conversation returns
-    ``None`` — it creates no attempt and consumes no retry.
+    ``None`` — it creates no attempt and consumes no retry. When no Coursebook store exists at all
+    it returns ``None`` before touching anything: a chat turn is not Coursebook use, so an
+    unprovisioned profile stays ungoverned rather than blocked, and the hook provisions nothing
+    (CB-014-R1 R1/R2). An *unreadable* store still fails closed.
 
 ``post_llm_call``
     Observer only: records the assistant snapshot as a lesson segment, fenced by the revision and
     turn nonce captured before the turn. Late callbacks are discarded, never written.
 
 ``post_tool_call``
-    Captures tool provenance/usage correlation. Source text stays untrusted content and can never
-    change policy, rubrics, tools, state, reminders or exports.
+    Captures tool provenance/usage correlation **for a bound lesson chat only**. A session that
+    never passed the gate is not attributable to an enrollment, so it writes nothing and opens no
+    database — an unbound chat must not grow the store it is not a part of. Source text stays
+    untrusted content and can never change policy, rubrics, tools, state, reminders or exports.
 
 A late callback carries a turn nonce and a compare-and-swap fence; it may not modify a newer
 revision.
@@ -33,9 +38,28 @@ GRADING_DEADLINE_MS = 8000
 #: Pre-turn fence per session: what the post-turn observer is allowed to write against.
 _TURNS: dict[str, dict[str, Any]] = {}
 
+#: Sessions this process has *decided* are bound lesson chats (``pre_llm_call`` records them,
+#: detach/unbind/error forgets them). Tool telemetry is written only for these: an unattributed
+#: usage row is not attributable to an enrollment and ``cb.db`` ``usage_events.enrollment_id``
+#: exists precisely to attribute one. Bounded so a long-lived gateway cannot grow it without limit.
+_GOVERNED: dict[str, dict[str, Any]] = {}
+_MAX_GOVERNED = 1024
+
 
 def _session_key(session_id: str) -> str:
     return str(session_id or "")
+
+
+def _remember_governed(session_key: str, binding_id: Any) -> None:
+    if not session_key:
+        return
+    if session_key not in _GOVERNED and len(_GOVERNED) >= _MAX_GOVERNED:
+        _GOVERNED.pop(next(iter(_GOVERNED)), None)
+    _GOVERNED[session_key] = {"binding_id": str(binding_id) if binding_id else None}
+
+
+def _forget_governed(session_key: str) -> None:
+    _GOVERNED.pop(session_key, None)
 
 
 def _fingerprint(value: Any) -> str | None:
@@ -58,10 +82,20 @@ def pre_llm_call(
     """Coursebook pre-turn gate.
 
     Returns ``{"context": ...}`` only after a transition is committed, or a fail-closed
-    ``{"action": "block", "message": ...}``. Returns ``None`` when this chat is not governed.
+    ``{"action": "block", "message": ...}``. Returns ``None`` when this chat is not governed —
+    including when this profile has no Coursebook store at all, which is the ordinary state of an
+    install nobody has opened yet. Absent is not unreadable: a store that exists and cannot be read
+    still fails closed below.
     """
-    from . import turn
+    from . import db, turn
 
+    key = _session_key(session_id)
+    if not db.store_exists():
+        # Nothing is provisioned, so nothing here can be governed. Clear any stale in-process
+        # decision for this key and leave the filesystem untouched (no directory, no file).
+        _TURNS.pop(key, None)
+        _forget_governed(key)
+        return None
     try:
         reconcile = turn.reconcile_binding(
             session_id,
@@ -70,11 +104,19 @@ def pre_llm_call(
         )
         if reconcile.get("status") in ("detached", "branched", "orphaned"):
             # A cwd change detaches governance; the chat continues without Coursebook state.
-            _TURNS.pop(_session_key(session_id), None)
+            _TURNS.pop(key, None)
+            _forget_governed(key)
             return None
+        if session_id and reconcile.get("status") != "unbound":
+            # This chat governs an enrollment, so its tool usage is attributable. Recorded here,
+            # before the turn, because ``post_tool_call`` runs mid-turn and must not re-derive
+            # governance from a database an unbound chat has no business opening.
+            _remember_governed(key, reconcile.get("binding_id"))
+        else:
+            _forget_governed(key)
         outcome = turn.pre_turn(session_id, user_message, deadline_ms=GRADING_DEADLINE_MS)
         if outcome.nonce:
-            _TURNS[_session_key(session_id)] = {
+            _TURNS[key] = {
                 "nonce": outcome.nonce,
                 "revision": outcome.revision,
                 "verdict": outcome.verdict,
@@ -82,7 +124,8 @@ def pre_llm_call(
             }
         return outcome.hook
     except Exception:  # noqa: BLE001 - a hook that cannot finish must never grant a pass
-        _TURNS.pop(_session_key(session_id), None)
+        _TURNS.pop(key, None)
+        _forget_governed(key)
         return {
             "action": "block",
             "message": (
@@ -128,23 +171,47 @@ def post_tool_call(
     duration_ms: int = 0,
     **kwargs: Any,
 ) -> None:
-    """Coursebook tool-provenance observer. Returns ``None``; never alters the tool result."""
+    """Coursebook tool-provenance observer. Returns ``None``; never alters the tool result.
+
+    Records a ``usage_events`` row **only** for a session this process observed as a bound lesson
+    chat. An unbound session's tool call has no ``enrollment_id`` to attribute, and ``cb.db``
+    ``usage_events`` is an attribution table: the row would be noise in the operator's store, so
+    nothing is written and no connection is opened for it. Governance is re-confirmed against the
+    live binding inside the fence, so a chat detached mid-turn stops being recorded immediately
+    (``AUDIT.md`` R1: no recency, no inference — a live binding row is the only authority).
+    """
     from . import db
 
+    session_id = str(kwargs.get("session_id") or "")
+    key = _session_key(session_id)
+    if not session_id or key not in _GOVERNED:
+        # Ungoverned chat: nothing to attribute. Deliberately before the storage seam so an
+        # unbound session can never create or grow a Coursebook database.
+        return None
     try:
         with db.transaction() as connection:
             binding = connection.execute(
-                "SELECT enrollment_id, status FROM bindings WHERE connection_id = ? OR stored_session_id = ?"
-                + bindings.GOVERNING_ORDER,
-                (task_id or "", kwargs.get("session_id") or ""),
+                "SELECT id, enrollment_id FROM bindings"
+                " WHERE stored_session_id = ? AND status IN ('active', 'paused')"
+                " ORDER BY updated_at DESC LIMIT 1",
+                (session_id,),
             ).fetchone()
+            if binding is None or not binding["enrollment_id"]:
+                # Detached (or the row moved) after the gate decided: stop attributing this chat.
+                _forget_governed(key)
+                return None
+            enrollment = connection.execute(
+                "SELECT 1 FROM enrollments WHERE id = ?", (binding["enrollment_id"],)
+            ).fetchone()
+            if enrollment is None:
+                return None
             connection.execute(
                 "INSERT INTO usage_events (id, operation_id, enrollment_id, provider, model, tokens_json,"
                 " duration_ms, artifact_count, recorded_at) VALUES (?, ?, ?, ?, NULL, '{}', ?, 0, ?)",
                 (
                     f"use_{uuid.uuid4().hex}",
                     (task_id or None),
-                    binding["enrollment_id"] if binding else None,
+                    binding["enrollment_id"],
                     f"tool:{str(tool_name)[:120]}",
                     int(duration_ms) if duration_ms else None,
                     db.utcnow(),
@@ -162,7 +229,6 @@ PROVIDED_HOOKS: tuple[str, ...] = ("pre_llm_call", "post_llm_call", "post_tool_c
 # Registration reads the live contract (``coursebook.domain.ensure_registered``), so a contract
 # amendment adds methods without a second wiring point and cannot drift from ``cb.rpc``.
 from . import domain as _domain  # noqa: E402  (import after the hook constants on purpose)
-from . import bindings  # noqa: E402  (binding lookup ordering shared with the kernel)
 
 _domain.ensure_registered()
 
@@ -175,7 +241,8 @@ _pack_flow.ensure_registered()
 # Startup reconciliation runs once per process, at plugin load: a crashed worker's jobs become
 # `interrupted_requires_retry`, cancel-in-progress jobs become `cancelled`, and orphaned artifact
 # staging/objects are reconciled. Guarded so tests and an unmigrated install are never mutated by
-# merely importing the package.
+# merely importing the package — and because its guard is `db.applied_schema_version()`, which is a
+# non-creating read, importing this module does not create `plugin-data/` either (CB-014-R1 R1).
 def reconcile_on_startup() -> dict[str, Any]:
     try:
         from . import job_service

@@ -62,6 +62,20 @@ def implemented_methods() -> tuple[str, ...]:
 
 
 def _health_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Report plugin/db health, provisioning the store on first contact.
+
+    **This GET mutates, deliberately.** "Migrate on first use" means the first use is the user
+    opening Coursebook, and the pane's first request is ``health.get``; a pure read here would
+    leave a fresh install permanently ``Degraded`` with no path to ``course.create``. Chat
+    lifecycle hooks never provision (CB-014-R1 R1), so this handler is the seam (R4).
+
+    ``db.health()`` itself stays a pure read. A migration failure is swallowed here and shows up
+    honestly as ``db.ready: false`` with the version still on disk — never raised, never faked.
+    """
+    try:
+        db.ensure_schema()
+    except Exception:  # noqa: BLE001 - health must answer, and must not claim ready on failure
+        pass
     return 0, {
         "plugin_version": __version__,
         "contract_version": RPC_CONTRACT_VERSION,
