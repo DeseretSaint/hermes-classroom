@@ -8,7 +8,10 @@ These three functions are the *only* place Coursebook touches Hermes chat lifecy
     ``attempt.submit`` on the same dispatcher the UI uses, commits the transition, and only then
     returns the teaching context. A grading failure or a refusal returns a local block message so
     no inference runs against ungraded state. A clarification or ordinary conversation returns
-    ``None`` — it creates no attempt and consumes no retry.
+    ``None`` — it creates no attempt and consumes no retry. When no Coursebook store exists at all
+    it returns ``None`` before touching anything: a chat turn is not Coursebook use, so an
+    unprovisioned profile stays ungoverned rather than blocked, and the hook provisions nothing
+    (CB-014-R1 R1/R2). An *unreadable* store still fails closed.
 
 ``post_llm_call``
     Observer only: records the assistant snapshot as a lesson segment, fenced by the revision and
@@ -79,11 +82,20 @@ def pre_llm_call(
     """Coursebook pre-turn gate.
 
     Returns ``{"context": ...}`` only after a transition is committed, or a fail-closed
-    ``{"action": "block", "message": ...}``. Returns ``None`` when this chat is not governed.
+    ``{"action": "block", "message": ...}``. Returns ``None`` when this chat is not governed —
+    including when this profile has no Coursebook store at all, which is the ordinary state of an
+    install nobody has opened yet. Absent is not unreadable: a store that exists and cannot be read
+    still fails closed below.
     """
-    from . import turn
+    from . import db, turn
 
     key = _session_key(session_id)
+    if not db.store_exists():
+        # Nothing is provisioned, so nothing here can be governed. Clear any stale in-process
+        # decision for this key and leave the filesystem untouched (no directory, no file).
+        _TURNS.pop(key, None)
+        _forget_governed(key)
+        return None
     try:
         reconcile = turn.reconcile_binding(
             session_id,
@@ -229,7 +241,8 @@ _pack_flow.ensure_registered()
 # Startup reconciliation runs once per process, at plugin load: a crashed worker's jobs become
 # `interrupted_requires_retry`, cancel-in-progress jobs become `cancelled`, and orphaned artifact
 # staging/objects are reconciled. Guarded so tests and an unmigrated install are never mutated by
-# merely importing the package.
+# merely importing the package — and because its guard is `db.applied_schema_version()`, which is a
+# non-creating read, importing this module does not create `plugin-data/` either (CB-014-R1 R1).
 def reconcile_on_startup() -> dict[str, Any]:
     try:
         from . import job_service

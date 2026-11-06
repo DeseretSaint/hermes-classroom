@@ -13,8 +13,11 @@ Frozen rules — do not relax them in a later phase:
 * migrations are transactional and recorded in ``schema_migrations`` with a checksum, one
   transaction per migration.
 
-The only handle is ``plugins.plugin_storage.plugin_db("coursebook")`` (``docs/ARCHITECTURE.md``
-§3). Nothing here opens a path directly.
+The only database handle is ``plugins.plugin_storage.plugin_db("coursebook")``
+(``docs/ARCHITECTURE.md`` §3). The read side (:func:`store_root`, :func:`store_exists`) resolves
+``<plugin data>/coursebook`` through ``hermes_constants.get_hermes_home()`` — exactly the path
+``plugin_data_dir`` returns — because ``plugin_data_dir`` ``mkdir``s on every call and a read must
+never create the store it is asking about.
 """
 
 from __future__ import annotations
@@ -105,16 +108,32 @@ def single_home_pin() -> Path | None:
     return None if _within(active, launch) else launch
 
 
-def data_root() -> Path:
-    """``<plugin data>/`` for the active profile, resolved per call (never cached)."""
+def store_root() -> Path:
+    """``<plugin data>/`` for the active profile, resolved **without creating anything**.
+
+    This is the read-side twin of :func:`data_root`: same resolution rules — including
+    :func:`single_home_pin` — but it never calls ``plugin_data_dir()``, which ``mkdir``s on every
+    call. Existence probes and other reads must use this one: a lifecycle hook or a health read
+    that has found nothing must leave the filesystem exactly as it found it (``PREBUILD_SPEC.md``
+    §6/§7, CB-014-R1 R1/R3).
+    """
     pinned = single_home_pin()
     if pinned is not None:
-        root = pinned / "plugin-data" / PACKAGE_ID
-        root.mkdir(parents=True, exist_ok=True)
-        return root
-    from plugins.plugin_storage import plugin_data_dir
+        return pinned / "plugin-data" / PACKAGE_ID
+    from hermes_constants import get_hermes_home
 
-    return plugin_data_dir(PACKAGE_ID)
+    return get_hermes_home() / "plugin-data" / PACKAGE_ID
+
+
+def data_root() -> Path:
+    """``<plugin data>/`` for the active profile, resolved per call (never cached).
+
+    Creating on purpose: every caller of this function is about to write. Reads go through
+    :func:`store_root` instead.
+    """
+    root = store_root()
+    root.mkdir(parents=True, exist_ok=True)
+    return root
 
 
 def database_path() -> Path:
@@ -259,13 +278,29 @@ def _statements(script: str) -> list[str]:
     return statements
 
 
+def store_exists() -> bool:
+    """Whether this profile has a Coursebook database file, without creating anything.
+
+    ``False`` means "this chat is not Coursebook use" for a lifecycle hook, and "nothing has been
+    provisioned yet" for a health read. It must never be confused with ``False`` from a check that
+    could not run: a store that exists but cannot be read stays a hard failure, so fail-closed
+    behaviour is untouched (CB-014-R1 R2).
+    """
+    try:
+        return (store_root() / "data.db").is_file()
+    except Exception:  # noqa: BLE001 - no resolvable store is an absent store, never a block
+        return False
+
+
 def applied_schema_version() -> int | None:
     """Highest applied migration version, or ``None`` when the database has no schema yet.
 
-    Read-only: it never creates the database file.
+    Read-only: it never creates the directory or the file. When the file is absent it returns
+    ``None`` without opening a connection (a connection would create an empty database), and when
+    the directory is absent it returns ``None`` without creating it either.
     """
-    path = database_path()
-    if not path.exists():
+    path = store_root() / "data.db"
+    if not path.is_file():
         return None
     with read() as connection:
         row = connection.execute(
@@ -332,8 +367,9 @@ def migrate() -> int:
 def ensure_schema() -> int:
     """Migrate on first use. Returns the schema version now on disk.
 
-    Every command calls this before touching data, so a fresh install works without a separate
-    provisioning step and ``health.get`` can report ``ready`` honestly.
+    "First use" is an explicit Coursebook action — the user opening the pane (``health.get``),
+    ``course.create``, a pack, a job, any command. A chat turn is not Coursebook use, so no
+    lifecycle hook calls this (CB-014-R1 R1/R5).
     """
     version = applied_schema_version()
     if version is not None and version >= target_schema_version():

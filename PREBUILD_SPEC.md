@@ -167,6 +167,17 @@ Course workspace (backend-owned, outside git roots)
 SQLite is the source of truth. Markdown/JSON/PDF/audio are exports or content artifacts, not
 parallel authorities. Large media lives in content-addressed storage with metadata in SQLite.
 
+Lifecycle hooks never provision storage. No chat-lifecycle path (`pre_llm_call`, `post_llm_call`,
+`post_tool_call`) and no plugin import may create the plugin-data directory, create the database
+file, or run a migration: a chat turn is not Coursebook use. Only an explicit Coursebook action
+provisions the store — `health.get` on first pane contact, `course.create`, packs, jobs and every
+other command call `ensure_schema()`. `health.get` is therefore a deliberate mutating read:
+opening Coursebook is the first use, so the handler migrates before reporting, then reports the
+honest result (`db.ready: false` on failure) — it never raises and never claims ready. Reads
+outside that handler (`db.applied_schema_version()`, `db.health()`, `db.store_exists()`) create
+neither the directory nor the file, so a profile that only chats never grows a store it does not
+use.
+
 Use one short-lived SQLite connection per unit of work, `BEGIN IMMEDIATE` for fenced mutations,
 foreign keys, bounded busy timeout/retry, transactional migrations, and guaranteed connection
 cleanup. Provider calls, archive generation, and long artifact writes never run inside a DB
@@ -206,6 +217,12 @@ compression tip, and status. Titles are display only.
 Create operations are adopt-before-mint with an in-flight lock. Repeating a lesson creates a
 new run and never depends on acquiring the same title. Runtime-id loss triggers resume by the
 stored binding, not recency.
+
+A chat in a profile with no Coursebook store is simply ungoverned: `pre_llm_call` returns `None`,
+injects no policy, grades nothing, and provisions nothing — no directory, no file, no migration.
+Absent is not unreadable. A store that exists and cannot be read (schema drift, a missing table, an
+unopenable file) still fails closed exactly as the grading gate requires, so removing accidental
+provisioning never weakens the gate: the two states get different answers.
 
 Binding statuses: `active`, `paused`, `detached`, `branched`, `completed`, `orphaned`.
 Rename is cosmetic. Cwd change detaches governance. Model change is recorded and may require
