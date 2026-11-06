@@ -6,6 +6,44 @@ where it stops, for backend reasons recorded below.** Nothing pushed to GitHub.
 Branch `wt/cb-011-vellum`, worktree `/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_4255b696`,
 built on `master` @ `adedf47` (cb.rpc v6 / cb.db v3, Cinder's executor).
 
+## CB-011L live acceptance attempt (2026-11-06, `master` @ `f4a42f3`)
+
+Ran once as the card requires — `scripts/cb011-parent-probe.py full` with `CB011_WAIT=900
+CB011_POLL=2` — against the isolated backend (`scripts/cb013-live-backend.sh`, plugin root this
+worktree, `wire_version` 6) with `scripts/cb011-tick-loop.py` printing `tick running`. Full stdout,
+raw job rows and provider usage: `docs/REVIEW_CB011-live.log`.
+
+| Step | Result | Evidence |
+|---|---|---|
+| `parent.brief.create` | ok — course `crs_66dfba72ef9e4182b05bc250b7d5f097` | probe log |
+| plan job `job_0fbffd2882df4e238171bef0a0ac15a6` | **completed** 16:27:07Z, “plan authored (needs_review)” | jobs row |
+| `parent.plan.edit` on draft v1 | ok → plan v2 draft (fenced on plan hash + revision) | probe log |
+| `plan.approve` | ok — plan `489dbd431294e890` **approved** 16:27:09Z | plans row |
+| lessons job `job_bfd483af216d4104a979cc8a17f19c13` | **FAILED** 16:32:40Z, `GRADER_UNAVAILABLE` — “coursebook.lesson.generate took 115802ms, over its 60.0s deadline” | jobs row |
+| `parent.final.approve` | **not reached** (the probe path also refuses: `expected_revision` is required) | probe log |
+| `parent.export` | **not reached**; gate reads `{"ready":false,"blocked_reason":"no_final_approval"}` | `parent.blueprint.read` |
+| three exported roles + PDF artifact | **not proven** — no export exists for this course | no artifact row, no file |
+
+The probe process itself was killed by this agent's 420 s per-command cap at ~16:32:06Z, so the
+run did not reach the probe's own 900 s wait; the job was read to its terminal state by direct
+`jobs.get` polling. That does not soften the verdict: the lesson job failed on a real provider
+deadline, not on a harness wait. One lesson of five sections was persisted (`needs_review`).
+
+Defects behind the stop (method, code and last state in `docs/REVIEW_CB011-live.log`):
+
+1. **Deadline** — every lesson/validation request is built with a hard-coded 60 s deadline
+   (`coursebook/generation.py`) and a call that returns in 115.8 s is converted to
+   `ProviderTimeout`; the host call is not aborted at the declared deadline. Observed call times
+   on this provider: 14.2 s, 26.9 s, 31.4 s, 34.3 s, 52.3 s, 55.4 s, **115.8 s**.
+2. **Call budget** — `CostBudget.max_calls = 8` per job is below the floor for a 5-section plan
+   (one lesson + one validation call per section, plus a retry call whenever validation rejects).
+   The earlier attempt on this home died at exactly that ceiling:
+   `job_06388582367a40af8c69d01dd9c3964a`, “job already made 8 provider calls (ceiling 8)”,
+   2026-11-06T15:46:11Z.
+3. **Probe** — `scripts/cb011-parent-probe.py` sends no `expected_revision` to
+   `parent.final.approve`, so its final-approval step can never pass even with real content
+   (`VALIDATION_FAILED: 'expected_revision' is a required property`).
+
 ## What is in the Desktop half
 
 `desktop/plugin.js` (single module, `@hermes/plugin-sdk` only, `jsx()`/`jsxs()`, theme tokens only):
@@ -77,6 +115,11 @@ parent.blueprint.read→ plan v2 approved, content_hash, approval.state=none,
 
 `docs/REVIEW_CB011-flow-trace.json` holds the request/response of every call above.
 
+That first capture stopped at `interrupted_requires_retry` because the job's lease lapsed while no
+tick was running. The 2026-11-06 re-run reaches the same stage and fails it outright
+(`GRADER_UNAVAILABLE`, 115.8 s call against a 60 s deadline) — stronger evidence that the stage does
+not complete here, not a different symptom.
+
 Gates: `node --check desktop/plugin.js` OK; `tests.test_desktop_contracts` 6/6;
 `hermes plugins doctor` `OK: 1 tool(s), 3 hook(s)`; `hermes plugins validate` passed.
 
@@ -118,9 +161,9 @@ and are wiring/caching scope only, commented as cross-owner edits:
 | Criterion | State |
 |---|---|
 | Brief with age/level/setting/materials/exclusions/egress disclosure | **Verified live** |
-| Draft / review / plan approval / generation / final approval / export / reflection states | Draft, review, plan approval, generation queued/running verified live; **final approval + export not reachable** because the lesson stage never completed |
+| Draft / review / plan approval / generation / final approval / export / reflection states | Brief, draft plan, **draft edit and plan approval verified live** (2026-11-06: plan job `job_0fbffd2882df4e238171bef0a0ac15a6` completed, `plan.approve` ok). Generation **FAILED live** — lessons job `job_bfd483af216d4104a979cc8a17f19c13` ended `GRADER_UNAVAILABLE` on a 60 s provider deadline. **Final approval + export not reachable** |
 | Source/activity editing with approval invalidation and partial regeneration | Editing + fence verified live; invalidation banner is wired to the approval row (not yet observed because no approval existed); partial-regeneration copy/behaviour is the kernel’s reuse path |
-| Parent guide / learner pages / answers / narration tabs; low-ink printable export | Tabs render live (empty until content); PDF export **not produced** |
+| Parent guide / learner pages / answers / narration tabs; low-ink printable export | Tabs render live (empty until content); PDF export **not produced** — 2026-11-06 run failed before any lesson set existed |
 | No answer key on learner page | Enforced by role separation in the UI copy and by `packs.LEARNER_FACING_ROLES` + the v6 answer-text exception; verified as a structural property, not yet on generated content |
 | Editing after approval blocks export until reapproval | Wired (`blocked_reason` + banner); needs a complete lesson set to demonstrate |
 | Final approval distinct from plan approval | **Verified live**: two badges and two actions, revision 2 with plan approved and lesson set not approved |
