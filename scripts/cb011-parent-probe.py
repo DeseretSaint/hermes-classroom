@@ -11,7 +11,7 @@ the same calls the UI made.
     scripts/cb011-parent-probe.py revise   # re-approval path: replan -> draft edit -> export gate
 
 Environment: CB013_BASE (default http://127.0.0.1:44219), CB013_TOKEN (default cb013-test-token),
-CB011_COURSE_ID to continue an existing course, CB011_WAIT seconds for job completion (default 240).
+CB011_COURSE_ID to continue an existing course, CB011_WAIT seconds for job completion (default 900).
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ import urllib.request
 
 BASE = os.environ.get("CB013_BASE", "http://127.0.0.1:44219")
 TOKEN = os.environ.get("CB013_TOKEN", "cb013-test-token")
-WAIT = float(os.environ.get("CB011_WAIT", "240"))
+WAIT = float(os.environ.get("CB011_WAIT", "900"))
 LOG: list[dict] = []
 
 

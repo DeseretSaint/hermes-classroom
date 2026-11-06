@@ -16,20 +16,60 @@ from __future__ import annotations
 
 import asyncio
 import os
+import subprocess
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
+def _has_host_packages(python: str) -> bool:
+    """True when this interpreter can load the agent's plugin-LLM seam."""
+    if not python or not os.path.isfile(python):
+        return False
+    try:
+        checked = subprocess.run(
+            [python, "-c", "import referencing, agent.plugin_llm"],
+            env={**os.environ, "HERMES_AGENT_ROOT": os.environ.get(
+                "HERMES_AGENT_ROOT", os.path.expanduser("~/.hermes/hermes-agent"))},
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return checked.returncode == 0
+
+
+def _host_python() -> str | None:
+    """Find an interpreter with the host packages instead of trusting one stale venv path."""
+    candidates = [os.environ.get("COURSEBOOK_VENV_PYTHON", "")]
+    for root in (
+        Path.home() / ".hermes" / "installs",
+        Path(os.environ.get("HERMES_HOME", "")) / "installs",
+    ):
+        if root.is_dir():
+            candidates.extend(str(path) for path in sorted(root.glob("*/environments/*/venv/bin/python")))
+    candidates.append(sys.executable)
+    for candidate in dict.fromkeys(candidates):
+        if _has_host_packages(candidate):
+            return candidate
+    return None
+
+
 # A supervisor may restart this script under an interpreter that lacks the host's packages
-# (`referencing`, `agent.*`). Re-exec into the venv that has them instead of dying mid-run.
+# (`referencing`, `agent.*`). Re-exec into a verified interpreter, never into a stale path.
 try:  # noqa: SIM105
     import referencing  # noqa: F401
     import agent.plugin_llm  # noqa: F401
 except ModuleNotFoundError:
-    venv_python = os.environ.get("COURSEBOOK_VENV_PYTHON")
+    venv_python = _host_python()
     if venv_python and os.path.realpath(sys.executable) != os.path.realpath(venv_python):
         os.execv(venv_python, [venv_python, *sys.argv])
-    raise
+    raise SystemExit(
+        "cb011-tick-loop: no interpreter has both referencing and agent.plugin_llm; "
+        "set COURSEBOOK_VENV_PYTHON to the Hermes runtime venv"
+    )
 
 from coursebook import db, executor, generation, hooks  # noqa: E402,F401 - hooks runs startup reconciliation
 
