@@ -92,22 +92,24 @@ The mounted-backend probe now drives the whole product loop through the real ASG
 `HERMES_HOME`), so the routes are proven, not just the handlers:
 
 ```
-GET  /packs/intake                 can_grant true
-POST /packs/grant                  relative path → PACK_REJECTED (no guessed location)
+GET  /packs/intake                 can_grant true · staging_root is an output-only hint
+POST /packs/grant                  relative path / URL / symlink / absent file → PACK_REJECTED
 POST /packs/grant                  real archive → staged_id
 POST /rpc pack.preview             manifest + integrity + three separate trust labels
 POST /rpc pack.import mode=fresh   course crs_… enrollment enr_… (pack_id echoed)
 POST /rpc pack.export              content_hash == previewed hash · 5 files · 14548 B
 POST /rpc artifact.get             handle art_…_<expiry>
-GET  /artifacts/<handle>           application/zip · 14548 B · sha256:503f3316755…
+GET  /artifacts/<handle>           application/zip · 14548 B · sha256:503f3316755… · attachment
+GET  /artifacts/<expired-handle>   404 NOT_FOUND, no bytes
 GET  /artifacts/<unknown>          404, no path, no traceback
+GET  /artifacts/<corrupted file>   500 INTERNAL_ERROR, no path, no traceback
 POST /rpc pack.import mode=resume  same enrollment_id as the first import
 POST /rpc pack.import mode=fresh   distinct course_id/enrollment_id, same pack_id
 POST /rpc pack.preview (tampered)  PACK_REJECTED · library total unchanged
 ```
 
-`python3 scripts/probe-backend.py --trace docs/REVIEW_CB010-trace.json` writes the full 20-step
-trace (sha256 `11b960094f07686510e7415ebdc0d58cb1f2ce86341f7645e30fd152688977fd`).
+`python3 scripts/probe-backend.py --trace docs/REVIEW_CB010-trace.json` writes the full 26-step
+trace (sha256 `bb73d3d13dbb3bcd28d1f51a86bb6d3eeb676e198793a91967746472edfa33a2`).
 
 `python3 scripts/pack-flow-trace.py` (real run, throwaway `HERMES_HOME`):
 
@@ -141,16 +143,28 @@ delete               frozen · scope counts {courses 2, enrollments 2, artifacts
   `library.list`, which the kernel now implements; it uses a method absent from the contract.
   CB-010 also appends the pack loop (intake → grant → preview → import → export → artifact
   download → resume/fresh → tampered rejection); `record()` now records a binary response by
-  content type, bytes and sha256 instead of trying to JSON-decode a zip.
+  content type, bytes and sha256 instead of trying to JSON-decode a zip. CB-016 adds URL/symlink/
+  absent-path grant refusals, download header assertions (`Content-Disposition` name,
+  `Content-Length`, `no-store`, `nosniff`), an expired-handle 404, and an on-disk corruption that
+  must be an integrity 500 with no path in the body — 26 expectations total.
 * `dashboard/plugin_api.py` — three routes appended below the existing four:
   `GET /packs/intake`, `POST /packs/grant`, `GET /artifacts/{handle}`. They are thin adapters
   over `coursebook/pack_flow.py` (`grant_local_file`, `open_artifact`); no path is accepted from
   the RPC contract, no path is returned, refusals come back as data (HTTP 200 `ok:false`) and a
   bad handle as 404. The download response is `Cache-Control: no-store`,
   `X-Content-Type-Options: nosniff`, and lets `FileResponse` own `Content-Length`.
-  **Owner: Sable.** This landed here because the acceptance criteria require an authenticated
+  **Owner: Sable.**
+  This landed here because the acceptance criteria require an authenticated
   download in this package; Sable's CB-016 card (t_0b7715dc) can keep or replace it — the handler
   seam it calls is fixed and tested either way.
+  **Verified by Sable in CB-016 (branch `wt/cb-010-seams`):** the three routes are kept.
+  `staging_root` is restored to the intake body (the card's contract; an output-only hint, never a
+  client input). Refusal handling is narrowed to `PackRejected`/`RpcError`, so an internal failure
+  is a 500 instead of a fake `PACK_REJECTED`; artifact `NOT_FOUND` maps to 404 and an integrity
+  mismatch to 500, both JSON with a stable code and never a path or traceback; the download is
+  named `<pack_id>-<version>.zip` as the card asks (the on-disk export keeps its digest suffix).
+  Authentication is the host's own `/api/` middleware — `/api/plugins/...` is not in
+  `PUBLIC_API_PATHS`, so an unauthenticated request is 401'd before the route runs.
 * `tests/test_manifest.py` — the router-path assertion now lists the three new routes.
 * `desktop/plugin.js` — appended inside Vellum's shell (their explicit hand-off), flag flipped;
   the export panel renders the `artifact.download.url` the backend names as a real download link
