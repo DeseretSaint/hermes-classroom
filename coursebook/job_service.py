@@ -562,6 +562,38 @@ def _view(job_id: str) -> dict[str, Any]:
     return job_view(row)
 
 
+def run_pending(
+    resolvers: dict[str, Callable[[dict[str, Any]], Sequence[Stage]]],
+    *,
+    limit: int = 5,
+    owner: str | None = None,
+) -> list[dict[str, Any]]:
+    """Drain up to ``limit`` queued jobs whose kind has a resolver.
+
+    This is the pump a host calls (poll tick or ``ctx.spawn_task`` body). A job whose kind has no
+    resolver stays ``queued`` rather than being failed: the family may be implemented by another
+    package, and inventing a failure would be a false statement. ``resolvers`` build stages from
+    the persisted brief, so a retry after edit never needs the original form.
+    """
+    with db.read() as connection:
+        rows = connection.execute(
+            "SELECT id, kind, brief_json FROM jobs WHERE state = 'queued' ORDER BY created_at LIMIT ?",
+            (limit,),
+        ).fetchall()
+    views: list[dict[str, Any]] = []
+    for row in rows:
+        resolver = resolvers.get(str(row["kind"]))
+        if resolver is None:
+            continue
+        brief = _load(row["brief_json"], {})
+        try:
+            stages = resolver(brief)
+        except Exception:  # noqa: BLE001 - a bad brief must not kill the pump
+            continue
+        views.append(execute(str(row["id"]), stages, owner=owner))
+    return views
+
+
 def list_jobs(*, state: str | None = None, kind: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
     clauses: list[str] = []
     params: list[Any] = []

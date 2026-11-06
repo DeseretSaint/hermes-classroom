@@ -207,6 +207,31 @@ class FailureAndRecoveryTest(JobServiceCase):
         self.assertEqual(error["code"], "JOB_NOT_CANCELLABLE")
 
 
+class PumpTest(JobServiceCase):
+    def test_pump_runs_known_kinds_and_leaves_unknown_kinds_queued(self) -> None:
+        research = self.new_job("research")
+        export = self.new_job("export")
+        stage = CountingStage("pump")
+        views = job_service.run_pending({
+            "research": lambda brief: [job_service.Stage("pump", stage)],
+        })
+        self.assertEqual([view["job_id"] for view in views], [research])
+        self.assertEqual(views[0]["state"], "completed")
+        self.assertEqual(stage.runs, 1)
+        self.assertEqual(self.job(export)["state"], "queued", "an unimplemented family is not failed")
+
+    def test_pump_passes_the_persisted_brief_not_a_live_form(self) -> None:
+        self.ok("jobs.create", {"kind": "media", "brief": {"goal": "diagram-42"}})
+        seen = {}
+
+        def resolver(brief):
+            seen.update(brief)
+            return [job_service.Stage("one", CountingStage("one"))]
+
+        job_service.run_pending({"media": resolver})
+        self.assertEqual(seen["goal"], "diagram-42")
+
+
 class UsageTest(JobServiceCase):
     def test_usage_is_recorded_with_unknown_fields_null(self) -> None:
         job_id = self.new_job()

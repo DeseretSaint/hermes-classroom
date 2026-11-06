@@ -8,7 +8,7 @@ the kernel tables and the kernel was not yet merged to `master` when the worktre
 
 | Deliverable | Module | What is actually enforced |
 |---|---|---|
-| Durable job service | `coursebook/job_service.py` | Random job ids; `operation_id` de-duplication; leases with `(job_id, attempt_id, lease_owner)` fencing; `BEGIN IMMEDIATE` claims/renewals/checkpoints/finishes; real-stage progress; `cancel_requested → cancelling → cancelled`; `completed` that races a cancel becomes `completed_late`; failed retry is a new attempt with the persisted checkpoint; startup reconciliation. |
+| Durable job service | `coursebook/job_service.py` | Random job ids; `operation_id` de-duplication; leases with `(job_id, attempt_id, lease_owner)` fencing; `BEGIN IMMEDIATE` claims/renewals/checkpoints/finishes; real-stage progress; `cancel_requested → cancelling → cancelled`; `completed` that races a cancel becomes `completed_late`; failed retry is a new attempt with the persisted checkpoint; `run_pending()` drains queued jobs for kinds a host has a resolver for; startup reconciliation. |
 | Governed research | `coursebook/workers.py` (research stages) | Executable `ResearchBudget`; a cancel check at every provider-call boundary; cancellation propagates through `research.run_research` instead of being swallowed as a "failed fetch"; search/extract calls are counted in `usage_events` with real durations and null tokens. No research path is reachable from `pre_llm_call`. |
 | Source ledger | `coursebook/sources.py` | URL/title/source type/fetch/publication dates and support status from the frozen vocabulary; refresh compares content hashes against the immutable `gen_research_runs` snapshots; a changed source becomes `stale`; unreachable sources stay historical and become `unreachable`; impact resolves dependent objectives/checks/lessons/artifacts; `attempt.submit` refuses a stale check with `CHECK_STALE` and creates no attempt or transition. |
 | Artifact cache + media policy | `coursebook/artifacts.py` | Content-addressed store (`<root>/objects/<hash[:2]>/<hash>`); unique `(content_hash, kind)` reuse with `ref_count`; spec-hash + source-hash cache lookup; staged write → fsync → atomic rename → DB commit; startup reconciliation of stale staging and unreferenced objects; allowlisted SVG subset; safe exclusive-subset PDF template with selectable text; magic-byte MIME sniffing; illustration label; text-equivalent requirement; narration transcript/voice/language requirement. |
@@ -35,16 +35,17 @@ the old worker's next checkpoint/finish raises `JobLeaseLost` and cannot touch t
 
 ```
 python3 -m unittest discover -s tests -t .
-Ran 389 tests ... OK
+Ran 391 tests ... OK
 ```
 
 New suites:
 
-* `tests/test_job_service.py` — 17 cases: operation-id de-dup, idempotency replay/conflict, live
+* `tests/test_job_service.py` — 19 cases: operation-id de-dup, idempotency replay/conflict, live
   lease refusal, expiry reclaim + stale-worker fence, renew fence, queued cancel spends nothing,
   cancel at a stage boundary stops the next stage, `completed_late`, cancel+restart→cancelled,
   durable failure, restart→`interrupted_requires_retry` with checkpoint, resume with stage skip,
-  terminal job refusal, usage nulls, usage summary.
+  terminal job refusal, usage nulls, usage summary, and the `run_pending` pump (known kinds run,
+  unknown kinds stay queued, the persisted brief is what the resolver sees).
 * `tests/test_artifacts.py` — 28 cases: SVG script/on*/foreignObject/external-href/doctype
   rejection, deterministic schematic, PDF header/EOF/selectable text/no JavaScript, MIME sniffing,
   spec policy (illustration authority, sourced permission, narration transcript, schematic facts),
