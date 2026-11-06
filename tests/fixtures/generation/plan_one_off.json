@@ -1,0 +1,128 @@
+{
+  "title": "Replace a bicycle brake pad",
+  "learner_outcome": "Replace one rim-brake pad on a bicycle, then verify the brake by hand before riding, following the manufacturer's manual.",
+  "delivery": "self_study",
+  "time_estimate": {
+    "sessions_per_week": 1,
+    "minutes_per_session": 45,
+    "weeks": 1,
+    "basis": "none",
+    "confidence": "low",
+    "rationale": "A single task; no attainment estimate is made because completion is verified, not learned.",
+    "benchmark": null,
+    "attainment_hours": null
+  },
+  "objectives": [
+    {
+      "ordinal": 1,
+      "title": "Identify the correct replacement pad for the brake model",
+      "evidence_target": "procedure",
+      "evidence_criteria": [
+        "Matches pad model to the manual"
+      ],
+      "support": "unverified"
+    },
+    {
+      "ordinal": 2,
+      "title": "Remove the worn pad without damaging the caliper",
+      "evidence_target": "procedure",
+      "evidence_criteria": [
+        "Pad removed with the correct fastener"
+      ],
+      "support": "unverified"
+    },
+    {
+      "ordinal": 3,
+      "title": "Seat and tighten the new pad to the manual's specification",
+      "evidence_target": "procedure",
+      "evidence_criteria": [
+        "Pad seated square",
+        "Fastener tightened to the manual's torque"
+      ],
+      "support": "unverified"
+    },
+    {
+      "ordinal": 4,
+      "title": "Verify the brake by hand before riding",
+      "evidence_target": "procedure",
+      "evidence_criteria": [
+        "Lever feels firm",
+        "Wheel spins without rubbing"
+      ],
+      "support": "unverified"
+    }
+  ],
+  "sections": [
+    {
+      "ordinal": 1,
+      "title": "Identify and remove",
+      "lesson_intent": "Match the pad to the manual, then remove it with the listed tool.",
+      "objective_refs": [
+        1,
+        2
+      ],
+      "context_needs": [
+        "manufacturer manual",
+        "correct tools"
+      ],
+      "source_ids": []
+    },
+    {
+      "ordinal": 2,
+      "title": "Install and verify",
+      "lesson_intent": "Seat the new pad and run the manual's hand-verification checklist before any ride.",
+      "objective_refs": [
+        3,
+        4
+      ],
+      "context_needs": [
+        "manufacturer manual",
+        "torque specification"
+      ],
+      "source_ids": []
+    }
+  ],
+  "check_plan": [
+    {
+      "objective_ref": 1,
+      "kind": "verification",
+      "evidence_target": "procedure",
+      "count": 1,
+      "independent_evidence": false
+    },
+    {
+      "objective_ref": 2,
+      "kind": "verification",
+      "evidence_target": "procedure",
+      "count": 1,
+      "independent_evidence": false
+    },
+    {
+      "objective_ref": 3,
+      "kind": "verification",
+      "evidence_target": "procedure",
+      "count": 1,
+      "independent_evidence": false
+    },
+    {
+      "objective_ref": 4,
+      "kind": "verification",
+      "evidence_target": "procedure",
+      "count": 1,
+      "independent_evidence": false
+    }
+  ],
+  "context_needs": [
+    "manufacturer manual",
+    "correct tools",
+    "work stand"
+  ],
+  "source_ids": [],
+  "exclusions": [
+    "Does not certify the procedure; authoritative manufacturer documentation and an expert check are required.",
+    "No live-road test is part of this brief.",
+    "Not for hydraulic, disc or e-bike brake systems."
+  ],
+  "spaced_review": false,
+  "evidence_note": null
+}

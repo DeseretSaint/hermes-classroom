@@ -1,0 +1,64 @@
+{
+  "verdict": "reject",
+  "criteria": [
+    {
+      "id": "objective_alignment",
+      "verdict": "fail",
+      "reason": "objective_alignment checked"
+    },
+    {
+      "id": "source_support",
+      "verdict": "pass",
+      "reason": "source_support checked"
+    },
+    {
+      "id": "factual_correctness",
+      "verdict": "pass",
+      "reason": "factual_correctness checked"
+    },
+    {
+      "id": "answer_uniqueness",
+      "verdict": "pass",
+      "reason": "answer_uniqueness checked"
+    },
+    {
+      "id": "alternative_coverage",
+      "verdict": "pass",
+      "reason": "alternative_coverage checked"
+    },
+    {
+      "id": "rubric_consistency",
+      "verdict": "pass",
+      "reason": "rubric_consistency checked"
+    },
+    {
+      "id": "internal_contradiction",
+      "verdict": "pass",
+      "reason": "internal_contradiction checked"
+    },
+    {
+      "id": "answer_leakage",
+      "verdict": "pass",
+      "reason": "answer_leakage checked"
+    },
+    {
+      "id": "hazard_age_appropriateness",
+      "verdict": "fail",
+      "reason": "the guided activity has the child operate a kettle unattended"
+    },
+    {
+      "id": "evidence_target_fit",
+      "verdict": "pass",
+      "reason": "evidence_target_fit checked"
+    }
+  ],
+  "rejections": [
+    {
+      "item": "segment:2",
+      "criterion": "hazard_age_appropriateness",
+      "reason": "The guided step tells a 6-8 year old to fill and switch on the kettle, which is a hot-water hazard the parent notes do not control.",
+      "fix_hint": "Keep the kettle unplugged and out of reach; the child sorts cards and names objects instead."
+    }
+  ],
+  "claim_verdicts": []
+}

@@ -1,0 +1,71 @@
+{
+  "section_title": "Identify and remove",
+  "segments": [
+    {
+      "kind": "model",
+      "heading": "Read the manual first",
+      "body": "Find the pad model in the manufacturer's manual before touching the brake. The manual names the tool and the fastener."
+    },
+    {
+      "kind": "guided",
+      "heading": "Remove with the listed tool",
+      "body": "Hold the caliper steady and loosen only the fastener the manual names. Stop if the caliper moves or the fastener will not turn by hand."
+    }
+  ],
+  "worked_example": {
+    "prompt": "The manual lists pad model BR-42 and a 5 mm hex key.",
+    "steps": [
+      "Lay out the new pad and the 5 mm key",
+      "Confirm the pad model matches BR-42",
+      "Loosen the fastener and slide the worn pad out"
+    ],
+    "answer": "Worn pad removed with the listed key"
+  },
+  "learner_explanation": "Work through the checklist with the manual open. This is a verification list, not a quiz: you confirm each step honestly.",
+  "check": {
+    "kind": "verification",
+    "stimulus": {
+      "prompt": "Tick each step only after you have done it with the manual open.",
+      "format": "verification",
+      "choices": [
+        "Pad model matched to the manual",
+        "Worn pad removed with the listed tool",
+        "Caliper undamaged"
+      ]
+    },
+    "learner_instructions": "Tick what is true. Completion is self-reported and is never presented as independently verified.",
+    "evidence_target": "procedure",
+    "accepted_answers": [
+      "all three steps ticked honestly"
+    ],
+    "accepted_alternatives": [],
+    "rubric": [
+      {
+        "criterion": "checklist completed",
+        "weight": 1.0,
+        "description": "Every step confirmed against the manual"
+      }
+    ],
+    "reference_answer": "Both pads replaced, wheel seated, lever firm with 2 mm clearance",
+    "assistance_policy": {
+      "hint": "available",
+      "answer_marks_evidence_class": "none"
+    },
+    "scaffolds": {
+      "romaji": false,
+      "furigana": false,
+      "english_meaning": false
+    }
+  },
+  "sources": [],
+  "media": [
+    {
+      "kind": "visual",
+      "purpose": "Show where the pad fastener sits on this brake type",
+      "spec": "simple line diagram, no measurements presented as authoritative",
+      "text_equivalent": "Diagram labels the pad fastener on the caliper; the manual remains the authority"
+    }
+  ],
+  "parent_notes": null,
+  "supervision_notes": []
+}

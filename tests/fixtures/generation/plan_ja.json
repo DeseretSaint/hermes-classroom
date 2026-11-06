@@ -1,0 +1,151 @@
+{
+  "title": "Japanese café basics",
+  "learner_outcome": "At a café, greet the staff, order one drink, ask a price and answer a simple follow-up question in Japanese using standard polite forms, with romaji and furigana available as scaffolds.",
+  "delivery": "self_study",
+  "time_estimate": {
+    "sessions_per_week": 3,
+    "minutes_per_session": 25,
+    "weeks": 6,
+    "basis": "model",
+    "confidence": "low",
+    "rationale": "Derived from the declared 75 minutes per week and three sections; it schedules practice, it does not promise attainment.",
+    "benchmark": null,
+    "attainment_hours": null
+  },
+  "objectives": [
+    {
+      "ordinal": 1,
+      "title": "Greet café staff and open the interaction politely",
+      "evidence_target": "production",
+      "evidence_criteria": [
+        "Produces a greeting in Japanese script",
+        "Chooses a greeting appropriate to entering a shop"
+      ],
+      "support": "sourced",
+      "source_ids": [
+        "SRC_ALPHA"
+      ]
+    },
+    {
+      "ordinal": 2,
+      "title": "Order one drink using a polite request form",
+      "evidence_target": "production",
+      "evidence_criteria": [
+        "Names one drink",
+        "Uses a polite request ending"
+      ],
+      "support": "unverified"
+    },
+    {
+      "ordinal": 3,
+      "title": "Distinguish これ / それ / あれ when pointing at menu items",
+      "evidence_target": "discrimination",
+      "evidence_criteria": [
+        "Selects the demonstrative that matches the speaker's distance from the item"
+      ],
+      "support": "unverified"
+    },
+    {
+      "ordinal": 4,
+      "title": "Understand a staff follow-up question about drink size",
+      "evidence_target": "comprehension",
+      "evidence_criteria": [
+        "Identifies that a size choice was requested",
+        "Answers with one of the offered sizes"
+      ],
+      "support": "unverified"
+    }
+  ],
+  "sections": [
+    {
+      "ordinal": 1,
+      "title": "Greeting and opening",
+      "lesson_intent": "Model one polite greeting, then have the learner produce it cold before seeing romaji removed.",
+      "objective_refs": [
+        1
+      ],
+      "context_needs": [
+        "romaji",
+        "furigana",
+        "english meaning"
+      ],
+      "source_ids": [
+        "SRC_ALPHA"
+      ]
+    },
+    {
+      "ordinal": 2,
+      "title": "Ordering a drink",
+      "lesson_intent": "Contrast これ / それ / あれ while ordering, then practise one polite request.",
+      "objective_refs": [
+        2,
+        3
+      ],
+      "context_needs": [
+        "romaji",
+        "furigana"
+      ],
+      "source_ids": []
+    },
+    {
+      "ordinal": 3,
+      "title": "Price and follow-up",
+      "lesson_intent": "Ask a price, then recognise and answer a size question.",
+      "objective_refs": [
+        4
+      ],
+      "context_needs": [
+        "romaji",
+        "english meaning"
+      ],
+      "source_ids": []
+    }
+  ],
+  "check_plan": [
+    {
+      "objective_ref": 1,
+      "kind": "quiz",
+      "evidence_target": "production",
+      "count": 1,
+      "independent_evidence": true,
+      "notes": "Selection check on a greeting, no romaji in the stimulus."
+    },
+    {
+      "objective_ref": 2,
+      "kind": "quiz",
+      "evidence_target": "production",
+      "count": 1,
+      "independent_evidence": true
+    },
+    {
+      "objective_ref": 3,
+      "kind": "quiz",
+      "evidence_target": "discrimination",
+      "count": 1,
+      "independent_evidence": true
+    },
+    {
+      "objective_ref": 4,
+      "kind": "quiz",
+      "evidence_target": "comprehension",
+      "count": 1,
+      "independent_evidence": true
+    }
+  ],
+  "context_needs": [
+    "romaji",
+    "furigana",
+    "english meaning",
+    "Japanese-capable fonts and line breaking"
+  ],
+  "source_ids": [
+    "SRC_ALPHA"
+  ],
+  "exclusions": [
+    "No claim of native-speaker naturalness: wording and usage still need fresh sourcing.",
+    "No pronunciation assessment from text or generic TTS.",
+    "No keigo beyond standard polite forms."
+  ],
+  "spaced_review": true,
+  "evidence_note": null
+}
