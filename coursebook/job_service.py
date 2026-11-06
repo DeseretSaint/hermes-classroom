@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Iterable, Sequence
 
+from . import contracts
 from . import db
 from . import jobs as jobs_contract
 from .api import RpcError
@@ -553,14 +554,7 @@ def execute(
                 finish(lease, state="cancelled", now=now)
                 return _view(job_id)
             except Exception as exc:  # noqa: BLE001 - a stage failure is durable, not a crash
-                error = {
-                    "code": _error_code(exc),
-                    "message": str(exc)[:_MAX_ERROR_TEXT] or type(exc).__name__,
-                    "category": "capability",
-                    "retryable": True,
-                    "http": 503,
-                }
-                fail(lease, error)
+                fail(lease, _stage_error(exc))
                 return _view(job_id)
             with db.transaction() as connection:
                 _record_usage(connection, job_id, result.usage, now, "job")
@@ -581,14 +575,40 @@ def execute(
         return _view(job_id)
 
 
+#: Stage exceptions that are the *host's* problem, mapped to the contract's capability code.
+#: ``HOST_UNAVAILABLE`` means "the Hermes host (gateway, auxiliary model, media provider) is
+#: unavailable"; ``GRADER_UNAVAILABLE`` is about grading an answer, and reporting a provider
+#: deadline as a grader failure sends the reader to the wrong subsystem (CB-011-D1).
+_PROVIDER_ERRORS = frozenset({"ProviderTimeout", "ProviderFailure"})
+
+
 def _error_code(exc: Exception) -> str:
     code = getattr(exc, "code", None)
     if isinstance(code, str):
         return code
     name = type(exc).__name__
-    if name in ("ResearchUnavailable", "ProviderTimeout", "ProviderFailure", "CostCeilingExceeded"):
-        return "GRADER_UNAVAILABLE" if name == "ProviderTimeout" else "POLICY_VIOLATION"
+    if name in _PROVIDER_ERRORS:
+        return "HOST_UNAVAILABLE"
+    if name in ("ResearchUnavailable", "CostCeilingExceeded"):
+        return "POLICY_VIOLATION"
     return "INTERNAL_ERROR"
+
+
+def _stage_error(exc: Exception) -> dict[str, Any]:
+    """The durable failure record: a contract-legal code plus non-sensitive context.
+
+    ``cb.errors`` is the single authority for category/retryability, so this builds the error
+    from it instead of repeating ``category: capability`` for every failure. Structured
+    ``details`` name the purpose and the measured duration, never a secret or a reference answer.
+    """
+    code = _error_code(exc)
+    message = str(exc)[:_MAX_ERROR_TEXT] or type(exc).__name__
+    details: dict[str, Any] = {}
+    for attribute in ("purpose", "duration_ms", "deadline_s"):
+        value = getattr(exc, attribute, None)
+        if value is not None:
+            details[attribute] = value
+    return contracts.build_error(code, message, **details)
 
 
 def _view(job_id: str) -> dict[str, Any]:

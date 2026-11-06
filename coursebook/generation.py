@@ -33,6 +33,8 @@ The LLM seam is the host-owned plugin route (``ctx.llm``), not a raw provider ke
 from __future__ import annotations
 
 import json
+import logging
+import os
 import secrets
 import sqlite3
 import time
@@ -68,6 +70,12 @@ __all__ = [
     "LLMRequest",
     "LLMResponse",
     "CostBudget",
+    "default_cost_budget",
+    "lesson_cost_budget",
+    "provider_timeout_s",
+    "PROVIDER_TIMEOUT_SECONDS",
+    "PROVIDER_TIMEOUT_ENV",
+    "PROVIDER_TIMEOUT_FALLBACK_ENV",
     "PluginLLMAdapter",
     "bind_host_llm",
     "host_llm",
@@ -88,6 +96,8 @@ __all__ = [
 #: Bumped when the shape of a plan/lesson/validation artifact changes. Part of every idempotency
 #: fingerprint, so an old result is never silently reused under new rules.
 PIPELINE_VERSION = "cb.gen.v1"
+
+logger = logging.getLogger("coursebook.generation")
 
 PLAN_PROMPT_VERSION = "plan-prompt.v1"
 LESSON_PROMPT_VERSION = "lesson-prompt.v2"
@@ -133,11 +143,44 @@ class PlanNotApproved(GenerationError):
 
 
 class ProviderTimeout(GenerationError):
-    """The provider call did not finish inside its declared deadline."""
+    """The provider call did not finish inside its declared deadline.
+
+    Two shapes produce it: the host seam raised ``TimeoutError``, or the call returned *after*
+    its declared deadline (a late success). Both are real spend, so the usage of a late call is
+    recorded before this is raised. The attributes let the job service report the actual cause
+    instead of a guessed one.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        purpose: str | None = None,
+        duration_ms: int | None = None,
+        deadline_s: float | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.purpose = purpose
+        self.duration_ms = duration_ms
+        self.deadline_s = deadline_s
+        #: Filled in by the pipeline when it knows what work survived; job failures carry it.
+        self.recovery: str | None = None
+
+    def with_recovery(self, recovery: str) -> "ProviderTimeout":
+        """Attach the actionable half: what the parent can do without losing authored work."""
+        self.recovery = recovery
+        self.args = (f"{self.message}. {recovery}",)
+        return self
 
 
 class ProviderFailure(GenerationError):
     """The provider call raised. Retry is the job service's decision, not this module's."""
+
+    def __init__(self, message: str, *, purpose: str | None = None) -> None:
+        super().__init__(message)
+        self.message = message
+        self.purpose = purpose
 
 
 class CostCeilingExceeded(GenerationError):
@@ -197,10 +240,121 @@ LLM = Callable[[LLMRequest], LLMResponse]
 
 @dataclass
 class CostBudget:
-    """Honest ceilings for one job. Unknown cost is tracked, not guessed."""
+    """Honest ceilings for one job. Unknown cost is tracked, not guessed.
 
-    max_calls: int = 8
+    ``max_calls`` is the *worst legal* pipeline cost, not the happy path: 8 sections x 2 attempts
+    x (generate + validate) = 32. The old default of 8 was below the floor for any plan larger
+    than four sections (CB-011-D1: a five-section plan needs 10 calls before a single retry, so
+    the job ended ``POLICY_VIOLATION`` on a fast provider).
+    """
+
+    max_calls: int = 32
     max_cost_usd: float | None = 0.75
+
+
+# ── Provider policy ─────────────────────────────────────────────────────────
+#
+# Deadlines and ceilings are policy, so they are declared once and overridable by the operator.
+# CB-011-D1 live evidence: a hard-coded 60 s deadline declared a *successful* 115.8 s lesson
+# write late and failed the job, and the call's real tokens/cost were dropped on that path. A
+# hosted flash model needs tens of seconds for one structured lesson; these are outer bounds,
+# not target latencies.
+
+#: Declared deadline per request purpose, in seconds. One value per purpose, never per call site.
+PROVIDER_TIMEOUT_SECONDS: dict[str, float] = {
+    "coursebook.plan.generate": 240.0,
+    "coursebook.plan.validate": 180.0,
+    "coursebook.lesson.generate": 300.0,
+    "coursebook.lesson.validate": 240.0,
+}
+
+#: Purpose -> environment variable that overrides only that purpose's deadline.
+PROVIDER_TIMEOUT_ENV: dict[str, str] = {
+    "coursebook.plan.generate": "COURSEBOOK_PLAN_GENERATE_TIMEOUT_SECONDS",
+    "coursebook.plan.validate": "COURSEBOOK_PLAN_VALIDATE_TIMEOUT_SECONDS",
+    "coursebook.lesson.generate": "COURSEBOOK_LESSON_GENERATE_TIMEOUT_SECONDS",
+    "coursebook.lesson.validate": "COURSEBOOK_LESSON_VALIDATE_TIMEOUT_SECONDS",
+}
+
+#: Environment variable that overrides every purpose's deadline at once (a purpose-specific
+#: variable wins over it).
+PROVIDER_TIMEOUT_FALLBACK_ENV = "COURSEBOOK_PROVIDER_TIMEOUT_SECONDS"
+
+#: Environment variable that sets the per-job known-cost ceiling.
+JOB_MAX_COST_ENV = "COURSEBOOK_JOB_MAX_COST_USD"
+
+#: Calls one lesson attempt makes: one generation plus one independent validation.
+CALLS_PER_LESSON_ATTEMPT = 2
+
+#: Attempts per section before the lesson is parked for review with its reasons.
+LESSON_ATTEMPTS = 2
+
+
+def _env_positive_float(name: str, default: float) -> float:
+    """Read a positive float override. An invalid value is logged and the default kept.
+
+    A typo in a deployment variable must not silently change policy, but it must not take every
+    job down either: the warning makes the mistake visible without inventing a new deadline.
+    """
+    raw = os.environ.get(name)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        value = float(str(raw).strip())
+    except (TypeError, ValueError):
+        logger.warning("coursebook: ignoring %s=%r (not a number); using %.1fs", name, raw, default)
+        return default
+    if value <= 0:
+        logger.warning("coursebook: ignoring %s=%r (not positive); using %.1fs", name, raw, default)
+        return default
+    return value
+
+
+def provider_timeout_s(purpose: str) -> float:
+    """The declared deadline for one provider call.
+
+    Resolution order: purpose-specific environment variable, then the global override, then the
+    declared default for that purpose. No caller passes a literal deadline.
+    """
+    default = PROVIDER_TIMEOUT_SECONDS.get(purpose)
+    if default is None:
+        raise GenerationRejected(f"no provider deadline configured for purpose {purpose!r}")
+    specific = PROVIDER_TIMEOUT_ENV.get(purpose)
+    if specific and os.environ.get(specific, "").strip():
+        return _env_positive_float(specific, default)
+    return _env_positive_float(PROVIDER_TIMEOUT_FALLBACK_ENV, default)
+
+
+def _timeout_for(purpose: str, timeout_s: float | None) -> float:
+    """Explicit callers keep their value (tests); production resolves the configured one."""
+    if timeout_s is None:
+        return provider_timeout_s(purpose)
+    value = float(timeout_s)
+    if value <= 0:
+        raise GenerationRejected(f"{purpose} deadline must be positive, got {value}")
+    return value
+
+
+def default_cost_budget(*, max_calls: int | None = None) -> CostBudget:
+    """A job budget. The cost ceiling comes from the operator when one is configured."""
+    ceiling = CostBudget.max_cost_usd
+    if ceiling is not None:
+        ceiling = _env_positive_float(JOB_MAX_COST_ENV, float(ceiling))
+    return CostBudget(
+        max_calls=CostBudget.max_calls if max_calls is None else int(max_calls),
+        max_cost_usd=ceiling,
+    )
+
+
+def lesson_cost_budget(section_count: int) -> CostBudget:
+    """Budget sized to the plan, not to a constant.
+
+    Every section gets :data:`LESSON_ATTEMPTS` attempts of one generation plus one independent
+    validation. A ceiling below that floor fails a job that is behaving exactly as designed.
+    """
+    sections = max(1, int(section_count))
+    calls = sections * CALLS_PER_LESSON_ATTEMPT * LESSON_ATTEMPTS
+    return default_cost_budget(max_calls=calls)
 
 
 @dataclass
@@ -325,17 +479,31 @@ def _call_llm(llm: LLM, request: LLMRequest, usage: _Usage) -> LLMResponse:
     try:
         response = llm(request)
     except (TimeoutError,) as exc:
-        raise ProviderTimeout(f"{request.purpose} timed out: {exc}") from exc
+        raise ProviderTimeout(
+            f"{request.purpose} timed out: {exc}",
+            purpose=request.purpose,
+            deadline_s=float(request.timeout_s),
+        ) from exc
     except GenerationError:
         raise
     except Exception as exc:  # noqa: BLE001 - provider bug becomes a typed failure
-        raise ProviderFailure(f"{request.purpose} failed: {type(exc).__name__}: {exc}") from exc
+        raise ProviderFailure(
+            f"{request.purpose} failed: {type(exc).__name__}: {exc}", purpose=request.purpose
+        ) from exc
     duration_ms = int((time.monotonic() - started) * 1000)
-    if duration_ms > int(request.timeout_s * 1000):
-        raise ProviderTimeout(f"{request.purpose} took {duration_ms}ms, over its {request.timeout_s}s deadline")
     if not isinstance(response, LLMResponse):
         raise GenerationRejected(f"{request.purpose} returned {type(response).__name__}, not LLMResponse")
+    # A call that returned is real spend even when it returned too late to use. Record it before
+    # the deadline verdict so usage never understates what the provider charged and a cost
+    # ceiling is checked against the true total.
     usage.record(request, response, duration_ms)
+    if duration_ms > int(request.timeout_s * 1000):
+        raise ProviderTimeout(
+            f"{request.purpose} took {duration_ms}ms, over its {request.timeout_s}s deadline",
+            purpose=request.purpose,
+            duration_ms=duration_ms,
+            deadline_s=float(request.timeout_s),
+        )
     return response
 
 
@@ -1164,7 +1332,7 @@ def build_plan_request(
     locale: str | None,
     research_run: ResearchRun,
     feedback: str | None = None,
-    timeout_s: float = 60.0,
+    timeout_s: float | None = None,
 ) -> LLMRequest:
     payload = {
         "goal": goal,
@@ -1195,7 +1363,7 @@ def build_plan_request(
         schema=PLAN_SCHEMA,
         schema_name="coursebook_plan_v1",
         max_tokens=4000,
-        timeout_s=timeout_s,
+        timeout_s=_timeout_for("coursebook.plan.generate", timeout_s),
     )
 
 
@@ -1207,7 +1375,7 @@ def build_plan_validation_request(
     dials: dict[str, Any],
     locale: str | None,
     research_run: ResearchRun,
-    timeout_s: float = 60.0,
+    timeout_s: float | None = None,
 ) -> LLMRequest:
     payload = {
         "artifact_kind": "plan",
@@ -1229,7 +1397,7 @@ def build_plan_validation_request(
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
         max_tokens=2000,
-        timeout_s=timeout_s,
+        timeout_s=_timeout_for("coursebook.plan.validate", timeout_s),
     )
 
 
@@ -1243,7 +1411,7 @@ def build_lesson_request(
     locale: str | None,
     sources: Sequence[SourceRecord],
     feedback: str | None = None,
-    timeout_s: float = 60.0,
+    timeout_s: float | None = None,
 ) -> LLMRequest:
     policy = _scaffold_policy(recipe, dials, locale)
     payload = {
@@ -1276,7 +1444,7 @@ def build_lesson_request(
         schema=LESSON_SCHEMA,
         schema_name="coursebook_lesson_v1",
         max_tokens=4000,
-        timeout_s=timeout_s,
+        timeout_s=_timeout_for("coursebook.lesson.generate", timeout_s),
     )
 
 
@@ -1290,7 +1458,7 @@ def build_lesson_validation_request(
     dials: dict[str, Any],
     locale: str | None,
     sources: Sequence[SourceRecord],
-    timeout_s: float = 60.0,
+    timeout_s: float | None = None,
 ) -> LLMRequest:
     payload = {
         "artifact_kind": "lesson",
@@ -1313,7 +1481,7 @@ def build_lesson_validation_request(
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
         max_tokens=2000,
-        timeout_s=timeout_s,
+        timeout_s=_timeout_for("coursebook.lesson.validate", timeout_s),
     )
 
 
@@ -1860,7 +2028,7 @@ def run_plan_job(
     dials = dict(brief.get("dials") or {})
     locale = brief.get("locale")
     job_id = str(job.get("job_id") or "") or None
-    usage = _Usage(budget or CostBudget())
+    usage = _Usage(budget or default_cost_budget())
 
     ensure_schema(connection)
     fingerprint = _request_fingerprint(goal, recipe, dials, locale)
@@ -2278,7 +2446,6 @@ def run_lesson_job(
     if not plan_id:
         raise GenerationRejected("lesson job needs a plan_id")
     job_id = str(job.get("job_id") or "") or None
-    usage = _Usage(budget or CostBudget())
 
     document = _load_plan_document(connection, str(plan_id))
     if document is None:
@@ -2309,6 +2476,10 @@ def run_lesson_job(
     ]
     if not section_rows:
         raise GenerationRejected(f"plan {plan_id!r} has no sections to author")
+
+    # Budget sized to *this* plan: every section gets two attempts of generate + validate. A
+    # fixed ceiling below that floor failed jobs that were behaving exactly as designed.
+    usage = _Usage(budget or lesson_cost_budget(len(section_rows)))
 
     lesson_summaries: list[dict[str, Any]] = []
     try:
@@ -2348,8 +2519,16 @@ def run_lesson_job(
                     now=now,
                 )
             )
-    except BaseException:
+    except BaseException as exc:
         _record_usage(connection, job_id, usage, now)
+        if isinstance(exc, ProviderTimeout):
+            # The authored sections are already durable. Say so, and name the action that
+            # continues without re-authoring (and re-charging) them.
+            exc.with_recovery(
+                f"{len(lesson_summaries)} of {len(section_rows)} sections are saved for plan "
+                f"{plan_id}; create a new lessons job for that plan to continue without "
+                f"re-authoring them"
+            )
         raise
 
     _record_usage(connection, job_id, usage, now)
