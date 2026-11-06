@@ -49,17 +49,59 @@ Studio and Activity cannot be checked as views, and gates 7 and 13 cannot start.
 Run on the exact commit that will be pinned. Nothing else counts as evidence.
 
 ```
-bash scripts/validate.sh
-hermes plugins validate . --install-deps
+bash scripts/validate-plugin.sh          # the release gate: a clean export of the commit
+bash scripts/validate.sh                 # the pre-merge gate: admission on an export of the tree
 hermes plugins doctor .
 hermes plugins doctor coursebook
 ```
 
-Expected at 0.1.0 on the CB-014 tree: **636 tests pass** (`Ran 636 tests ... OK`),
-`desktop/plugin.js` syntax OK, `hermes plugins validate .` passes all **16** admission checks with
-one warning (private core imports, see section 3), doctor reports **1 tool and 3 hooks**, the
-mounted backend trace passes **31/31** expectations, and the script ends `Validation passed.` with
-exit 0.
+`scripts/validate-plugin.sh` is the admission gate. It exports the commit with `git archive` into a
+temporary directory outside the repository, runs `hermes plugins validate <export>`,
+`node --check desktop/plugin.js` and `python3 -m unittest tests.test_desktop_contracts` against that
+export, removes the export, and exits non-zero if any of the three fails. It refuses to run when
+tracked files differ from `HEAD`, because the gate pins a commit; `--worktree` gates the uncommitted
+edits instead, and `--ref <commit>` gates another commit.
+
+If the capability probe fails on a fresh machine, the one declared dependency is missing:
+`hermes plugins validate . --install-deps`, as `docs/INSTALL.md` describes. The gate does not install
+anything.
+
+It exports because the validator reads every directory it is given. From the checkout root,
+`hermes plugins validate .` walks `.worktrees/` (one worktree per kanban task, 358 MB, gitignored)
+and reports `dangerous` for adversarial fixtures and review notes that are in no version of this
+package. Measured at `caa7cde`, same commit, same minute:
+
+| Command | Result |
+| --- | --- |
+| `hermes plugins validate .` at the repository root, 43 worktrees present | `✗ security scan — dangerous: destructive_home_rm (REVIEW_CB003.md:32)`, `Validation failed.`, exit 1 |
+| `bash scripts/validate-plugin.sh`, 443 files exported | `✓ security scan — safe`, `Validation passed.`, exit 0 |
+
+Observed gate output at `bc4b2f9` (the commit that adds the script and this section):
+
+```
+validate-plugin: gate bc4b2f963fda82238d2047cb928b177f9e18c3fb (head, 444 files)
+validate-plugin: export <temp dir> (removed on exit)
+...16 admission check lines, 1 warning...
+Validation passed.
+desktop/plugin.js: syntax OK
+Ran 7 tests in 0.004s
+OK
+Release gate passed: 3/3 checks on bc4b2f963fda82238d2047cb928b177f9e18c3fb (444 files).
+```
+
+The same gate at `caa7cde` reports 3/3 on 443 files; the extra file is the script itself.
+
+`scripts/validate.sh` uses the same export for its admission step: step 3 exports the tracked working
+tree with `scripts/lib/gate-export.sh` and validates that copy, so a populated `.worktrees/` farm no
+longer changes the verdict, while an uncommitted edit to a tracked file still fails the step. Steps
+1, 2, 4 and 5 (tests, `node --check`, doctor, mounted backend trace) run against the checkout as
+before.
+
+Expected at 0.1.0 on the CB-014 tree: **636 tests pass** (`Ran 636 tests ... OK`; 652 on master at
+`caa7cde`), `desktop/plugin.js` syntax OK, `hermes plugins validate` passes all **16** admission
+checks with one warning (private core imports, see section 3), doctor reports **1 tool and 3
+hooks**, the mounted backend trace passes **31/31** expectations, and `validate.sh` ends
+`Validation passed.` with exit 0.
 
 Fresh install path, in a throwaway home:
 

@@ -2,6 +2,10 @@
 # The admission gate. Run before every merge into master.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Export helper shared with scripts/validate-plugin.sh.
+# shellcheck source=scripts/lib/gate-export.sh
+. scripts/lib/gate-export.sh
+trap gate_export_cleanup EXIT
 
 echo "== 1/5 unit tests + contract audit =="
 "${COURSEBOOK_PYTHON:-python3}" -m unittest discover -s tests -t . -v
@@ -13,7 +17,23 @@ echo "desktop/plugin.js: syntax OK"
 
 echo
 echo "== 3/5 catalog admission =="
-hermes plugins validate .
+# Validate an export of the tracked tree, never the checkout root: the validator
+# walks every directory it is given, and the root contains the gitignored
+# .worktrees/ farm (other tasks' fixtures and review notes). A worktree export
+# includes uncommitted edits to tracked files, so a local violation still fails
+# this step without requiring a commit.
+if ! gate_export_tree "$PWD" worktree; then
+  echo "catalog admission: could not export the tracked tree (see above)" >&2
+  exit 2
+fi
+UNTRACKED="$(git ls-files --others --exclude-standard | wc -l | tr -d ' ')"
+if [ "$UNTRACKED" != "0" ]; then
+  echo "catalog admission: note - $UNTRACKED untracked file(s) are not in the export"
+fi
+(
+  cd "$GATE_EXPORT_DIR"
+  hermes plugins validate "$GATE_EXPORT_DIR"
+)
 
 echo
 echo "== 4/5 runtime contracts (doctor) =="
