@@ -12,19 +12,21 @@
   "x-known-divergences": [
     {
       "id": "empty-alternatives",
-      "status": "open",
-      "summary": "As shipped, the importer withholds every check that declares no accepted_alternatives, because its rule applies an unconditional all() over an empty list. This contract requires the guard: an empty or whitespace-only alternatives list is not an inconsistency, and the reference answer itself is an accepted form.",
+      "status": "resolved",
+      "summary": "When this contract was frozen, the importer withheld every check that declares no accepted_alternatives, because its rule applied an unconditional all() over an empty list. The contract requires the guard: an empty or whitespace-only alternatives list is not an inconsistency, and the reference answer itself is an accepted form.",
       "affected_rule": "R5",
       "owner": "lattice",
-      "resolution": "Importer must gain the non-empty guard; the conformance vectors marked divergences.move_once_fixed cover it."
+      "resolved_by": "577d268 (CB-025): coursebook.pack_flow.audit_check_for_import applies the non-empty guard",
+      "resolution": "Resolved. The no_accepted_alternatives_is_gradable vector runs without a divergence skip, and the bundled japanese-affection-context-l0 pack's chk-register-transfer-1 now projects, so obj-register-transfer opens through the real dispatcher."
     },
     {
       "id": "declared-audit-failed",
-      "status": "open",
-      "summary": "As shipped, the importer grades a check whose manifest declares audit_state 'failed' whenever its own deterministic audit passes, so the stored spec says audit_state 'passed' while declared_audit_state says 'failed'. This contract requires the author's declaration to withhold gradability: a declaration can never grant it, but it may always refuse it.",
+      "status": "resolved",
+      "summary": "When this contract was frozen, the importer graded a check whose manifest declares audit_state 'failed' whenever its own deterministic audit passed, so the stored spec said audit_state 'passed' while declared_audit_state said 'failed'. The contract requires the author's declaration to withhold gradability: a declaration can never grant it, but it may always refuse it.",
       "affected_rule": "R6",
       "owner": "lattice",
-      "resolution": "Importer must refuse when declared_audit_state is 'failed'; the conformance vectors marked divergences.move_once_fixed cover it."
+      "resolved_by": "577d268 (CB-025): coursebook.pack_flow.audit_check_for_import reports the R6 problem and check_spec_from_pack_check returns None",
+      "resolution": "Resolved. The declared_failed_withholds vector runs without a divergence skip and now expects the ordinary audit-failure result, so R6 cannot reach a stored spec."
     }
   ],
   "inputs": {
@@ -95,7 +97,7 @@
         "name": "declared_audit_not_failed",
         "passes_when": "manifest audit_state is absent, 'unreviewed' or 'passed'",
         "problem": "the pack declares this check failed its own audit",
-        "note": "A pack's self-declaration can never grant gradability (R1-R5 do that) and can always refuse it. Grading an item its author marked failed would make the stored spec contradict its own provenance."
+        "note": "A pack's self-declaration can never grant gradability (R1-R5 do that) and can always refuse it. Grading an item its author marked failed would make the stored spec contradict its own provenance. R6 is an audit rule, not a separate declaration gate: when it fails, the check is withheld for the same 'import_audit_failed' reason as R1-R5, this problem string is reported in problem_order alongside theirs, and no other reason vocabulary exists for it."
       }
     ],
     "problem_order": "Rules are evaluated R1..R6 in order and every failing problem is reported; the list order in the result is that order."
@@ -332,7 +334,11 @@
         "accepted_alternatives": ["four"],
         "audit_state": "failed"
       },
-      "expect": {"kind": "none", "reason": "declared_audit_failed", "problems": []}
+      "expect": {
+        "kind": "none",
+        "reason": "import_audit_failed",
+        "problems": ["the pack declares this check failed its own audit"]
+      }
     },
     {
       "name": "production_target_is_rubric_only",
@@ -625,7 +631,8 @@
         },
         "declared_audit_state": {
           "type": "string",
-          "enum": ["passed", "unreviewed", "failed"]
+          "description": "The manifest's own audit_state, preserved verbatim. 'failed' is not in the enum because R6 withholds such a check before any spec exists; a spec that declared it failed would contradict its own provenance.",
+          "enum": ["passed", "unreviewed"]
         },
         "stimulus": {
           "type": "object",

@@ -970,7 +970,6 @@ class ProjectionContractTest(unittest.TestCase):
         reasons = {
             document["recipe_gate"]["reason"],
             "import_audit_failed",
-            "declared_audit_failed",
         }
         problems = {rule["problem"] for rule in document["audit_rules"]["rules"]}
         seen_kinds = set()
@@ -990,19 +989,23 @@ class ProjectionContractTest(unittest.TestCase):
                     )
                     self.assertIn("locale", spec)
                 else:
-                    self.assertIn(expectation["reason"], reasons | {"declared_audit_failed"})
+                    self.assertIn(expectation["reason"], reasons)
                     self.assertTrue(set(expectation["problems"]) <= problems)
         # The vectors must cover both outcomes, or the conformance set proves nothing.
         self.assertEqual(seen_kinds, {"spec", "none"})
 
-    def test_known_divergences_have_vectors(self) -> None:
+    def test_divergence_record_is_closed_and_each_entry_keeps_its_vector(self) -> None:
         document = self.projection()
         vectors = {example.get("divergence") for example in document["examples"]}
+        # CB-025 landed both importer fixes (commits 577d268, 725ffbf). The record stays as
+        # provenance, so every entry must say it is resolved and name the commit that did it —
+        # an entry drifting back to "open" without an importer change fails here.
         for divergence in document["x-known-divergences"]:
             with self.subTest(divergence=divergence["id"]):
                 self.assertIn(divergence["id"], vectors)
-                self.assertEqual(divergence["status"], "open")
-                self.assertTrue(divergence["resolution"])
+                self.assertIn(divergence["status"], {"resolved", "fixed"})
+                self.assertTrue(divergence["resolved_by"])
+                self.assertTrue(divergence["resolution"].startswith("Resolved."))
 
     def test_objective_examples_validate_and_keep_the_first_graded_check(self) -> None:
         for example in self.projection()["objective_examples"]:
@@ -1052,7 +1055,12 @@ class ProjectionContractTest(unittest.TestCase):
         )
         self.assertEqual(example["check"]["audit_state"], "failed")
         self.assertEqual(example["expect"]["kind"], "none")
-        self.assertEqual(example["expect"]["reason"], "declared_audit_failed")
+        # R6 is an audit rule like the rest: the same import_audit_failed reason, with the
+        # rule's own problem string. There is no separate 'declared_audit_failed' vocabulary.
+        self.assertEqual(example["expect"]["reason"], "import_audit_failed")
+        self.assertEqual(
+            example["expect"]["problems"], ["the pack declares this check failed its own audit"]
+        )
         # ... and a pack cannot buy gradability by declaring 'passed' either: the deterministic
         # audit in R1-R5 is the only gate, which the reference_leaked_into_stimulus vector shows.
         leaked = next(
