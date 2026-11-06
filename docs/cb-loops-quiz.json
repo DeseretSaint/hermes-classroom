@@ -2,25 +2,43 @@
   "steps": [
     {
       "step": "check-open",
-      "at": "2026-11-06T19:20:38.284Z",
+      "at": "2026-11-06T19:54:27.033Z",
       "expected": "A live check is offered for the section, Submit disabled until an answer exists",
-      "actual": "check panel rendered",
+      "actual": "check panel rendered, Submit disabled",
       "hash": "#/coursebook",
-      "mode": "dark",
-      "active": "BUTTON:Courses",
+      "mode": "light",
+      "active": "BUTTON:cb-view-picker",
       "route": true,
-      "checkLabel": "Check v10",
+      "checkLabel": "Check v14",
       "target": "discrimination",
       "submitDisabled": true,
       "bound": true
     },
     {
+      "step": "list-before",
+      "at": "2026-11-06T19:54:30.279Z",
+      "expected": "The Quizzes destination lists the attempts that already exist",
+      "actual": "attempt rows: 26",
+      "hash": "#/coursebook",
+      "mode": "light",
+      "active": "BUTTON:cb-view-picker",
+      "route": true,
+      "rows": 26,
+      "newest": {
+        "verdict": "Passed",
+        "assistance": "Cold attempt",
+        "when": "3 min ago",
+        "answer": "B"
+      },
+      "destination": "courses"
+    },
+    {
       "step": "answer-typed",
-      "at": "2026-11-06T19:20:38.865Z",
+      "at": "2026-11-06T19:54:35.789Z",
       "expected": "Answer lands in the check field and Submit enables",
       "actual": "Submit enabled",
       "hash": "#/coursebook",
-      "mode": "dark",
+      "mode": "light",
       "active": "TEXTAREA:cb-attempt-answer",
       "route": true,
       "focus": "TEXTAREA|cb-attempt-answer|",
@@ -28,49 +46,59 @@
     },
     {
       "step": "submitted",
-      "at": "2026-11-06T19:20:41.592Z",
+      "at": "2026-11-06T19:54:38.521Z",
       "expected": "Answer locks while one grading operation runs",
       "actual": "no submitting indicator observed",
       "hash": "#/coursebook",
-      "mode": "dark",
+      "mode": "light",
       "active": "DIV:Passed\nmatches an accepted answer\n\nThis ",
       "route": true,
       "focusAfterSubmit": "DIV||Passed\nmatches an accepted answer\n\nThis "
     },
     {
       "step": "graded",
-      "at": "2026-11-06T19:20:42.242Z",
+      "at": "2026-11-06T19:54:39.144Z",
       "expected": "Backend returns a verdict, criteria feedback and the next permitted action",
       "actual": "verdict: Passed",
       "hash": "#/coursebook",
-      "mode": "dark",
+      "mode": "light",
       "active": "DIV:Passed\nmatches an accepted answer\n\nThis ",
       "route": true,
-      "segment": "CURRENT CHECK\nCheck v10\ndiscrimination\nCold attempt\nPassed\nmatches an accepted answer\n\nThis objective is complete. Move to the next section when you are ready.\n\nTry a new example\nExplain the difference\n\nHints and shown answers are recorded against the next attempt.\n\nATTEMPTS ON THIS SECTION\njust now\nPassed\nCold attempt\njust now\nPassed\nCold attempt\n1 min ago\nPassed\nCold attempt\n3 min ago\nPassed\nCold attempt\n4 min ago\nPassed\nCold attempt\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 19 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 19 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 19 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 19 hr ago\nLearn how to say \"I love you\" in Japanese\nmodel_assessed\nfetched 19 hr ago\nHonorific speech in Japanese\nmodel_assessed\nfetched 19 hr ago",
+      "segment": "CURRENT CHECK\nCheck v14\ndiscrimination\nCold attempt\nPassed\nmatches an accepted answer\n\nThis objective is complete. Move to the next section when you are ready.\n\nTry a new example\nExplain the difference\n\nHints and shown answers are recorded against the next attempt.\n\nATTEMPTS ON THIS SECTION\njust now\nPassed\nCold attempt\n3 min ago\nPassed\nCold attempt\n4 min ago\nPassed\nCold attempt\n5 min ago\nPassed\nHinted\n20 min ago\nNot yet\nHinted\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 20 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 20 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 20 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 20 hr ago\nLearn how to say \"I love you\" in Japanese\nmodel_assessed\nfetched 20 hr ago\nHonorific speech in Japanese\nmodel_assessed\nfetched 20 hr ago",
       "verdict": "Passed",
       "error": null,
-      "answerStillShown": false,
+      "criteriaRows": [
+        "matches an accepted answer"
+      ],
       "focusAfterGrading": "DIV|Passed\nmatches an accepted answer\n\nThis "
     },
     {
       "step": "quiz-list",
-      "at": "2026-11-06T19:20:45.526Z",
-      "expected": "The new attempt appears in the attempt list with its verdict",
-      "actual": "attempt list rendered",
+      "at": "2026-11-06T19:54:42.048Z",
+      "expected": "The attempt that was just graded appears in the attempt list with its verdict",
+      "actual": "new row: Passed · Cold attempt",
       "hash": "#/coursebook",
-      "mode": "dark",
-      "active": "BODY:1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapab",
+      "mode": "light",
+      "active": "BUTTON:cb-view-picker",
       "route": true,
-      "rows": [],
-      "buttonCount": 24
+      "rowsBefore": 26,
+      "rowsAfter": 27,
+      "grewByOne": true,
+      "verdictOk": true,
+      "newest": {
+        "verdict": "Passed",
+        "assistance": "Cold attempt",
+        "when": "just now",
+        "answer": "B"
+      }
     },
     {
       "step": "review-open",
-      "at": "2026-11-06T19:20:47.111Z",
+      "at": "2026-11-06T19:54:43.593Z",
       "expected": "Opening an attempt shows the original answer and feedback read-only (no Submit, no answer field)",
       "actual": "read-only review",
       "hash": "#/coursebook",
-      "mode": "dark",
+      "mode": "light",
       "active": "BUTTON:Close",
       "route": true,
       "openedRow": "Open attempt",
@@ -97,30 +125,49 @@
         "Cold"
       ],
       "answerShown": true,
-      "readOnlyNote": true
+      "readOnlyNote": true,
+      "segment": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nPassed\nCold attempt\njust now\nClose\n\nB\n\nReviewing is read-only. Nothing here consumes a retry or changes the old grade.\n\nMet: matches an accepted answer\nGrader\ndeterministic:exact\nCheck version\nv14\nDisputes\n0\nReview lesson\nTry a new version\nSave to notebook\nDispute this grade\nRecord dispute\n\nA dispute never overwrites the original verdict; a re-grade would be a new operation.\n\nPassed\nCold attempt\n3 min ago\nOpen attempt\n\nB\n\nPassed\nCold attempt\n4 min ago\nOpen attempt\n\nB\n\nPassed\nHinted\n5 min ago\nOpen attempt\n\nB\n\nNot"
     },
     {
       "step": "review-persistence",
-      "at": "2026-11-06T19:21:03.284Z",
-      "expected": "After reload the attempt history still lists the graded attempt",
-      "actual": "attempt still listed",
+      "at": "2026-11-06T19:54:57.740Z",
+      "expected": "After a renderer reload the attempt is still listed with the same verdict",
+      "actual": "attempt still listed: Passed · Cold attempt",
       "hash": "#/coursebook",
-      "mode": "dark",
-      "active": "BUTTON:Courses",
+      "mode": "light",
+      "active": "BUTTON:cb-view-picker",
       "route": true,
-      "newestRow": "All assistance\nCold"
+      "rowsAfterReload": 27,
+      "persisted": true,
+      "newest": {
+        "verdict": "Passed",
+        "assistance": "Cold attempt",
+        "when": "just now",
+        "answer": "B"
+      }
     },
     {
       "step": "console",
-      "at": "2026-11-06T19:21:03.302Z",
-      "expected": "No renderer exceptions or console errors during the loop",
-      "actual": "0 captured",
+      "at": "2026-11-06T19:54:57.761Z",
+      "expected": "No renderer exceptions, no console errors, and no React list-key warning during the loop",
+      "actual": "0 error(s), 0 key warning(s), 0 other plugin warning(s)",
       "hash": "#/coursebook",
-      "mode": "dark",
-      "active": "BUTTON:Courses",
+      "mode": "light",
+      "active": "BUTTON:cb-view-picker",
       "route": true,
-      "errors": []
+      "errors": [],
+      "keyWarnings": [],
+      "pluginWarnings": [],
+      "hostWarnings": 2
     }
   ],
-  "finished_at": "2026-11-06T19:21:03.303Z"
+  "finished_at": "2026-11-06T19:54:57.762Z",
+  "run": {
+    "started_at": "2026-11-06T19:54:16.122Z",
+    "window_cdp_port": "9341",
+    "plugin_sha256": "7cca17198c73186495b4bb308d809dfdb32d3d8d2bf1fbdff4989c8cce63c196",
+    "git_head": "22a9180+dirty",
+    "backend_base": "http://127.0.0.1:44219",
+    "wire_version": "6"
+  }
 }

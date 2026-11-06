@@ -556,36 +556,6 @@ function useOnline() {
   return online
 }
 
-/**
- * A dialog is a detour, not a destination: when it closes, focus goes back to the control that
- * opened it rather than to `<body>`.
- *
- * The host dialog restores the element it captured at open, but a row re-render inside the
- * plugin can replace that node — so the nearest live control is focused explicitly, one frame
- * after the host's own cleanup, and only if it is still connected.
- */
-function useReturnFocus(open) {
-  const saved = useRef(null)
-  useEffect(() => {
-    if (!open) return undefined
-    const active = typeof document === 'undefined' ? null : document.activeElement
-    saved.current = active && active !== document.body && typeof active.focus === 'function' ? active : null
-    return () => {
-      const target = saved.current
-      saved.current = null
-      if (!target) return
-      const restore = () => {
-        if (target.isConnected && typeof target.focus === 'function') target.focus({ preventScroll: true })
-      }
-      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
-        window.requestAnimationFrame(restore)
-      } else {
-        restore()
-      }
-    }
-  }, [open])
-}
-
 /** The backend's method registry, so a control can be absent instead of dead. */
 function useRuntime(healthStatus) {
   const [implemented, setImplemented] = useState(backendWire.implemented)
@@ -3237,7 +3207,6 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const supports = (method) => Boolean(implemented && implemented.has(method))
-  useReturnFocus(open)
 
   useEffect(() => {
     if (!open) return
@@ -7296,6 +7265,12 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
  * remembered at open time and refocused at close; when the section refresh replaced that node while
  * the dialog was up, the same control is found again by its label inside this plugin's own route
  * root. Only Coursebook's own markup is read — nothing here observes or restyles the app shell.
+ *
+ * This is the ONLY focus-restoration mechanism in the plugin. A separate `useReturnFocus` hook
+ * briefly coexisted here (both ran on NotebookSaveDialog); it restored the same opener from the
+ * effect cleanup, one animation frame later. It was removed rather than the dialog wrapper because
+ * the wrapper also owns the label fallback for a replaced opener and is used by every dialog in
+ * this file, so keeping one mechanism means no dialog can drift.
  */
 function FocusReturningDialog({ open, ...props }) {
   const openerRef = useRef(null)
@@ -7751,12 +7726,15 @@ function ContractList() {
   return jsx('div', {
     className: 'flex flex-col',
     children: state.contracts.map((entry) =>
-      jsx(StatusRow, {
-        key: entry.id,
-        label: entry.id,
-        value: `v${entry.version}`,
-        detail: `${entry.file} · ${String(entry.sha256).slice(7, 19)}…`
-      })
+      jsx(
+        StatusRow,
+        {
+          label: entry.id,
+          value: `v${entry.version}`,
+          detail: `${entry.file} · ${String(entry.sha256).slice(7, 19)}…`
+        },
+        entry.id
+      )
     )
   })
 }

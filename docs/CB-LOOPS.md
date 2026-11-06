@@ -32,17 +32,20 @@ One pass, 19:06:37 → 19:07:06 UTC, every step recorded with expected vs actual
 Section open → switch to a second section → follow a reference from the notebook back to a section →
 open the chat context → return → the section list and the reopened section's state are unchanged.
 
-### Quiz — PARTIAL (grading proven, list step not)
+### Quiz — PASS
 
-Grading is proven end to end: check v10 opens bound (`submitDisabled: true` until an answer exists),
+Grading is proven end to end: check v14 opens bound (`submitDisabled: true` until an answer exists),
 a typed answer enables Submit, `attempt.submit` returns `Passed` with criteria feedback, the verdict
-takes focus, and the attempt history renders under the section. Opening an attempt from the list
-shows the original answer and feedback read-only with no answer field.
+takes focus, and the attempt history renders under the section. Passing through Quizzes records 26
+rows before the submission and 27 after, with the new row first (`Passed · Cold attempt · just now ·
+B`); opening it shows the original answer and feedback read-only, and after a renderer reload the
+same row is still first with the same verdict. Console: 0 errors and 0 key warnings.
 
-**Not proven:** the `quiz-list` step recorded `"rows": []` for the Quizzes destination immediately
-after grading, and that capture's `active` element was host chrome, so it is not established that
-the Quizzes pane was mounted. The same file also mixes runs (steps at 19:02:03 follow steps at
-19:20:47). Both are tracked in **t_74066a11** and are not claimed here.
+The first capture of this loop was faulty in two ways, both repaired in the re-drive recorded in
+`docs/REVIEW_CB015-quiz-list.md`: its attempt-list selector never matched the newest row ("just
+now"), and its screenshot helper had no route gate. That file was superseded by a single-pass
+re-recording with monotonic timestamps and a `run` block naming the window, plugin sha256 and base
+commit.
 
 ## 2. Two product defects found and fixed in this diff
 
@@ -60,7 +63,9 @@ Both are in `desktop/plugin.js` and both blocked the loops from completing:
 
 Also in the diff: the notebook editor and the override dialog now use `FocusReturningDialog`, which
 returns focus to the control that opened it (and, if that node was replaced, finds the same control
-again by its label inside the plugin's own route root).
+again by its label inside the plugin's own route root). A second mechanism, `useReturnFocus(open)`,
+briefly ran alongside it on `NotebookSaveDialog`; it was removed in t_74066a11, leaving
+`FocusReturningDialog` as the only focus-restoration path.
 
 ## 3. Known friction, recorded and not fixed
 
@@ -68,9 +73,11 @@ again by its label inside the plugin's own route root).
   several screens below the excerpt. Two screenshots needed programmatic scrolling.
 - The Textbook reopens a section by position after returning from a reference; the section identity
   is not retained in the URL.
-- Console: two React `key` warnings were still observed during the quiz loop ("unique key prop" in
-  `AttemptControls`, and a `key` spread into an `li`). Tracked in **t_74066a11**; the notebook and
-  textbook loops did not surface them.
+
+The console key warnings this section used to list were resolved in **t_74066a11**
+(`docs/REVIEW_CB015-quiz-list.md`): both `<li>` lists pass their key as `jsx()`'s third argument, the
+last key-inside-props site (`ContractList`) was fixed, and the re-recorded quiz loop reports 0
+console errors and 0 key warnings.
 
 ## 4. Gates on the merged tree
 
