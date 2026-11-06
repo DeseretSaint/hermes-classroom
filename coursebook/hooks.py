@@ -134,8 +134,8 @@ def post_tool_call(
     try:
         with db.transaction() as connection:
             binding = connection.execute(
-                "SELECT enrollment_id FROM bindings WHERE connection_id = ? OR stored_session_id = ?"
-                " ORDER BY revision DESC, updated_at DESC LIMIT 1",
+                "SELECT enrollment_id, status FROM bindings WHERE connection_id = ? OR stored_session_id = ?"
+                + bindings.GOVERNING_ORDER,
                 (task_id or "", kwargs.get("session_id") or ""),
             ).fetchone()
             connection.execute(
@@ -162,6 +162,7 @@ PROVIDED_HOOKS: tuple[str, ...] = ("pre_llm_call", "post_llm_call", "post_tool_c
 # Registration reads the live contract (``coursebook.domain.ensure_registered``), so a contract
 # amendment adds methods without a second wiring point and cannot drift from ``cb.rpc``.
 from . import domain as _domain  # noqa: E402  (import after the hook constants on purpose)
+from . import bindings  # noqa: E402  (binding lookup ordering shared with the kernel)
 
 _domain.ensure_registered()
 

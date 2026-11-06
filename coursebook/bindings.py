@@ -38,6 +38,16 @@ from . import api, db
 #: Statuses that mean "this chat still governs the lesson".
 LIVE_STATUSES = ("active", "paused")
 
+#: Ordering for "the binding that governs this enrollment/chat".
+#:
+#: ``bindings.revision`` counts edits to ONE row, not edits to the enrollment, so ordering rows by
+#: ``revision DESC`` across an enrollment can surface a superseded row: moving a lesson to a new
+#: section detaches the old row (revision + 1) and inserts the new active row at revision 0. Picking
+#: by revision then read the detached row and refused a submit with ``BINDING_NOT_ACTIVE`` even
+#: though a live binding existed. Prefer a live row; fall back to the most recently touched one so a
+#: refusal can still name the real status.
+GOVERNING_ORDER = " ORDER BY (status IN ('active', 'paused')) DESC, updated_at DESC LIMIT 1"
+
 _BINDING_FIELDS = (
     "id",
     "enrollment_id",

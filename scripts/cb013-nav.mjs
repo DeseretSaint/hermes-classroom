@@ -57,7 +57,7 @@ await evaluate(`location.hash = '#/coursebook'`)
 await sleep(2500)
 await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find(x => x.innerText.trim() === 'Open'); if (b) { b.click(); return true } return false })()`)
 await sleep(2500)
-await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find(x => x.innerText.trim() === 'Open this section'); if (b) { b.click(); return true } return false })()`)
+await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find(x => x.innerText.trim() === 'Open section'); if (b) { b.click(); return true } return false })()`)
 await sleep(3500)
 const clicked = await evaluate(`(() => {
   const title = ${JSON.stringify(sectionTitle)}

@@ -243,6 +243,39 @@ class BindSessionCase(KernelCase):
         self.assertEqual(moved["binding"]["status"], "active")
         self.assertEqual(len(self.binding_rows()), 1)
 
+    def test_a_superseded_section_binding_does_not_block_the_new_one(self) -> None:
+        """The governing binding is the LIVE row, not the highest per-row revision.
+
+        Moving a lesson to a new section detaches the old row (its ``revision`` is bumped) and
+        inserts the new active row at revision 0. Ordering rows by ``revision DESC`` therefore read
+        the detached row and refused a submit with ``BINDING_NOT_ACTIVE`` although a live binding
+        existed — the pane showed "stored_only" and Submit stayed dead.
+        """
+        first = self.bind()
+        other = self.add_section()
+        second = self.bind(
+            stored_session_id="sess_durable_2",
+            objective_id=other["objective_id"],
+            lesson_run_id=other["run_id"],
+        )
+        self.assertEqual(first["binding"]["status"], "active")
+        rows = self.binding_rows()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["status"], "detached")
+        self.assertEqual(rows[0]["revision"], 1)
+        self.assertEqual(rows[1]["status"], "active")
+        self.assertEqual(rows[1]["revision"], 0)
+
+        from coursebook import domain
+
+        with db.read() as connection:
+            # The submit gate must see the live row...
+            domain._binding_refusal(connection, self.lesson["enrollment_id"])
+            # ...and binding.get must resolve to it, not to the superseded one.
+            latest = domain._latest_binding(connection, self.lesson["enrollment_id"])
+        self.assertEqual(str(latest["id"]), str(second["binding"]["id"]))
+        self.assertEqual(latest["status"], "active")
+
     def prepare_lesson_second(self) -> dict:
         lesson = self.prepare_lesson()
         run = self.ok(

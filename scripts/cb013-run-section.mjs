@@ -65,7 +65,7 @@ const openSection = async () => {
   await sleep(2200)
   await clickText('Open')
   await sleep(2200)
-  const opened = await clickText('Open this section')
+  const opened = await clickText('Open section')
   if (opened === 'missing') {
     const all = await clickText('All sections')
     if (all === 'missing') throw new Error('cannot reach the textbook list')

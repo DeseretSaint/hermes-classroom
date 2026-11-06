@@ -33,11 +33,23 @@ fi
 
 echo "home: $TEST_HOME"
 echo
-echo "== 1/3 disable =="
+echo "== 1/4 remove the credential copy =="
+# A live capture needs a provider, so the disposable home may hold a copy of the operator's
+# auth.json. That copy is the one piece of test residue that must never survive teardown: it lives
+# outside the root home and outlives the plugin. Delete exactly that path, never a tree.
+if [[ -e "$TEST_HOME/auth.json" ]]; then
+  rm -f "$TEST_HOME/auth.json"
+  echo "deleted the copied credential file $TEST_HOME/auth.json"
+else
+  echo "no credential copy at $TEST_HOME/auth.json"
+fi
+
+echo
+echo "== 2/4 disable =="
 HERMES_HOME="$TEST_HOME" "$HERMES_BIN" plugins disable coursebook || true
 
 echo
-echo "== 2/3 remove the package =="
+echo "== 3/4 remove the package =="
 PLUGIN_PATH="$TEST_HOME/plugins/coursebook"
 DESKTOP_PATH="$TEST_HOME/desktop-plugins/coursebook"
 if [[ -L "$PLUGIN_PATH" ]]; then
@@ -57,12 +69,17 @@ else
 fi
 
 echo
-echo "== 3/3 verify the home no longer lists it =="
+echo "== 4/4 verify the home no longer lists it, and holds no credential copy =="
 if HERMES_HOME="$TEST_HOME" "$HERMES_BIN" plugins list --plain --no-bundled 2>/dev/null | grep -q '^coursebook'; then
   echo "coursebook is still listed after removal" >&2
   exit 1
 fi
 echo "unlisted"
+if [[ -e "$TEST_HOME/auth.json" ]]; then
+  echo "credential copy still present after teardown: $TEST_HOME/auth.json" >&2
+  exit 1
+fi
+echo "no credential copy remains"
 
 echo
 echo "Plugin data under $TEST_HOME/plugin-data/coursebook was kept."
