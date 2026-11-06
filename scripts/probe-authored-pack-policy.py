@@ -2,13 +2,13 @@
 
 Runs the shipped pipeline end to end in a throwaway HERMES_HOME:
   parent.brief.create -> plan job (plan_parent fixture) -> plan.approve
-  -> lessons job (observation lesson, ONE rubric criterion, as the shipped
-     lesson fixtures and lesson instructions produce) -> parent.final.approve
-  -> parent.export
+  -> lessons job (observation lesson, three rubric criteria as lesson-prompt.v2
+     requires) -> parent.final.approve -> parent.export
 
-Mode "shipped" uses plan_parent.json unchanged (2 sections cover 4 objectives).
-Mode "one_to_one" rewrites that plan in memory so each section covers exactly
-one objective, isolating the rubric-minima question from section cardinality.
+Mode "shipped" uses plan_parent.json unchanged (one section per objective, as
+the plan rules now require). Mode "one_to_one" rewrites that plan in memory so
+each section covers exactly one objective; it is kept so the two modes can be
+compared as the card originally asked.
 
 Nothing is mocked except the two LLM seams (FakeLLM), the same offline seam
 tests/test_generation.py uses. Prints one JSON object.
@@ -92,8 +92,8 @@ def static_llm(document):
     return build
 
 
-def lesson_builder(rubric_criteria: int):
-    """A parent observation lesson in the shape the shipped author prompt produces."""
+def lesson_builder(rubric_criteria: int = 3):
+    """A parent observation lesson in the shape the lesson-prompt.v2 author asks for."""
 
     def build(request_obj):
         payload = json.loads(request_obj.input_text)
@@ -183,7 +183,7 @@ def main():
     executor.pump_once(
         llm=FakeLLM(
             {
-                "coursebook.lesson.generate": lesson_builder(1),
+                "coursebook.lesson.generate": lesson_builder(3),
                 "coursebook.lesson.validate": validation_from_fixture(),
             }
         ),
@@ -252,17 +252,7 @@ def main():
                     "plan_evidence_criteria": len(criteria),
                     "supervision_notes": len(notes),
                     "composed_rubric": (
-                        len(
-                            authoring._check_rubric(
-                                check,
-                                objective,
-                                section["page"],
-                                section,
-                                section.get("notes") or {},
-                            )
-                        )
-                        if check is not None
-                        else 0
+                        len(authoring._check_rubric(check, objective)) if check is not None else 0
                     ),
                 }
             )

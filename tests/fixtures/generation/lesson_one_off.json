@@ -44,6 +44,16 @@
         "criterion": "checklist completed",
         "weight": 1.0,
         "description": "Every step confirmed against the manual"
+      },
+      {
+        "criterion": "model matched",
+        "weight": 1.0,
+        "description": "Pad model matched to the manual before removal"
+      },
+      {
+        "criterion": "listed tool used",
+        "weight": 1.0,
+        "description": "Fastener loosened with the listed tool only"
       }
     ],
     "reference_answer": "Both pads replaced, wheel seated, lever firm with 2 mm clearance",

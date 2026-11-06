@@ -45,6 +45,7 @@ from jsonschema import Draft202012Validator
 
 from . import research as research_mod
 from . import sources as source_ledger
+from .packs import MIN_RUBRIC_CRITERIA
 from .research import (
     ResearchBudget,
     ResearchRun,
@@ -89,7 +90,7 @@ __all__ = [
 PIPELINE_VERSION = "cb.gen.v1"
 
 PLAN_PROMPT_VERSION = "plan-prompt.v1"
-LESSON_PROMPT_VERSION = "lesson-prompt.v1"
+LESSON_PROMPT_VERSION = "lesson-prompt.v2"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v1"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
@@ -374,7 +375,7 @@ SECTION_SCHEMA: dict[str, Any] = {
         "objective_refs": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 8,
+            "maxItems": 1,
             "items": {"type": "integer", "minimum": 1, "maximum": 8},
         },
         "context_needs": {"type": "array", "maxItems": 6, "items": {"type": "string", "maxLength": 120}},
@@ -762,8 +763,8 @@ def _plan_instructions(*, recipe: str, dials: dict[str, Any], locale: str | None
         f"Research status: {research_status}.",
         "Produce 4 to 8 objectives, each with a stable ordinal, an evidence target and 1-3 "
         "observable evidence criteria.",
-        "Produce 2 to 8 ordered sections; each section names the objectives it serves and its "
-        "lesson intent.",
+        "Produce one section per objective: exactly one section for each objective, and each "
+        "section names exactly one objective it serves plus its lesson intent.",
         "Produce a check plan covering every objective at least once, with the recipe-appropriate "
         "kind and whether it collects independent evidence.",
         "State explicit exclusions: what this course will not cover or claim.",
@@ -790,6 +791,8 @@ def _lesson_instructions(*, recipe: str, locale: str | None, scaffold_note: str)
         f"Recipe: {recipe}.",
         "Segments: 2-6, at least one 'model' and one 'guided'.",
         "Include exactly one check.",
+        "Write 3-6 rubric criteria in check.rubric, each a distinct observable aspect of the "
+        "response; never restate one aspect in two criteria.",
         "Media items are declarative specs only, each with a complete text equivalent.",
     ]
     if locale:
@@ -860,10 +863,30 @@ def enforce_plan_rules(
     ordinals = [int(obj.get("ordinal", 0)) for obj in objectives]
     if sorted(ordinals) != list(range(1, len(ordinals) + 1)):
         reasons.append("objective ordinals must be contiguous starting at 1")
+    # The objective is the authoring and evidence unit: one section per objective, once each, so
+    # every objective has its own generated check and composed export section.
+    coverage: dict[int, int] = {}
     for section in sections:
-        for ref in section.get("objective_refs") or []:
-            if int(ref) not in ordinals:
-                reasons.append(f"section {section.get('ordinal')} references missing objective {ref}")
+        refs = [int(ref) for ref in section.get("objective_refs") or []]
+        if len(refs) != 1:
+            reasons.append(
+                f"section {section.get('ordinal')} must cover exactly one objective; it names {len(refs)}"
+            )
+            continue
+        if refs[0] not in ordinals:
+            reasons.append(f"section {section.get('ordinal')} references missing objective {refs[0]}")
+            continue
+        coverage[refs[0]] = coverage.get(refs[0], 0) + 1
+    for ordinal in ordinals:
+        count = coverage.get(ordinal, 0)
+        if count == 0:
+            reasons.append(
+                f"objective {ordinal} has no section; author exactly one section per objective"
+            )
+        elif count > 1:
+            reasons.append(
+                f"objective {ordinal} is covered by {count} sections; author exactly one section per objective"
+            )
 
     # Time honesty (AUDIT R9).
     estimate = plan.get("time_estimate") or {}
@@ -953,6 +976,12 @@ def enforce_lesson_rules(
 ) -> None:
     reasons: list[str] = []
     check = lesson.get("check") or {}
+    rubric_criteria = [item for item in check.get("rubric") or [] if isinstance(item, dict)]
+    if len(rubric_criteria) < MIN_RUBRIC_CRITERIA:
+        reasons.append(
+            f"check.rubric declares {len(rubric_criteria)} criteria; at least "
+            f"{MIN_RUBRIC_CRITERIA} distinct observable criteria are required"
+        )
     if objective is not None and check.get("evidence_target") != objective.get("evidence_target"):
         reasons.append(
             f"check targets {check.get('evidence_target')!r} but the objective requires "
@@ -1231,6 +1260,7 @@ def build_lesson_request(
         "rules": {
             "segments": [2, 6],
             "checks": 1,
+            "rubric_criteria": [3, 6],
             "reference_answer": "stored separately; never inside segments, explanation or worked example",
             "media": "declarative spec with complete text equivalent; never generate an image",
         },

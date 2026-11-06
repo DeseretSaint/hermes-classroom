@@ -53,6 +53,16 @@
         "criterion": "polite greeting",
         "weight": 1.0,
         "description": "Selects a greeting used when entering a shop"
+      },
+      {
+        "criterion": "target script",
+        "weight": 1.0,
+        "description": "Produces the chosen phrase in Japanese script"
+      },
+      {
+        "criterion": "register",
+        "weight": 1.0,
+        "description": "Keeps the polite register expected with staff"
       }
     ],
     "reference_answer": "こんにちは",
