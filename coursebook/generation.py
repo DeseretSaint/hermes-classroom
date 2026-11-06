@@ -44,6 +44,7 @@ from typing import Any, Callable, Iterable, Sequence
 from jsonschema import Draft202012Validator
 
 from . import research as research_mod
+from . import sources as source_ledger
 from .research import (
     ResearchBudget,
     ResearchRun,
@@ -1657,6 +1658,10 @@ def _persist_research(
     created_at = _now_iso(now)
     claim_links = _claim_links(run, plan)
     with _transaction(connection):
+        # Compare against the previously recorded snapshot *before* inserting this one, so a
+        # changed source marks its dependent checks stale pending review instead of silently
+        # becoming the new truth.
+        source_ledger.apply_run(connection, course_id, run)
         connection.execute(
             "INSERT INTO gen_research_runs (id, course_id, job_id, status, queries_json, sources_json, reason, "
             "created_at) VALUES (?,?,?,?,?,?,?,?)",

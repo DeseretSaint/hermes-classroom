@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sqlite3
 import unittest
+from contextlib import closing
 from unittest import mock
 
 from coursebook import api, db
@@ -134,6 +135,71 @@ class MigrationPresentTest(_ApiBindingHandlerIsolated):
     def test_neither_identifier_is_refused(self) -> None:
         response = api.dispatch(
             request("binding.get", {"session_id": None, "enrollment_id": None})
+        )
+        self.assertFalse(response["ok"])
+        self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
+
+
+class KernelBindingHandlerTest(unittest.TestCase):
+    """CB-012: ``coursebook.domain`` owns ``binding.get`` once the kernel is present.
+
+    The platform handler above is the pre-kernel seam; this class pins the kernel handler and
+    proves the durable shape (``binding_id``, revision) and that it migrates before reading.
+    """
+
+    def setUp(self) -> None:
+        from coursebook import domain
+
+        self._saved_handlers = dict(api.METHOD_HANDLERS)
+        api.METHOD_HANDLERS["binding.get"] = domain.binding_get
+        self.addCleanup(self._restore_handlers)
+        patcher_read = mock.patch.object(db, "read", side_effect=lambda: closing(seeded_connection()))
+        patcher_read.start()
+        self.addCleanup(patcher_read.stop)
+
+    def _restore_handlers(self) -> None:
+        api.METHOD_HANDLERS.clear()
+        api.METHOD_HANDLERS.update(self._saved_handlers)
+
+    def test_migrates_then_resolves_the_stored_id(self) -> None:
+        calls = []
+
+        def fake_ensure_schema() -> int:
+            calls.append("ensure")
+            return 1
+
+        with mock.patch.object(db, "ensure_schema", side_effect=fake_ensure_schema):
+            response = api.dispatch(request("binding.get", {"session_id": "stored_1"}))
+        self.assertEqual(calls, ["ensure"])
+        self.assertTrue(response["ok"], response)
+        binding = response["result"]["binding"]
+        self.assertEqual(binding["binding_id"], "bnd_active")
+        self.assertEqual(binding["stored_session_id"], "stored_1")
+        self.assertEqual(binding["revision"], 3)
+
+    def test_runtime_id_does_not_resolve_a_binding(self) -> None:
+        # A runtime id is a live-gateway id, not durable identity (AUDIT.md R1); the Desktop
+        # half maps it to the stored id before calling. The kernel must not guess.
+        response = api.dispatch(request("binding.get", {"session_id": "rt_live_1"}))
+        self.assertTrue(response["ok"], response)
+        self.assertIsNone(response["result"]["binding"])
+
+    def test_reports_which_column_matched(self) -> None:
+        response = api.dispatch(request("binding.get", {"session_id": "stored_1"}))
+        self.assertTrue(response["ok"], response)
+        self.assertEqual(response["result"]["binding"]["matched_column"], "stored_session_id")
+        response = api.dispatch(request("binding.get", {"enrollment_id": "enr_1"}))
+        self.assertTrue(response["ok"], response)
+        self.assertEqual(response["result"]["binding"]["matched_column"], "enrollment_id")
+
+    def test_enrollment_id_resolves_the_same_row(self) -> None:
+        response = api.dispatch(request("binding.get", {"enrollment_id": "enr_1"}))
+        self.assertTrue(response["ok"], response)
+        self.assertEqual(response["result"]["binding"]["binding_id"], "bnd_active")
+
+    def test_both_identifiers_are_refused(self) -> None:
+        response = api.dispatch(
+            request("binding.get", {"session_id": "stored_1", "enrollment_id": "enr_1"})
         )
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")

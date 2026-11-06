@@ -1,0 +1,689 @@
+"""Durable backend job service: leases, fencing, checkpoints, cancellation, reconciliation.
+
+``PREBUILD_SPEC.md`` §12 and ``AUDIT.md`` R2/H2 are the reasons this module exists rather than a
+bare "spawn a task" call: a job is a durable row, an attempt is a leased worker, and a result is
+adopted by key. Losing the in-process runner must never look like a successful cancellation, and
+restarting the process must never repeat spend or duplicate an artifact.
+
+Frozen rules enforced here:
+
+* every claim/renew/checkpoint/complete is a ``BEGIN IMMEDIATE`` compare-and-swap on
+  ``(job_id, attempt_id, lease_owner)`` — a stale worker cannot write newer state;
+* provider/media calls always run **outside** any transaction (``db.active_transactions() == 0``
+  while a stage executes);
+* a cancellation marks intent and stops future stages; an already-running non-idempotent call is
+  reconciled by operation/artifact key on return and becomes ``completed_late`` — never a rerun;
+* progress comes from real completed stages, so ``steps_total`` may be null;
+* unknown usage fields stay null; nothing is fabricated.
+"""
+
+from __future__ import annotations
+
+import os
+import uuid
+from contextlib import closing
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from typing import Any, Callable, Iterable, Sequence
+
+from . import db
+from . import jobs as jobs_contract
+from .api import RpcError
+from .research import ResearchCancelled
+
+#: Lease length. Short enough that a killed process is detected within one poll interval, long
+#: enough that a slow provider call does not lose its fence between heartbeats.
+LEASE_SECONDS = 120
+
+#: Identity of this process's worker. Random per process: never a hostname or pid, which can be
+#: reused and would make two workers look like one.
+WORKER_ID = f"worker-{uuid.uuid4().hex[:12]}"
+
+_MAX_ERROR_TEXT = 500
+
+
+def _now(moment: datetime | None = None) -> datetime:
+    return moment or datetime.now(timezone.utc)
+
+
+def _iso(moment: datetime) -> str:
+    return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _parse(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _json(value: Any) -> str:
+    import json
+
+    return json.dumps(value, ensure_ascii=False, sort_keys=True)
+
+
+def _load(value: str | None, default: Any) -> Any:
+    import json
+
+    if not value:
+        return default
+    try:
+        parsed = json.loads(value)
+    except (TypeError, ValueError):
+        return default
+    return parsed if isinstance(parsed, type(default)) else default
+
+
+class JobLeaseLost(RuntimeError):
+    """Another attempt owns the job now. The caller must stop, not retry the write."""
+
+
+class JobCancelled(ResearchCancelled):
+    """The job's cancellation reached a safe boundary; the stage loop stops."""
+
+    def __init__(self, reason: str, *, usage: list[Any] | None = None) -> None:
+        super().__init__(reason)
+        # Calls that already happened before the boundary are still real spend and must be
+        # recorded; the executor takes them from here on the cancellation path.
+        self.usage = list(usage or [])
+
+
+@dataclass(frozen=True)
+class Lease:
+    job_id: str
+    attempt_id: str
+    owner: str
+    expires_at: str
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"owner": self.owner, "expires_at": self.expires_at}
+
+
+@dataclass
+class UsageRecord:
+    """One real provider call. Unknown fields stay ``None`` and are stored as NULL."""
+
+    provider: str | None = None
+    model: str | None = None
+    tokens: dict[str, Any] = field(default_factory=dict)
+    duration_ms: int | None = None
+    artifact_count: int = 0
+
+
+@dataclass
+class StageResult:
+    artifacts: list[str] = field(default_factory=list)
+    usage: list[UsageRecord] = field(default_factory=list)
+    checkpoint: dict[str, Any] = field(default_factory=dict)
+    message: str | None = None
+
+
+@dataclass(frozen=True)
+class Stage:
+    """A named unit of work. ``run`` executes with no transaction open."""
+
+    name: str
+    run: Callable[[Lease], StageResult]
+
+
+def _job(connection, job_id: str) -> Any:
+    row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+    if row is None:
+        raise RpcError.of("NOT_FOUND", f"job {job_id} does not exist.", job_id=job_id)
+    return row
+
+
+def job_view(row: Any) -> dict[str, Any]:
+    """The ``cb.jobs`` row as the RPC contract's job object."""
+    progress = _load(row["progress_json"], {})
+    checkpoint = _load(row["checkpoint_json"], {})
+    brief = _load(row["brief_json"], {})
+    error = _load(row["error_json"], {})
+    artifact_ids: list[str] = []
+    for item in progress.get("stages") or []:
+        for artifact_id in item.get("artifact_ids") or []:
+            if artifact_id not in artifact_ids:
+                artifact_ids.append(str(artifact_id))
+    lease = None
+    if row["lease_owner"]:
+        lease = {"owner": row["lease_owner"], "expires_at": row["lease_expires_at"]}
+    return {
+        "job_id": row["id"],
+        "kind": row["kind"],
+        "state": row["state"],
+        "operation_id": row["operation_id"],
+        "attempt_id": row["attempt_id"] or "unassigned",
+        "brief": brief,
+        "checkpoint": checkpoint,
+        "progress": {
+            "stage": progress.get("stage") or "queued",
+            "steps_done": int(progress.get("steps_done") or 0),
+            "steps_total": progress.get("steps_total"),
+            "message": progress.get("message") or "",
+        },
+        "lease": lease,
+        "artifact_ids": artifact_ids,
+        "error": error or None,
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "cancel_requested_at": None,
+    }
+
+
+# ── creation ────────────────────────────────────────────────────────────────
+
+
+def create(
+    kind: str,
+    brief: dict[str, Any],
+    *,
+    operation_id: str | None = None,
+    idempotency_key: str | None = None,
+    now: datetime | None = None,
+    connection=None,
+) -> dict[str, Any]:
+    """Create a queued job, idempotent on ``operation_id``/``idempotency_key``.
+
+    The kernel's ``jobs.create`` command calls this so a retried POST never mints a second job
+    (and therefore never a second spend). Pass ``connection`` to join the caller's fenced
+    transaction; otherwise a short transaction is opened and closed here.
+    """
+    if connection is not None:
+        return _create(connection, kind, brief, operation_id, idempotency_key, now)
+    with db.transaction() as connection:
+        return _create(connection, kind, brief, operation_id, idempotency_key, now)
+
+
+def _create(connection, kind, brief, operation_id, idempotency_key, now) -> dict[str, Any]:
+    moment = _now(now)
+    stamp = _iso(moment)
+    key = idempotency_key
+    if key:
+        row = connection.execute(
+            "SELECT response_json FROM idempotency_keys WHERE key = ?", (key,)
+        ).fetchone()
+        if row is not None:
+            return _load(row["response_json"], {})
+    elif operation_id:
+        row = connection.execute(
+            "SELECT id, state FROM jobs WHERE operation_id = ? ORDER BY created_at LIMIT 1",
+            (operation_id,),
+        ).fetchone()
+        if row is not None:
+            return {"job_id": row["id"], "state": row["state"]}
+    job_id = f"job_{uuid.uuid4().hex}"
+    connection.execute(
+        "INSERT INTO jobs (id, kind, state, operation_id, brief_json, checkpoint_json, attempt_id,"
+        " lease_owner, lease_expires_at, progress_json, error_json, created_at, updated_at)"
+        " VALUES (?, ?, 'queued', ?, ?, '{}', NULL, NULL, NULL, '{}', '{}', ?, ?)",
+        (job_id, kind, operation_id, _json(brief), stamp, stamp),
+    )
+    result = {"job_id": job_id, "state": "queued"}
+    if key:
+        connection.execute(
+            "INSERT INTO idempotency_keys (key, payload_hash, method, operation_id, response_json, created_at)"
+            " VALUES (?, ?, 'jobs.create', ?, ?, ?)",
+            (key, _json(brief), operation_id or f"op-{job_id}", _json(result), stamp),
+        )
+    return result
+
+
+# ── leases ──────────────────────────────────────────────────────────────────
+
+
+def claim(job_id: str, *, owner: str | None = None, now: datetime | None = None) -> Lease:
+    """Take the lease for one attempt. Fenced by state and current lease expiry."""
+    owner = owner or WORKER_ID
+    moment = _now(now)
+    expires = _iso(moment + timedelta(seconds=LEASE_SECONDS))
+    attempt_id = f"att_{uuid.uuid4().hex}"
+    with db.transaction() as connection:
+        row = _job(connection, job_id)
+        state = str(row["state"])
+        if state not in ("queued", "running"):
+            raise RpcError.of(
+                "JOB_STATE_INVALID", f"job is {state} and cannot be claimed.", job_id=job_id, state=state
+            )
+        held_until = _parse(row["lease_expires_at"])
+        if state == "running" and held_until is not None and held_until > moment:
+            if row["lease_owner"] != owner:
+                raise JobLeaseLost(f"job {job_id} is leased by {row['lease_owner']} until {row['lease_expires_at']}")
+        if state == "queued":
+            jobs_contract.assert_transition(state, "running")
+        connection.execute(
+            "UPDATE jobs SET state = 'running', attempt_id = ?, lease_owner = ?, lease_expires_at = ?,"
+            " updated_at = ?, error_json = '{}' WHERE id = ? AND state = ?",
+            (attempt_id, owner, expires, _iso(moment), job_id, state),
+        )
+    return Lease(job_id=job_id, attempt_id=attempt_id, owner=owner, expires_at=expires)
+
+
+def _fenced_row(connection, lease: Lease) -> Any:
+    row = _job(connection, lease.job_id)
+    if row["attempt_id"] != lease.attempt_id or row["lease_owner"] != lease.owner:
+        raise JobLeaseLost(
+            f"attempt {lease.attempt_id} no longer owns job {lease.job_id}"
+            f" (now {row['attempt_id']}/{row['lease_owner']})"
+        )
+    return row
+
+
+def renew(lease: Lease, *, now: datetime | None = None, extra_seconds: int | None = None) -> Lease:
+    """Extend a still-owned lease. A lost fence raises rather than silently continuing."""
+    moment = _now(now)
+    expires = _iso(moment + timedelta(seconds=extra_seconds or LEASE_SECONDS))
+    with db.transaction() as connection:
+        _fenced_row(connection, lease)
+        connection.execute(
+            "UPDATE jobs SET lease_expires_at = ?, updated_at = ? WHERE id = ? AND attempt_id = ?",
+            (expires, _iso(moment), lease.job_id, lease.attempt_id),
+        )
+    return Lease(lease.job_id, lease.attempt_id, lease.owner, expires)
+
+
+def is_cancel_requested(job_id: str) -> bool:
+    with db.read() as connection:
+        row = connection.execute("SELECT state FROM jobs WHERE id = ?", (job_id,)).fetchone()
+    return row is not None and str(row["state"]) in ("cancel_requested", "cancelling")
+
+
+def request_cancel(job_id: str, *, now: datetime | None = None) -> dict[str, Any]:
+    """Record cancellation intent. ``cancelled`` means nothing further will run."""
+    moment = _now(now)
+    with db.transaction() as connection:
+        row = _job(connection, job_id)
+        state = str(row["state"])
+        if jobs_contract.is_terminal(state):
+            raise RpcError.of(
+                "JOB_NOT_CANCELLABLE", f"job is already {state}.", job_id=job_id, state=state
+            )
+        if state == "queued":
+            target = "cancelled"
+        elif state == "interrupted_requires_retry":
+            target = "cancelled"
+        elif state in ("cancel_requested", "cancelling"):
+            return {"job_id": job_id, "state": state}
+        else:
+            target = "cancel_requested"
+        jobs_contract.assert_transition(state, target)
+        connection.execute(
+            "UPDATE jobs SET state = ?, updated_at = ? WHERE id = ?", (target, _iso(moment), job_id)
+        )
+    return {"job_id": job_id, "state": target}
+
+
+def begin_cancelling(lease: Lease, *, now: datetime | None = None) -> None:
+    """Move a leased ``cancel_requested`` job to ``cancelling`` at a stage boundary."""
+    moment = _now(now)
+    with db.transaction() as connection:
+        row = _fenced_row(connection, lease)
+        state = str(row["state"])
+        if state == "running":
+            return
+        if state == "cancel_requested":
+            jobs_contract.assert_transition(state, "cancelling")
+            connection.execute(
+                "UPDATE jobs SET state = 'cancelling', updated_at = ? WHERE id = ?", (_iso(moment), lease.job_id)
+            )
+        elif state not in ("cancelling",):
+            raise RpcError.of("JOB_STATE_INVALID", f"job is {state}; cannot begin cancelling.", state=state)
+
+
+# ── checkpoints and terminal transitions ────────────────────────────────────
+
+
+def checkpoint(
+    lease: Lease,
+    *,
+    stage: str,
+    steps_done: int,
+    steps_total: int | None,
+    message: str | None = None,
+    checkpoint: dict[str, Any] | None = None,
+    artifact_ids: Sequence[str] = (),
+    now: datetime | None = None,
+) -> None:
+    """Persist a safe resume point plus real progress. Provider calls are already done."""
+    moment = _now(now)
+    with db.transaction() as connection:
+        row = _fenced_row(connection, lease)
+        progress = _load(row["progress_json"], {})
+        stages = [item for item in (progress.get("stages") or []) if isinstance(item, dict)]
+        stages.append(
+            {
+                "stage": stage,
+                "steps_done": int(steps_done),
+                "steps_total": steps_total,
+                "artifact_ids": list(artifact_ids),
+                "at": _iso(moment),
+            }
+        )
+        progress.update(
+            {
+                "stage": stage,
+                "steps_done": int(steps_done),
+                "steps_total": steps_total,
+                "message": (message or "")[:300],
+                "stages": stages,
+            }
+        )
+        stored = _load(row["checkpoint_json"], {})
+        stored.update(checkpoint or {})
+        stored["last_stage"] = stage
+        connection.execute(
+            "UPDATE jobs SET progress_json = ?, checkpoint_json = ?, updated_at = ?"
+            " WHERE id = ? AND attempt_id = ?",
+            (_json(progress), _json(stored), _iso(moment), lease.job_id, lease.attempt_id),
+        )
+
+
+def finish(
+    lease: Lease,
+    *,
+    state: str = "completed",
+    artifact_ids: Sequence[str] = (),
+    error: dict[str, Any] | None = None,
+    message: str | None = None,
+    now: datetime | None = None,
+) -> str:
+    """Close the attempt. A completion that raced a cancel becomes ``completed_late``."""
+    moment = _now(now)
+    with db.transaction() as connection:
+        row = _fenced_row(connection, lease)
+        current = str(row["state"])
+        target = state
+        if state == "completed" and current in ("cancel_requested", "cancelling"):
+            target = "completed_late"
+        jobs_contract.assert_transition(current, target)
+        progress = _load(row["progress_json"], {})
+        if message:
+            progress["message"] = message[:300]
+        connection.execute(
+            "UPDATE jobs SET state = ?, progress_json = ?, error_json = ?, lease_owner = NULL,"
+            " lease_expires_at = NULL, updated_at = ? WHERE id = ? AND attempt_id = ?",
+            (
+                target,
+                _json(progress),
+                _json(error) if error else "{}",
+                _iso(moment),
+                lease.job_id,
+                lease.attempt_id,
+            ),
+        )
+    return target
+
+
+def fail(lease: Lease, error: dict[str, Any], *, now: datetime | None = None) -> str:
+    return finish(lease, state="failed", error=error, now=now)
+
+
+def resume(job_id: str, *, now: datetime | None = None) -> dict[str, Any]:
+    """Re-queue a failed/interrupted job with the persisted brief and checkpoint.
+
+    A retry is a new attempt id; the checkpoint is what lets a caller skip finished stages
+    instead of paying for them again.
+    """
+    moment = _now(now)
+    with db.transaction() as connection:
+        row = _job(connection, job_id)
+        state = str(row["state"])
+        if state not in ("failed", "interrupted_requires_retry"):
+            raise RpcError.of(
+                "JOB_STATE_INVALID", f"job is {state} and cannot be resumed.", job_id=job_id, state=state
+            )
+        jobs_contract.assert_transition(state, "queued")
+        attempt_id = f"att_{uuid.uuid4().hex}"
+        connection.execute(
+            "UPDATE jobs SET state = 'queued', attempt_id = ?, lease_owner = NULL, lease_expires_at = NULL,"
+            " error_json = '{}', updated_at = ? WHERE id = ?",
+            (attempt_id, _iso(moment), job_id),
+        )
+        checkpoint = _load(row["checkpoint_json"], {})
+    return {"job_id": job_id, "state": "queued", "attempt_id": attempt_id, "checkpoint": checkpoint}
+
+
+# ── execution ───────────────────────────────────────────────────────────────
+
+
+def _record_usage(
+    connection,
+    job_id: str,
+    usage: Iterable[UsageRecord],
+    now: datetime | None,
+    payment_kind: str,
+) -> None:
+    stamp = _iso(_now(now))
+    for item in usage:
+        connection.execute(
+            "INSERT INTO usage_events (id, operation_id, enrollment_id, provider, model, tokens_json,"
+            " duration_ms, artifact_count, recorded_at)"
+            " VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)",
+            (
+                f"use_{uuid.uuid4().hex}",
+                job_id,
+                item.provider,
+                item.model,
+                _json(item.tokens or {}),
+                item.duration_ms,
+                int(item.artifact_count or 0),
+                stamp,
+            ),
+        )
+
+
+def execute(
+    job_id: str,
+    stages: Sequence[Stage],
+    *,
+    owner: str | None = None,
+    skip_stages: Iterable[str] = (),
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Run stages under one lease, checkpointing after each, honoring cancellation.
+
+    Returns the final job view. Never raises for an expected stage failure: the job row records
+    ``failed`` with a typed error so the UI can offer retry with the same brief/checkpoint.
+    """
+    try:
+        lease = claim(job_id, owner=owner, now=now)
+    except RpcError as exc:
+        if exc.error.get("code") == "JOB_STATE_INVALID" and str(_view(job_id)["state"]) in jobs_contract.terminal_states():
+            # A job that is already terminal spends nothing further.
+            return _view(job_id)
+        raise
+    steps_total = len(stages)
+    skip = set(skip_stages)
+    try:
+        for index, stage in enumerate(stages, start=1):
+            if stage.name in skip:
+                continue
+            if is_cancel_requested(job_id):
+                begin_cancelling(lease)
+                finish(lease, state="cancelled", now=now)
+                return _view(job_id)
+            renew(lease)
+            try:
+                result = stage.run(lease)
+            except ResearchCancelled as exc:
+                usage = list(getattr(exc, "usage", []) or [])
+                if usage:
+                    with db.transaction() as connection:
+                        _record_usage(connection, job_id, usage, now, "job")
+                begin_cancelling(lease)
+                finish(lease, state="cancelled", now=now)
+                return _view(job_id)
+            except Exception as exc:  # noqa: BLE001 - a stage failure is durable, not a crash
+                error = {
+                    "code": _error_code(exc),
+                    "message": str(exc)[:_MAX_ERROR_TEXT] or type(exc).__name__,
+                    "category": "capability",
+                    "retryable": True,
+                    "http": 503,
+                }
+                fail(lease, error)
+                return _view(job_id)
+            with db.transaction() as connection:
+                _record_usage(connection, job_id, result.usage, now, "job")
+            checkpoint(
+                lease,
+                stage=stage.name,
+                steps_done=index,
+                steps_total=steps_total,
+                message=result.message,
+                checkpoint=result.checkpoint,
+                artifact_ids=result.artifacts,
+                now=now,
+            )
+            done_after = index
+        state = finish(lease, artifact_ids=())
+        return _view(job_id)
+    except JobLeaseLost:
+        return _view(job_id)
+
+
+def _error_code(exc: Exception) -> str:
+    code = getattr(exc, "code", None)
+    if isinstance(code, str):
+        return code
+    name = type(exc).__name__
+    if name in ("ResearchUnavailable", "ProviderTimeout", "ProviderFailure", "CostCeilingExceeded"):
+        return "GRADER_UNAVAILABLE" if name == "ProviderTimeout" else "POLICY_VIOLATION"
+    return "INTERNAL_ERROR"
+
+
+def _view(job_id: str) -> dict[str, Any]:
+    with db.read() as connection:
+        row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+    if row is None:
+        return {"job_id": job_id, "state": "failed"}
+    return job_view(row)
+
+
+def run_pending(
+    resolvers: dict[str, Callable[[dict[str, Any]], Sequence[Stage]]],
+    *,
+    limit: int = 5,
+    owner: str | None = None,
+) -> list[dict[str, Any]]:
+    """Drain up to ``limit`` queued jobs whose kind has a resolver.
+
+    This is the pump a host calls (poll tick or ``ctx.spawn_task`` body). A job whose kind has no
+    resolver stays ``queued`` rather than being failed: the family may be implemented by another
+    package, and inventing a failure would be a false statement. ``resolvers`` build stages from
+    the persisted brief, so a retry after edit never needs the original form.
+    """
+    with db.read() as connection:
+        rows = connection.execute(
+            "SELECT id, kind, brief_json FROM jobs WHERE state = 'queued' ORDER BY created_at LIMIT ?",
+            (limit,),
+        ).fetchall()
+    views: list[dict[str, Any]] = []
+    for row in rows:
+        resolver = resolvers.get(str(row["kind"]))
+        if resolver is None:
+            continue
+        brief = _load(row["brief_json"], {})
+        try:
+            stages = resolver(brief)
+        except Exception:  # noqa: BLE001 - a bad brief must not kill the pump
+            continue
+        views.append(execute(str(row["id"]), stages, owner=owner))
+    return views
+
+
+def list_jobs(*, state: str | None = None, kind: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+    clauses: list[str] = []
+    params: list[Any] = []
+    if state:
+        clauses.append("state = ?")
+        params.append(state)
+    if kind:
+        clauses.append("kind = ?")
+        params.append(kind)
+    where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+    with db.read() as connection:
+        rows = connection.execute(
+            f"SELECT * FROM jobs{where} ORDER BY created_at DESC LIMIT ?", (*params, int(limit))
+        ).fetchall()
+    return [job_view(row) for row in rows]
+
+
+# ── startup reconciliation ──────────────────────────────────────────────────
+
+_RECONCILED = False
+
+
+def ensure_startup_reconciled() -> dict[str, Any]:
+    """Run the crash-recovery pass once per process, at plugin load.
+
+    Guarded on an already-migrated database so importing the plugin never creates schema as a
+    side effect of a load. Idempotent and safe to call from a host that reimports the module.
+    """
+    global _RECONCILED
+    if _RECONCILED:
+        return {"skipped": True, "reason": "already reconciled in this process"}
+    if db.applied_schema_version() is None:
+        return {"skipped": True, "reason": "database has no schema yet"}
+    recovered = db.recover_interrupted()
+    jobs = reconcile_startup(artifact_store=_default_store())
+    _RECONCILED = True
+    return {"attempts": recovered.get("attempts", 0), "jobs": jobs}
+
+
+def _default_store() -> Any:
+    from .artifacts import ArtifactStore
+
+    return ArtifactStore()
+
+
+def reconcile_startup(
+    *,
+    artifact_store: Any | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Make the database honest after a crash/restart, once, at startup.
+
+    * ``running`` jobs whose lease expired, or whose lease belongs to a *previous* process, are
+      ``interrupted_requires_retry`` — the brief and checkpoint survive;
+    * ``cancel_requested``/``cancelling`` jobs cannot still be running after a restart, so they are
+      ``cancelled``;
+    * orphaned staged/object artifact files are reconciled against the table;
+    * nothing in flight is retried automatically, because an uncertain non-idempotent call must
+      never be re-run blind.
+    """
+    moment = _now(now)
+    stamp = _iso(moment)
+    interrupted = cancelled = 0
+    with db.transaction() as connection:
+        rows = connection.execute(
+            "SELECT id, state, lease_owner, lease_expires_at FROM jobs WHERE state IN"
+            " ('running','cancel_requested','cancelling')"
+        ).fetchall()
+        for row in rows:
+            state = str(row["state"])
+            if state in ("cancel_requested", "cancelling"):
+                jobs_contract.assert_transition(state, "cancelled")
+                connection.execute(
+                    "UPDATE jobs SET state = 'cancelled', lease_owner = NULL, lease_expires_at = NULL,"
+                    " updated_at = ? WHERE id = ?",
+                    (stamp, row["id"]),
+                )
+                cancelled += 1
+                continue
+            held = _parse(row["lease_expires_at"])
+            stale = held is None or held <= moment or row["lease_owner"] != WORKER_ID
+            if stale:
+                jobs_contract.assert_transition(state, "interrupted_requires_retry")
+                connection.execute(
+                    "UPDATE jobs SET state = 'interrupted_requires_retry', lease_owner = NULL,"
+                    " lease_expires_at = NULL, updated_at = ? WHERE id = ?",
+                    (stamp, row["id"]),
+                )
+                interrupted += 1
+    cleanup: dict[str, int] = {}
+    if artifact_store is not None:
+        cleanup = artifact_store.reconcile(now=moment)
+    return {"interrupted": interrupted, "cancelled": cancelled, "artifacts": cleanup}

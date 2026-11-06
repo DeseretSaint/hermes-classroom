@@ -170,3 +170,18 @@ _domain.ensure_registered()
 from . import pack_flow as _pack_flow  # noqa: E402  (same single wiring point)
 
 _pack_flow.ensure_registered()
+
+# Startup reconciliation runs once per process, at plugin load: a crashed worker's jobs become
+# `interrupted_requires_retry`, cancel-in-progress jobs become `cancelled`, and orphaned artifact
+# staging/objects are reconciled. Guarded so tests and an unmigrated install are never mutated by
+# merely importing the package.
+def reconcile_on_startup() -> dict[str, Any]:
+    try:
+        from . import job_service
+
+        return job_service.ensure_startup_reconciled()
+    except Exception as exc:  # noqa: BLE001 - a load-time recovery failure must not break the plugin
+        return {"error": type(exc).__name__, "message": str(exc)[:300]}
+
+
+STARTUP_RECONCILIATION = reconcile_on_startup()

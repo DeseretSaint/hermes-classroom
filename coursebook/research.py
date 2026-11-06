@@ -83,6 +83,15 @@ class ResearchBudgetExceeded(RuntimeError):
     """The pipeline tried to exceed a declared query/page/source ceiling."""
 
 
+class ResearchCancelled(RuntimeError):
+    """A cancellation reached a provider-call boundary mid-run.
+
+    Search/extract failures are recorded and skipped; **cancellation is not a failure** and must
+    propagate, otherwise a cancelled job would keep spending and look like a completed one.
+    Provider adapters must raise this (or a subclass) to stop the run.
+    """
+
+
 @dataclass(frozen=True)
 class ResearchBudget:
     """Executable ceilings. Every field is checked before the call it bounds."""
@@ -335,6 +344,8 @@ def run_research(
         entry: dict[str, Any] = {"query": query, "result_count": 0, "error": None}
         try:
             results = search.search(query, budget.max_results_per_query)
+        except ResearchCancelled:
+            raise
         except ResearchUnavailable as exc:
             entry["error"] = _bound(str(exc), _MAX_REASON)
             records.append(entry)
@@ -363,6 +374,8 @@ def run_research(
             break
         try:
             page = search.fetch(candidate["url"], budget.max_page_chars)
+        except ResearchCancelled:
+            raise
         except ResearchUnavailable as exc:
             failures.append(f"{candidate['url']}: {exc}")
             continue

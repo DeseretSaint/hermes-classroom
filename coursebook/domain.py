@@ -29,7 +29,16 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
-from . import api, db, evidence, grading, jobs as jobs_contract, review
+from . import (
+    api,
+    db,
+    evidence,
+    grading,
+    job_service,
+    jobs as jobs_contract,
+    review,
+    sources as source_ledger,
+)
 from .api import RpcError
 from .contracts import method_names
 
@@ -446,6 +455,57 @@ def quiz_history(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
             }
         )
     return int(enrollment["revision"]), {"attempts": attempts}
+
+
+@_handler("binding.get")
+def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Resolve a binding by stored session id or enrollment id — never by recency.
+
+    A binding carries both ids (``cb.db`` -> bindings): ``runtime_session_id`` is the id the
+    gateway uses for the live chat, ``stored_session_id`` is the durable id that survives
+    compression/rotation. They are never interchangeable (``AUDIT.md`` R1), so this handler
+    matches ``stored_session_id`` only and reports which column matched. A caller holding only
+    a runtime id resolves it on the Desktop half first.
+    """
+    db.ensure_schema()
+    session_id = payload.get("session_id")
+    enrollment_id = payload.get("enrollment_id")
+    if bool(session_id) == bool(enrollment_id):
+        # Ambiguity is refused rather than resolved by precedence: a caller that sends two
+        # identifiers cannot prove which one the answer came from.
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "binding.get takes exactly one of session_id (stored session id) or enrollment_id.",
+            field="session_id" if session_id else "enrollment_id",
+        )
+    column = "enrollment_id" if enrollment_id else "stored_session_id"
+    value = str(enrollment_id if enrollment_id else session_id)
+    with db.read() as connection:
+        row = _row(
+            connection,
+            f"SELECT * FROM bindings WHERE {column} = ?"
+            " ORDER BY (status = 'active') DESC, revision DESC, updated_at DESC LIMIT 1",
+            (value,),
+        )
+    if row is None:
+        return 0, {"binding": None}
+    return int(row["revision"]), {
+        "binding": {
+            "binding_id": row["id"],
+            "id": row["id"],
+            "enrollment_id": row["enrollment_id"],
+            "profile": row["profile"],
+            "connection_id": row["connection_id"],
+            "runtime_session_id": row["runtime_session_id"],
+            "stored_session_id": row["stored_session_id"],
+            "cwd_fingerprint": row["cwd_fingerprint"],
+            "compression_tip": row["compression_tip"],
+            "status": row["status"],
+            "revision": int(row["revision"]),
+            "updated_at": row["updated_at"],
+            "matched_column": column,
+        }
+    }
 
 
 # ── courses, plans, enrollments ─────────────────────────────────────────────
@@ -918,6 +978,9 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                 "POLICY_VIOLATION", "this check did not pass its pre-lesson audit and cannot be graded.",
                 reason="check_not_audited", audit_state=check["audit_state"],
             )
+        # A source update pauses dependent generated checks pending review; grading against
+        # changed content would manufacture evidence the plan no longer supports.
+        source_ledger.assert_check_current(connection, str(check["id"]))
         _binding_refusal(connection, enrollment["id"])
         if int(enrollment["revision"]) != expected:
             raise _stale("the enrollment moved on before this answer was graded.", int(enrollment["revision"]))
@@ -1209,7 +1272,7 @@ def _job_view(row) -> dict[str, Any]:
         "kind": row["kind"],
         "state": row["state"],
         "operation_id": row["operation_id"],
-        "attempt_id": row["attempt_id"] or "",
+        "attempt_id": row["attempt_id"] or "unassigned",
         "brief": _json_load(row["brief_json"], {}),
         "checkpoint": _json_load(row["checkpoint_json"], {}),
         "progress": progress,
@@ -1224,24 +1287,23 @@ def _job_view(row) -> dict[str, Any]:
 
 @_handler("jobs.create")
 def jobs_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Create a durable queued job. Same operation id never mints a second job."""
     db.ensure_schema()
     method = "jobs.create"
     payload_hash = _payload_hash(method, payload)
     key = envelope.get("idempotency_key")
-    now = _now()
     with db.transaction() as connection:
         replay = _idempotent_lookup(connection, key, method, payload_hash)
         if replay is not None:
             return replay
-        job_id = _new_id("job")
-        connection.execute(
-            "INSERT INTO jobs (id, kind, state, operation_id, brief_json, checkpoint_json, attempt_id,"
-            " lease_owner, lease_expires_at, progress_json, error_json, created_at, updated_at)"
-            " VALUES (?, ?, 'queued', ?, ?, '{}', ?, NULL, NULL, '{}', '{}', ?, ?)",
-            (job_id, payload["kind"], envelope.get("operation_id"), _json_dump(payload["brief"]),
-             _new_id("jat"), now, now),
+        result = job_service.create(
+            payload["kind"],
+            payload["brief"],
+            operation_id=envelope.get("operation_id"),
+            idempotency_key=None,
+            now=datetime.now(timezone.utc),
+            connection=connection,
         )
-        result = {"job_id": job_id, "state": "queued"}
         _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
     return 0, result
 

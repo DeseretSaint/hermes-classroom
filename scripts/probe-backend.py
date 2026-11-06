@@ -186,8 +186,11 @@ def main() -> int:
         json=envelope("binding.get", {"session_id": "stored-session-abc"}),
     )
     record(
-        "POST /rpc binding.get on an unmigrated database refuses instead of claiming 'unbound'",
-        binding_unmigrated.json().get("error", {}).get("code") == "NOT_IMPLEMENTED",
+        # With the kernel merged, every command migrates on first use, so an empty migrated
+        # database can answer `{binding: null}` truthfully. It still must not invent a binding.
+        "POST /rpc binding.get on a fresh database migrates and returns an explicit null binding",
+        binding_unmigrated.json().get("ok") is True
+        and binding_unmigrated.json().get("result", {}).get("binding") is None,
         None,
         binding_unmigrated,
     )
