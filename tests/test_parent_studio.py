@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import unittest
 import zipfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from coursebook import db, domain, executor, generation, job_service, packs, parent_authoring as authoring
@@ -226,7 +226,11 @@ class ExecutorTest(KernelCase):
             dead, stage="plan", steps_done=1, steps_total=1,
             checkpoint={"plan_id": "pln_resume_me"}, now=NOW,
         )
-        report = job_service.reconcile_startup(now=NOW)
+        # A real crash stops renewing, so the lease is what has to lapse before recovery may
+        # touch the row. (Reclaiming on owner mismatch is the bug that killed live jobs.)
+        report = job_service.reconcile_startup(
+            now=NOW + timedelta(seconds=job_service.LEASE_SECONDS + 1)
+        )
         self.assertEqual(report["interrupted"], 1)
         view = self.job(job_id)
         self.assertEqual(view["state"], "interrupted_requires_retry")
@@ -309,7 +313,16 @@ class ExecutorTest(KernelCase):
 
         module = load_plugin_package()
         ctx = TickContext()
-        module.register(ctx)
+
+        # The Hermes loader calls register() synchronously, so the spawn_task branch only exists
+        # when a loop is already running. Before this test ran under a loop it asserted behaviour
+        # no real host provides (which is exactly the bug that left jobs queued forever).
+        import asyncio
+
+        async def register_inside_a_running_loop() -> None:
+            module.register(ctx)
+
+        asyncio.run(register_inside_a_running_loop())
         self.assertEqual(ctx.spawned, ["coursebook-job-tick"])
         self.assertEqual(len(ctx.unloads), 1, "the loop must be stopped on unload")
         ctx.unloads[0]()

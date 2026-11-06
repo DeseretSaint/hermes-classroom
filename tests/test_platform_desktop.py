@@ -215,7 +215,19 @@ class DesktopRegistrationTest(unittest.TestCase):
         areas = {entry["area"] for entry in self.payload["registrations"]}
         self.assertEqual(areas, {"routes", "sidebar.nav", "panes", "palette", "keybinds"})
         ids = {entry["id"] for entry in self.payload["registrations"]}
-        self.assertEqual(ids, {"page", "nav", "pane", "open", "focus"})
+        self.assertEqual(
+            ids,
+            {
+                "page",
+                "nav",
+                "pane",
+                "open",
+                "focus",
+                # CB-011 Parent Studio: the third destination and "write a brief" intent.
+                "studio",
+                "studio-new",
+            },
+        )
 
     def test_route_and_nav_agree_on_the_path(self) -> None:
         by_id = {entry["id"]: entry for entry in self.payload["registrations"]}

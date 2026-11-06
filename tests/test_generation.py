@@ -718,8 +718,13 @@ class PlanJobTest(GenerationTestBase):
         search = FakeSearch()
         first = gen.run_plan_job(self.connection, plan_job(), llm, search, now=NOW)
         calls_before = len(llm.requests)
-        second = gen.run_plan_job(self.connection, plan_job(), llm, search, now=NOW)
+        # Idempotency is *per course*: a retry names the course the first run created. A brief
+        # with no course_id creates a course, so it is a different course, not a retry.
+        retry = plan_job()
+        retry["brief"] = {**retry["brief"], "course_id": first["course_id"]}
+        second = gen.run_plan_job(self.connection, retry, llm, search, now=NOW)
         self.assertTrue(second["reused"])
+        self.assertFalse(first["reused"])
         self.assertEqual(second["plan_id"], first["plan_id"])
         self.assertEqual(len(llm.requests), calls_before)  # no second spend
         self.assertEqual(self.count("plans"), 1)

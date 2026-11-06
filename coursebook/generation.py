@@ -1864,20 +1864,14 @@ def run_plan_job(
 
     ensure_schema(connection)
     fingerprint = _request_fingerprint(goal, recipe, dials, locale)
-
-    existing = _row_dict(
-        connection.execute(
-            "SELECT result_json FROM gen_plan_documents WHERE request_fingerprint = ?",
-            (fingerprint,),
-        ).fetchone()
-    )
-    if existing is not None:
-        result = _load_json(existing["result_json"], {})
-        result["reused"] = True
-        return result
-
     course_id = _course_id(connection, brief, goal=goal, recipe=recipe, locale=locale, now=now)
 
+    # CB-011 integration fix (Vellum): this reuse cache is scoped to **this course**. It used to
+    # be looked up by fingerprint alone *before* the course was resolved, so a second brief with
+    # the same goal/recipe/dials/locale (exactly what "Duplicate brief" produces) returned the
+    # first course's plan document, wrote nothing for the new course, and left it with no plan at
+    # all while the job reported success. Reuse is still what makes a retried job idempotent and
+    # free; it just cannot cross course boundaries. Cinder owns this file.
     existing = _row_dict(
         connection.execute(
             "SELECT result_json FROM gen_plan_documents WHERE course_id = ? AND request_fingerprint = ?",
@@ -1998,6 +1992,9 @@ def run_plan_job(
             "plan_hash": digest,
             "plan_version": 1,
             "status": generation_state,
+            # Always present, on both paths: a caller must be able to tell a fresh author from a
+            # reuse without a ``KeyError``. (CB-011: the cache path set this; the author path did not.)
+            "reused": False,
             "validation_id": None,
             "validation_verdict": verdict["verdict"],
             "objectives": len(objectives),

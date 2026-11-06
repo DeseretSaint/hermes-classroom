@@ -116,7 +116,8 @@ const FILTERS = [
 ]
 const DESTINATIONS = [
   { id: 'courses', label: 'Courses' },
-  { id: 'library', label: 'Library' }
+  { id: 'library', label: 'Library' },
+  { id: 'studio', label: 'Parent Studio' }
 ]
 
 /**
@@ -5168,6 +5169,1958 @@ async function continueLesson(binding) {
   }
   return 'This Desktop build cannot send a message; open the lesson chat and continue there.'
 }
+/**
+ * Parent Studio (UX_SPEC §10) — the parent-led authoring surface.
+ *
+ * This is not a chat persona and never a child-facing surface. The parent is the operator: they
+ * write a brief, review and approve the plan, generate the pages, approve the exact lesson set by
+ * hash, export the printable files and record a reflection. Every screen here reads from cb.rpc v6
+ * (`parent.*`); a control exists only when the method behind it is in `/runtime`.
+ *
+ * Two rules are load-bearing and deliberately visible in the UI rather than assumed:
+ *   - the learner pages tab can never contain an answer key (`answer_guide` is a different role,
+ *     served in its own tab, and export keeps it out of `LEARNER_FACING_ROLES`);
+ *   - plan approval and final approval are different gates, with different hashes and different
+ *     consequences, so they are two differently-labelled actions and two different badges.
+ */
+
+const STUDIO_SETTINGS = [
+  { id: 'home', label: 'Home' },
+  { id: 'classroom', label: 'Classroom' },
+  { id: 'outdoors', label: 'Outdoors' },
+  { id: 'car', label: 'Car' },
+  { id: 'library', label: 'Library' },
+  { id: 'community', label: 'Community' },
+  { id: 'other', label: 'Other' }
+]
+const STUDIO_VISUALS = [
+  { id: 'none', label: 'No visuals' },
+  { id: 'diagrams', label: 'Diagrams' },
+  { id: 'illustrations', label: 'Illustrations' }
+]
+const STUDIO_NARRATION = [
+  { id: 'none', label: 'No narration' },
+  { id: 'script', label: 'A script I read aloud' }
+]
+const STUDIO_AGE_BANDS = ['3-5', '5-7', '7-9', '8-10', '10-12', '12-14', '14-16', '16+'].map((band) => ({
+  id: band,
+  label: band
+}))
+const STUDIO_DIFFICULTIES = [
+  { id: 'easy', label: 'Too easy' },
+  { id: 'about_right', label: 'About right' },
+  { id: 'too_hard', label: 'Too hard' }
+]
+const STUDIO_VIEWS = [
+  { id: 'brief', label: 'Brief' },
+  { id: 'plan', label: 'Plan' },
+  { id: 'blueprint', label: 'Pages' },
+  { id: 'export', label: 'Export' },
+  { id: 'reflection', label: 'Reflection' }
+]
+const STUDIO_TABS = [
+  { id: 'parent_guide', label: 'Parent guide' },
+  { id: 'learner_pages', label: 'Learner pages' },
+  { id: 'answers', label: 'Answers' },
+  { id: 'narration', label: 'Audio & visuals' },
+  { id: 'sources', label: 'Sources' }
+]
+const EVIDENCE_TARGET_OPTIONS = [
+  { id: 'recall', label: 'Recall' },
+  { id: 'comprehension', label: 'Comprehension' },
+  { id: 'production', label: 'Production' },
+  { id: 'discrimination', label: 'Discrimination' },
+  { id: 'procedure', label: 'Procedure' },
+  { id: 'transfer', label: 'Transfer' }
+]
+const PLAN_STATE_COPY = {
+  draft: 'Plan draft',
+  approved: 'Plan approved',
+  superseded: 'Plan superseded'
+}
+const APPROVAL_STATE_COPY = {
+  none: 'Lesson set not approved',
+  active: 'Lesson set approved',
+  superseded: 'Changes need review'
+}
+/** `parent_export_status.blocked_reason` → the sentence the export panel shows. */
+const EXPORT_BLOCKED_COPY = {
+  no_final_approval: 'The generated lesson set has not been approved. Approval is a separate step from approving the plan.',
+  changes_need_review: 'Changes need review. The approved lesson set no longer matches the pages shown, so export is blocked until you approve them again.',
+  plan_not_approved: 'The plan is not approved, so there are no pages to export.',
+  no_generated_content: 'No lesson pages have been generated yet.'
+}
+/** `parent.export` refusals include ones the blueprint read cannot predict. */
+const EXPORT_REFUSAL_COPY = {
+  plan_not_approved: 'The plan is not approved.',
+  no_final_approval: 'Approve the exact lesson set first.',
+  changes_need_review: 'The pages changed after approval; review and approve them again.',
+  no_generated_content: 'There is no generated content to export.',
+  course_pack_backed: 'This course came from an imported pack. Use Library → Export pack for it.',
+  export_not_exportable: 'The generated lessons do not meet the pack’s teaching minima yet.',
+  export_write_failed: 'The files could not be written. Nothing was exported.'
+}
+const JOB_TERMINAL_STATES = new Set([
+  'completed',
+  'failed',
+  'cancelled',
+  'completed_late',
+  'interrupted_requires_retry'
+])
+
+function blankBrief() {
+  return {
+    title: '',
+    goal: '',
+    starting_point: '',
+    age_band: '8-10',
+    reading_level: '',
+    duration_minutes: 25,
+    setting: 'home',
+    materials: [],
+    exclusions: [],
+    supervision: '',
+    desired_pages: 3,
+    desired_visuals: 'diagrams',
+    narration: 'script',
+    locale: null,
+    egress_acknowledged: false,
+    redaction_requested: false
+  }
+}
+
+/** The typed brief from `parent.brief.get`, defaulted field by field for the form. */
+function briefForForm(brief) {
+  const base = blankBrief()
+  if (!brief || typeof brief !== 'object') return base
+  return {
+    ...base,
+    ...brief,
+    materials: Array.isArray(brief.materials) ? brief.materials : [],
+    exclusions: Array.isArray(brief.exclusions) ? brief.exclusions : [],
+    // A copied brief still has to be acknowledged in this form: the disclosure is shown again.
+    egress_acknowledged: false
+  }
+}
+
+/** One item per line → a bounded string array the contract accepts. */
+function linesToList(value, maxItems, maxLength) {
+  const items = String(value || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, maxItems)
+    .map((line) => line.slice(0, maxLength))
+  return items
+}
+
+/** A stale fence is recoverable: the backend names the revision it expects next. */
+function staleRevision(response) {
+  const error = (response && response.error) || {}
+  const value = error.current_revision !== undefined ? error.current_revision : (error.details || {}).current_revision
+  return typeof value === 'number' ? value : null
+}
+
+function StudioField({ id, label, hint, children, error }) {
+  return jsxs('div', {
+    className: 'flex flex-col gap-1',
+    children: [
+      jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: id, children: label }),
+      children,
+      error
+        ? jsx('p', { className: 'text-xs text-(--ui-text-secondary)', children: error })
+        : hint
+          ? jsx('p', { className: 'text-xs text-(--ui-text-tertiary)', children: hint })
+          : null
+    ]
+  })
+}
+
+function StudioSelect({ id, label, value, options, onChange, hint }) {
+  return jsx(StudioField, {
+    id,
+    label,
+    hint,
+    children: jsxs(sdk.Select, {
+      value,
+      onValueChange: onChange,
+      children: [
+        jsx(sdk.SelectTrigger, { id, className: 'w-full', children: jsx(sdk.SelectValue, {}) }, 'trigger'),
+        jsx(
+          sdk.SelectContent,
+          {
+            children: options.map((option) => jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id))
+          },
+          'content'
+        )
+      ]
+    })
+  })
+}
+
+function StudioCheck({ id, checked, onChange, children }) {
+  return jsxs('label', {
+    className: 'flex items-start gap-2 text-xs leading-relaxed text-(--ui-text-secondary)',
+    htmlFor: id,
+    children: [
+      jsx('input', { id, type: 'checkbox', checked, onChange: (event) => onChange(Boolean(event.target.checked)) }),
+      jsx('span', { children })
+    ]
+  })
+}
+
+/** Plan-level badge: this is the outline gate, never the lesson-set gate. */
+function PlanStateBadge({ plan }) {
+  const state = plan && plan.state
+  if (!state) return jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: 'No plan yet' })
+  return jsx(sdk.Badge, {
+    size: 'xs',
+    variant: state === 'approved' ? 'muted' : 'outline',
+    children: `${PLAN_STATE_COPY[state] || state} · v${plan.version}`
+  })
+}
+
+/** Lesson-set badge: `active` binds exact bytes, `superseded` means the pages moved on. */
+function ApprovalBadge({ approval }) {
+  const state = (approval && approval.state) || 'none'
+  return jsx(sdk.Badge, {
+    size: 'xs',
+    variant: state === 'active' ? 'muted' : state === 'superseded' ? 'warn' : 'outline',
+    children: APPROVAL_STATE_COPY[state] || state
+  })
+}
+
+function JobStateText({ job }) {
+  if (!job) return null
+  const progress = job.progress || {}
+  const message = progress.message ? ` — ${progress.message}` : ''
+  if (job.state === 'queued') {
+    return jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'Queued. The job runner picks it up on its next tick; nothing is spent until it starts.' })
+  }
+  if (job.state === 'running' || job.state === 'cancel_requested' || job.state === 'cancelling') {
+    return jsx('div', {
+      className: 'text-xs text-(--ui-text-secondary)',
+      children: `Working${progress.stage ? ` (${progress.stage})` : ''}${message}`
+    })
+  }
+  if (job.state === 'completed' || job.state === 'completed_late') {
+    return jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `Finished${message}` })
+  }
+  if (job.state === 'interrupted_requires_retry') {
+    return jsx('div', {
+      className: 'text-xs text-(--ui-text-secondary)',
+      children: 'Interrupted: the worker stopped mid-job. Its checkpoint was kept; run the stage again to finish it.'
+    })
+  }
+  const error = job.error || {}
+  return jsxs('div', {
+    className: 'flex flex-col gap-1 text-xs text-(--ui-text-secondary)',
+    children: [
+      jsx('div', { children: `Failed${error.code ? ` (${error.code})` : ''}.` }),
+      error.message ? jsx('div', { className: 'text-(--ui-text-tertiary)', children: error.message }) : null
+    ]
+  })
+}
+
+/**
+ * Poll one job until it settles. The poll never navigates and never focuses anything: it re-renders
+ * the line the parent is already looking at and calls `onSettled` so the caller can re-read.
+ */
+function useStudioJob(jobId, onSettled) {
+  const [job, setJob] = useState(null)
+  const settled = useRef(null)
+  const settledHandler = useRef(onSettled)
+  settledHandler.current = onSettled
+
+  useEffect(() => {
+    if (!jobId) {
+      setJob(null)
+      return undefined
+    }
+    let cancelled = false
+    let cancelTimer = null
+    settled.current = null
+    const poll = async () => {
+      const response = await rpc('jobs.get', { job_id: jobId })
+      if (cancelled) return
+      if (!response.ok) {
+        setJob({ job_id: jobId, state: 'unknown', error: response.error })
+        cancelTimer = pluginContext.setTimeout(poll, 5000)
+        return
+      }
+      const next = response.result.job
+      setJob(next)
+      if (JOB_TERMINAL_STATES.has(next.state)) {
+        if (settled.current !== next.state) {
+          settled.current = next.state
+          if (settledHandler.current) settledHandler.current(next)
+        }
+        return
+      }
+      cancelTimer = pluginContext.setTimeout(poll, 3000)
+    }
+    cancelTimer = pluginContext.setTimeout(poll, 0)
+    return () => {
+      cancelled = true
+      if (cancelTimer) cancelTimer()
+    }
+  }, [jobId])
+
+  return job
+}
+
+function StudioJobLine({ jobId, onSettled }) {
+  const job = useStudioJob(jobId, onSettled)
+  if (!jobId) return null
+  return jsx('div', { className: 'flex flex-col gap-1', 'data-cb-job-id': jobId, children: jsx(JobStateText, { job }) })
+}
+
+/** The studio list: authored parent courses only. Imported packs stay in Library. */
+function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
+  const supported = Boolean(implemented && implemented.has('library.list'))
+  const query = useRpcQuery(
+    'library.list',
+    { filter: 'all', recipe: 'parent', limit: 50, sort: 'recent' },
+    `studio-list-${reloadSignal}`,
+    supported
+  )
+  const rows = query.data && Array.isArray(query.data.items) ? query.data.items : []
+
+  if (!supported) {
+    return jsx(EmptyState, {
+      title: 'Parent Studio needs the v6 authoring methods',
+      description:
+        'This backend does not list library.list, so no authored course can be read. Update the plugin instead of using a placeholder screen.',
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
+    })
+  }
+  if (query.status === 'loading' && !query.data) {
+    return jsx('div', { className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading your parent courses' }) })
+  }
+  if (query.status === 'error' && !query.data) {
+    return jsx(sdk.ErrorState, {
+      title: 'Your parent courses could not be read',
+      description: `${query.error && query.error.code ? query.error.code + ': ' : ''}${describeError(query.error)}`,
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: query.reload, children: 'Try again' })
+    })
+  }
+  if (rows.length === 0) {
+    return jsx(EmptyState, {
+      title: 'No parent lesson packs yet',
+      description:
+        'A brief describes the child’s age and reading level, the setting and materials, what to leave out, and what you want to teach. Coursebook drafts a plan for you to review before anything is generated.',
+      children: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'Write a lesson brief' })
+    })
+  }
+
+  return jsxs('div', {
+    className: 'flex flex-col',
+    children: [
+      jsx('div', { className: 'pb-1 text-xs text-(--ui-text-tertiary)', children: `${rows.length} authored course${rows.length === 1 ? '' : 's'}` }),
+      ...rows.map((row) =>
+        jsx(
+          sdk.ListRow,
+          {
+            action: jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: () => onOpen(row), children: 'Open studio' }),
+            description: jsxs('span', {
+              className: 'flex flex-wrap items-center gap-2',
+              children: [
+                jsx('span', { children: 'Parent preparation' }),
+                jsx('span', { children: `updated ${whenLabel(row.updated_at)}` })
+              ]
+            }),
+            onClick: () => onOpen(row),
+            title: jsx('span', { className: 'min-w-0 break-words', children: row.title })
+          },
+          row.enrollment_id
+        )
+      )
+    ]
+  })
+}
+
+/**
+ * The §10 brief. Every field the contract requires is here, in the order a parent thinks in:
+ * what they want, who it is for, where it happens and with what, what to avoid, and only then the
+ * provider/egress disclosure that must be acknowledged before submit is possible.
+ */
+function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
+  const [form, setForm] = useState(() => briefForForm(initial))
+  const [materialsText, setMaterialsText] = useState(() => (initial && initial.materials ? initial.materials.join('\n') : ''))
+  const [exclusionsText, setExclusionsText] = useState(() => (initial && initial.exclusions ? initial.exclusions.join('\n') : ''))
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  const update = useCallback((key, value) => setForm((previous) => ({ ...previous, [key]: value })), [])
+
+  const materials = linesToList(materialsText, 20, 120)
+  const exclusions = linesToList(exclusionsText, 20, 200)
+  const problems = []
+  if (!form.title.trim()) problems.push('A title is required.')
+  if (!form.goal.trim()) problems.push('Say what you want the child to be able to do.')
+  if (!form.age_band) problems.push('Pick an age band.')
+  if (!form.reading_level.trim()) problems.push('Say the reading level in your own words.')
+  const duration = Number(form.duration_minutes)
+  if (!Number.isFinite(duration) || duration < 5 || duration > 600) problems.push('Duration must be between 5 and 600 minutes.')
+  const pages = Number(form.desired_pages)
+  if (!Number.isFinite(pages) || pages < 1 || pages > 40) problems.push('Desired pages must be between 1 and 40.')
+  if (!form.egress_acknowledged) problems.push('Acknowledge the provider/egress disclosure before submitting.')
+
+  const submit = useCallback(async () => {
+    setBusy(true)
+    setError(null)
+    const brief = {
+      ...form,
+      title: form.title.trim(),
+      goal: form.goal.trim(),
+      starting_point: form.starting_point.trim() ? form.starting_point.trim() : null,
+      reading_level: form.reading_level.trim(),
+      duration_minutes: Number(form.duration_minutes),
+      desired_pages: Number(form.desired_pages),
+      materials,
+      exclusions,
+      supervision: form.supervision.trim(),
+      locale: form.locale || null,
+      egress_acknowledged: true,
+      redaction_requested: Boolean(form.redaction_requested)
+    }
+    const response = await rpc('parent.brief.create', { brief }, { idempotencyKey: newOperationId('brief') })
+    setBusy(false)
+    if (!response.ok) {
+      setError({ code: response.error && response.error.code, message: describeError(response.error) })
+      return
+    }
+    onCreated({ ...response.result, title: brief.title })
+  }, [form, materials, exclusions, onCreated])
+
+  return jsxs('div', {
+    className: 'flex max-w-2xl flex-col gap-4',
+    children: [
+      jsxs('div', {
+        className: 'flex flex-col gap-1',
+        children: [
+          jsx('h2', { className: 'text-sm font-semibold', children: initial ? 'Duplicate this brief' : 'Write a lesson brief' }),
+          jsx(QuietNote, {
+            children:
+              'You are the operator. Coursebook prepares the material for you to teach: there is no child chat, no child persona and no grading of the child. Everything here is a plan you review before any page is generated.'
+          }),
+          note
+            ? jsx('div', {
+                className: 'mt-1 border-l border-(--ui-stroke-tertiary) pl-3 text-xs leading-relaxed text-(--ui-text-secondary)',
+                children: `From your last reflection: ${note}`
+              })
+            : null
+        ]
+      }),
+
+      jsx(sdk.PanelSectionLabel, { children: 'WHAT AND WHO' }),
+      jsx(StudioField, {
+        id: 'cb-brief-title',
+        label: 'Title',
+        hint: 'How this course appears in your list.',
+        children: jsx(sdk.Input, {
+          id: 'cb-brief-title',
+          maxLength: 200,
+          value: form.title,
+          onChange: (event) => update('title', event.target.value),
+          placeholder: 'Kitchen fractions for a 9-year-old'
+        })
+      }),
+      jsx(StudioField, {
+        id: 'cb-brief-goal',
+        label: 'What should the child be able to do afterwards?',
+        hint: 'Concrete beats aspirational. One skill, described as an action you can watch.',
+        children: jsx(sdk.Textarea, {
+          id: 'cb-brief-goal',
+          rows: 3,
+          value: form.goal,
+          onChange: (event) => update('goal', event.target.value),
+          placeholder: 'Halve and quarter a real object and explain each cut.'
+        })
+      }),
+      jsx(StudioField, {
+        id: 'cb-brief-start',
+        label: 'Starting point and content prerequisites',
+        hint: 'What they can already do, and anything they must have read or seen first.',
+        children: jsx(sdk.Textarea, {
+          id: 'cb-brief-start',
+          rows: 2,
+          value: form.starting_point || '',
+          onChange: (event) => update('starting_point', event.target.value),
+          placeholder: 'Counts to 100, follows a recipe with help.'
+        })
+      }),
+      jsxs('div', {
+        className: 'grid gap-3 sm:grid-cols-2',
+        children: [
+          jsx(StudioSelect, {
+            id: 'cb-brief-age',
+            label: 'Age band',
+            value: form.age_band,
+            options: STUDIO_AGE_BANDS,
+            onChange: (value) => update('age_band', value)
+          }),
+          jsx(StudioField, {
+            id: 'cb-brief-reading',
+            label: 'Reading level',
+            hint: 'Your words are enough: “Year 3, short sentences”.',
+            children: jsx(sdk.Input, {
+              id: 'cb-brief-reading',
+              maxLength: 120,
+              value: form.reading_level,
+              onChange: (event) => update('reading_level', event.target.value),
+              placeholder: 'Year 3, short decodable sentences'
+            })
+          })
+        ]
+      }),
+
+      jsx(sdk.PanelSectionLabel, { children: 'WHERE, HOW LONG, WITH WHAT' }),
+      jsxs('div', {
+        className: 'grid gap-3 sm:grid-cols-3',
+        children: [
+          jsx(StudioSelect, {
+            id: 'cb-brief-setting',
+            label: 'Setting',
+            value: form.setting,
+            options: STUDIO_SETTINGS,
+            onChange: (value) => update('setting', value)
+          }),
+          jsx(StudioField, {
+            id: 'cb-brief-duration',
+            label: 'Minutes',
+            children: jsx(sdk.Input, {
+              id: 'cb-brief-duration',
+              type: 'number',
+              min: 5,
+              max: 600,
+              value: String(form.duration_minutes),
+              onChange: (event) => update('duration_minutes', event.target.value)
+            })
+          }),
+          jsx(StudioField, {
+            id: 'cb-brief-pages',
+            label: 'Pages',
+            children: jsx(sdk.Input, {
+              id: 'cb-brief-pages',
+              type: 'number',
+              min: 1,
+              max: 40,
+              value: String(form.desired_pages),
+              onChange: (event) => update('desired_pages', event.target.value)
+            })
+          })
+        ]
+      }),
+      jsx(StudioField, {
+        id: 'cb-brief-materials',
+        label: 'Materials you have',
+        hint: 'One per line. Up to 20. Safety notes are written against this list.',
+        children: jsx(sdk.Textarea, {
+          id: 'cb-brief-materials',
+          rows: 3,
+          value: materialsText,
+          onChange: (event) => setMaterialsText(event.target.value),
+          placeholder: 'one apple\nplastic knife\nmeasuring cup'
+        })
+      }),
+      jsx(StudioSelect, {
+        id: 'cb-brief-visuals',
+        label: 'Visuals',
+        value: form.desired_visuals,
+        options: STUDIO_VISUALS,
+        onChange: (value) => update('desired_visuals', value)
+      }),
+      jsx(StudioSelect, {
+        id: 'cb-brief-narration',
+        label: 'Narration',
+        value: form.narration,
+        options: STUDIO_NARRATION,
+        onChange: (value) => update('narration', value),
+        hint: 'A narration script is text you read aloud; it is not an audio file.'
+      }),
+
+      jsx(sdk.PanelSectionLabel, { children: 'EXCLUSIONS AND SUPERVISION' }),
+      jsx(StudioField, {
+        id: 'cb-brief-exclusions',
+        label: 'Leave these out',
+        hint: 'One per line: foods, topics, activities, anything the child must not meet here.',
+        children: jsx(sdk.Textarea, {
+          id: 'cb-brief-exclusions',
+          rows: 3,
+          value: exclusionsText,
+          onChange: (event) => setExclusionsText(event.target.value),
+          placeholder: 'no nuts\nno timed pressure'
+        })
+      }),
+      jsx(StudioField, {
+        id: 'cb-brief-supervision',
+        label: 'Supervision and safety',
+        hint: 'Who holds what, what the adult must do, what the child may not do alone.',
+        children: jsx(sdk.Textarea, {
+          id: 'cb-brief-supervision',
+          rows: 2,
+          value: form.supervision,
+          onChange: (event) => update('supervision', event.target.value),
+          placeholder: 'An adult holds the knife; the child places the pieces.'
+        })
+      }),
+
+      jsx(sdk.PanelSectionLabel, { children: 'BEFORE YOU PASTE: PROVIDER AND EGRESS' }),
+      jsxs('div', {
+        className: 'flex flex-col gap-2 border-l-2 border-(--ui-stroke-secondary) pl-3',
+        children: [
+          jsx('p', {
+            className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+            children:
+              'This brief is sent to the model provider configured for this Hermes profile so the plan can be drafted. Coursebook stores no provider key and sends the brief nowhere else. Anything you paste can appear in the generated pages — do not paste a child’s full name, address, school or anything you would not hand to a provider.'
+          }),
+          jsx(StudioCheck, {
+            id: 'cb-brief-egress',
+            checked: form.egress_acknowledged,
+            onChange: (value) => update('egress_acknowledged', value),
+            children: 'I have read this and want to send this brief to the provider.'
+          }),
+          jsx(StudioCheck, {
+            id: 'cb-brief-redaction',
+            checked: Boolean(form.redaction_requested),
+            onChange: (value) => update('redaction_requested', value),
+            children: 'Ask for identifying details to be redacted where it is possible.'
+          })
+        ]
+      }),
+
+      problems.length > 0
+        ? jsxs('div', {
+            className: 'flex flex-col gap-1',
+            children: [
+              jsx(sdk.PanelSectionLabel, { children: 'BEFORE SUBMITTING' }),
+              ...problems.map((problem) => jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: problem }, problem))
+            ]
+          })
+        : null,
+      error
+        ? jsxs('div', {
+            className: 'flex flex-col gap-1 text-xs text-(--ui-text-secondary)',
+            children: [
+              jsx('div', { children: `${error.code ? error.code + ': ' : ''}${error.message}` }),
+              jsx('div', { className: 'text-(--ui-text-tertiary)', children: 'The brief was not saved and no job was queued.' })
+            ]
+          })
+        : null,
+
+      jsxs('div', {
+        className: 'flex flex-wrap items-center gap-2',
+        children: [
+          jsx(sdk.Button, {
+            variant: 'default',
+            disabled: busy || problems.length > 0 || !supported,
+            onClick: submit,
+            children: busy ? 'Saving the brief' : 'Create the course and queue the plan'
+          }),
+          jsx(sdk.Button, { variant: 'secondary', onClick: onCancel, children: 'Cancel' })
+        ]
+      }),
+      !supported
+        ? jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'This backend does not register parent.brief.create.' })
+        : null
+    ]
+  })
+}
+
+/** The view switcher: canonical tab strip when there is width, labelled Select when there is not. */
+function StudioViewPicker({ id, label, value, options, onChange }) {
+  return jsxs('div', {
+    className: 'flex flex-col gap-2',
+    children: [
+      jsx('div', {
+        className: 'hidden min-[47.5rem]:block',
+        children: jsx(sdk.SegmentedControl, { onChange, options, sizing: 'content', value })
+      }),
+      jsxs('div', {
+        className: 'flex items-center gap-2 min-[47.5rem]:hidden',
+        children: [
+          jsx('label', { htmlFor: id, className: 'text-xs font-medium text-(--ui-text-secondary)', children: label }),
+          jsxs(sdk.Select, {
+            value,
+            onValueChange: onChange,
+            children: [
+              jsx(sdk.SelectTrigger, { id, className: 'w-44', 'aria-label': label, children: jsx(sdk.SelectValue, {}) }, 'trigger'),
+              jsx(
+                sdk.SelectContent,
+                { children: options.map((option) => jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)) },
+                'content'
+              )
+            ]
+          })
+        ]
+      })
+    ]
+  })
+}
+
+const APPROVAL_INVALIDATION_COPY = {
+  plan_edited: 'You edited the plan after approving the lesson set.',
+  content_changed: 'The generated pages changed after you approved them.',
+  course_edited: 'You changed the course title or goal after approving the lesson set.',
+  replaced: 'A newer approval replaced this one.'
+}
+
+/** "Changes need review" — the banner is derived from the approval row, never from local state. */
+function StudioReviewBanner({ approval, exportStatus }) {
+  if (!approval || approval.state !== 'superseded') return null
+  return jsxs('div', {
+    className: 'flex flex-col gap-1 border-l-2 border-(--ui-stroke-secondary) pl-3',
+    role: 'status',
+    children: [
+      jsx('div', { className: 'text-xs font-semibold', children: 'Changes need review' }),
+      jsx('div', {
+        className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+        children:
+          APPROVAL_INVALIDATION_COPY[approval.invalidated_reason] ||
+          'The lesson set you approved no longer matches the current pages.'
+      }),
+      jsx('div', {
+        className: 'text-xs text-(--ui-text-tertiary)',
+        children: exportStatus && exportStatus.blocked_reason
+          ? EXPORT_BLOCKED_COPY[exportStatus.blocked_reason] || `Export is blocked (${exportStatus.blocked_reason}).`
+          : 'Approve the current lesson set before exporting.'
+      })
+    ]
+  })
+}
+
+/** The brief recap. It is a read: v6 has no brief edit verb, so the honest action is Duplicate. */
+function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplicate, reflections }) {
+  const brief = briefQuery.data && briefQuery.data.brief
+  if (briefQuery.status === 'loading' && !briefQuery.data) {
+    return jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading the brief' }) })
+  }
+  if (!brief) {
+    return jsx(sdk.ErrorState, {
+      title: 'This course has no parent brief',
+      description:
+        'It was not created by parent.brief.create, or the job row that stores it is gone. Nothing is reconstructed from a form.',
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: briefQuery.reload, children: 'Try again' })
+    })
+  }
+  const settingsLabel = (STUDIO_SETTINGS.find((item) => item.id === brief.setting) || {}).label || brief.setting
+  const rows = [
+    { label: 'Goal', value: brief.goal },
+    { label: 'Starting point', value: brief.starting_point || '—' },
+    { label: 'Age band', value: brief.age_band },
+    { label: 'Reading level', value: brief.reading_level },
+    { label: 'Setting', value: settingsLabel },
+    { label: 'Duration', value: `${brief.duration_minutes} minutes` },
+    { label: 'Materials', value: (brief.materials || []).join(', ') || 'None listed' },
+    { label: 'Exclusions', value: (brief.exclusions || []).join(', ') || 'None listed' },
+    { label: 'Supervision', value: brief.supervision || '—' },
+    { label: 'Pages / visuals / narration', value: `${brief.desired_pages} pages · ${brief.desired_visuals} · ${brief.narration}` },
+    { label: 'Provider disclosure acknowledged', value: brief.egress_acknowledged ? 'yes' : 'no' },
+    { label: 'Redaction requested', value: brief.redaction_requested ? 'yes' : 'no' }
+  ]
+  const plane = (briefQuery.data && briefQuery.data.plan_job) || {}
+  const latestProposal =
+    reflections && Array.isArray(reflections.reflections)
+      ? reflections.reflections.find((item) => item.apply_to_next_draft && item.revisit_note)
+      : null
+
+  return jsxs('div', {
+    className: 'flex max-w-2xl flex-col gap-4',
+    children: [
+      jsx(QuietNote, {
+        children:
+          'You are the operator of this course. Coursebook drafted material for you to teach; the child never chats with it. A brief is immutable once stored — changing the teaching comes from editing the plan, and copying this brief makes a new course.'
+      }),
+      jsx(sdk.PanelSectionLabel, { children: 'THE BRIEF' }),
+      jsxs('div', {
+        className: 'flex flex-col',
+        children: rows.map((row) => jsx(PackReviewLine, { label: row.label, value: row.value }, row.label))
+      }),
+      jsx(sdk.PanelSectionLabel, { children: 'PLAN JOB' }),
+      jsxs('div', {
+        className: 'flex flex-col gap-1',
+        children: [
+          jsx(PackReviewLine, { label: 'Job', value: plane.job_id || '—' }),
+          jsx(PackReviewLine, { label: 'Submitted', value: plane.submitted_at ? whenLabel(plane.submitted_at) : '—' }),
+          jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled })
+        ]
+      }),
+      latestProposal
+        ? jsxs('div', {
+            className: 'flex flex-col gap-1 border-l border-(--ui-stroke-tertiary) pl-3',
+            children: [
+              jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: 'A note from your last reflection' }),
+              jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: latestProposal.revisit_note }),
+              jsx('div', {
+                className: 'text-xs text-(--ui-text-tertiary)',
+                children: 'It is shown here as a proposal. It is not applied to any brief unless you copy one.'
+              })
+            ]
+          })
+        : null,
+      jsxs('div', {
+        className: 'flex flex-wrap items-center gap-2',
+        children: [
+          jsx(sdk.Button, { variant: 'default', onClick: () => onDuplicate(brief, null), children: 'Duplicate brief' }),
+          latestProposal
+            ? jsx(sdk.Button, {
+                variant: 'secondary',
+                onClick: () => onDuplicate(brief, latestProposal.revisit_note),
+                children: 'Duplicate with the reflection note'
+              })
+            : null
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * The plan working view: outline and activities on the left, sources and review notes on the
+ * right. The parent can edit every meaningful field of a **draft** plan; an approved plan is only
+ * changed by starting a new plan version, so approval always binds exact bytes.
+ */
+function StudioPlanView({
+  course,
+  revision,
+  onRevision,
+  outline,
+  book,
+  brief,
+  planJobId,
+  onJobSettled,
+  onChanged,
+  supported
+}) {
+  const plan = outline.data && outline.data.plan
+  const objectives = (outline.data && outline.data.objectives) || []
+  // `course.outline.plan.plan_hash` echoes the digest generation stored with the plan document,
+  // while `plan.approve` / `parent.plan.edit` fence on the digest recomputed from the plan rows.
+  // `parent.blueprint.read` serves the recomputed one, so that is the value the studio sends.
+  const planHash =
+    (book && book.data && book.data.plan && book.data.plan.plan_hash) || (plan && plan.plan_hash) || null
+  const [order, setOrder] = useState(null)
+  const [editing, setEditing] = useState(false)
+  const [drafts, setDrafts] = useState({})
+  const [added, setAdded] = useState([])
+  const [removed, setRemoved] = useState([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const [lessonJobId, setLessonJobId] = useState(null)
+
+  // The editor's displayed order. Local until Save changes sends it as a permutation.
+  useEffect(() => setOrder(null), [outline.data])
+  const displayObjectives = order
+    ? order.map((id) => objectives.find((objective) => objective.objective_id === id)).filter(Boolean)
+    : objectives
+
+  const startEditing = useCallback(() => {
+    const next = {}
+    for (const objective of displayObjectives) {
+      next[objective.objective_id] = {
+        title: objective.title,
+        evidence_target: objective.evidence_target
+      }
+    }
+    setDrafts(next)
+    setAdded([])
+    setRemoved([])
+    setError(null)
+    setEditing(true)
+  }, [displayObjectives])
+
+  const cancelEditing = useCallback(() => {
+    setEditing(false)
+    setError(null)
+  }, [])
+
+  const savePlan = useCallback(async () => {
+    if (!outline.data || !plan) return
+    const edits = []
+    for (const objective of displayObjectives) {
+      const draft = drafts[objective.objective_id]
+      if (!draft) continue
+      const changedTitle = draft.title.trim() && draft.title.trim() !== objective.title
+      const changedTarget = draft.evidence_target && draft.evidence_target !== objective.evidence_target
+      if (changedTitle || changedTarget) {
+        edits.push({
+          objective_id: objective.objective_id,
+          ...(changedTitle ? { title: draft.title.trim().slice(0, 300) } : {}),
+          ...(changedTarget ? { evidence_target: draft.evidence_target } : {})
+        })
+      }
+    }
+    const survivingOrder = displayObjectives.map((objective) => objective.objective_id).filter((id) => !removed.includes(id))
+    const orderChanged = displayObjectives.map((objective) => objective.objective_id).join('|') !== objectives.map((objective) => objective.objective_id).join('|')
+    const payload = {
+      enrollment_id: course.enrollment_id,
+      plan_id: plan.plan_id,
+      expected_plan_hash: planHash
+    }
+    if (edits.length > 0) payload.objective_edits = edits
+    if (removed.length > 0) payload.remove_objective_ids = removed
+    if (added.length > 0) {
+      payload.add_objectives = added
+        .filter((item) => item.title.trim())
+        .map((item) => ({
+          title: item.title.trim().slice(0, 300),
+          evidence_target: item.evidence_target
+        }))
+    }
+    if (removed.length > 0 || orderChanged) payload.order = survivingOrder
+    if (!payload.objective_edits && !payload.remove_objective_ids && !payload.add_objectives && !payload.order) {
+      setError('Nothing changed yet.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    const response = await rpc('parent.plan.edit', payload, {
+      expectedRevision: revision,
+      idempotencyKey: newOperationId('plan-edit')
+    })
+    setBusy(false)
+    if (!response.ok) {
+      const details = (response.error && response.error.details) || {}
+      const nextRevision = staleRevision(response)
+      if (nextRevision !== null) onRevision(nextRevision)
+      setError(
+        `${response.error && response.error.code ? response.error.code + ': ' : ''}${describeError(response.error)}` +
+          (nextRevision !== null ? ' The course revision was refreshed; press Save changes again.' : '') +
+          (details.reason === 'plan_not_draft'
+            ? ' This plan is approved; start a new plan version to change it.'
+            : details.reason === 'objective_in_use'
+              ? ' That objective already has content or learning state, so it cannot be removed.'
+              : '')
+      )
+      return
+    }
+    onRevision(response.result.revision)
+    setEditing(false)
+    setNotice('Plan saved. The edit marks the lesson set as needing review until it is approved again.')
+    onChanged()
+  }, [outline.data, plan, objectives, drafts, removed, added, course.enrollment_id, revision, onRevision, onChanged])
+
+  const approvePlan = useCallback(async () => {
+    if (!plan) return
+    setBusy(true)
+    setError(null)
+    const response = await rpc(
+      'plan.approve',
+      { enrollment_id: course.enrollment_id, plan_id: plan.plan_id, plan_hash: planHash },
+      { expectedRevision: revision, idempotencyKey: newOperationId('plan-approve') }
+    )
+    setBusy(false)
+    if (!response.ok) {
+      const nextRevision = staleRevision(response)
+      if (nextRevision !== null) onRevision(nextRevision)
+      setError(
+        `${response.error.code}: ${describeError(response.error)}` +
+          (nextRevision !== null ? ' The course revision was refreshed; press Approve plan again.' : '')
+      )
+      return
+    }
+    onRevision(response.result.revision)
+    setNotice('Plan approved. The outline and activities are now fixed; the generated pages are a separate approval.')
+    onChanged()
+  }, [plan, course.enrollment_id, revision, onRevision, onChanged])
+
+  const generateLessons = useCallback(async () => {
+    if (!plan) return
+    setBusy(true)
+    setError(null)
+    const response = await rpc(
+      'jobs.create',
+      { kind: 'plan', brief: { stage: 'lessons', plan_id: plan.plan_id } },
+      { idempotencyKey: newOperationId('lessons') }
+    )
+    setBusy(false)
+    if (!response.ok) {
+      setError(`${response.error.code}: ${describeError(response.error)}`)
+      return
+    }
+    setLessonJobId(response.result.job_id)
+  }, [plan])
+
+  const startRevision = useCallback(async () => {
+    if (!plan || objectives.length === 0) return
+    setBusy(true)
+    setError(null)
+    const response = await rpc(
+      'plan.replan',
+      {
+        enrollment_id: course.enrollment_id,
+        objective_changes: objectives.map((objective) => ({ objective_id: objective.objective_id, change: 'keep' }))
+      },
+      { expectedRevision: revision, idempotencyKey: newOperationId('replan') }
+    )
+    setBusy(false)
+    if (!response.ok) {
+      const nextRevision = staleRevision(response)
+      if (nextRevision !== null) onRevision(nextRevision)
+      setError(
+        `${response.error.code}: ${describeError(response.error)}` +
+          (nextRevision !== null ? ' The course revision was refreshed; press Start a new plan version again.' : '')
+      )
+      return
+    }
+    onRevision(response.result.revision)
+    setNotice('A new draft plan version was created. The approved lesson set stops applying until the new plan and its pages are approved.')
+    onChanged()
+    startEditing()
+  }, [plan, objectives, course.enrollment_id, revision, onRevision, onChanged, startEditing])
+
+  const settled = useCallback(
+    (job) => {
+      if (job && (job.state === 'completed' || job.state === 'completed_late')) onChanged()
+      else onJobSettled(job)
+    },
+    [onChanged, onJobSettled]
+  )
+
+  if (outline.status === 'loading' && !outline.data) {
+    return jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading the plan' }) })
+  }
+  if (outline.status === 'error' && !outline.data) {
+    return jsx(sdk.ErrorState, {
+      title: 'The plan could not be read',
+      description: `${outline.error && outline.error.code ? outline.error.code + ': ' : ''}${describeError(outline.error)}`,
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: outline.reload, children: 'Try again' })
+    })
+  }
+  if (!plan || objectives.length === 0) {
+    return jsx(EmptyState, {
+      title: 'No plan yet',
+      description: planJobId
+        ? 'The plan job is still working. This screen fills itself when the plan is written; nothing is shown from a template.'
+        : 'No plan job is attached to this course, so there is nothing to review. Start a new brief.',
+      children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled }) : null
+    })
+  }
+
+  const isDraft = plan.state === 'draft'
+  const contentReady = Boolean(book && book.data && book.data.tabs && (book.data.tabs.learner_pages || []).length > 0)
+  const setting = brief && brief.brief ? brief.brief.setting : null
+  const sources = (book && book.data && book.data.sources) || []
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-4',
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-center justify-between gap-2',
+        children: [
+          jsxs('div', {
+            className: 'flex flex-wrap items-center gap-2',
+            children: [
+              jsx(PlanStateBadge, { plan }),
+              jsx('span', { className: 'text-xs text-(--ui-text-tertiary)', children: `plan ${String(planHash || '').slice(0, 19)}…` })
+            ]
+          }),
+          jsxs('div', {
+            className: 'flex flex-wrap items-center gap-2',
+            children: [
+              isDraft && !editing
+                ? jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: startEditing, children: 'Edit plan' })
+                : null,
+              editing
+                ? jsx(sdk.Button, { size: 'sm', variant: 'default', disabled: busy, onClick: savePlan, children: busy ? 'Saving' : 'Save changes' })
+                : null,
+              editing ? jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: cancelEditing, children: 'Cancel' }) : null,
+              isDraft && !editing
+                ? jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'default',
+                    disabled: busy || !supported('plan.approve'),
+                    onClick: approvePlan,
+                    children: 'Approve plan'
+                  })
+                : null,
+              !isDraft && !editing
+                ? jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'default',
+                    disabled: busy || !supported('jobs.create'),
+                    onClick: generateLessons,
+                    children: contentReady ? 'Generate missing lessons' : 'Generate lessons'
+                  })
+                : null,
+              !isDraft && !editing
+                ? jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'secondary',
+                    disabled: busy || !supported('plan.replan'),
+                    onClick: startRevision,
+                    children: 'Start a new plan version'
+                  })
+                : null
+            ]
+          })
+        ]
+      }),
+
+      jsx(QuietNote, {
+        children:
+          'Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.'
+      }),
+      notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
+      error ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: error }) : null,
+      planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled }) : null,
+      lessonJobId ? jsx(StudioJobLine, { jobId: lessonJobId, onSettled: settled }) : null,
+
+      !isDraft && contentReady
+        ? jsx('div', {
+            className: 'text-xs text-(--ui-text-tertiary)',
+            children:
+              'Re-running generation reuses every lesson already authored at this plan version and only authors what is missing. Nothing is paid for twice.'
+          })
+        : null,
+
+      jsxs('div', {
+        className: 'flex flex-col gap-4 min-[60rem]:flex-row min-[60rem]:items-start',
+        children: [
+          jsxs('div', {
+            className: 'flex min-w-0 flex-1 flex-col gap-2',
+            children: [
+              jsx(sdk.PanelSectionLabel, { children: `OUTLINE AND ACTIVITIES (${objectives.length})` }),
+              ...displayObjectives.map((objective, index) => {
+                const draft = drafts[objective.objective_id] || {}
+                const isRemoved = removed.includes(objective.objective_id)
+                return jsxs(
+                  'div',
+                  {
+                    className: `flex flex-col gap-1 border-t border-(--ui-stroke-tertiary) pt-2${isRemoved ? ' opacity-60' : ''}`,
+                    'data-cb-objective': objective.objective_id,
+                    children: [
+                      jsxs('div', {
+                        className: 'flex flex-wrap items-baseline justify-between gap-2',
+                        children: [
+                          jsx('div', {
+                            className: 'flex min-w-0 items-baseline gap-2',
+                            children: [
+                              jsx('span', { className: 'shrink-0 text-xs tabular-nums text-(--ui-text-tertiary)', children: String(objective.ordinal).padStart(2, '0') }),
+                              editing
+                                ? jsx(sdk.Input, {
+                                    'aria-label': `Objective ${objective.ordinal} title`,
+                                    value: draft.title || '',
+                                    onChange: (event) =>
+                                      setDrafts((previous) => ({
+                                        ...previous,
+                                        [objective.objective_id]: { ...draft, title: event.target.value }
+                                      })),
+                                    className: 'min-w-0 flex-1'
+                                  })
+                                : jsx('span', { className: 'min-w-0 break-words text-sm', children: objective.title })
+                            ]
+                          }),
+                          jsxs('div', {
+                            className: 'flex shrink-0 items-center gap-2',
+                            children: [
+                              editing
+                                ? jsx(sdk.Select, {
+                                    value: draft.evidence_target || objective.evidence_target,
+                                    onValueChange: (value) =>
+                                      setDrafts((previous) => ({
+                                        ...previous,
+                                        [objective.objective_id]: { ...draft, evidence_target: value }
+                                      })),
+                                    children: [
+                                      jsx(sdk.SelectTrigger, {
+                                        'aria-label': `Objective ${objective.ordinal} evidence target`,
+                                        className: 'w-36',
+                                        children: jsx(sdk.SelectValue, {})
+                                      }, 'trigger'),
+                                      jsx(
+                                        sdk.SelectContent,
+                                        {
+                                          children: EVIDENCE_TARGET_OPTIONS.map((option) =>
+                                            jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)
+                                          )
+                                        },
+                                        'content'
+                                      )
+                                    ]
+                                  })
+                                : jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: objective.evidence_target }),
+                              editing
+                                ? jsxs('div', {
+                                    className: 'flex items-center gap-1',
+                                    children: [
+                                      jsx(sdk.Button, {
+                                        size: 'sm',
+                                        variant: 'text',
+                                        disabled: index === 0,
+                                        onClick: () => {
+                                          const ids = displayObjectives.map((item) => item.objective_id)
+                                          const [moved] = ids.splice(index, 1)
+                                          ids.splice(index - 1, 0, moved)
+                                          setOrder(ids)
+                                        },
+                                        children: 'Up'
+                                      }),
+                                      jsx(sdk.Button, {
+                                        size: 'sm',
+                                        variant: 'text',
+                                        disabled: index === displayObjectives.length - 1,
+                                        onClick: () => {
+                                          const ids = displayObjectives.map((item) => item.objective_id)
+                                          const [moved] = ids.splice(index, 1)
+                                          ids.splice(index + 1, 0, moved)
+                                          setOrder(ids)
+                                        },
+                                        children: 'Down'
+                                      }),
+                                      jsx(sdk.Button, {
+                                        size: 'sm',
+                                        variant: 'text',
+                                        onClick: () =>
+                                          setRemoved((previous) =>
+                                            previous.includes(objective.objective_id)
+                                              ? previous.filter((id) => id !== objective.objective_id)
+                                              : [...previous, objective.objective_id]
+                                          ),
+                                        children: isRemoved ? 'Keep' : 'Remove'
+                                      })
+                                    ]
+                                  })
+                                : null
+                            ]
+                          })
+                        ]
+                      }),
+                      jsx('div', {
+                        className: 'text-xs text-(--ui-text-tertiary)',
+                        children: `State: ${objective.state} · check: ${objective.check_state}`
+                      })
+                    ]
+                  },
+                  objective.objective_id
+                )
+              }),
+              editing
+                ? jsxs('div', {
+                    className: 'flex flex-col gap-2 border-t border-(--ui-stroke-tertiary) pt-2',
+                    children: [
+                      jsx(sdk.PanelSectionLabel, { children: 'ADD AN OBJECTIVE' }),
+                      added.map((item, index) =>
+                        jsxs(
+                          'div',
+                          {
+                            className: 'flex flex-wrap items-center gap-2',
+                            children: [
+                              jsx(sdk.Input, {
+                                'aria-label': `New objective ${index + 1} title`,
+                                value: item.title,
+                                onChange: (event) =>
+                                  setAdded((previous) =>
+                                    previous.map((entry, position) =>
+                                      position === index ? { ...entry, title: event.target.value } : entry
+                                    )
+                                  ),
+                                placeholder: 'Objective title',
+                                className: 'min-w-0 flex-1'
+                              }),
+                              jsx(sdk.Select, {
+                                value: item.evidence_target,
+                                onValueChange: (value) =>
+                                  setAdded((previous) =>
+                                    previous.map((entry, position) =>
+                                      position === index ? { ...entry, evidence_target: value } : entry
+                                    )
+                                  ),
+                                children: [
+                                  jsx(sdk.SelectTrigger, {
+                                    'aria-label': `New objective ${index + 1} evidence target`,
+                                    className: 'w-36',
+                                    children: jsx(sdk.SelectValue, {})
+                                  }, 'trigger'),
+                                  jsx(
+                                    sdk.SelectContent,
+                                    {
+                                      children: EVIDENCE_TARGET_OPTIONS.map((option) =>
+                                        jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)
+                                      )
+                                    },
+                                    'content'
+                                  )
+                                ]
+                              }),
+                              jsx(sdk.Button, {
+                                size: 'sm',
+                                variant: 'text',
+                                onClick: () => setAdded((previous) => previous.filter((_entry, position) => position !== index)),
+                                children: 'Remove'
+                              })
+                            ]
+                          },
+                          `added-${index}`
+                        )
+                      ),
+                      jsx(sdk.Button, {
+                        size: 'sm',
+                        variant: 'secondary',
+                        className: 'self-start',
+                        onClick: () => setAdded((previous) => [...previous, { title: '', evidence_target: 'recall' }]),
+                        children: 'Add objective'
+                      })
+                    ]
+                  })
+                : null
+            ]
+          }),
+          jsxs('div', {
+            className: 'flex w-full shrink-0 flex-col gap-2 min-[60rem]:w-[20rem]',
+            children: [
+              jsx(sdk.PanelSectionLabel, { children: 'SOURCES AND REVIEW NOTES' }),
+              jsx(QuietNote, {
+                children:
+                  'Sources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here.'
+              }),
+              sources.length === 0
+                ? jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'No sources recorded for this course.' })
+                : jsxs('div', {
+                    className: 'flex flex-col',
+                    children: sources.slice(0, 8).map((source) =>
+                      jsx(
+                        'div',
+                        {
+                          className: 'flex flex-col gap-0.5 border-b border-(--ui-stroke-tertiary) py-1.5 last:border-b-0',
+                          children: [
+                            jsx('div', { className: 'min-w-0 break-words text-xs', children: source.title }),
+                            jsxs('div', {
+                              className: 'flex flex-wrap items-center gap-2 text-[11px] text-(--ui-text-tertiary)',
+                              children: [
+                                jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status }),
+                                source.url ? jsx('span', { className: 'min-w-0 break-all', children: source.url }) : null
+                              ]
+                            })
+                          ]
+                        },
+                        source.source_id
+                      )
+                    )
+                  }),
+              setting === 'car'
+                ? jsx('div', {
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    children: 'Car activities are passenger-only. The driver never handles material.'
+                  })
+                : null,
+              jsx('div', {
+                className: 'text-xs leading-relaxed text-(--ui-text-tertiary)',
+                children: 'A draft plan can be edited freely. An approved plan is changed only by starting a new version, so what you approved stays exact.'
+              })
+            ]
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/** The five tabs of §10, as declared text. Sources is its own tab and is always answered. */
+function StudioBlueprintView({ book }) {
+  const [tab, setTab] = useState('learner_pages')
+  if (!book || book.status === 'loading') {
+    return jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading the pages' }) })
+  }
+  if (book.status === 'error' && !book.data) {
+    return jsx(sdk.ErrorState, {
+      title: 'The pages could not be read',
+      description: `${book.error && book.error.code ? book.error.code + ' : ' : ''}${describeError(book.error)}`,
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: book.reload, children: 'Try again' })
+    })
+  }
+  const data = book.data || {}
+  const tabs = data.tabs || {}
+  const files = tabs[tab] || []
+  const sources = data.sources || []
+  const notice = {
+    parent_guide: 'The parent guide is what you follow while teaching. It can quote the answer guide; the learner pages never do.',
+    learner_pages: 'These are the learner pages. No answer key is included here — answers live in their own tab and are a different file role.',
+    answers: 'The answer guide. It is served by course id only, so it is never reachable from a learner’s lesson surface, and export keeps it out of the learner pages.',
+    narration: 'The narration script you read aloud. It is text, not an audio file, and it is also inside the parent guide.',
+    sources: 'Every source the plan job recorded, with the support verdict it earned.'
+  }[tab]
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-3',
+    children: [
+      jsx(StudioViewPicker, { id: 'cb-studio-tab', label: 'Tab', value: tab, options: STUDIO_TABS, onChange: setTab }),
+      jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: notice }),
+      jsxs('div', {
+        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+        children: [
+          jsx('span', { children: `${files.length} file${files.length === 1 ? '' : 's'} in this tab` }),
+          jsx('span', { children: `content hash ${String(data.content_hash || '').slice(0, 19)}…` })
+        ]
+      }),
+      tab === 'sources'
+        ? sources.length === 0
+          ? jsx('div', { className: 'py-4 text-xs text-(--ui-text-tertiary)', children: 'No sources were recorded for this course.' })
+          : jsx('div', {
+              className: 'flex flex-col',
+              children: sources.map((source) =>
+                jsxs(
+                  'div',
+                  {
+                    className: 'flex flex-col gap-0.5 border-t border-(--ui-stroke-tertiary) py-2',
+                    children: [
+                      jsx('div', { className: 'min-w-0 break-words text-sm', children: source.title }),
+                      jsxs('div', {
+                        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                        children: [
+                          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status }),
+                          source.url ? jsx('a', { className: 'min-w-0 break-all underline', href: source.url, children: source.url }) : null,
+                          jsx('span', { children: source.fetched_at ? whenLabel(source.fetched_at) : '' })
+                        ]
+                      })
+                    ]
+                  },
+                  source.source_id
+                )
+              )
+            })
+        : files.length === 0
+          ? jsx(EmptyState, {
+              title: 'Nothing generated for this tab yet',
+              description:
+                tab === 'narration'
+                  ? 'This course asked for no narration, or no lesson has been generated yet.'
+                  : 'The plan must be approved and its lessons generated before this tab has text.',
+              children: null
+            })
+          : jsx('div', {
+              className: 'flex flex-col gap-4',
+              children: files.map((file, index) =>
+                jsxs(
+                  'article',
+                  {
+                    className: 'flex flex-col gap-1.5 border-t border-(--ui-stroke-tertiary) pt-3',
+                    'data-cb-blueprint-role': file.role,
+                    children: [
+                      jsxs('div', {
+                        className: 'flex flex-wrap items-baseline justify-between gap-2',
+                        children: [
+                          jsx('h3', { className: 'min-w-0 break-words text-sm font-semibold', children: file.title }),
+                          jsxs('div', {
+                            className: 'flex shrink-0 items-center gap-2 text-xs text-(--ui-text-tertiary)',
+                            children: [
+                              jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: file.role }),
+                              jsx('span', { children: bytesLabel(file.bytes) }),
+                              file.truncated ? jsx(sdk.Badge, { size: 'xs', variant: 'warn', children: 'clipped' }) : null
+                            ]
+                          })
+                        ]
+                      }),
+                      jsx('div', {
+                        className: 'max-w-prose whitespace-pre-wrap break-words text-sm leading-relaxed',
+                        children: file.text
+                      }),
+                      jsxs('div', {
+                        className: 'text-[11px] break-all text-(--ui-text-tertiary)',
+                        children: [`sha256 ${file.sha256}`, file.truncated ? ' · the served text was clipped at the tab limit' : '']
+                      })
+                    ]
+                  },
+                  `${file.role}-${index}`
+                )
+              )
+            })
+    ]
+  })
+}
+
+/** Export: gated on the backend's own `export.blocked_reason`, files and downloads from the response. */
+function StudioExportPanel({ course, book, supported, onChanged }) {
+  const [formats, setFormats] = useState({ pack: true, pdf: true })
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [exported, setExported] = useState(null)
+  const [artifacts, setArtifacts] = useState({})
+  const [approving, setApproving] = useState(false)
+  const [approveError, setApproveError] = useState(null)
+
+  const status = (book && book.data && book.data.export) || { ready: false, blocked_reason: 'no_generated_content' }
+  const approval = (book && book.data && book.data.approval) || { state: 'none' }
+  const plan = (book && book.data && book.data.plan) || {}
+  const planHash = plan.plan_hash || null
+  const contentHash = (book && book.data && book.data.content_hash) || null
+  const chosen = [formats.pack ? 'pack' : null, formats.pdf ? 'pdf' : null].filter(Boolean)
+
+  // Final approval is its own gate: the plan approved an outline, this approves the exact
+  // generated lesson set, fenced by the content hash the backend served (never computed here).
+  const approveFinal = useCallback(async () => {
+    setApproving(true)
+    setApproveError(null)
+    const response = await rpc(
+      'parent.final.approve',
+      {
+        enrollment_id: course.enrollment_id,
+        plan_id: plan.plan_id,
+        plan_hash: planHash,
+        content_hash: contentHash
+      },
+      { idempotencyKey: newOperationId('parent-final-approve') }
+    )
+    setApproving(false)
+    if (!response.ok) {
+      setApproveError(describeError(response.error))
+      return
+    }
+    if (typeof onChanged === 'function') onChanged()
+  }, [course.enrollment_id, plan.plan_id, planHash, contentHash, onChanged])
+
+  const run = useCallback(async () => {
+    setBusy(true)
+    setError(null)
+    setExported(null)
+    setArtifacts({})
+    const response = await rpc(
+      'parent.export',
+      { enrollment_id: course.enrollment_id, formats: chosen },
+      { idempotencyKey: newOperationId('parent-export') }
+    )
+    if (!response.ok) {
+      setBusy(false)
+      const details = (response.error && response.error.details) || {}
+      setError({
+        code: response.error && response.error.code,
+        reason: details.reason,
+        message: describeError(response.error),
+        problems: Array.isArray(details.problems) ? details.problems : null
+      })
+      return
+    }
+    setExported(response.result)
+    const next = {}
+    for (const artifact of response.result.artifacts || []) {
+      const facts = await rpc('artifact.get', { artifact_id: artifact.artifact_id })
+      if (facts.ok) next[artifact.artifact_id] = facts.result
+    }
+    setArtifacts(next)
+    setBusy(false)
+  }, [course.enrollment_id, formats.pack, formats.pdf])
+
+  return jsxs('div', {
+    className: 'flex max-w-2xl flex-col gap-4',
+    children: [
+      jsx(sdk.PanelSectionLabel, { children: 'EXPORT GATE' }),
+      jsxs('div', {
+        className: 'flex flex-col',
+        children: [
+          jsx(PackReviewLine, { label: 'Plan', value: (book && book.data && book.data.plan && `${book.data.plan.state} · v${book.data.plan.version}`) || '—' }),
+          jsx(PackReviewLine, { label: 'Lesson set approval', value: APPROVAL_STATE_COPY[approval.state] || approval.state }),
+          jsx(PackReviewLine, {
+            label: 'Approved content hash',
+            value: jsx('code', { className: 'text-[11px] break-all', children: approval.content_hash || '—' })
+          }),
+          jsx(PackReviewLine, {
+            label: 'Current content hash',
+            value: jsx('code', { className: 'text-[11px] break-all', children: (book && book.data && book.data.content_hash) || '—' })
+          })
+        ]
+      }),
+      jsx(sdk.PanelSectionLabel, { children: 'FINAL APPROVAL' }),
+      jsx('div', {
+        className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+        children:
+          'Approving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it.'
+      }),
+      approval.state === 'active'
+        ? jsx('div', {
+            className: 'text-xs text-(--ui-text-secondary)',
+            children: `Lesson set approved${approval.approved_at ? ' on ' + whenLabel(approval.approved_at) : ''}${
+              approval.content_hash ? ' for content hash ' + approval.content_hash : ''
+            }.`
+          })
+        : jsxs('div', {
+            className: 'flex flex-col gap-2',
+            children: [
+              !planHash || !contentHash
+                ? jsx('div', {
+                    className: 'text-xs text-(--ui-text-secondary)',
+                    children: !planHash
+                      ? 'There is no approved plan to approve a lesson set for yet.'
+                      : 'No generated pages exist yet, so there is nothing to approve. Generate the lessons from the Plan view first.'
+                  })
+                : !supported('parent.final.approve')
+                  ? jsx('div', {
+                      className: 'text-xs text-(--ui-text-secondary)',
+                      children: 'This backend does not implement parent.final.approve yet.'
+                    })
+                  : null,
+              jsx(sdk.Button, {
+                variant: 'secondary',
+                size: 'sm',
+                className: 'self-start',
+                disabled: approving || !planHash || !contentHash || !supported('parent.final.approve'),
+                onClick: approveFinal,
+                children: approving ? 'Approving the lesson set' : 'Approve this lesson set'
+              }),
+              approveError ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: approveError }) : null
+            ]
+          }),
+      status.ready
+        ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Export is available: the approved lesson set matches the pages shown.' })
+        : jsx('div', {
+            className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+            children: EXPORT_BLOCKED_COPY[status.blocked_reason] || `Export is blocked (${status.blocked_reason}).`
+          }),
+
+      jsx(sdk.PanelSectionLabel, { children: 'FORMATS' }),
+      jsx(StudioCheck, {
+        id: 'cb-export-pack',
+        checked: formats.pack,
+        onChange: (value) => setFormats((previous) => ({ ...previous, pack: value })),
+        children: 'Pack archive (parent guide, learner pages, answer guide).'
+      }),
+      jsx(StudioCheck, {
+        id: 'cb-export-pdf',
+        checked: formats.pdf,
+        onChange: (value) => setFormats((previous) => ({ ...previous, pdf: value })),
+        children: 'Printable PDF: selectable text, low-ink layout, no color-only answers.'
+      }),
+      jsx(sdk.Button, {
+        variant: 'default',
+        disabled: busy || !status.ready || chosen.length === 0 || !supported('parent.export'),
+        onClick: run,
+        children: busy ? 'Exporting' : 'Export the approved files'
+      }),
+      error
+        ? jsxs('div', {
+            className: 'flex flex-col gap-1 text-xs text-(--ui-text-secondary)',
+            children: [
+              jsx('div', {
+                children: `${error.code ? error.code + ': ' : ''}${error.reason ? (EXPORT_REFUSAL_COPY[error.reason] || error.reason) : ''} ${error.message}`
+              }),
+              error.problems
+                ? jsxs('div', {
+                    className: 'flex flex-col gap-0.5 text-(--ui-text-tertiary)',
+                    children: [
+                      jsx('div', { children: 'The pack minima reported these problems:' }),
+                      ...error.problems.map((problem, index) =>
+                        jsx('div', { children: typeof problem === 'string' ? problem : JSON.stringify(problem) }, `problem-${index}`)
+                      )
+                    ]
+                  })
+                : null
+            ]
+          })
+        : null,
+      exported
+        ? jsxs('div', {
+            className: 'flex flex-col gap-3',
+            children: [
+              jsx(sdk.PanelSectionLabel, { children: 'EXPORTED FILES' }),
+              jsx('div', {
+                className: 'text-xs text-(--ui-text-tertiary)',
+                children: `Export ${exported.export_id} · ${whenLabel(exported.exported_at)} · content hash ${exported.content_hash}`
+              }),
+              jsxs('div', {
+                className: 'flex flex-col',
+                children: (exported.files || []).map((file) =>
+                  jsx(PackReviewLine, {
+                    label: `${file.role} · ${file.name}`,
+                    value: `${bytesLabel(file.bytes)} · ${file.mime}`
+                  }, file.name)
+                )
+              }),
+              jsxs('div', {
+                className: 'flex flex-col gap-1 text-xs leading-relaxed text-(--ui-text-tertiary)',
+                children: [
+                  jsx('div', {
+                    children:
+                      'The pack carries parent guide, learner pages and answer guide. Narration stays an audio role, so an authored text script is not exported as a narration file: it is the Audio & visuals tab and part of the parent guide.'
+                  }),
+                  jsx('div', { children: 'Exported files never include attempts, notebook notes, reflections, transcripts or provider settings.' })
+                ]
+              }),
+              ...(exported.artifacts || []).map((artifact) => {
+                const facts = artifacts[artifact.artifact_id]
+                return jsxs(
+                  'div',
+                  {
+                    className: 'flex flex-col gap-1 border-t border-(--ui-stroke-tertiary) pt-2',
+                    children: [
+                      jsxs('div', {
+                        className: 'flex flex-wrap items-baseline justify-between gap-2',
+                        children: [
+                          jsx('div', { className: 'text-xs font-medium', children: `${artifact.kind} · ${artifact.mime} · ${bytesLabel(artifact.bytes)}` }),
+                          jsx('div', { className: 'min-w-0 break-all text-[11px] text-(--ui-text-tertiary)', children: artifact.content_hash })
+                        ]
+                      }),
+                      facts && facts.download
+                        ? jsx('a', {
+                            className: 'self-start rounded-md border border-(--ui-stroke-tertiary) px-3 py-1 text-xs',
+                            download: artifact.kind === 'pdf' ? 'parent-lesson-pack.pdf' : artifact.kind === 'pack' ? 'parent-lesson-pack.zip' : 'parent-export.json',
+                            href: facts.download.url,
+                            children: artifact.kind === 'pdf' ? 'Download PDF' : artifact.kind === 'pack' ? 'Download pack archive' : 'Download export record'
+                          })
+                        : null,
+                      facts && facts.download
+                        ? jsx('div', {
+                            className: 'text-[11px] text-(--ui-text-tertiary)',
+                            children: facts.download.requires_session
+                              ? 'Session-bound, expiring link served by this host’s artifact route. A filesystem path never leaves the backend.'
+                              : 'Host artifact route.'
+                          })
+                        : null
+                    ]
+                  },
+                  artifact.artifact_id
+                )
+              })
+            ]
+          })
+        : null
+    ]
+  })
+}
+
+/** §10 reflection: parent-reported, easy/about right/too hard plus a revisit note. */
+function StudioReflectionView({ course, reflections, supported, onDuplicate, onSaved }) {
+  const [difficulty, setDifficulty] = useState('about_right')
+  const [note, setNote] = useState('')
+  const [applyToNext, setApplyToNext] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [saved, setSaved] = useState(null)
+
+  const record = useCallback(async () => {
+    setBusy(true)
+    setError(null)
+    const response = await rpc(
+      'parent.reflection.record',
+      {
+        course_id: course.course_id,
+        enrollment_id: course.enrollment_id,
+        difficulty,
+        revisit_note: note.trim() ? note.trim() : null,
+        apply_to_next_draft: applyToNext
+      },
+      { idempotencyKey: newOperationId('reflection') }
+    )
+    setBusy(false)
+    if (!response.ok) {
+      setError(`${response.error.code}: ${describeError(response.error)}`)
+      return
+    }
+    setSaved(response.result)
+    setNote('')
+    onSaved()
+  }, [course.course_id, course.enrollment_id, difficulty, note, applyToNext, onSaved])
+
+  const list = (reflections && Array.isArray(reflections.reflections) ? reflections.reflections : []).slice()
+  const latest = list.find((item) => item.apply_to_next_draft && item.revisit_note)
+
+  return jsxs('div', {
+    className: 'flex max-w-2xl flex-col gap-4',
+    children: [
+      jsx(QuietNote, {
+        children:
+          'A reflection is parent-reported. It is not evidence of learning, it is never graded, and it is excluded from every exported pack. Its only job is to seed your next brief.'
+      }),
+      jsx(sdk.PanelSectionLabel, { children: 'HOW DID IT GO?' }),
+      jsx(StudioViewPicker, {
+        id: 'cb-studio-difficulty',
+        label: 'Difficulty',
+        value: difficulty,
+        options: STUDIO_DIFFICULTIES,
+        onChange: setDifficulty
+      }),
+      jsx(StudioField, {
+        id: 'cb-reflection-note',
+        label: 'What would you revisit?',
+        hint: 'Optional. This note is offered to your next draft as a proposal, never applied silently.',
+        children: jsx(sdk.Textarea, {
+          id: 'cb-reflection-note',
+          rows: 3,
+          value: note,
+          onChange: (event) => setNote(event.target.value),
+          placeholder: 'The quarter-to-eighth cut needed a second demonstration.'
+        })
+      }),
+      jsx(StudioCheck, {
+        id: 'cb-reflection-apply',
+        checked: applyToNext,
+        onChange: setApplyToNext,
+        children: 'Offer this note to my next draft.'
+      }),
+      jsxs('div', {
+        className: 'flex flex-wrap items-center gap-2',
+        children: [
+          jsx(sdk.Button, {
+            variant: 'default',
+            disabled: busy || !supported('parent.reflection.record'),
+            onClick: record,
+            children: busy ? 'Saving' : 'Record reflection'
+          }),
+          latest
+            ? jsx(sdk.Button, {
+                variant: 'secondary',
+                onClick: () => onDuplicate(null, latest.revisit_note),
+                children: 'Start the next brief from this note'
+              })
+            : null
+        ]
+      }),
+      error ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: error }) : null,
+      saved
+        ? jsxs('div', {
+            className: 'flex flex-col',
+            children: [
+              jsx(sdk.PanelSectionLabel, { children: 'RECORDED' }),
+              jsx(PackReviewLine, { label: 'Difficulty', value: (STUDIO_DIFFICULTIES.find((item) => item.id === saved.difficulty) || {}).label || saved.difficulty }),
+              jsx(PackReviewLine, { label: 'When', value: whenLabel(saved.created_at) }),
+              jsx(PackReviewLine, { label: 'Plan hash', value: jsx('code', { className: 'text-[11px] break-all', children: saved.plan_hash || '—' }) })
+            ]
+          })
+        : null,
+      jsx(sdk.PanelSectionLabel, { children: `REFLECTIONS (${list.length})` }),
+      list.length === 0
+        ? jsx('div', { className: 'text-xs text-(--ui-text-tertiary)', children: 'No reflections recorded for this course yet.' })
+        : jsx('div', {
+            className: 'flex flex-col',
+            children: list.map((item, index) =>
+              jsxs(
+                'div',
+                {
+                  className: 'flex flex-col gap-0.5 border-t border-(--ui-stroke-tertiary) py-2',
+                  children: [
+                    jsxs('div', {
+                      className: 'flex flex-wrap items-center gap-2 text-xs',
+                      children: [
+                        jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: (STUDIO_DIFFICULTIES.find((entry) => entry.id === item.difficulty) || {}).label || item.difficulty }),
+                        jsx('span', { className: 'text-(--ui-text-tertiary)', children: `parent-reported · ${whenLabel(item.created_at)}` }),
+                        item.apply_to_next_draft ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: 'for next draft' }) : null
+                      ]
+                    }),
+                    item.revisit_note ? jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: item.revisit_note }) : null
+                  ]
+                },
+                item.reflection_id || `reflection-${index}`
+              )
+            )
+          })
+    ]
+  })
+}
+
+/**
+ * One authored course, one studio. The header states the two approvals separately because they
+ * are separate gates; the body is only ever read from the backend's own rows.
+ */
+function StudioDetail({ course, implemented, revision, onRevision, onBack, onChanged, onDuplicate }) {
+  const supports = useCallback((method) => Boolean(implemented && implemented.has(method)), [implemented])
+  const [view, setView] = useState('brief')
+  const [notice, setNotice] = useState(null)
+
+  const brief = useRpcQuery('parent.brief.get', { course_id: course.course_id }, `studio-brief-${course.course_id}`, supports('parent.brief.get'))
+  const outline = useRpcQuery(
+    'course.outline',
+    { enrollment_id: course.enrollment_id },
+    `studio-outline-${course.course_id}`,
+    supports('course.outline') && Boolean(course.enrollment_id)
+  )
+  const book = useRpcQuery('parent.blueprint.read', { course_id: course.course_id }, `studio-book-${course.course_id}`, supports('parent.blueprint.read'))
+  const reflections = useRpcQuery(
+    'parent.reflection.list',
+    { course_id: course.course_id },
+    `studio-reflections-${course.course_id}`,
+    supports('parent.reflection.list')
+  )
+
+  const reloadAll = useCallback(() => {
+    brief.reload()
+    outline.reload()
+    book.reload()
+    reflections.reload()
+    if (onChanged) onChanged()
+  }, [brief.reload, outline.reload, book.reload, reflections.reload, onChanged])
+
+  const planJobId = (brief.data && brief.data.plan_job && brief.data.plan_job.job_id) || null
+  const onPlanJobSettled = useCallback(() => reloadAll(), [reloadAll])
+
+  const plan = outline.data && outline.data.plan
+  const approval = book.data && book.data.approval
+  const exportStatus = book.data && book.data.export
+
+  let body
+  if (view === 'brief') {
+    body = jsx(StudioBriefView, {
+      briefQuery: brief,
+      course,
+      planJobId,
+      onJobSettled: onPlanJobSettled,
+      onDuplicate,
+      reflections: reflections.data
+    })
+  } else if (view === 'plan') {
+    body = jsx(StudioPlanView, {
+      course,
+      revision,
+      onRevision,
+      outline,
+      book,
+      brief: brief.data,
+      planJobId,
+      onJobSettled: onPlanJobSettled,
+      onChanged: reloadAll,
+      supported: supports
+    })
+  } else if (view === 'blueprint') {
+    body = jsx(StudioBlueprintView, { book })
+  } else if (view === 'export') {
+    body = jsx(StudioExportPanel, { course, book, supported: supports, onChanged: reloadAll })
+  } else {
+    body = jsx(StudioReflectionView, {
+      course,
+      reflections: reflections.data,
+      supported: supports,
+      onDuplicate,
+      onSaved: reloadAll
+    })
+  }
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-3',
+    children: [
+      jsx(sdk.Button, { className: 'self-start', variant: 'text', size: 'sm', onClick: onBack, children: 'All parent courses' }),
+      jsxs('div', {
+        className: 'flex flex-wrap items-start justify-between gap-3',
+        children: [
+          jsxs('div', {
+            className: 'flex min-w-0 flex-col gap-1',
+            children: [
+              jsx('h2', { className: 'min-w-0 break-words text-sm font-semibold', children: course.title || 'Parent course' }),
+              jsxs('div', {
+                className: 'flex flex-wrap items-center gap-2',
+                children: [
+                  jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: 'Parent preparation' }),
+                  jsx(PlanStateBadge, { plan }),
+                  jsx(ApprovalBadge, { approval }),
+                  exportStatus && exportStatus.ready
+                    ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: 'Export ready' })
+                    : null
+                ]
+              })
+            ]
+          }),
+          jsx('div', {
+            className: 'text-xs text-(--ui-text-tertiary)',
+            children: `You are the operator · revision ${revision}`
+          })
+        ]
+      }),
+      notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
+      jsx(StudioReviewBanner, { approval, exportStatus }),
+      jsx(StudioViewPicker, { id: 'cb-studio-view', label: 'Studio view', value: view, options: STUDIO_VIEWS, onChange: setView }),
+      body
+    ]
+  })
+}
+
 function CoursebookPage() {
   const { state: health, reload: reloadHealth } = useHealth()
   const implemented = useRuntime(health.status)
@@ -5175,12 +7128,18 @@ function CoursebookPage() {
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
+  const [studioCourse, setStudioCourse] = useState(null)
+  const [studioSeed, setStudioSeed] = useState(null)
+  const [studioRevision, setStudioRevision] = useState(0)
+  const [studioReload, setStudioReload] = useState(0)
 
   const changeDestination = useCallback((next) => {
     rememberedDestination = next
     setCreating(false)
     setImporting(false)
     setOpenCourse(null)
+    setStudioCourse(null)
+    setStudioSeed(null)
     setDestination(next)
   }, [])
 
@@ -5192,22 +7151,44 @@ function CoursebookPage() {
         setDestination('courses')
         setCreating(true)
         setImporting(false)
+        setStudioCourse(null)
+        setStudioSeed(null)
       } else if (intent.kind === 'import') {
         rememberedDestination = 'library'
         setDestination('library')
         setCreating(false)
         setImporting(true)
+        setStudioCourse(null)
+        setStudioSeed(null)
       } else if (intent.kind === 'library') {
         rememberedDestination = 'library'
         setDestination('library')
         setCreating(false)
         setImporting(false)
+        setStudioCourse(null)
+        setStudioSeed(null)
+      } else if (intent.kind === 'studio') {
+        rememberedDestination = 'studio'
+        setDestination('studio')
+        setCreating(false)
+        setImporting(false)
+        setOpenCourse(null)
+        setStudioCourse(null)
+        setStudioSeed(null)
+      } else if (intent.kind === 'studio-new') {
+        rememberedDestination = 'studio'
+        setDestination('studio')
+        setCreating(false)
+        setImporting(false)
+        setStudioCourse(null)
+        setStudioSeed({ initial: null, note: null })
       }
     }, [])
   )
 
   const canCreate = Boolean(implemented && implemented.has('course.create'))
   const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
+  const canAuthor = Boolean(implemented && implemented.has('parent.brief.create'))
 
   let body
   if (health.status === 'loading' && !health.result) {
@@ -5230,6 +7211,46 @@ function CoursebookPage() {
         reloadHealth()
       }
     })
+  } else if (destination === 'studio') {
+    if (studioSeed) {
+      body = jsx(StudioBriefForm, {
+        initial: studioSeed.initial,
+        note: studioSeed.note,
+        supported: canAuthor,
+        onCancel: () => setStudioSeed(null),
+        onCreated: (created) => {
+          setStudioSeed(null)
+          setStudioCourse({
+            course_id: created.course_id,
+            enrollment_id: created.enrollment_id,
+            title: created.title,
+            revision: Number(created.revision || 0)
+          })
+          setStudioRevision(Number(created.revision || 0))
+          setStudioReload((value) => value + 1)
+        }
+      })
+    } else if (studioCourse) {
+      body = jsx(StudioDetail, {
+        course: studioCourse,
+        implemented,
+        revision: studioRevision,
+        onRevision: setStudioRevision,
+        onBack: () => setStudioCourse(null),
+        onChanged: () => setStudioReload((value) => value + 1),
+        onDuplicate: (brief, note) => setStudioSeed({ initial: brief, note })
+      })
+    } else {
+      body = jsx(StudioList, {
+        implemented,
+        reloadSignal: studioReload,
+        onCreate: () => setStudioSeed({ initial: null, note: null }),
+        onOpen: (row) => {
+          setStudioCourse(row)
+          setStudioRevision(Number(row.revision || 0))
+        }
+      })
+    }
   } else if (destination === 'library') {
     body = jsx(LibraryView, { createOpen: creating, implemented })
   } else if (openCourse) {
@@ -5268,11 +7289,15 @@ function CoursebookPage() {
                   jsx('div', {
                     className: 'mt-0.5 text-xs text-(--ui-text-tertiary)',
                     children:
-                      destination === 'library' && !creating
-                        ? 'Packs you can teach from, with the provenance the backend recorded.'
-                        : openCourse
-                          ? 'One objective, its evidence and the next permitted action.'
-                          : 'A governed learning workspace: one objective, real evidence, honest next steps.'
+                      destination === 'studio' && !studioSeed
+                        ? studioCourse
+                          ? 'One authored course: brief, plan, pages, export and reflection.'
+                          : 'Parent-led lesson packs: write the brief, review it, then teach it.'
+                        : destination === 'library' && !creating
+                          ? 'Packs you can teach from, with the provenance the backend recorded.'
+                          : openCourse
+                            ? 'One objective, its evidence and the next permitted action.'
+                            : 'A governed learning workspace: one objective, real evidence, honest next steps.'
                   })
                 ]
               }),
@@ -5285,6 +7310,9 @@ function CoursebookPage() {
                     : null,
                   health.status === 'ready' && !creating && !importing && destination === 'library' && canImport
                     ? jsx(sdk.Button, { onClick: onImportPlaceholder, size: 'sm', variant: 'default', children: 'Import pack' })
+                    : null,
+                  health.status === 'ready' && !studioSeed && destination === 'studio' && !studioCourse && canAuthor
+                    ? jsx(sdk.Button, { onClick: () => setStudioSeed({ initial: null, note: null }), size: 'sm', variant: 'default', children: 'New lesson brief' })
                     : null
                 ]
               })
@@ -5627,6 +7655,26 @@ export default {
           label: 'Open Coursebook',
           keywords: ['coursebook', 'course', 'lesson', 'learn'],
           run: () => host.navigate(ROUTE_PATH)
+        }
+      })
+      ctx.register({
+        id: 'studio',
+        area: AREAS.palette,
+        data: {
+          id: 'coursebook.studio',
+          label: 'Open Parent Studio',
+          keywords: ['parent', 'studio', 'lesson pack', 'teach', 'author', 'brief'],
+          run: () => requestIntent({ kind: 'studio' })
+        }
+      })
+      ctx.register({
+        id: 'studio-new',
+        area: AREAS.palette,
+        data: {
+          id: 'coursebook.studio.new',
+          label: 'Write a parent lesson brief',
+          keywords: ['parent', 'brief', 'new lesson', 'author', 'prepare'],
+          run: () => requestIntent({ kind: 'studio-new' })
         }
       })
     }
