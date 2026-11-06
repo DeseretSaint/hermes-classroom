@@ -1,0 +1,311 @@
+ok  parent.brief.create
+   created: {"course_id": "crs_66dfba72ef9e4182b05bc250b7d5f097", "enrollment_id": "enr_f7979943032a4e4c8ea244910780e966", "job_id": "job_0fbffd2882df4e238171bef0a0ac15a6", "state": "queued", "revision": 0}
+ok  parent.brief.get
+   brief: {"course_id": "crs_66dfba72ef9e4182b05bc250b7d5f097", "enrollment_id": "enr_f7979943032a4e4c8ea244910780e966", "plan_job": {"job_id": "job_0fbffd2882df4e238171bef0a0ac15a6", "kind": "plan", "state": "queued", "submitted_at": "2026-11-06T16:25:06Z"}, "created_at": "2026-11-06T16:25:06.986612+00:00"}
+   typed brief keys: ['age_band', 'desired_pages', 'desired_visuals', 'duration_minutes', 'egress_acknowledged', 'exclusions', 'goal', 'locale', 'materials', 'narration', 'reading_level', 'redaction_requested', 'setting', 'starting_point', 'supervision', 'title']
+ok  jobs.get
+   plan job job_0fbffd2882df4e238171bef0a0ac15a6 -> queued {}
+ok  jobs.get
+   plan job job_0fbffd2882df4e238171bef0a0ac15a6 -> running {}
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+   plan job job_0fbffd2882df4e238171bef0a0ac15a6 -> completed {"stage": "plan", "steps_done": 1, "steps_total": 1, "message": "plan authored (needs_review)"}
+ok  parent.brief.get
+ok  course.outline
+   outline plan: {"plan_id": "489dbd431294e890", "version": 1, "state": "draft", "plan_hash": "sha256:cf230d250b26436cee3f42ce8a905e72af585994828b66c2024ae2c37c519f65"}
+ok  parent.blueprint.read
+   fence hash: sha256:da8c9cb2e9b568d61fcf2b6524227846e606e77346602905e4ae57ad10a10627
+ok  parent.plan.edit
+ok  course.outline
+   after edit plan: {"plan_id": "489dbd431294e890", "version": 2, "state": "draft", "plan_hash": "sha256:073b0841fe312e8d46dbaa2692b93d5068d9841afb517e866268893e4ada01b2"}
+ok  plan.approve
+ok  course.outline
+   plan state after approve: approved
+ok  jobs.create
+ok  jobs.get
+   lessons job job_bfd483af216d4104a979cc8a17f19c13 -> queued {}
+ok  jobs.get
+   lessons job job_bfd483af216d4104a979cc8a17f19c13 -> running {}
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+ok  jobs.get
+
+────────────────────────────────────────────────────────────────────────────────
+LIVE OBSERVATION — method and result (2026-11-06, isolated backend, this worktree)
+────────────────────────────────────────────────────────────────────────────────
+
+Isolated backend: scripts/cb013-live-backend.sh, 127.0.0.1:44219, home
+~/.hermes/coursebook-test/home, plugin symlink -> this worktree (t_6fb0b580 @ f4a42f3).
+Runtime says plugin_root=/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_6fb0b580,
+wire_version 6, 51 implemented methods.
+Executor: scripts/cb011-tick-loop.py started with the verified Hermes runtime venv
+(/home/deseretsaint/.hermes/installs/4a0017846986ee5e/environments/
+ 86a8c1156c3b4cdd941112e99afaab9e/venv/bin/python), HERMES_HOME=~/.hermes/coursebook-test/home;
+it printed: "store ... schema 3" / "host llm bound (PluginLlm, trust-gated)" / "tick running every 2.0 s".
+
+Probe: scripts/cb011-parent-probe.py full  with CB011_WAIT=900 CB011_POLL=2, one run only,
+started 16:25:06Z. The agent harness caps a single shell command at 420 s, so the probe process
+was killed at ~16:32:06Z while it was still polling the lessons job. It was NOT its own 900 s
+wait that ended: the process was killed from outside. The job was then polled directly with
+jobs.get every 2 s so the run could still be read to a terminal state.
+
+  course_id       crs_66dfba72ef9e4182b05bc250b7d5f097
+  enrollment_id   enr_f7979943032a4e4c8ea244910780e966
+  plan job        job_0fbffd2882df4e238171bef0a0ac15a6   completed 16:27:07Z
+                  progress.message "plan authored (needs_review)"  (2m01s wall)
+  plan            489dbd431294e890  v1 draft -> parent.plan.edit ok (v2 draft) -> plan.approve ok
+                  16:27:09Z, approved_at 16:27:09.299077Z, 5 objectives / 5 sections
+                  plan_hash sha256:073b0841fe312e8d46dbaa2692b93d5068d9841afb517e866268893e4ada01b2
+  lessons job     job_bfd483af216d4104a979cc8a17f19c13   FAILED 16:32:40Z
+                  {"category":"capability","code":"GRADER_UNAVAILABLE","http":503,
+                   "message":"coursebook.lesson.generate took 115802ms, over its 60.0s deadline",
+                   "retryable":true}
+  lessons         1 of 5 sections persisted (gen_lessons 9c03bd5d2008f419, state needs_review)
+
+  provider usage recorded against the failed job (all nous / deepseek/deepseek-v4.1-flash-1017,
+  cost unknown, nothing fabricated):
+    coursebook.lesson.generate   52297 ms   in 2068  out 3690
+    coursebook.lesson.validate   31397 ms   in 4805  out 4453
+    coursebook.lesson.generate   26941 ms   in 2424  out 5250
+    coursebook.lesson.validate   34303 ms   in 3889  out 4664
+    coursebook.lesson.generate   14176 ms   in 2091  out 2715
+    coursebook.lesson.validate   55377 ms   in 4614  out 8446
+    coursebook.lesson.generate  115802 ms   <- over the declared 60 s deadline, raised out of
+                                              _call_llm before usage.record, so the job failed
+  Every validation call so far returned reject (section 1 retried, then was parked
+  needs_review; section 2's second attempt is the 115.8 s call), so the stage was already on
+  its 7th provider call when it died.
+
+Follow-up observation on the SAME course (no new course was created), phase `approve`:
+  REFUSED parent.final.approve VALIDATION_FAILED: RPC request violates cb.rpc at <root>:
+          'expected_revision' is a required property {"path":"<root>"}
+          — phase_approve_and_export() sends no expected_revision at all, so this probe path
+            cannot exercise final approval even when content exists (harness defect, F3).
+  parent.blueprint.read  approval {"state":"none","plan_hash":null,"content_hash":null,...}
+                         export   {"ready":false,"blocked_reason":"no_final_approval"}
+  REFUSED parent.export POLICY_VIOLATION: the generated lessons have not been approved;
+          approve them before exporting.
+          {"reason":"no_final_approval","course_id":"crs_66dfba72ef9e4182b05bc250b7d5f097"}
+
+────────────────────────────────────────────────────────────────────────────────
+FINDINGS (evidence only; product code was not edited)
+────────────────────────────────────────────────────────────────────────────────
+F1 BLOCKER (product, coursebook/generation.py): every lesson/validation request is built with
+   timeout_s=60.0 (build_lesson_request / build_lesson_validation_request, no env override), and
+   _call_llm raises ProviderTimeout when the returned call took longer than that declared
+   deadline. The host call returned after 115.8 s, so the job failed. On this provider the
+   lesson stage cannot be relied on to stay under 60 s per call (observed 14.2 s - 115.8 s).
+F2 BLOCKER (product, coursebook/generation.py CostBudget): max_calls defaults to 8 per job, but a
+   5-section plan needs lesson+validation per section (>=10 calls) and validation rejects add a
+   retry call each. Even without F1 this plan would end POLICY_VIOLATION "job already made 8
+   provider calls (ceiling 8)" — the exact error recorded earlier on this home for
+   job_06388582367a40af8c69d01dd9c3964a (2026-11-06T15:46:11Z).
+F3 HARNESS (scripts/cb011-parent-probe.py): `full`/`approve` never send expected_revision to
+   parent.final.approve, so the probe cannot reach the final approval state it exists to prove.
+F4 MAPPING (coursebook/job_service.py _error_code): ProviderTimeout is reported as
+   GRADER_UNAVAILABLE, which points a reader at the grader instead of the provider deadline.
+
+CONSEQUENCE FOR THIS CARD: the expected sequence stopped at the lesson stage. Final approval and
+export are NOT proven; no PDF exists for this course. No retry with a fresh course was made.
