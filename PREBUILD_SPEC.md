@@ -2,6 +2,8 @@
 
 Status: architecture candidate after adversarial audit. No implementation has started.
 Companion evidence and source citations: `AUDIT.md` in this repository.
+Personal-vault learning research and Japanese demo mapping: `VAULT_LEARNING.md`. Vault notes
+are read-only research leads; unavailable canonical findings require fresh verification.
 Contest: catalog PR + under-90-second X demo + form by Nov 11, 2026, 5 PM EST.
 
 ## 1. Product
@@ -31,6 +33,10 @@ coherent working vertical slice, not a wide set of partially functional controls
 
 ### Contest end-to-end paths
 
+The guaranteed contest platform is the **active local Hermes profile/backend**. Remote and
+cross-profile controls stay disabled until their cwd, REST, identity, media, and download
+paths pass the same tests; a README caveat alone is not support.
+
 1. **Create:** goal → recipe-aware intake → plan preview → isolated lesson chat.
 2. **Import:** local/bundled pack → trust/source/license preview → fresh course → lesson.
 3. **Learn:** typed check → bounded grade → governed transition → misconception/retry.
@@ -44,10 +50,12 @@ coherent working vertical slice, not a wide set of partially functional controls
 
 ### Roadmap within the same architecture
 
-Full Companion mode, richer dial/migration UX, public community index, optional gateway
-reminders, additional recipe/milestone variants, and larger media/catalog collections. Schemas
-can anticipate them; incomplete features must be labelled honestly and must not appear as
-working contest features.
+Richer dial/migration UX, public community index, optional gateway reminders, additional
+recipe/milestone variants, and larger media/catalog collections. Schemas can anticipate them;
+incomplete features must be labelled honestly and must not appear as working contest features.
+Companion v1 is a thin pasted-syllabus/current-unit workflow with exam/evaluator/deadline
+intake; LMS/calendar integrations are later. Reminder v1 displays a manual schedule; actual
+cron delivery is enabled only after explicit channel/DST/delivery verification.
 
 ## 3. Recipes
 
@@ -59,8 +67,9 @@ working contest features.
 | Companion | support an external course | imported syllabus and exam-aligned drills |
 | Parent | prepare a lesson for one's child | parent-approved printable/narrated lesson pack |
 
-Every recipe maps onto the same objective/attempt/evidence model. Parent mode maps the lesson
-states to a parent guide; it does not automate child grading or create a child chat profile.
+Adult recipes share an objective/attempt/evidence lifecycle. Parent mode reuses the planning,
+source, and artifact infrastructure with a parent-observation checklist; it is not presented
+as equivalent automated assessment or adaptation.
 
 ## 4. Intake and planning
 
@@ -101,6 +110,8 @@ unbounded new ones.
 - Casual allows self-checks and optional reviews.
 - Committed requires the stated evidence criteria and capstone.
 - Companion aligns to the external syllabus.
+- Companion also asks exam/evaluator/deadline and labels imported material `unofficial`; no
+  exam prediction, accommodation equivalence, proctoring, or past-paper redistribution claim.
 - Parent renders these as warm-up, goal, model, guided activity, independent activity,
   observation check, take-home, and parent notes.
 
@@ -112,6 +123,11 @@ Evidence classes: `cold`, `hinted`, `answer_shown`, `self_reported`, `parent_rep
 `override`. Instruction completion, independent evidence, and delayed retrieval are separate.
 One immediate item never proves durable mastery. A manual override grants access, not mastery.
 Users can inspect and dispute evidence.
+
+Every check declares its evidence target: recall, comprehension, production, discrimination,
+procedure, or transfer. Recognition cannot substitute for production, a repeated near-
+identical item cannot substitute for transfer, and simulated/self-reported physical completion
+cannot become independently verified completion.
 
 ## 6. Authoritative architecture
 
@@ -139,6 +155,10 @@ Course workspace (backend-owned, outside git roots)
 SQLite is the source of truth. Markdown/JSON/PDF/audio are exports or content artifacts, not
 parallel authorities. Large media lives in content-addressed storage with metadata in SQLite.
 
+Evidence is inspectable at three layers: L1 raw attempts/events, L2 current objective evidence
+linked to L1, and L3 short revisable plan recommendations linked to L2. L3 is not a learner
+persona or psychological diagnosis.
+
 The Desktop and agent backend must share a filesystem/authority topology. Otherwise use a
 backend-driven workspace flow or report the unsupported topology; never pretend a Desktop
 folder grant creates a remote backend cwd.
@@ -164,16 +184,31 @@ chats preserve evidence and allow a new run. Multiple windows use revision-fence
 Checks are typed, versioned records created before the answer: id, objective, construct,
 locale/register assumptions, accepted variation, rubric, prerequisites, and scoring rule.
 
+Before a learner sees a check, a separate audit verifies objective alignment, an unambiguous
+stimulus, correct reference answer, acceptable alternatives, and rubric consistency. A flawed
+key/question/rubric is replaced or the lesson pauses; it cannot be used for grading.
+
 Closed forms use deterministic validators. Open responses use `ctx.llm` with only answer,
 rubric, construct, and permitted context. Return observed criteria, verdict, rationale, and a
-possible misconception. Unexpected phrasing is not automatically a misconception. The plugin
+possible error pattern. Unexpected phrasing is not automatically a misconception. The plugin
 declares `jsonschema` explicitly and locally validates structured output; a missing optional
 host package must never turn invalid grading JSON into an accepted verdict.
+
+The minimal assessment envelope contains stimulus, learner instructions, response, rubric,
+reference answer/scoring examples, locale, allowed conventions, and attempt id. The key stays
+out of learner-facing context. Deterministic validators cover units, rounding/tolerance,
+equivalent forms, Unicode/notation, and multiple valid solutions rather than exact strings.
 
 `pre_llm_call` grades a pending answer with an internal deadline shorter than Hermes' hook
 timeout. It catches errors and returns a local `needs_retry` response/block if grading cannot
 finish. The transition commits before the next teaching turn proceeds. A timeout never grants
 a pass. `post_llm_call` is an observer, not the gate.
+
+The primary correctness door is an explicit backend `submit_attempt` command invoked by the
+Coursebook UI/owned tool. It returns the committed verdict and next permitted action. The chat
+hook is an adapter for free-text submissions and calls the same command; it is not the sole
+boundary. If a hook fails open, the next Coursebook action reconciles the pending attempt and
+refuses advancement. Clarifying questions do not consume retries or create error evidence.
 
 A transition transaction checks course/run identity, open check, answer hash/id, rubric
 version, verdict freshness, current revision, and idempotency key. Late callbacks carry turn
@@ -183,7 +218,10 @@ Evidence histories record attempts, hints, overrides, disputes, and model/provid
 provenance. Grader evaluation uses 60 initial labeled cases, expanded per domain, with
 correct/partial/wrong/irrelevant/code-switched/dialect/non-native/adversarial categories.
 Report per-category false pass, false block, retry, and repeat stability; do not claim fairness
-from aggregate accuracy.
+from aggregate accuracy. Sixty is a smoke-test floor **per grader configuration and domain/
+language slice**, not a universal validity result. Re-run whenever model, prompt, rubric
+schema, or language changes. A misconception requires different items targeting the same
+concept; one flawed/repeated item cannot confirm it.
 
 ## 9. Research, sources, and claims
 
@@ -199,9 +237,17 @@ review on reuse.
 
 High-risk physical/medical/legal/electrical/mechanical instruction requires authoritative
 documentation and an expert-check warning. Coursebook does not certify procedures.
+Before procedural steps, a hazard gate identifies exact equipment/manual, protective
+equipment, isolation procedure, and stop/professional-help conditions. Live mains, gas, fuel,
+pressure-system, structural, and safety-critical vehicle verification are excluded. Physical
+completion reported in chat is `self_reported`, never independently verified.
 
 Web/source text is untrusted content, never policy. It cannot alter tools, rubrics, state,
 reminders, provider configuration, or exports.
+
+Source/spec versions attach to dependent lessons/checks/media. An updated source produces an
+impact list and marks affected generated checks stale pending review; it does not silently
+rewrite evidence or migrate learners.
 
 ## 10. Media and parent exports
 
@@ -221,14 +267,21 @@ accessible, status is not color-only, reduced motion/theme preferences are respe
 TTS/image failure leaves a complete text lesson. Imported packs can work offline with cached
 artifacts.
 
+Generation and human-sense review are separate passes: comprehension/accessibility, domain
+naturalness, cultural/context fit, tone/cognitive load, and operator usability. Automated
+review is never labelled native-speaker/expert review; only a real qualified reviewer earns
+that label. Voice/model choices are auditioned on actual target-language content.
+
 Parent flow: brief → bounded research/plan → parent edits and approves sources/activities →
 generate guide/learner pages/answers/optional narration → offline parent-led use → optional
 `parent_reported` reflection. Community export excludes reflections and private material by
 construction. Planning uses backend jobs rather than persistent child-related chat sessions
 where possible.
 
-Approval binds to the exact plan/content hash. Any edit to objectives, exclusions, activities,
-source text, or media specs invalidates approval and blocks generation until reapproved.
+Approval binds to the exact plan/content hash, including actual learner pages, answers,
+narration transcript, and activity instructions. Any edit to objectives, exclusions,
+activities, source text, or media specs invalidates approval and blocks generation until
+reapproved.
 Activities include setting-specific supervision/safety checks (heat, sharp objects, small
 parts, allergies, water, roads, tools). Car activities are passenger-only and never ask for
 driver interaction. Parent-confirmed level informs activities, not developmental diagnoses.
@@ -255,13 +308,17 @@ count/string/list/expanded bytes, hash verification, decoder/MIME validation, no
 remote images, no auto-open links, atomic adopt or complete rejection. Prompt-injection text
 stays in the untrusted content channel.
 
-Updates are previewed migrations. Stable ids carry evidence; changed rubrics are versioned;
-removed objectives retain archived evidence. Reimport is idempotent. Local forks retain
-attribution and never alter the original.
+Updates are previewed migrations only after migration is implemented and tested; v1 refuses
+incompatible upgrades and keeps the working version. Stable ids carry evidence; changed
+rubrics are versioned; removed objectives retain archived evidence. Reimporting the same pack
+offers **Resume existing enrollment** or **Create fresh enrollment**, never a silent duplicate
+or reset. Pack, course, and enrollment ids are distinct. Local forks retain attribution.
 
 Export defaults to no license until the author chooses. Distinguish local adaptation from
 redistribution; ND/unknown-license content cannot be published as remixable. Track rights per
-artifact. Linked sources are not bundled by default.
+artifact. Linked sources are not bundled by default. Export uses an allowlisted schema and
+previews all prose/prompts/media/metadata; it does not promise automatic PII detection or
+removal. Unknown-license private imports may carry warnings; public distribution rejects them.
 
 Trust states are separate: integrity verified, automated checks passed, human review recorded,
 and model-assessed source support. No universal “safe/true” badge. Correction/revocation is
@@ -282,7 +339,8 @@ cannot undo an overrun.
 Reminders require an explicit verified delivery channel or a clearly selected local-only mode.
 Show timezone, destination, quiet hours, frequency, test action, and last delivery error.
 Omitted/`origin` delivery is never represented as Telegram delivery. Stable job ids make
-creation/update/archive idempotent.
+creation idempotent through list-by-namespaced-name → reuse. `cron.manage` has no update or
+idempotency key: schedule changes require remove+add, and the returned random job id is stored.
 Scheduling and DST are evaluated in the backend's declared timezone, tested separately from
 the Desktop display timezone.
 
@@ -301,6 +359,8 @@ One native Coursebook page with four task-oriented views:
 Course list and operation status remain visible without becoming a file manager. Empty,
 loading, offline, degraded, revoked-grant, detached-session, and failed-job states each have
 honest copy and a recovery action. No focus/navigation hijack from background jobs.
+Pause/abandon, skip/late homework, retry, review queue, archive/delete, recovery export, and
+imported-content deletion are explicit workflows with confirmation and recovery semantics.
 
 ## 14. Required live probes before full implementation
 
@@ -311,6 +371,7 @@ honest copy and a recovery action. No focus/navigation hijack from background jo
 4. Owned aux structured grading latency/timeout/invalid JSON/outage under the intended model.
 5. Owned tool → artifact → `MEDIA:` renderer on local and remote plus disabled-media fallback.
 6. Explicit vs omitted cron delivery targets; no real external send without user authorization.
+7. Backend `submit_attempt` remains authoritative when the chat hook is disabled/times out.
 
 These probes gate implementation details, not the product concept.
 
@@ -341,11 +402,13 @@ is the differentiator; everything else depends on its correctness.
 
 ### Learning/grading
 - wrong/irrelevant answers do not pass;
+- flawed question/key/rubric fails closed before learner grading;
 - answer-shown/hint/override evidence is correct;
 - grade dispute is inspectable;
 - misconceptions require repeated evidence;
 - unexpected phrasing triggers appropriate clarification, not automatic failure;
 - capstone measures the declared end state.
+- physical completion is labelled self-reported, never independently verified;
 
 ### Security/content
 - pack/web prompt injection cannot change policy/tools/rubrics/state/reminders/exports;
@@ -353,6 +416,7 @@ is the differentiator; everything else depends on its correctness.
 - offline cached content works; source staleness is visible;
 - rights/attribution and ND/unknown-license restrictions are enforced;
 - exports contain no private state or unrequested upload.
+- reimport supports both resume-existing and deliberately fresh enrollment.
 
 ### Reliability/accessibility
 - Parent edits invalidate approval; setting/supervision checks and passenger-only car rules
@@ -386,6 +450,13 @@ The strongest sequence is:
 6. restart and resume the exact lesson.
 
 Close: **“A chat answers. Coursebook makes the next step depend on what you did.”**
+
+The Japanese fixture uses the vault-derived personal policy: Japanese script + romaji +
+English at L0, with furigana/romaji as independently fading scaffolds. It evaluates contextual
+usage through a relationship/addressee/intent/register envelope, not one literal translation.
+The contest-safe check is context selection; an open explanation can additionally demonstrate
+bounded aux grading. Actual wording and native-usage claims must be freshly sourced before
+pack authoring; no unavailable canonical vault finding is cited as reviewed evidence.
 
 ## 18. Final position
 

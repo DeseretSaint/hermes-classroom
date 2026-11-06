@@ -58,6 +58,12 @@ There is a UX consequence: a failing aux model must produce an immediate local r
 not a 30-second stall. If the gate cannot maintain this latency under the configured provider,
 the lesson remains paused with a manual override; it never advances by timeout.
 
+The authoritative operation is an explicit backend `submit_attempt` command called by the
+Coursebook UI/owned tool, not merely a hook callback. It returns the committed verdict/next
+action. The free-text chat hook invokes the same command; if it is skipped/fails open, the
+next Coursebook action reconciles the pending attempt and refuses advancement. This also
+supports non-chat attempts without pretending Hermes' entire chat is transactional.
+
 ### R3 — Untrusted pack text cannot become `AGENTS.md`
 
 Imported/community material and web pages are indirect-prompt-injection input. Declaring a
@@ -168,6 +174,13 @@ number/diversity of attempts. Review scheduling records cold retrieval separatel
 out uses a fresh varied check, not a replayed item. Never label a learner “mastered” globally;
 show the evidence history.
 
+The generated question/rubric itself also needs pre-lesson validation: objective alignment,
+unambiguous stimulus, correct reference answer, accepted alternatives, and rubric consistency.
+The grader receives a minimal envelope with stimulus, learner instructions, reference answer/
+scoring examples, response, locale, allowed conventions, and attempt id. A flawed check fails
+closed. Sixty cases are only a smoke-test floor per grader configuration/domain/language slice,
+re-run on model/prompt/schema/language changes, not universal evidence of grading validity.
+
 ### R11 — Multilingual and open-response grading needs construct separation
 
 Grammar, dialect, accent, concision, translation choice, and conceptual understanding are
@@ -244,6 +257,11 @@ channel or explicitly chooses local-only. Show target and timezone at confirmati
 hours, last delivery error, and a test action. No promise of Telegram just because a gateway
 exists. Job names include stable course/reminder ids and creation/update is idempotent.
 
+`cron.manage` actually exposes list/add/remove/pause/resume, not a general update operation,
+and creation mints a random UUID without an idempotency key. Implement namespaced-list →
+reuse for creation; store the returned id; use remove+add for schedule changes. Do not claim
+inherent update idempotency or timezone fields the RPC lacks.
+
 ### H5 — Cost accounting and cost control are different
 
 `pre/post_api_request` can observe usage even on turns that do not complete normally; usage
@@ -266,6 +284,10 @@ expanded limits; media MIME and decoder validation; hash/size verification befor
 no symlink/hardlink/device files; one pack root; no runtime remote URLs except user-initiated
 source refetch; normalized ids; bounded strings/list lengths; sanitized text previews;
 transactional staging then atomic adopt. A rejected import leaves no course or background job.
+
+Pack identity and enrollment identity are separate. Reimport offers **Resume existing
+enrollment** or **Create fresh enrollment**; it must not prevent a parent/teacher deliberately
+starting another learner with the same pack.
 
 ### H7 — Pack licensing and adaptation rights need concrete policy
 
@@ -387,6 +409,8 @@ These are small executable probes, not more planning:
    backends, including TTS/image-disabled fallback.
 6. Create a reminder with explicit vs omitted delivery and inspect stored job/delivery target;
    do not use a real user's Telegram until explicit delivery authorization is requested.
+7. Verify the backend `submit_attempt` command remains authoritative when chat hooks are
+   disabled, time out, or are bypassed by a non-chat UI attempt.
 
 ## Acceptance expansion beyond v7
 
