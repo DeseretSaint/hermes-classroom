@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import unittest
 from pathlib import Path
 
@@ -75,6 +76,50 @@ class StatusToolTest(unittest.TestCase):
         module.register(SettingsContext())
         # The privately-loaded package owns its own module objects; read through it.
         self.assertNotIn('"contracts"', module.tools.status_handler())
+
+
+class StatusToolDispatchTest(unittest.TestCase):
+    """Dispatch the registered handler the way the host does, not as a bare call.
+
+    ``tools/registry.py::dispatch`` invokes ``entry.handler(args, **kwargs)`` — the model's
+    argument dict arrives **positionally**. A handler declared ``(**_kwargs)`` therefore raises
+    ``TypeError`` on every real invocation while ``plugins doctor`` (import/registration only)
+    stays green. This class pins the registry call shape.
+    """
+
+    def setUp(self) -> None:
+        self.addCleanup(tools.configure, None)
+        tools.configure(None)
+
+    def _registry(self):
+        from tools.registry import ToolRegistry
+
+        registry = ToolRegistry()
+        registry.register(
+            name=tools.STATUS_TOOL_NAME,
+            toolset="coursebook",
+            schema=tools.status_schema(),
+            handler=tools.status_handler,
+            description=tools.STATUS_TOOL_DESCRIPTION,
+        )
+        return registry
+
+    def test_registry_dispatch_returns_the_health_payload(self) -> None:
+        raw = self._registry().dispatch(tools.STATUS_TOOL_NAME, {})
+        self.assertIsInstance(raw, str)
+        payload = json.loads(raw)
+        self.assertEqual(payload["plugin_version"], tools.__version__)
+        self.assertIn("db", payload)
+        self.assertIn("implemented_methods", payload)
+
+    def test_handler_accepts_the_argument_dict_positionally(self) -> None:
+        # The exact shape that used to raise: status_handler({}) -> TypeError.
+        payload = json.loads(tools.status_handler({}))
+        self.assertIn("plugin_version", payload)
+
+    def test_handler_accepts_forwarded_context_kwargs(self) -> None:
+        payload = json.loads(tools.status_handler({}, task_id="t-1", session_id="s-1"))
+        self.assertIn("db", payload)
 
 
 if __name__ == "__main__":
