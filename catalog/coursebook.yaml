@@ -1,14 +1,14 @@
-# Draft catalog entry for Coursebook. Not submitted.
+# Draft catalog entry for Coursebook. NOT SUBMITTED.
 #
-# The sha below is the skeleton commit this draft was first validated against. It is a placeholder
-# for the PR pin and it does NOT contain the 0.1.0 candidate the description now describes. Before
-# the catalog pull request, merge every code change, then set sha to the release commit, point
-# docs_url at the same commit, and keep version in step with the pinned code — all in one change.
-# See docs/SUBMISSION.md sections 3 and 4. Do not submit this file while sha and description
-# disagree; gate 11 is exactly that check.
+# The sha below is a real release commit, but the entry is still a draft: gates 5, 7, 9 and 10 of
+# docs/SUBMISSION.md are open (host gateway condition, demo gate, license, publication sign-off).
+# Before the catalog pull request, merge every code change, re-run `scripts/validate-plugin.sh` on
+# the final commit, then set sha and docs_url to that commit and keep version in step with the
+# pinned code — all in one change. See docs/SUBMISSION.md sections 3 and 4. Do not submit this file
+# while sha and description disagree; gate 11 is exactly that check.
 name: coursebook
 repo: https://github.com/DeseretSaint/hermes-classroom
-sha: e1f1cab7087c19e8f4eacd09cc7dabf50633fee1
+sha: 3d7dfde0534d52621cb57b7833e412762fd28730
 description: >-
   A native Hermes Desktop learning workspace where a lesson is governed state rather than chat:
   one objective at a time, typed checks, bounded grading, transactional transitions, inspectable
@@ -32,11 +32,12 @@ tier: community
 category: desktop
 requires_hermes: ">=0.23.0"
 version: "0.1.0"
-docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/e1f1cab7087c19e8f4eacd09cc7dabf50633fee1/docs/INSTALL.md
+docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/3d7dfde0534d52621cb57b7833e412762fd28730/docs/INSTALL.md
 readme: true
 platforms: []
 known_issues:
-  - "Desktop route #/coursebook renders the session home instead of the Coursebook page (CB-QA-09); the course library, course creation, Parent Studio and Activity are unreachable from the UI on this candidate."
+  - "Desktop route #/coursebook mounts against a reachable backend, but on an isolated home whose gateway cannot start the shell renders the session list for every route (CB-QA-09, verdict open); the demo's chat surface is unreachable until that condition is fixed or explained."
+  - "No license file is present in this repository yet; do not redistribute until one is added."
   - "Research runs inside plan jobs only; there is no standalone research command."
   - "Image and speech generation are absent: lesson generation emits declarative media specs with text equivalents and no provider is wired."
   - "Reminders are absent: no command, no job kind and no storage."

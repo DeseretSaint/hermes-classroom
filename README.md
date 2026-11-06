@@ -87,12 +87,14 @@ hermes plugins doctor coursebook
 bash scripts/validate.sh
 ```
 
-Install from the plugin catalog (`hermes plugins install coursebook`) is TODO. The entry in
-`catalog/coursebook.yaml` is still pinned to the skeleton commit and marked not submitted; it
-must be re-pinned to the release commit before submission. Owner: Harbor.
+Install from the plugin catalog (`hermes plugins install coursebook`) is not available: the entry is
+still a draft and no pull request has been opened. `catalog/coursebook.yaml` validates against
+`hermes-agent`'s catalog validator and carries a real release pin, but gates 5, 7, 9 and 10 of
+`docs/SUBMISSION.md` are open, so submitting it is on hold. Owner: Harbor and DeseretSaint.
 
-Cloning from GitHub is also TODO: the public repository does not exist yet, and pushing needs
-operator approval. Until then, install from a local checkout as above.
+Cloning from GitHub is not a supported install path yet: the repository is private, and making it
+public is publication, which needs DeseretSaint's sign-off. Until then, install from a local
+checkout as above.
 
 ## First run
 
@@ -191,5 +193,6 @@ Desktop runtime loader refuses everything else. It is a single-writer file; see
 
 ## License
 
-No license file is present yet. Do not redistribute this repository until one is added. Owner:
-DeseretSaint.
+No license file is present yet. Do not redistribute this repository until one is added. The choice
+of license is DeseretSaint's, not a maintainer default, so this repository ships without one rather
+than asserting terms nobody approved.
