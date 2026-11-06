@@ -80,6 +80,76 @@ register_handler("health.get", _health_get)
 register_handler("schema.get", _schema_get)
 
 
+# ── Session bindings ────────────────────────────────────────────────────────
+#
+# A binding row carries BOTH ids (`cb.db` -> bindings): `runtime_session_id` is the id the
+# gateway uses for the live chat, `stored_session_id` is the durable id that survives
+# compression/rotation. They are never interchangeable. `binding.get` therefore:
+#
+#   * takes exactly one of `session_id` (a STORED id) or `enrollment_id`;
+#   * matches `stored_session_id` only — never a recency scan, never a title match;
+#   * reports which column matched, so a caller can prove it did not guess.
+#
+# A caller holding only a runtime id must resolve it first (`host.state.focusedStoredSessionId`
+# on the Desktop half); this backend does not accept a runtime id as a stand-in.
+
+BINDING_COLUMNS = (
+    "id",
+    "enrollment_id",
+    "profile",
+    "connection_id",
+    "runtime_session_id",
+    "stored_session_id",
+    "cwd_fingerprint",
+    "compression_tip",
+    "status",
+    "revision",
+    "updated_at",
+)
+
+
+def _binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    session_id = payload.get("session_id")
+    enrollment_id = payload.get("enrollment_id")
+    if bool(session_id) == bool(enrollment_id):
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "binding.get takes exactly one of session_id (stored session id) or enrollment_id.",
+            field="session_id" if session_id else "enrollment_id",
+        )
+
+    if db.applied_schema_version() is None:
+        # No migrations, therefore no binding can exist. Answering `{binding: null}` here would
+        # claim "this chat is not bound" when the truth is "this build cannot know".
+        raise RpcError.of(
+            "NOT_IMPLEMENTED",
+            "binding.get needs the kernel schema; this build ships no migrations, so no session binding can exist.",
+        )
+
+    if session_id is not None:
+        column, value = "stored_session_id", str(session_id)
+    else:
+        column, value = "enrollment_id", str(enrollment_id)
+
+    from contextlib import closing
+
+    with closing(db.connect()) as connection:
+        row = connection.execute(
+            f"SELECT {', '.join(BINDING_COLUMNS)} FROM bindings WHERE {column} = ? "
+            "ORDER BY (status = 'active') DESC, updated_at DESC LIMIT 1",
+            (value,),
+        ).fetchone()
+
+    if row is None:
+        return 0, {"binding": None}
+    binding = {name: row[name] for name in BINDING_COLUMNS}
+    binding["matched_column"] = column
+    return 0, {"binding": binding}
+
+
+register_handler("binding.get", _binding_get)
+
+
 # ── Envelope construction ───────────────────────────────────────────────────
 
 
