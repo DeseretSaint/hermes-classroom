@@ -46,6 +46,21 @@ GET /api/plugins/coursebook/health
 So on this commit the shipped contract is `cb.rpc` v7 over `cb.db` v4 (migration
 `0004_sources_content_hash.sql`), not the v6/v3 pair the earlier README and INSTALL text quoted.
 
+### 2.1 The same commit installed from a clean export
+
+The run above installed the working tree. The release claim is about a checkout, so the pinned
+commit was also exported with `git archive 32f67b8 | tar -x` into a directory with no `.git` and no
+`.worktrees/` (793 files), then installed into a fresh home on a fresh port:
+
+```
+COURSEBOOK_TEST_HOME=<scratch>/state/home bash <export>/scripts/install-local.sh --home <scratch>/state/home
+  6/6 admission gates, Validation passed., manifest: coursebook 0.1.0 (standalone), Installed.
+GET /health   -> {plugin_version: 0.1.0, contract_version: 7, db: {ready: true, schema_version: 4}}
+GET /runtime  -> wire_contract cb.rpc, wire_version 7, contract_methods 52, plugin_root <export>
+```
+
+The install path does not depend on the repository being a git checkout or on any sibling worktree.
+
 ## 3. The `#/coursebook` route, run twice under two conditions
 
 The earlier release record (`docs/REVIEW_CB014.md`, CB-QA-09) says the route renders the session
