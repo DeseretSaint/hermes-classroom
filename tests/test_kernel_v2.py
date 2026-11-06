@@ -397,12 +397,14 @@ class ArtifactGetTest(KernelCase):
 
 
 class RegistryTest(unittest.TestCase):
-    def test_every_v2_method_is_registered_except_the_pack_pipeline(self) -> None:
+    def test_every_v2_method_is_registered_unless_another_package_owns_it(self) -> None:
+        # ``pack.*`` belongs to Lattice (CB-004) and may or may not be wired when this branch is
+        # merged; everything the kernel owns must be present, and nothing may be invented.
         pack_methods = {"pack.preview", "pack.import", "pack.export"}
         expected = set(method_names()) - pack_methods
-        self.assertTrue(expected <= set(api.implemented_methods()),
-                        f"unregistered: {sorted(expected - set(api.implemented_methods()))}")
-        self.assertEqual(set(api.implemented_methods()), expected)
+        implemented = set(api.implemented_methods())
+        self.assertTrue(expected <= implemented, f"unregistered: {sorted(expected - implemented)}")
+        self.assertTrue(implemented <= set(method_names()), "a handler exists for a non-contract method")
 
     def test_the_kernel_owns_the_v2_lesson_and_library_commands(self) -> None:
         for method in ("library.list", "lesson.page", "lesson.begin", "enrollment.update",
