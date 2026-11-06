@@ -1,0 +1,35 @@
+{
+  "capturedAt": "2026-11-06T17:02:32.832Z",
+  "shots": [
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/40-courses-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/41-courses-light.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/42-course-overview-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/43-textbook-index-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/44-section-evidence-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/45-notebook-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/46-notebook-search-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/47-quizzes-list-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/48-quiz-review-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/49-notebook-dialog-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/50-perf-textbook-55-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/51-perf-last-section-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/52-perf-text200-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/53-perf-narrow-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/54-perf-last-section-light.png"
+  ],
+  "notes": [
+    {
+      "step": "quiz-review-opened",
+      "review": "clicked"
+    },
+    {
+      "step": "escape-closes-dialog",
+      "dialogOpen": true,
+      "dialogClosed": true,
+      "focusAfter": {
+        "tag": "BODY",
+        "text": "SESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nArti"
+      }
+    }
+  ]
+}

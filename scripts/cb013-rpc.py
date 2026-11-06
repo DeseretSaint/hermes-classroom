@@ -20,10 +20,21 @@ BASE = os.environ.get("CB013_BASE", "http://127.0.0.1:44219")
 TOKEN = os.environ.get("CB013_TOKEN", "cb013-test-token")
 
 
+def wire_version() -> int:
+    """The backend's own wire version — never a hard-coded one."""
+    request = urllib.request.Request(
+        f"{BASE}/api/plugins/coursebook/runtime?profile=",
+        headers={"Authorization": f"Bearer {TOKEN}"},
+    )
+    with urllib.request.urlopen(request, timeout=15) as response:
+        runtime = json.loads(response.read())
+    return int(runtime.get("wire_version") or 0)
+
+
 def call(method: str, payload: dict, expected_revision: int | None = None, **extra) -> dict:
     body = {
         "contract": "cb.rpc",
-        "contract_version": 5,
+        "contract_version": wire_version(),
         "method": method,
         "operation_id": f"cb013-{method.replace('.', '-')}-{int(time.time() * 1000)}",
         "idempotency_key": f"cb013-{method.replace('.', '-')}-{time.time_ns()}",

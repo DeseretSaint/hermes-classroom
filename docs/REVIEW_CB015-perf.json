@@ -1,0 +1,139 @@
+{
+  "measuredAt": "2026-11-06T16:59:07.102Z",
+  "pack": {
+    "pack_id": "cb015-perf-long-l0",
+    "course_id": "crs_e83157235ab14c7e9c1ef731c37ab1af",
+    "enrollment_id": "enr_007dd38142904b4694af3b9ae5d61039",
+    "objectives": 55,
+    "files": 55,
+    "sources": 9,
+    "content_hash": "sha256:2b0523c174e891606dae1003fcfa1c44629806ddf71a450056fd61b15740c6af"
+  },
+  "rows": [
+    {
+      "id": "cold-mount",
+      "label": "cold #/coursebook mount after reload",
+      "wallMs": 1502
+    },
+    {
+      "id": "course-list",
+      "label": "filter the list to the long course",
+      "wallMs": 810,
+      "rows": 1
+    },
+    {
+      "id": "course-detail",
+      "label": "open the 55-objective course detail",
+      "wallMs": 12,
+      "nodes": 72,
+      "text": 1201,
+      "renderMs": 12,
+      "attempts": 1
+    },
+    {
+      "id": "course-detail-longtasks",
+      "longTasks": [],
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "textbook-55",
+      "label": "render 55-row textbook index",
+      "wallMs": 157,
+      "renderMs": 157,
+      "sectionRows": 55,
+      "nodes": 533,
+      "scrollHeight": 1497,
+      "clientHeight": 1497
+    },
+    {
+      "id": "textbook-longtasks",
+      "longTasks": [],
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "textbook-scroll",
+      "label": "scroll the 55-row index to the end",
+      "wallMs": 70,
+      "scroller": {
+        "tag": "DIV",
+        "cls": "min-h-0 flex-1 overflow-auto pb-6",
+        "scrollHeight": 4213,
+        "clientHeight": 1414
+      },
+      "frames": 12,
+      "worstFrameMs": 6,
+      "over32ms": 0,
+      "finalScrollTop": 2799.0419921875
+    },
+    {
+      "id": "textbook-scroll-longtasks",
+      "longTasks": [],
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "plan-55",
+      "label": "render the 55-objective plan view",
+      "wallMs": 12,
+      "renderMs": 12,
+      "rows": 55,
+      "nodes": 535,
+      "text": 7174
+    },
+    {
+      "id": "plan-longtasks",
+      "longTasks": [],
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "last-section",
+      "label": "open the 55th section and render its lesson",
+      "wallMs": 161,
+      "renderMs": 161,
+      "clicked": "clicked(55)",
+      "nodes": 112,
+      "text": 5522,
+      "scrollHeight": 1497,
+      "hasJapanese": true,
+      "heading": "Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective heade"
+    },
+    {
+      "id": "last-section-longtasks",
+      "longTasks": [],
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "text200",
+      "label": "long section at 200% text",
+      "wallMs": 1,
+      "rootFontPx": "32px",
+      "overflowX": 0,
+      "scrollWidth": 1276,
+      "innerWidth": 1276,
+      "clippedNodes": 0
+    },
+    {
+      "id": "narrow460",
+      "label": "long section at 460px",
+      "wallMs": 1,
+      "overflowX": 0,
+      "scrollWidth": 513,
+      "innerWidth": 513,
+      "headingVisible": true
+    }
+  ],
+  "shots": [
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/30-perf-courses-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/31-perf-course-detail-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/32-perf-textbook-55-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/33-perf-textbook-bottom-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/37-perf-plan-55-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/34-perf-last-section-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/35-perf-text200-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/36-perf-narrow-dark.png"
+  ]
+}

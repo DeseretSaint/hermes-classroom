@@ -697,7 +697,7 @@ function ErrorLine({ error }) {
 
 /** Shared page chrome: a destination body never re-implements its own header. */
 function PageBody({ children }) {
-  return jsx('div', { className: 'min-h-0 flex-1 overflow-auto px-4 pb-6', children })
+  return jsx('div', { className: 'min-h-0 flex-1 overflow-auto pb-6', children })
 }
 
 function backendCopy(status) {
@@ -993,7 +993,7 @@ function PackPreview({ preview, existing }) {
         children: [
           jsx(PackReviewLine, {
             label: 'Content hash',
-            value: jsx('code', { className: 'text-[11px]', children: manifest.content_hash })
+            value: jsx('code', { className: 'text-xs', children: manifest.content_hash })
           }),
           jsx(PackReviewLine, {
             label: 'Files',
@@ -1099,7 +1099,7 @@ function PackPreview({ preview, existing }) {
                           jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status || 'unassessed' }),
                           jsx('span', { children: source.publisher || source.source_type }),
                           jsx('span', { children: source.bundled ? 'bundled' : 'linked, not bundled' }),
-                          source.url ? jsx('code', { className: 'break-all text-[10px]', children: source.url }) : null
+                          source.url ? jsx('code', { className: 'break-all text-xs', children: source.url }) : null
                         ]
                       })
                     ]
@@ -1320,7 +1320,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
         jsx(PackPreview, { existing, preview }),
         parentPack
           ? jsx('div', {
-              className: 'rounded border border-(--ui-stroke-secondary) p-3 text-xs leading-relaxed',
+              className: 'border-l border-(--ui-stroke-secondary) pl-3 text-xs leading-relaxed text-(--ui-text-secondary)',
               children:
                 'This is a parent blueprint. Importing it creates a Parent Studio lesson plan for an adult to teach ' +
                 'from. Its checks are observations, never graded child answers, and the recipe cannot be changed here.'
@@ -1491,7 +1491,7 @@ function PackExportPanel({ row, onClose }) {
         className: 'flex flex-col',
         children: [
           jsx(PackReviewLine, { label: 'Files', value: String((manifest.files || []).length) }),
-          jsx(PackReviewLine, { label: 'Content hash', value: jsx('code', { className: 'text-[11px]', children: manifest.content_hash }) })
+          jsx(PackReviewLine, { label: 'Content hash', value: jsx('code', { className: 'text-xs', children: manifest.content_hash }) })
         ]
       }),
       jsx(sdk.Button, {
@@ -1514,7 +1514,7 @@ function PackExportPanel({ row, onClose }) {
             className: 'flex flex-col',
             children: [
               jsx(sdk.PanelSectionLabel, { children: 'EXPORTED' }),
-              jsx(PackReviewLine, { label: 'Content hash', value: jsx('code', { className: 'text-[11px]', children: exported.content_hash }) }),
+              jsx(PackReviewLine, { label: 'Content hash', value: jsx('code', { className: 'text-xs', children: exported.content_hash }) }),
               jsx(PackReviewLine, { label: 'Matches the reviewed hash', value: 'yes' }),
               jsx(PackReviewLine, { label: 'Files', value: String(exported.file_count) }),
               jsx(PackReviewLine, { label: 'Archive bytes', value: bytesLabel(exported.bytes) }),
@@ -1525,20 +1525,24 @@ function PackExportPanel({ row, onClose }) {
                       jsx(PackReviewLine, { label: 'Artifact', value: artifact.artifact_id }),
                       jsx(PackReviewLine, {
                         label: 'File hash',
-                        value: jsx('code', { className: 'text-[11px]', children: artifact.content_hash })
+                        value: jsx('code', { className: 'text-xs', children: artifact.content_hash })
                       }),
-                      jsx(PackReviewLine, { label: 'Download handle', value: jsx('code', { className: 'text-[11px]', children: artifact.download.handle }) }),
+                      jsx(PackReviewLine, { label: 'Download handle', value: jsx('code', { className: 'text-xs', children: artifact.download.handle }) }),
                       jsx(PackReviewLine, {
                         label: 'Download',
                         value: artifact.download.requires_session
                           ? 'session-bound, expiring — served by this host’s artifact route'
                           : 'host route'
                       }),
-                      jsx('a', {
-                        className: 'mt-1 self-start rounded-md border border-(--ui-stroke-tertiary) px-3 py-1 text-xs',
-                        download: `${manifest.pack_id}-${manifest.pack_version}.zip`,
-                        href: artifact.download.url,
-                        children: 'Download archive'
+                      jsx(sdk.Button, {
+                        asChild: true,
+                        size: 'sm',
+                        variant: 'secondary',
+                        children: jsx('a', {
+                          download: `${manifest.pack_id}-${manifest.pack_version}.zip`,
+                          href: artifact.download.url,
+                          children: 'Download archive'
+                        })
                       }),
                       jsx('div', {
                         className: 'mt-1 text-xs leading-relaxed text-(--ui-text-tertiary)',
@@ -1883,7 +1887,7 @@ function CoursesView({ implemented, onStartCreate, createOpen, onOpen }) {
       children: [
         stale
           ? jsxs('div', {
-              className: 'mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-(--ui-stroke-tertiary) px-3 py-2',
+              className: 'mb-2 flex flex-wrap items-center justify-between gap-2 border-b border-(--ui-stroke-tertiary) pb-2',
               children: [
                 jsx('div', {
                   className: 'text-xs text-(--ui-text-tertiary)',
@@ -2095,7 +2099,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
       }),
       row.recipe === 'parent'
         ? jsx('div', {
-            className: 'rounded border border-(--ui-stroke-secondary) p-2 text-xs leading-relaxed',
+            className: 'border-l border-(--ui-stroke-secondary) pl-3 text-xs leading-relaxed text-(--ui-text-secondary)',
             children:
               'Parent Studio blueprint: the adult prepares and teaches from this plan. Checks are observations, ' +
               'not graded child answers, and this course is never offered as an adult graded course.'
@@ -2490,7 +2494,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
           jsxs('div', {
             className: 'min-w-0',
             children: [
-              jsx('div', { className: 'text-[0.6rem] font-medium uppercase tracking-wider text-(--ui-text-tertiary)', children: `STEP ${step} OF 3` }),
+              jsx(sdk.PanelSectionLabel, { children: `STEP ${step} OF 3` }),
               jsx('h2', { className: 'mt-1 text-sm font-semibold', children: stepTitle })
             ]
           }),
@@ -6488,7 +6492,7 @@ function StudioPlanView({
                           children: [
                             jsx('div', { className: 'min-w-0 break-words text-xs', children: source.title }),
                             jsxs('div', {
-                              className: 'flex flex-wrap items-center gap-2 text-[11px] text-(--ui-text-tertiary)',
+                              className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-tertiary)',
                               children: [
                                 jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status }),
                                 source.url ? jsx('span', { className: 'min-w-0 break-all', children: source.url }) : null
@@ -6618,7 +6622,7 @@ function StudioBlueprintView({ book }) {
                         children: file.text
                       }),
                       jsxs('div', {
-                        className: 'text-[11px] break-all text-(--ui-text-tertiary)',
+                        className: 'text-xs break-all text-(--ui-text-tertiary)',
                         children: [`sha256 ${file.sha256}`, file.truncated ? ' · the served text was clipped at the tab limit' : '']
                       })
                     ]
@@ -6722,11 +6726,11 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
           jsx(PackReviewLine, { label: 'Lesson set approval', value: APPROVAL_STATE_COPY[approval.state] || approval.state }),
           jsx(PackReviewLine, {
             label: 'Approved content hash',
-            value: jsx('code', { className: 'text-[11px] break-all', children: approval.content_hash || '—' })
+            value: jsx('code', { className: 'text-xs break-all', children: approval.content_hash || '—' })
           }),
           jsx(PackReviewLine, {
             label: 'Current content hash',
-            value: jsx('code', { className: 'text-[11px] break-all', children: (book && book.data && book.data.content_hash) || '—' })
+            value: jsx('code', { className: 'text-xs break-all', children: (book && book.data && book.data.content_hash) || '—' })
           })
         ]
       }),
@@ -6856,20 +6860,34 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
                         className: 'flex flex-wrap items-baseline justify-between gap-2',
                         children: [
                           jsx('div', { className: 'text-xs font-medium', children: `${artifact.kind} · ${artifact.mime} · ${bytesLabel(artifact.bytes)}` }),
-                          jsx('div', { className: 'min-w-0 break-all text-[11px] text-(--ui-text-tertiary)', children: artifact.content_hash })
+                          jsx('div', { className: 'min-w-0 break-all text-xs text-(--ui-text-tertiary)', children: artifact.content_hash })
                         ]
                       }),
                       facts && facts.download
-                        ? jsx('a', {
-                            className: 'self-start rounded-md border border-(--ui-stroke-tertiary) px-3 py-1 text-xs',
-                            download: artifact.kind === 'pdf' ? 'parent-lesson-pack.pdf' : artifact.kind === 'pack' ? 'parent-lesson-pack.zip' : 'parent-export.json',
-                            href: facts.download.url,
-                            children: artifact.kind === 'pdf' ? 'Download PDF' : artifact.kind === 'pack' ? 'Download pack archive' : 'Download export record'
+                        ? jsx(sdk.Button, {
+                            asChild: true,
+                            size: 'sm',
+                            variant: 'secondary',
+                            children: jsx('a', {
+                              download:
+                                artifact.kind === 'pdf'
+                                  ? 'parent-lesson-pack.pdf'
+                                  : artifact.kind === 'pack'
+                                    ? 'parent-lesson-pack.zip'
+                                    : 'parent-export.json',
+                              href: facts.download.url,
+                              children:
+                                artifact.kind === 'pdf'
+                                  ? 'Download PDF'
+                                  : artifact.kind === 'pack'
+                                    ? 'Download pack archive'
+                                    : 'Download export record'
+                            })
                           })
                         : null,
                       facts && facts.download
                         ? jsx('div', {
-                            className: 'text-[11px] text-(--ui-text-tertiary)',
+                            className: 'text-xs text-(--ui-text-tertiary)',
                             children: facts.download.requires_session
                               ? 'Session-bound, expiring link served by this host’s artifact route. A filesystem path never leaves the backend.'
                               : 'Host artifact route.'
@@ -6982,7 +7000,7 @@ function StudioReflectionView({ course, reflections, supported, onDuplicate, onS
               jsx(sdk.PanelSectionLabel, { children: 'RECORDED' }),
               jsx(PackReviewLine, { label: 'Difficulty', value: (STUDIO_DIFFICULTIES.find((item) => item.id === saved.difficulty) || {}).label || saved.difficulty }),
               jsx(PackReviewLine, { label: 'When', value: whenLabel(saved.created_at) }),
-              jsx(PackReviewLine, { label: 'Plan hash', value: jsx('code', { className: 'text-[11px] break-all', children: saved.plan_hash || '—' }) })
+              jsx(PackReviewLine, { label: 'Plan hash', value: jsx('code', { className: 'text-xs break-all', children: saved.plan_hash || '—' }) })
             ]
           })
         : null,
@@ -7290,10 +7308,12 @@ function CoursebookPage() {
   const showDestinationNav = health.status === 'ready' && !creating && !importing
 
   return jsxs('div', {
-    className: 'flex h-full min-h-0 flex-col',
+    className: 'flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
+    'data-cb-destination': destination,
+    'data-cb-route': ROUTE_PATH,
     children: [
       jsxs('header', {
-        className: 'flex shrink-0 flex-col gap-2 px-4 pt-3',
+        className: 'flex shrink-0 flex-col gap-2 pt-3',
         children: [
           jsxs('div', {
             className: 'flex flex-wrap items-start justify-between gap-3',

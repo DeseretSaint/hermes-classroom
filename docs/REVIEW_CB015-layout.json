@@ -1,0 +1,90 @@
+{
+  "measuredAt": "2026-11-06T16:48:43.113Z",
+  "cdpPort": "9338",
+  "rows": [
+    {
+      "id": "desktop-dark",
+      "width": 1280,
+      "height": 800,
+      "text": "100%",
+      "mode": "dark",
+      "rootFontPx": 16,
+      "viewport": [
+        1427,
+        892
+      ],
+      "overflowX": 0,
+      "routeWidth": 785,
+      "gutterPx": "57.1188px",
+      "headerX": 294,
+      "bodyX": 294,
+      "controls": 12,
+      "unnamedControls": [],
+      "clippedNodes": 0,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/layout-desktop-dark.png"
+    },
+    {
+      "id": "desktop-light",
+      "width": 1280,
+      "height": 800,
+      "text": "100%",
+      "mode": "light",
+      "rootFontPx": 16,
+      "viewport": [
+        1427,
+        892
+      ],
+      "overflowX": 0,
+      "routeWidth": 785,
+      "gutterPx": "57.1188px",
+      "headerX": 294,
+      "bodyX": 294,
+      "controls": 12,
+      "unnamedControls": [],
+      "clippedNodes": 0,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/layout-desktop-light.png"
+    },
+    {
+      "id": "narrow-dark",
+      "width": 460,
+      "height": 900,
+      "text": "100%",
+      "mode": "dark",
+      "rootFontPx": 16,
+      "viewport": [
+        513,
+        1004
+      ],
+      "overflowX": 0,
+      "routeWidth": 267,
+      "gutterPx": "20.5271px",
+      "headerX": 21,
+      "bodyX": 21,
+      "controls": 12,
+      "unnamedControls": [],
+      "clippedNodes": 2,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/layout-narrow-dark.png"
+    },
+    {
+      "id": "text200-dark",
+      "width": 1280,
+      "height": 800,
+      "text": "200%",
+      "mode": "dark",
+      "rootFontPx": 32,
+      "viewport": [
+        1427,
+        892
+      ],
+      "overflowX": 0,
+      "routeWidth": 785,
+      "gutterPx": "57.1188px",
+      "headerX": 294,
+      "bodyX": 294,
+      "controls": 12,
+      "unnamedControls": [],
+      "clippedNodes": 0,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/layout-text200-dark.png"
+    }
+  ]
+}
