@@ -69,6 +69,12 @@ class PlanDocumentGuardTest(unittest.TestCase):
         self.assertIn("plan_hash: hash", approve)
         self.assertIn("press Approve plan again.", approve)
 
+    def test_the_editor_backfills_titles_for_a_new_plan_version(self) -> None:
+        """A replan replaces objective ids; the editor must not render blank titles waiting for them."""
+        source = _source()
+        self.assertIn("so a title is never shown as blank", source)
+        self.assertRegex(source, r"if \(!next\[objective\.objective_id\]\)")
+
 
 if __name__ == "__main__":
     unittest.main()

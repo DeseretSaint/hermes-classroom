@@ -6214,6 +6214,25 @@ function StudioPlanView({
     ? order.map((id) => objectives.find((objective) => objective.objective_id === id)).filter(Boolean)
     : objectives
 
+  // A new plan version (plan.replan) is a new set of objective rows with new ids. The editor is
+  // opened right after that replan, before the outline reload lands, so its drafts can be keyed by
+  // the previous version's ids — every title input then renders empty. Backfill a draft for any
+  // objective that has none while the editor is open, so a title is never shown as blank.
+  useEffect(() => {
+    if (!editing) return
+    setDrafts((previous) => {
+      let changed = false
+      const next = { ...previous }
+      for (const objective of objectives) {
+        if (!next[objective.objective_id]) {
+          next[objective.objective_id] = { title: objective.title, evidence_target: objective.evidence_target }
+          changed = true
+        }
+      }
+      return changed ? next : previous
+    })
+  }, [editing, objectives])
+
   const startEditing = useCallback(() => {
     const next = {}
     for (const objective of displayObjectives) {
