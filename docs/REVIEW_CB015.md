@@ -4,6 +4,10 @@ Owner: Vellum. Branch `wt/cb-015-vellum`, source commit `64ea355` plus this evid
 Rig: isolated home `~/.hermes/cb015-test/home`, backend `127.0.0.1:44220` (wire `cb.rpc` v6),
 isolated Electron window on CDP `9338` (`COURSEBOOK_TEST_STATE=~/.hermes/cb015-test
 scripts/cb013-live-window.sh`). The operator's window, profile and gateway were not touched.
+Proof 12 was re-driven later on the CB-015 residual branch (`wt/cb015-proof12`, base `9f4b387`):
+isolated rig `~/.hermes/coursebook-test` (its own home and userdata), backend `127.0.0.1:44219`
+wire **`cb.rpc` v7 / cb.db v4 (52 methods)**, window CDP `9337`. Only that row's evidence comes
+from the v7 rig; the rest of this packet is the v6 pass described above.
 
 Status in one line: **the design-system polish is machine-clean; the notebook, quiz and
 textbook loops are live-proven on this branch; the 55-objective performance run is measured;
@@ -97,6 +101,44 @@ never show a stale lesson", not data loss.
 `Grading failed · Grader unavailable`, and its review is read-only. The `needs_retry` copy with
 `Retry grading` exists in `AttemptControls`; an explicit override was not exercised in this
 pass.
+
+## 3b. Proof 12 — a real source revalidation, its banner, and the evidence that survives
+
+The v7 backend adds `source.revalidate` (52nd method). `scripts/cb015-proof12-stale.py` drives it
+through the same `cb.rpc` endpoint the Desktop calls; `scripts/cb015-proof12-ui.mjs` reads the
+rendered result from the live window on CDP `9337`. No UI control was added: Atlas ruled that a
+Sources-tab "Check for changes" button must not ship while `source.revalidate` is detection-only,
+so the transition is driven through the proof harness and the plugin only renders the state.
+
+Course: pack-imported `japanese-affection-context-l0` on the v7 rig, enrollment
+`enr_36266a77f6024e4da1130d6bd2404bbf`, source `src_f4da58f3e9fe4635b0d03bf3ba879d4f`.
+
+| stage | observed |
+|---|---|
+| pre-transition attempt | `attempt.submit` on `chk_e5d74106de12466faa2389efebf0671d` answered `B` → `verdict: pass`, `evidence_class: cold`; attempt `att_774c1a97d154437b9ec4918418493756` and two evidence rows (attempt + independent_evidence) committed; DB counts **attempts 32 / transitions 63 / evidence 45** |
+| baseline revalidation | `source.revalidate` with captured content → `changed: false`, `previous_hash: null` (a pack source has no baseline yet), status `authoritative_documentation`; the baseline hash is now recorded |
+| changed revalidation | different content → `changed: true`, `review_required: true`, `support_status: "stale"`, `previous_hash` = the baseline, new `content_hash`; envelope `revision: 0` (not an enrollment revision) |
+| library row | `library.list` for the same enrollment returns `warning: "stale_source"` |
+| retained evidence | after the transition the same attempt is `Passed · Cold attempt · just now · B` in Quizzes; the same two evidence rows are present; no retained attempt changed verdict or class; DB counts are **still 32 / 63 / 45** |
+
+Rendered proof (`docs/cb015-shots/row12-01`–`04`): the library row carries the `Source stale`
+badge and *"A source behind this course changed. Existing evidence is kept; the source needs
+review."*; the course Overview shows the banner *"A source behind this course changed. Old
+evidence is kept; the source needs review."* with `Passed · just now` and `1 independent` beneath
+it; Quizzes lists the pre-transition attempt; Sources renders the revalidated row as `stale`
+(`fetched just now`). The Sources controls are `New course / Courses / Library / Parent Studio /
+All courses / Resume lesson / Overview / Textbook / Notebook / Quizzes / Plan / Evidence /
+Sources` — there is no revalidate control, and the probe fails if one appears.
+
+**Honest limit, not hidden:** on this pack-imported course the returned `impact` lists are empty
+(`objective_ids`, `check_ids`, `lesson_ids`, `artifact_ids`). The impact query reads
+`gen_plan_sections.source_ids_json`, and pack import writes no `gen_plan_sections` rows — those
+belong to the research/generation pipeline. So the banner states the affected *course* and the
+review need, but cannot name an objective/check on this course shape, and `CHECK_STALE` cannot
+fire. The citation-backed impact ids and the `CHECK_STALE` refusal (with zero attempt/evidence
+writes) are proven at the same seam by `scripts/proof_contract_v7.py` (4/4 OK) using a seeded
+section that does cite the source. This is recorded as a backend follow-up on t_8863beb4 rather
+than papered over.
 
 ## 4. Performance — a real 55-objective pack
 
@@ -198,7 +240,7 @@ not driven through the Desktop UI; **open** = not proven.
 | 9 | parent edit after approval → reapproval before export | live@other | CB-011 export gate: `no_final_approval` refusal |
 | 10 | invalid/malicious pack → precise error, no residue | boundary | adversarial suite 21/21 hostile packs rejected with zero residue (`tests/adversarial/evidence/attack-packs.json`, CB-014). The UI folder grant needs a native dialog. |
 | 11 | offline → cached lesson, research paused | **live@015** | `docs/REVIEW_CB015-fault-offline.json`: `Network.emulateNetworkConditions(offline)` → `navigator.onLine=false`, the header renders `Offline` + a sentence naming what still works and what is paused, `New course` is absent while offline, a course opens from what the profile already has, and the notice clears when the connection returns (`64`–`66`). |
-| 12 | source stale → impact banner, old evidence kept | open | documented limitation, see §11 — the state is written only by `sources.apply_run`, which is called from `generation.py:1862` inside the research/generation pipeline when a re-fetched source's content hash changes. None of the 51 contract methods in `/runtime` mutates a source, so the Desktop cannot reach it; producing it needs a live re-fetch whose content we do not control. |
+| 12 | source stale → impact banner, old evidence kept | **live@015** | `docs/REVIEW_CB015-row12-rpc.json` + `docs/REVIEW_CB015-row12-ui.json` (+ `cb015-shots/row12-01`–`04`): on the v7 rig, `source.revalidate` records a baseline (`changed=false`), then a changed fetch returns `changed=true`, `support_status="stale"`, `review_required=true`; `library.list` returns `warning: "stale_source"`; the rendered library row and Overview banner say "A source behind this course changed. Old evidence is kept; the source needs review."; Sources renders the revalidated row as `stale`; the pre-transition `Passed · Cold` attempt and its two evidence rows are unchanged and attempt/evidence row counts are identical before and after (32/63/45). The impact **ids** are empty on a pack-imported course because pack import writes no `gen_plan_sections` citations; the citation-backed impact list and `CHECK_STALE` are proven at the kernel seam in `scripts/proof_contract_v7.py` (§3b). |
 | 13 | reimport same pack → resume vs fresh | boundary | `pack.import` modes exercised by `seed-demo-course.py --mode fresh/resume`; not clicked through the UI |
 | 14 | course/chat/pack deletion distinct and recoverable | **live@015** | `docs/REVIEW_CB015-delete-paths.json` (all six verdicts true, stills `76`–`81`): archive through the row's own menu hides it from the default list (2→1 rows); the `Archived` filter shows it; `Unarchive course` returns both titles to `All`; `Delete enrollment…` opens a scoped confirm (attempts/notes/runs/jobs + `Course and plan kept` / `Hermes transcripts kept`) and removes the row; `Remove pack…` previews `Evidence kept` and freezes the pack. Driving this exposed a real defect — the delete preview sent no `idempotency_key`, so the confirm could never open — fixed in `desktop/plugin.js`. Chat deletion stays host-owned. |
 | 15 | keyboard / text-only / reduced motion / 200 % / narrow | **live@015** | §5 (`docs/REVIEW_CB015-keyboard.json`); both recorded defects (Escape focus return, view-strip name) fixed and re-proved — `docs/REVIEW_CB015-a11y2.json`, §11(1)/(2) |
@@ -207,8 +249,8 @@ not driven through the Desktop UI; **open** = not proven.
 | 18 | past quiz unchanged → new version → both inspectable | **live@015** | §3; new version refused honestly (`VALIDATION_FAILED`), both attempts remain inspectable (`20`, `21`, `22`, `47`, `48`) |
 | 19 | jump early/late → separate runs, later evidence intact | **live@015** | §3 steps `late-run-*`, `early-evidence-intact`, `23`, `24` |
 
-Result: **6 rows live in this worktree, 4 more live on a sibling worktree, 3 partial, 2
-boundary-only, 4 open.** I did not manufacture the missing runs to turn this into 19 green
+Result: **7 rows live in this worktree, 4 more live on a sibling worktree, 3 partial, 2
+boundary-only, 3 open.** I did not manufacture the missing runs to turn this into 19 green
 rows.
 
 ## 8. State matrix (UX_SPEC §13, 26 states)
@@ -233,7 +275,7 @@ not exercise it in the live window.
 | detached chat | **live@015** | banner, `Reattach`, `Start a fresh run`, Submit disabled with reason (`44`) |
 | offline | not driven | no network emulation run |
 | TTS/image unavailable | n/a this pack | both packs declare no audio; lesson shows text and no media control |
-| source stale/dead | not driven | impact banner not exercised |
+| source stale/dead | **live@015** | `source.revalidate` flips the source `stale`; library row + Overview banner name the course and keep old evidence; Sources reads `stale`; impact ids need `gen_plan_sections` citations, proven at the kernel seam (`REVIEW_CB015-row12-rpc.json`, `-ui.json`, §3b) |
 | pack invalid | boundary | hostile-pack suite 21/21; native folder grant blocks UI path |
 | incompatible pack update | boundary | version gate unit-tested; not UI-driven |
 | grant revoked | boundary | staging/grant refusal unit-tested; not UI-driven |
@@ -328,12 +370,15 @@ recomputed from that run's recorded steps by `scripts/cb015-delete-verdict.mjs`,
 
 **Still not proven — and why (no manufacture):**
 
-- **source stale (proof 12).** The state is written only by `sources.apply_run`, called from
-  `generation.py:1862` inside the research/generation pipeline when a re-fetched source's content
-  hash differs from the recorded one. None of the 51 contract methods in `/runtime`
-  (`artifact.get … usage.summary`) mutates a source, so no Desktop control can reach it, and
-  manufacturing it would mean a hand-written DB row or a live web re-fetch whose content we do not
-  control. It stays open, deliberately, rather than being faked.
+- **source stale — impact ids and `CHECK_STALE` on a pack-imported course (proof 12 limit).**
+  The v7 `source.revalidate` path is live on the rig (§3b): the source flips to `stale`, the
+  library row and Overview banner render, and the old attempt/evidence rows are untouched. What a
+  pack-imported course cannot show is the *impact list*: `sources.impact()` reads
+  `gen_plan_sections.source_ids_json`, and pack import writes no `gen_plan_sections` rows (those
+  are written by the research/generation pipeline). So `objective_ids`/`check_ids` come back empty
+  and `CHECK_STALE` cannot fire on this course shape. The citation-backed impact ids and the
+  `CHECK_STALE` refusal with zero writes are proven by `scripts/proof_contract_v7.py` on a seeded
+  citing section. Follow-up recorded on t_8863beb4 (backend), not faked in the UI.
 - **pack UI states (proofs 1/10/13).** `pack.preview` / `pack.import` require
   `pluginContext.files.requestFolder()`, a native folder picker this headless rig cannot drive.
   Proven at the RPC boundary, not through the dialog.
@@ -359,9 +404,13 @@ re-proved after the plugin edit (`REVIEW_CB015-a11y2.json`).
 - `docs/REVIEW_CB015-fault-plugin-off.json` — only the Python half disabled
 - `docs/REVIEW_CB015-needs-retry.json` — needs_retry → retry → override, end to end
 - `docs/REVIEW_CB015-delete-paths.json` — archive / unarchive / delete / pack freeze
+- `docs/REVIEW_CB015-row12-rpc.json` — proof 12 on `cb.rpc` v7: baseline, changed→stale, library warning, retained evidence
+- `docs/REVIEW_CB015-row12-ui.json` — proof 12 rendered: library badge, Overview banner, Quizzes attempt, Sources `stale`
+- `docs/cb015-shots/row12-01`–`04` — proof 12 stills
 - `docs/REVIEW_CB015-gallery.json` — gallery manifest
 - `docs/cb015-shots/10`–`24`, `40`–`54`, `60`–`81` — stills
 - `scripts/cb015-hygiene.mjs`, `cb015-lib.mjs`, `cb015-loops-*.mjs`, `cb015-perf.mjs`,
   `cb015-perf-pack.py`, `cb015-keyboard.mjs`, `cb015-gallery2.mjs`, `cb015-a11y2.mjs`,
   `cb015-fault-offline.mjs`, `cb015-fault-backend-off.mjs`, `cb015-fault-plugin-off.mjs`,
-  `cb015-needs-retry.mjs`, `cb015-delete-paths.mjs`, `cb015-delete-verdict.mjs`
+  `cb015-needs-retry.mjs`, `cb015-delete-paths.mjs`, `cb015-delete-verdict.mjs`,
+  `cb015-proof12-stale.py`, `cb015-proof12-ui.mjs`

@@ -1,0 +1,191 @@
+{
+  "proof": 12,
+  "at": "2026-11-06T22:00:04.693Z",
+  "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+  "steps": [
+    {
+      "step": "library-stale-row",
+      "at": "2026-11-06T22:00:11.704Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeMounted": true,
+      "staleBadge": true,
+      "bannerSentence": false,
+      "otherBanner": true,
+      "excerpt": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese affection and register — an L0 demonstration classroom · 3 due\nReview\nJapanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nResume Explain why register changes with the relationship\n1 independent · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen\nResume lesson\nJapanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nReview 1 objective(s)\n0 independent · 1 due · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen\nJapanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nReview 3 objective(s)\n0 independent · 3 due · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen\nJapanese café basics, revised\nParent preparation\nStart Name one warm and one cold thing in the kitchen (revised)\n0 independent · 4 objectives\nOpen\nJapanese café basics\nParent preparation\nStart Name one warm and one cold thing in the kitchen\n0 independent · 4 objectives\nOpen\nJapanese café basics\nParent preparation\nStart Name one warm and one cold thing in the kitchen\n0 independent · 4 objectives\nOpen\nKitchen fractions for a 9-year-old\nParent preparation\nStart Name the parts: half, quarter and eighth (kitchen table)\n0 independent · 6 objectives\nOpen\nKitchen fractions for a 9-year-old\nParent preparation\nStart Name halves of ",
+      "rowText": "Japanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nResume Explain why register changes with the relationship\n1 independent · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen\nResume lesson"
+    },
+    {
+      "step": "course-overview-banner",
+      "at": "2026-11-06T22:00:13.248Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeMounted": true,
+      "staleBadge": true,
+      "bannerSentence": true,
+      "otherBanner": false,
+      "excerpt": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nChoose the polite expression for a first confession\nResume lesson\nView\nOverview\nA source behind this course changed. Old evidence is kept; the source needs review.\nCURRENT OBJECTIVE\nChoose the polite expression for a first confession\nNot started\ncomprehension\nResume Explain why register changes with the relationship\nResume lesson\nOpen this section\nREVIEW\nNothing due. The review queue stays quiet until evidence is scheduled.\nRECENT EVENT\nPassed · just now\nCold attempt\nTHIS COURSE\nRecipe\ncasual\nEnrollment\nrevision 2\nactive\nEvidence\n4 objectives · 0 due\n1 independent\nProvenance\njapanese-affection-context-l0 v1.0.0\nLocal pack\nExporting the pack is a Library action; it never includes your answers or notes."
+    },
+    {
+      "step": "quizzes-retained-attempt",
+      "at": "2026-11-06T22:00:15.086Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeMounted": true,
+      "staleBadge": true,
+      "bannerSentence": false,
+      "otherBanner": false,
+      "excerpt": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nChoose the polite expression for a first confession\nResume lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nPassed\nCold attempt\njust now\nOpen attempt\nB",
+      "quizText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nChoose the polite expression for a first confession\nResume lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nPassed\nCold attempt\njust now\nOpen attempt\nB",
+      "attemptRows": [
+        "Passed",
+        "Not yet",
+        "Open attempt"
+      ]
+    },
+    {
+      "step": "sources-stale-no-control",
+      "at": "2026-11-06T22:00:16.917Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeMounted": true,
+      "staleBadge": true,
+      "bannerSentence": false,
+      "otherBanner": false,
+      "excerpt": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nChoose the polite expression for a first confession\nResume lesson\nView\nSources\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\ncourse_material\nstale\nfetched just now\nExternal content opens only when you choose it; the URL is shown, not fetched.\nHow to teach with Marugoto (teacher FAQ)\ncourse_material\nauthoritative_documentation\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.\nWiktionary — 好き (suki)\nreference\nmodel_assessed\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.\nWiktionary — 愛する (aisuru)\nreference\nmodel_assessed\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.\nLearn how to say \"I love you\" in Japanese\nsecondary\nmodel_assessed\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.\nHonorific speech in Japanese\nreference\nmodel_assessed\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.",
+      "sourceText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nChoose the polite expression for a first confession\nResume lesson\nView\nSources\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\ncourse_material\nstale\nfetched just now\nExternal content opens only when you choose it; the URL is shown, not fetched.\nHow to teach with Marugoto (teacher FAQ)\ncourse_material\nauthoritative_documentation\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.\nWiktionary — 好き (suki)\nreference\nmodel_assessed\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.\nWiktionary — 愛する (aisuru)\nreference\nmodel_assessed\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.\nLearn how to say \"I love you\" in Japanese\nsecondary\nmodel_assessed\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.\nHonorific speech in Japanese\nreference\nmodel_assessed\nfetched 22 hr ago\nExternal content opens only when you choose it; the URL is shown, not fetched.",
+      "buttons": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All courses",
+        "Resume lesson",
+        "Overview",
+        "Textbook",
+        "Notebook",
+        "Quizzes",
+        "Plan",
+        "Evidence",
+        "Sources",
+        "Sources"
+      ]
+    }
+  ],
+  "shots": [
+    "/home/deseretsaint/Projects/hermes-classroom/docs/cb015-shots/row12-01-library-stale.png",
+    "/home/deseretsaint/Projects/hermes-classroom/docs/cb015-shots/row12-02-overview-banner.png",
+    "/home/deseretsaint/Projects/hermes-classroom/docs/cb015-shots/row12-03-quizzes-retained.png",
+    "/home/deseretsaint/Projects/hermes-classroom/docs/cb015-shots/row12-04-sources-stale.png"
+  ],
+  "library_rows": [
+    {
+      "index": 0,
+      "rowText": "Japanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nResume Explain why register changes with the relationship\n1 independent · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+      "hasStale": true
+    },
+    {
+      "index": 1,
+      "rowText": "Japanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nReview 1 objective(s)\n0 independent · 1 due · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen",
+      "hasStale": true
+    },
+    {
+      "index": 2,
+      "rowText": "Japanese affection and register — an L0 demonstration classroom\nCasual\nSource stale\nReview 3 objective(s)\n0 independent · 3 due · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen",
+      "hasStale": true
+    },
+    {
+      "index": 3,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 4,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 5,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 6,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 7,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 8,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 9,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 10,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 11,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 12,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 13,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 14,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 15,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 16,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 17,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 18,
+      "rowText": "",
+      "hasStale": false
+    },
+    {
+      "index": 19,
+      "rowText": "",
+      "hasStale": false
+    }
+  ],
+  "ok": true,
+  "summary": {
+    "libraryRowWarning": true,
+    "overviewBanner": true,
+    "quizzesListed": true,
+    "sourcesReadStale": true,
+    "noRevalidateControl": true
+  }
+}
