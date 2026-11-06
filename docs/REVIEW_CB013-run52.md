@@ -111,6 +111,24 @@ expectations against an isolated `HERMES_HOME` (pack grant/preview/import/export
 `/sessions/bind` seam, binding.get by stored id, resume vs fresh reimport, tampered archive
 refused). `node --check desktop/plugin.js` OK. `tests.test_session_bind` 16/16.
 
+## Supervisor correction — the root profile was NOT byte-identical
+
+The run repeated "root profile untouched (`data.db` never written)". That is false and is corrected
+here after a supervisor query of the live file:
+
+* `~/.hermes/plugin-data/coursebook/data.db` grew 364,544 → 372,736 bytes at `06:23:53` and now
+  holds **48 `usage_events` rows** across five `operation_id`s (`20261106_055011_00373f`,
+  `20261106_055800_dae9d9`, `20261106_061456_26a162`, `20261106_062333_4730b6`, and one UUID),
+  recorded between `05:50` and `06:23` MST, every one with `enrollment_id` NULL and provider
+  `tool:terminal` / `tool:skill_view`.
+* **No course, enrollment, attempt, binding, pack, artifact, objective or job row exists in it** —
+  every one of those tables is empty, so no demo course, seed or pane attempt ever landed in the
+  operator's profile. The writes are the plugin's own tool-usage telemetry, recorded by the
+  gateway-hosted root-profile copy while these agent sessions ran; they are pre-existing hook
+  behaviour, not this card's seeding.
+* So the accurate claim is "no course data in the root profile", not "the file was never written".
+  The telemetry-in-root behaviour is filed as its own follow-up card rather than silently accepted.
+
 ## Not claimed in this run
 
 * No screen recording; screenshots + this transcript stand in.
