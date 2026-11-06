@@ -1,8 +1,10 @@
 # Review packet — CB-011 contract amendment (cb.rpc v6, cb.db v3)
 
-Status: **frozen, nothing pushed**. Branch `wt/cb-011-atlas-contract-v6`, commit `3309993`, based on
-`master` @ `ce7aded`. Owner: Atlas (contract + kernel). Consumed by CB-011 Parent Studio
-(`t_4255b696`, Vellum) and by Cinder's executor/export card (`t_a356c8a8`).
+Status: **frozen, nothing pushed**. Branch `wt/cb-011-atlas-contract-v6`, commits `bb8fdb2`
+(freeze) and `d7416c1` (this packet), rebased onto `master` @ `8335b5c` (the CB-009/CB-010/CB-014
+merges landed after this branch was cut; the freeze was rebased so integration does not wait).
+Owner: Atlas (contract + kernel). Consumed by CB-011 Parent Studio (`t_4255b696`, Vellum) and by
+Cinder's executor/export card (`t_a356c8a8`).
 
 ## Why v6 exists
 
@@ -30,10 +32,10 @@ what "Duplicate brief" needs. This packet is the correction record.
 | `contracts/rpc.v6.json` | **new**: `$id .../rpc/v6`, `x-contract-version: 6`, `x-supersedes .../rpc/v5`, 51 methods (+8 `parent.*`), six new `$defs` (`parent_brief`, `parent_approval_status`, `parent_export_status`, `blueprint_file`, `parent_export_file`, `parent_reflection`), five new envelope rules; every `contract_version` echo moved 5 → 6 | `sha256:7fa0ccfe5553c43b249ea370d87fd993e32047092f5be5471b9ddd0dc2bf3397` |
 | `contracts/db.v3.json` | **new**: `schema_version: 3`, two additive tables (`final_approvals`, `parent_reflections`), migration_plan entry 3; every v2 table/column/index/unique carried verbatim | `sha256:4c0569e4505f12e5862db6d63effe7363da64c1e0e0c837a49ed278b08ab48b6` |
 | `coursebook/migrations/0003_parent_studio_approvals_and_reflections.sql` | **new**: the DDL the contract names, matching column-for-column (types, nullability, defaults, FKs, unique, indexes, CHECKs) | `sha256:bbf1ce923c5c98f91a80d138f81312cd5ea7e2f7b18aa30cbb9295c873b5784b` |
-| `coursebook/contracts.py` | `cb.rpc → rpc.v6.json`, `cb.db → db.v3.json`, `WIRE_CONTRACT_VERSION = 6` | `sha256:6283ae115a7944b7c9a86599228a0d4e0e86956668a535b4d9834b164839576a` |
+| `coursebook/contracts.py` | `cb.rpc → rpc.v6.json`, `cb.db → db.v3.json`, `WIRE_CONTRACT_VERSION = 6` (rebased over master's `build_error(retryable=...)` change, which is untouched) | `sha256:ea22823b074b97ad1b72e0d2d53ded4ff019a3d3a342c9c5232a6058a1a6a17c` |
 | `tests/test_contracts.py` | `V6AmendmentTest` (15 tests); `test_wire_contract_is_v6`; v5/v4/v3 "adds only" and "no new storage" tests now assert their **own snapshots**; `db.v2` sha256 pins added; explicit `coursebook.domain`/`pack_flow` imports so the seam tests no longer depend on discovery order; two pre-existing V5 tests moved to the v6 file pointer | `sha256:5b2976f6f6a887cad4f7adea74b2bddd0cd7943aded8c95eb1ddb4d370dd3aa7` |
 | `tests/test_kernel_v2.py` | registry test gains an explicit `pending_v6` allowance (frozen-but-unwired methods; must shrink to empty when `t_a356c8a8` lands) | `sha256:59fbbe5a5e8d1f9dfd0ac5e9577158e0490c61035f5eb1ec6b517ef8d4dc745b` |
-| `docs/CONTRACTS.md` | v6 delta: method table, the scoped answer-text exception, per-method semantics, the `content_hash` definition, the invalidation rule, storage table, the executor decision (`brief.stage`), handler instructions, UX §10 mapping row, migration impact, version log, new deliberate omissions | `sha256:122ca16a8d2afcf0c03d1cd2eef97059fda7f1d30173d06d644e4d6f9e025a2b` |
+| `docs/CONTRACTS.md` | v6 delta: method table, the scoped answer-text exception, per-method semantics, the `content_hash` definition, the invalidation rule, storage table, the executor decision (`brief.stage`), handler instructions, UX §10 mapping row, migration impact, version log, new deliberate omissions. One rebase conflict resolved by keeping master's `v5 (binding scope)` row **and** the new `v6` row | `sha256:a6f5c5399d1efe115bcbcde5a7de8caabb47d55ebd203ae3b01ff5726cf28621` |
 | `scripts/proof_contract_v3.py`, `proof_contract_v4.py` | storage version is `>= 2` (the snapshot each proof froze against) instead of pinned to 2, so a later additive db version does not fail a historical proof | `sha256:1dd7409ece08433a5d98595e73130d366cabf4602f3aecccac675a86449e7b81`, `sha256:181a63ce6ddee0aade2489b0012a9166539fd84cf2a83f775048dab907aba59d` |
 
 `contracts/rpc.v1.json`…`rpc.v5.json`, `db.v1.json`, `db.v2.json`, `errors.*`, `jobs.*`,
@@ -90,13 +92,14 @@ handler cannot pass stored JSON through. `lesson.page`, `check.get`, `course.out
 `answer_guide` is not in `packs.LEARNER_FACING_ROLES`, so an exported pack keeps the key out of the
 learner page.
 
-## Evidence (run in `~/Projects/hermes-classroom/.worktrees/t_d54abd38` on `3309993`)
+## Evidence (run in `~/Projects/hermes-classroom/.worktrees/t_d54abd38` on `bb8fdb2`, rebased onto
+`master` @ `8335b5c`)
 
 ```
 $ python3 -m unittest discover -s tests -t .
-Ran 583 tests in 61.228s
+Ran 609 tests in 54.982s
 OK
-# master @ ce7aded baseline in the same worktree: 568 tests, OK. +15 = the new V6AmendmentTest.
+# master @ 8335b5c carries 594 tests in this worktree; +15 = the new V6AmendmentTest.
 
 $ python3 -m unittest tests.test_contracts
 Ran 71 tests in 0.077s
@@ -114,7 +117,7 @@ OK
 
 $ hermes plugins validate .
 Validation passed.
-# The "private core imports" advisory is pre-existing on master (coursebook/db.py:167 open_db,
+# The "private core imports" advisory is pre-existing on master (coursebook/db.py open_db,
 # probes/*) and untouched by this card.
 
 $ python3 probe_v6.py            # fresh HERMES_HOME
