@@ -68,6 +68,11 @@ V6_NEW_METHODS = (
     "parent.reflection.list",
 )
 
+#: Added in cb.rpc v7 (CB-015 residual): the one wire command that can reach the stale-source state.
+V7_NEW_METHODS = (
+    "source.revalidate",
+)
+
 
 def _document(filename: str) -> dict:
     return json.loads((contracts.CONTRACT_DIR / filename).read_text(encoding="utf-8"))
@@ -176,11 +181,11 @@ class ContractSetTest(unittest.TestCase):
                 self.assertRegex(entry["sha256"], r"^sha256:[a-f0-9]{64}$")
                 self.assertEqual(entry["version"], contracts.contract_version(entry["id"]))
 
-    def test_wire_contract_is_v6(self) -> None:
+    def test_wire_contract_is_current(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 6)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 7)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v6"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v7"))
         # Every place the wire version is echoed (both response envelopes, health.get) must agree.
         # A missed constant is an envelope the plugin itself produces and cannot validate.
         echo = _wire_echoes(contracts.contract("cb.rpc"))
@@ -1166,6 +1171,7 @@ FROZEN_RPC_SHA256 = {
     "rpc.v3.json": "sha256:006232ae71b642fd44d6461ce0e0f83f7fd40cf6dfeb4b0730fc4283cb6aad9a",
     "rpc.v4.json": "sha256:b910c5e4a02015db6d35131e283b10582a4a8d400a24b9f3a6f8b242b538ad49",
     "rpc.v5.json": "sha256:e4dfea0e031b32698e9e354f640b25acfcdf68244ec819a3cedc375e8bd8b156",
+    "rpc.v6.json": "sha256:7fa0ccfe5553c43b249ea370d87fd993e32047092f5be5471b9ddd0dc2bf3397",
 }
 
 #: The superseded storage snapshots stay on disk and stay byte-identical: a later amendment is a
@@ -1173,6 +1179,7 @@ FROZEN_RPC_SHA256 = {
 FROZEN_DB_SHA256 = {
     "db.v1.json": "sha256:e4ad371ba64a8dc76a3055a46c7a127160028d17c36ec07413e542d0f9a8d53a",
     "db.v2.json": "sha256:873fd56c4ea0a7229721ce9eb6065dd2a9370cc5563099852c88858e0413c0d7",
+    "db.v3.json": "sha256:4c0569e4505f12e5862db6d63effe7363da64c1e0e0c837a49ed278b08ab48b6",
 }
 
 
@@ -1193,7 +1200,7 @@ class V5AmendmentTest(unittest.TestCase):
         for version in (1, 2, 3, 4, 5):
             # Not in the inventory, and not silently repurposed: history stays history.
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v6.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v7.json")
 
     def test_v5_adds_only_the_outline_check_and_assist_surface(self) -> None:
         # The v5 snapshot, not the live inventory: v6 appended the Parent Studio family afterwards.
@@ -1574,27 +1581,30 @@ class V6AmendmentTest(unittest.TestCase):
             with self.subTest(filename=filename):
                 digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
                 self.assertEqual(f"sha256:{digest}", expected)
-        for version in (1, 2, 3, 4, 5):
+        for version in (1, 2, 3, 4, 5, 6):
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        for version in (1, 2):
+        for version in (1, 2, 3):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v6.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v3.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v7.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v4.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
         v5 = _document("rpc.v5.json")
         v5_methods = list(v5["$defs"]["method"]["enum"])
         self.assertEqual(len(v5_methods), 43)
-        self.assertEqual(set(contracts.method_names()), set(v5_methods) | set(V6_NEW_METHODS))
-        self.assertEqual(len(contracts.method_names()), 51)
+        v6 = _document("rpc.v6.json")
+        v6_methods = list(v6["$defs"]["method"]["enum"])
+        self.assertEqual(set(v6_methods), set(v5_methods) | set(V6_NEW_METHODS))
+        self.assertEqual(len(v6_methods), 51)
         # Append-only: the v5 order survives as a prefix, so a client diffing enums sees no churn.
-        self.assertEqual(list(contracts.method_names())[: len(v5_methods)], v5_methods)
+        self.assertEqual(v6_methods[: len(v5_methods)], v5_methods)
         self.assertEqual(
-            sorted(set(contracts.method_names()) - set(v5_methods)), sorted(V6_NEW_METHODS)
+            sorted(set(v6_methods) - set(v5_methods)), sorted(V6_NEW_METHODS)
         )
         for method in V6_NEW_METHODS:
             with self.subTest(method=method):
-                schema = contracts.method_schema(method)
+                schema = {"request": v6["$defs"]["methods"]["properties"][method]["request"],
+                          "response": v6["$defs"]["methods"]["properties"][method]["response"]}
                 for side in ("request", "response"):
                     self.assertEqual(schema[side]["type"], "object", side)
                     self.assertIs(schema[side].get("additionalProperties"), False, side)
@@ -1686,9 +1696,10 @@ class V6AmendmentTest(unittest.TestCase):
         self.assertEqual(status["properties"]["invalidated_reason"]["oneOf"][1], {"type": "null"})
 
     def test_final_approval_invalidation_is_storable_and_gates_export(self) -> None:
-        db = contracts.contract("cb.db")
+        db = _document("db.v3.json")
         self.assertEqual(db["schema_version"], 3)
-        self.assertEqual(contracts.contract_version("cb.db"), 3)
+        self.assertEqual(contracts.contract_version("cb.db"), 4)
+        self.assertEqual(contracts.contract("cb.db")["schema_version"], 4)
         migration = [entry for entry in db["migration_plan"] if entry["version"] == 3]
         self.assertEqual(len(migration), 1)
         self.assertEqual(migration[0]["migration"],
@@ -1953,6 +1964,125 @@ class V6AmendmentTest(unittest.TestCase):
             "parent.export",
             # and the decision this card could not take must be written down, not implied
             "brief.stage",
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+
+class V7AmendmentTest(unittest.TestCase):
+    """CB-015 residual: v7 gives the stale-source state a wire surface and cb.db a baseline column.
+
+    Before v7, ``sources.refresh`` existed but no cb.rpc method called it, so a reviewer could not
+    reach ``support_status='stale'`` without hand-writing a row. v7 adds exactly one command and
+    cb.db v4 adds exactly one nullable column; no shipped method payload, error code or job kind
+    changes.
+    """
+
+    def test_v7_adds_only_source_revalidate(self) -> None:
+        v6 = _document("rpc.v6.json")
+        v6_methods = list(v6["$defs"]["method"]["enum"])
+        self.assertEqual(len(v6_methods), 51)
+        current = list(contracts.method_names())
+        self.assertEqual(len(current), 52)
+        self.assertEqual(current[: len(v6_methods)], v6_methods)
+        self.assertEqual(sorted(set(current) - set(v6_methods)), sorted(V7_NEW_METHODS))
+
+    def test_every_v6_method_payload_is_carried_over_verbatim(self) -> None:
+        v6 = _document("rpc.v6.json")
+        current = contracts.contract("cb.rpc")
+        for method in v6["$defs"]["method"]["enum"]:
+            with self.subTest(method=method):
+                original = v6["$defs"]["methods"]["properties"][method]
+                carried = current["$defs"]["methods"]["properties"][method]
+                if method == "health.get":
+                    # The one intentional difference: the version echo moves with the wire version.
+                    self.assertEqual(
+                        original["response"]["properties"]["contract_version"]["const"], 6
+                    )
+                    self.assertEqual(
+                        carried["response"]["properties"]["contract_version"]["const"], 7
+                    )
+                    original = json.loads(json.dumps(original))
+                    carried = json.loads(json.dumps(carried))
+                    original["response"]["properties"]["contract_version"] = {"const": 7}
+                self.assertEqual(original, carried)
+        # Both response envelopes and the request envelope echo the live version.
+        echoes = _wire_echoes(current)
+        self.assertGreaterEqual(len(echoes), 3)
+        for path, value in echoes:
+            self.assertEqual(value, contracts.WIRE_CONTRACT_VERSION, path)
+
+    def test_source_revalidate_request_response_and_fence(self) -> None:
+        method = "source.revalidate"
+        schema = contracts.method_schema(method)
+        request, response = schema["request"], schema["response"]
+        self.assertEqual(set(request["required"]), {"source_id", "fetched"})
+        self.assertIs(request["additionalProperties"], False)
+        fetched = request["properties"]["fetched"]
+        branches = fetched["oneOf"]
+        self.assertEqual([branch["type"] for branch in branches], ["object", "null"])
+        self.assertEqual(set(branches[0]["required"]), {"content"})
+        self.assertIs(branches[0]["additionalProperties"], False)
+        # A wire field that the kernel discards is a seam that reads as working; there is no reason.
+        self.assertNotIn("reason", request["properties"])
+        self.assertEqual(
+            set(response["required"]),
+            {"source_id", "changed", "support_status", "review_required",
+             "fetched_at", "previous_hash", "content_hash", "impact"},
+        )
+        self.assertIs(response["additionalProperties"], False)
+        impact = response["properties"]["impact"]
+        self.assertEqual(
+            set(impact["required"]),
+            {"source_id", "course_id", "objective_ids", "check_ids",
+             "artifact_ids", "lesson_ids", "support_status"},
+        )
+        self.assertEqual(_schema_problems(request), [])
+        self.assertEqual(_schema_problems(response), [])
+        # Fenced by idempotency only: a course-scoped source row has no aggregate revision.
+        envelope = contracts.contract("cb.rpc")["$defs"]["envelope_request"]
+        rules = {
+            tuple(rule["if"]["properties"]["method"]["enum"]): set(rule["then"]["required"])
+            for rule in envelope["allOf"]
+        }
+        self.assertEqual(rules[(method,)], {"idempotency_key"})
+        self.assertNotIn("revision", response["properties"])
+
+    def test_db_v4_adds_only_a_nullable_content_hash_column(self) -> None:
+        db4 = contracts.contract("cb.db")
+        db3 = _document("db.v3.json")
+        self.assertEqual(contracts.contract_version("cb.db"), 4)
+        self.assertEqual(db4["schema_version"], 4)
+        self.assertEqual(set(db4["tables"]), set(db3["tables"]), "v4 adds no table and drops none")
+        column = db4["tables"]["sources"]["columns"]["content_hash"]
+        self.assertEqual(column["type"], "TEXT")
+        self.assertTrue(column["nullable"], "NULL means no baseline yet, not unchanged")
+        migration = [entry for entry in db4["migration_plan"] if entry["version"] == 4]
+        self.assertEqual(len(migration), 1)
+        self.assertEqual(migration[0]["migration"], "0004_sources_content_hash.sql")
+        self.assertTrue(any("Additive only" in line for line in migration[0]["impact"]))
+        self.assertTrue(any("No backfill" in line for line in migration[0]["impact"]))
+        sql = (contracts.CONTRACT_DIR.parent / "coursebook" / "migrations"
+               / migration[0]["migration"]).read_text(encoding="utf-8")
+        self.assertIn("ALTER TABLE sources ADD COLUMN content_hash TEXT", sql)
+
+    def test_v7_adds_no_error_code_and_no_job_kind(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.errors"), 2)
+        self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
+        self.assertEqual(contracts.contract_version("cb.jobs"), 2)
+        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_docs_publish_the_v7_surface_and_its_omission(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for needle in (
+            "v7 delta (CB-015 residual)",
+            "source.revalidate",
+            "rpc.v7.json",
+            "db.v4.json",
+            "content_hash",
+            "no `expected_revision`",
+            "No recovery",
+            "stale_source",
         ):
             self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
 

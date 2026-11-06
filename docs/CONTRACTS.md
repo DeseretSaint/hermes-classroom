@@ -1,7 +1,7 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v6** (CB-011 additive amendment; v5 = CB-026, v4 = CB-024, v3 = CB-022,
-v2 = CB-018).
+Status: **frozen at v7** (CB-015 residual additive amendment; v6 = CB-011, v5 = CB-026, v4 = CB-024,
+v3 = CB-022, v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
 contract: **Atlas**. Implementers are the specialists named below.
 
@@ -16,15 +16,16 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v2.json` | 2 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v6.json` | 6 | Cinder (kernel + learning-loop + `parent.*` methods), Sable (transport), Lattice (`pack.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v3.json` | 3 | Cinder | migrations, every command, evidence views |
+| `cb.rpc` | `contracts/rpc.v7.json` | 7 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate`), Sable (transport), Lattice (`pack.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.db` | `contracts/db.v4.json` | 4 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v2.json` | 2 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v5** files for `cb.rpc`, the v1 **to v4** files for `cb.db`, and the v1 files for
+The v1 **to v6** files for `cb.rpc`, the v1 **to v3** files for `cb.db`, and the v1 files for
 `cb.errors` and `cb.jobs` remain on disk, unmodified,
-as immutable history. `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
+as immutable history: the superseded current files are `rpc.v6.json` and `db.v3.json`.
+`CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 `tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so
 "additive" is a fact about the bytes rather than a claim about a diff.
@@ -38,7 +39,7 @@ version in the URI and the declared version agree for every file.
 `cb.rpc` is transport-neutral. The root schema validates a **request envelope**:
 
 ```json
-{ "contract": "cb.rpc", "contract_version": 6,
+{ "contract": "cb.rpc", "contract_version": 7,
   "method": "attempt.submit", "operation_id": "op-...", "idempotency_key": "...",
   "expected_revision": 12, "payload": { } }
 ```
@@ -49,11 +50,12 @@ Success and failure are separate envelopes (`$defs/envelope_response_ok`,
 handler, then validates the handler's result against the response schema. A handler that returns
 something outside the contract becomes `INTERNAL_ERROR` — it is never rendered.
 
-Envelope-level requirements added by v2, v3 and v5 (enforced by the schema before any handler runs).
+Envelope-level requirements added by v2, v3, v5 and v7 (enforced by the schema before any handler runs).
 v4 adds none: both of its methods are reads, so they carry neither `idempotency_key` nor
 `expected_revision`. `course.outline` and `check.get` (v5) are reads for the same reason; only
 `lesson.assist` is a command. v6 adds the Parent Studio family; its three reads stay unfenced and
-its five commands are fenced as the table below says:
+its five commands are fenced as the table below says. v7 adds one command, fenced by
+`idempotency_key` only:
 
 | Method(s) | Required envelope fields |
 |---|---|
@@ -66,6 +68,7 @@ its five commands are fenced as the table below says:
 | `parent.brief.create`, `parent.export`, `parent.reflection.record` | `idempotency_key` (a double click must not mint two courses, two exports or two reflections) |
 | `parent.plan.edit`, `parent.final.approve` | `idempotency_key`, `expected_revision` |
 | `parent.brief.get`, `parent.blueprint.read`, `parent.reflection.list` | none — reads |
+| `source.revalidate` | `idempotency_key` (a double-submitted re-fetch must not record twice; the content-hash comparison is the fence, not a revision) |
 
 Two v6 commands deliberately carry **no** `expected_revision`: `parent.export` is fenced by the
 approved content hash instead (bumping the enrollment revision would refuse an answer that is being
@@ -78,8 +81,10 @@ HTTP error. That keeps the Desktop half to one branch (`response.ok`) instead of
 
 ### State and identity rules baked into the contract
 
-* Every mutation is fenced by `expected_revision` and refused with `STALE_REVISION` +
-  `current_revision` rather than silently winning.
+* Every learner-facing mutation is fenced by `expected_revision` and refused with `STALE_REVISION` +
+  `current_revision` rather than silently winning. `source.revalidate` is the one documented
+  exception: a source row is course-scoped with no aggregate revision, so its content-hash
+  comparison is the fence (see the v7 delta).
 * `attempt.submit` **requires** `idempotency_key` and `expected_revision`. Repeating a key with the
   same payload hash returns the persisted original result; the same key with a different payload is
   `IDEMPOTENCY_CONFLICT`.
@@ -917,6 +922,71 @@ dropped or retyped. No backfill — a plan approved before this migration is not
 the migration does not invent one; a course with no row reports approval state `none` and export
 blocked by `no_final_approval`.
 
+## v7 delta (CB-015 residual) — source revalidation
+
+v6 left a documented hole: `sources.refresh` could mark a source `stale`, but no cb.rpc method
+called it, so the state guarded by `CHECK_STALE` was reachable only by hand-writing a database row.
+v7 adds exactly one command, `source.revalidate`, and cb.db v4 adds exactly one nullable column,
+`sources.content_hash`. Every v1–v6 method name and every v1–v6 method request/response payload is
+preserved unchanged; the only bytes that move inside a carried method are `health.get`'s
+`contract_version` echo (6 → 7), plus both response envelopes' `contract_version` consts. The
+method enum is 52 = the 51 v6 methods + `source.revalidate`.
+
+| `source.revalidate` | Contract |
+|---|---|
+| Request | `source_id`, `fetched` (`{content, title?}` or `null` for unreachable). No `reason`: a wire field the kernel discards is a seam that reads as working. |
+| Response | `source_id`, `changed`, `support_status`, `review_required`, `fetched_at`, `previous_hash`, `content_hash`, `impact` (`objective_ids`, `check_ids`, `artifact_ids`, `lesson_ids`, `course_id`, `support_status`) |
+| Envelope | `idempotency_key` required; **no `expected_revision`** (see below) |
+| Effect | writes the fetch's content hash as the row's baseline and, on a change, `support_status='stale'`; never writes learner evidence |
+| Revision | the response envelope's `revision` is always `0`; it is **not** an enrollment revision |
+
+**Why no `expected_revision`.** Sources are course-scoped and several enrollments may legally share
+one course; there is no single aggregate revision to compare-and-swap. The fence is the content-hash
+comparison itself: a caller cannot make an unchanged fetch look changed, and the persisted baseline is
+read in the same transaction that writes it. This is a deliberate carve-out from the general
+"every mutation is fenced by `expected_revision`" line, and it is why the response carries no
+revision field: a client must not adopt the envelope's `0` as an enrollment revision.
+
+**The baseline rule (cb.db v4).** `sources.content_hash` is the hash of the last adopted fetch of
+that row. It exists because pack-imported sources (`pack_flow._write_sources`) never have a
+`gen_research_runs` snapshot, so before v4 they had no baseline and every revalidation would have
+reported the convincing lie `changed=false`. `NULL` means "no baseline yet", never "unchanged": the
+first successful `source.revalidate` of such a row records the baseline and returns `changed=false`;
+only a later fetch whose hash differs marks the row stale. `sources.apply_run` writes the same
+column when a research run sees the source, so the row and the immutable run snapshot cannot drift.
+The fallback to the latest run snapshot remains for rows written before the column existed. An
+unreachable fetch (`fetched: null`) marks the row `unreachable` for review without erasing the last
+known baseline.
+
+**Detection only; No recovery.** A changed fetch sets `stale`, and an identical re-fetch deliberately
+leaves it `stale`. Nothing in this build writes `support_status` back to a reviewed value, so a
+revalidated course's dependent checks stop grading and stay stopped until the plan is regenerated and
+re-approved. Restoring a status honestly needs a stored prior status plus a review decision; neither
+is in cb.db v4 nor in this card, so it is recorded as a deliberate omission instead of a half-built
+recovery path.
+
+**The race is closed in the kernel.** `attempt.submit` re-checks
+`sources.assert_check_current` inside the same write transaction that commits the attempt, not only
+in its pre-grade read. A revalidation that lands while an answer is being graded therefore returns
+`CHECK_STALE` and writes no attempt, attempt row or evidence row. Nothing about the v7 wire changes
+for this; it is the kernel keeping the existing gate true. `library.list` already reports the
+course-level `warning: "stale_source"` once any source row is stale, so a client does not need to
+scan the ledger to show the banner.
+
+**Surface discipline.** This method is for the parent/research path, the Desktop's course-level
+banner data and the proof harness. Vellum must **not** ship a Sources-tab "Check for changes" button
+in this build: grading is paused with no review step beside it, so that control would be a one-way
+switch rather than a wired feature. Harbor must run the demo's stale-source proof last, or on a
+disposable course, for the same reason.
+
+### Migration impact (cb.db v4)
+
+Migration `0004_sources_content_hash.sql` is `ALTER TABLE sources ADD COLUMN content_hash TEXT`.
+Additive only: no v3 table, column, index or unique key is dropped or retyped, and there is no
+backfill. Existing sources have `content_hash` NULL until a research run or a first
+`source.revalidate` records a fetch; learner evidence, attempts and notebook entries are never
+rewritten by the migration or by revalidation.
+
 ## UX screen → method mapping
 
 Every screen in §6, §7, §8, §10 and §11 is implementable against a method or a documented payload.
@@ -985,7 +1055,7 @@ unique key changes, and there is no backfill.
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
-2. Add a new file (`rpc.v6.json`, `db.v3.json`, `projection.v1.json`) and bump
+2. Add a new file (`rpc.v7.json`, `db.v4.json`, `projection.v1.json`) and bump
    `$id`/`x-contract-version`/`x-supersedes`. Never edit a
    shipped version in a way that changes meaning; clients cache by version.
 3. Update `CONTRACT_FILES` in `coursebook/contracts.py` and run
@@ -1003,6 +1073,7 @@ unique key changes, and there is no backfill.
 | v5 | 2026-11-06 | CB-026 additive amendment. 43 RPC methods (+course.outline, check.get, lesson.assist) so CB-009 can render the Textbook section list, the Plan tab, the structured check prompt and the pane's Hint/Show answer; `lesson.assist` is fenced in the envelope. No new table, column, migration or error code — every field is derived from `plans`/`objectives`/`checks`/`lesson_runs`/`attempts`, and the assist event is the layer-1 `evidence` row the chat hook already writes. `section_titles` deliberately omitted (no heading storage). Superseded files pinned by sha256. |
 | v5 (binding scope) | 2026-11-06 | CB-009 finding: `binding.get` now answers `objective_id` and `lesson_run_id` from the `bindings` row so the pane scopes to the bound section instead of the enrollment's current one. Additive inside v5 because `binding` is an open object in `rpc.v5.json` and `cb.db` v2 already stores both columns: **no v6, no schema edit, no version bump, no status-semantics change**. `null` = legacy/course-level binding; the platform seam answers `null` on a v1 binding table rather than omitting the fields. |
 | v6 | 2026-11-06 | CB-011 additive amendment. 51 RPC methods (+parent.brief.create, parent.brief.get, parent.plan.edit, parent.final.approve, parent.blueprint.read, parent.export, parent.reflection.record, parent.reflection.list) so the Parent Studio can be built without reading SQLite. cb.db **v3** adds `final_approvals` (lesson-set approval bound to plan hash + content hash, with the vocabulary value that invalidates it) and `parent_reflections` via migration 0003; no column changes, no new error code, `cb.vocabulary`/`cb.jobs`/`cb.pack`/`cb.projection` unchanged. Rejected: a generic path-addressed `pack.file.read` (role-scoped tabs instead), a `lesson` job kind (would force a `cb.pack` v2 and reject installed packs), and per-lesson prose editing (no storage decision yet). The Parent Studio answers tab is the one scoped exception to "no answer text on the wire". |
+| v7 | 2026-11-06 | CB-015 residual additive amendment. 52 RPC methods (+`source.revalidate`) so the stale-source state is reachable through cb.rpc instead of only by hand-writing a row; the existing `sources.assert_check_current` gate then refuses dependent grading with `CHECK_STALE`. cb.db **v4** adds the nullable `sources.content_hash` baseline column via migration 0004 (additive, no backfill), because pack-imported sources have no research-run snapshot and would otherwise report `changed=false` forever. No new error code, job kind or vocabulary value. `source.revalidate` carries `idempotency_key` and deliberately no `expected_revision`; the envelope revision is 0 and is not an enrollment revision. Detection only: there is no status-restoring recovery command, and a client must not expose a one-way "check for changes" control. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
@@ -1057,6 +1128,9 @@ unique key changes, and there is no backfill.
 * No per-lesson prose edit command. Generated page text lives in the generation staging rows and
   changes by regenerating from an edited, re-approved plan; there is no approved storage decision
   for editing one page's bytes in place.
+* No status-restoring recovery command for a stale source. `source.revalidate` is detection only:
+  an identical re-fetch stays stale, and restoring a reviewed status honestly needs a stored prior
+  status plus a review decision that `cb.db` v4 does not have.
 * No second brief store. The brief is `jobs.brief_json`, read by the executor and by
   `parent.brief.get`; a `parent_briefs` table would be a competing authority.
 * No `mastered`/`verified` claim on a final approval. It says which bytes the parent signed off,

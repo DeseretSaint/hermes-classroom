@@ -84,6 +84,7 @@ KERNEL_METHODS: tuple[str, ...] = (
     "course.outline",
     "check.get",
     "lesson.assist",
+    "source.revalidate",
 )
 
 MAX_PAGE = 500
@@ -1014,6 +1015,10 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                 "the check changed while this answer was being graded; no attempt was created.",
                 int(enrollment["revision"]), check_version=int(check["version"]),
             )
+        # The pre-grade read checked this too, but a revalidation can land while the answer is
+        # being graded. Re-check inside the write transaction so a cold attempt is never committed
+        # against a source the user has since been told changed.
+        source_ledger.assert_check_current(connection, str(check["id"]))
 
         if graded is None:
             connection.execute(
@@ -3311,6 +3316,32 @@ def parent_reflection_list(payload: dict[str, Any], envelope: dict[str, Any]) ->
         ],
         "total": int(total),
     }
+
+
+# ── source revalidation ─────────────────────────────────────────────────────
+
+
+@_handler("source.revalidate")
+def source_revalidate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Record one re-fetch of a source and report the staleness it caused.
+
+    Detection only: a changed content hash marks the row ``stale`` and the existing grading gate
+    refuses dependent checks with ``CHECK_STALE``. Learner evidence is never rewritten. There is no
+    aggregate revision on a course-scoped source row, so the content-hash comparison is the fence
+    and the envelope's ``revision`` stays 0 (it is not an enrollment revision).
+    """
+    db.ensure_schema()
+    method = "source.revalidate"
+    key = envelope.get("idempotency_key")
+    payload_hash = _payload_hash(method, payload)
+    fetched = payload["fetched"]
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        result = source_ledger.refresh(connection, str(payload["source_id"]), fetched).to_dict()
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
+    return 0, result
 
 
 # ── registration ────────────────────────────────────────────────────────────

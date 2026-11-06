@@ -208,6 +208,25 @@ class RefreshResult:
         }
 
 
+def _recorded_baseline(row, latest: dict[str, dict[str, Any]]) -> str | None:
+    """The hash this source row was last adopted at, or ``None`` when it has no baseline yet.
+
+    ``sources.content_hash`` (cb.db v4) is the row's own record, so pack-imported sources that
+    never had a research run still get a baseline on their first revalidation. The immutable
+    research-run snapshot stays the fallback for rows written before the column existed.
+    """
+    try:
+        stored = row["content_hash"]
+    except (IndexError, KeyError):
+        stored = None
+    if stored:
+        return str(stored)
+    prior = latest.get(str(row["id"])) or latest.get(str(row["url"] or "")) or None
+    if prior and prior.get("content_hash"):
+        return str(prior["content_hash"])
+    return None
+
+
 def refresh(
     connection,
     source_id: str,
@@ -221,15 +240,14 @@ def refresh(
     ``fetched`` is the seam's return shape (``content``…). ``None`` means the source was
     unreachable: it stays historical evidence but is marked ``unreachable`` so reuse triggers
     review. A changed content hash marks the row ``stale``; dependent checks are then refused for
-    grading until re-audited. Nothing migrates learner evidence.
+    grading until re-audited. The first successful fetch of a row with no baseline records the
+    baseline and is *not* a change. Nothing migrates learner evidence.
     """
     moment = _now(now)
     row = connection.execute("SELECT * FROM sources WHERE id = ?", (source_id,)).fetchone()
     if row is None:
         raise RpcError.of("NOT_FOUND", f"source {source_id} does not exist.", source_id=source_id)
-    previous = _latest_run_sources(connection, str(row["course_id"]))
-    prior = previous.get(source_id) or previous.get(str(row["url"] or "")) or None
-    previous_hash = str(prior["content_hash"]) if prior and prior.get("content_hash") else None
+    previous_hash = _recorded_baseline(row, _latest_run_sources(connection, str(row["course_id"])))
 
     if fetched is None:
         connection.execute(
@@ -260,8 +278,9 @@ def refresh(
     else:
         status = str(row["support_status"])
     connection.execute(
-        "UPDATE sources SET fetched_at = ?, title = COALESCE(?, title), support_status = ? WHERE id = ?",
-        (stamp, fetched.get("title"), status, source_id),
+        "UPDATE sources SET fetched_at = ?, title = COALESCE(?, title), support_status = ?,"
+        " content_hash = COALESCE(?, content_hash) WHERE id = ?",
+        (stamp, fetched.get("title"), status, content_hash, source_id),
     )
     return RefreshResult(
         source_id=source_id,
@@ -279,7 +298,9 @@ def apply_run(connection, course_id: str, run: research.ResearchRun) -> dict[str
     """Upsert a research run's sources and mark changed ones stale.
 
     Called from the generation pipeline *after* it persists the immutable run snapshot, so the
-    previous content hash is always available for comparison.
+    previous content hash is always available for comparison. The row's own ``content_hash``
+    baseline (cb.db v4) is written for every source the run saw, so a later ``source.revalidate``
+    compares against the same hash the run recorded instead of drifting from the snapshot.
     """
     marked: list[dict[str, Any]] = []
     previous = _latest_run_sources(connection, course_id)
@@ -289,8 +310,12 @@ def apply_run(connection, course_id: str, run: research.ResearchRun) -> dict[str
         ).fetchone()
         if existing is None:
             continue
-        prior = previous.get(source.source_id) or previous.get(source.url)
-        prior_hash = str(prior["content_hash"]) if prior and prior.get("content_hash") else None
+        prior_hash = _recorded_baseline(existing, previous)
+        if source.content_hash:
+            connection.execute(
+                "UPDATE sources SET content_hash = ? WHERE id = ?",
+                (source.content_hash, existing["id"]),
+            )
         if prior_hash and source.content_hash and prior_hash != source.content_hash:
             connection.execute(
                 "UPDATE sources SET support_status = 'stale', fetched_at = ? WHERE id = ?",

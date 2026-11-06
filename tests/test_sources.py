@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import unittest
+from unittest import mock
 
 from coursebook import db, generation, research, sources
 from tests.kernel_support import KernelCase
@@ -15,8 +17,8 @@ def bounded(text: str) -> str:
 
 class SourceCase(KernelCase):
     def link_source(self, lesson: dict, *, cited: bool = True, content: str = "old body",
-                    status: str = "model_assessed") -> tuple[str, str]:
-        """Seed one ledger row, one plan section citing it, and the prior run snapshot."""
+                    status: str = "model_assessed", run_snapshot: bool = True) -> tuple[str, str]:
+        """Seed one ledger row, one plan section citing it, and optionally the prior run snapshot."""
         source_id = "src_ledger_1"
         with db.transaction() as connection:
             generation.ensure_schema(connection)
@@ -33,14 +35,15 @@ class SourceCase(KernelCase):
                 ("sec_1", lesson["plan_id"], 1, "planhash", "Section", "Learn",
                  json.dumps([1]), "[]", json.dumps([source_id] if cited else [])),
             )
-            connection.execute(
-                "INSERT INTO gen_research_runs (id, course_id, job_id, status, queries_json,"
-                " sources_json, reason, created_at) VALUES (?,?,?,?,?,?,?,?)",
-                ("run_1", lesson["course_id"], None, "ok", "[]",
-                 json.dumps([{"source_id": source_id, "url": "https://example.test/page",
-                              "content_hash": research.sha256_of_text(bounded(content))}]),
-                 None, "2026-02-01T00:00:00Z"),
-            )
+            if run_snapshot:
+                connection.execute(
+                    "INSERT INTO gen_research_runs (id, course_id, job_id, status, queries_json,"
+                    " sources_json, reason, created_at) VALUES (?,?,?,?,?,?,?,?)",
+                    ("run_1", lesson["course_id"], None, "ok", "[]",
+                     json.dumps([{"source_id": source_id, "url": "https://example.test/page",
+                                  "content_hash": research.sha256_of_text(bounded(content))}]),
+                     None, "2026-02-01T00:00:00Z"),
+                )
         return source_id, content
 
     def refresh(self, source_id: str, content: str | None):
@@ -142,6 +145,142 @@ class StalenessTest(SourceCase):
         with db.read() as connection:
             status = connection.execute("SELECT support_status FROM sources WHERE id = ?", (source_id,)).fetchone()[0]
         self.assertEqual(status, "stale")
+
+
+class SourceRevalidateRpcTest(SourceCase):
+    """``source.revalidate`` is the wire surface that makes staleness reachable.
+
+    The ledger's internal ``sources.refresh`` existed but no cb.rpc method called it, so neither the
+    Desktop nor a reviewer could produce the state that ``CHECK_STALE`` guards. These tests drive
+    the shipped handler through ``api.dispatch`` — never the helper directly.
+    """
+
+    def revalidate(self, source_id: str, content: str | None, *, key: str | None = None,
+                   title: str | None = None) -> dict:
+        fetched = None if content is None else {"content": content}
+        if fetched is not None and title is not None:
+            fetched["title"] = title
+        return self.dispatch(
+            "source.revalidate",
+            {"source_id": source_id, "fetched": fetched},
+            idempotency_key=key or f"reval-{os.urandom(6).hex()}",
+        )
+
+    def evidence_counts(self) -> tuple[int, int, int]:
+        return (
+            int(self.scalar("SELECT COUNT(*) FROM attempts")),  # type: ignore[arg-type]
+            int(self.scalar("SELECT COUNT(*) FROM transitions")),  # type: ignore[arg-type]
+            int(self.scalar("SELECT COUNT(*) FROM evidence")),  # type: ignore[arg-type]
+        )
+
+    def test_pack_source_baseline_then_change_stales_through_cb_rpc(self) -> None:
+        lesson = self.prepare_lesson()
+        # Pack-imported sources have no gen_research_runs snapshot: their baseline is the new column.
+        source_id, _ = self.link_source(lesson, run_snapshot=False)
+
+        first = self.revalidate(source_id, "first capture")
+        self.assertTrue(first["ok"], first)
+        self.assertEqual(first["revision"], 0, "a source is course-scoped; no enrollment revision moves")
+        body = first["result"]
+        baseline_hash = research.sha256_of_text("first capture")
+        self.assertIsNone(body["previous_hash"])
+        self.assertFalse(body["changed"])
+        self.assertEqual(body["content_hash"], baseline_hash)
+        self.assertEqual(body["support_status"], "model_assessed")
+        self.assertFalse(body["review_required"])
+        self.assertEqual(body["impact"]["objective_ids"], [lesson["objective_id"]])
+        self.assertEqual(body["impact"]["check_ids"], [lesson["check_id"]])
+        self.assertEqual(body["impact"]["artifact_ids"], [])
+        self.assertEqual(
+            self.scalar("SELECT content_hash FROM sources WHERE id = ?", (source_id,)), baseline_hash
+        )
+
+        identical = self.revalidate(source_id, "first capture")["result"]
+        self.assertFalse(identical["changed"])
+        self.assertEqual(identical["previous_hash"], baseline_hash)
+        self.assertEqual(identical["support_status"], "model_assessed")
+
+        changed = self.revalidate(source_id, "a revised capture")["result"]
+        self.assertTrue(changed["changed"])
+        self.assertEqual(changed["previous_hash"], baseline_hash)
+        self.assertEqual(changed["content_hash"], research.sha256_of_text("a revised capture"))
+        self.assertEqual(changed["support_status"], "stale")
+        self.assertTrue(changed["review_required"])
+        self.assertEqual(
+            self.scalar("SELECT support_status FROM sources WHERE id = ?", (source_id,)), "stale"
+        )
+
+        before = self.evidence_counts()
+        refused = self.submit(lesson, {"kind": "text", "text": "4"})
+        self.assertFalse(refused["ok"])
+        self.assertEqual(refused["error"]["code"], "CHECK_STALE")
+        self.assertEqual(self.evidence_counts(), before, "stale detection must not rewrite learner evidence")
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM attempts"), 0)
+
+        library = self.ok("library.list", {"filter": "all"})["result"]
+        row = next(item for item in library["items"] if item["enrollment_id"] == lesson["enrollment_id"])
+        self.assertEqual(row["warning"], "stale_source")
+
+    def test_replay_returns_the_original_and_a_different_payload_conflicts(self) -> None:
+        lesson = self.prepare_lesson()
+        source_id, _ = self.link_source(lesson, run_snapshot=False, content="baseline")
+        self.revalidate(source_id, "baseline", key="baseline-key")
+
+        first = self.revalidate(source_id, "changed body", key="replay-key")
+        self.assertTrue(first["ok"], first)
+        self.assertTrue(first["result"]["changed"])
+        replay = self.revalidate(source_id, "changed body", key="replay-key")
+        self.assertEqual(replay["result"], first["result"])
+        self.assertEqual(replay["revision"], first["revision"])
+
+        conflict = self.revalidate(source_id, "different body", key="replay-key")
+        self.assertFalse(conflict["ok"])
+        self.assertEqual(conflict["error"]["code"], "IDEMPOTENCY_CONFLICT")
+        self.assertEqual(
+            self.scalar("SELECT support_status FROM sources WHERE id = ?", (source_id,)), "stale"
+        )
+
+    def test_unreachable_keeps_the_recorded_baseline_and_needs_review(self) -> None:
+        lesson = self.prepare_lesson()
+        source_id, _ = self.link_source(lesson, run_snapshot=False)
+        baseline = self.revalidate(source_id, "still here")["result"]
+        fetched_at = baseline["fetched_at"]
+
+        unreachable = self.revalidate(source_id, None)["result"]
+        self.assertFalse(unreachable["changed"])
+        self.assertEqual(unreachable["support_status"], "unreachable")
+        self.assertTrue(unreachable["review_required"])
+        self.assertEqual(unreachable["fetched_at"], fetched_at, "an unreachable fetch is not a fetch")
+        self.assertEqual(unreachable["content_hash"], None)
+        self.assertEqual(
+            self.scalar("SELECT content_hash FROM sources WHERE id = ?", (source_id,)),
+            baseline["content_hash"],
+            "the last known baseline is not erased by an unreachable fetch",
+        )
+
+    def test_revalidation_racing_a_grade_is_refused_at_commit(self) -> None:
+        lesson = self.prepare_lesson()
+        source_id, _ = self.link_source(lesson, run_snapshot=False)
+        self.revalidate(source_id, "old procedure", key="race-baseline")
+
+        original = __import__("coursebook.grading", fromlist=["grade"]).grade
+
+        def revalidate_while_grading(*args, **kwargs):
+            # The realistic race: the parent revalidates after the answer was read but before the
+            # attempt commits. The commit re-check must refuse, not write a cold attempt.
+            self.ok(
+                "source.revalidate",
+                {"source_id": source_id, "fetched": {"content": "revised procedure"}},
+                idempotency_key="race-revalidate",
+            )
+            return original(*args, **kwargs)
+
+        with mock.patch("coursebook.grading.grade", side_effect=revalidate_while_grading):
+            response = self.submit(lesson, {"kind": "text", "text": "4"})
+        self.assertFalse(response["ok"])
+        self.assertEqual(response["error"]["code"], "CHECK_STALE")
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM attempts"), 0)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM evidence"), 0)
 
 
 if __name__ == "__main__":
