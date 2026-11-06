@@ -1,0 +1,274 @@
+{
+  "course": "legal",
+  "rows": [
+    {
+      "id": "cold-mount",
+      "label": "reload on #/coursebook → route mounted with rows",
+      "wallMs": 2483,
+      "readyMs": 2,
+      "mountMs": 1981,
+      "firstPaintMs": 44,
+      "firstContentfulPaintMs": 1220,
+      "paint": [
+        {
+          "name": "first-paint",
+          "startTime": 44
+        },
+        {
+          "name": "first-contentful-paint",
+          "startTime": 1220
+        }
+      ],
+      "nav": {
+        "domContentLoaded": 36,
+        "load": 36
+      }
+    },
+    {
+      "id": "course-list",
+      "label": "course list with 3 courses / 118 objectives",
+      "wallMs": 503,
+      "nodes": 82,
+      "textChars": 1048,
+      "pres": 0,
+      "codes": 0,
+      "ols": 0,
+      "lis": 0,
+      "tables": 0,
+      "h2": 0,
+      "scroll": null
+    },
+    {
+      "id": "course-detail",
+      "label": "open 60-objective course detail",
+      "wallMs": 13,
+      "renderMs": 13,
+      "nodes": 72,
+      "textChars": 1127,
+      "pres": 0,
+      "codes": 0,
+      "ols": 0,
+      "lis": 0,
+      "tables": 0,
+      "h2": 1,
+      "scroll": {
+        "tag": "DIV",
+        "cls": "min-h-0 flex-1 overflow-auto pb-6",
+        "scrollHeight": 667,
+        "clientHeight": 552
+      }
+    },
+    {
+      "id": "course-detail-longtasks",
+      "longTasks": [],
+      "longTaskCount": 0,
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "textbook-index",
+      "label": "render 60-row textbook index",
+      "wallMs": 163,
+      "renderMs": 162,
+      "sectionRows": 60,
+      "nodes": 578,
+      "textChars": 6087,
+      "pres": 0,
+      "codes": 0,
+      "ols": 0,
+      "lis": 0,
+      "tables": 0,
+      "h2": 1,
+      "scroll": {
+        "tag": "DIV",
+        "cls": "min-h-0 flex-1 overflow-auto pb-6",
+        "scrollHeight": 3649,
+        "clientHeight": 552
+      }
+    },
+    {
+      "id": "textbook-index-longtasks",
+      "longTasks": [],
+      "longTaskCount": 0,
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "lesson-long",
+      "label": "open objective 1 (long multi-segment lesson)",
+      "wallMs": 84,
+      "clicked": "clicked(60)",
+      "segmentsMarkerMs": 79,
+      "fullRenderMs": 83,
+      "heading": "Objective 1: register in context 1",
+      "nodes": 371,
+      "textChars": 22098,
+      "pres": 2,
+      "codes": 1,
+      "ols": 1,
+      "lis": 6,
+      "tables": 1,
+      "h2": 4,
+      "scroll": {
+        "tag": "DIV",
+        "cls": "min-h-0 flex-1 overflow-auto pb-6",
+        "scrollHeight": 5970,
+        "clientHeight": 552
+      }
+    },
+    {
+      "id": "lesson-long-longtasks",
+      "longTasks": [
+        69
+      ],
+      "longTaskCount": 1,
+      "longTaskMaxMs": 69,
+      "longTaskTotalMs": 69
+    },
+    {
+      "id": "scroll-long",
+      "label": "scroll the long lesson top→bottom→top",
+      "wallMs": 201,
+      "scroller": {
+        "scrollHeight": 5970,
+        "clientHeight": 552
+      },
+      "sweep": {
+        "finalScrollTop": 5418
+      },
+      "back": {
+        "finalScrollTop": 0
+      },
+      "frames": 20,
+      "worstFrameMs": 6,
+      "over32ms": 0,
+      "over50ms": 0,
+      "medianMs": 6
+    },
+    {
+      "id": "scroll-long-longtasks",
+      "longTasks": [],
+      "longTaskCount": 0,
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "lesson-last",
+      "label": "open objective 60 (long title)",
+      "wallMs": 178,
+      "renderMs": 162,
+      "headingPresent": true,
+      "heading": "Objective 60: register in context 60",
+      "nodes": 368,
+      "textChars": 22752,
+      "pres": 2,
+      "codes": 1,
+      "ols": 1,
+      "lis": 6,
+      "tables": 1,
+      "h2": 4,
+      "scroll": {
+        "tag": "DIV",
+        "cls": "min-h-0 flex-1 overflow-auto pb-6",
+        "scrollHeight": 5967,
+        "clientHeight": 552
+      }
+    },
+    {
+      "id": "lesson-last-longtasks",
+      "longTasks": [],
+      "longTaskCount": 0,
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "rapid-nav",
+      "label": "rapid pane switches with the large course loaded",
+      "wallMs": 1828,
+      "switches": 35,
+      "failedSwitches": 0,
+      "medianContentMs": 11,
+      "p95ContentMs": 14,
+      "worstContentMs": 15,
+      "medianPaintMs": 11,
+      "worstPaintMs": 14,
+      "perTabMedian": {
+        "Textbook": 11,
+        "Notebook": 11,
+        "Quizzes": 11,
+        "Overview": 11,
+        "Plan": 14
+      },
+      "frames": 315,
+      "worstFrameMs": 12,
+      "over32ms": 0,
+      "over50ms": 0,
+      "medianMs": 6
+    },
+    {
+      "id": "rapid-nav-longtasks",
+      "longTasks": [],
+      "longTaskCount": 0,
+      "longTaskMaxMs": 0,
+      "longTaskTotalMs": 0
+    },
+    {
+      "id": "memory-nav",
+      "label": "JS heap across 35 pane switches",
+      "before": {
+        "jsHeapUsedMb": 336.65,
+        "jsHeapTotalMb": 386.7,
+        "domNodes": 1082
+      },
+      "after": {
+        "jsHeapUsedMb": 344.67,
+        "jsHeapTotalMb": 390.96,
+        "domNodes": 1292
+      },
+      "deltaHeapMb": 8.02
+    },
+    {
+      "id": "text200",
+      "label": "long lesson at 200% text",
+      "wallMs": 1104,
+      "rootFontPx": "32px",
+      "overflowX": 0,
+      "scrollWidth": 1190,
+      "innerWidth": 1190,
+      "clippedNodes": 0
+    },
+    {
+      "id": "narrow460",
+      "label": "long lesson at 460px",
+      "wallMs": 1388,
+      "overflowX": 0,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "headingVisible": true
+    },
+    {
+      "id": "memory-session",
+      "label": "JS heap and renderer RSS across the whole run",
+      "before": {
+        "jsHeapUsedMb": 261.3,
+        "jsHeapTotalMb": 282.45,
+        "domNodes": 842,
+        "rss": {
+          "pid": 2788465,
+          "rssMb": 680
+        }
+      },
+      "after": {
+        "jsHeapUsedMb": 341.34,
+        "jsHeapTotalMb": 406.37,
+        "domNodes": 862,
+        "rss": {
+          "pid": 2788465,
+          "rssMb": 873.1
+        }
+      },
+      "deltaHeapMb": 80.04,
+      "deltaRssMb": 193.1
+    }
+  ]
+}

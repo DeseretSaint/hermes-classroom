@@ -1,0 +1,15 @@
+{
+  "rows": [
+    {
+      "id": "scroll-textbook-index-60",
+      "label": "3s continuous 40px-step scroll of the 60-row index",
+      "scrollHeight": 3649,
+      "clientHeight": 552,
+      "frames": 77,
+      "medianFrameMs": 5.7,
+      "p95FrameMs": 5.8,
+      "worstFrameMs": 5.8,
+      "longTasks": []
+    }
+  ]
+}
