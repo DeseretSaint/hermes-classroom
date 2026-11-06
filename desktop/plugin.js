@@ -1977,7 +1977,7 @@ function CoursesView({ implemented, onStartCreate, createOpen, onOpen }) {
         ]
       }),
       body,
-      jsx(sdk.ConfirmDialog, {
+      jsx(FocusReturningDialog, {
         confirmLabel: 'Delete enrollment',
         description: pendingDelete
           ? `This deletes the learning data for “${pendingDelete.title}” on this profile. The course content and the pack it came from are kept.`
@@ -2348,7 +2348,7 @@ function LibraryView({ implemented, createOpen }) {
             ]
           })
         : null,
-      jsx(sdk.ConfirmDialog, {
+      jsx(FocusReturningDialog, {
         confirmLabel: 'Delete enrollment',
         description: pendingDelete
           ? `This deletes the learning data for “${pendingDelete.title}” on this profile. The pack content itself is kept.`
@@ -2777,6 +2777,21 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled }) {
 }
 
 /**
+ * The answer object sent to `attempt.submit`.
+ *
+ * `text` carries the written answer (contract max 8000). `selection` is the closed-form channel and
+ * the contract caps every item at 200 characters, so a long written answer must not be copied into
+ * it — a 400-character sentence was rejected as VALIDATION_FAILED before grading ever ran. Short
+ * answers still travel on both channels, because a closed-form check may grade on either field.
+ */
+const SELECTION_MAX_CHARS = 200
+function attemptAnswer(answer) {
+  const payload = { kind: 'text', text: answer }
+  if (answer.length <= SELECTION_MAX_CHARS) payload.selection = [answer]
+  return payload
+}
+
+/**
  * One attempt, started and finished in the pane or on the lesson page.
  *
  * Idempotency is enrollment + check + a per-view nonce: retrying a failed grade re-sends the SAME
@@ -2789,18 +2804,34 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
   const [text, setText] = useState('')
   const [phase, setPhase] = useState('awaiting_input')
   const [result, setResult] = useState(null)
+  const [resultCheck, setResultCheck] = useState(null)
   const [error, setError] = useState(null)
   const [overrideOpen, setOverrideOpen] = useState(false)
   const nonceRef = useRef(null)
+  const resultRef = useRef(null)
   const detached = Boolean(bindingState && bindingState !== 'active')
 
+  // The answer form unmounts when a verdict arrives; put focus on the verdict itself so a keyboard
+  // user is not dropped back on <body> with no idea whether the submission went through.
   useEffect(() => {
+    if (phase === 'graded' || phase === 'needs_retry' || phase === 'overridden') {
+      resultRef.current?.focus({ preventScroll: true })
+    }
+  }, [phase])
+
+  // A verdict stays on screen until the learner acts on it. Committing an attempt refreshes the
+  // section and opens the next check version; that refresh must not wipe the feedback the person
+  // just earned (the panel used to snap straight to an empty v3 form).
+  useEffect(() => {
+    if (result) return
     setText('')
     setPhase('awaiting_input')
     setResult(null)
+    setResultCheck(null)
     setError(null)
     nonceRef.current = null
-  }, [check && check.check_id])
+  }, [check && check.check_id, result])
+  const displayCheck = resultCheck || check
 
   const submit = useCallback(async () => {
     if (!check) return
@@ -2819,7 +2850,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
         check_id: check.check_id,
         check_version: check.check_version,
         attempt_nonce: nonceRef.current,
-        answer: { kind: 'text', text: answer, selection: [answer] }
+        answer: attemptAnswer(answer)
       },
       {
         idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
@@ -2834,6 +2865,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
     }
     const graded = response.result
     setResult(graded)
+    setResultCheck(check)
     setPhase(graded.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
     if (onCommitted) onCommitted(graded)
   }, [check, text, enrollmentId, revision, onCommitted])
@@ -2849,7 +2881,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
         check_id: check.check_id,
         check_version: check.check_version,
         attempt_nonce: nonceRef.current,
-        answer: { kind: 'text', text: text.trim(), selection: [text.trim()] }
+        answer: attemptAnswer(text.trim())
       },
       {
         idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
@@ -2862,6 +2894,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
       return
     }
     setResult(response.result)
+    setResultCheck(check)
     setPhase(response.result.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
     if (onCommitted) onCommitted(response.result)
   }, [check, text, enrollmentId, revision, onCommitted])
@@ -2883,6 +2916,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
       return
     }
     setResult({ verdict: 'overridden', evidence_class: 'override', criteria: [], next_action: 'complete_objective' })
+    setResultCheck(check)
     setPhase('overridden')
     if (onCommitted) onCommitted(response.result)
   }, [check, enrollmentId, revision, onCommitted])
@@ -2903,8 +2937,8 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
       jsxs('div', {
         className: 'flex flex-wrap items-center gap-2',
         children: [
-          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: `Check v${check.check_version}` }),
-          jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: check.evidence_target || 'evidence' }),
+          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: `Check v${displayCheck.check_version}` }),
+          jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: displayCheck.evidence_target || 'evidence' }),
           result && result.evidence_class ? jsx(EvidenceClassText, { value: result.evidence_class }) : null
         ]
       }),
@@ -2966,7 +3000,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
         : null,
 
       phase === 'submitting'
-        ? jsx('div', {
+        ? jsxs('div', {
             className: 'flex items-center gap-2 text-xs text-(--ui-text-secondary)',
             children: [
               jsx(sdk.Loader, { label: 'Grading this answer' }),
@@ -2977,7 +3011,9 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
 
       phase === 'graded' && result
         ? jsxs('div', {
-            className: 'flex flex-col gap-2',
+            className: 'flex flex-col gap-2 outline-none',
+            ref: resultRef,
+            tabIndex: -1,
             children: [
               jsx('div', { className: 'text-sm font-medium', children: VERDICT_COPY[result.verdict] || result.verdict }),
               criteria.length > 0
@@ -2993,7 +3029,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
                             jsx('span', { className: 'ml-1', children: item.observed || item.id })
                           ]
                         },
-                        `${item.id}-${index}`
+                        `${item.id || 'criterion'}-${index}`
                       )
                     )
                   })
@@ -3008,6 +3044,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
                     onClick: () => {
                       setText('')
                       setResult(null)
+                      setResultCheck(null)
                       setPhase('awaiting_input')
                       nonceRef.current = null
                     },
@@ -3029,7 +3066,9 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
 
       phase === 'needs_retry'
         ? jsxs('div', {
-            className: 'flex flex-col gap-2',
+            className: 'flex flex-col gap-2 outline-none',
+            ref: resultRef,
+            tabIndex: -1,
             children: [
               jsx('div', {
                 className: 'text-sm font-medium',
@@ -3058,7 +3097,9 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
 
       phase === 'overridden'
         ? jsxs('div', {
-            className: 'flex flex-col gap-2',
+            className: 'flex flex-col gap-2 outline-none',
+            ref: resultRef,
+            tabIndex: -1,
             children: [
               jsx('div', { className: 'text-sm font-medium', children: 'Access granted — not independent evidence' }),
               jsx(QuietNote, {
@@ -3069,6 +3110,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
                 size: 'sm',
                 onClick: () => {
                   setResult(null)
+                  setResultCheck(null)
                   setPhase('awaiting_input')
                   nonceRef.current = null
                 },
@@ -3099,7 +3141,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
           : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
       }),
 
-      jsx(sdk.ConfirmDialog, {
+      jsx(FocusReturningDialog, {
         open: overrideOpen,
         title: 'Move on without a grade?',
         description:
@@ -3159,7 +3201,7 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
     onClose()
   }, [enrollmentId, objectiveId, lessonRunId, seed, excerpt, note, tags, onSaved, onClose])
 
-  return jsx(sdk.ConfirmDialog, {
+  return jsx(FocusReturningDialog, {
     open,
     title: 'Save to notebook',
     description: 'Saved excerpts and personal notes stay on this profile. They never enter a shared pack.',
@@ -3817,6 +3859,7 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
   const [pendingRemove, setPendingRemove] = useState(null)
   const [undo, setUndo] = useState(null)
   const [error, setError] = useState(null)
+  const editTriggerRef = useRef(null)
 
   useEffect(() => {
     if (!pluginContext) return undefined
@@ -3864,6 +3907,8 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
     setError(null)
     setEditing(null)
     onChanged()
+    // The editor's fields unmount here; hand focus back to the control that opened them.
+    editTriggerRef.current?.focus({ preventScroll: true })
   }, [editing, editNote, editTags, onChanged])
 
   const removeEntry = useCallback(async () => {
@@ -4030,7 +4075,8 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
                           ? jsx(sdk.Button, {
                               variant: 'text',
                               size: 'sm',
-                              onClick: () => {
+                              onClick: (event) => {
+                                editTriggerRef.current = event.currentTarget
                                 setEditing(entry)
                                 setEditNote(entry.note || '')
                                 setEditTags((entry.tags || []).join(', '))
@@ -4075,7 +4121,15 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
                               className: 'flex items-center gap-2',
                               children: [
                                 jsx(sdk.Button, { variant: 'default', size: 'sm', onClick: saveEdit, children: 'Save changes' }),
-                                jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: () => setEditing(null), children: 'Cancel' })
+                                jsx(sdk.Button, {
+                                  variant: 'text',
+                                  size: 'sm',
+                                  onClick: () => {
+                                    setEditing(null)
+                                    editTriggerRef.current?.focus({ preventScroll: true })
+                                  },
+                                  children: 'Cancel'
+                                })
                               ]
                             })
                           ]
@@ -4088,7 +4142,7 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
             )
           }),
 
-      jsx(sdk.ConfirmDialog, {
+      jsx(FocusReturningDialog, {
         open: Boolean(pendingRemove),
         title: 'Remove this moment from the notebook?',
         description:
@@ -4258,7 +4312,7 @@ function QuizzesView({ row, quizzes, implemented, onOpenSection, onChanged }) {
                                         className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                                         children: `${item.met ? 'Met' : 'Not met'}: ${item.observed || item.id}`
                                       },
-                                      `${item.id}-${index}`
+                                      `${item.id || 'criterion'}-${index}`
                                     )
                                   )
                                 })
@@ -7153,6 +7207,44 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
       body
     ]
   })
+}
+
+/**
+ * A controlled `ConfirmDialog` that hands focus back to the control that opened it.
+ *
+ * Every Coursebook dialog is opened from a button, not a DialogTrigger, so Radix has no trigger to
+ * restore to and focus lands on `<body>` when the dialog unmounts. The control that opened it is
+ * remembered at open time and refocused at close; when the section refresh replaced that node while
+ * the dialog was up, the same control is found again by its label inside this plugin's own route
+ * root. Only Coursebook's own markup is read — nothing here observes or restyles the app shell.
+ */
+function FocusReturningDialog({ open, ...props }) {
+  const openerRef = useRef(null)
+  useEffect(() => {
+    if (open) {
+      const active = document.activeElement
+      if (active && active !== document.body && !(active.closest && active.closest('[role="dialog"]'))) {
+        openerRef.current = { element: active, label: (active.innerText || '').trim().slice(0, 80) }
+      }
+      return
+    }
+    const opener = openerRef.current
+    openerRef.current = null
+    if (!opener) return
+    let target = opener.element && opener.element.isConnected ? opener.element : null
+    if (!target && opener.label) {
+      const root = document.querySelector('[data-cb-route]')
+      target =
+        (root &&
+          [...root.querySelectorAll('button')].find(
+            (button) => (button.innerText || '').trim().slice(0, 80) === opener.label
+          )) ||
+        null
+    }
+    if (target && typeof target.focus === 'function') target.focus({ preventScroll: true })
+  }, [open])
+  const dialogProps = { open, ...props }
+  return jsx(sdk.ConfirmDialog, dialogProps)
 }
 
 function CoursebookPage() {

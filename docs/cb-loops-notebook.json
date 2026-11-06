@@ -1,0 +1,120 @@
+{
+  "steps": [
+    {
+      "step": "section-open",
+      "at": "2026-11-06T19:26:04.435Z",
+      "expected": "A section with a teaching segment renders its lesson page with Save to notebook",
+      "actual": "section page rendered",
+      "hash": "#/coursebook",
+      "mode": "dark",
+      "active": "BUTTON:Courses",
+      "route": true,
+      "sectionIndex": 1,
+      "sectionTitle": "Choose the polite expression for a first confession",
+      "saveButtons": 2
+    },
+    {
+      "step": "save-dialog-open",
+      "at": "2026-11-06T19:26:05.997Z",
+      "expected": "Editor prefilled with the segment excerpt, empty personal note, tags field",
+      "actual": "dialog opened",
+      "hash": "#/coursebook",
+      "mode": "dark",
+      "active": "BUTTON:Save to notebook",
+      "route": true,
+      "excerptChars": 2457,
+      "excerptHead": "# Lesson 2 — choosing by addressee, relationship and setting\n\nThere is no single"
+    },
+    {
+      "step": "notes-typed",
+      "at": "2026-11-06T19:26:06.796Z",
+      "expected": "Note and tag accepted into the editor",
+      "actual": "inputs hold typed values",
+      "hash": "#/coursebook",
+      "mode": "dark",
+      "active": "INPUT:cb-note-tags",
+      "route": true,
+      "note": "cb-loop-note-mw5d7d0l v1 — polite form carries distance, not more affection.",
+      "tags": "loop-proof-d7d0l"
+    },
+    {
+      "step": "entry-saved",
+      "at": "2026-11-06T19:26:07.498Z",
+      "expected": "Dialog closes after notebook.save commits and focus returns to the Save control",
+      "actual": "dialog closed",
+      "hash": "#/coursebook",
+      "mode": "dark",
+      "active": "BUTTON:Save to notebook",
+      "route": true,
+      "waitedMs": 151,
+      "focusBefore": "BUTTON||Courses",
+      "focusAfter": "BUTTON||Save to notebook"
+    },
+    {
+      "step": "notebook-search",
+      "at": "2026-11-06T19:26:10.513Z",
+      "expected": "One entry matches the unique note marker",
+      "actual": "entry and note shown",
+      "hash": "#/coursebook",
+      "mode": "dark",
+      "active": "INPUT:",
+      "route": true,
+      "entries": 1,
+      "noteVisible": true
+    },
+    {
+      "step": "edit-open",
+      "at": "2026-11-06T19:26:13.772Z",
+      "expected": "Inline editor opens prefilled with the saved note and tags",
+      "actual": "fields prefilled",
+      "hash": "#/coursebook",
+      "mode": "dark",
+      "active": "INPUT:cb-edit-tags",
+      "route": true,
+      "prefillMatches": true,
+      "note": "cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession.",
+      "tags": "loop-proof-d7d0l, edited",
+      "focus": "BUTTON||Edit note and tags"
+    },
+    {
+      "step": "entry-edited",
+      "at": "2026-11-06T19:26:15.140Z",
+      "expected": "notebook.update keeps one entry with the new note and tags; focus stays in the notebook",
+      "actual": "edited note visible",
+      "hash": "#/coursebook",
+      "mode": "dark",
+      "active": "BUTTON:Edit note and tags",
+      "route": true,
+      "v2Visible": true,
+      "oldNoteGone": true,
+      "focusAfter": "BUTTON||Edit note and tags"
+    },
+    {
+      "step": "reload-persistence",
+      "at": "2026-11-06T19:26:29.590Z",
+      "expected": "After a full renderer reload the edited entry still has the edited note and both tags",
+      "actual": "edited content survived reload",
+      "hash": "#/coursebook",
+      "mode": "dark",
+      "active": "INPUT:",
+      "route": true,
+      "hashBefore": "#/coursebook",
+      "hashAfter": "#/coursebook",
+      "noteSurvived": true,
+      "originalGone": true,
+      "tagVisible": true
+    },
+    {
+      "step": "console",
+      "at": "2026-11-06T19:26:30.207Z",
+      "expected": "No renderer exceptions or console errors during the loop",
+      "actual": "0 captured",
+      "hash": "#/coursebook",
+      "mode": "dark",
+      "active": "INPUT:",
+      "route": true,
+      "errors": []
+    }
+  ],
+  "finished_at": "2026-11-06T19:26:30.208Z"
+}
