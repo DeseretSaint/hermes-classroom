@@ -53,7 +53,26 @@ def seeded_connection() -> sqlite3.Connection:
     return connection
 
 
-class UnmigratedDatabaseTest(unittest.TestCase):
+class _ApiBindingHandlerIsolated(unittest.TestCase):
+    """Pin ``binding.get`` to the platform handler while this module runs.
+
+    ``coursebook.api.METHOD_HANDLERS`` is process-wide. Once the kernel package has been
+    imported by another test module, ``coursebook.domain`` owns ``binding.get`` and reads the
+    real database, which these tests deliberately replace with an in-memory copy of the frozen
+    shape. Without this pin the suite result depends on module load order (CB-002 merge).
+    """
+
+    def setUp(self) -> None:
+        self._saved_handlers = dict(api.METHOD_HANDLERS)
+        api.METHOD_HANDLERS["binding.get"] = api._binding_get
+        self.addCleanup(self._restore_handlers)
+
+    def _restore_handlers(self) -> None:
+        api.METHOD_HANDLERS.clear()
+        api.METHOD_HANDLERS.update(self._saved_handlers)
+
+
+class UnmigratedDatabaseTest(_ApiBindingHandlerIsolated):
     def test_binding_get_refuses_rather_than_claiming_no_binding(self) -> None:
         # No migrations -> no binding row can exist. `{binding: null}` would assert
         # "this chat is not bound", which this build cannot know.
@@ -64,8 +83,9 @@ class UnmigratedDatabaseTest(unittest.TestCase):
         self.assertFalse(response["error"]["retryable"])
 
 
-class MigrationPresentTest(unittest.TestCase):
+class MigrationPresentTest(_ApiBindingHandlerIsolated):
     def setUp(self) -> None:
+        super().setUp()
         patcher_version = mock.patch.object(db, "applied_schema_version", return_value=1)
         patcher_connect = mock.patch.object(db, "connect", side_effect=seeded_connection)
         patcher_version.start()

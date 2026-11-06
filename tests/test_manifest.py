@@ -126,7 +126,19 @@ class PackageLayoutTest(unittest.TestCase):
         sys.modules[spec.name] = module
         spec.loader.exec_module(module)
         paths = {route.path for route in module.router.routes}
-        self.assertEqual(paths, {"/health", "/schema", "/rpc", "/runtime"})
+        self.assertEqual(
+            paths,
+            {
+                "/health",
+                "/schema",
+                "/rpc",
+                "/runtime",
+                # CB-010: the only doors a local pack may enter or leave through.
+                "/packs/intake",
+                "/packs/grant",
+                "/artifacts/{handle}",
+            },
+        )
 
 
 if __name__ == "__main__":

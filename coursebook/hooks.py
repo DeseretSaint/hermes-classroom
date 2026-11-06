@@ -74,3 +74,16 @@ def post_tool_call(
 
 #: What ``plugin.yaml`` declares. Kept here so a rename cannot drift from the manifest silently.
 PROVIDED_HOOKS: tuple[str, ...] = ("pre_llm_call", "post_llm_call", "post_tool_call")
+
+# Importing the package imports this module, so this is where the kernel's RPC handlers get bound.
+# Registration reads the live contract (``coursebook.domain.ensure_registered``), so a contract
+# amendment adds methods without a second wiring point and cannot drift from ``cb.rpc``.
+from . import domain as _domain  # noqa: E402  (import after the hook constants on purpose)
+
+_domain.ensure_registered()
+
+# Pack lifecycle handlers (CB-010). They are not kernel commands: preview/import/export touch the
+# archive and the pack library, and ``pack.delete`` stays with the kernel's data-scope path.
+from . import pack_flow as _pack_flow  # noqa: E402  (same single wiring point)
+
+_pack_flow.ensure_registered()

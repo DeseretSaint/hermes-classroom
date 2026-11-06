@@ -1,0 +1,1012 @@
+"""Pack lifecycle integration: preview → import → learn → export → delete.
+
+:mod:`coursebook.packs` owns the pack *document*; :mod:`coursebook.archive` owns bounded
+archive reading and staging. This module is the seam that connects both to the kernel
+(:mod:`coursebook.domain`, ``cb.db``) so a pack becomes a real course a learner can open, and so
+an exported pack is provably the content that was reviewed.
+
+Three frozen constraints shape every function here:
+
+* **A pack is untrusted data.** Nothing from a manifest reaches ``courses``/``objectives``
+  without passing :func:`coursebook.archive.extract_archive` (schema, bounds, MIME, hashes,
+  teaching audit) and :func:`validate_and_audit` below. Refusal happens *before* the first
+  database write, so a rejected pack leaves no course residue.
+* **Pack identity and enrollment identity are separate.** ``pack_id`` + immutable
+  ``pack_version`` + ``content_hash`` identify content; ``course_id``/``enrollment_id`` identify
+  one learner's progress. Re-importing the same content adds no rows; ``mode: "fresh"`` cuts a
+  new course over the same immutable content; ``mode: "resume"`` re-opens the existing one.
+* **The pack's recipe is the course's recipe.** There is no request field that can change it, so
+  a ``parent`` pack cannot silently become an adult graded course. A parent pack's checks are
+  never copied as gradable specs; cross-recipe conversion is a separate, explicit authoring act
+  (:func:`build_conversion`) that produces a *new* pack with ``derived_from`` recorded.
+
+Host seams this module exposes but does not own (``dashboard/plugin_api.py`` is Sable's file):
+
+* :func:`grant_local_file` — the only way a filesystem path enters the pack pipeline.
+* :func:`open_artifact` — resolves an ``artifact.get`` handle to bounded bytes for the
+  authenticated download route.
+"""
+
+from __future__ import annotations
+
+import copy
+import hashlib
+import json
+import os
+import re
+import sqlite3
+import uuid
+import zipfile
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Mapping
+
+from . import PACKAGE_ID, __version__, api, db
+from . import archive, packs
+from .api import RpcError
+from .archive import PackRejected, PackLibrary, StagingArea
+
+#: Methods this module owns. ``pack.delete`` stays with the kernel: it owns data-scope previews.
+PACK_METHODS: tuple[str, ...] = ("pack.preview", "pack.import", "pack.export")
+
+#: Roles whose content may be rendered as a lesson segment on import.
+TEACHING_ROLES = ("section", "learner_page", "parent_guide")
+
+
+# ── paths ──────────────────────────────────────────────────────────────────
+
+
+def data_root() -> Path:
+    """``<plugin data>/`` for the active profile, resolved per call (never cached)."""
+    from plugins.plugin_storage import plugin_data_dir
+
+    return plugin_data_dir(PACKAGE_ID)
+
+
+def library_root() -> Path:
+    return data_root() / "pack-library"
+
+
+def staging_root() -> Path:
+    return data_root() / "pack-staging"
+
+
+def export_root() -> Path:
+    return data_root() / "pack-exports"
+
+
+#: Process-level staging registry, keyed by resolved root. A grant lives in this object only,
+#: which is why a restart turns an unknown ``staged_id`` into an explicit refusal rather than a
+#: guessed file.
+_STAGING: dict[str, StagingArea] = {}
+
+
+def staging() -> StagingArea:
+    root = staging_root().resolve()
+    key = str(root)
+    area = _STAGING.get(key)
+    if area is None:
+        area = StagingArea(root)
+        _STAGING[key] = area
+    return area
+
+
+def library() -> PackLibrary:
+    return PackLibrary(library_root())
+
+
+def grant_local_file(path: str | Path) -> str:
+    """Register a host-held local archive and return the ``staged_id``.
+
+    Called by the host adapter (native picker / bundled installer / CLI), never over the wire.
+    """
+    return staging().grant_local_file(path)
+
+
+# ── small helpers ──────────────────────────────────────────────────────────
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds")
+
+
+def _canonical_hash(value: Any) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return "sha256:" + hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _new_id(prefix: str) -> str:
+    return f"{prefix}_{uuid.uuid4().hex}"
+
+
+def _payload_hash(method: str, payload: Mapping[str, Any]) -> str:
+    return _canonical_hash({"method": method, "payload": dict(payload)})
+
+
+def _rejected(message: str, reason: str, **details: Any) -> RpcError:
+    return RpcError.of("PACK_REJECTED", message, reason=reason, **details)
+
+
+def _row(connection: sqlite3.Connection, sql: str, params: tuple = ()) -> sqlite3.Row | None:
+    return connection.execute(sql, params).fetchone()
+
+
+def _idempotent_lookup(
+    connection: sqlite3.Connection, key: str | None, method: str, payload_hash: str
+) -> tuple[int, dict[str, Any]] | None:
+    if not key:
+        return None
+    row = _row(
+        connection,
+        "SELECT payload_hash, method, response_json FROM idempotency_keys WHERE key = ?",
+        (key,),
+    )
+    if row is None:
+        return None
+    if row["payload_hash"] != payload_hash or row["method"] != method:
+        raise RpcError.of(
+            "IDEMPOTENCY_CONFLICT",
+            "this idempotency key was already used with a different payload.",
+            key=key,
+            method=row["method"],
+        )
+    stored = json.loads(row["response_json"] or "{}")
+    return int(stored.get("revision", 0)), dict(stored.get("result") or {})
+
+
+def _remember(
+    connection: sqlite3.Connection,
+    key: str | None,
+    method: str,
+    payload_hash: str,
+    operation_id: str,
+    revision: int,
+    result: dict[str, Any],
+) -> None:
+    if not key:
+        return
+    connection.execute(
+        "INSERT INTO idempotency_keys (key, payload_hash, method, operation_id, response_json, created_at)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            key,
+            payload_hash,
+            method,
+            operation_id,
+            json.dumps({"revision": revision, "result": result}, sort_keys=True),
+            _now(),
+        ),
+    )
+
+
+# ── pack → course projection ───────────────────────────────────────────────
+
+
+def _stimulus_text(check: Mapping[str, Any]) -> str:
+    return str(check.get("stimulus") or "").strip()
+
+
+def audit_check_for_import(check: Mapping[str, Any]) -> tuple[bool, list[str]]:
+    """Deterministic pre-import audit of one manifest check. Never a human review.
+
+    A check becomes gradable only when *this* audit passes. The pack's own declared
+    ``audit_state`` is preserved alongside it, so a caller can see that no human review was
+    claimed (``trust.labels`` still has no ``human_review_recorded``).
+    """
+    problems: list[str] = []
+    stimulus = _stimulus_text(check)
+    reference = str(check.get("reference_answer") or "").strip()
+    rubric = [str(item).strip() for item in check.get("rubric") or [] if str(item).strip()]
+    if not stimulus:
+        problems.append("empty stimulus")
+    if not reference:
+        problems.append("empty reference answer")
+    if not rubric:
+        problems.append("empty rubric")
+    if reference and stimulus and reference.casefold() in stimulus.casefold():
+        problems.append("reference answer appears in the stimulus")
+    alternatives = [str(item) for item in check.get("accepted_alternatives") or []]
+    if reference and all(alternative.strip().casefold() == reference.casefold() for alternative in alternatives if alternative.strip()):
+        problems.append("accepted alternatives do not add an accepted form")
+    return (not problems), problems
+
+
+def check_spec_from_pack_check(
+    check: Mapping[str, Any], *, recipe: str
+) -> dict[str, Any] | None:
+    """Project a manifest check into the kernel's ``check_spec`` shape.
+
+    ``None`` means "not gradable here": a parent pack never yields a gradable spec (a parent
+    observes, the harness does not grade a child), and a check that fails the deterministic
+    audit stays ungraded instead of shipping a flawed item.
+    """
+    if recipe == "parent":
+        return None
+    passed, _problems = audit_check_for_import(check)
+    if not passed:
+        return None
+    reference_answer = str(check["reference_answer"]).strip()
+    alternatives = [str(item) for item in check.get("accepted_alternatives") or []]
+    evidence_target = str(check.get("evidence_target") or "recall")
+    open_targets = {"production", "transfer"}
+    if evidence_target in open_targets:
+        reference: dict[str, Any] = {"kind": "rubric_only"}
+    else:
+        answers = [reference_answer] + [item for item in alternatives if item not in (reference_answer,)]
+        reference = {"kind": "exact", "answers": answers}
+    rubric_items = [
+        {"id": f"c{index}", "description": str(text)}
+        for index, text in enumerate(check.get("rubric") or [], start=1)
+    ]
+    return {
+        "audit_state": "passed",
+        "audit_source": "import_automated_audit",
+        "declared_audit_state": str(check.get("audit_state") or "unreviewed"),
+        "stimulus": {"prompt": _stimulus_text(check)},
+        "reference": reference,
+        "rubric": {
+            "construct": evidence_target,
+            "pass_rule": "all",
+            "criteria": rubric_items,
+        },
+        "locale": check.get("locale"),
+    }
+
+
+def objective_criteria(objective: Mapping[str, Any], *, recipe: str) -> list[dict[str, Any]]:
+    """Criteria list for ``objectives.evidence_criteria_json`` (kernel-owned convention)."""
+    criteria: list[dict[str, Any]] = [
+        {
+            "id": "pack_objective",
+            "description": str(objective["objective_id"]),
+            "pack_objective_id": str(objective["objective_id"]),
+        }
+    ]
+    for index, text in enumerate(objective.get("evidence_criteria") or [], start=1):
+        criteria.append({"id": f"target{index}", "description": str(text)})
+    for check in objective.get("checks") or []:
+        spec = check_spec_from_pack_check(check, recipe=recipe)
+        if spec is None:
+            criteria.append(
+                {
+                    "id": str(check.get("check_id") or "check"),
+                    "description": "parent observation: not machine-graded"
+                    if recipe == "parent"
+                    else "check withheld: failed the import audit",
+                    "check_id": str(check.get("check_id")),
+                    "check_spec_withheld": True,
+                }
+            )
+            continue
+        criteria.append(
+            {
+                "id": str(check["check_id"]),
+                "description": f"automated audit of {check['check_id']}",
+                "check_spec": spec,
+            }
+        )
+    return criteria
+
+
+def course_goal(manifest: Mapping[str, Any]) -> str:
+    """A goal derived from the pack itself; never invented prose about the learner."""
+    objectives = manifest.get("objectives") or []
+    first = str(objectives[0]["title"]) if objectives else str(manifest["title"])
+    return (
+        f"Work through the published pack {manifest['pack_id']} {manifest['pack_version']}: "
+        f"{first} (and {max(len(objectives) - 1, 0)} more objective(s))."
+    )
+
+
+def course_dials(manifest: Mapping[str, Any]) -> dict[str, Any]:
+    dials = copy.deepcopy(dict(manifest.get("default_dials") or {}))
+    if manifest["recipe"] == "parent":
+        # A parent pack is a lesson blueprint. The harness never grades a child, so the recipe's
+        # assessment dial is pinned off here instead of trusting a manifest value.
+        dials["assessment"] = "none"
+        dials.setdefault("autonomy", "guided")
+    dials["recipe_source"] = "pack_manifest"
+    return dials
+
+
+def _plan_hash(connection: sqlite3.Connection, plan_id: str) -> str:
+    """Same canonical plan hash the kernel computes (``coursebook.domain._plan_hash``)."""
+    plan = _row(connection, "SELECT * FROM plans WHERE id = ?", (plan_id,))
+    if plan is None:
+        raise RpcError.of("NOT_FOUND", "plan not found", plan_id=plan_id)
+    objectives = connection.execute(
+        "SELECT id, ordinal, title, evidence_target, evidence_criteria_json, version"
+        " FROM objectives WHERE plan_id = ? ORDER BY ordinal",
+        (plan_id,),
+    ).fetchall()
+    payload = {
+        "course_id": plan["course_id"],
+        "version": plan["version"],
+        "schedule": json.loads(plan["schedule_json"] or "{}"),
+        "objectives": [
+            {
+                "id": row["id"],
+                "ordinal": row["ordinal"],
+                "title": row["title"],
+                "evidence_target": row["evidence_target"],
+                "evidence_criteria": json.loads(row["evidence_criteria_json"] or "[]"),
+                "version": row["version"],
+            }
+            for row in objectives
+        ],
+    }
+    return _canonical_hash(payload)
+
+
+# ── validation and audit before any write ──────────────────────────────────
+
+
+def validate_and_audit(staged: archive.StagedPack) -> dict[str, Any]:
+    """Full pre-write gate for a staged pack. Raises :class:`PackRejected`."""
+    manifest = staged.manifest
+    packs.validate_manifest(manifest)
+    packs.validate_minima(manifest)
+    packs.verify_content_hash(manifest)
+    packs.require_minimum_version(manifest, __version__)
+    if str(manifest.get("recipe")) not in _RECIPES:
+        raise PackRejected(f"unknown recipe {manifest.get('recipe')!r}")
+    problems = packs.audit_bundle(staged.directory)
+    if problems:
+        raise PackRejected("pack content audit failed: " + "; ".join(problems))
+    # A pack may not hold content for a role it does not declare, and no manifest may carry a
+    # private field. Both are checked on the document itself, not only on the archive.
+    leaked = packs.contains_private_fields(manifest)
+    if leaked:
+        raise PackRejected(f"pack manifest carries private fields: {sorted(set(leaked))}")
+    return manifest
+
+
+_RECIPES = ("one_off", "casual", "committed", "companion", "parent")
+
+
+def _pack_row_id(pack_id: str, version: str) -> str:
+    digest = hashlib.sha256(f"{pack_id}\x00{version}".encode("utf-8")).hexdigest()[:24]
+    return f"pck_{digest}"
+
+
+def _installed_record(pack_id: str, version: str) -> dict[str, Any] | None:
+    for record in library().list():
+        if record.get("pack_id") == pack_id and record.get("version") == version:
+            return record
+    return None
+
+
+def _frozen(connection: sqlite3.Connection, pack_id: str) -> bool:
+    row = connection.execute(
+        "SELECT state FROM packs WHERE pack_id = ? ORDER BY installed_at DESC LIMIT 1", (pack_id,)
+    ).fetchone()
+    return row is not None and str(row["state"]) == "frozen"
+
+
+# ── import ─────────────────────────────────────────────────────────────────
+
+
+def _import_job_start(manifest: Mapping[str, Any], mode: str) -> str | None:
+    """Journal the import so an interruption is visible in ``jobs.list`` (never silent)."""
+    try:
+        with db.transaction() as connection:
+            job_id = _new_id("job")
+            now = _now()
+            brief = json.dumps(
+                {
+                    "kind": "import",
+                    "pack_id": manifest["pack_id"],
+                    "pack_version": manifest["pack_version"],
+                    "mode": mode,
+                },
+                sort_keys=True,
+            )
+            connection.execute(
+                "INSERT INTO jobs (id, kind, state, operation_id, brief_json, checkpoint_json,"
+                " attempt_id, lease_owner, lease_expires_at, progress_json, error_json, created_at,"
+                " updated_at) VALUES (?, 'import', 'running', ?, ?, '{}', ?, NULL, NULL, '{}', '{}', ?, ?)",
+                (job_id, f"pack-import-{job_id}", brief, f"jat_{job_id[-12:]}", now, now),
+            )
+            return job_id
+    except Exception:  # noqa: BLE001 - journaling must not block a legitimate import
+        return None
+
+
+def _import_job_finish(job_id: str | None, state: str, error: str | None = None) -> None:
+    if not job_id:
+        return
+    try:
+        with db.transaction() as connection:
+            if error is None:
+                connection.execute(
+                    "UPDATE jobs SET state = ?, updated_at = ? WHERE id = ?", (state, _now(), job_id)
+                )
+            else:
+                connection.execute(
+                    "UPDATE jobs SET state = ?, error_json = ?, updated_at = ? WHERE id = ?",
+                    (state, json.dumps({"message": error[:500]}), _now(), job_id),
+                )
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _write_lesson_page(
+    connection: sqlite3.Connection,
+    *,
+    enrollment_id: str,
+    objective_row_id: str,
+    objective: Mapping[str, Any],
+    staged_directory: Path,
+) -> None:
+    """Materialize the pack's own section text as a durable lesson page.
+
+    The learner reads the authored content; nothing is generated or paraphrased on import.
+    """
+    run_id = _new_id("run")
+    now = _now()
+    connection.execute(
+        "INSERT INTO lesson_runs (id, enrollment_id, objective_id, state, revision, created_at,"
+        " updated_at, last_opened_at) VALUES (?, ?, ?, 'active', 0, ?, ?, ?)",
+        (run_id, enrollment_id, objective_row_id, now, now, now),
+    )
+    ordinal = 0
+    for section in objective.get("sections") or []:
+        path = str(section.get("path") or "")
+        if not path:
+            continue
+        candidate = staged_directory / path
+        if not candidate.is_file():
+            continue
+        text = candidate.read_text(encoding="utf-8")
+        ordinal += 1
+        connection.execute(
+            "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, created_at)"
+            " VALUES (?, ?, ?, 'teaching', ?, ?)",
+            (_new_id("seg"), run_id, ordinal, text, now),
+        )
+    for check in objective.get("checks") or []:
+        ordinal += 1
+        connection.execute(
+            "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, created_at)"
+            " VALUES (?, ?, ?, 'check_prompt', ?, ?)",
+            (_new_id("seg"), run_id, ordinal, _stimulus_text(check), now),
+        )
+
+
+def _write_sources(connection: sqlite3.Connection, course_id: str, manifest: Mapping[str, Any]) -> None:
+    now = _now()
+    for index, source in enumerate(manifest.get("sources") or [], start=1):
+        connection.execute(
+            "INSERT INTO sources (id, course_id, url, title, source_type, published_at, fetched_at,"
+            " support_status, claim_count, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)",
+            (
+                _new_id("src"),
+                course_id,
+                source.get("url"),
+                str(source["title"]),
+                str(source["source_type"]),
+                source.get("published_at"),
+                source.get("fetched_at") or now,
+                str(source.get("support_status") or "unassessed"),
+                now,
+            ),
+        )
+
+
+def pack_preview(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """``pack.preview``: manifest + integrity + the four separate trust labels.
+
+    Nothing is summarised away: author, outcomes, checks, sources/support, licence, notes and
+    media size all travel inside ``manifest``/``integrity``. The response carries no verdict.
+    """
+    try:
+        staged = staging().stage(payload["staged_id"])
+        manifest = validate_and_audit(staged)
+    except PackRejected as exc:
+        raise _rejected(str(exc), "pack_not_importable") from exc
+    document = packs.preview(
+        manifest,
+        integrity=staged.integrity,
+        automated_checks_passed=True,
+    )
+    return 0, document
+
+
+def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """``pack.import``: adopt immutable content and cut (or resume) one learner's course."""
+    db.ensure_schema()
+    method = "pack.import"
+    mode = str(payload["mode"])
+    key = envelope.get("idempotency_key")
+    payload_hash = _payload_hash(method, payload)
+
+    # A double-submitted import must not touch staging twice: the first call consumed the grant.
+    if key:
+        with db.read() as connection:
+            replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+
+    try:
+        staged = staging().stage(payload["staged_id"])
+        manifest = validate_and_audit(staged)
+    except PackRejected as exc:
+        raise _rejected(str(exc), "pack_not_importable") from exc
+
+    pack_id = str(manifest["pack_id"])
+    version = str(manifest["pack_version"])
+    recipe = str(manifest["recipe"])
+
+    installed = _installed_record(pack_id, version)
+    if installed is not None and installed.get("manifest_hash") not in (None, str(manifest["content_hash"])):
+        raise _rejected(
+            "this version is already installed with different content; a published version is immutable",
+            "version_immutable",
+            pack_id=pack_id,
+            pack_version=version,
+        )
+
+    with db.read() as connection:
+        if _frozen(connection, pack_id):
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "this pack was deleted (frozen); its evidence is kept but it cannot be imported again.",
+                pack_id=pack_id,
+            )
+
+    job_id = _import_job_start(manifest, mode)
+    try:
+        # Filesystem first (never inside a transaction): adopt is atomic and idempotent.
+        record = library().adopt(staged, source="local")
+        adopted_directory = Path(str(record["directory"]))
+        with db.transaction() as connection:
+            replay = _idempotent_lookup(connection, key, method, payload_hash)
+            if replay is not None:
+                _import_job_finish(job_id, "completed")
+                return replay
+
+            pack_row_id = _pack_row_id(pack_id, version)
+            now = _now()
+            pack_row = _row(connection, "SELECT * FROM packs WHERE id = ?", (pack_row_id,))
+            if pack_row is None:
+                connection.execute(
+                    "INSERT INTO packs (id, pack_id, version, manifest_hash, license_json, derived_from,"
+                    " source, installed_at, revision, state) VALUES (?, ?, ?, ?, ?, ?, 'local', ?, 0, 'installed')",
+                    (
+                        pack_row_id,
+                        pack_id,
+                        version,
+                        str(manifest["content_hash"]),
+                        json.dumps(manifest.get("license") or {}, sort_keys=True),
+                        (manifest.get("derived_from") or {}).get("pack_id") if manifest.get("derived_from") else None,
+                        now,
+                    ),
+                )
+
+            if mode == "resume":
+                existing = connection.execute(
+                    "SELECT e.id AS enrollment_id, e.revision AS revision, c.id AS course_id"
+                    " FROM enrollments e JOIN courses c ON c.id = e.course_id"
+                    " JOIN packs p ON p.id = c.pack_id"
+                    " WHERE p.pack_id = ? AND e.status != 'archived'"
+                    " ORDER BY e.created_at DESC, e.rowid DESC LIMIT 1",
+                    (pack_id,),
+                ).fetchone()
+                if existing is not None:
+                    result = {
+                        "pack_id": pack_id,
+                        "course_id": existing["course_id"],
+                        "enrollment_id": existing["enrollment_id"],
+                        "revision": int(existing["revision"]),
+                    }
+                    _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), result["revision"], result)
+                    _import_job_finish(job_id, "completed")
+                    return result["revision"], result
+
+            course_id = _new_id("crs")
+            connection.execute(
+                "INSERT INTO courses (id, title, recipe, goal, locale, dials_json, status, pack_id,"
+                " revision, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, 0, ?, ?)",
+                (
+                    course_id,
+                    str(manifest["title"]),
+                    recipe,
+                    course_goal(manifest),
+                    manifest.get("locale"),
+                    json.dumps(course_dials(manifest), sort_keys=True),
+                    pack_row_id,
+                    now,
+                    now,
+                ),
+            )
+            _write_sources(connection, course_id, manifest)
+
+            plan_id = _new_id("pln")
+            connection.execute(
+                "INSERT INTO plans (id, course_id, version, state, plan_hash, schedule_json, created_at,"
+                " approved_at) VALUES (?, ?, 1, 'approved', NULL, ?, ?, ?)",
+                (plan_id, course_id, json.dumps({"source": "pack", "pack_version": version}, sort_keys=True), now, now),
+            )
+            objective_rows: list[tuple[str, Mapping[str, Any]]] = []
+            for objective in sorted(manifest["objectives"], key=lambda item: int(item["ordinal"])):
+                objective_row_id = _new_id("obj")
+                connection.execute(
+                    "INSERT INTO objectives (id, plan_id, ordinal, title, evidence_target,"
+                    " evidence_criteria_json, state, version, created_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, 'not_started', 1, ?)",
+                    (
+                        objective_row_id,
+                        plan_id,
+                        int(objective["ordinal"]),
+                        str(objective["title"]),
+                        str(objective["evidence_target"]),
+                        json.dumps(objective_criteria(objective, recipe=recipe), sort_keys=True),
+                        now,
+                    ),
+                )
+                objective_rows.append((objective_row_id, objective))
+            plan_hash = _plan_hash(connection, plan_id)
+            connection.execute("UPDATE plans SET plan_hash = ? WHERE id = ?", (plan_hash, plan_id))
+
+            enrollment_id = _new_id("enr")
+            connection.execute(
+                "INSERT INTO enrollments (id, course_id, learner_label, status, revision, created_at,"
+                " updated_at) VALUES (?, ?, NULL, 'active', 0, ?, ?)",
+                (enrollment_id, course_id, now, now),
+            )
+            for objective_row_id, objective in objective_rows:
+                _write_lesson_page(
+                    connection,
+                    enrollment_id=enrollment_id,
+                    objective_row_id=objective_row_id,
+                    objective=objective,
+                    staged_directory=adopted_directory,
+                )
+
+            result = {
+                "pack_id": pack_id,
+                "course_id": course_id,
+                "enrollment_id": enrollment_id,
+                "revision": 0,
+            }
+            _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
+        _import_job_finish(job_id, "completed")
+        return 0, result
+    except RpcError:
+        _import_job_finish(job_id, "failed", "refused before completion")
+        raise
+    except PackRejected as exc:
+        _import_job_finish(job_id, "failed", str(exc))
+        raise _rejected(str(exc), "pack_not_importable") from exc
+    except Exception as exc:  # noqa: BLE001 - journal it, then let the dispatcher shape the error
+        _import_job_finish(job_id, "failed", type(exc).__name__)
+        raise
+
+
+# ── export ─────────────────────────────────────────────────────────────────
+
+
+def export_options(options: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Allowlisted export options. Anything else is refused, never ignored."""
+    allowed = {"expected_content_hash"}
+    supplied = dict(options or {})
+    unknown = sorted(set(supplied) - allowed)
+    if unknown:
+        raise _rejected(f"unknown export option(s): {unknown}", "unknown_option")
+    expected = supplied.get("expected_content_hash")
+    if expected is not None and not re.match(r"^sha256:[a-f0-9]{64}$", str(expected)):
+        raise _rejected("expected_content_hash must be sha256:<64 hex>", "bad_option")
+    return {"expected_content_hash": expected}
+
+
+def _rehash_written_archive(path: Path) -> dict[str, Any]:
+    """Read an exported archive back and verify its own manifest hash. Never trust the writer."""
+    with zipfile.ZipFile(path) as bundle:
+        names = bundle.namelist()
+        manifests = [name for name in names if name.count("/") == 1 and name.endswith("/pack.json")]
+        if len(manifests) != 1:
+            raise RpcError.of("INTERNAL_ERROR", "exported archive does not hold exactly one manifest")
+        manifest = json.loads(bundle.read(manifests[0]).decode("utf-8"))
+        for name in names:
+            if name in manifests:
+                continue
+            if name.count("/") < 2:
+                raise RpcError.of("INTERNAL_ERROR", "exported archive has an entry outside its content set")
+    packs.verify_content_hash(manifest)
+    return manifest
+
+
+def review_export_tree(manifest: Mapping[str, Any], files: Mapping[str, bytes]) -> list[dict[str, Any]]:
+    """The complete file/content review: every included file, its role, size, hash and notes."""
+    entries = []
+    for record in manifest["files"]:
+        path = str(record["path"])
+        entries.append(
+            {
+                "path": path,
+                "role": str(record["role"]),
+                "mime": str(record["mime"]),
+                "bytes": int(record["bytes"]),
+                "sha256": str(record["sha256"]),
+                "description": record.get("description"),
+                "text_equivalent": record.get("text_equivalent"),
+                "present": path in files,
+            }
+        )
+    return entries
+
+
+def pack_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """``pack.export``: rebuild the pack from its stored content and record an export artifact.
+
+    The exported document is assembled field-by-field from :func:`coursebook.packs.export_allowlist`,
+    so no transcript, attempt, notebook entry, provider setting or path can ride along. The
+    returned ``content_hash`` is recomputed from the written archive.
+    """
+    db.ensure_schema()
+    options = export_options(payload.get("options"))
+    with db.read() as connection:
+        enrollment = _row(connection, "SELECT * FROM enrollments WHERE id = ?", (payload["enrollment_id"],))
+        if enrollment is None:
+            raise RpcError.of("NOT_FOUND", "enrollment not found", enrollment_id=payload["enrollment_id"])
+        course = _row(connection, "SELECT * FROM courses WHERE id = ?", (enrollment["course_id"],))
+        if course is None or course["pack_id"] is None:
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "this course was not imported from a pack; package it from an authored export instead.",
+                reason="course_not_pack_backed",
+            )
+        pack_row = _row(connection, "SELECT * FROM packs WHERE id = ?", (course["pack_id"],))
+        if pack_row is None:
+            raise RpcError.of("NOT_FOUND", "the pack record for this course is missing", pack_id=course["pack_id"])
+
+    pack_id = str(pack_row["pack_id"])
+    version = str(pack_row["version"])
+    try:
+        manifest, files = library().read(pack_id, version)
+    except PackRejected as exc:
+        raise _rejected(str(exc), "pack_content_missing", pack_id=pack_id, pack_version=version) from exc
+
+    if str(manifest["content_hash"]) != str(pack_row["manifest_hash"]):
+        raise _rejected(
+            "the installed pack content no longer matches the hash recorded at import",
+            "content_hash_drift",
+            pack_id=pack_id,
+            pack_version=version,
+        )
+    problems = packs.audit_bundle(library().path_for(pack_id, version))
+    if problems:
+        raise _rejected("pack content audit failed before export: " + "; ".join(problems), "content_audit_failed")
+
+    try:
+        document, exported = packs.build_export(manifest, files)
+    except PackRejected as exc:
+        raise _rejected(f"export refused: {exc}", "export_not_exportable") from exc
+    review = review_export_tree(document, exported)
+    expected = options["expected_content_hash"]
+    if expected is not None and expected != str(document["content_hash"]):
+        raise RpcError.of(
+            "DELETE_SCOPE_STALE",
+            "the installed pack content changed since it was reviewed; nothing was exported.",
+            current_data_scope_hash=str(document["content_hash"]),
+        )
+
+    export_dir = export_root()
+    export_dir.mkdir(parents=True, exist_ok=True)
+    digest = str(document["content_hash"]).split(":", 1)[1]
+    destination = export_dir / f"{pack_id}-{version}-{digest[:16]}.zip"
+    temporary = destination.with_name(destination.stem + ".partial.zip")
+    try:
+        archive.write_archive(temporary, document, exported)
+    except PackRejected as exc:
+        temporary.unlink(missing_ok=True)
+        raise _rejected(f"the export archive could not be written: {exc}", "export_write_failed") from exc
+    os.replace(temporary, destination)
+
+    # Verify the bytes that will be downloaded, not the bytes we think we wrote.
+    try:
+        written_manifest = _rehash_written_archive(destination)
+    except PackRejected as exc:
+        destination.unlink(missing_ok=True)
+        raise _rejected(f"the exported archive failed verification: {exc}", "export_verification_failed") from exc
+    if str(written_manifest["content_hash"]) != str(document["content_hash"]):
+        destination.unlink(missing_ok=True)
+        raise RpcError.of("INTERNAL_ERROR", "the exported archive does not re-hash to its manifest")
+
+    leaked = packs.contains_private_fields(document)
+    if leaked:  # defence in depth: build_export already refuses
+        destination.unlink(missing_ok=True)
+        raise RpcError.of("INTERNAL_ERROR", "export carried a private field and was discarded")
+
+    size = destination.stat().st_size
+    file_digest = "sha256:" + hashlib.sha256(destination.read_bytes()).hexdigest()
+    with db.transaction() as connection:
+        artifact_id = _new_id("art")
+        connection.execute(
+            "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime, provenance_json,"
+            " ref_count, created_at) VALUES (?, ?, 'export', ?, ?, ?, 'application/zip', ?, 1, ?)",
+            (
+                artifact_id,
+                course["id"],
+                file_digest,
+                str(destination),
+                size,
+                json.dumps(
+                    {
+                        "generator": "coursebook.pack_flow",
+                        "model": None,
+                        "prompt_hash": None,
+                        "source_ids": [],
+                        "notes": (
+                            f"export of {pack_id} {version} from enrollment {enrollment['id']}; "
+                            f"pack content_hash {document['content_hash']}"
+                        ),
+                    },
+                    sort_keys=True,
+                ),
+                _now(),
+            ),
+        )
+    return 0, {
+        "artifact_id": artifact_id,
+        "content_hash": str(document["content_hash"]),
+        "file_count": len(review),
+        "bytes": size,
+    }
+
+
+# ── download seam (route owner: Sable) ─────────────────────────────────────
+
+
+_HANDLE = re.compile(r"^(?P<artifact_id>art_[a-f0-9]{32})_(?P<expires>\d{9,12})$")
+
+
+def open_artifact(handle: str) -> tuple[Path, str, int]:
+    """Resolve an ``artifact.get`` handle to ``(path, mime, bytes)``.
+
+    The route calls this *after* the host authenticated the session (``requires_session: true``).
+    A path never crosses the wire; the handle is expiring and refers only to a stored export.
+    """
+    match = _HANDLE.match(str(handle))
+    if match is None:
+        raise RpcError.of("NOT_FOUND", "unknown artifact handle")
+    if int(match.group("expires")) < int(datetime.now(timezone.utc).timestamp()):
+        raise RpcError.of("NOT_FOUND", "this download handle expired; ask artifact.get again")
+    with db.read() as connection:
+        row = _row(connection, "SELECT * FROM artifacts WHERE id = ?", (match.group("artifact_id"),))
+    if row is None:
+        raise RpcError.of("NOT_FOUND", "artifact not found")
+    path = Path(str(row["path"]))
+    if not path.is_file():
+        raise RpcError.of("NOT_FOUND", "artifact file is missing on disk")
+    if path.stat().st_size != int(row["bytes"]):
+        raise RpcError.of("INTERNAL_ERROR", "artifact file size does not match its record")
+    digest = "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest != str(row["content_hash"]):
+        raise RpcError.of("INTERNAL_ERROR", "artifact file hash does not match its record")
+    return path, str(row["mime"]), int(row["bytes"])
+
+
+# ── deletion / tombstone reconciliation ────────────────────────────────────
+
+
+def sync_tombstones() -> list[str]:
+    """Mark library records frozen when the kernel froze their pack row.
+
+    ``pack.delete`` (kernel) freezes the pack and keeps evidence; this keeps the *library index*
+    honest too, so a deleted pack cannot look installed in the file list.
+    """
+    frozen: set[str] = set()
+    try:
+        with db.read() as connection:
+            for row in connection.execute("SELECT pack_id, state FROM packs WHERE state = 'frozen'"):
+                frozen.add(str(row["pack_id"]))
+    except Exception:  # noqa: BLE001 - no schema yet: nothing can be frozen
+        return []
+    if not frozen:
+        return []
+    store = library()
+    records = store.list()
+    changed = []
+    for record in records:
+        if str(record.get("pack_id")) in frozen and record.get("state") != "frozen":
+            record["state"] = "frozen"
+            changed.append(str(record.get("pack_id")))
+    if changed:
+        store._write_records(records)  # noqa: SLF001 - same package, single writer of index.json
+    return changed
+
+
+def recover_interrupted_imports() -> list[str]:
+    """Startup reconciliation: staged trees, library state, and journaled import jobs.
+
+    Returns the ids of import jobs that were running when the process died. Those imports wrote
+    no course: the database transaction is all-or-nothing and adoption happens before it. The
+    UI shows them through ``jobs.list`` so a user is told rather than left guessing.
+    """
+    recovered = staging().reconcile()
+    sync_tombstones()
+    interrupted: list[str] = []
+    try:
+        with db.transaction() as connection:
+            rows = connection.execute(
+                "SELECT id FROM jobs WHERE kind = 'import' AND state = 'running'"
+            ).fetchall()
+            for row in rows:
+                connection.execute(
+                    "UPDATE jobs SET state = 'interrupted_requires_retry', updated_at = ? WHERE id = ?",
+                    (_now(), row["id"]),
+                )
+                interrupted.append(str(row["id"]))
+    except Exception:  # noqa: BLE001
+        return recovered
+    return recovered + interrupted
+
+
+def reconcile() -> dict[str, Any]:
+    """Startup entry point: reconcile staging, tombstones and interrupted imports."""
+    recovered = recover_interrupted_imports()
+    return {"recovered": recovered, "installed": len(library().list())}
+
+
+# ── explicit cross-recipe conversion ───────────────────────────────────────
+
+
+def build_conversion(
+    manifest: Mapping[str, Any],
+    files: Mapping[str, bytes],
+    *,
+    pack_id: str,
+    pack_version: str,
+    recipe: str,
+    license: Mapping[str, Any] | None = None,
+    confirm: bool = False,
+) -> tuple[dict[str, Any], dict[str, bytes]]:
+    """Turn a pack into a *new* pack under a chosen recipe — never silently, never in place.
+
+    Cross-recipe conversion is an authoring act with three visible facts: a new ``pack_id``, a new
+    ``pack_version``, and ``derived_from`` naming the original. Without ``confirm=True`` it
+    refuses, so no UI path can convert a parent blueprint into a graded adult course by accident.
+    """
+    if not confirm:
+        raise PackRejected("conversion needs explicit confirmation and a new pack identity")
+    if recipe not in _RECIPES:
+        raise PackRejected(f"unknown recipe {recipe!r}")
+    if recipe == str(manifest.get("recipe")):
+        raise PackRejected("conversion must change the recipe; re-export the same recipe unchanged instead")
+    if pack_id == str(manifest.get("pack_id")) or pack_version == str(manifest.get("pack_version")):
+        raise PackRejected("a conversion is a new pack: both pack_id and pack_version must change")
+    document, exported = packs.build_export(
+        manifest,
+        files,
+        pack_id=pack_id,
+        pack_version=pack_version,
+        license=license,
+    )
+    # ``build_export`` rebuilds the allowlisted fields but keeps the source recipe; a conversion
+    # is precisely the act of changing it, so it is set here, explicitly, then re-hashed.
+    document = {key: value for key, value in document.items() if key != "content_hash"}
+    document["recipe"] = recipe
+    document = packs.with_content_hash(document)
+    packs.validate_manifest(document)
+    packs.validate_minima(document)
+    return document, exported
+
+
+# ── registration ───────────────────────────────────────────────────────────
+
+
+def ensure_registered() -> tuple[str, ...]:
+    """Bind the three pack methods. Called at import; safe to call again."""
+    registered = []
+    for method, handler in (
+        ("pack.preview", pack_preview),
+        ("pack.import", pack_import),
+        ("pack.export", pack_export),
+    ):
+        api.register_handler(method, handler)
+        registered.append(method)
+    return tuple(registered)
+
+
+ensure_registered()

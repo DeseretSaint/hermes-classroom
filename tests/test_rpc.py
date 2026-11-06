@@ -50,9 +50,13 @@ class DispatchTest(unittest.TestCase):
         self.assertEqual(response["result"]["db_schema_version"], contracts.contract("cb.db")["schema_version"])
 
     def test_unimplemented_method_is_refused_not_faked(self) -> None:
-        response = api.dispatch(request("course.create", {
-            "title": "Learn to braise", "recipe": "one_off", "goal": "Braise short ribs"
-        }))
+        # Every frozen method now has a handler, so the seam is exercised by removing one: the
+        # dispatch contract is "no handler means NOT_IMPLEMENTED", not "guess something".
+        saved = api.METHOD_HANDLERS.pop("pack.preview")
+        try:
+            response = api.dispatch(request("pack.preview", {"staged_id": "stg_not_implemented_01"}))
+        finally:
+            api.METHOD_HANDLERS["pack.preview"] = saved
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
         self.assertFalse(response["error"]["retryable"])
