@@ -1,0 +1,66 @@
+== notebook.save (live, isolated backend 44219)
+{
+  "ok": true,
+  "contract_version": 5,
+  "operation_id": "cb013-notebook-save-1793972264231",
+  "revision": 0,
+  "result": {
+    "entry_id": "nbt_d0d34b1f9de245fe83aec3abfc747749",
+    "revision": 0
+  }
+}
+== notebook.list
+{
+  "ok": true,
+  "contract_version": 5,
+  "operation_id": "cb013-notebook-list-1793972264282",
+  "revision": 0,
+  "result": {
+    "entries": [
+      {
+        "entry_id": "nbt_d0d34b1f9de245fe83aec3abfc747749",
+        "enrollment_id": "enr_544f0aba033e4fc0a2f50fb61aceda25",
+        "objective_id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+        "lesson_run_id": null,
+        "kind": "personal_note",
+        "excerpt": "attempt att_fd9ab53b recorded from the pane",
+        "note": "Supervisor notebook proof: the pane states were captured live in the isolated window.",
+        "tags": [
+          "supervisor-proof"
+        ],
+        "source_ref": null,
+        "created_at": "2026-11-06T13:37:44.238062+00:00",
+        "updated_at": "2026-11-06T13:37:44.238062+00:00",
+        "revision": 0
+      },
+      {
+        "entry_id": "nbt_5ff0733e92284d709d6ab6b28cc418b4",
+        "enrollment_id": "enr_544f0aba033e4fc0a2f50fb61aceda25",
+        "objective_id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+        "lesson_run_id": null,
+        "kind": "personal_note",
+        "excerpt": "attempt att_fd9ab53b recorded from the pane",
+        "note": "Supervisor notebook proof: the pane states were captured live in the isolated window.",
+        "tags": [
+          "supervisor-proof"
+        ],
+        "source_ref": null,
+        "created_at": "2026-11-06T13:37:07.375084+00:00",
+        "updated_at": "2026-11-06T13:37:07.375084+00:00",
+        "revision": 0
+      }
+    ]
+  }
+}
+== pack.export
+{
+  "ok": false,
+  "contract_version": 5,
+  "operation_id": "cb013-pack-export-1793972264311",
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "category": "internal",
+    "message": "pack.export failed: IntegrityError",
+    "retryable": true
+  }
+}
