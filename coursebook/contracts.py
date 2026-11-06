@@ -30,15 +30,16 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v2.json",
-    "cb.rpc": "rpc.v3.json",
+    "cb.rpc": "rpc.v4.json",
     "cb.db": "db.v2.json",
     "cb.jobs": "jobs.v2.json",
     "cb.pack": "pack-manifest.v1.json",
+    "cb.projection": "projection.v1.json",
 }
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 3
+WIRE_CONTRACT_VERSION = 4
 
 
 class ContractError(Exception):
@@ -177,6 +178,37 @@ def validate_response_payload(method: str, result: Any) -> None:
             contract_id="cb.rpc",
             path=location,
         ) from exc
+
+
+def definition_schema(contract_id: str, name: str) -> dict[str, Any]:
+    """One ``$defs`` entry as a standalone schema, with its contract's definitions reachable.
+
+    ``$defs`` entries are not independently addressable through :func:`validate`, so a consumer
+    that validates a sub-record (a projection output, one list item) would otherwise restate the
+    schema. ``$ref`` targets resolve against the merged document, which carries the same ``$id``
+    and ``$defs`` as the contract file.
+    """
+    document = contract(contract_id)
+    definitions = document.get("$defs") or {}
+    if name not in definitions:
+        raise ContractError(
+            f"{contract_id} has no $defs/{name}", contract_id=contract_id, path=f"$defs/{name}"
+        )
+    return {**document, "$ref": f"#/$defs/{name}"}
+
+
+def validate_definition(contract_id: str, name: str, instance: Any, *, what: str = "value") -> None:
+    """Validate *instance* against one ``$defs`` entry, raising :class:`ContractError`."""
+    validator = Draft202012Validator(definition_schema(contract_id, name), registry=registry())
+    errors = sorted(validator.iter_errors(instance), key=lambda e: list(e.absolute_path))
+    if errors:
+        first = errors[0]
+        location = "/".join(str(part) for part in first.absolute_path) or "<root>"
+        raise ContractError(
+            f"{what} violates {contract_id}#/$defs/{name} at {location}: {first.message}",
+            contract_id=contract_id,
+            path=location,
+        )
 
 
 def error_catalog() -> dict[str, dict[str, Any]]:
