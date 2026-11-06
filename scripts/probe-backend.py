@@ -14,11 +14,13 @@ fails, so it can run as a gate in ``scripts/validate.sh`` and as the RPC trace i
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -74,12 +76,22 @@ def main() -> int:
     failures: list[str] = []
 
     def record(name: str, expectation: bool, request, response) -> None:
+        content_type = response.headers.get("content-type", "")
         entry = {
             "step": name,
             "ok": expectation,
             "status": response.status_code,
-            "body": response.json(),
         }
+        if "json" in content_type:
+            entry["body"] = response.json()
+        else:
+            # A download is bytes, not a document: record what travelled, never decode it.
+            entry["body"] = {
+                "binary": True,
+                "content_type": content_type,
+                "bytes": len(response.content),
+                "sha256": "sha256:" + hashlib.sha256(response.content).hexdigest(),
+            }
         trace.append(entry)
         print(json.dumps(entry, ensure_ascii=False, sort_keys=True))
         if not expectation:
@@ -108,20 +120,6 @@ def main() -> int:
     record(
         "GET /runtime exposes the backend method registry (Desktop reads this)",
         runtime.status_code == 200 and isinstance(implemented, list) and "binding.get" in implemented,
-        None,
-        runtime,
-    )
-
-    # CB-022 wired the four learning-loop handlers: 35 of the 38 frozen cb.rpc v3 methods are
-    # implemented, and the only ones still unregistered are Lattice's pack.* methods.
-    contract_methods = set(contracts.method_names())
-    unregistered = contract_methods - set(implemented or ())
-    record(
-        "GET /runtime registers 35 of 38 cb.rpc v3 methods (pack.* still unregistered)",
-        runtime.status_code == 200
-        and len(contract_methods) == 38
-        and len(implemented or ()) == 35
-        and unregistered == {"pack.preview", "pack.import", "pack.export"},
         None,
         runtime,
     )
@@ -172,12 +170,184 @@ def main() -> int:
         binding_unmigrated,
     )
 
-    later = client.post("/api/plugins/coursebook/rpc", json=envelope("pack.preview", {}))
+    # CB-010: every frozen method now has a handler, so this probe uses a method name that is not
+    # in the contract at all — the envelope must be refused, never silently accepted.
+    later = client.post("/api/plugins/coursebook/rpc", json=envelope("course.teleport", {}))
     record(
-        "POST /rpc for an unregistered method is refused, never faked",
+        "POST /rpc for a method not in the mounted contract is refused, never faked",
         later.json().get("ok") is False,
         None,
         later,
+    )
+
+    # ── CB-010: local pack intake → import → export → authenticated download ──────────
+    from coursebook import archive as pack_archive
+
+    intake = client.get("/api/plugins/coursebook/packs/intake")
+    record(
+        "GET /packs/intake answers the host intake capability",
+        intake.status_code == 200 and intake.json().get("can_grant") is True,
+        None,
+        intake,
+    )
+
+    bad_grant = client.post("/api/plugins/coursebook/packs/grant", json={"path": "relative/pack.zip"})
+    record(
+        "POST /packs/grant refuses a relative path instead of guessing a location",
+        bad_grant.status_code == 200 and bad_grant.json().get("ok") is False,
+        None,
+        bad_grant,
+    )
+
+    source = ROOT / "bundled" / "packs" / "japanese-affection-context-l0"
+    manifest, files = pack_archive.read_directory(source)
+    bundle = Path(home.name) / "probe-pack.zip"
+    pack_archive.write_archive(bundle, manifest, files)
+    granted = client.post("/api/plugins/coursebook/packs/grant", json={"path": str(bundle)})
+    record(
+        "POST /packs/grant mints a staged_id for a real archive",
+        granted.status_code == 200 and bool(granted.json().get("staged_id")),
+        None,
+        granted,
+    )
+
+    staged_id = granted.json().get("staged_id", "")
+    preview = client.post("/api/plugins/coursebook/rpc", json=envelope("pack.preview", {"staged_id": staged_id}))
+    record(
+        "pack.preview returns the manifest, integrity and separate trust labels",
+        preview.json().get("ok") is True
+        and set(preview.json()["result"]) == {"manifest", "integrity", "trust"}
+        and preview.json()["result"]["manifest"]["content_hash"] == manifest["content_hash"],
+        None,
+        preview,
+    )
+
+    imported = client.post(
+        "/api/plugins/coursebook/rpc",
+        json=envelope(
+            "pack.import",
+            {"staged_id": staged_id, "mode": "fresh"},
+            idempotency_key="probe-pack-import-0001",
+        ),
+    )
+    record(
+        "pack.import creates a course and enrollment from the bundle",
+        imported.json().get("ok") is True
+        and imported.json()["result"]["pack_id"] == manifest["pack_id"]
+        and bool(imported.json()["result"]["enrollment_id"]),
+        None,
+        imported,
+    )
+
+    enrollment_id = imported.json().get("result", {}).get("enrollment_id", "")
+    exported = client.post(
+        "/api/plugins/coursebook/rpc",
+        json=envelope(
+            "pack.export",
+            {"enrollment_id": enrollment_id, "options": {"expected_content_hash": manifest["content_hash"]}},
+        ),
+    )
+    export_body = exported.json().get("result") or {}
+    record(
+        "pack.export returns the exact reviewed content hash",
+        exported.json().get("ok") is True and export_body.get("content_hash") == manifest["content_hash"],
+        None,
+        exported,
+    )
+
+    artifact = client.post(
+        "/api/plugins/coursebook/rpc",
+        json=envelope("artifact.get", {"artifact_id": export_body.get("artifact_id", "")}),
+    )
+    handle = (artifact.json().get("result") or {}).get("download", {}).get("handle", "")
+    download = client.get(f"/api/plugins/coursebook/artifacts/{handle}")
+    digest = "sha256:" + hashlib.sha256(download.content).hexdigest()
+    record(
+        "GET /artifacts/<handle> streams the exported bytes with a matching hash",
+        download.status_code == 200
+        and download.headers.get("content-type", "").startswith("application/zip")
+        and len(download.content) == int(export_body.get("bytes") or 0)
+        and digest == (artifact.json().get("result") or {}).get("content_hash"),
+        None,
+        download,
+    )
+
+    missing = client.get("/api/plugins/coursebook/artifacts/art_" + "0" * 32 + "_99999999999")
+    record(
+        "GET /artifacts/<handle> refuses an unknown handle without a path or traceback",
+        missing.status_code == 404 and "path" not in missing.text.lower(),
+        None,
+        missing,
+    )
+
+    # ── reimport: resume keeps progress, fresh separates it; a tampered pack leaves no residue ──
+    def library_total() -> int:
+        listed = client.post("/api/plugins/coursebook/rpc", json=envelope("library.list", {}))
+        return int((listed.json().get("result") or {}).get("total") or 0)
+
+    def grant(path: Path) -> str:
+        """Every import needs its own grant: adoption consumes the staged pack."""
+        response = client.post("/api/plugins/coursebook/packs/grant", json={"path": str(path)})
+        return str(response.json().get("staged_id", ""))
+
+    resume = client.post(
+        "/api/plugins/coursebook/rpc",
+        json=envelope(
+            "pack.import",
+            {"staged_id": grant(bundle), "mode": "resume"},
+            idempotency_key="probe-pack-resume-0001",
+        ),
+    )
+    record(
+        "pack.import mode=resume re-opens the same enrollment instead of a second course",
+        resume.json().get("ok") is True
+        and (resume.json().get("result") or {}).get("enrollment_id") == enrollment_id,
+        None,
+        resume,
+    )
+
+    second = client.post(
+        "/api/plugins/coursebook/rpc",
+        json=envelope(
+            "pack.import",
+            {"staged_id": grant(bundle), "mode": "fresh"},
+            idempotency_key="probe-pack-fresh-0002",
+        ),
+    )
+    second_body = second.json().get("result") or {}
+    record(
+        "pack.import mode=fresh cuts a distinct course over the same immutable content",
+        second.json().get("ok") is True
+        and second_body.get("enrollment_id") not in ("", None, enrollment_id)
+        and second_body.get("course_id") not in ("", None, imported.json()["result"]["course_id"])
+        and second_body.get("pack_id") == manifest["pack_id"],
+        None,
+        second,
+    )
+
+    tampered_path = Path(home.name) / "tampered-pack.zip"
+    with zipfile.ZipFile(bundle) as source_zip:
+        entries = [(info.filename, source_zip.read(info.filename)) for info in source_zip.infolist()]
+    with zipfile.ZipFile(tampered_path, "w", zipfile.ZIP_DEFLATED) as out_zip:
+        for name, data in entries:
+            if name.endswith("section-01-two-ways.md"):
+                # One byte appended: the manifest hash can no longer match the file.
+                data = data + b"\n"
+            out_zip.writestr(name, data)
+
+    before = library_total()
+    tampered = client.post(
+        "/api/plugins/coursebook/rpc",
+        json=envelope("pack.preview", {"staged_id": grant(tampered_path)}),
+    )
+    after = library_total()
+    record(
+        "a pack whose bytes no longer match its manifest is refused with no library residue",
+        tampered.json().get("ok") is False
+        and (tampered.json().get("error") or {}).get("code") == "PACK_REJECTED"
+        and after == before,
+        None,
+        tampered,
     )
 
     if args.trace:

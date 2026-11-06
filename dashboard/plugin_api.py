@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Body
+from fastapi.responses import FileResponse, JSONResponse
 
 logger = logging.getLogger("coursebook.api")
 
@@ -107,6 +108,68 @@ async def schema() -> dict[str, Any]:
 async def rpc(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Execute one contract command. Shape errors come back as a contract envelope."""
     return _api().dispatch(body)
+
+
+@router.get("/packs/intake")
+async def packs_intake() -> dict[str, Any]:
+    """Capability probe for the local pack intake (CB-010).
+
+    Reports whether this backend can mint a local file grant. The Desktop shows its import
+    picker only when this answers true, so a host without the door is told plainly instead of
+    rendering a control that cannot work.
+    """
+    pack_flow = _pack_flow()
+    available = callable(getattr(pack_flow, "grant_local_file", None))
+    return {
+        "ok": True,
+        "available": available,
+        "can_grant": available,
+    }
+
+
+@router.post("/packs/grant")
+async def packs_grant(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Grant one host-chosen archive and return its ``staged_id`` (CB-010).
+
+    This is the only door a filesystem path may enter through; the RPC contract itself never
+    accepts one. ``grant_local_file`` refuses URLs, relative paths and symlinks, and the refusal
+    is returned as data (HTTP 200, ``ok: false``) so the Desktop renders the reason.
+    """
+    pack_flow = _pack_flow()
+    path = body.get("path")
+    if not isinstance(path, str) or not path:
+        return {"ok": False, "code": "PACK_REJECTED", "message": "a local file grant needs an absolute path"}
+    try:
+        staged_id = pack_flow.grant_local_file(path)
+    except Exception as exc:  # noqa: BLE001 - a refused grant is data, not a transport failure
+        return {"ok": False, "code": "PACK_REJECTED", "message": str(exc)}
+    return {"ok": True, "staged_id": staged_id}
+
+
+@router.get("/artifacts/{handle}")
+async def artifact_download(handle: str) -> Any:
+    """Stream one exported pack by its expiring, session-bound handle (CB-010).
+
+    ``artifact.get`` mints the handle; ``pack_flow.open_artifact`` re-verifies expiry, size and
+    sha256 against the artifacts row before a byte leaves. A filesystem path never crosses the
+    wire, and the response is never cached.
+    """
+    pack_flow = _pack_flow()
+    try:
+        path, mime, _size = pack_flow.open_artifact(handle)
+    except Exception as exc:  # noqa: BLE001 - shaped as a refusal, never a traceback
+        return JSONResponse(status_code=404, content={"ok": False, "message": str(exc)})
+    return FileResponse(
+        path,
+        media_type=mime,
+        filename=path.name,
+        headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+    )
+
+
+def _pack_flow() -> Any:
+    _load_backend()
+    return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.pack_flow")
 
 
 @router.get("/runtime")

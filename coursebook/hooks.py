@@ -164,3 +164,9 @@ PROVIDED_HOOKS: tuple[str, ...] = ("pre_llm_call", "post_llm_call", "post_tool_c
 from . import domain as _domain  # noqa: E402  (import after the hook constants on purpose)
 
 _domain.ensure_registered()
+
+# Pack lifecycle handlers (CB-010). They are not kernel commands: preview/import/export touch the
+# archive and the pack library, and ``pack.delete`` stays with the kernel data-scope path.
+from . import pack_flow as _pack_flow  # noqa: E402  (same single wiring point)
+
+_pack_flow.ensure_registered()
