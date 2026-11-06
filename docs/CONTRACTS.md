@@ -1,8 +1,8 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v3** (CB-022 additive amendment; v2 = CB-018). Governed by `PREBUILD_SPEC.md`
-(architecture) and `UX_SPEC.md` (interface). Owner of every contract: **Atlas**. Implementers are
-the specialists named below.
+Status: **frozen at v4** (CB-024 additive amendment; v3 = CB-022, v2 = CB-018). Governed by
+`PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every contract: **Atlas**.
+Implementers are the specialists named below.
 
 A contract file is the single authority for its vocabulary, payload shapes and error codes.
 No module may redeclare an enum or error code that lives in `contracts/`. Python reads them
@@ -15,12 +15,13 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v2.json` | 2 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v3.json` | 3 | Cinder (kernel + learning-loop methods), Sable (transport) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v4.json` | 4 | Cinder (kernel + learning-loop methods), Sable (transport), Lattice (`pack.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v2.json` | 2 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v2.json` | 2 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
+| `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **and v2** files for `cb.rpc`, `cb.errors`, `cb.db` and `cb.jobs` remain on disk, unmodified,
+The v1 **to v3** files for `cb.rpc`, `cb.errors`, `cb.db` and `cb.jobs` remain on disk, unmodified,
 as immutable history. `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 
@@ -33,7 +34,7 @@ version in the URI and the declared version agree for every file.
 `cb.rpc` is transport-neutral. The root schema validates a **request envelope**:
 
 ```json
-{ "contract": "cb.rpc", "contract_version": 3,
+{ "contract": "cb.rpc", "contract_version": 4,
   "method": "attempt.submit", "operation_id": "op-...", "idempotency_key": "...",
   "expected_revision": 12, "payload": { } }
 ```
@@ -44,7 +45,9 @@ Success and failure are separate envelopes (`$defs/envelope_response_ok`,
 handler, then validates the handler's result against the response schema. A handler that returns
 something outside the contract becomes `INTERNAL_ERROR` — it is never rendered.
 
-Envelope-level requirements added by v2 and v3 (enforced by the schema before any handler runs):
+Envelope-level requirements added by v2 and v3 (enforced by the schema before any handler runs).
+v4 adds no envelope rule: both of its methods are reads, so they carry neither `idempotency_key` nor
+`expected_revision`:
 
 | Method(s) | Required envelope fields |
 |---|---|
@@ -265,12 +268,151 @@ section documents: `review.queue` and `evidence.inspect`'s three layers are cont
 returned, `review.apply_action` needs `state` (and `due_at` from the queue) added by the handler, and
 `evidence.disputes` needs `truncated`.
 
+## v4 delta (CB-024)
+
+CB-010 wired the pack lifecycle — `pack.preview`, `pack.import`, `pack.export`, `pack.delete` — and
+proved the loop end to end, then found one gap the Desktop could not work around without inventing a
+field: **there was no way to read an installed pack.** `library.list` enumerates *enrollments*
+(`courses JOIN enrollments`), so a pack that is installed but not enrolled — imported with
+`mode: resume` refused, or after `enrollment.delete` — is invisible; and `pack.preview` requires a
+`staged_id`, i.e. a freshly granted file. The only way to re-render a manifest was to re-import it.
+
+That made CB-010's export review carry a `previewCache`: the UI exported only a manifest it had
+reviewed *in the same session*, and refused to export blind rather than export against a hash it
+could not show. Safe, but it turned "export any installed pack" into a two-step re-import. v4 adds
+two read-only methods and nothing else; every v1, v2 and v3 method and payload is byte-identical
+(asserted in `tests/test_contracts.py`).
+
+| New method | Purpose | Request (required fields) | Response (required fields) |
+|---|---|---|---|
+| `pack.list` | Every adopted pack identity, enrolled or not, with the revision `pack.delete` fences on | `pack_id?`, `pack_version?`, `filter`, `limit` | `items[]`, `total`, `truncated`, `applied_filter` |
+| `pack.inspect` | One installed pack read from the library: manifest, integrity, trust labels — no upload grant | `pack_id`, `pack_version` | `pack`, `manifest`, `integrity`, `trust` |
+
+No table, column, migration or error code is added: both methods read state that adoption and
+`pack.delete` already write. `cb.db`, `cb.errors`, `cb.jobs` and `cb.pack` stay at their current
+versions. Refusals use the existing `NOT_FOUND` (unknown identity) and `PACK_REJECTED` (unsafe or
+unreadable identity) codes.
+
+### `pack.list` semantics — one authority per fact
+
+* **The library index is the installed-pack authority.** Adoption writes it, so an identity present
+  there is installed, whether or not any course was ever cut from it. That is exactly the row
+  `library.list` cannot show.
+* **The kernel `packs` row wins for `state` and `revision`** when one exists; the index's own
+  `state` is the fallback (this is the difference `sync_tombstones` reconciles at startup). One item
+  per `(pack_id, pack_version)`; there is no second copy of either fact in the response.
+* **`revision` is why this method is required for deletion.** `pack.delete` demands
+  `expected_revision` and refuses with `STALE_REVISION` otherwise, and nothing else on the wire
+  exposed a pack's revision. The list row supplies it (`coursebook.domain.pack_delete` is the
+  reader that fences on it); the delete preview still comes from `pack.delete` `dry_run: true` and
+  its server-returned `data_scope_hash`.
+* **Counts come from the stored manifest** (`file_count`, `expanded_bytes`), which adoption already
+  validated and bounded. `pack.list` therefore reads one small manifest per item and deliberately
+  does **not** return the manifest itself; `pack.inspect` is the read that returns it.
+* **Bounded, not paged.** `limit` ≤ 200 and `items` ≤ 200; `total` is always the full count and
+  `truncated` says the list omitted rows. There is no cursor: a pack library that exceeds 200
+  identities is narrowed with `pack_id`/`pack_version`/`filter`, not scrolled.
+* **Ordering** (documented, not schema-expressible): `installed_at` descending, then `pack_id`, then
+  `pack_version` ascending — a stable order so two renders of the same library agree.
+* **No filesystem path, no enrollment claim, no manifest.** The library index stores an absolute
+  `directory`; it is storage. Enrollment state stays with `library.list` (keyed by
+  `provenance.pack_id`/`pack_version`), because a pack row that also claimed "enrolled" would be a
+  second authority for the same fact.
+* `filter` is `all` / `installed` / `frozen` / `removed` and echoes back as `applied_filter`.
+  `removed` is reserved by the `cb.db` v2 migration and is **not produced by this build**; the
+  contract names it so a future writer does not need a wire bump.
+
+### `pack.inspect` semantics — preview without a grant
+
+* Reads the adopted directory through `archive.PackLibrary.read()`, re-validates the manifest
+  against `cb.pack` and **recomputes** the content hash over the bytes on disk.
+* `integrity.hashes_match` is an honest boolean: `true` only when the recomputed hash equals the
+  stored `manifest_hash` and every declared file's size and sha256 match. Drifted content is
+  reported, not raised — the review screen can then refuse the export instead of the pane dying.
+  A `pack.inspect` that cannot read the directory at all is `NOT_FOUND`.
+* `trust.labels` is the same four-dimension list `pack.preview` returns
+  (`integrity_verified`, `automated_checks_passed`, `human_review_recorded`,
+  `model_assessed_support`), computed by `packs.trust_labels()` from the stored manifest. There is
+  still no `safe` or `verified` badge.
+* `content_hash` in `pack` is the identity `pack.export` is checked against: the export request
+  carries `options.expected_content_hash`, so the UI can show the hash it inspected and the backend
+  refuses if the archive would not reproduce it. That is what replaces `previewCache`.
+* Read-only, GET-shaped: it never stages, adopts, imports, exports or deletes.
+
+## The pack-check → check-spec projection (cb.projection v1)
+
+The second gap CB-010 recorded was that the manifest-check mapping lived in importer code. `cb.pack`
+checks are `{stimulus, rubric[], reference_answer, accepted_alternatives, evidence_target, locale,
+audit_state}`; the kernel grades `{stimulus: {prompt}, reference: {kind}, rubric: {criteria}}`.
+`coursebook.pack_flow.check_spec_from_pack_check` and `::objective_criteria` define the projection,
+but import is only the **first** consumer: Parent Studio generation and community upload review need
+the same mapping. Two implementations of one mapping is how a pack starts grading differently in two
+places, so v4 freezes it in `contracts/projection.v1.json` (`cb.projection`, v1) and the importer
+applies that contract instead of restating it.
+
+`cb.projection` is a new contract **id**, not a new `cb.pack` version: the manifest did not change,
+only the derivation from it is now frozen. Its `$defs.check_spec` is the machine-checkable shape of
+what gets stored in `objectives.evidence_criteria_json`, and `$defs.objective_criterion` is the shape
+of each criteria entry.
+
+The gate, in order:
+
+1. **P1 recipe gate.** `recipe == parent` yields no spec (`parent_observation_not_graded`). A parent
+   observes; the harness never grades a child.
+2. **R1–R6 audit.** `stimulus_present`, `reference_present`, `rubric_present`,
+   `reference_not_in_stimulus`, `alternatives_add_a_form`, `declared_audit_not_failed`. Any failure
+   yields no spec (`import_audit_failed`) and the problems are reported verbatim.
+3. **Projection.** `audit_state: passed`, `audit_source: import_automated_audit`,
+   `declared_audit_state` preserved, `stimulus.prompt` trimmed, `reference` = `rubric_only` for
+   `production`/`transfer` and `exact` (reference plus declared alternatives) otherwise,
+   `rubric` = `{construct, pass_rule: "all", criteria: [{id: c<N>, description}]}` with positional
+   ids over the raw rubric array, `locale` verbatim or `null`.
+4. **Criteria list.** `pack_objective` first, then `target<N>` per declared `evidence_criteria`,
+   then one entry per check in manifest order — graded with `check_spec`, or withheld with
+   `check_spec_withheld: true` and a reason. A withheld check stays visible; it is never silently
+   dropped and no placeholder spec is invented.
+
+A pack's own `audit_state` can refuse a check (`failed`) and can never grant one: a pack that
+declares `passed` on a check whose reference answer is in the stimulus is still withheld, because
+the deterministic audit is the only gate.
+
+### Divergences between `cb.projection` v1 and the importer as shipped
+
+The freeze found two places where `coursebook/pack_flow.py` does not implement the frozen rules.
+Both are recorded in the contract's `x-known-divergences` and both have conformance vectors in
+`examples` (marked `divergence`), so the fix is a test result rather than an opinion:
+
+| Id | Importer as shipped | Contract requires | Effect |
+|---|---|---|---|
+| `empty-alternatives` | `all(...)` over an empty alternatives list is vacuously true, so **every** check that declares no accepted alternatives is withheld | an empty/whitespace-only list is not a flaw; the reference answer is already an accepted form | the bundled Japanese demo pack ships exactly this: `chk-register-transfer-1` declares `accepted_alternatives: []`, so `obj-register-transfer` gets no spec and `check.open` refuses it with `objective_not_checkable` (proved in `scripts/proof_contract_v4.py`) |
+| `declared-audit-failed` | a check declaring `audit_state: failed` is still projected when the automated audit passes, so the spec says `audit_state: passed` while `declared_audit_state: failed` | the author's `failed` withholds gradability | the stored spec contradicts its own provenance, and an item its author marked failed can be graded |
+
+Until Lattice lands both fixes, the contract is the authority and the importer is wrong.
+`scripts/proof_contract_v4.py` asserts every frozen vector, passes 11 of 13 unchanged, and **pins**
+each of the two divergences to its exact current shape — so a third, undocumented divergence fails
+the proof, and fixing either one turns its pin red with a message to update `x-known-divergences`.
+
+### Handlers to register (after this freeze)
+
+| Method | Register in | Backing code | Handler must do |
+|---|---|---|---|
+| `pack.list` | `coursebook/pack_flow.py` `ensure_registered()` (Lattice) | `pack_flow.library().list()`, `db` `packs` rows, `packs.load_manifest()` | join index record to the `packs` row by `(pack_id, version)`; `state`/`revision` from the row, index as fallback; read the stored manifest for `file_count`/`expanded_bytes`; sort, filter, slice to `limit`, set `total` and `truncated`; never emit `directory` |
+| `pack.inspect` | same | `pack_flow.library().read()` + `packs.preview(manifest, integrity=...)` | re-validate and re-hash, `hashes_match` = hash and per-file digests match, wrap `packs.preview()` output; `NOT_FOUND` when the identity is not in the library |
+| `objective_criteria` / `check_spec_from_pack_check` | `coursebook/pack_flow.py` (Lattice) | `cb.projection` | apply the contract's rules; delegate rather than restate, and satisfy the conformance vectors |
+
+Run `python3 -m unittest scripts.proof_contract_v4 -v` in a worktree that contains the CB-010 pack
+lifecycle: it drives `check_spec_from_pack_check`/`objective_criteria` against the conformance
+vectors and the two bundled demo packs, and composes `pack.list`/`pack.inspect` responses from a
+real adopted pack and a real SQLite database, validating each against `rpc.v4.json`. On a branch
+without that backend it skips with a stated reason rather than passing.
+
 ### Version numbering
 
-`pack.list` is **not** part of v3. A draft v3 that carried `pack.list` existed on an unowned branch;
-it has no backend function, no handler and no consumer, so it was not adopted. A pack enumeration
-method is a v4 amendment with its own owner and its own backend proof — no v3 file may be extended
-in place, for the same reason v1 and v2 were not.
+v3 is frozen at four learning-loop methods. The draft v3 that carried `pack.list` on the unowned
+`wt/cb-020-rpc-v3` branch had no backend function, no handler and no consumer, and it was not
+adopted; this amendment supersedes it by putting the installed-pack read in v4 with its own owner,
+its own storage analysis and its own proof. No shipped version file may be extended in place — v1,
+v2 and v3 were not, and v4 is not.
 
 ## UX screen → method mapping
 
@@ -288,8 +430,8 @@ Every screen in §6, §7, §8, §10 and §11 is implementable against a method o
 | §7 | Evidence: L1 attempts, L2 objective evidence, L3 recommendation | `evidence.inspect` (L1/L2/L3 + disputes in one read); `evidence.disputes` (filtered dispute view); `course.get` `course` payload (below); `quiz.history`; `attempt.override`; `attempt.dispute` |
 | §7 | Sources: provenance, support, staleness, claim count | `course.get` `course` payload (below); `lesson.page.sources` |
 | §8 | Lesson workspace: objective/check pane, attempt states, feedback, continue, detached banner | `lesson.page`; `check.open`; `attempt.submit`; `attempt.override`; `binding.get`; `lesson.begin`; `binding.abandon` |
-| §9 | Library and pack trust: preview, import, keep/review/refuse update | `pack.preview`; `pack.import`; `pack.export`; `artifact.get`; `library.list` `provenance.source` |
-| §10 | Parent Studio: brief, research/review, approval, pack preview/export | `course.create` (`recipe: parent`); `jobs.create` (`kind: research` / `plan`) with the brief; `jobs.get`; `plan.approve`; `pack.preview` (manifest, integrity, trust); `pack.export`; `artifact.get` (tabs: parent guide, learner pages, answers, audio/visuals, sources are manifest file roles) |
+| §9 | Library and pack trust: preview, import, keep/review/refuse update | `pack.list` (installed packs, enrolled or not, with state and revision); `pack.inspect` (manifest, integrity, trust of an installed pack without a new upload); `pack.preview`; `pack.import`; `pack.export`; `artifact.get`; `library.list` `provenance.source` |
+| §10 | Parent Studio: brief, research/review, approval, pack preview/export | `course.create` (`recipe: parent`); `jobs.create` (`kind: research` / `plan`) with the brief; `jobs.get`; `plan.approve`; `pack.preview` (manifest, integrity, trust); `pack.inspect` (re-open a pack generated in an earlier session); `pack.export`; `artifact.get` (tabs: parent guide, learner pages, answers, audio/visuals, sources are manifest file roles) |
 | §11 | Activity, jobs, recovery: running/failed/stale/delivery/recovery/usage | `jobs.list` (states, progress, errors, checkpoints); `jobs.get`; `jobs.cancel`; `usage.summary` |
 
 ### `course.get` payload (documented, not re-schemaed)
@@ -334,7 +476,8 @@ backups, provider-side data, or artifacts referenced by another course.
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
-2. Add a new file (`rpc.v3.json`) and bump `$id`/`x-contract-version`/`x-supersedes`. Never edit a
+2. Add a new file (`rpc.v4.json`, `projection.v1.json`) and bump
+   `$id`/`x-contract-version`/`x-supersedes`. Never edit a
    shipped version in a way that changes meaning; clients cache by version.
 3. Update `CONTRACT_FILES` in `coursebook/contracts.py` and run
    `python3 -m unittest discover -s tests -t .`. `audit_contracts()` fails on a stale `$ref`
@@ -346,6 +489,7 @@ backups, provider-side data, or artifacts referenced by another course.
 | v1 | 2026-11-06 | Initial freeze. 24 RPC methods, 17 tables, 16 error codes, 9 job states, 1 pack manifest. |
 | v2 | 2026-11-06 | CB-018 additive amendment. 34 RPC methods (+library.list, lesson.page, lesson.begin, enrollment.update, enrollment.delete, pack.delete, artifact.get, jobs.list, notebook.update, binding.abandon), +DELETE_SCOPE_STALE, +lesson_runs/lesson_segments and revision fencing in cb.db v2, +$defs.job_state in cb.jobs v2. |
 | v3 | 2026-11-06 | CB-022 additive amendment. 38 RPC methods (+review.queue, review.action, evidence.inspect, evidence.disputes) with `review.action` fenced in the envelope; no new table, column, migration or error code — the queue stays derived and disputes stay in `attempts.grading_provenance_json`. `pack.list` deferred to a future v4. |
+| v4 | 2026-11-06 | CB-024 additive amendment. 40 RPC methods (+pack.list, pack.inspect) reading the existing library index and `packs` row; no new table, column, migration or error code. New contract `cb.projection` v1 freezes the pack-check → check-spec mapping (six audit rules, deterministic projection, conformance vectors) with two importer divergences recorded for Lattice. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
@@ -362,8 +506,17 @@ backups, provider-side data, or artifacts referenced by another course.
   evidence plus learner action events, and `cap` bounds rows, never the counts.
 * No completeness/retention percentage and no persona field: L3 recommendations carry a `basis`,
   and `is_persona` is `false` by contract.
-* No filesystem path in `artifact.get` (or any RPC response). Artifacts are fetched through an
-  authenticated, expiring handle.
+* No filesystem path in `artifact.get`, `pack.list` or `pack.inspect` (or any RPC response). The
+  pack library's absolute `directory` is storage; artifacts are fetched through an authenticated,
+  expiring handle.
+* No enrollment state, course id or course count in a `pack.list` row. Whether a pack has a course
+  is `library.list`'s answer; a pack row that also claimed it would be a second authority.
+* No manifest inside `pack.list`. The list is a bounded index read; `pack.inspect` is the read that
+  returns the manifest, and it re-hashes the bytes on disk before doing so.
+* No `safe`/`verified` verdict on an installed pack: `pack.inspect` returns the same four
+  independent trust labels as `pack.preview`.
+* No `check_spec` (or reference answer, or rubric internals) in any RPC response. The frozen
+  projection is storage, not a wire payload.
 * No mutation in `lesson.page`; navigation cannot change evidence.
 * No "delete everything" method. Archive, delete enrollment and delete imported pack are separate
   scopes with separate, server-returned data scope.

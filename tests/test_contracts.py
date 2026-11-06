@@ -1,7 +1,8 @@
 """Contract-set invariants: ids, versions, cross-document references, integrity hashes.
 
-CB-018 amended the set to v2; CB-022 amends it to v3. These tests fail if the new methods, their
-payload schemas, the version links, the storage decisions or the documented UX mapping disappear.
+CB-018 amended the set to v2, CB-022 to v3, CB-024 to v4. These tests fail if the new methods,
+their payload schemas, the version links, the storage decisions, the pack-check projection or the
+documented UX mapping disappear.
 """
 
 from __future__ import annotations
@@ -31,6 +32,12 @@ V3_NEW_METHODS = (
     "review.action",
     "evidence.inspect",
     "evidence.disputes",
+)
+
+#: Added in cb.rpc v4 (CB-024): the installed-pack read surface the pack lifecycle needs.
+V4_NEW_METHODS = (
+    "pack.list",
+    "pack.inspect",
 )
 
 
@@ -74,6 +81,20 @@ def _schema_problems(schema: dict, path: str = "schema") -> list[str]:
     if "integer" in types and "maximum" not in schema:
         problems.append(f"{path}: integer lacks maximum")
     return problems
+
+
+def _wire_echoes(node: object, path: str = "") -> list[tuple[str, object]]:
+    """Every schema location that pins the wire contract version, with its path."""
+    found: list[tuple[str, object]] = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "contract_version" and isinstance(value, dict) and "const" in value:
+                found.append((path or "<root>", value["const"]))
+            found.extend(_wire_echoes(value, f"{path}/{key}"))
+    elif isinstance(node, list):
+        for index, item in enumerate(node):
+            found.extend(_wire_echoes(item, f"{path}[{index}]"))
+    return found
 
 
 def _property_names(schema: dict) -> set[str]:
@@ -127,11 +148,17 @@ class ContractSetTest(unittest.TestCase):
                 self.assertRegex(entry["sha256"], r"^sha256:[a-f0-9]{64}$")
                 self.assertEqual(entry["version"], contracts.contract_version(entry["id"]))
 
-    def test_wire_contract_is_v3(self) -> None:
+    def test_wire_contract_is_v4(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 3)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 4)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v3"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v4"))
+        # Every place the wire version is echoed (both response envelopes, health.get) must agree.
+        # A missed constant is an envelope the plugin itself produces and cannot validate.
+        echo = _wire_echoes(contracts.contract("cb.rpc"))
+        self.assertTrue(echo, "the wire version must be echoed somewhere")
+        for path, value in echo:
+            self.assertEqual(value, contracts.WIRE_CONTRACT_VERSION, path)
 
     def test_every_method_publishes_request_and_response_schemas(self) -> None:
         methods = contracts.method_names()
@@ -179,18 +206,22 @@ class V2AmendmentTest(unittest.TestCase):
         current = contracts.contract("cb.rpc")
         v1 = _document("rpc.v1.json")
         v2 = _document("rpc.v2.json")
+        v3 = _document("rpc.v3.json")
         self.assertEqual(v1["x-contract-version"], 1)
         self.assertEqual(str(v1["$id"]), "https://contracts.coursebook.hermes/rpc/v1")
         self.assertEqual(len(v1["$defs"]["method"]["enum"]), 24)
         self.assertEqual(v2["x-contract-version"], 2)
         self.assertEqual(str(v2["$id"]), "https://contracts.coursebook.hermes/rpc/v2")
         self.assertEqual(len(v2["$defs"]["method"]["enum"]), 34)
+        self.assertEqual(v3["x-contract-version"], 3)
+        self.assertEqual(str(v3["$id"]), "https://contracts.coursebook.hermes/rpc/v3")
+        self.assertEqual(len(v3["$defs"]["method"]["enum"]), 38)
         for filename in ("errors.v1.json", "db.v1.json", "jobs.v1.json"):
             self.assertTrue((contracts.CONTRACT_DIR / filename).is_file(), filename)
 
         # Every superseded method and payload survives verbatim. The only permitted edit is the
         # wire-version constant echoed by health.get, which follows the current contract version.
-        for document, version in ((v1, 1), (v2, 2)):
+        for document, version in ((v1, 1), (v2, 2), (v3, 3)):
             for method in document["$defs"]["method"]["enum"]:
                 with self.subTest(version=version, method=method):
                     self.assertIn(method, contracts.method_names())
@@ -438,8 +469,11 @@ class V3AmendmentTest(unittest.TestCase):
 
     def test_v3_adds_only_the_learning_loop_surface(self) -> None:
         v2_methods = set(_document("rpc.v2.json")["$defs"]["method"]["enum"])
-        self.assertEqual(set(contracts.method_names()), v2_methods | set(V3_NEW_METHODS))
-        self.assertEqual(len(contracts.method_names()), 38)
+        v3_methods = set(_document("rpc.v3.json")["$defs"]["method"]["enum"])
+        self.assertEqual(v3_methods, v2_methods | set(V3_NEW_METHODS))
+        self.assertEqual(len(v3_methods), 38)
+        # v4 carries every v3 method verbatim and adds only the installed-pack reads.
+        self.assertEqual(set(contracts.method_names()), v3_methods | set(V4_NEW_METHODS))
         for method in V3_NEW_METHODS:
             with self.subTest(method=method):
                 schema = contracts.method_schema(method)
@@ -704,7 +738,7 @@ class V3AmendmentTest(unittest.TestCase):
         try:
             response = api.dispatch(_envelope("review.queue", {"enrollment_id": "enr_12345678"}))
             self.assertTrue(response["ok"], response)
-            self.assertEqual(response["contract_version"], 3)
+            self.assertEqual(response["contract_version"], contracts.WIRE_CONTRACT_VERSION)
             self.assertEqual(response["revision"], 7)
         finally:
             api.METHOD_HANDLERS.pop("review.queue", None)
@@ -721,6 +755,340 @@ class V3AmendmentTest(unittest.TestCase):
             "pack.list",                # explicitly deferred to v4, not a v3 extension
         ):
             self.assertIn(needle, text, f"CONTRACTS.md does not record the v3 decision on {needle!r}")
+
+
+class V4AmendmentTest(unittest.TestCase):
+    """CB-024: the installed-pack read surface, and the frozen pack-check projection.
+
+    CB-010 wired the pack lifecycle (preview/import/export/delete) but the UI could only re-list
+    files from a manifest it had just previewed in the same session: ``library.list`` enumerates
+    enrollments, and ``pack.preview`` requires a fresh upload grant. An installed pack therefore had
+    no wire read. v4 is additive over v3: two read-only methods and nothing else.
+    """
+
+    def test_v4_adds_only_the_installed_pack_read_surface(self) -> None:
+        v3_methods = set(_document("rpc.v3.json")["$defs"]["method"]["enum"])
+        self.assertEqual(set(contracts.method_names()), v3_methods | set(V4_NEW_METHODS))
+        self.assertEqual(len(contracts.method_names()), 40)
+        for method in V4_NEW_METHODS:
+            with self.subTest(method=method):
+                schema = contracts.method_schema(method)
+                for side in ("request", "response"):
+                    self.assertEqual(schema[side]["type"], "object", side)
+                    if "$ref" in schema[side]:
+                        continue  # pack.inspect.response reuses $defs/pack_inspection
+                    self.assertIs(schema[side].get("additionalProperties"), False, side)
+                    self.assertEqual(_schema_problems(schema[side]), [], f"{method}.{side}")
+
+    def test_pack_list_cannot_return_a_path_an_enrollment_claim_or_a_manifest(self) -> None:
+        item = contracts.contract("cb.rpc")["$defs"]["pack_list_item"]
+        names = _property_names(item)
+        # The library index stores an absolute directory; it is storage, not a wire field.
+        for forbidden in ("directory", "path", "local_path", "file_path", "manifest"):
+            self.assertNotIn(forbidden, names)
+        # Enrollment facts stay with library.list. A pack row is enrollment-agnostic by design.
+        for forbidden in ("enrollment_id", "course_id", "enrolled", "course_count", "status"):
+            self.assertNotIn(forbidden, names)
+        # A list row must still carry the revision pack.delete fences on, or deletion is unreachable.
+        self.assertIn("revision", item["required"])
+        for field in (
+            "pack_id", "pack_version", "content_hash", "recipe", "source", "state",
+            "installed_at", "file_count", "expanded_bytes", "license",
+        ):
+            self.assertIn(field, item["required"])
+
+        contracts.validate_definition("cb.rpc", "pack_list_item", _pack_item())
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_definition(
+                "cb.rpc", "pack_list_item", _pack_item(directory="/var/lib/coursebook/packs")
+            )
+
+    def test_pack_list_is_bounded_and_says_when_it_truncated(self) -> None:
+        schema = contracts.method_schema("pack.list")
+        request = schema["request"]["properties"]
+        self.assertEqual(set(request), {"pack_id", "pack_version", "filter", "limit"})
+        self.assertLessEqual(request["limit"]["maximum"], 200)
+        self.assertEqual(
+            set(request["filter"]["enum"]), {"all", "installed", "frozen", "removed"}
+        )
+        response = schema["response"]
+        self.assertLessEqual(response["properties"]["items"]["maxItems"], 200)
+        for field in ("items", "total", "truncated", "applied_filter"):
+            self.assertIn(field, response["required"])
+
+        contracts.validate_response_payload(
+            "pack.list",
+            {
+                "items": [_pack_item()],
+                "total": 3,
+                "truncated": True,
+                "applied_filter": "all",
+            },
+        )
+        # A truncated list must never look like a short library: total is the full count.
+        contracts.validate_response_payload(
+            "pack.list",
+            {"items": [], "total": 0, "truncated": False, "applied_filter": "installed"},
+        )
+
+    def test_pack_inspect_reads_an_installed_pack_without_a_grant(self) -> None:
+        schema = contracts.method_schema("pack.inspect")
+        self.assertEqual(set(schema["request"]["required"]), {"pack_id", "pack_version"})
+        self.assertNotIn("staged_id", schema["request"]["properties"])
+        inspection = contracts.contract("cb.rpc")["$defs"]["pack_inspection"]
+        self.assertEqual(set(inspection["required"]), {"pack", "manifest", "integrity", "trust"})
+        integrity = inspection["properties"]["integrity"]
+        self.assertEqual(
+            set(integrity["required"]), {"hashes_match", "file_count", "expanded_bytes"}
+        )
+        labels = inspection["properties"]["trust"]["properties"]["labels"]
+        self.assertLessEqual(labels["maxItems"], 4)
+        contracts.validate_response_payload("pack.inspect", _inspection())
+        # hashes_match is the honest boolean, not a verdict: drifting content must be reportable.
+        self.assertFalse(_inspection(hashes_match=False)["integrity"]["hashes_match"])
+        contracts.validate_response_payload("pack.inspect", _inspection(hashes_match=False))
+
+    def test_pack_state_and_source_enums_come_from_the_storage_authority(self) -> None:
+        packs = contracts.contract("cb.db")["tables"]["packs"]["columns"]
+        item = contracts.contract("cb.rpc")["$defs"]["pack_list_item"]["properties"]
+        self.assertEqual(set(item["state"]["enum"]), set(packs["state"]["enum"]))
+        self.assertEqual(set(item["source"]["enum"]), set(packs["source"]["enum"]))
+        # 'removed' is reserved by the migration and is not produced by this build; the contract
+        # still names it so a future writer does not need a wire bump.
+        self.assertIn("removed", item["state"]["enum"])
+
+    def test_v4_claims_no_new_storage_and_no_new_error_code(self) -> None:
+        # Both methods read what adoption and pack.delete already write: the library index and the
+        # packs row. No table, no column, no migration, no error code.
+        self.assertEqual(contracts.contract_version("cb.db"), 2)
+        self.assertEqual(contracts.contract_version("cb.errors"), 2)
+        v2_codes = set(_document("errors.v2.json")["code_catalog"])
+        self.assertEqual(set(contracts.error_codes()), v2_codes)
+        # The projection is a new contract id, not a new version of cb.pack: the manifest is
+        # unchanged, only the derivation from it is frozen.
+        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        self.assertEqual(contracts.contract_version("cb.projection"), 1)
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_v4_payloads_validate_before_any_handler_and_refuse_a_path(self) -> None:
+        for method, payload in (
+            ("pack.inspect", {"pack_id": "japanese-affection-context-l0"}),
+            ("pack.list", {"limit": 0}),
+            ("pack.list", {"limit": 201}),
+            ("pack.list", {"filter": "deleted"}),
+            ("pack.list", {"pack_version": "not-a-version"}),
+        ):
+            with self.subTest(method=method, payload=payload):
+                response = api.dispatch(_envelope(method, payload))
+                self.assertFalse(response["ok"])
+                self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
+
+        for method, payload in (
+            ("pack.list", {}),
+            ("pack.inspect", {"pack_id": "japanese-affection-context-l0", "pack_version": "1.0.0"}),
+        ):
+            with self.subTest(method=method):
+                response = api.dispatch(_envelope(method, payload))
+                self.assertFalse(response["ok"])
+                self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
+
+        def leaking_handler(payload, envelope):
+            item = _pack_item()
+            item["directory"] = "/var/lib/coursebook/library/packs"
+            return 0, {
+                "items": [item],
+                "total": 1,
+                "truncated": False,
+                "applied_filter": "all",
+            }
+
+        api.register_handler("pack.list", leaking_handler)
+        try:
+            response = api.dispatch(_envelope("pack.list", {}))
+            self.assertFalse(response["ok"])
+            self.assertEqual(response["error"]["code"], "INTERNAL_ERROR")
+            self.assertIn("directory", response["error"]["message"])
+        finally:
+            api.METHOD_HANDLERS.pop("pack.list", None)
+
+    def test_docs_publish_the_v4_surface_and_the_projection_authority(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for method in V4_NEW_METHODS:
+            self.assertIn(method, text, f"CONTRACTS.md does not document {method}")
+        for needle in (
+            "cb.projection",
+            "check_spec_from_pack_check",
+            "objective_criteria",
+            "pack_delete",  # the fence the list revision feeds
+            "previewCache",  # the CB-010 workaround this amendment removes
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md does not record the v4 decision on {needle!r}")
+
+
+class ProjectionContractTest(unittest.TestCase):
+    """CB-024: the pack-check projection is frozen as contract text, not importer code.
+
+    Import is the first consumer of the mapping. Parent Studio generation and community upload
+    review will be the second and third, so the rules live in ``cb.projection`` and the importer
+    applies them. The vectors below are the conformance set the implementation must satisfy.
+    """
+
+    def projection(self) -> dict:
+        return contracts.contract("cb.projection")
+
+    def test_projection_is_a_frozen_contract_at_v1(self) -> None:
+        document = self.projection()
+        self.assertEqual(document["x-contract-id"], "cb.projection")
+        self.assertEqual(document["x-contract-version"], 1)
+        self.assertEqual(document["$id"], "https://contracts.coursebook.hermes/projection/v1")
+        self.assertEqual(document["x-status"], "frozen")
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_every_example_validates_against_the_frozen_schemas(self) -> None:
+        document = self.projection()
+        reasons = {
+            document["recipe_gate"]["reason"],
+            "import_audit_failed",
+            "declared_audit_failed",
+        }
+        problems = {rule["problem"] for rule in document["audit_rules"]["rules"]}
+        seen_kinds = set()
+        for example in document["examples"]:
+            with self.subTest(example=example["name"]):
+                expectation = example["expect"]
+                seen_kinds.add(expectation["kind"])
+                if expectation["kind"] == "spec":
+                    contracts.validate_definition(
+                        "cb.projection", "check_spec", expectation["spec"], what=example["name"]
+                    )
+                    spec = expectation["spec"]
+                    self.assertEqual(spec["audit_state"], "passed")
+                    self.assertEqual(spec["audit_source"], "import_automated_audit")
+                    self.assertEqual(
+                        spec["rubric"]["construct"], example["check"]["evidence_target"]
+                    )
+                    self.assertIn("locale", spec)
+                else:
+                    self.assertIn(expectation["reason"], reasons | {"declared_audit_failed"})
+                    self.assertTrue(set(expectation["problems"]) <= problems)
+        # The vectors must cover both outcomes, or the conformance set proves nothing.
+        self.assertEqual(seen_kinds, {"spec", "none"})
+
+    def test_known_divergences_have_vectors(self) -> None:
+        document = self.projection()
+        vectors = {example.get("divergence") for example in document["examples"]}
+        for divergence in document["x-known-divergences"]:
+            with self.subTest(divergence=divergence["id"]):
+                self.assertIn(divergence["id"], vectors)
+                self.assertEqual(divergence["status"], "open")
+                self.assertTrue(divergence["resolution"])
+
+    def test_objective_examples_validate_and_keep_the_first_graded_check(self) -> None:
+        for example in self.projection()["objective_examples"]:
+            with self.subTest(example=example["name"]):
+                criteria = example["expect"]
+                self.assertEqual(criteria[0]["id"], "pack_objective")
+                self.assertEqual(criteria[0]["pack_objective_id"], example["objective"]["objective_id"])
+                for criterion in criteria:
+                    contracts.validate_definition("cb.projection", "objective_criterion", criterion)
+                graded = [entry for entry in criteria if "check_spec" in entry]
+                withheld = [entry for entry in criteria if entry.get("check_spec_withheld")]
+                self.assertEqual(
+                    len(graded) + len(withheld), len(example["objective"]["checks"])
+                )
+                if example["recipe"] == "parent":
+                    self.assertEqual(graded, [], "a parent pack must never yield a graded check")
+                else:
+                    self.assertEqual(
+                        graded[0]["id"], example["objective"]["checks"][0]["check_id"],
+                        "the first gradable check is the one the objective opens",
+                    )
+
+    def test_rules_are_named_ordered_and_total(self) -> None:
+        document = self.projection()
+        rules = document["audit_rules"]["rules"]
+        self.assertEqual([rule["id"] for rule in rules], ["R1", "R2", "R3", "R4", "R5", "R6"])
+        self.assertEqual([rule["name"] for rule in rules], [
+            "stimulus_present", "reference_present", "rubric_present",
+            "reference_not_in_stimulus", "alternatives_add_a_form", "declared_audit_not_failed",
+        ])
+        for rule in rules:
+            with self.subTest(rule=rule["id"]):
+                self.assertTrue(rule["passes_when"])
+                self.assertTrue(rule["problem"])
+        # The projection is total over a schema-valid manifest check: every required field is
+        # either read or explicitly accounted for as deliberately unread (the check's own version).
+        pack_check = contracts.contract("cb.pack")["properties"]["objectives"]["items"]["properties"]["checks"]["items"]
+        self.assertTrue(set(document["inputs"]["fields_read"]) <= set(pack_check["properties"]))
+        unread = set(document["inputs"]["fields_deliberately_unread"])
+        self.assertTrue(set(pack_check["required"]) <= set(document["inputs"]["fields_read"]) | unread)
+        self.assertIn("version", unread)
+
+    def test_declared_failure_cannot_become_gradable(self) -> None:
+        # A pack's own audit_state may refuse a check and may never grant one.
+        example = next(
+            item for item in self.projection()["examples"] if item["name"] == "declared_failed_withholds"
+        )
+        self.assertEqual(example["check"]["audit_state"], "failed")
+        self.assertEqual(example["expect"]["kind"], "none")
+        self.assertEqual(example["expect"]["reason"], "declared_audit_failed")
+        # ... and a pack cannot buy gradability by declaring 'passed' either: the deterministic
+        # audit in R1-R5 is the only gate, which the reference_leaked_into_stimulus vector shows.
+        leaked = next(
+            item for item in self.projection()["examples"] if item["name"] == "reference_leaked_into_stimulus"
+        )
+        self.assertEqual(leaked["check"]["audit_state"], "passed")
+        self.assertEqual(leaked["expect"]["kind"], "none")
+
+    def test_projection_never_carries_a_learner_path_or_answer_authority(self) -> None:
+        document = self.projection()
+        spec = document["$defs"]["check_spec"]
+        names = _property_names(spec)
+        for forbidden in (
+            "learner_label", "enrollment_id", "course_id", "attempt_id", "path", "local_path",
+            "provider", "model", "persona", "mastery", "pass_threshold",
+        ):
+            self.assertNotIn(forbidden, names)
+        self.assertIn("check_id", document["projection"]["never_produced"])
+        self.assertIn("version", document["projection"]["never_produced"])
+        self.assertIn("criterion_id", document["projection"]["never_produced"])
+        # An exact reference answer is the answer key. It lives in the spec the grader reads and
+        # nowhere in this contract's response shapes; no RPC response may carry the spec.
+        for method in contracts.method_names():
+            response_names = _property_names(contracts.method_schema(method)["response"])
+            self.assertNotIn("check_spec", response_names, method)
+            self.assertNotIn("reference_answer", response_names, method)
+
+
+def _pack_item(**overrides) -> dict:
+    item = {
+        "pack_id": "japanese-affection-context-l0",
+        "pack_version": "1.0.0",
+        "content_hash": "sha256:" + "a" * 64,
+        "recipe": "casual",
+        "source": "local",
+        "state": "installed",
+        "revision": 0,
+        "installed_at": "2026-11-06T00:00:00Z",
+        "file_count": 12,
+        "expanded_bytes": 40213,
+        "license": {"id": "CC-BY-4.0", "redistribution": "allowed"},
+    }
+    item.update(overrides)
+    return item
+
+
+def _inspection(*, hashes_match: bool = True) -> dict:
+    return {
+        "pack": _pack_item(),
+        "manifest": {"pack_id": "japanese-affection-context-l0", "pack_version": "1.0.0"},
+        "integrity": {
+            "hashes_match": hashes_match,
+            "file_count": 12,
+            "expanded_bytes": 40213,
+        },
+        "trust": {"labels": ["integrity_verified", "automated_checks_passed"]},
+    }
 
 
 if __name__ == "__main__":

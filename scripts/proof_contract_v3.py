@@ -79,7 +79,10 @@ class V3BackendProof(KernelCase):
 
     def test_contract_set_still_audits_clean_on_the_backend_branch(self) -> None:
         self.assertEqual(contracts.audit_contracts(), [])
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 3)
+        # This proof is version-agnostic: it holds the four v3 methods to their frozen shapes
+        # whatever the current wire version is (v4 added pack reads on top of them).
+        self.assertGreaterEqual(contracts.WIRE_CONTRACT_VERSION, 3)
+        self.assertEqual(contracts.contract_version("cb.rpc"), contracts.WIRE_CONTRACT_VERSION)
         self.assertEqual(contracts.contract_version("cb.db"), 2)
 
     def test_review_queue_output_is_contract_legal_as_returned(self) -> None:

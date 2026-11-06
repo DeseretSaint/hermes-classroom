@@ -96,9 +96,10 @@ def main() -> int:
     )
 
     schema = client.get("/api/plugins/coursebook/schema")
+    listed = {entry["id"] for entry in schema.json()["result"]["contracts"]} if schema.status_code == 200 else set()
     record(
-        "GET /schema lists all six frozen contracts",
-        schema.status_code == 200 and len(schema.json()["result"]["contracts"]) == 6,
+        "GET /schema lists every frozen contract in the inventory",
+        schema.status_code == 200 and listed == set(contracts.contract_ids()),
         None,
         schema,
     )
@@ -160,7 +161,7 @@ def main() -> int:
 
     later = client.post("/api/plugins/coursebook/rpc", json=envelope("library.list", {}))
     record(
-        "POST /rpc for a method not in the mounted contract is refused, never faked",
+        "POST /rpc for a frozen method with no handler is refused, never faked",
         later.json().get("ok") is False,
         None,
         later,
