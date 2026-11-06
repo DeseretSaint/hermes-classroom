@@ -243,6 +243,31 @@ class HermesToolSearch:
         }
 
 
+# ── Host seam binding (agent half) ──────────────────────────────────────────
+#
+# ``register(ctx)`` in the plugin entry point binds the host object once. The job executor then
+# asks for :func:`host_search`; an unbound (or unusable) host yields ``None``, which
+# ``run_research`` records honestly as ``status="unavailable"`` rather than inventing a source.
+
+_HOST_SEAM: Any = None
+
+
+def bind_host_seam(host: Any) -> None:
+    """Bind the plugin ``ctx`` so research can use the host's own search/extract tools."""
+    global _HOST_SEAM
+    _HOST_SEAM = host
+
+
+def host_search() -> "HermesToolSearch | None":
+    """The host-backed seam, or ``None`` when this process has no usable host tools."""
+    if _HOST_SEAM is None:
+        return None
+    try:
+        return HermesToolSearch.from_ctx(_HOST_SEAM)
+    except ResearchUnavailable:
+        return None
+
+
 # ── Query derivation ────────────────────────────────────────────────────────
 
 

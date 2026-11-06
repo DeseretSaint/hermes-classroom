@@ -20,7 +20,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .coursebook import __version__, hooks, tools
+from .coursebook import __version__, executor, hooks, tools
+from .coursebook import research
 from .coursebook.generation import bind_host_llm
 
 logger = logging.getLogger("coursebook")
@@ -36,6 +37,10 @@ def register(ctx: Any) -> None:
     # Generation jobs run in the agent process; bind the host-owned LLM once so the pipeline
     # never reaches for a raw provider key. Unbound calls fail loudly in generation.host_llm().
     bind_host_llm(getattr(ctx, "llm", None))
+    # Research uses the host's own web_search/web_extract tools through ctx.dispatch_tool, so it
+    # inherits the user's provider, egress rules and SSRF checks. An unusable host is recorded as
+    # "research unavailable" by the pipeline, never replaced with an invented source.
+    research.bind_host_seam(ctx)
     ctx.register_tool(
         name=tools.STATUS_TOOL_NAME,
         toolset=TOOLSET,
@@ -46,4 +51,8 @@ def register(ctx: Any) -> None:
     )
     for hook_name in hooks.PROVIDED_HOOKS:
         ctx.register_hook(hook_name, getattr(hooks, hook_name))
+    # The job tick: queued `plan` jobs (and their `brief.stage = lessons` variant) become real
+    # work. Bounded per tick, driven on the host's own asyncio loop, stopped on unload. A host
+    # without spawn_task (bare tests, dashboard-only process) simply does not start one.
+    executor.start_tick(ctx)
     logger.debug("coursebook %s registered (1 tool, %d hooks)", __version__, len(hooks.PROVIDED_HOOKS))

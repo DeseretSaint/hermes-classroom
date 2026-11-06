@@ -27,7 +27,7 @@ import json
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 
 from . import (
     api,
@@ -37,6 +37,7 @@ from . import (
     grading,
     job_service,
     jobs as jobs_contract,
+    parent_authoring as authoring,
     review,
     sources as source_ledger,
 )
@@ -271,28 +272,8 @@ def _objective_in_plan(connection, objective_id: str, plan_id: str) -> Any:
 
 
 def _plan_hash(connection, plan) -> str:
-    objectives = connection.execute(
-        "SELECT id, ordinal, title, evidence_target, evidence_criteria_json, version"
-        " FROM objectives WHERE plan_id = ? ORDER BY ordinal",
-        (plan["id"],),
-    ).fetchall()
-    payload = {
-        "course_id": plan["course_id"],
-        "version": plan["version"],
-        "schedule": _json_load(plan["schedule_json"], {}),
-        "objectives": [
-            {
-                "id": row["id"],
-                "ordinal": row["ordinal"],
-                "title": row["title"],
-                "evidence_target": row["evidence_target"],
-                "evidence_criteria": _json_load(row["evidence_criteria_json"], []),
-                "version": row["version"],
-            }
-            for row in objectives
-        ],
-    }
-    return _canonical_hash(payload)
+    """The plan's content hash. One implementation lives in ``parent_authoring``."""
+    return authoring.plan_hash(connection, plan)
 
 
 def _check_spec(objective) -> dict[str, Any] | None:
@@ -2611,6 +2592,33 @@ def plan_hash(plan_id: str) -> str:
         return _plan_hash(connection, plan)
 
 
+def _insert_objective(connection, plan_id: str, *, title: str, evidence_target: str,
+                      criteria: list[dict[str, Any]], ordinal: int | None = None) -> str:
+    """Insert one drafted objective on the caller's connection.
+
+    Shared by :func:`record_objective` (own transaction) and ``parent.plan.edit`` (one fenced
+    transaction for the whole edit): two row-insertion paths would let ordinals or hashes drift.
+    """
+    plan = _row(connection, "SELECT id, state FROM plans WHERE id = ?", (plan_id,))
+    if plan is None:
+        raise _not_found("plan", plan_id)
+    if plan["state"] != "draft":
+        raise RpcError.of(
+            "POLICY_VIOLATION", "objectives can only be authored on a draft plan.", plan_id=plan_id
+        )
+    if ordinal is None:
+        row = _row(connection, "SELECT COALESCE(MAX(ordinal), 0) AS ordinal FROM objectives WHERE plan_id = ?",
+                   (plan_id,))
+        ordinal = int(row["ordinal"]) + 1
+    objective_id = _new_id("obj")
+    connection.execute(
+        "INSERT INTO objectives (id, plan_id, ordinal, title, evidence_target, evidence_criteria_json,"
+        " state, version, created_at) VALUES (?, ?, ?, ?, ?, ?, 'not_started', 1, ?)",
+        (objective_id, plan_id, ordinal, title, evidence_target, _json_dump(criteria), _now()),
+    )
+    return objective_id
+
+
 def record_objective(plan_id: str, *, title: str, evidence_target: str, criteria: list[dict[str, Any]],
                      ordinal: int | None = None) -> str:
     """Write one planned objective (draft plans only).
@@ -2621,24 +2629,8 @@ def record_objective(plan_id: str, *, title: str, evidence_target: str, criteria
     """
     db.ensure_schema()
     with db.transaction() as connection:
-        plan = _row(connection, "SELECT id, state FROM plans WHERE id = ?", (plan_id,))
-        if plan is None:
-            raise _not_found("plan", plan_id)
-        if plan["state"] != "draft":
-            raise RpcError.of(
-                "POLICY_VIOLATION", "objectives can only be authored on a draft plan.", plan_id=plan_id
-            )
-        if ordinal is None:
-            row = _row(connection, "SELECT COALESCE(MAX(ordinal), 0) AS ordinal FROM objectives WHERE plan_id = ?",
-                       (plan_id,))
-            ordinal = int(row["ordinal"]) + 1
-        objective_id = _new_id("obj")
-        connection.execute(
-            "INSERT INTO objectives (id, plan_id, ordinal, title, evidence_target, evidence_criteria_json,"
-            " state, version, created_at) VALUES (?, ?, ?, ?, ?, ?, 'not_started', 1, ?)",
-            (objective_id, plan_id, ordinal, title, evidence_target, _json_dump(criteria), _now()),
-        )
-    return objective_id
+        return _insert_objective(connection, plan_id, title=title, evidence_target=evidence_target,
+                                 criteria=criteria, ordinal=ordinal)
 
 
 #: Evidence classes a non-attempt observation may carry. A model or a learner cannot self-assert
@@ -2674,6 +2666,651 @@ def record_observation(enrollment_id: str, objective_id: str, *, evidence_class:
             (evidence_id, enrollment["id"], objective["id"], kind, evidence_class, _now()),
         )
     return evidence_id
+
+
+# ── Parent Studio: authored courses (cb.rpc v6, CB-011) ─────────────────────
+#
+# The parent authoring surface is one aggregate: a course, its enrollment, the plan job that
+# authors the plan, the final approval that binds an exact content set, and the export that
+# refuses anything the approval does not cover. The hashes are computed by
+# :mod:`coursebook.parent_authoring` so the three commands that read them cannot disagree.
+
+#: The typed brief keys of ``cb.rpc#/$defs/parent_brief``. Internal routing keys
+#: (``course_id``, ``enrollment_id``, ``plan_id``, ``stage``, ``recipe``, ``dials``) are stored in
+#: the same JSON row but never returned as part of the typed brief.
+BRIEF_KEYS: tuple[str, ...] = (
+    "title", "goal", "starting_point", "age_band", "reading_level", "duration_minutes",
+    "setting", "materials", "exclusions", "supervision", "desired_pages", "desired_visuals",
+    "narration", "locale", "egress_acknowledged", "redaction_requested",
+)
+
+#: Bounded generated-content probes for objective removal. An objective with any of these rows is
+#: in use by generated content or learning state and cannot be deleted from a plan.
+_OBJECTIVE_USE_TABLES: tuple[str, ...] = (
+    "checks", "evidence", "lesson_runs", "notebook_entries",
+)
+
+
+def _parent_brief_view(brief: dict[str, Any]) -> dict[str, Any]:
+    return {key: brief[key] for key in BRIEF_KEYS if key in brief}
+
+
+def _course_row(connection, course_id: str) -> Any:
+    course = _row(connection, "SELECT * FROM courses WHERE id = ?", (course_id,))
+    if course is None or course["status"] == "deleted":
+        raise _not_found("course", course_id)
+    return course
+
+
+def _parent_approval(connection, course_id: str) -> Any:
+    return _row(
+        connection,
+        "SELECT * FROM final_approvals WHERE course_id = ?"
+        " ORDER BY (state = 'active') DESC, approved_at DESC LIMIT 1",
+        (course_id,),
+    )
+
+
+def _supersede_active_approval(connection, course_id: str, reason: str) -> None:
+    """Mark the active approval stale. Rows are superseded, never deleted (v6 invariant)."""
+    connection.execute(
+        "UPDATE final_approvals SET state = 'superseded', invalidation_reason = ?, superseded_at = ?"
+        " WHERE course_id = ? AND state = 'active'",
+        (reason, _now(), course_id),
+    )
+
+
+def _derived_content(connection, course, plan: Any) -> tuple[list[dict[str, Any]], str]:
+    """Compose the current authored content and its hash. Empty plan → empty content."""
+    if plan is None:
+        return [], authoring.content_hash(str(course["id"]), "", "", [])
+    composed = authoring.sections(connection, course, plan)
+    current_hash = _plan_hash(connection, plan)
+    return composed, authoring.content_hash(str(course["id"]), str(plan["id"]), current_hash, composed)
+
+
+def _approval_view(row: Any) -> dict[str, Any]:
+    if row is None:
+        return {
+            "state": "none",
+            "plan_hash": None,
+            "content_hash": None,
+            "approved_at": None,
+            "invalidated_reason": None,
+        }
+    return {
+        "state": str(row["state"]),
+        "plan_hash": row["plan_hash"],
+        "content_hash": row["content_hash"],
+        "approved_at": row["approved_at"],
+        "invalidated_reason": row["invalidation_reason"],
+    }
+
+
+def _export_status(plan: Any, composed: Sequence[dict[str, Any]], approval: Any, content_hash: str,
+                   *, has_content: bool | None = None) -> dict[str, Any]:
+    """Derive `parent_export_status`. Ready means every blocker is absent; one reason otherwise."""
+    if plan is None or str(plan["state"]) != "approved":
+        return {"ready": False, "blocked_reason": "plan_not_approved"}
+    content_ready = authoring.ready_sections(composed) if has_content is None else has_content
+    if not content_ready:
+        return {"ready": False, "blocked_reason": "no_generated_content"}
+    if approval is None or str(approval["state"]) != "active":
+        return {"ready": False, "blocked_reason": "no_final_approval"}
+    if str(approval["content_hash"]) != str(content_hash):
+        return {"ready": False, "blocked_reason": "changes_need_review"}
+    return {"ready": True, "blocked_reason": None}
+
+
+def _blueprint_sources(connection, course_id: str) -> list[dict[str, Any]]:
+    rows = connection.execute(
+        "SELECT id, title, url, support_status, fetched_at FROM sources"
+        " WHERE course_id = ? ORDER BY created_at LIMIT 200",
+        (course_id,),
+    ).fetchall()
+    return [
+        {
+            "source_id": str(row["id"]),
+            "title": str(row["title"])[:500] or "Source",
+            "url": row["url"],
+            "support_status": str(row["support_status"]),
+            "fetched_at": row["fetched_at"],
+        }
+        for row in rows
+    ]
+
+
+def _pack_backed_blueprint(course) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]], str]:
+    """Tabs for an imported pack course: its declared text files, grouped by role.
+
+    No path crosses the wire; the text is read from the already-validated library directory. The
+    content hash binds the pack's own manifest hash plus the course, because an imported pack's
+    bytes — not generated staging — are what the parent would approve.
+    """
+    from . import pack_flow
+
+    pack_row = None
+    with db.read() as connection:
+        pack_row = _row(connection, "SELECT * FROM packs WHERE id = ?", (course["pack_id"],))
+    if pack_row is None:
+        raise _not_found("pack", str(course["pack_id"]))
+    manifest, files = pack_flow.library().read(str(pack_row["pack_id"]), str(pack_row["version"]))
+    tabs: dict[str, list[dict[str, Any]]] = {
+        "parent_guide": [], "learner_pages": [], "answers": [], "narration": [],
+    }
+    role_tab = {
+        "parent_guide": "parent_guide",
+        "learner_page": "learner_pages",
+        "answer_guide": "answers",
+        "narration": "narration",
+    }
+    for record in manifest.get("files") or []:
+        role = str(record.get("role"))
+        tab = role_tab.get(role)
+        if tab is None:
+            continue
+        path = str(record.get("path"))
+        data = files.get(path)
+        if data is None:
+            continue
+        mime = str(record.get("mime"))
+        if mime.startswith("text/"):
+            text = data.decode("utf-8", "replace")
+        elif record.get("text_equivalent"):
+            text = str(record["text_equivalent"])
+        else:
+            continue
+        tabs[tab].append(
+            authoring.blueprint_file(role, path, text, None, limit=authoring.MAX_BLUEPRINT_CHARS)
+        )
+    sources = []
+    for source in manifest.get("sources") or []:
+        sources.append(
+            {
+                "source_id": str(source["source_id"]),
+                "title": str(source["title"])[:500],
+                "url": source.get("url"),
+                "publisher": source.get("publisher"),
+                "support_status": str(source.get("support_status") or "unassessed"),
+                "fetched_at": source.get("fetched_at") or "1970-01-01T00:00:00Z",
+            }
+        )
+    current_hash = authoring.content_hash(str(course["id"]), "", str(manifest["content_hash"]), [])
+    return tabs, sources[:200], current_hash
+
+
+@_handler("parent.brief.create")
+def parent_brief_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Create the course, its enrollment and the queued ``plan`` job in one fenced call."""
+    db.ensure_schema()
+    method = "parent.brief.create"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    if not key:
+        raise RpcError.of("VALIDATION_FAILED", "parent.brief.create requires an idempotency_key.",
+                          field="idempotency_key")
+    brief = dict(payload["brief"])
+    if not brief.get("egress_acknowledged"):
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "the provider/egress disclosure must be acknowledged before a course is created.",
+            field="egress_acknowledged",
+        )
+    now = _now()
+    course_id = _new_id("crs")
+    enrollment_id = _new_id("enr")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        connection.execute(
+            "INSERT INTO courses (id, title, recipe, goal, locale, dials_json, status, pack_id, revision,"
+            " created_at, updated_at) VALUES (?, ?, 'parent', ?, ?, '{}', 'draft', NULL, 0, ?, ?)",
+            (course_id, brief["title"], brief["goal"], brief.get("locale"), now, now),
+        )
+        connection.execute(
+            "INSERT INTO enrollments (id, course_id, learner_label, status, revision, created_at, updated_at)"
+            " VALUES (?, ?, NULL, 'active', 0, ?, ?)",
+            (enrollment_id, course_id, now, now),
+        )
+        stored_brief = {
+            **brief,
+            "recipe": "parent",
+            "dials": {},
+            "course_id": course_id,
+            "enrollment_id": enrollment_id,
+            "stage": "plan",
+        }
+        job = job_service.create(
+            "plan",
+            stored_brief,
+            operation_id=envelope.get("operation_id"),
+            idempotency_key=None,
+            now=datetime.now(timezone.utc),
+            connection=connection,
+        )
+        result = {
+            "course_id": course_id,
+            "enrollment_id": enrollment_id,
+            "job_id": str(job["job_id"]),
+            "state": str(job.get("state") or "queued"),
+            "revision": 0,
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
+    return 0, result
+
+
+@_handler("parent.brief.get")
+def parent_brief_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The typed brief, read back from the job row that the executor will consume."""
+    db.ensure_schema()
+    with db.read() as connection:
+        course = _course_row(connection, payload["course_id"])
+        job = _row(
+            connection,
+            "SELECT * FROM jobs WHERE kind = 'plan'"
+            " AND json_extract(brief_json, '$.course_id') = ? ORDER BY created_at DESC LIMIT 1",
+            (course["id"],),
+        )
+        if job is None:
+            raise RpcError.of(
+                "NOT_FOUND",
+                "this course has no parent brief; it was not created by parent.brief.create.",
+                course_id=course["id"],
+            )
+        brief = _json_load(job["brief_json"], {})
+        enrollment_id = brief.get("enrollment_id")
+        if not enrollment_id:
+            row = _row(
+                connection,
+                "SELECT id FROM enrollments WHERE course_id = ? ORDER BY created_at DESC LIMIT 1",
+                (course["id"],),
+            )
+            enrollment_id = row["id"] if row is not None else None
+    return 0, {
+        "course_id": str(course["id"]),
+        "enrollment_id": enrollment_id,
+        "brief": _parent_brief_view(brief),
+        "plan_job": {
+            "job_id": str(job["id"]),
+            "kind": str(job["kind"]),
+            "state": str(job["state"]),
+            "submitted_at": job["created_at"],
+        },
+        "created_at": course["created_at"],
+    }
+
+
+@_handler("parent.plan.edit")
+def parent_plan_edit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Draft-only plan edits, fenced on the hash the parent saw *then* on the revision."""
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "parent.plan.edit"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    edits = [name for name in (
+        "course_title", "goal", "objective_edits", "add_objectives",
+        "remove_objective_ids", "order",
+    ) if payload.get(name) is not None]
+    if not edits:
+        raise RpcError.of("VALIDATION_FAILED", "parent.plan.edit needs at least one edit.", field="objective_edits")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        plan = _row(connection, "SELECT * FROM plans WHERE id = ?", (payload["plan_id"],))
+        if plan is None or plan["course_id"] != enrollment["course_id"]:
+            raise _not_found("plan", payload["plan_id"])
+        if plan["state"] != "draft":
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "only a draft plan can be edited; use plan.replan for an approved plan.",
+                reason="plan_not_draft",
+                plan_id=plan["id"],
+                state=plan["state"],
+            )
+        actual_hash = _plan_hash(connection, plan)
+        if str(payload["expected_plan_hash"]) != actual_hash:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "the plan changed since it was read; re-read before editing.",
+                field="expected_plan_hash",
+                current_plan_hash=actual_hash,
+            )
+        objectives = list(
+            connection.execute(
+                "SELECT * FROM objectives WHERE plan_id = ? ORDER BY ordinal", (plan["id"],)
+            ).fetchall()
+        )
+        by_id = {str(row["id"]): row for row in objectives}
+        course = _row(connection, "SELECT * FROM courses WHERE id = ?", (enrollment["course_id"],))
+        now = _now()
+
+        if payload.get("course_title") is not None:
+            connection.execute(
+                "UPDATE courses SET title = ?, updated_at = ? WHERE id = ?",
+                (payload["course_title"], now, course["id"]),
+            )
+        if payload.get("goal") is not None:
+            connection.execute(
+                "UPDATE courses SET goal = ?, updated_at = ? WHERE id = ?",
+                (payload["goal"], now, course["id"]),
+            )
+
+        for edit in payload.get("objective_edits") or []:
+            objective = by_id.get(str(edit["objective_id"]))
+            if objective is None:
+                raise _not_found("objective", str(edit["objective_id"]))
+            title = edit.get("title") or objective["title"]
+            target = edit.get("evidence_target") or objective["evidence_target"]
+            criteria = (
+                _json_dump(edit["criteria"])
+                if edit.get("criteria") is not None
+                else objective["evidence_criteria_json"]
+            )
+            connection.execute(
+                "UPDATE objectives SET title = ?, evidence_target = ?, evidence_criteria_json = ?,"
+                " version = version + 1 WHERE id = ?",
+                (title, target, criteria, objective["id"]),
+            )
+
+        removed: set[str] = set()
+        for objective_id in payload.get("remove_objective_ids") or []:
+            objective = by_id.get(str(objective_id))
+            if objective is None:
+                raise _not_found("objective", str(objective_id))
+            for table in _OBJECTIVE_USE_TABLES:
+                used = _row(connection, f"SELECT 1 AS used FROM {table} WHERE objective_id = ? LIMIT 1",
+                            (objective["id"],))
+                if used is not None:
+                    raise RpcError.of(
+                        "POLICY_VIOLATION",
+                        "that objective already has generated content or learning state; it cannot be removed.",
+                        reason="objective_in_use",
+                        objective_id=str(objective["id"]),
+                        table=table,
+                    )
+            connection.execute("DELETE FROM objectives WHERE id = ?", (objective["id"],))
+            removed.add(str(objective["id"]))
+
+        next_ordinal = max([int(row["ordinal"]) for row in objectives if str(row["id"]) not in removed] or [0]) + 1
+        for offset, addition in enumerate(payload.get("add_objectives") or []):
+            _insert_objective(
+                connection,
+                str(plan["id"]),
+                title=str(addition["title"]),
+                evidence_target=str(addition["evidence_target"]),
+                criteria=list(addition.get("criteria") or []),
+                ordinal=next_ordinal + offset,
+            )
+
+        surviving = list(
+            connection.execute(
+                "SELECT id, ordinal FROM objectives WHERE plan_id = ? ORDER BY ordinal", (plan["id"],)
+            ).fetchall()
+        )
+        if payload.get("order") is not None:
+            requested = [str(item) for item in payload["order"]]
+            if len(requested) != len(set(requested)) or set(requested) != {str(row["id"]) for row in surviving}:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "order must be a permutation of the plan's surviving objective ids.",
+                    field="order",
+                )
+            for index, objective_id in enumerate(requested, start=1):
+                connection.execute(
+                    "UPDATE objectives SET ordinal = ? WHERE id = ?", (index, objective_id)
+                )
+        else:
+            # Keep the surviving sequence gapless after removals.
+            for index, row in enumerate(sorted(surviving, key=lambda item: int(item["ordinal"])), start=1):
+                connection.execute("UPDATE objectives SET ordinal = ? WHERE id = ?", (index, row["id"]))
+
+        revision = _bump_enrollment(connection, enrollment["id"], expected)
+        connection.execute(
+            "UPDATE plans SET version = version + 1 WHERE id = ?", (plan["id"],)
+        )
+        refreshed = _row(connection, "SELECT * FROM plans WHERE id = ?", (plan["id"],))
+        new_hash = _plan_hash(connection, refreshed)
+        connection.execute("UPDATE plans SET plan_hash = ? WHERE id = ?", (new_hash, plan["id"]))
+        reason = "plan_edited" if any(
+            payload.get(name) is not None
+            for name in ("objective_edits", "add_objectives", "remove_objective_ids", "order")
+        ) else "course_edited"
+        _supersede_active_approval(connection, str(enrollment["course_id"]), reason)
+        ordered = [
+            str(row["id"])
+            for row in connection.execute(
+                "SELECT id FROM objectives WHERE plan_id = ? ORDER BY ordinal", (plan["id"],)
+            ).fetchall()
+        ]
+        result = {
+            "plan_id": str(plan["id"]),
+            "plan_version": int(refreshed["version"]),
+            "plan_hash": new_hash,
+            "objective_ids": ordered,
+            "changes_need_review": True,
+            "revision": revision,
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+    return revision, result
+
+
+@_handler("parent.final.approve")
+def parent_final_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Approve the exact generated content set by hash. Distinct from ``plan.approve``."""
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "parent.final.approve"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        plan = _row(connection, "SELECT * FROM plans WHERE id = ?", (payload["plan_id"],))
+        if plan is None or plan["course_id"] != enrollment["course_id"]:
+            raise _not_found("plan", payload["plan_id"])
+        if plan["state"] != "approved":
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "the plan must be approved before the generated lessons can be approved.",
+                reason="plan_not_approved",
+                plan_id=str(plan["id"]),
+                state=str(plan["state"]),
+            )
+        actual_hash = _plan_hash(connection, plan)
+        if str(payload["plan_hash"]) != actual_hash:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "the approved plan hash is stale; re-read the plan.",
+                field="plan_hash",
+                current_plan_hash=actual_hash,
+            )
+        course = _row(connection, "SELECT * FROM courses WHERE id = ?", (enrollment["course_id"],))
+        composed = authoring.sections(connection, course, plan)
+        if not authoring.ready_sections(composed):
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "there is no generated lesson content to approve yet.",
+                reason="no_generated_content",
+            )
+        current_content = authoring.content_hash(
+            str(course["id"]), str(plan["id"]), actual_hash, composed
+        )
+        if str(payload["content_hash"]) != current_content:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "the content changed since it was read; re-read the blueprint.",
+                field="content_hash",
+                current_content_hash=current_content,
+            )
+        revision = _bump_enrollment(connection, enrollment["id"], expected)
+        now = _now()
+        _supersede_active_approval(connection, str(course["id"]), "replaced")
+        approval_id = _new_id("apr")
+        connection.execute(
+            "INSERT INTO final_approvals (id, course_id, plan_id, plan_hash, content_hash, state,"
+            " invalidation_reason, approved_at, superseded_at)"
+            " VALUES (?, ?, ?, ?, ?, 'active', NULL, ?, NULL)",
+            (approval_id, course["id"], plan["id"], actual_hash, current_content, now),
+        )
+        result = {
+            "approval_id": approval_id,
+            "state": "active",
+            "plan_hash": actual_hash,
+            "content_hash": current_content,
+            "approved_at": now,
+            "revision": revision,
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+    return revision, result
+
+
+@_handler("parent.blueprint.read")
+def parent_blueprint_read(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The five tabs as declared text. Read-only, unfenced, and it never emits a path."""
+    db.ensure_schema()
+    limit = int(payload.get("limit") or 100)
+    with db.read() as connection:
+        course = _course_row(connection, payload["course_id"])
+        plan = authoring.current_plan(connection, str(course["id"]))
+        approval = _parent_approval(connection, str(course["id"]))
+        if course["pack_id"] is not None:
+            tabs, sources, current_hash = _pack_backed_blueprint(course)
+            plan_view = None
+            if plan is not None:
+                plan_view = {
+                    "plan_id": str(plan["id"]),
+                    "version": int(plan["version"]),
+                    "state": str(plan["state"]),
+                    "plan_hash": _plan_hash(connection, plan),
+                }
+            status = _export_status(plan, [], approval, current_hash,
+                                    has_content=any(tabs.values()))
+            return 0, {
+                "course_id": str(course["id"]),
+                "recipe": str(course["recipe"]),
+                "plan": plan_view,
+                "approval": _approval_view(approval),
+                "content_hash": current_hash,
+                "export": status,
+                "tabs": tabs,
+                "sources": sources,
+            }
+        composed, current_hash = _derived_content(connection, course, plan)
+        sources = _blueprint_sources(connection, str(course["id"]))
+        status = _export_status(plan, composed, approval, current_hash)
+        plan_view = None
+        if plan is not None:
+            plan_view = {
+                "plan_id": str(plan["id"]),
+                "version": int(plan["version"]),
+                "state": str(plan["state"]),
+                "plan_hash": _plan_hash(connection, plan),
+            }
+        tabs = authoring.blueprint_tabs(composed, limit=min(limit, authoring.MAX_BLUEPRINT_CHARS))
+    return 0, {
+        "course_id": str(course["id"]),
+        "recipe": str(course["recipe"]),
+        "plan": plan_view,
+        "approval": _approval_view(approval),
+        "content_hash": current_hash,
+        "export": status,
+        "tabs": tabs,
+        "sources": sources,
+    }
+
+
+@_handler("parent.export")
+def parent_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Authored pack + selectable-text PDF, only when the active approval covers the bytes."""
+    from . import pack_flow
+
+    return pack_flow.parent_export(payload, envelope)
+
+
+@_handler("parent.reflection.record")
+def parent_reflection_record(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Parent-reported difficulty. It has no evidence class and never becomes evidence."""
+    db.ensure_schema()
+    key = envelope.get("idempotency_key")
+    method = "parent.reflection.record"
+    payload_hash = _payload_hash(method, payload)
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        course = _course_row(connection, payload["course_id"])
+        plan = authoring.current_plan(connection, str(course["id"]))
+        plan_hash = _plan_hash(connection, plan) if plan is not None else None
+        content_hash_value = None
+        if plan is not None:
+            composed, content_hash_value = _derived_content(connection, course, plan)
+            if not authoring.ready_sections(composed):
+                content_hash_value = None
+        now = _now()
+        reflection_id = _new_id("rfl")
+        connection.execute(
+            "INSERT INTO parent_reflections (id, course_id, enrollment_id, plan_id, difficulty,"
+            " revisit_note, apply_to_next_draft, plan_hash, content_hash, created_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                reflection_id,
+                course["id"],
+                payload.get("enrollment_id"),
+                payload.get("plan_id") or (str(plan["id"]) if plan is not None else None),
+                str(payload["difficulty"]),
+                payload.get("revisit_note"),
+                1 if payload.get("apply_to_next_draft", True) else 0,
+                plan_hash,
+                content_hash_value,
+                now,
+            ),
+        )
+        result = {
+            "reflection_id": reflection_id,
+            "difficulty": str(payload["difficulty"]),
+            "plan_hash": plan_hash,
+            "content_hash": content_hash_value,
+            "created_at": now,
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
+    return 0, result
+
+
+@_handler("parent.reflection.list")
+def parent_reflection_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Bounded read of the reflections that seed the next brief."""
+    db.ensure_schema()
+    limit = min(int(payload.get("limit") or 50), 200)
+    with db.read() as connection:
+        course = _course_row(connection, payload["course_id"])
+        rows = connection.execute(
+            "SELECT * FROM parent_reflections WHERE course_id = ? ORDER BY created_at DESC LIMIT ?",
+            (course["id"], limit),
+        ).fetchall()
+        total = connection.execute(
+            "SELECT COUNT(*) AS n FROM parent_reflections WHERE course_id = ?", (course["id"],)
+        ).fetchone()["n"]
+    return 0, {
+        "reflections": [
+            {
+                "reflection_id": str(row["id"]),
+                "difficulty": str(row["difficulty"]),
+                "revisit_note": row["revisit_note"],
+                "apply_to_next_draft": bool(row["apply_to_next_draft"]),
+                "plan_hash": row["plan_hash"],
+                "content_hash": row["content_hash"],
+                "created_at": row["created_at"],
+            }
+            for row in rows
+        ],
+        "total": int(total),
+    }
 
 
 # ── registration ────────────────────────────────────────────────────────────
