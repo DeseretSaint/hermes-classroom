@@ -153,8 +153,9 @@ class V4PackReadProof(KernelCase):
 
     def assert_contract_clean(self) -> None:
         self.assertEqual(contracts.audit_contracts(), [])
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 4)
-        self.assertEqual(contracts.contract_version("cb.rpc"), 4)
+        # Version-agnostic: v5 supersedes v4 additively, so a later version must not fail this proof.
+        self.assertGreaterEqual(contracts.WIRE_CONTRACT_VERSION, 4)
+        self.assertEqual(contracts.contract_version("cb.rpc"), contracts.WIRE_CONTRACT_VERSION)
         self.assertEqual(contracts.contract_version("cb.db"), 2)
         self.assertEqual(contracts.contract_version("cb.errors"), 2)
         self.assertEqual(contracts.contract_version("cb.projection"), 1)

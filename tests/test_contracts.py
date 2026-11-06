@@ -7,6 +7,7 @@ documented UX mapping disappear.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import unittest
 
@@ -38,6 +39,13 @@ V3_NEW_METHODS = (
 V4_NEW_METHODS = (
     "pack.list",
     "pack.inspect",
+)
+
+#: Added in cb.rpc v5 (CB-026): the three surfaces the Desktop learning workspace needs.
+V5_NEW_METHODS = (
+    "course.outline",
+    "check.get",
+    "lesson.assist",
 )
 
 
@@ -148,11 +156,11 @@ class ContractSetTest(unittest.TestCase):
                 self.assertRegex(entry["sha256"], r"^sha256:[a-f0-9]{64}$")
                 self.assertEqual(entry["version"], contracts.contract_version(entry["id"]))
 
-    def test_wire_contract_is_v4(self) -> None:
+    def test_wire_contract_is_v5(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 4)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 5)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v4"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v5"))
         # Every place the wire version is echoed (both response envelopes, health.get) must agree.
         # A missed constant is an envelope the plugin itself produces and cannot validate.
         echo = _wire_echoes(contracts.contract("cb.rpc"))
@@ -422,8 +430,9 @@ class V2AmendmentTest(unittest.TestCase):
         self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
 
         response = api.dispatch(_envelope("library.list", {"filter": "all"}))
-        self.assertFalse(response["ok"])
-        self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
+        # Whether a handler exists is a branch fact, not an invariant: this file must pass on the
+        # contract branch (no handler) and on the kernel branch (real handler) alike.
+        self.assertTrue(response["ok"] or response["error"]["code"] == "NOT_IMPLEMENTED", response.get("error"))
 
         def handler(payload, envelope):
             return 3, {
@@ -451,12 +460,18 @@ class V2AmendmentTest(unittest.TestCase):
                 "applied_filter": "all",
             }
 
+        # Save and restore: on a branch where the real handler exists, popping it would leave the
+        # rest of the suite dispatching a frozen method with no handler.
+        saved = api.METHOD_HANDLERS.get("library.list")
         api.register_handler("library.list", handler)
         try:
             response = api.dispatch(_envelope("library.list", {"filter": "all"}))
             self.assertTrue(response["ok"], response)
         finally:
-            api.METHOD_HANDLERS.pop("library.list", None)
+            if saved is not None:
+                api.METHOD_HANDLERS["library.list"] = saved
+            else:
+                api.METHOD_HANDLERS.pop("library.list", None)
 
 
 class V3AmendmentTest(unittest.TestCase):
@@ -473,7 +488,7 @@ class V3AmendmentTest(unittest.TestCase):
         self.assertEqual(v3_methods, v2_methods | set(V3_NEW_METHODS))
         self.assertEqual(len(v3_methods), 38)
         # v4 carries every v3 method verbatim and adds only the installed-pack reads.
-        self.assertEqual(set(contracts.method_names()), v3_methods | set(V4_NEW_METHODS))
+        self.assertEqual(set(contracts.method_names()), v3_methods | set(V4_NEW_METHODS) | set(V5_NEW_METHODS))
         for method in V3_NEW_METHODS:
             with self.subTest(method=method):
                 schema = contracts.method_schema(method)
@@ -586,8 +601,8 @@ class V3AmendmentTest(unittest.TestCase):
             "objective_id": "obj_12345678",
             "action": "snooze",
         }, expected_revision=4, idempotency_key="idem-review-action-1"))
-        self.assertFalse(fenced["ok"])
-        self.assertEqual(fenced["error"]["code"], "NOT_IMPLEMENTED")
+        # The envelope rule is the invariant; whether a handler answers is a branch fact.
+        self.assertTrue(fenced["ok"] or fenced["error"]["code"] in {"NOT_IMPLEMENTED", "NOT_FOUND"})
         self.assertNotIn("revision", fenced.get("result") or {})
         self.assertTrue(expected <= set(rule[0]["then"]["required"]))
 
@@ -718,9 +733,9 @@ class V3AmendmentTest(unittest.TestCase):
             ("evidence.disputes", {"enrollment_id": "enr_12345678"}),
         ):
             with self.subTest(method=method):
-                response = api.dispatch(_envelope(method, payload))
-                self.assertFalse(response["ok"])
-                self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
+                # Only the schema is the invariant here. Whether a handler exists (or refuses a
+                # nonexistent enrollment) is a branch fact; the payload gate is already asserted.
+                contracts.validate_request_payload(method, payload)
 
         def handler(payload, envelope):
             return 7, {
@@ -734,6 +749,7 @@ class V3AmendmentTest(unittest.TestCase):
                 "cap": 10,
             }
 
+        saved = api.METHOD_HANDLERS.get("review.queue")
         api.register_handler("review.queue", handler)
         try:
             response = api.dispatch(_envelope("review.queue", {"enrollment_id": "enr_12345678"}))
@@ -741,7 +757,10 @@ class V3AmendmentTest(unittest.TestCase):
             self.assertEqual(response["contract_version"], contracts.WIRE_CONTRACT_VERSION)
             self.assertEqual(response["revision"], 7)
         finally:
-            api.METHOD_HANDLERS.pop("review.queue", None)
+            if saved is not None:
+                api.METHOD_HANDLERS["review.queue"] = saved
+            else:
+                api.METHOD_HANDLERS.pop("review.queue", None)
 
     def test_docs_publish_the_v3_surface_and_the_handler_contract(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
@@ -767,9 +786,9 @@ class V4AmendmentTest(unittest.TestCase):
     """
 
     def test_v4_adds_only_the_installed_pack_read_surface(self) -> None:
-        v3_methods = set(_document("rpc.v3.json")["$defs"]["method"]["enum"])
-        self.assertEqual(set(contracts.method_names()), v3_methods | set(V4_NEW_METHODS))
-        self.assertEqual(len(contracts.method_names()), 40)
+        v4_methods = set(_document("rpc.v4.json")["$defs"]["method"]["enum"])
+        self.assertEqual(set(contracts.method_names()), v4_methods | set(V5_NEW_METHODS))
+        self.assertEqual(len(contracts.method_names()), 43)
         for method in V4_NEW_METHODS:
             with self.subTest(method=method):
                 schema = contracts.method_schema(method)
@@ -888,9 +907,7 @@ class V4AmendmentTest(unittest.TestCase):
             ("pack.inspect", {"pack_id": "japanese-affection-context-l0", "pack_version": "1.0.0"}),
         ):
             with self.subTest(method=method):
-                response = api.dispatch(_envelope(method, payload))
-                self.assertFalse(response["ok"])
-                self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
+                contracts.validate_request_payload(method, payload)
 
         def leaking_handler(payload, envelope):
             item = _pack_item()
@@ -902,6 +919,7 @@ class V4AmendmentTest(unittest.TestCase):
                 "applied_filter": "all",
             }
 
+        saved = api.METHOD_HANDLERS.get("pack.list")
         api.register_handler("pack.list", leaking_handler)
         try:
             response = api.dispatch(_envelope("pack.list", {}))
@@ -909,7 +927,10 @@ class V4AmendmentTest(unittest.TestCase):
             self.assertEqual(response["error"]["code"], "INTERNAL_ERROR")
             self.assertIn("directory", response["error"]["message"])
         finally:
-            api.METHOD_HANDLERS.pop("pack.list", None)
+            if saved is not None:
+                api.METHOD_HANDLERS["pack.list"] = saved
+            else:
+                api.METHOD_HANDLERS.pop("pack.list", None)
 
     def test_docs_publish_the_v4_surface_and_the_projection_authority(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
@@ -1089,6 +1110,340 @@ def _inspection(*, hashes_match: bool = True) -> dict:
         },
         "trust": {"labels": ["integrity_verified", "automated_checks_passed"]},
     }
+
+
+#: Byte hashes of the superseded RPC documents. Pinned so "additive" is a fact about the files,
+#: not a claim about the diff: history is not edited in place, so these can never legitimately move.
+FROZEN_RPC_SHA256 = {
+    "rpc.v1.json": "sha256:de5f65360da0d7c4a0065a1c4c9d69f5d0dec48742d5650bc396ff71f22d1997",
+    "rpc.v2.json": "sha256:4afc3c5fe0248c32733884dc68295f4a3aff916df7782f437945a8862e4352f4",
+    "rpc.v3.json": "sha256:006232ae71b642fd44d6461ce0e0f83f7fd40cf6dfeb4b0730fc4283cb6aad9a",
+    "rpc.v4.json": "sha256:b910c5e4a02015db6d35131e283b10582a4a8d400a24b9f3a6f8b242b538ad49",
+}
+
+
+class V5AmendmentTest(unittest.TestCase):
+    """CB-026: the three surfaces CB-009 cannot build without, and what they may never return.
+
+    The Desktop learning workspace may not read SQLite and may not invent a second authority, so
+    the Textbook/Plan index (``course.outline``), the structured check prompt (``check.get``) and
+    the pane's Hint/Show answer events (``lesson.assist``) have to be commands. All three read or
+    write rows ``cb.db`` v2 already defines; v5 adds no storage and no error code.
+    """
+
+    def test_superseded_rpc_documents_are_byte_identical(self) -> None:
+        for filename, expected in FROZEN_RPC_SHA256.items():
+            with self.subTest(filename=filename):
+                digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
+                self.assertEqual(f"sha256:{digest}", expected)
+        for version in (1, 2, 3, 4):
+            # Not in the inventory, and not silently repurposed: history stays history.
+            self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v5.json")
+
+    def test_v5_adds_only_the_outline_check_and_assist_surface(self) -> None:
+        v4 = _document("rpc.v4.json")
+        v4_methods = list(v4["$defs"]["method"]["enum"])
+        self.assertEqual(len(v4_methods), 40)
+        self.assertEqual(set(contracts.method_names()), set(v4_methods) | set(V5_NEW_METHODS))
+        self.assertEqual(len(contracts.method_names()), 43)
+        # Append-only: the v4 order survives as a prefix, so a client diffing enums sees no churn.
+        self.assertEqual(list(contracts.method_names())[: len(v4_methods)], v4_methods)
+        for method in V5_NEW_METHODS:
+            with self.subTest(method=method):
+                schema = contracts.method_schema(method)
+                for side in ("request", "response"):
+                    self.assertEqual(schema[side]["type"], "object", side)
+                    if "oneOf" in schema[side]:
+                        for branch in schema[side]["oneOf"]:
+                            self.assertIs(branch.get("additionalProperties"), False, side)
+                            self.assertEqual(_schema_problems(branch), [], f"{method}.{side}")
+                        continue
+                    self.assertIs(schema[side].get("additionalProperties"), False, side)
+                    self.assertEqual(_schema_problems(schema[side]), [], f"{method}.{side}")
+
+    def test_every_v1_to_v4_method_schema_is_carried_over_verbatim(self) -> None:
+        current = contracts.contract("cb.rpc")
+        for version in (1, 2, 3, 4):
+            document = _document(f"rpc.v{version}.json")
+            for method in document["$defs"]["method"]["enum"]:
+                with self.subTest(version=version, method=method):
+                    original = document["$defs"]["methods"]["properties"][method]
+                    carried = json.loads(json.dumps(current["$defs"]["methods"]["properties"][method]))
+                    if method == "health.get":
+                        carried["response"]["properties"]["contract_version"] = {
+                            "const": original["response"]["properties"]["contract_version"]["const"]
+                        }
+                    self.assertEqual(original, carried)
+            # The superseded envelope still says what it said when it was shipped.
+            self.assertEqual(
+                document["$defs"]["envelope_request"]["properties"]["contract_version"]["const"], version
+            )
+        # The one thing that may move: the wire echo, which must equal the current version.
+        self.assertEqual(
+            current["$defs"]["methods"]["properties"]["health.get"]["response"]["properties"]
+            ["contract_version"]["const"],
+            contracts.WIRE_CONTRACT_VERSION,
+        )
+        for path, value in _wire_echoes(current):
+            self.assertEqual(value, contracts.WIRE_CONTRACT_VERSION, path)
+
+    def test_course_outline_is_a_bounded_read_of_the_current_plan(self) -> None:
+        schema = contracts.method_schema("course.outline")
+        request = schema["request"]
+        self.assertEqual(set(request["required"]), {"enrollment_id"})
+        self.assertEqual(set(request["properties"]), {"enrollment_id", "limit"})
+        self.assertLessEqual(request["properties"]["limit"]["maximum"], 400)
+        # Read path: no fence and no idempotency key of its own; both live in the envelope only.
+        for forbidden in ("expected_revision", "idempotency_key", "revision", "cursor"):
+            self.assertNotIn(forbidden, request["properties"])
+
+        response = schema["response"]
+        self.assertEqual(
+            set(response["required"]), {"enrollment_id", "plan", "objectives", "total", "truncated"}
+        )
+        self.assertLessEqual(response["properties"]["objectives"]["maxItems"], 400)
+        # A short list must never hide a long course: total is the full count.
+        self.assertIn({"type": "null"}, response["properties"]["plan"]["oneOf"])
+
+        plan = contracts.contract("cb.rpc")["$defs"]["outline_plan"]
+        self.assertEqual(set(plan["required"]), {"plan_id", "version", "state", "plan_hash"})
+        self.assertEqual(set(plan["properties"]["state"]["enum"]), {"draft", "approved", "superseded"})
+
+        objective = contracts.contract("cb.rpc")["$defs"]["outline_objective"]
+        self.assertEqual(
+            set(objective["required"]),
+            {
+                "objective_id",
+                "ordinal",
+                "title",
+                "evidence_target",
+                "state",
+                "check_state",
+                "attempt_count",
+                "independent",
+                "last_opened_at",
+            },
+        )
+        self.assertEqual(
+            set(objective["properties"]["check_state"]["enum"]), {"none", "open", "closed", "superseded"}
+        )
+        self.assertEqual(objective["properties"]["independent"]["type"], "boolean")
+
+    def test_check_get_serves_the_stimulus_and_never_the_key(self) -> None:
+        schema = contracts.method_schema("check.get")
+        branches = schema["request"]["oneOf"]
+        self.assertEqual(len(branches), 2)
+        self.assertEqual({frozenset(branch["required"]) for branch in branches},
+                         {frozenset({"enrollment_id", "check_id"}),
+                          frozenset({"enrollment_id", "objective_id"})})
+        response = schema["response"]
+        self.assertEqual(
+            set(response["required"]),
+            {"check_id", "objective_id", "check_version", "evidence_target", "state",
+             "audit_state", "stimulus", "attempt_count"},
+        )
+        self.assertEqual(set(response["properties"]["state"]["enum"]), {"open", "closed", "superseded"})
+        self.assertEqual(set(response["properties"]["audit_state"]["enum"]), {"pending", "passed", "failed"})
+
+        stimulus = contracts.contract("cb.rpc")["$defs"]["check_stimulus"]
+        self.assertEqual(set(stimulus["required"]), {"prompt", "format", "choices"})
+        self.assertEqual(set(stimulus["properties"]["format"]["enum"]),
+                         {"text", "selection", "verification"})
+        self.assertLessEqual(stimulus["properties"]["choices"]["maxItems"], 8)
+        # The prompt bound must cover what storage can hold: a pack check's stimulus is up to 8000
+        # characters in cb.pack, and it is copied into checks.stimulus_json verbatim. A tighter
+        # bound would make a legitimate imported check unrenderable.
+        self.assertGreaterEqual(stimulus["properties"]["prompt"]["maxLength"], 8000)
+
+        # The answer key and the rubric are not on this wire, in any spelling.
+        names = _property_names(response) | _property_names(stimulus)
+        for forbidden in (
+            "reference_answer", "reference", "reference_json", "rubric", "rubric_json",
+            "accepted_answers", "accepted_alternatives", "grading_provenance", "check_spec",
+        ):
+            self.assertNotIn(forbidden, names, forbidden)
+
+    def test_v5_payloads_validate_and_refuse_a_smuggled_answer(self) -> None:
+        contracts.validate_response_payload("course.outline", _outline_result())
+        contracts.validate_response_payload("course.outline", _outline_result(plan=None, objectives=[]))
+        contracts.validate_response_payload("check.get", _check_result())
+        contracts.validate_response_payload(
+            "lesson.assist",
+            {"event_id": "evd_12345678", "kind": "hint_request", "evidence_class": "hinted", "revision": 9},
+        )
+        contracts.validate_request_payload("check.get", {"enrollment_id": "enr_12345678", "check_id": "chk_12345678"})
+        contracts.validate_request_payload("check.get", {"enrollment_id": "enr_12345678", "objective_id": "obj_12345678"})
+
+        # Exactly one addressing mode: both or neither is a caller bug, not a merge.
+        for payload in (
+            {"enrollment_id": "enr_12345678"},
+            {"enrollment_id": "enr_12345678", "check_id": "chk_12345678", "objective_id": "obj_12345678"},
+        ):
+            with self.subTest(payload=payload), self.assertRaises(contracts.ContractError):
+                contracts.validate_request_payload("check.get", payload)
+
+        # additionalProperties:false means a passthrough of stimulus_json would not validate: an
+        # unknown stored key (an answer smuggled into the stimulus) cannot ride out as a field.
+        leaked = _check_result()
+        leaked["stimulus"]["reference_answer"] = "丁寧に"
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_response_payload("check.get", leaked)
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_response_payload("check.get", {**_check_result(), "rubric": []})
+
+    def test_v5_payloads_validate_before_any_handler(self) -> None:
+        for method, payload in (
+            ("course.outline", {}),
+            ("course.outline", {"enrollment_id": "enr_12345678", "limit": 0}),
+            ("course.outline", {"enrollment_id": "enr_12345678", "limit": 401}),
+            ("check.get", {"enrollment_id": "enr_12345678"}),
+            ("lesson.assist", {"enrollment_id": "enr_12345678", "objective_id": "obj_12345678", "kind": "reveal"}),
+            ("lesson.assist", {"objective_id": "obj_12345678", "kind": "hint_request"}),
+        ):
+            with self.subTest(method=method, payload=payload):
+                response = api.dispatch(_envelope(method, payload))
+                self.assertFalse(response["ok"])
+                self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
+
+        # Valid shapes reach the seam and say honestly that no handler is registered yet (Cinder's
+        # registration is the next step; the UI gates on runtime.implemented_methods meanwhile).
+        # Valid shapes are schema-valid; whether a handler answers is a branch fact (Cinder's
+        # registration follows this freeze), so the seam is tested by the two invariants above and
+        # below instead of by asserting today's unimplemented state.
+        contracts.validate_request_payload("course.outline", {"enrollment_id": "enr_12345678"})
+        contracts.validate_request_payload("check.get", {"enrollment_id": "enr_12345678",
+                                                        "objective_id": "obj_12345678"})
+        contracts.validate_request_payload(
+            "lesson.assist", {"enrollment_id": "enr_12345678", "objective_id": "obj_12345678",
+                              "kind": "hint_request"}
+        )
+
+        # A handler that leaks the key is refused by the seam, not trusted.
+        def leaking_handler(payload, envelope):
+            result = _check_result()
+            result["reference_answer"] = "丁寧に"
+            return 7, result
+
+        saved = api.METHOD_HANDLERS.get("check.get")
+        api.register_handler("check.get", leaking_handler)
+        try:
+            response = api.dispatch(_envelope("check.get", {"enrollment_id": "enr_12345678",
+                                                           "check_id": "chk_12345678"}))
+            self.assertFalse(response["ok"])
+            self.assertEqual(response["error"]["code"], "INTERNAL_ERROR")
+            self.assertIn("reference_answer", response["error"]["message"])
+        finally:
+            if saved is not None:
+                api.METHOD_HANDLERS["check.get"] = saved
+            else:
+                api.METHOD_HANDLERS.pop("check.get", None)
+
+    def test_lesson_assist_is_a_revision_fenced_learner_command(self) -> None:
+        schema = contracts.method_schema("lesson.assist")
+        self.assertEqual(set(schema["request"]["required"]), {"enrollment_id", "objective_id", "kind"})
+        self.assertEqual(set(schema["request"]["properties"]["kind"]["enum"]),
+                         {"hint_request", "answer_shown"})
+        response = schema["response"]
+        self.assertEqual(set(response["required"]), {"event_id", "kind", "evidence_class", "revision"})
+        self.assertEqual(set(response["properties"]["evidence_class"]["enum"]),
+                         {"hinted", "answer_shown"})
+        # It is a command, so the envelope fence is mandatory: the event changes what class the
+        # next answer inherits, and an answer already being graded must lose the race.
+        envelope = contracts.contract("cb.rpc")["$defs"]["envelope_request"]
+        conditional = [
+            rule for rule in envelope["allOf"]
+            if rule.get("if", {}).get("properties", {}).get("method", {}).get("enum") == ["lesson.assist"]
+        ]
+        self.assertEqual(len(conditional), 1, "lesson.assist must be conditional in the envelope")
+        self.assertIn("expected_revision", conditional[0]["then"]["required"])
+        self.assertIn("idempotency_key", conditional[0]["then"]["required"])
+        self.assertNotIn("expected_revision", schema["request"]["properties"])
+
+    def test_v5_claims_no_new_storage_and_no_new_error_code(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.db"), 2)
+        self.assertEqual(contracts.contract_version("cb.errors"), 2)
+        self.assertEqual(set(contracts.error_codes()),
+                         set(_document("errors.v2.json")["code_catalog"]))
+        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        self.assertEqual(contracts.contract_version("cb.projection"), 1)
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_docs_publish_the_v5_surface_the_refusals_and_the_derivations(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for method in V5_NEW_METHODS:
+            self.assertIn(method, text, f"CONTRACTS.md does not document {method}")
+        for needle in (
+            "rpc.v5.json",
+            # what each method may not return
+            "reference_answer",
+            "rubric",
+            # the event/revision rule and its precedent
+            "review.action",
+            "bump",
+            # the storage the three methods read
+            "objectives",
+            "plans",
+            "checks",
+            "lesson_runs",
+            "evidence",
+            # the honest omission, recorded rather than silently dropped
+            "section_titles",
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+
+def _outline_result(*, plan: dict | None | str = "default", objectives: list | None = None) -> dict:
+    if plan == "default":
+        plan = {
+            "plan_id": "pln_12345678",
+            "version": 2,
+            "state": "approved",
+            "plan_hash": "sha256:" + "b" * 64,
+        }
+    return {
+        "enrollment_id": "enr_12345678",
+        "plan": plan,
+        "objectives": objectives if objectives is not None else [_outline_objective()],
+        "total": 1 if objectives is None else len(objectives),
+        "truncated": False,
+    }
+
+
+def _outline_objective(**overrides) -> dict:
+    objective = {
+        "objective_id": "obj_12345678",
+        "ordinal": 1,
+        "title": "Choose an appropriate expression for this addressee",
+        "evidence_target": "production",
+        "state": "independent_evidence",
+        "check_state": "closed",
+        "attempt_count": 2,
+        "independent": True,
+        "last_opened_at": "2026-11-06T00:00:00+00:00",
+    }
+    objective.update(overrides)
+    return objective
+
+
+def _check_result(**overrides) -> dict:
+    result = {
+        "check_id": "chk_12345678",
+        "objective_id": "obj_12345678",
+        "check_version": 1,
+        "evidence_target": "production",
+        "state": "open",
+        "audit_state": "passed",
+        "stimulus": {
+            "prompt": "You are thanking a professor. Which expression do you use?",
+            "format": "selection",
+            "choices": ["ありがとう", "ありがとうございます", "どうも"],
+            "learner_instructions": "Choose one option.",
+        },
+        "attempt_count": 0,
+    }
+    result.update(overrides)
+    return result
 
 
 if __name__ == "__main__":

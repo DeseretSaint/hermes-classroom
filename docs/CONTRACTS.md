@@ -1,8 +1,8 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v4** (CB-024 additive amendment; v3 = CB-022, v2 = CB-018). Governed by
-`PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every contract: **Atlas**.
-Implementers are the specialists named below.
+Status: **frozen at v5** (CB-026 additive amendment; v4 = CB-024, v3 = CB-022, v2 = CB-018).
+Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
+contract: **Atlas**. Implementers are the specialists named below.
 
 A contract file is the single authority for its vocabulary, payload shapes and error codes.
 No module may redeclare an enum or error code that lives in `contracts/`. Python reads them
@@ -15,15 +15,17 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v2.json` | 2 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v4.json` | 4 | Cinder (kernel + learning-loop methods), Sable (transport), Lattice (`pack.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v5.json` | 5 | Cinder (kernel + learning-loop methods), Sable (transport), Lattice (`pack.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v2.json` | 2 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v2.json` | 2 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v3** files for `cb.rpc`, `cb.errors`, `cb.db` and `cb.jobs` remain on disk, unmodified,
+The v1 **to v4** files for `cb.rpc`, `cb.errors`, `cb.db` and `cb.jobs` remain on disk, unmodified,
 as immutable history. `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
+`tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json`, so "additive" is a
+fact about the bytes rather than a claim about a diff.
 
 Each document carries `$id` (versioned URI), `x-contract-id`, `x-contract-version`, `x-owner`
 and, where superseded, `x-supersedes`. `tests/test_contracts.py` asserts that the id, the
@@ -34,7 +36,7 @@ version in the URI and the declared version agree for every file.
 `cb.rpc` is transport-neutral. The root schema validates a **request envelope**:
 
 ```json
-{ "contract": "cb.rpc", "contract_version": 4,
+{ "contract": "cb.rpc", "contract_version": 5,
   "method": "attempt.submit", "operation_id": "op-...", "idempotency_key": "...",
   "expected_revision": 12, "payload": { } }
 ```
@@ -45,9 +47,10 @@ Success and failure are separate envelopes (`$defs/envelope_response_ok`,
 handler, then validates the handler's result against the response schema. A handler that returns
 something outside the contract becomes `INTERNAL_ERROR` — it is never rendered.
 
-Envelope-level requirements added by v2 and v3 (enforced by the schema before any handler runs).
-v4 adds no envelope rule: both of its methods are reads, so they carry neither `idempotency_key` nor
-`expected_revision`:
+Envelope-level requirements added by v2, v3 and v5 (enforced by the schema before any handler runs).
+v4 adds none: both of its methods are reads, so they carry neither `idempotency_key` nor
+`expected_revision`. `course.outline` and `check.get` (v5) are reads for the same reason; only
+`lesson.assist` is a command:
 
 | Method(s) | Required envelope fields |
 |---|---|
@@ -56,6 +59,7 @@ v4 adds no envelope rule: both of its methods are reads, so they carry neither `
 | `enrollment.delete`, `pack.delete` | `idempotency_key`, `expected_revision` |
 | `enrollment.update`, `notebook.update`, `binding.abandon` | `expected_revision` |
 | `review.action` | `idempotency_key`, `expected_revision` |
+| `lesson.assist` | `idempotency_key`, `expected_revision` |
 
 `POST /api/plugins/coursebook/rpc` always answers **HTTP 200** with a contract envelope. A refused
 command is `ok:false` with an error code; a transport failure is the only reason a client sees an
@@ -412,7 +416,184 @@ v3 is frozen at four learning-loop methods. The draft v3 that carried `pack.list
 `wt/cb-020-rpc-v3` branch had no backend function, no handler and no consumer, and it was not
 adopted; this amendment supersedes it by putting the installed-pack read in v4 with its own owner,
 its own storage analysis and its own proof. No shipped version file may be extended in place — v1,
-v2 and v3 were not, and v4 is not.
+v2 and v3 were not, v4 is not, and the three CB-026 methods therefore land in **v5** rather than
+being bolted onto v4 (whose 40-method freeze is already referenced by the pack handlers and by
+CB-024's review packet).
+
+## v5 delta (CB-026)
+
+CB-009 (the Desktop learning workspace) could not be built against `cb.rpc` v4 without the Desktop
+half reading SQLite directly or inventing a second authority. Three surfaces of the signature
+learning screen had no wire path:
+
+* the **Textbook section index** and the **Plan tab** could name at most one objective
+  (`library_item.evidence_summary.current_objective_id`) plus scheduled review rows, so "Textbook —
+  sections, not one endless thread" and "returning to a past section" had no list to render;
+* the **Coursebook pane** could submit an answer but could not show the question: `check.open`
+  returns `{check_id, check_version, evidence_target, revision}` and nothing else, while the prompt,
+  format and choices already sit in `checks.stimulus_json`;
+* the pane's **Hint** and **Show answer** controls had no command path. `turn.py` writes
+  `hint_request` / `answer_shown` as layer-1 evidence that the next committed attempt consumes, but
+  only the chat hook could write them.
+
+v5 adds three methods and nothing else; every v1, v2, v3 and v4 method and payload is byte-identical
+(asserted in `tests/test_contracts.py`, which also pins the sha256 of each superseded `rpc.v*.json`).
+`rpc.v3.json` and `rpc.v4.json` are untouched on disk.
+
+| New method | Purpose | Request (required fields) | Response (required fields) |
+|---|---|---|---|
+| `course.outline` | Plan + flat objective index for one enrollment: the Textbook section list and the Plan tab | `enrollment_id` (`limit?`) | `enrollment_id`, `plan`, `objectives[]`, `total`, `truncated` |
+| `check.get` | The structured stimulus of one check, by check id or by objective | `enrollment_id` + exactly one of `check_id`, `objective_id` | `check_id`, `objective_id`, `check_version`, `evidence_target`, `state`, `audit_state`, `stimulus`, `attempt_count` |
+| `lesson.assist` | Pane-driven Hint / Show answer, recorded as a layer-1 event the next attempt consumes | `enrollment_id`, `objective_id`, `kind` + envelope `idempotency_key`, `expected_revision` | `event_id`, `kind`, `evidence_class`, `revision` |
+
+No table, no column, no migration and no error code is added: every field is derived from
+`plans`/`objectives`/`checks`/`lesson_runs`/`attempts`, or written to the existing `evidence` table
+(`cb.db` v2). `cb.errors`, `cb.db`, `cb.jobs`, `cb.pack` and `cb.projection` stay at their versions.
+
+### What these three methods may not return
+
+This is the reason the methods are small. Each one is a *view*, and a view that leaks the grading
+authority would make the learning surface dishonest no matter how correct the rest is.
+
+| Method | Never returned | Why |
+|---|---|---|
+| `course.outline` | any `reference_answer`, `reference`, `reference_json`, `rubric`, `rubric_json`, grading `criteria`, `evidence_criteria`, grading provenance, review schedule, learner label or filesystem path | It is an index. Scoring internals belong to the grader and the committed attempt row; the outline must be safe to render in a list with no attempt in flight. |
+| `check.get` | `reference_answer`, `reference` / `reference_json`, `accepted_answers` / `accepted_alternatives`, `rubric` / `rubric_json`, `audit_source`, `declared_audit_state`, `grading_provenance`, `check_spec`, and any chat transcript | `grading.py` keeps the answer and the rubric separate from the stimulus on purpose, and `quiz.history` withholds them; the pane renders a question, never a key. |
+| `lesson.assist` | any answer text, rubric, verdict, criteria or objective state | It records *that* scaffolding was used, never what the learner knows. Access is not evidence. |
+
+The stimulus is built from a **closed allowlist** (`prompt`, `format`, `choices`,
+`learner_instructions`). `checks.stimulus_json` is importer- and generator-written, so it can hold
+keys nobody planned for; `check.get` drops what it does not recognise instead of echoing it, and
+`additionalProperties: false` in the response schema means a handler that passes the JSON through
+fails response validation and becomes `INTERNAL_ERROR` rather than a rendered answer key. The
+contract tests exercise exactly that: a stimulus carrying `reference_answer` is refused.
+
+### `course.outline` semantics
+
+* **One plan authority, the same one `library.list` counts against.** `plan` is the course's
+  approved plan; when there is no approved plan it is the highest-version plan, which is then a
+  `draft` awaiting approval (`_current_plan_sql()` in the kernel). A `draft` state is therefore not
+  an error: it is what the Plan tab shows the learner to approve. `plan` is `null` only when the
+  course has no plan row at all.
+* **Objectives are the sections.** Ordered by `ordinal`, bounded at 400 rows, with `total` always
+  the full count and `truncated` saying whether rows were omitted. A short list never hides a long
+  course.
+* **Derived, never stored** — every field is one query over an existing row, with one authority per
+  fact:
+
+  | Field | Derivation |
+  |---|---|
+  | `state` | `objectives.state` verbatim (`cb.vocabulary#objective_state`) |
+  | `check_state` | the objective's highest-version `checks` row: its `state`. `none` when the objective has no check row (never opened, or a draft plan's objective) |
+  | `attempt_count` | `COUNT(attempts)` for **this enrollment** and this objective's checks with `state = 'committed'`. Failed `needs_retry` rows are not attempts at knowing |
+  | `independent` | `true` only when `objectives.state` is `independent_evidence` or `delayed_evidence` — the same rule that makes `library.list.evidence_summary.independent`; it is a view of the state, not a second claim |
+  | `last_opened_at` | `MAX(lesson_runs.last_opened_at)` for this enrollment + objective, `null` when the section was never opened |
+
+* **Read-only and unfenced.** No revision bump, no transitions row, no idempotency key; the
+  response envelope carries the read revision `0` like `library.list`. Opening the outline cannot
+  change evidence.
+* **No `section_titles`.** The draft of this card asked for a per-objective `section_titles[]`. The
+  database has no heading field: `lesson_segments.text` is a verbatim teaching transcript (written by
+  `turn.record_assistant_snapshot`), not a title, and `plans.schedule_json` is always `{}` in this
+  build. Rather than freeze a fabricated label list — first lines of chat prose rendered as
+  "sections" — the field is omitted: the section index **is** `objectives[]`, and a section's page is
+  `lesson.page`. If authored headings ever exist they are a `cb.db` migration plus a v6 field, not a
+  quiet string slice.
+
+### `check.get` semantics
+
+* **Two addressing modes, exactly one.** By `check_id` (the exact item the pane is showing) or by
+  `objective_id` (the objective's open check, else its highest-version check). Both or neither is
+  `VALIDATION_FAILED` before any handler runs.
+* **Membership follows `check.open`/`attempt.submit`:** the objective must belong to the
+  enrollment's course and to its **approved** plan, not the outline's current (possibly draft) plan.
+  A check from another course is `VALIDATION_FAILED` with `reason: check_not_in_enrollment_course`; an
+  unknown identity is `NOT_FOUND`.
+* **Stimulus normalization is part of the contract**, because the storage is heterogeneous:
+  `prompt` comes from the stored stimulus and is bounded at 8000 characters — the same bound
+  `cb.pack` allows a pack check's stimulus, which is copied into `checks.stimulus_json` verbatim;
+  `format` defaults to `text` when the stored stimulus declares none, which is the honest reading of
+  an imported pack check (an open answer, and `cb.projection` v1 emits no format); `choices` is `[]`
+  for a text item; `learner_instructions` is passed through when the generator stored it.
+* **`audit_state` is exposed, and it is honest.** A check whose audit failed can still be rendered —
+  the pane must be able to say why it refuses — but `attempt.submit` keeps refusing it with
+  `POLICY_VIOLATION` / `reason: check_not_audited`. Seeing a question is not grading it.
+* `attempt_count` counts committed attempts for this enrollment on this check only.
+* Read-only: no revision bump, no transitions row. It never opens a check (`check.open` does that,
+  and it is fenced) and never supersedes one.
+
+### `lesson.assist` semantics
+
+* **It is the same event the chat hook writes**, so it has the same shape: a layer-1 `evidence` row
+  with `attempt_id = NULL`, `kind` in `hint_request` / `answer_shown`, and
+  `evidence_class` `hinted` / `answer_shown` respectively. The next **committed** attempt on that
+  objective consumes it (`UPDATE evidence SET attempt_id = ?`), which is what keeps a hint from
+  contaminating a later, independent answer.
+* **It must bump the enrollment revision.** This is not ceremony: `attempt.submit` classifies
+  evidence inside its *read* transaction and then grades outside any transaction, so a hint recorded
+  while a grade is in flight would be invisible to that classification and the answer would be
+  committed as `cold`. Bumping the revision makes the in-flight submit lose the fence
+  (`STALE_REVISION`, or `CHECK_STALE`), and the pane's resubmit is classified `hinted`. A hint that
+  cannot change the evidence class is not a hint, it is a lie in the record.
+* **No transitions row.** `review.action` already bumps a revision for an event that is not a
+  transition (CB-022); the kernel's ledger is one row per *learner transition*, and a hint is an
+  action, not a movement. `lesson.assist` follows that precedent exactly.
+* **Preconditions**, all refused with existing codes:
+  * the objective must be in the enrollment's approved plan (`VALIDATION_FAILED`,
+    `reason: plan_not_approved` / `objective_not_in_plan`);
+  * an **open check must exist** for the objective (`VALIDATION_FAILED`, `reason: no_open_check`).
+    Without one the event can never be consumed by an attempt, and `evidence` has no `check_id`
+    column — an unconsumed hint would silently contaminate the *next* check on that objective;
+  * the chat binding must not be detached (`BINDING_NOT_ACTIVE`) — the same precondition
+    `attempt.submit` enforces, because the event exists to change the class of the next answer and
+    that answer would be refused.
+* `idempotency_key` replays the original result; the same key with a different payload is
+  `IDEMPOTENCY_CONFLICT`. `revision` in the response equals the envelope revision.
+* It never writes an `attempts` row, never sets a verdict and never changes `objectives.state`.
+
+### Storage read and written (all `cb.db` v2)
+
+| Method | Rows |
+|---|---|
+| `course.outline` | reads `plans`, `objectives`, `checks`, `lesson_runs`, `attempts` |
+| `check.get` | reads `checks`, `objectives`, `plans`, `attempts` |
+| `lesson.assist` | reads `enrollments`, `plans`, `objectives`, `checks`, `bindings`; writes one `evidence` row (layer 1) and bumps `enrollments.revision` |
+
+### Known divergence: the chat hook's hint path does not bump
+
+`turn.pre_turn` records the same `hint_request` / `answer_shown` event today **without** bumping the
+enrollment revision, so the chat path has the narrow race the pane path closes: a hint typed in chat
+while a pane submit is grading can be missed by that grading's classification. The wire contract
+cannot fix a host hook, and changing `pre_turn` touches Cinder's session-lifecycle code, so it is
+recorded here and handed to Cinder on the handler card rather than changed in this amendment. Until
+then, both paths write the same evidence event; they differ only in the fence.
+
+### Handlers Cinder must register (after this freeze)
+
+The backing rows all exist; wiring is derivation plus response mapping, no new semantics.
+
+| Method | Register in | Backing code | Handler must do |
+|---|---|---|---|
+| `course.outline` | `coursebook/domain.py` (`@_handler`) | `_enrollment`, `_approved_plan`/`_current_plan_sql`, `objectives`, `checks`, `lesson_runs`, `attempts` | one `db.read()`; resolve the current plan; select objectives by `ordinal` bound by `limit`; derive `check_state` (highest-version check), `attempt_count` (committed, this enrollment), `independent` (state in independent/delayed), `last_opened_at` (`MAX(lesson_runs.last_opened_at)`); set `total`/`truncated`; return `(0, result)` — never bump a revision |
+| `check.get` | same | `checks`, `_objective_in_plan`, `_approved_plan` | one `db.read()`; resolve the check by id, or by objective (open first, else highest version); build the stimulus from the four-key allowlist with `format` defaulting to `text` and `choices` to `[]`; count committed attempts; return `(0, result)` |
+| `lesson.assist` | same | `_require_revision`, `_idempotent_lookup`, `_bump_enrollment`, `_remember`, `evidence` | one transaction: replay the key; load enrollment, approved plan, `_objective_in_plan`; require an open check; `_binding_refusal`; `to_revision = _bump_enrollment(...)`; insert the layer-1 `evidence` row (`attempt_id NULL`, mapped `evidence_class`); `_remember(...)`; return `(to_revision, result)` |
+
+One writer: factor the insert currently inlined in `turn._record_assist` into
+`evidence.record_assist(connection, ...)` and have **both** `turn.py` and `domain.py` call it, so the
+hook and the pane cannot drift in `kind`/`evidence_class` mapping.
+
+Until registration lands, `api.dispatch` answers `NOT_IMPLEMENTED` for all three (the payload is
+still validated first), and the Desktop gates its controls on `/runtime.implemented_methods` — which
+is why the pane's Hint/Show answer and the Textbook index stay in the honest "not in this build"
+state rather than becoming dead buttons.
+
+Run `python3 -m unittest scripts.proof_contract_v5 -v` in a worktree that contains the CB-008/CB-022
+kernel: it drives real commands against a real SQLite database built by the real migrations, composes
+all three responses from the resulting rows under the rules above, and validates each against
+`rpc.v5.json` — including the smuggle case (a check row whose `stimulus_json` carries
+`reference_answer` must not put it on the wire) and the assist case (the event is written, the
+revision moves, and the next committed attempt is classified `hinted`). On a branch without that
+kernel the module skips with a stated reason rather than passing.
 
 ## UX screen → method mapping
 
@@ -423,13 +604,13 @@ Every screen in §6, §7, §8, §10 and §11 is implementable against a method o
 | §6 | Courses home: rows, search, filter, empty & filtered-empty, overflow | `library.list` (rows, `next_step`, `evidence_summary`, `warning`, `empty_reason`, `provenance`); `enrollment.update` (archive/unarchive); `enrollment.delete` (delete, previewed scope); `pack.delete` (delete imported pack); `artifact.get` (exported learning backup after `pack.export`); `binding.get` + `lesson.begin` (open bound chat) |
 | §6 / §7 | Review-due row and review queue | `library.list` `filter=review_due`; `review.queue` (due/overdue/cap/`upcoming_hidden`); `review.action` (`snooze`/`stretch`/`drop`/`resume`); `course.get` payload: plan objectives + evidence (below); `quiz.history` |
 | §7 | Overview: current objective, next action, resume/start, recent event, status banners | `library.list` row; `course.get` `course` payload (below); `lesson.begin`; `binding.get` |
-| §7 | Textbook: section list and durable lesson page, continue/fresh run, history | `lesson.page` (segments, sources, artifacts, checks, notebook saves, related attempts, state); `lesson.begin` (`resume`/`fresh`); `lesson.page.runtime` for bound-run status |
+| §7 | Textbook: section list and durable lesson page, continue/fresh run, history | `course.outline` (the section list: plan + every objective with state, check state, attempts, independence, last opened); `lesson.page` (segments, sources, artifacts, checks, notebook saves, related attempts, state); `lesson.begin` (`resume`/`fresh`); `lesson.page.runtime` for bound-run status |
 | §7 | Notebook: search, tag/course filter, edit note/tags, remove, open in textbook | `notebook.list`; `notebook.update`; `notebook.delete`; `lesson.page` (jump back to section) |
 | §7 | Quizzes: attempts, original feedback, dispute, new version | `quiz.history`; `attempt.dispute`; `check.open` (new version); `lesson.page.attempts` |
-| §7 | Plan: objective states, criteria, challenge-out, dials | `course.get` `course` payload (below); `progression.challenge_out`; `plan.replan`; `plan.approve` |
+| §7 | Plan: objective states, criteria, challenge-out, dials | `course.outline` (plan version/state/hash + the flat objective list); `course.get` `course` payload (below); `progression.challenge_out`; `plan.replan`; `plan.approve` |
 | §7 | Evidence: L1 attempts, L2 objective evidence, L3 recommendation | `evidence.inspect` (L1/L2/L3 + disputes in one read); `evidence.disputes` (filtered dispute view); `course.get` `course` payload (below); `quiz.history`; `attempt.override`; `attempt.dispute` |
 | §7 | Sources: provenance, support, staleness, claim count | `course.get` `course` payload (below); `lesson.page.sources` |
-| §8 | Lesson workspace: objective/check pane, attempt states, feedback, continue, detached banner | `lesson.page`; `check.open`; `attempt.submit`; `attempt.override`; `binding.get`; `lesson.begin`; `binding.abandon` |
+| §8 | Lesson workspace: objective/check pane, attempt states, feedback, continue, detached banner | `course.outline` (which section is current); `lesson.page`; `check.get` (structured prompt, format, choices); `check.open`; `attempt.submit`; `lesson.assist` (Hint / Show answer as layer-1 events); `attempt.override` (Skip); `binding.get`; `lesson.begin`; `binding.abandon` |
 | §9 | Library and pack trust: preview, import, keep/review/refuse update | `pack.list` (installed packs, enrolled or not, with state and revision); `pack.inspect` (manifest, integrity, trust of an installed pack without a new upload); `pack.preview`; `pack.import`; `pack.export`; `artifact.get`; `library.list` `provenance.source` |
 | §10 | Parent Studio: brief, research/review, approval, pack preview/export | `course.create` (`recipe: parent`); `jobs.create` (`kind: research` / `plan`) with the brief; `jobs.get`; `plan.approve`; `pack.preview` (manifest, integrity, trust); `pack.inspect` (re-open a pack generated in an earlier session); `pack.export`; `artifact.get` (tabs: parent guide, learner pages, answers, audio/visuals, sources are manifest file roles) |
 | §11 | Activity, jobs, recovery: running/failed/stale/delivery/recovery/usage | `jobs.list` (states, progress, errors, checkpoints); `jobs.get`; `jobs.cancel`; `usage.summary` |
@@ -476,7 +657,7 @@ backups, provider-side data, or artifacts referenced by another course.
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
-2. Add a new file (`rpc.v4.json`, `projection.v1.json`) and bump
+2. Add a new file (`rpc.v5.json`, `projection.v1.json`) and bump
    `$id`/`x-contract-version`/`x-supersedes`. Never edit a
    shipped version in a way that changes meaning; clients cache by version.
 3. Update `CONTRACT_FILES` in `coursebook/contracts.py` and run
@@ -490,6 +671,7 @@ backups, provider-side data, or artifacts referenced by another course.
 | v2 | 2026-11-06 | CB-018 additive amendment. 34 RPC methods (+library.list, lesson.page, lesson.begin, enrollment.update, enrollment.delete, pack.delete, artifact.get, jobs.list, notebook.update, binding.abandon), +DELETE_SCOPE_STALE, +lesson_runs/lesson_segments and revision fencing in cb.db v2, +$defs.job_state in cb.jobs v2. |
 | v3 | 2026-11-06 | CB-022 additive amendment. 38 RPC methods (+review.queue, review.action, evidence.inspect, evidence.disputes) with `review.action` fenced in the envelope; no new table, column, migration or error code — the queue stays derived and disputes stay in `attempts.grading_provenance_json`. `pack.list` deferred to a future v4. |
 | v4 | 2026-11-06 | CB-024 additive amendment. 40 RPC methods (+pack.list, pack.inspect) reading the existing library index and `packs` row; no new table, column, migration or error code. New contract `cb.projection` v1 freezes the pack-check → check-spec mapping (six audit rules, deterministic projection, conformance vectors) with two importer divergences recorded for Lattice. |
+| v5 | 2026-11-06 | CB-026 additive amendment. 43 RPC methods (+course.outline, check.get, lesson.assist) so CB-009 can render the Textbook section list, the Plan tab, the structured check prompt and the pane's Hint/Show answer; `lesson.assist` is fenced in the envelope. No new table, column, migration or error code — every field is derived from `plans`/`objectives`/`checks`/`lesson_runs`/`attempts`, and the assist event is the layer-1 `evidence` row the chat hook already writes. `section_titles` deliberately omitted (no heading storage). Superseded files pinned by sha256. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
@@ -517,6 +699,15 @@ backups, provider-side data, or artifacts referenced by another course.
   independent trust labels as `pack.preview`.
 * No `check_spec` (or reference answer, or rubric internals) in any RPC response. The frozen
   projection is storage, not a wire payload.
+* No `reference_answer`, `accepted_answers`/`accepted_alternatives`, `rubric` or `rubric_json` in
+  `check.get`: the pane renders a question. A stimulus that smuggles an answer is dropped by the
+  allowlist and refused by the response schema, not rendered.
+* No `section_titles` (or any other derived "heading") in `course.outline`. Storage has no heading
+  field — `lesson_segments.text` is verbatim teaching prose — so the section index is the objective
+  list itself. A fabricated label list would be worse than an absent one; authored headings would be
+  a `cb.db` migration and a v6 field.
+* No mastery, retention or "score" field in `course.outline` or `check.get`: `attempt_count` and
+  `independent` are facts about committed evidence, not an attainment estimate.
 * No mutation in `lesson.page`; navigation cannot change evidence.
 * No "delete everything" method. Archive, delete enrollment and delete imported pack are separate
   scopes with separate, server-returned data scope.
