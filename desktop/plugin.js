@@ -900,7 +900,10 @@ function CoursesView({ implemented, onStartCreate, createOpen }) {
 
   const rows = data && Array.isArray(data.items) ? data.items : []
   const noCourses = data && Number(data.total || 0) === 0
-  const filteredEmpty = noCourses && data.applied_filter && data.applied_filter !== 'all'
+  // A search is a filter too: with rows present on the profile, an empty result set caused by the
+  // search box must never be presented as first-run. `applied_filter` alone missed that case.
+  const filteredEmpty =
+    noCourses && (Boolean(query) || Boolean(data.applied_filter && data.applied_filter !== 'all'))
 
   let body
   if (status === 'idle') {
@@ -930,8 +933,10 @@ function CoursesView({ implemented, onStartCreate, createOpen }) {
             className: 'mx-auto flex w-full max-w-xl flex-col items-center gap-3',
             children: [
               jsx(sdk.EmptyState, {
-                title: 'No courses match this filter',
-                description: 'Your courses are still here; this filter just excludes them right now.'
+                title: query ? 'No courses match your search' : 'No courses match this filter',
+                description: query
+                  ? 'Your courses are still here; the search just excludes them right now.'
+                  : 'Your courses are still here; this filter just excludes them right now.'
               }),
               jsx(sdk.Button, {
                 variant: 'secondary',
@@ -939,7 +944,7 @@ function CoursesView({ implemented, onStartCreate, createOpen }) {
                   setFilter('all')
                   setSearchInput('')
                 },
-                children: 'Clear filter'
+                children: query ? 'Clear search' : 'Clear filter'
               })
             ]
           })

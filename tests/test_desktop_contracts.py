@@ -59,6 +59,16 @@ class DesktopContractMirrorTest(unittest.TestCase):
         expected = request["properties"]["filter"]["enum"]
         self.assertEqual(_string_list(_source(), "const FILTERS = ["), expected)
 
+    def test_filtered_empty_accounts_for_a_search_query(self) -> None:
+        # With courses on the profile, an empty result set caused by the search box must render the
+        # filtered-empty state (which offers Clear search), never first-run. `applied_filter` alone
+        # missed the search case and told a learner with courses that they had none.
+        source = _source()
+        start = source.index("const filteredEmpty =")
+        block = source[start : source.index("\n\n", start)]
+        self.assertIn("applied_filter", block)
+        self.assertIn("query", block, "the search term must count as a filter")
+
     def test_navigation_uses_the_contributed_route_and_one_segment(self) -> None:
         source = _source()
         self.assertIn("const ROUTE_PATH = '/coursebook'", source)
