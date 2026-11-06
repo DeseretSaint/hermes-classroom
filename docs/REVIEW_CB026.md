@@ -1,6 +1,6 @@
 # Review packet — CB-026 contract amendment (cb.rpc v5)
 
-Status: **frozen, nothing pushed**. Branch `wt/cb-026-atlas-rpc-v5`, based on
+Status: **frozen, nothing pushed**. Branch `wt/cb-026-atlas-rpc-v5`, commit `dc0a22c`, based on
 `wt/cb-024-atlas-rpc-v4` @ `4839cb5` (which is based on `wt/cb-022-atlas-rpc-v3` @ `a378516`, which is
 based on `master` @ `b536e2f`).
 
@@ -23,11 +23,11 @@ the diff.
 | File | Change | sha256 |
 |---|---|---|
 | `contracts/rpc.v5.json` | **new**: `$id .../rpc/v5`, `x-contract-version: 5`, `x-supersedes .../rpc/v4`, 43 methods (+`course.outline`, `check.get`, `lesson.assist`), three new `$defs` (`outline_plan`, `outline_objective`, `check_stimulus`), one new envelope rule for `lesson.assist`; every `contract_version` echo moved 4 → 5 | `sha256:e4dfea0e031b32698e9e354f640b25acfcdf68244ec819a3cedc375e8bd8b156` |
-| `coursebook/contracts.py` | `CONTRACT_FILES["cb.rpc"] = "rpc.v5.json"`, `WIRE_CONTRACT_VERSION = 5` | (see commit) |
-| `tests/test_contracts.py` | `V5AmendmentTest` (10 tests): additive-only, verbatim carry-over of v1–v4 schemas, pinned history hashes, outline bounds and derivation, `check.get` stimulus/refusal, `lesson.assist` fencing, no new storage/error code, docs coverage. Wire test is now `test_wire_contract_is_v5`. Handler-restore fix in the four seam tests so the file passes on a branch **with** real handlers (it previously popped them) | (see commit) |
-| `scripts/proof_contract_v5.py` | **new**: 11 tests against the real kernel and a real SQLite database | (see commit) |
-| `scripts/proof_contract_v4.py` | version-agnostic (`>= 4`) instead of pinned to 4 | (see commit) |
-| `docs/CONTRACTS.md` | v5 delta: why, method table, **what each method may not return**, `course.outline`/`check.get`/`lesson.assist` semantics, storage rows, known divergence, handler instructions, version numbering + decision log, UX mapping rows, deliberate omissions | (see commit) |
+| `coursebook/contracts.py` | `CONTRACT_FILES["cb.rpc"] = "rpc.v5.json"`, `WIRE_CONTRACT_VERSION = 5` | `sha256:f20ed35b1d5663dc252515bf50935e36aaf4ea46dd1ae536e202ff978c6ffe7f` |
+| `tests/test_contracts.py` | `V5AmendmentTest` (10 tests): additive-only, verbatim carry-over of v1–v4 schemas, pinned history hashes, outline bounds and derivation, `check.get` stimulus/refusal, `lesson.assist` fencing, no new storage/error code, docs coverage. Wire test is now `test_wire_contract_is_v5`. Handler-restore fix in the four seam tests so the file passes on a branch **with** real handlers (it previously popped them) | `sha256:6df4efd6f97a968017777fb03625c15c277b22e518cf394718805553dcf9d413` |
+| `scripts/proof_contract_v5.py` | **new**: 11 tests against the real kernel and a real SQLite database | `sha256:44e2eb71ad5373dfce5a01e17a1dbe933a3517cc1310ca85e15222e52acad0ed` |
+| `scripts/proof_contract_v4.py` | version-agnostic (`>= 4`) instead of pinned to 4 | `sha256:f363850d7c97830f8c924eb4035a34cbaf135df87a59f332d60f2bf9475a8448` |
+| `docs/CONTRACTS.md` | v5 delta: why, method table, **what each method may not return**, `course.outline`/`check.get`/`lesson.assist` semantics, storage rows, known divergence, handler instructions, version numbering + decision log, UX mapping rows, deliberate omissions | `sha256:22ea1ef26ba091e6d05e0079d91280c52c300b77049ec848eb08188e788f38a5` |
 
 `contracts/rpc.v1.json` … `rpc.v4.json`, `db`, `errors`, `jobs`, `pack`, `projection`, `vocabulary`:
 **untouched**. No table, column, migration or error code.
