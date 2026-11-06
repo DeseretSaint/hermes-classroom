@@ -66,11 +66,16 @@ class TestProbePacket(unittest.TestCase):
             )
 
     def test_matrix_uses_only_known_statuses(self) -> None:
+        # "seam" is the honest middle state: the backend half passed at the RPC seam on this
+        # commit while the user-visible half is blocked by CB-QA-09. It is deliberately not
+        # "verified" and never counts toward the demo gate.
         text = ACCEPTANCE.read_text(encoding="utf-8")
-        statuses = set(re.findall(r"\|\s*(verified|pending|blocked|failing)\b", text, re.IGNORECASE))
+        statuses = set(re.findall(
+            r"\|\s*(verified|seam|pending|blocked|failing)\b", text, re.IGNORECASE
+        ))
         self.assertTrue(statuses, "no statuses found in the matrix")
         self.assertLessEqual(
-            {s.lower() for s in statuses}, {"verified", "pending", "blocked", "failing"}
+            {s.lower() for s in statuses}, {"verified", "seam", "pending", "blocked", "failing"}
         )
 
 
