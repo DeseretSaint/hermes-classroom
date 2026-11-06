@@ -5,7 +5,7 @@ from __future__ import annotations
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from coursebook import db, job_service
+from coursebook import contracts, db, generation as gen, job_service
 from tests.kernel_support import KernelCase
 
 T0 = datetime(2026, 11, 6, 12, 0, 0, tzinfo=timezone.utc)
@@ -181,6 +181,41 @@ class FailureAndRecoveryTest(JobServiceCase):
         self.assertEqual(view["error"]["retryable"], True)
         self.assertIn("provider exploded", view["error"]["message"])
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM jobs WHERE state = 'failed'"), 1)
+
+    def test_a_provider_timeout_is_a_host_failure_not_a_grader_failure(self) -> None:
+        """CB-011-D1: ``GRADER_UNAVAILABLE`` sent the reader to the grader for a provider deadline."""
+        job_id = self.new_job()
+
+        def provider_deadline(lease):
+            raise gen.ProviderTimeout(
+                "coursebook.lesson.generate took 115802ms, over its 300.0s deadline",
+                purpose="coursebook.lesson.generate",
+                duration_ms=115802,
+                deadline_s=300.0,
+            )
+
+        view = job_service.execute(job_id, [job_service.Stage("lessons", provider_deadline)])
+        self.assertEqual(view["state"], "failed")
+        error = view["error"]
+        self.assertEqual(error["code"], "HOST_UNAVAILABLE")
+        self.assertEqual(error["category"], "capability")
+        self.assertEqual(error["retryable"], True)
+        self.assertEqual(error["details"]["purpose"], "coursebook.lesson.generate")
+        self.assertEqual(error["details"]["duration_ms"], 115802)
+        self.assertEqual(error["details"]["deadline_s"], 300.0)
+        # The durable record is the contract's own error shape, not a hand-rolled dict.
+        contracts.validate_definition("cb.errors", "error", error)
+
+    def test_a_provider_failure_is_also_a_host_failure(self) -> None:
+        job_id = self.new_job()
+
+        def provider_raised(lease):
+            raise gen.ProviderFailure("coursebook.lesson.generate failed: RuntimeError: boom",
+                                      purpose="coursebook.lesson.generate")
+
+        view = job_service.execute(job_id, [job_service.Stage("lessons", provider_raised)])
+        self.assertEqual(view["error"]["code"], "HOST_UNAVAILABLE")
+        self.assertEqual(view["error"]["details"]["purpose"], "coursebook.lesson.generate")
 
     def test_restart_marks_running_job_interrupted_and_resume_keeps_checkpoint(self) -> None:
         job_id = self.new_job()

@@ -183,15 +183,54 @@ On rejection the author is called **once more** with the validator's itemised re
 `LessonNotAvailable`. There is no path that enables a learner-facing check without a passing
 independent validation.
 
-## 8. Tests
+## 9. Provider deadlines and job budgets
 
-`tests/test_generation.py` (48 cases) and `tests/fixtures/generation/*.json` run entirely offline
+A deadline is policy, so it is declared once per request purpose in
+`generation.PROVIDER_TIMEOUT_SECONDS` and never passed as a literal from a call site:
+
+| purpose | default |
+|---|---|
+| `coursebook.plan.generate` | 240 s |
+| `coursebook.plan.validate` | 180 s |
+| `coursebook.lesson.generate` | 300 s |
+| `coursebook.lesson.validate` | 240 s |
+
+CB-011-D1 live evidence: a hard-coded 60 s deadline declared a **successful** 115.8 s lesson write
+late and failed the job, and the call's real tokens/cost were dropped on that path. A call that
+returns is real spend, so its usage is recorded before the deadline verdict; only then is
+`ProviderTimeout` raised (with `purpose`, `duration_ms` and `deadline_s` on the exception).
+
+Operator overrides, no code change required:
+
+* `COURSEBOOK_<PURPOSE>_TIMEOUT_SECONDS` — one purpose, e.g.
+  `COURSEBOOK_LESSON_GENERATE_TIMEOUT_SECONDS=600`.
+* `COURSEBOOK_PROVIDER_TIMEOUT_SECONDS` — every purpose (a purpose-specific value wins).
+* `COURSEBOOK_JOB_MAX_COST_USD` — the per-job known-cost ceiling (default 0.75).
+
+An invalid value is logged and the declared default kept; a typo never invents a deadline.
+
+`CostBudget.max_calls` defaults to 32 — the worst legal pipeline cost, 8 sections x 2 attempts x
+(generate + validate). A lesson job is budgeted to its own plan (`lesson_cost_budget`, 4 calls per
+section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs that were
+behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old default
+was 8). The ceiling still stops a runaway retry loop.
+
+A provider deadline is the host's failure, not the grader's: `job_service` reports
+`HOST_UNAVAILABLE` (capability, retryable) with the purpose and measured duration in `details`.
+A lesson timeout names what survived — "N of M sections are saved for plan X; create a new lessons
+job for that plan" — and the retry reuses those rows, so no authored section is re-charged.
+
+## 10. Tests
+
+`tests/test_generation.py` and `tests/fixtures/generation/*.json` run entirely offline
 with a fake LLM and fake search seam. Covered: malformed JSON, empty and oversized plans,
 fabricated citations, contradictory sources, research unavailable, one-off quiz suppression,
 parent hazard rejection, rejected check regeneration and second-failure parking, accepted
 alternatives, Japanese L0 romaji/furigana scaffolds, reference-answer leakage, provider timeout,
 retry idempotency, cost ceilings, unknown cost staying null, structural separation of the two
-passes, and web text not becoming policy.
+passes, web text not becoming policy, configured deadlines and their env overrides, a successful
+115 s call not being declared late, the sized lesson budget above the pipeline floor, and a
+timeout that keeps its authored sections and is resumed without re-authoring them.
 
 A live smoke test is intentionally **not** included: no test in this repo makes a network call, and
 no fixture claims to be real provider output.

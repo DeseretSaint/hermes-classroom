@@ -8,10 +8,12 @@ output as a real call.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 from coursebook import generation as gen
 from coursebook import research
@@ -1019,10 +1021,175 @@ class LessonJobTest(GenerationTestBase):
         self.assertIn("choices", stimulus)
         self.assertTrue(stimulus["scaffolds"]["romaji"])
 
+    # ── CB-011-D1: completability on a real provider ──────────────────────
+
+    def test_all_rejecting_validations_do_not_hit_the_production_call_ceiling(self) -> None:
+        """The live defect: a plan larger than four sections died on the 8-call ceiling.
+
+        Every validation rejects, so each section spends its two legal attempts
+        (generate + validate twice = 4 calls). Four fixture sections therefore need 16 real
+        calls, which the old production default of 8 refused with ``POLICY_VIOLATION``. No
+        budget is passed here: the production default is what is under test.
+        """
+        plan_result = self.approved_plan()
+        llm = self.lesson_script(validation_from_fixture("validation_reject_check"))
+        result = gen.run_lesson_job(
+            self.connection,
+            {"job_id": "job-lesson-ceiling", "kind": "plan", "brief": {"plan_id": plan_result["plan_id"]}},
+            llm,
+            now=NOW,
+        )
+        self.assertEqual(len(result["lessons"]), 4)
+        self.assertEqual(len(result["needs_review"]), 4)  # parked, never falsely passed
+        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 8)
+        self.assertEqual(llm.calls_for("coursebook.lesson.validate"), 8)
+        self.assertEqual(result["usage"]["calls"], 16)
+        self.assertEqual(self.count("gen_lessons"), 4)
+
+    def test_lesson_budget_is_sized_to_the_plan_and_still_has_a_ceiling(self) -> None:
+        self.assertEqual(gen.lesson_cost_budget(5).max_calls, 20)  # 5 x 2 attempts x 2 calls
+        self.assertEqual(gen.lesson_cost_budget(8).max_calls, 32)
+        budget = gen.lesson_cost_budget(2)
+        usage = gen._Usage(budget)
+        request = gen.build_lesson_request(
+            plan={}, section={"source_ids": []}, objective=None, recipe="casual",
+            dials={}, locale=None, sources=[],
+        )
+        for _ in range(budget.max_calls):
+            usage.before_call(request)
+            usage.calls.append({"purpose": request.purpose})
+        with self.assertRaises(gen.CostCeilingExceeded):
+            usage.before_call(request)
+
+    def test_a_timeout_keeps_authored_sections_and_a_retry_reuses_them(self) -> None:
+        plan_result = self.approved_plan()
+        accept = validation_from_fixture()
+        author = lesson_from_request()
+        generations = {"count": 0}
+
+        def stall_on_third_section(request: gen.LLMRequest) -> gen.LLMResponse:
+            generations["count"] += 1
+            if generations["count"] == 3:
+                raise TimeoutError("provider stalled at 115.8 s")
+            return author(request)
+
+        stalling = self.lesson_script(accept, generate=stall_on_third_section)
+        job = {"job_id": "job-lesson-timeout", "kind": "plan", "brief": {"plan_id": plan_result["plan_id"]}}
+        usage_before = self.count("usage_events")
+        with self.assertRaises(gen.ProviderTimeout) as raised:
+            gen.run_lesson_job(self.connection, job, stalling, now=NOW)
+        error = raised.exception
+        self.assertEqual(error.purpose, "coursebook.lesson.generate")
+        self.assertIn("2 of 4 sections are saved", str(error))
+        self.assertIn("new lessons job", str(error))
+        # Authored sections survive and the real spend before the timeout is recorded, not hidden.
+        self.assertEqual(self.count("gen_lessons"), 2)
+        self.assertEqual(self.count("usage_events") - usage_before, 4)  # 2 sections x (gen + validate)
+
+        healthy = self.lesson_script(accept)
+        result = gen.run_lesson_job(
+            self.connection,
+            {"job_id": "job-lesson-retry", "kind": "plan", "brief": {"plan_id": plan_result["plan_id"]}},
+            healthy,
+            now=NOW,
+        )
+        self.assertEqual(len(result["lessons"]), 4)
+        self.assertEqual(sum(1 for item in result["lessons"] if item["reused"]), 2)
+        self.assertEqual(healthy.calls_for("coursebook.lesson.generate"), 2)  # only the missing two
+        self.assertEqual(healthy.calls_for("coursebook.lesson.validate"), 2)
+        self.assertEqual(self.count("gen_lessons"), 4)
+
 
 def first_section_id(connection: sqlite3.Connection) -> str:
     row = connection.execute("SELECT id FROM gen_plan_sections ORDER BY ordinal LIMIT 1").fetchone()
     return str(row["id"])
+
+
+class ProviderDeadlineTest(unittest.TestCase):
+    """CB-011-D1: a declared 60 s deadline declared a real, successful call late."""
+
+    def _lesson_request(self, purpose: str = "coursebook.lesson.generate", timeout_s: float | None = None) -> gen.LLMRequest:
+        builders = {
+            "coursebook.lesson.generate": lambda: gen.build_lesson_request(
+                plan={}, section={"source_ids": []}, objective=None, recipe="casual",
+                dials={}, locale=None, sources=[], timeout_s=timeout_s,
+            ),
+            "coursebook.lesson.validate": lambda: gen.build_lesson_validation_request(
+                lesson={}, page={}, section={}, objective=None, recipe="casual",
+                dials={}, locale=None, sources=[], timeout_s=timeout_s,
+            ),
+            "coursebook.plan.generate": lambda: gen.build_plan_request(
+                goal="g", recipe="casual", dials={}, locale=None,
+                research_run=research.ResearchRun("unavailable", [], [], "none"), timeout_s=timeout_s,
+            ),
+            "coursebook.plan.validate": lambda: gen.build_plan_validation_request(
+                plan={}, goal="g", recipe="casual", dials={}, locale=None,
+                research_run=research.ResearchRun("unavailable", [], [], "none"), timeout_s=timeout_s,
+            ),
+        }
+        return builders[purpose]()
+
+    def test_a_lesson_request_is_never_given_a_sixty_second_deadline(self) -> None:
+        for purpose in gen.PROVIDER_TIMEOUT_SECONDS:
+            request = self._lesson_request(purpose)
+            self.assertEqual(request.purpose, purpose)
+            self.assertEqual(request.timeout_s, gen.PROVIDER_TIMEOUT_SECONDS[purpose])
+            self.assertGreater(request.timeout_s, 60.0)
+
+    def test_an_operator_can_override_each_deadline_without_a_code_change(self) -> None:
+        with mock.patch.dict(os.environ, {"COURSEBOOK_LESSON_GENERATE_TIMEOUT_SECONDS": "600"}):
+            self.assertEqual(gen.provider_timeout_s("coursebook.lesson.generate"), 600.0)
+            self.assertEqual(
+                gen.build_lesson_request(
+                    plan={}, section={"source_ids": []}, objective=None, recipe="casual",
+                    dials={}, locale=None, sources=[],
+                ).timeout_s,
+                600.0,
+            )
+        with mock.patch.dict(os.environ, {"COURSEBOOK_PROVIDER_TIMEOUT_SECONDS": "420"}):
+            self.assertEqual(gen.provider_timeout_s("coursebook.plan.validate"), 420.0)
+            self.assertEqual(gen.provider_timeout_s("coursebook.lesson.validate"), 420.0)
+        with mock.patch.dict(os.environ, {"COURSEBOOK_LESSON_VALIDATE_TIMEOUT_SECONDS": "nonsense"}):
+            self.assertEqual(
+                gen.provider_timeout_s("coursebook.lesson.validate"),
+                gen.PROVIDER_TIMEOUT_SECONDS["coursebook.lesson.validate"],
+            )
+
+    def test_the_per_job_cost_ceiling_is_configurable(self) -> None:
+        self.assertEqual(gen.default_cost_budget().max_cost_usd, 0.75)
+        with mock.patch.dict(os.environ, {"COURSEBOOK_JOB_MAX_COST_USD": "3.5"}):
+            self.assertEqual(gen.default_cost_budget().max_cost_usd, 3.5)
+            self.assertEqual(gen.lesson_cost_budget(5).max_cost_usd, 3.5)
+
+    def test_a_successful_call_that_took_115_seconds_is_not_declared_late(self) -> None:
+        request = self._lesson_request(timeout_s=300.0)
+        usage = gen._Usage(gen.CostBudget(max_calls=4))
+        clock = iter([0.0, 115.802])
+        with mock.patch.object(gen.time, "monotonic", lambda: next(clock)):
+            result = gen._call_llm(
+                lambda _request: gen.LLMResponse(text="{}", cost_usd=0.01), request, usage
+            )
+        self.assertEqual(result.text, "{}")
+        self.assertEqual(usage.summary()["calls"], 1)
+        self.assertEqual(usage.summary()["cost_usd"], 0.01)
+
+    def test_a_call_past_its_deadline_is_a_timeout_that_still_records_spend(self) -> None:
+        request = self._lesson_request(timeout_s=60.0)
+        usage = gen._Usage(gen.CostBudget(max_calls=4))
+        clock = iter([0.0, 115.802])
+        with mock.patch.object(gen.time, "monotonic", lambda: next(clock)):
+            with self.assertRaises(gen.ProviderTimeout) as raised:
+                gen._call_llm(
+                    lambda _request: gen.LLMResponse(text="{}", cost_usd=0.02), request, usage
+                )
+        error = raised.exception
+        self.assertEqual(error.purpose, "coursebook.lesson.generate")
+        self.assertEqual(error.duration_ms, 115802)
+        self.assertEqual(error.deadline_s, 60.0)
+        self.assertIn("115802ms", str(error))
+        # The provider charged for that call: the ledger says so instead of dropping it.
+        self.assertEqual(usage.summary()["calls"], 1)
+        self.assertEqual(usage.summary()["cost_usd"], 0.02)
 
 
 if __name__ == "__main__":

@@ -266,6 +266,66 @@ class ExecutorTest(KernelCase):
         self.assertEqual(view["checkpoint"]["lessons"], 4)
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM gen_lessons"), 4)
 
+    def test_a_lesson_provider_timeout_is_a_host_failure_the_parent_can_retry(self) -> None:
+        """CB-011-D1: the live failure. jobs.get must name the provider, not the grader."""
+        plan_job = self.create_plan_job()
+        executor.pump_once(llm=self.plan_llm(), search=FakeSearch(), now=NOW)
+        plan_id = self.job(plan_job)["checkpoint"]["plan_id"]
+        course_id = str(self.scalar("SELECT course_id FROM plans WHERE id = ?", (plan_id,)))
+        enrollment_id = self.new_enrollment(course_id, label="Learner")
+        self.assertEqual(self.approve(enrollment_id, plan_id, 0), 1)
+
+        lesson_job = self.ok(
+            "jobs.create",
+            {"kind": "plan", "brief": {"stage": "lessons", "plan_id": plan_id}},
+        )["result"]["job_id"]
+        author = lesson_from_request()
+        generations = {"count": 0}
+
+        def stall_on_the_second_section(request):  # noqa: ANN001 - the host seam raised
+            generations["count"] += 1
+            if generations["count"] == 2:
+                raise TimeoutError("provider stalled past its deadline")
+            return author(request)
+
+        executor.pump_once(
+            llm=FakeLLM(
+                {
+                    "coursebook.lesson.generate": stall_on_the_second_section,
+                    "coursebook.lesson.validate": validation_from_fixture(),
+                }
+            ),
+            search=FakeSearch(),
+            now=NOW,
+        )
+
+        # jobs.get validates the stored error against cb.errors through api.dispatch.
+        view = self.job(lesson_job)
+        self.assertEqual(view["state"], "failed")
+        self.assertEqual(view["error"]["code"], "HOST_UNAVAILABLE")
+        self.assertEqual(view["error"]["category"], "capability")
+        self.assertTrue(view["error"]["retryable"])
+        self.assertIn("sections are saved", view["error"]["message"])
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM gen_lessons"), 1)
+
+        retry_job = self.ok(
+            "jobs.create",
+            {"kind": "plan", "brief": {"stage": "lessons", "plan_id": plan_id}},
+        )["result"]["job_id"]
+        retry_llm = FakeLLM(
+            {
+                "coursebook.lesson.generate": author,
+                "coursebook.lesson.validate": validation_from_fixture(),
+            }
+        )
+        executor.pump_once(llm=retry_llm, search=FakeSearch(), now=NOW)
+        retried = self.job(retry_job)
+        self.assertEqual(retried["state"], "completed")
+        self.assertEqual(retried["checkpoint"]["lessons"], 4)
+        # Only the three missing sections were authored: the saved one was reused, not re-charged.
+        self.assertEqual(retry_llm.calls_for("coursebook.lesson.generate"), 3)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM gen_lessons"), 4)
+
     def test_pump_does_nothing_on_an_unmigrated_store(self) -> None:
         import os
         import shutil
