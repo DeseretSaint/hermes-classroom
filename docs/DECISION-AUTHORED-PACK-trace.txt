@@ -1,0 +1,121 @@
+# trace: scripts/probe-authored-pack-policy.py on master @ adedf47
+# run: python3 scripts/probe-authored-pack-policy.py shipped
+{
+ "blueprint_export": {
+  "blocked_reason": "no_final_approval",
+  "ready": false
+ },
+ "composed": [
+  {
+   "check_rubric": 1,
+   "composed_rubric": 3,
+   "has_page": true,
+   "objective": "4a289bba59af1fc3",
+   "plan_evidence_criteria": 1,
+   "section": "Warm and cold at home",
+   "supervision_notes": 1
+  },
+  {
+   "check_rubric": 1,
+   "composed_rubric": 3,
+   "has_page": true,
+   "objective": "b9bb130c7f7535fb",
+   "plan_evidence_criteria": 1,
+   "section": "Why some jobs are for grown-ups",
+   "supervision_notes": 1
+  }
+ ],
+ "export": {
+  "code": "POLICY_VIOLATION",
+  "message": "some approved objectives have no generated section; regenerate lessons before exporting.",
+  "ok": false,
+  "problems": [
+   "objective e5b668d2fa0cc09e has no generated section",
+   "objective cc1f6020a15a056a has no generated section"
+  ],
+  "reason": "no_generated_content"
+ },
+ "final_approval_error": null,
+ "final_approval_ok": true,
+ "lesson_job_state": "completed",
+ "lesson_states": [
+  "validated",
+  "validated"
+ ],
+ "mode": "shipped",
+ "objectives_in_plan": 4,
+ "stored_rubric_criteria": [
+  1,
+  1
+ ]
+}
+
+# run: python3 scripts/probe-authored-pack-policy.py one_to_one
+{
+ "blueprint_export": {
+  "blocked_reason": "no_final_approval",
+  "ready": false
+ },
+ "composed": [
+  {
+   "check_rubric": 1,
+   "composed_rubric": 3,
+   "has_page": true,
+   "objective": "dce1342b512b9c2a",
+   "plan_evidence_criteria": 1,
+   "section": "Warm things at home",
+   "supervision_notes": 1
+  },
+  {
+   "check_rubric": 1,
+   "composed_rubric": 3,
+   "has_page": true,
+   "objective": "84b6b3534c54a24b",
+   "plan_evidence_criteria": 1,
+   "section": "Cold things at home",
+   "supervision_notes": 1
+  },
+  {
+   "check_rubric": 1,
+   "composed_rubric": 3,
+   "has_page": true,
+   "objective": "ee9e50d5aac759a5",
+   "plan_evidence_criteria": 1,
+   "section": "Why the kettle is a grown-up job",
+   "supervision_notes": 1
+  },
+  {
+   "check_rubric": 1,
+   "composed_rubric": 3,
+   "has_page": true,
+   "objective": "ef2888c75787f2cc",
+   "plan_evidence_criteria": 1,
+   "section": "Explain one example",
+   "supervision_notes": 1
+  }
+ ],
+ "export": {
+  "code": "POLICY_VIOLATION",
+  "message": "the authored pack is not exportable: pack does not meet the teaching minima: check '770fa820523ffa9e' lists its reference answer as an accepted alternative; check '3411e1da8e68f67c' lists its reference answer as an accepted alternative; check '8ac46f9317ffcd84' lists its reference answer as an accepted alternative; check 'a5c4159edb1fd11f' lists its reference answer as an accepted alternative",
+  "ok": false,
+  "problems": null,
+  "reason": "export_not_exportable"
+ },
+ "final_approval_error": null,
+ "final_approval_ok": true,
+ "lesson_job_state": "completed",
+ "lesson_states": [
+  "validated",
+  "validated",
+  "validated",
+  "validated"
+ ],
+ "mode": "one_to_one",
+ "objectives_in_plan": 4,
+ "stored_rubric_criteria": [
+  1,
+  1,
+  1,
+  1
+ ]
+}
