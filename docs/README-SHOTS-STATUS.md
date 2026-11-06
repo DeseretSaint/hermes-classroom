@@ -1,9 +1,9 @@
 # README/demo capture set — rig, what exists, and the blocker
 
-Status: **incomplete.** Three surfaces are captured from the polished build; the lesson-pane and
-quiz frames are blocked by a binding flow that does not re-bind, so nothing has been copied into
-`docs/assets/` and no caption list is published yet. This file records the rig and the exact
-failure so the next pass does not have to rediscover either.
+Status: **complete under option (b).** Nine README/demo frames are committed under
+`docs/assets/`, with captions and provenance in `docs/README-SHOTS.md`. The lesson-pane and quiz
+frames reuse the merged CB-009/CB-015 live evidence; the detached-binding behavior in this rig is
+recorded below as a rig limitation, not claimed as a product defect.
 
 ## Rig (built for this card, from this worktree's HEAD 22a9180)
 
