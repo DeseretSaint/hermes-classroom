@@ -6,13 +6,14 @@ isolated Electron window on CDP `9338` (`COURSEBOOK_TEST_STATE=~/.hermes/cb015-t
 scripts/cb013-live-window.sh`). The operator's window, profile and gateway were not touched.
 Proof 12 was re-driven later on the CB-015 residual branch (`wt/cb015-proof12`, base `9f4b387`):
 isolated rig `~/.hermes/coursebook-test` (its own home and userdata), backend `127.0.0.1:44219`
-wire **`cb.rpc` v7 / cb.db v4 (52 methods)**, window CDP `9337`. Only that row's evidence comes
-from the v7 rig; the rest of this packet is the v6 pass described above.
+wire **`cb.rpc` v7 / cb.db v4 (52 methods)**, window CDP `9337`. Proof 12 (§3b) and the residual
+rows 3/7/8/9 (§12) were driven later on the v7 backend; everything else in this packet is the
+v6 pass described above.
 
 Status in one line: **the design-system polish is machine-clean; the notebook, quiz and
 textbook loops are live-proven on this branch; the 55-objective performance run is measured;
-the 19-proof matrix is fully evidenced but only part of it was re-run in this worktree this
-pass — every row says which branch its evidence comes from and what remains unproven.**
+the 19-proof matrix stands at 10 live / 6 partial / 2 boundary-only / 1 open, with every
+missing half named — no row is claimed green on prose alone.**
 
 ## 1. Design-system polish — enforced by a gate, not by eye
 
@@ -51,12 +52,15 @@ overflow** (`docs/REVIEW_CB015-perf.json`).
 
 ## 2. Gates
 
+Measured on the merged master tree, not on the branch this packet was written on.
+
 | gate | command | result |
 |---|---|---|
-| unit/integration | `python3 -m unittest discover -s tests -t .` | 636 tests OK |
-| ESM parse | `node --check desktop/plugin.js` | OK |
+| unit/integration | `python3 -m unittest discover -s tests -t .` | **674 tests OK** at `459b99f` (this packet's own measurement at `64ea355` was 636; master grew with CB-014/CB-049 and the rows 3/7/8/9 pass) |
+| ESM parse | `node --check desktop/plugin.js` | OK at `459b99f` |
 | design hygiene | `node scripts/cb015-hygiene.mjs` | 0 findings / 13 rules |
-| canonical gate | `scripts/validate.sh` | 31/31 mounted expectations |
+| release gate | `bash scripts/validate-plugin.sh` | 3/3 on `459b99f` (787 files) — clean `git archive` export, admission + security scan `safe` |
+| canonical gate | `scripts/validate.sh` | 31/31 mounted expectations, recorded when the packet was assembled; not re-run in the final gate pass |
 
 ## 3. Live loops proved in this worktree
 
@@ -99,8 +103,10 @@ never show a stale lesson", not data loss.
 
 **A real grading failure was observed** during the late run: the attempt is recorded as
 `Grading failed · Grader unavailable`, and its review is read-only. The `needs_retry` copy with
-`Retry grading` exists in `AttemptControls`; an explicit override was not exercised in this
-pass.
+`Retry grading` exists in `AttemptControls`; the explicit override that follows it was driven
+end to end in the later pass — `Retry grading` keeps the same nonce and stays `needs_retry`,
+then `Move on… → Record override` advances the check and tags the attempt
+`Override — not independent evidence` (§11(4), `docs/REVIEW_CB015-needs-retry.json`).
 
 ## 3b. Proof 12 — a real source revalidation, its banner, and the evidence that survives
 
@@ -234,7 +240,7 @@ not driven through the Desktop UI; **open** = not proven.
 | 3 | new goal → cancel → reattach → approve edited plan | partial | **cancel + reattach driven, approve-edited-plan not.** The Desktop had no cancel affordance at all (`jobs.cancel` was never called), so this branch adds one to the job line — `Cancel generation` while queued/running, a named `cancelled` state, and `Run this stage again` re-queuing the job's own stored brief. Driven on the disposable `~/.hermes/cb015-residual` rig: `docs/REVIEW_CB015-row3a.json` + `docs/cb015-residual/row3-0{3,4,5,6}.png` show the plan job `job_27f922c7…` queued → **cancelled** by the button, the course reopened as `cancelled` with its brief preserved, then `Run this stage again` producing `job_40849e53…`. That second job completed (`plan authored (needs_review)`, 5 objectives), but the **edit-then-approve half was not finished**: `scripts/cb015r-row3b.mjs` could not open the Plan editor (`Edit plan` never rendered after the view switch), so no approved-plan artifact exists. |
 | 4 | chat and pane answers race → one attempt | open | not driven this pass |
 | 5 | wrong answer → alternate representation → clarification not a retry | partial | wrong answer live (`Not yet / Hinted`, §3); the "hint is not a retry" accounting is CB-009/CB-013 evidence |
-| 6 | grader timeout → needs_retry → override recorded | **live@015** | `docs/REVIEW_CB015-needs-retry.json`: the open-response check on the JP course's 4th section fails closed (`I couldn’t grade this attempt`, `Retry grading` / `Edit answer` / `Move on…`), Retry re-sent the same nonce and stayed `needs_retry`, and `Move on… → Record override` recorded the override (`Access granted — not independent evidence` seen before the section reload; durable row `Override — not independent evidence` + objective badge `Overridden`). |
+| 6 | grader timeout → needs_retry → override recorded | **live@015** | `docs/REVIEW_CB015-needs-retry.json`: the open-response check on the JP course's 4th section fails closed (`I couldn’t grade this attempt`, `Retry grading` / `Edit answer` / `Move on…`), Retry re-sent the same nonce and stayed `needs_retry` (check still v2, no second attempt row), and `Move on… → Record override` recorded the override — durable attempt row `Override — not independent evidence` plus the objective badge `Overridden`, with the check advanced v2 → v3. |
 | 7 | hide/reopen/split pane mid-attempt → no lost answer | partial (hide + reopen driven; split not) | `docs/REVIEW_CB015-row7.json`: in the bound chat's pane (Check v15), a real answer was typed into `#cb-attempt-answer`, `Submit answer` clicked, and the host's right sidebar hidden **immediately** (`Hide right sidebar`, leaving `Show right sidebar` as the only toggle). While hidden the pane painted nothing; reopening it showed the committed verdict **Not yet** (`Cold attempt / does not match an accepted answer`), so the submission landed once and nothing was lost on hide. **What this artifact does not prove:** the before/after attempt *count* and the attempt id. The harness's attempts-block regex in `scripts/cb015r-row7.mjs` is double-escaped, so `attemptsBlock` is `null` in every step, and the `att_8ff275dc…` id that earlier prose quoted is not present in `docs/REVIEW_CB015-row7.json` — it is withdrawn here rather than repeated. Stills `row7-01..03`. **Split was not driven** — the layout editor did not expose a split at this width, so that half of the row is still unproven. |
 | 8 | restart at every attempt state | partial | `docs/REVIEW_CB015-row8.json`: the isolated gateway (44219, same `data.db`) was **cycled** and the window hard-reloaded at three states, each read before and after on the same section: **awaiting input** (ordinal 2, Check v2, open check), **graded** (ordinal 1, Check v15, `Not yet`), **overridden** (ordinal 4, `Override — not independent evidence`). Every cycle returned the same objective title, the same check version, the same verdict/override copy and a byte-identical `ATTEMPTS ON THIS SECTION` block (`sameAttemptsBlock: true` in all three). **Not restarted:** `submitting` (mid-flight), a standalone `needs_retry`, and `detached`. The row stays partial on those three states. Caveat on the labels: the cycle recorded as **awaiting input** actually captured a body showing `Passed` with a *detached* banner, so that label is approximate even though its before/after comparison is real. |
 | 9 | parent edit after approval → reapproval before export | partial | **refusal half driven, restoration half blocked by a backend gap.** On `crs_3ea89…` (active final approval, `export.ready=true`), `docs/REVIEW_CB015-row9-rpc.json` shows `plan.replan` then `parent.plan.edit` turning the approval `superseded` (`course_edited`) and the export gate `ready:false` with `parent.export` refusing `POLICY_VIOLATION / plan_not_approved`; `direct parent.plan.edit on an approved plan` is refused `plan_not_draft` ("use plan.replan"). In the UI, `docs/REVIEW_CB015-row9-ui.json` records the Export screen after that edit: badge **Changes need review**, `Lesson set approval — Changes need review`, the blocked sentence, and `Export the approved files` **disabled**; after `Approve plan` it is still blocked with export disabled. The **reapproval → export** step could not be completed: the replanned plan has no `gen_plan_documents` row, so `Generate lessons` fails `INTERNAL_ERROR: plan 'pln_4a4e0887…' has no authored document` (`docs/REVIEW_CB015-row9-ui2.json`, job `job_5779b460…`) and there is no lesson set to re-approve. That is a product gap, not a UI proof; carded as `t_fc758da8`, and Atlas must rule on it at `t_c9baab37`. |
@@ -266,7 +272,7 @@ not exercise it in the live window.
 | first run | live@015 (pass 1) | real Create/Import actions, zero courses and no fake progress; pass-1 capture not shipped (overlay present) |
 | no courses | live@015 (pass 1) | same state, zero rows, no fake progress |
 | no search results | **live@015** | quiz filter exclusion: "No attempt matches … Clear filters"; notebook equivalent in CB-009 |
-| backend off | not driven | copy + disable logic in `backendCopy`; not fault-injected |
+| backend off | **live@015** | fault-injected by stopping the isolated gateway: `Backend off` + enable instructions + `Open Capabilities` / `Check again`, zero rows and no `New course`, and the page's own `Check again` recovers both enrollments once the gateway returns (`REVIEW_CB015-fault-backend-off.json`, §11(5)); the plugin-half-off variant shows the surface staying mounted with a scoped `VALIDATION_FAILED` (`-fault-plugin-off.json`) |
 | reconnecting | not driven | stale-read-only branch not exercised |
 | unsupported backend | not driven | `implemented` gate reviewed; not fault-injected |
 | plan generating | live@other | CB-011 plan job (2m01s, real stages) |
@@ -274,19 +280,19 @@ not exercise it in the live window.
 | plan awaiting approval | live@other | CB-011 editable preview + explicit approve |
 | lesson ready | **live@015** | section pages across both courses |
 | attempt submitting | **live@015** | Submit disabled after submit; `ATTEMPTS ON THIS SECTION` updated once |
-| grader unavailable / needs_retry | **live@015** | `Grading failed / Grader unavailable` row in review; copy in `AttemptControls` |
+| grader unavailable / needs_retry | **live@015** | `Grading failed / Grader unavailable` row in review; full `needs_retry` loop driven — fail closed, `Retry grading` keeps the same nonce, `Move on… → Record override` advances the check and writes `Override — not independent evidence` (`REVIEW_CB015-needs-retry.json`, §11(4)) |
 | detached chat | **live@015** | banner, `Reattach`, `Start a fresh run`, Submit disabled with reason (`44`) |
-| offline | not driven | no network emulation run |
+| offline | **live@015** | CDP `Network.emulateNetworkConditions(offline)`: `Offline` badge + one sentence naming what keeps working and what is paused, `New course` absent, a cached course opens, notice clears on reconnect (`REVIEW_CB015-fault-offline.json`, §11(3)) |
 | TTS/image unavailable | n/a this pack | both packs declare no audio; lesson shows text and no media control |
 | source stale/dead | **live@015** | `source.revalidate` flips the source `stale`; library row + Overview banner name the course and keep old evidence; Sources reads `stale`; impact ids need `gen_plan_sections` citations, proven at the kernel seam (`REVIEW_CB015-row12-rpc.json`, `-ui.json`, §3b) |
 | pack invalid | boundary | hostile-pack suite 21/21; native folder grant blocks UI path |
 | incompatible pack update | boundary | version gate unit-tested; not UI-driven |
 | grant revoked | boundary | staging/grant refusal unit-tested; not UI-driven |
-| export awaiting review | live@other | CB-011 export gate refusal `no_final_approval` |
+| export awaiting review | live@other (also rendered live in §12) | CB-011 export gate refusal `no_final_approval`; the same blocked screen renders on the live rig after an edit supersedes approval — `Changes need review`, disabled export (`REVIEW_CB015-row9-ui.json`). The exit from this state (reapprove → export) is unproven: §12 row 9 |
 | export complete | open | CB-011 never reached final approval/export |
 | download failed/cancelled | not driven | saved-on-backend vs local copy not exercised |
-| course archived | not driven | Archived filter present, no archived enrollment created |
-| course deleted | not driven | confirm dialog exists; destructive path not exercised |
+| course archived | **live@015** | archive from the row's own menu hides it from the default list (2 → 1 rows), the `Archived` filter shows it, `Unarchive course` restores both (`REVIEW_CB015-delete-paths.json`, §11(6)) |
+| course deleted | **live@015** | `Delete enrollment…` renders the scoped confirm (attempts / notebook / lesson runs / jobs, `Course and plan kept`, `Hermes transcripts kept`) and removes the row on confirm (`REVIEW_CB015-delete-paths.json`, §11(6)); chat deletion stays host-owned |
 | job interrupted | live@other | CB-011/CB-013 lease + resume evidence |
 | demo fixture mode | **live@015** | every row reads "From a local pack · v1.0.0"; perf pack licence `local_only` |
 
@@ -312,6 +318,34 @@ not exercise it in the live window.
    proved at the RPC boundary but not through the UI on this machine.
 7. **Perf fixture** `cb015-perf-long-l0` is a repetition fixture, licensed `local_only`, and is
    not teaching material. It exists only to stress the route.
+
+## 10. Review packet contents
+
+- `docs/REVIEW_CB015.md` (this file)
+- `docs/REVIEW_CB015-loops.json` — every loop step, live
+- `docs/REVIEW_CB015-perf.json` — 55-objective pack measurements
+- `docs/REVIEW_CB015-keyboard.json` — 576 key stops, text-only, reduced motion, Escape
+- `docs/REVIEW_CB015-a11y2.json` — Escape focus return + view-picker name, re-proved
+- `docs/REVIEW_CB015-fault-offline.json` — emulated offline, rendered state
+- `docs/REVIEW_CB015-fault-backend-off.json` — whole gateway stopped and restarted
+- `docs/REVIEW_CB015-fault-plugin-off.json` — only the Python half disabled
+- `docs/REVIEW_CB015-needs-retry.json` — needs_retry → retry → override, end to end
+- `docs/REVIEW_CB015-delete-paths.json` — archive / unarchive / delete / pack freeze
+- `docs/REVIEW_CB015-row12-rpc.json` — proof 12 on `cb.rpc` v7: baseline, changed→stale, library warning, retained evidence
+- `docs/REVIEW_CB015-row12-ui.json` — proof 12 rendered: library badge, Overview banner, Quizzes attempt, Sources `stale`
+- `docs/cb015-shots/row12-01`–`04` — proof 12 stills
+- `docs/REVIEW_CB015-gallery.json` — gallery manifest
+- `docs/REVIEW_CB015-row3a.json` — cancel generation → reattach → re-queue (§12)
+- `docs/REVIEW_CB015-row7.json` — pane hidden mid-attempt, committed verdict read back (§12)
+- `docs/REVIEW_CB015-row8.json` — backend cycled at three attempt states (§12)
+- `docs/REVIEW_CB015-row9-rpc.json`, `-row9-ui.json`, `-row9-ui2.json` — edit-after-approval gate (§12)
+- `docs/cb015-residual/row3-*`, `row7-*`, `row8-*`, `row9-*` — stills for §12
+- `docs/cb015-shots/10`–`24`, `40`–`54`, `60`–`81` — stills
+- `scripts/cb015-hygiene.mjs`, `cb015-lib.mjs`, `cb015-loops-*.mjs`, `cb015-perf.mjs`,
+  `cb015-perf-pack.py`, `cb015-keyboard.mjs`, `cb015-gallery2.mjs`, `cb015-a11y2.mjs`,
+  `cb015-fault-offline.mjs`, `cb015-fault-backend-off.mjs`, `cb015-fault-plugin-off.mjs`,
+  `cb015-needs-retry.mjs`, `cb015-delete-paths.mjs`, `cb015-delete-verdict.mjs`,
+  `cb015-proof12-stale.py`, `cb015-proof12-ui.mjs`
 
 ## 11. Re-run after the supervisor unblock (the rows that moved)
 
@@ -390,10 +424,11 @@ recomputed from that run's recorded steps by `scripts/cb015-delete-verdict.mjs`,
   pack-delete step (`pack.delete` = freeze, evidence kept), so it is no longer re-importable —
   future runs must regenerate it with `cb015-perf-pack.py`.
 
-**Gates re-run after these changes:** `node --check desktop/plugin.js` OK,
+**Gates re-run after these changes (on `fd124b1`):** `node --check desktop/plugin.js` OK,
 `node scripts/cb015-hygiene.mjs` **0 findings / 13 rules**, `python3 -m unittest
 tests.test_desktop_contracts` **7/7 OK**, full suite **652 tests OK**, and both a11y checks
-re-proved after the plugin edit (`REVIEW_CB015-a11y2.json`).
+re-proved after the plugin edit (`REVIEW_CB015-a11y2.json`). That 652 was this branch's count;
+the merged master tree is measured in §2 at **674**.
 
 ## 12. Residual pass on rows 3, 7, 8, 9 (answers `REVIEW_PACKET.md` §5)
 
@@ -425,31 +460,3 @@ by `docs/REVIEW_CB015-row3a.json`; nothing else in the plugin changed.
 **Rig used.** The writes were made against the disposable `~/.hermes/coursebook-test` home (gateway
 44219, window CDP 9337) and, for the cancel/reattach run, the disposable `~/.hermes/cb015-residual`
 home (gateway 44225, window CDP 9341). The operator profile was not used.
-
-## 10. Review packet contents
-
-- `docs/REVIEW_CB015.md` (this file)
-- `docs/REVIEW_CB015-loops.json` — every loop step, live
-- `docs/REVIEW_CB015-perf.json` — 55-objective pack measurements
-- `docs/REVIEW_CB015-keyboard.json` — 576 key stops, text-only, reduced motion, Escape
-- `docs/REVIEW_CB015-a11y2.json` — Escape focus return + view-picker name, re-proved
-- `docs/REVIEW_CB015-fault-offline.json` — emulated offline, rendered state
-- `docs/REVIEW_CB015-fault-backend-off.json` — whole gateway stopped and restarted
-- `docs/REVIEW_CB015-fault-plugin-off.json` — only the Python half disabled
-- `docs/REVIEW_CB015-needs-retry.json` — needs_retry → retry → override, end to end
-- `docs/REVIEW_CB015-delete-paths.json` — archive / unarchive / delete / pack freeze
-- `docs/REVIEW_CB015-row12-rpc.json` — proof 12 on `cb.rpc` v7: baseline, changed→stale, library warning, retained evidence
-- `docs/REVIEW_CB015-row12-ui.json` — proof 12 rendered: library badge, Overview banner, Quizzes attempt, Sources `stale`
-- `docs/cb015-shots/row12-01`–`04` — proof 12 stills
-- `docs/REVIEW_CB015-gallery.json` — gallery manifest
-- `docs/REVIEW_CB015-row3a.json` — cancel generation → reattach → re-queue (§12)
-- `docs/REVIEW_CB015-row7.json` — pane hidden mid-attempt, one committed attempt (§12)
-- `docs/REVIEW_CB015-row8.json` — backend cycled at three attempt states (§12)
-- `docs/REVIEW_CB015-row9-rpc.json`, `-row9-ui.json`, `-row9-ui2.json` — edit-after-approval gate (§12)
-- `docs/cb015-residual/row3-*`, `row7-*`, `row8-*`, `row9-*` — stills for §12
-- `docs/cb015-shots/10`–`24`, `40`–`54`, `60`–`81` — stills
-- `scripts/cb015-hygiene.mjs`, `cb015-lib.mjs`, `cb015-loops-*.mjs`, `cb015-perf.mjs`,
-  `cb015-perf-pack.py`, `cb015-keyboard.mjs`, `cb015-gallery2.mjs`, `cb015-a11y2.mjs`,
-  `cb015-fault-offline.mjs`, `cb015-fault-backend-off.mjs`, `cb015-fault-plugin-off.mjs`,
-  `cb015-needs-retry.mjs`, `cb015-delete-paths.mjs`, `cb015-delete-verdict.mjs`,
-  `cb015-proof12-stale.py`, `cb015-proof12-ui.mjs`
