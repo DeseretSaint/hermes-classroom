@@ -1,0 +1,146 @@
+{
+  "accessibility_notes": [
+    "Learner page uses short sentences and a blank line per answer.",
+    "The answer guide repeats each task number so a parent can match pages without scanning."
+  ],
+  "attribution": "Original teaching text and schematic: Coursebook demo pack. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
+  "content_hash": "sha256:92ee4a79c2ea469c6567ccadbe9fc55290fdd576f28091546372aa87ac36db3d",
+  "content_notes": [
+    "Parent recipe: this pack is prepared by a parent and approved before use; it is not a child-facing chat.",
+    "The learner page never carries the answer key. Answers live only in the answer guide, which the manifest declares with the answer_guide role.",
+    "Observation records from a session are parent-reported evidence and are never exported with the pack."
+  ],
+  "contract": "cb.pack",
+  "contract_version": 1,
+  "contributors": [
+    {
+      "name": "Coursebook demo pack",
+      "role": "author"
+    }
+  ],
+  "default_dials": {
+    "assessment": "self_check",
+    "autonomy": "guided",
+    "depth": "working",
+    "pace": "light"
+  },
+  "files": [
+    {
+      "bytes": 1285,
+      "mime": "text/markdown",
+      "path": "content/answer-guide.md",
+      "role": "answer_guide",
+      "sha256": "sha256:cfccf28d078790345d6a25293378240d0605bd795e77c66c0ef7df1d2348fd48"
+    },
+    {
+      "bytes": 853,
+      "mime": "text/markdown",
+      "path": "content/learner-page.md",
+      "role": "learner_page",
+      "sha256": "sha256:1031f494d59250136648db00f0977b87e61e13c7e3b9a4d0e7eb51db83cbbc2e"
+    },
+    {
+      "bytes": 1341,
+      "mime": "text/markdown",
+      "path": "content/parent-guide.md",
+      "role": "parent_guide",
+      "sha256": "sha256:d07737bef80604105aa8c9949af02cb852de56b197ab532bb6cc48546e9c192e"
+    }
+  ],
+  "level_label": "Age 8-10 · parent-led",
+  "license": {
+    "id": "unspecified",
+    "note": "Bundled demonstration fixture. The teaching text is original Coursebook-authored material; the operator has not chosen a redistribution license. Linked sources are cited, not bundled.",
+    "redistribution": "local_only"
+  },
+  "locale": "en-US",
+  "minimum_coursebook_version": "0.1.0",
+  "objectives": [
+    {
+      "checks": [
+        {
+          "accepted_alternatives": [
+            "150",
+            "150ml",
+            "150 millilitres",
+            "150 milliliters"
+          ],
+          "audit_state": "unreviewed",
+          "check_id": "chk-read-scale-1",
+          "evidence_target": "comprehension",
+          "reference_answer": "150 ml",
+          "rubric": [
+            "Answers 150 ml",
+            "Refers to the three 50 ml marks",
+            "Does not estimate without counting"
+          ],
+          "stimulus": "The jug is marked every 50 ml. Liquid reaches the third mark. How many millilitres are in the jug?",
+          "version": 1
+        }
+      ],
+      "estimated_minutes": 5,
+      "evidence_criteria": [
+        "Counts the 50 ml marks instead of estimating",
+        "Gives the quantity in millilitres"
+      ],
+      "evidence_target": "comprehension",
+      "objective_id": "obj-read-scale",
+      "ordinal": 1,
+      "sections": [
+        {
+          "path": "content/learner-page.md",
+          "section_id": "sec-learner-1",
+          "title": "Task 1 — read the jug"
+        }
+      ],
+      "title": "Read the marks on a measuring jug"
+    },
+    {
+      "checks": [
+        {
+          "accepted_alternatives": [
+            "350",
+            "350ml",
+            "350 millilitres",
+            "350 milliliters"
+          ],
+          "audit_state": "unreviewed",
+          "check_id": "chk-double-recipe-1",
+          "evidence_target": "procedure",
+          "reference_answer": "350 ml",
+          "rubric": [
+            "Answers 350 ml",
+            "Shows 175 + 175 (or 175 x 2)",
+            "Explains the operation in words"
+          ],
+          "stimulus": "One batch uses 175 ml. You make two batches of the same size. How much juice do you need?",
+          "version": 1
+        }
+      ],
+      "estimated_minutes": 5,
+      "evidence_criteria": [
+        "Adds the single batch quantity to itself",
+        "Explains the operation in words"
+      ],
+      "evidence_target": "procedure",
+      "objective_id": "obj-double-recipe",
+      "ordinal": 2,
+      "sections": [
+        {
+          "path": "content/learner-page.md",
+          "section_id": "sec-learner-2",
+          "title": "Task 2 — double the recipe"
+        }
+      ],
+      "title": "Double a recipe quantity and explain the operation"
+    }
+  ],
+  "pack_id": "parent-measurement-practice",
+  "pack_version": "1.0.0",
+  "recipe": "parent",
+  "safety_notes": [
+    "Uses water and a jug; no heat, sharp tools or hazardous materials."
+  ],
+  "subtitle": "A ten-minute parent-led measurement practice with a separate answer guide.",
+  "title": "Parent demo: measuring ingredients together"
+}
