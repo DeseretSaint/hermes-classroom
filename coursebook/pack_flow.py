@@ -841,32 +841,55 @@ def pack_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
     size = destination.stat().st_size
     file_digest = "sha256:" + hashlib.sha256(destination.read_bytes()).hexdigest()
     with db.transaction() as connection:
-        artifact_id = _new_id("art")
-        connection.execute(
-            "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime, provenance_json,"
-            " ref_count, created_at) VALUES (?, ?, 'export', ?, ?, ?, 'application/zip', ?, 1, ?)",
-            (
-                artifact_id,
-                course["id"],
-                file_digest,
-                str(destination),
-                size,
-                json.dumps(
-                    {
-                        "generator": "coursebook.pack_flow",
-                        "model": None,
-                        "prompt_hash": None,
-                        "source_ids": [],
-                        "notes": (
-                            f"export of {pack_id} {version} from enrollment {enrollment['id']}; "
-                            f"pack content_hash {document['content_hash']}"
-                        ),
-                    },
-                    sort_keys=True,
-                ),
-                _now(),
-            ),
+        # ``artifacts`` is unique on (content_hash, kind): a second export of unchanged bytes is
+        # the same artifact, not a new one. Reuse the row and count the reference; only content
+        # that actually changed produces a new digest and therefore a new row.
+        existing = _row(
+            connection,
+            "SELECT * FROM artifacts WHERE content_hash = ? AND kind = 'export'",
+            (file_digest,),
         )
+        if existing is not None:
+            artifact_id = str(existing["id"])
+            recorded = Path(str(existing["path"]))
+            if not recorded.is_file() or recorded.stat().st_size != size:
+                # The row outlived its file (reconciliation, manual cleanup): repoint it at the
+                # archive just verified, so a reused artifact always resolves to real bytes.
+                connection.execute(
+                    "UPDATE artifacts SET path = ?, bytes = ?, ref_count = ref_count + 1 WHERE id = ?",
+                    (str(destination), size, artifact_id),
+                )
+            else:
+                connection.execute(
+                    "UPDATE artifacts SET ref_count = ref_count + 1 WHERE id = ?", (artifact_id,)
+                )
+        else:
+            artifact_id = _new_id("art")
+            connection.execute(
+                "INSERT INTO artifacts (id, course_id, kind, content_hash, path, bytes, mime, provenance_json,"
+                " ref_count, created_at) VALUES (?, ?, 'export', ?, ?, ?, 'application/zip', ?, 1, ?)",
+                (
+                    artifact_id,
+                    course["id"],
+                    file_digest,
+                    str(destination),
+                    size,
+                    json.dumps(
+                        {
+                            "generator": "coursebook.pack_flow",
+                            "model": None,
+                            "prompt_hash": None,
+                            "source_ids": [],
+                            "notes": (
+                                f"export of {pack_id} {version} from enrollment {enrollment['id']}; "
+                                f"pack content_hash {document['content_hash']}"
+                            ),
+                        },
+                        sort_keys=True,
+                    ),
+                    _now(),
+                ),
+            )
     return 0, {
         "artifact_id": artifact_id,
         "content_hash": str(document["content_hash"]),

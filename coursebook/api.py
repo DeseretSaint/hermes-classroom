@@ -9,6 +9,7 @@ rather than a silent success.
 
 from __future__ import annotations
 
+import sqlite3
 from typing import Any, Callable
 
 from . import __version__
@@ -210,7 +211,19 @@ def dispatch(request: Any) -> dict[str, Any]:
     except ContractError as exc:
         return error_response(
             operation_id,
-            build_error("INTERNAL_ERROR", f"{method} produced a non-contract result: {exc}", path=exc.path or None),
+            build_error(
+                "INTERNAL_ERROR",
+                f"{method} produced a non-contract result: {exc}",
+                retryable=False,
+                path=exc.path or None,
+            ),
+        )
+    except sqlite3.IntegrityError as exc:
+        # A constraint violation replays identically on every retry. Advertising it as retryable
+        # would invite an automatic loop that can never succeed; it is a backend bug to fix.
+        return error_response(
+            operation_id,
+            build_error("INTERNAL_ERROR", f"{method} failed: {type(exc).__name__}", retryable=False),
         )
     except Exception as exc:  # noqa: BLE001 - one handler must not break the surface
         return error_response(

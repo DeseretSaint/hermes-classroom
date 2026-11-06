@@ -224,8 +224,13 @@ def is_retryable(code: str) -> bool:
     return bool(error_catalog()[code]["retryable"])
 
 
-def build_error(code: str, message: str, **details: Any) -> dict[str, Any]:
-    """Build a contract-legal error object; raises ``ContractError`` for an unknown code."""
+def build_error(code: str, message: str, *, retryable: bool | None = None, **details: Any) -> dict[str, Any]:
+    """Build a contract-legal error object; raises ``ContractError`` for an unknown code.
+
+    ``retryable`` defaults to the code's catalogue value. A caller that knows *this* failure is
+    deterministic (a constraint violation, a non-contract handler result) passes ``False``: the
+    catalogue describes the code in general, not the specific failure.
+    """
     catalog = error_catalog()
     if code not in catalog:
         raise ContractError(f"unknown error code {code!r}", contract_id="cb.errors")
@@ -233,7 +238,7 @@ def build_error(code: str, message: str, **details: Any) -> dict[str, Any]:
         "code": code,
         "category": catalog[code]["category"],
         "message": message,
-        "retryable": catalog[code]["retryable"],
+        "retryable": bool(catalog[code]["retryable"]) if retryable is None else bool(retryable),
     }
     if details:
         error["details"] = {k: v for k, v in details.items() if v is not None}
