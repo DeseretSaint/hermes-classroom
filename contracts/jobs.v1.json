@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.coursebook.hermes/jobs/v1",
+  "title": "Coursebook job and job-state contract v1",
+  "description": "Backend job service contract. POST-style creation returns an operation/job id quickly; Desktop polls by job id; the socket is an optional optimization and a no-op on OAuth remotes. Workers hold persistent job-attempt ids and leases with fencing. ctx.spawn_task is only a best-effort in-process runner and its loss never implies successful cancellation.",
+  "x-contract-id": "cb.jobs",
+  "x-contract-version": 1,
+  "x-owner": "atlas",
+  "x-implementer": "cinder",
+  "x-status": "frozen",
+  "states": ["queued", "running", "cancel_requested", "cancelling", "cancelled", "completed", "completed_late", "failed", "interrupted_requires_retry"],
+  "terminal_states": ["cancelled", "completed", "completed_late"],
+  "resting_states": {
+    "failed": "Failed is retryable, not terminal: a retry re-enters `queued` with a NEW job-attempt id and the persisted resume checkpoint. It is excluded from terminal_states so `terminal` keeps its only meaning — nothing further will run."
+  },
+  "transitions": {
+    "queued": ["running", "cancelled"],
+    "running": ["cancel_requested", "completed", "completed_late", "failed", "interrupted_requires_retry"],
+    "cancel_requested": ["cancelling", "cancelled", "completed_late"],
+    "cancelling": ["cancelled", "completed_late"],
+    "interrupted_requires_retry": ["queued", "cancelled"],
+    "failed": ["queued"],
+    "completed": [],
+    "completed_late": [],
+    "cancelled": []
+  },
+  "transition_notes": {
+    "cancelled_from_queued": "A job cancelled before it starts spent nothing; no artifact or evidence may exist.",
+    "completed_late": "A provider call already in flight finished after cancellation. Its result is reconciled by operation/artifact key; it never duplicates spend or artifacts.",
+    "failed_to_queued": "Retry keeps the same job id only with a NEW job-attempt id and a persisted resume checkpoint. Never blindly re-run an uncertain non-idempotent call.",
+    "interrupted_requires_retry": "Restart reconciliation found the job mid-stage. The brief and checkpoint are preserved so the user edits and retries instead of re-entering the form."
+  },
+  "progress_rule": "Progress is reported from real completed stages. Percentages are never invented; steps_total may be null until the plan is known.",
+  "job": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["job_id", "kind", "state", "attempt_id", "created_at", "updated_at"],
+    "properties": {
+      "job_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+      "kind": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/job_kind"},
+      "state": {"type": "string", "enum": ["queued", "running", "cancel_requested", "cancelling", "cancelled", "completed", "completed_late", "failed", "interrupted_requires_retry"]},
+      "operation_id": {
+        "oneOf": [
+          {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+          {"type": "null"}
+        ]
+      },
+      "attempt_id": {"type": "string", "minLength": 2, "maxLength": 64},
+      "brief": {"type": "object", "maxProperties": 40},
+      "checkpoint": {"type": "object", "maxProperties": 40},
+      "progress": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stage": {"type": "string", "maxLength": 80},
+          "steps_done": {"type": "integer", "minimum": 0},
+          "steps_total": {"type": ["integer", "null"], "minimum": 0},
+          "message": {"type": "string", "maxLength": 300}
+        }
+      },
+      "lease": {
+        "type": ["object", "null"],
+        "additionalProperties": false,
+        "properties": {
+          "owner": {"type": "string", "maxLength": 120},
+          "expires_at": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"}
+        }
+      },
+      "artifact_ids": {"type": "array", "maxItems": 200, "items": {"type": "string", "maxLength": 128}},
+      "error": {
+        "oneOf": [
+          {"$ref": "https://contracts.coursebook.hermes/errors/v1#/$defs/error"},
+          {"type": "null"}
+        ]
+      },
+      "created_at": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"},
+      "updated_at": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"},
+      "cancel_requested_at": {
+        "oneOf": [
+          {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"},
+          {"type": "null"}
+        ]
+      }
+    }
+  }
+}

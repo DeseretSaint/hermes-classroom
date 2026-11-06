@@ -1,0 +1,700 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.coursebook.hermes/rpc/v1",
+  "title": "Coursebook backend RPC v1",
+  "description": "Transport-neutral command contract between the Desktop half, the Coursebook tools, and the Python backend. The same envelope is used over HTTP (POST /api/plugins/coursebook/rpc) and from in-process callers. Root schema validates a request envelope; per-method payload schemas live in $defs.methods and are validated by coursebook.api.dispatch before a handler runs.",
+  "x-contract-id": "cb.rpc",
+  "x-contract-version": 1,
+  "x-owner": "atlas",
+  "x-status": "frozen",
+  "$ref": "#/$defs/envelope_request",
+  "$defs": {
+    "method": {
+      "type": "string",
+      "enum": [
+        "health.get",
+        "schema.get",
+        "course.create",
+        "course.get",
+        "enrollment.create",
+        "plan.approve",
+        "plan.replan",
+        "check.open",
+        "attempt.submit",
+        "attempt.override",
+        "attempt.dispute",
+        "progression.challenge_out",
+        "notebook.save",
+        "notebook.list",
+        "notebook.delete",
+        "quiz.history",
+        "binding.get",
+        "jobs.create",
+        "jobs.get",
+        "jobs.cancel",
+        "pack.preview",
+        "pack.import",
+        "pack.export",
+        "usage.summary"
+      ]
+    },
+    "envelope_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "method", "operation_id", "payload"],
+      "properties": {
+        "contract": {"const": "cb.rpc"},
+        "contract_version": {"const": 1},
+        "method": {"$ref": "#/$defs/method"},
+        "operation_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+        "idempotency_key": {
+          "type": ["string", "null"],
+          "minLength": 8,
+          "maxLength": 192,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+        },
+        "expected_revision": {
+          "oneOf": [
+            {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"},
+            {"type": "null"}
+          ]
+        },
+        "payload": {"type": "object"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"method": {"enum": ["attempt.submit"]}}},
+          "then": {"required": ["idempotency_key", "expected_revision"]}
+        }
+      ]
+    },
+    "envelope_response_ok": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "contract_version", "operation_id", "revision", "result"],
+      "properties": {
+        "ok": {"const": true},
+        "contract_version": {"const": 1},
+        "operation_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+        "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"},
+        "result": {"type": "object"}
+      }
+    },
+    "envelope_response_error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "contract_version", "operation_id", "error"],
+      "properties": {
+        "ok": {"const": false},
+        "contract_version": {"const": 1},
+        "operation_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+        "error": {"$ref": "https://contracts.coursebook.hermes/errors/v1#/$defs/error"}
+      }
+    },
+    "methods": {
+      "type": "object",
+      "description": "Per-method payload contracts. `request` validates envelope.payload; `response` validates envelope.result on success.",
+      "additionalProperties": false,
+      "properties": {
+        "health.get": {
+          "type": "object",
+          "request": {"type": "object", "additionalProperties": false, "maxProperties": 0},
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["plugin_version", "contract_version", "db"],
+            "properties": {
+              "plugin_version": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/semver"},
+              "contract_version": {"const": 1},
+              "db": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["ready", "schema_version"],
+                "properties": {
+                  "ready": {"type": "boolean"},
+                  "schema_version": {"type": ["integer", "null"], "minimum": 0}
+                }
+              },
+              "backend": {"type": "string", "maxLength": 32}
+            }
+          }
+        },
+        "schema.get": {
+          "type": "object",
+          "request": {"type": "object", "additionalProperties": false, "maxProperties": 0},
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contracts", "db_schema_version"],
+            "properties": {
+              "contracts": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "version", "file", "sha256"],
+                  "properties": {
+                    "id": {"type": "string", "pattern": "^cb\\.[a-z_]+$"},
+                    "version": {"type": "integer", "minimum": 1},
+                    "file": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+\\.json$"},
+                    "sha256": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"}
+                  }
+                }
+              },
+              "db_schema_version": {"type": "integer", "minimum": 1}
+            }
+          }
+        },
+        "course.create": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "recipe", "goal"],
+            "properties": {
+              "title": {"type": "string", "minLength": 1, "maxLength": 200},
+              "recipe": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/recipe"},
+              "goal": {"type": "string", "minLength": 1, "maxLength": 4000},
+              "locale": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/locale"},
+              "dials": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "pace": {"type": "string", "enum": ["light", "steady", "intense"]},
+                  "depth": {"type": "string", "enum": ["survey", "working", "deep"]},
+                  "assessment": {"type": "string", "enum": ["none", "self_check", "graded"]},
+                  "autonomy": {"type": "string", "enum": ["guided", "balanced", "independent"]}
+                }
+              }
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["course_id", "plan_id", "revision"],
+            "properties": {
+              "course_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "plan_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "course.get": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["course_id"],
+            "properties": {"course_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"}}
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["course", "revision"],
+            "properties": {
+              "course": {"type": "object"},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "enrollment.create": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["course_id"],
+            "properties": {
+              "course_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "learner_label": {"type": ["string", "null"], "maxLength": 80}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id", "revision"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "plan.approve": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id", "plan_id", "plan_hash"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "plan_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "plan_hash": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["plan_hash", "revision"],
+            "properties": {
+              "plan_hash": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "plan.replan": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id", "objective_changes"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "objective_changes": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 200,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["objective_id", "change"],
+                  "properties": {
+                    "objective_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+                    "change": {"type": "string", "enum": ["keep", "retitle", "add", "defer", "remove"]},
+                    "title": {"type": "string", "maxLength": 300}
+                  }
+                }
+              }
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["plan_version", "revision"],
+            "properties": {
+              "plan_version": {"type": "integer", "minimum": 1},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "check.open": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id", "objective_id"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "objective_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["check_id", "check_version", "evidence_target", "revision"],
+            "properties": {
+              "check_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "check_version": {"type": "integer", "minimum": 1},
+              "evidence_target": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/evidence_target"},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "attempt.submit": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id", "check_id", "check_version", "attempt_nonce", "answer"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "check_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "check_version": {"type": "integer", "minimum": 1},
+              "attempt_nonce": {"type": "string", "minLength": 8, "maxLength": 64},
+              "answer": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind"],
+                "properties": {
+                  "kind": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/answer_kind"},
+                  "text": {"type": "string", "maxLength": 8000},
+                  "selection": {"type": "array", "maxItems": 40, "items": {"type": "string", "maxLength": 200}}
+                }
+              }
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["attempt_id", "verdict", "evidence_class", "criteria", "next_action", "revision"],
+            "properties": {
+              "attempt_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "verdict": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/verdict"},
+              "evidence_class": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/evidence_class"},
+              "criteria": {
+                "type": "array",
+                "maxItems": 40,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "observed", "met"],
+                  "properties": {
+                    "id": {"type": "string", "maxLength": 80},
+                    "observed": {"type": "string", "maxLength": 500},
+                    "met": {"type": "boolean"}
+                  }
+                }
+              },
+              "next_action": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/next_action"},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "attempt.override": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id", "check_id", "reason"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "check_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "reason": {"type": "string", "minLength": 3, "maxLength": 500}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["attempt_id", "evidence_class", "next_action", "revision"],
+            "properties": {
+              "attempt_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "evidence_class": {"const": "override"},
+              "next_action": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/next_action"},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "attempt.dispute": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["attempt_id", "note"],
+            "properties": {
+              "attempt_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "note": {"type": "string", "minLength": 3, "maxLength": 2000}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["dispute_id", "state", "revision"],
+            "properties": {
+              "dispute_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "state": {"type": "string", "enum": ["open", "accepted", "kept_original", "withdrawn"]},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "progression.challenge_out": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id", "objective_id"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "objective_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["check_id", "check_version", "revision"],
+            "properties": {
+              "check_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "check_version": {"type": "integer", "minimum": 1},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "notebook.save": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id", "objective_id", "kind"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "objective_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "lesson_run_id": {"type": ["string", "null"], "maxLength": 128},
+              "kind": {"type": "string", "enum": ["lesson_segment", "artifact", "source_passage", "personal_note", "quiz_moment"]},
+              "excerpt": {"type": ["string", "null"], "maxLength": 8000},
+              "note": {"type": ["string", "null"], "maxLength": 4000},
+              "tags": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 40}},
+              "source_ref": {"type": ["string", "null"], "maxLength": 500}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["entry_id", "revision"],
+            "properties": {
+              "entry_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "notebook.list": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enrollment_id": {"type": ["string", "null"]},
+              "tag": {"type": ["string", "null"], "maxLength": 40},
+              "query": {"type": ["string", "null"], "maxLength": 200}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["entries"],
+            "properties": {
+              "entries": {"type": "array", "maxItems": 500, "items": {"type": "object"}}
+            }
+          }
+        },
+        "notebook.delete": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["entry_id"],
+            "properties": {"entry_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"}}
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["deleted", "revision"],
+            "properties": {
+              "deleted": {"const": true},
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "quiz.history": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "objective_id": {"type": ["string", "null"], "maxLength": 128}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["attempts"],
+            "properties": {
+              "attempts": {"type": "array", "maxItems": 500, "items": {"type": "object"}}
+            }
+          }
+        },
+        "binding.get": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "session_id": {"type": ["string", "null"], "maxLength": 128},
+              "enrollment_id": {"type": ["string", "null"], "maxLength": 128}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["binding"],
+            "properties": {
+              "binding": {"oneOf": [{"type": "null"}, {"type": "object"}]}
+            }
+          }
+        },
+        "jobs.create": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "brief"],
+            "properties": {
+              "kind": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/job_kind"},
+              "brief": {"type": "object", "maxProperties": 40}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["job_id", "state"],
+            "properties": {
+              "job_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "state": {"type": "string"}
+            }
+          }
+        },
+        "jobs.get": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["job_id"],
+            "properties": {"job_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"}}
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["job"],
+            "properties": {"job": {"type": "object"}}
+          }
+        },
+        "jobs.cancel": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["job_id"],
+            "properties": {"job_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"}}
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["job_id", "state"],
+            "properties": {
+              "job_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "state": {"type": "string"}
+            }
+          }
+        },
+        "pack.preview": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["staged_id"],
+            "properties": {"staged_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"}}
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["manifest", "integrity", "trust"],
+            "properties": {
+              "manifest": {"type": "object"},
+              "integrity": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["hashes_match", "file_count", "expanded_bytes"],
+                "properties": {
+                  "hashes_match": {"type": "boolean"},
+                  "file_count": {"type": "integer", "minimum": 0},
+                  "expanded_bytes": {"type": "integer", "minimum": 0}
+                }
+              },
+              "trust": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["labels"],
+                "properties": {
+                  "labels": {
+                    "type": "array",
+                    "items": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/pack_trust_label"}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pack.import": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["staged_id", "mode"],
+            "properties": {
+              "staged_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "mode": {"type": "string", "enum": ["resume", "fresh"]}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pack_id", "course_id", "revision"],
+            "properties": {
+              "pack_id": {"type": "string", "maxLength": 128},
+              "course_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "enrollment_id": {
+                "oneOf": [
+                  {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+                  {"type": "null"}
+                ]
+              },
+              "revision": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/revision"}
+            }
+          }
+        },
+        "pack.export": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["enrollment_id"],
+            "properties": {
+              "enrollment_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "options": {"type": "object", "maxProperties": 20}
+            }
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["artifact_id", "content_hash", "file_count", "bytes"],
+            "properties": {
+              "artifact_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+              "content_hash": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"},
+              "file_count": {"type": "integer", "minimum": 0},
+              "bytes": {"type": "integer", "minimum": 0}
+            }
+          }
+        },
+        "usage.summary": {
+          "type": "object",
+          "request": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {"enrollment_id": {"type": ["string", "null"], "maxLength": 128}}
+          },
+          "response": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["calls", "tokens", "artifacts", "unknown_fields"],
+            "properties": {
+              "calls": {"type": "integer", "minimum": 0},
+              "tokens": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["input", "output", "cache_read", "cache_write"],
+                "properties": {
+                  "input": {"type": ["integer", "null"], "minimum": 0},
+                  "output": {"type": ["integer", "null"], "minimum": 0},
+                  "cache_read": {"type": ["integer", "null"], "minimum": 0},
+                  "cache_write": {"type": ["integer", "null"], "minimum": 0}
+                }
+              },
+              "artifacts": {"type": "integer", "minimum": 0},
+              "unknown_fields": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        }
+      }
+    }
+  }
+}

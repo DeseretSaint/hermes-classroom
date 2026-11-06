@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Hermes plugin data lives under $HERMES_HOME/plugin-data, never in the checkout
+plugin-data/
+
+# Task orchestration
+.worktrees/

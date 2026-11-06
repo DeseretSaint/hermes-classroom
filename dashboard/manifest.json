@@ -1,0 +1,11 @@
+{
+  "name": "coursebook",
+  "label": "Coursebook",
+  "description": "Backend routes for the Coursebook learning workspace (contracts, RPC, jobs). The Desktop UI is shipped separately in desktop/plugin.js.",
+  "icon": "Book",
+  "version": "0.1.0",
+  "tab": {
+    "hidden": true
+  },
+  "api": "plugin_api.py"
+}
