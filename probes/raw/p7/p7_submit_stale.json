@@ -1,0 +1,7 @@
+{
+  "status": "stale",
+  "http": 409,
+  "current_revision": 1,
+  "key": "k2",
+  "durable": true
+}

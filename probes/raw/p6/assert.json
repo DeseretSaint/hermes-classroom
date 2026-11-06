@@ -1,0 +1,11 @@
+{
+  "probe": "p6",
+  "status": "PASS",
+  "checks": {
+    "omitted_delivery_stored_as_local": true,
+    "explicit_target_stored_verbatim": true,
+    "created_paused": true,
+    "duplicate_name_creates_second_job": true,
+    "origin_absent_without_gateway_session": true
+  }
+}

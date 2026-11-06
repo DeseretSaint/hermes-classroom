@@ -1,0 +1,107 @@
+{
+  "probe": "p4",
+  "status": "PASS",
+  "checks": {
+    "realistic_samples": 5,
+    "all_realistic_json": true,
+    "latency_p50_under_4s": true,
+    "latency_p95_under_8s": true,
+    "timeout_raises": true,
+    "outage_model_differs_from_pin": true,
+    "jsonschema_available": true,
+    "schema_violation_raises": true,
+    "invalid_accepted_without_package": true
+  },
+  "latency_s": {
+    "p50": 2.215,
+    "p95": 4.273,
+    "samples": [
+      1.583,
+      1.658,
+      2.215,
+      3.148,
+      4.273
+    ]
+  },
+  "scenarios": {
+    "invalid_json": {
+      "scenario": "invalid_json",
+      "timeout": null,
+      "ok": true,
+      "elapsed_s": 10.225,
+      "content_type": "json",
+      "parsed": {
+        "answer": 42
+      },
+      "provider": "nous",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "usage": 588,
+      "text_head": "{\"answer\":42}",
+      "audit": {
+        "plugin_id": "cb-probe",
+        "purpose": "qa-probe-grade",
+        "profile": "",
+        "schema_name": "",
+        "task": "cb_grader"
+      },
+      "observed_path": "json"
+    },
+    "timeout": {
+      "scenario": "timeout",
+      "timeout": 0.001,
+      "ok": false,
+      "elapsed_s": 3.408,
+      "error_type": "APITimeoutError",
+      "error": "Request timed out."
+    },
+    "outage": {
+      "scenario": "outage",
+      "timeout": null,
+      "ok": true,
+      "elapsed_s": 10.357,
+      "content_type": "json",
+      "parsed": {
+        "verdict": "pass",
+        "criteria": [
+          "meets all required course learning objectives",
+          "score of 42 exceeds the minimum passing threshold for the coursebook assessment"
+        ]
+      },
+      "provider": "nous",
+      "model": "stepfun/step-3.7-flash:free",
+      "usage": 682,
+      "text_head": "{\n  \"verdict\": \"pass\",\n  \"criteria\": [\"meets all required course learning objectives\", \"score of 42 exceeds the minimum passing threshold for the coursebook assessment\"]\n}",
+      "audit": {
+        "plugin_id": "cb-probe",
+        "purpose": "qa-probe-grade",
+        "profile": "",
+        "schema_name": "coursebook_grade",
+        "task": "cb_grader_bad"
+      }
+    },
+    "schema_ok": {
+      "scenario": "schema_ok",
+      "timeout": null,
+      "ok": true,
+      "elapsed_s": 1.227,
+      "content_type": "json",
+      "parsed": {
+        "verdict": "pass",
+        "criteria": [
+          "Correct: 6*7=42 matches the answer."
+        ]
+      },
+      "provider": "nous",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "usage": 226,
+      "text_head": "{\"verdict\":\"pass\",\"criteria\":[\"Correct: 6*7=42 matches the answer.\"]}",
+      "audit": {
+        "plugin_id": "cb-probe",
+        "purpose": "qa-probe-grade",
+        "profile": "",
+        "schema_name": "coursebook_grade",
+        "task": "cb_grader"
+      }
+    }
+  }
+}

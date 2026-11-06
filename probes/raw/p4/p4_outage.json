@@ -1,0 +1,25 @@
+{
+  "scenario": "outage",
+  "timeout": null,
+  "ok": true,
+  "elapsed_s": 10.357,
+  "content_type": "json",
+  "parsed": {
+    "verdict": "pass",
+    "criteria": [
+      "meets all required course learning objectives",
+      "score of 42 exceeds the minimum passing threshold for the coursebook assessment"
+    ]
+  },
+  "provider": "nous",
+  "model": "stepfun/step-3.7-flash:free",
+  "usage": 682,
+  "text_head": "{\n  \"verdict\": \"pass\",\n  \"criteria\": [\"meets all required course learning objectives\", \"score of 42 exceeds the minimum passing threshold for the coursebook assessment\"]\n}",
+  "audit": {
+    "plugin_id": "cb-probe",
+    "purpose": "qa-probe-grade",
+    "profile": "",
+    "schema_name": "coursebook_grade",
+    "task": "cb_grader_bad"
+  }
+}

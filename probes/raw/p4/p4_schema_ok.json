@@ -1,0 +1,24 @@
+{
+  "scenario": "schema_ok",
+  "timeout": null,
+  "ok": true,
+  "elapsed_s": 1.227,
+  "content_type": "json",
+  "parsed": {
+    "verdict": "pass",
+    "criteria": [
+      "Correct: 6*7=42 matches the answer."
+    ]
+  },
+  "provider": "nous",
+  "model": "deepseek/deepseek-v4.1-flash-1017",
+  "usage": 226,
+  "text_head": "{\"verdict\":\"pass\",\"criteria\":[\"Correct: 6*7=42 matches the answer.\"]}",
+  "audit": {
+    "plugin_id": "cb-probe",
+    "purpose": "qa-probe-grade",
+    "profile": "",
+    "schema_name": "coursebook_grade",
+    "task": "cb_grader"
+  }
+}

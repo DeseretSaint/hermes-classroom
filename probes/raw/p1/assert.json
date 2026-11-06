@@ -1,0 +1,15 @@
+{
+  "probe": "p1",
+  "status": "PASS",
+  "checks": {
+    "turns_observed": 2,
+    "session_id_stable_across_resume": true,
+    "turn_id_changes_per_turn": true,
+    "turn_id_prefixed_by_session_id": true,
+    "task_id_equals_session_id": true,
+    "on_session_start_fires_once": true,
+    "tool_receives_session_and_task_but_no_turn_id": true,
+    "tool_agent_cwd_is_course_dir": true,
+    "tool_process_cwd_is_gateway_cwd": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "probe": "p7",
+  "status": "PASS",
+  "checks": {
+    "submit_first": true,
+    "submit_duplicate": true,
+    "submit_conflict": true,
+    "submit_stale": true,
+    "hook_exception_turn_proceeded": true,
+    "hook_timeout_turn_proceeded": true,
+    "hook_did_not_run_after_timeout": true,
+    "submit_worked_while_hook_disabled": true
+  }
+}
