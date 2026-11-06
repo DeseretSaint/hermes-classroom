@@ -176,7 +176,7 @@ independent validation.
 
 ## 8. Tests
 
-`tests/test_generation.py` (42 cases) and `tests/fixtures/generation/*.json` run entirely offline
+`tests/test_generation.py` (43 cases) and `tests/fixtures/generation/*.json` run entirely offline
 with a fake LLM and fake search seam. Covered: malformed JSON, empty and oversized plans,
 fabricated citations, contradictory sources, research unavailable, one-off quiz suppression,
 parent hazard rejection, rejected check regeneration and second-failure parking, accepted

@@ -592,6 +592,34 @@ class PlanJobTest(GenerationTestBase):
         self.assertTrue(stored["rejections"])
         self.assertIn("source_support", stored["failed"])
 
+    def test_a_rule_violation_on_the_second_attempt_does_not_reuse_the_first_validation(self) -> None:
+        def first(request: gen.LLMRequest) -> gen.LLMResponse:
+            plan = plan_fixture("plan_ja", source_ids_from(request))
+            plan["evidence_note"] = "Self-checks only; no independent evidence is collected."
+            return response(plan)
+
+        def second(request: gen.LLMRequest) -> gen.LLMResponse:
+            plan = plan_fixture("plan_ja", source_ids_from(request))
+            plan["evidence_note"] = "Self-checks only."
+            plan["check_plan"] = plan["check_plan"][:3]  # objective 4 no longer covered
+            return response(plan)
+
+        llm = FakeLLM(
+            {
+                "coursebook.plan.generate": [first, second],
+                "coursebook.plan.validate": [validation_from_fixture("validation_reject_check")],
+            }
+        )
+        result = gen.run_plan_job(
+            self.connection, plan_job(recipe="casual"), llm, FakeSearch(), now=NOW
+        )
+        self.assertEqual(result["status"], "needs_review")
+        self.assertEqual(result["validation_verdict"], "reject")
+        # Attempt 1's validator report belongs to a different artifact and must not be attached here.
+        self.assertIsNone(result["validation_id"])
+        self.assertEqual(self.count("gen_validation_records"), 0)
+        self.assertTrue(any("does not cover" in reason for reason in result["rejection_reasons"]))
+
     def test_time_estimate_honesty_is_enforced(self) -> None:
         def dishonest(request: gen.LLMRequest) -> gen.LLMResponse:
             plan = plan_fixture("plan_ja", source_ids_from(request))

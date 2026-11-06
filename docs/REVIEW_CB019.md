@@ -11,7 +11,7 @@ Status: **not merged**. Atlas integrates.
 |---|---|
 | `coursebook/research.py` | bounded research: deterministic query derivation, executable ceilings, host-tool search/extract adapter, source ledger with real provenance + content hash, support status that only a validator can move |
 | `coursebook/generation.py` | strict plan/lesson/validation schemas, `ctx.llm` adapter, `run_plan_job`, `run_lesson_job`, `learner_page`, generation-owned SQLite schema, idempotent persistence, usage accounting |
-| `tests/test_generation.py` | 42 offline cases with a fake LLM and fake search seam |
+| `tests/test_generation.py` | 43 offline cases with a fake LLM and fake search seam |
 | `tests/fixtures/generation/*.json` | 9 fixtures: Japanese L0 plan/lesson, one-off plan/lesson, parent plan/unsafe parent lesson, three validation reports |
 | `docs/GENERATION.md` | seam decision, rules, limits |
 
@@ -24,7 +24,7 @@ No kernel file was touched: `coursebook/domain.py`, `coursebook/db.py`, `courseb
 $ python3 -m unittest discover -s tests -t .
 ........................................................................................
 ----------------------------------------------------------------------
-Ran 88 tests in 0.161s
+Ran 89 tests in 0.163s
 
 OK
 
@@ -35,7 +35,7 @@ $ hermes plugins validate .
 Validation passed.
 ```
 
-`tests.test_generation` alone: **42 tests, OK**. 46 pre-existing contract/RPC/job/desktop tests
+`tests.test_generation` alone: **43 tests, OK**. 46 pre-existing contract/RPC/job/desktop tests
 still pass unchanged.
 
 ## 3. Seam decision (short form; full text in `docs/GENERATION.md` §2)

@@ -1875,6 +1875,11 @@ def run_plan_job(
         validation_id: str | None = None
 
         for attempt in (1, 2):
+            # Each attempt starts clean: a stale validation from the previous candidate must never
+            # be recorded against a different artifact.
+            validation_request = None
+            validation_response = None
+            verdict = None
             plan_request = build_plan_request(
                 goal=goal,
                 recipe=recipe,
@@ -2355,6 +2360,10 @@ def _author_section(
     rejection_reasons: list[str] = []
 
     for attempt in (1, 2):
+        # Each attempt starts clean so no stale validator report can be attached to a new draft.
+        validation_request = None
+        validation_response = None
+        verdict = None
         request = build_lesson_request(
             plan=plan,
             section=section,
