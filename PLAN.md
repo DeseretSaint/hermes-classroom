@@ -7,8 +7,9 @@ resumable workflow** rather than a persona. The adult learner answers and the ha
 the parent plans and the harness prepares. Both use the same evidence map, state machine,
 source ledger, and multimodal artifact pipeline.
 
-We ship no authored lessons or curricula. The user's own Hermes model generates them at
-runtime inside the harness.
+We ship the harness and a small set of demonstration course packs, not a fixed curriculum.
+Users can generate classrooms at runtime or import community-authored, pre-prepared course
+packs instead of compiling everything from scratch. Every learner receives fresh progress.
 
 **Deadline:** Nov 11, 2026, 5:00 PM EST.
 **Submission:** catalog PR + public X demo tagging @NousResearch + submission form.
@@ -323,7 +324,105 @@ silently resetting progress. Uninstall does not delete learning.
 
 ---
 
-## 13. Cost and measurement
+## 13. Community classroom and lesson-pack exchange
+
+Coursebook separates the **shared teaching plan** from the **individual learning record**.
+A course author can prepare a classroom once; another user imports it and starts immediately
+without repeating research, syllabus compilation, rubric authoring, or media generation.
+
+### What a shared pack contains
+
+```json
+{
+  "format": "coursebook.pack",
+  "schema_version": 1,
+  "pack_id": "japanese-conversation-foundations",
+  "pack_version": "1.2.0",
+  "author": {"name": "...", "url": "..."},
+  "recipe": "committed",
+  "title": "Conversational Japanese Foundations",
+  "description": "...",
+  "end_state": "...",
+  "evidence": "...",
+  "default_dials": {"pace": "...", "depth": "...", "assessment": "graded"},
+  "prerequisites": [],
+  "syllabus": [{"node_id": "n1", "objective": "...", "evidence": "..."}],
+  "lessons": [{"node_id": "n1", "steps": [], "checks": [], "rubric_versions": {}}],
+  "sources": [{"source_id": "s1", "url": "...", "title": "...", "accessed": "..."}],
+  "artifacts": [{"hash": "...", "kind": "image|audio|document", "license": "..."}],
+  "estimate": {"basis": "fsi|derived|model", "confidence": "low|medium|high"},
+  "content_notes": [],
+  "license": "CC-BY-4.0",
+  "min_coursebook_version": "1.0.0"
+}
+```
+
+A pack is declarative JSON/Markdown plus declared media. It never contains executable Python,
+JavaScript, shell commands, plugin code, arbitrary tool calls, credentials, provider settings,
+reminder destinations, or prompt text designed to override Hermes/Coursebook policy. Imports
+are validated and rendered as data, not executed.
+
+**Never exported:** chat transcripts, session ids, learner events, mastery, misconceptions,
+homework submissions, parent reflections, names, local paths, API configuration, or secrets.
+A community pack and a personal backup are different formats.
+
+### Import experience
+
+1. Choose **Create from goal**, **Import pack**, or **Browse community** in the Coursebook tab.
+2. Preview author, version, end state, level, node count, estimated time, assessment style,
+   sources, content notes, media size, and license.
+3. Inspect any included answer keys/rubrics and source-support status. Parent packs require the
+   same parent approval as generated packs.
+4. Import into a new local course with fresh `events.jsonl`; optionally adjust dials or take a
+   placement probe. The shared `pack_id` and `pack_version` remain attached for update checks.
+5. Start learning immediately; no compilation call is needed for unchanged imported lessons.
+
+Imports are content-addressed and idempotent. Reimporting the same pack does not duplicate a
+course or reset progress. A new pack version is a previewable migration: stable node ids carry
+evidence forward, changed rubrics are versioned, removed nodes retain archived evidence, and
+nothing updates silently.
+
+### Authoring and publishing
+
+Any completed course can be exported through **Share as pack**. The exporter strips private
+state, runs schema/license/source checks, shows exactly what will leave the machine, and writes
+a local archive. Publishing is an explicit separate action; exporting never uploads anything.
+
+The community index is a Git-backed repository of reviewed pack manifests and immutable
+content hashes. A submission PR contains the pack, author attribution, license, validation
+report, and a source/support summary. Review covers factual sources, unsafe instructions,
+malicious prompt content, media rights, age appropriateness, and schema validity. Updates are
+new reviewed versions, not mutable remote files.
+
+This is separate from the Hermes plugin catalog: the plugin is executable code reviewed and
+SHA-pinned by Hermes; community packs are non-executable learning content reviewed by the
+Coursebook pack maintainers. Do not bypass Hermes' plugin trust model to distribute content.
+
+### Quality and trust
+
+- **Schema validated:** required objectives, evidence criteria, rubrics, and versions exist.
+- **Source checked:** cited URLs were fetched and support status is disclosed; unchecked
+  community claims are labelled unverified rather than presented as fact.
+- **Safety checked:** technical instructions require authoritative sources/deterministic
+  visuals; hazardous activities carry prerequisites and verification steps.
+- **Rights checked:** author declares the pack and media license; unsupported copyrighted media
+  is rejected.
+- **No popularity-based truth:** downloads, ratings, and author reputation never change a
+  source's support status or a learner's grade.
+- **Local fork allowed:** users can adapt an imported pack without changing the original; their
+  private learning history remains local.
+
+### Why this strengthens the entry
+
+Community packs turn Coursebook from a single-user tutor into a learning ecosystem without
+turning the hackathon submission into a hosted service. The harness still governs every
+imported session, and a pack saves compile/research/media cost while preserving per-learner
+adaptation. The demo can prove this in seconds: import a prepared classroom, preview its
+sources and plan, take placement, and enter the correct lesson with an empty evidence map.
+
+---
+
+## 14. Cost and measurement
 
 - boundary deltas, not repeated full-state injections;
 - aux model for intake, compile, grading, artifact specs;
@@ -339,7 +438,7 @@ measured comparison against the same lesson without the harness.
 
 ---
 
-## 14. Evidence and honest claims
+## 15. Evidence and honest claims
 
 Design is informed by VanLehn 2011 (human tutoring d≈0.79; step-based ITS ≈0.76), Adesope et
 al. 2017 (practice testing g=0.51), Bisra et al. 2018 (self-explanation g=0.55), Cepeda et al.
@@ -353,7 +452,7 @@ sigma", learning-style diagnosis, guaranteed mastery, child-safety, or COPPA-com
 
 ---
 
-## 15. Build order — all requested features retained
+## 16. Build order — all requested features retained
 
 **Nov 5:** loop and seam spikes (done).
 **Nov 6:** recipes, intake, contract/plan preview, syllabus compiler, estimate provenance,
@@ -364,28 +463,32 @@ validation, state machine.
 ledger.
 **Nov 9:** visual/listen pipeline, native renderer, challenge-out, versioned dials/re-plan,
 Companion, Parent research/approval/pack export.
-**Nov 10:** reminders, recovery, cockpit polish, hardening, README, tests, validate/doctor,
-catalog PR.
+**Nov 10:** pack schema, local import/export, privacy stripping, version migration, community
+index browser and submission template, reminders, recovery, cockpit polish, hardening, README,
+tests, validate/doctor, catalog PR.
 **Nov 11:** record demo, post X, submit form before 5 PM EST.
 
-Scope remains aggressive (~58–62 hours against ~50). No feature is silently removed. If Nov 9
+Scope remains aggressive (~66–70 hours against ~50). No feature is silently removed. If Nov 9
 is red, Nov 10 prioritizes demo-critical correctness; cron reminders and Parent digest may
-land in v1.1. State integrity, grading, Parent approval, and honest media are non-negotiable.
+land in v1.1, and the public community index may launch immediately after the deadline with
+local import/export demonstrated in v1. State integrity, grading, Parent approval, pack import
+safety, and honest media are non-negotiable.
 
 ---
 
-## 16. Winning demo — 85 seconds
+## 17. Winning demo — 88 seconds
 
 | Time | Shot | What it proves |
 |---|---|---|
-| 0–7s | Three goals become One-off, Committed, Parent recipes | one harness adapts to intent |
-| 7–16s | End-state plan, milestones, estimate basis/confidence | backward design, honest planning |
-| 16–30s | "How do I say I love you?" normal chat vs Coursebook | not a generic answer |
+| 0–8s | Import a community Japanese classroom; fresh progress, no compile wait | reusable classrooms |
+| 8–17s | End-state plan, milestones, estimate basis/confidence | backward design, honest planning |
+| 17–30s | "How do I say I love you?" normal chat vs Coursebook | not a generic answer |
 | 30–42s | Deliberately wrong answer; rubric verdict changes one teaching move | real inner loop |
-| 42–49s | Challenge-out skips known node; evidence remains intact | learner control |
-| 49–60s | Head-gasket one-off uses sourced/deterministic visual and verification | safe multimodal task help |
-| 60–75s | Parent approves sources, then printable activity + narration + parent guide appear | parent-led lesson preparation |
-| 75–85s | Restart resumes exact state; close: "A chat answers. Coursebook makes you answer." | reliability + thesis |
+| 42–48s | Challenge-out skips known node; evidence remains intact | learner control |
+| 48–59s | Head-gasket one-off uses sourced/deterministic visual and verification | safe multimodal task help |
+| 59–73s | Parent approves sources, then printable activity + narration + parent guide appear | parent-led lesson preparation |
+| 73–81s | Export the finished class as a privacy-stripped, versioned community pack | contribution loop |
+| 81–88s | Restart resumes exact state; close: "A chat answers. Coursebook makes you answer." | reliability + thesis |
 
 Do not spend the video touring panels. Every shot shows a state change or an artifact. Keep a
 single continuous run, with short cuts only to hide waiting; never represent cached output as
@@ -393,7 +496,7 @@ live research.
 
 ---
 
-## 17. Acceptance gates
+## 18. Acceptance gates
 
 ### State and grading
 - Correct answer advances exactly one valid state; irrelevant answer does not.
@@ -416,6 +519,15 @@ live research.
 - Cached lesson reopen performs no duplicate image/TTS generation.
 - Parent pack is not generated before parent approval.
 
+### Community packs
+- Importing a pack creates fresh learner events and never imports the author's transcript or
+  personal information.
+- A pack cannot register tools, execute code, alter provider settings, or override Coursebook
+  policy.
+- Reimport is idempotent; pack upgrades preview evidence/rubric migrations before committing.
+- Export shows every included file, strips private state, and performs no network upload.
+- An imported parent pack still requires parent review before use.
+
 ### Reliability and submission
 - Provider/aux/TTS/image failures produce honest degraded states, never fabricated outcomes.
 - Session budget stops cleanly and creates resumable homework.
@@ -426,12 +538,13 @@ live research.
 
 ---
 
-## 18. Final differentiation
+## 19. Final differentiation
 
 The strongest submission is not "an AI tutor with a nice tab." It is:
 
-> **A governed learning runtime for Hermes: backward-planned courses, graded lesson states,
-> durable evidence, sourced multimodal artifacts, and parent-approved lesson packs.**
+> **A governed learning runtime for Hermes: backward-planned or community-shared courses,
+> graded lesson states, durable evidence, sourced multimodal artifacts, and parent-approved
+> lesson packs.**
 
 That is useful beyond the demo, reliable in ways a judge can test, polished as one continuous
 workflow, and creative without relying on a fictional learning-science claim.
