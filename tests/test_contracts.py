@@ -1,7 +1,7 @@
 """Contract-set invariants: ids, versions, cross-document references, integrity hashes.
 
-CB-018 amends the set to v2. These tests fail if the new methods, their payload schemas, the
-version links, the v2 storage plan or the documented UX mapping disappear.
+CB-018 amended the set to v2; CB-022 amends it to v3. These tests fail if the new methods, their
+payload schemas, the version links, the storage decisions or the documented UX mapping disappear.
 """
 
 from __future__ import annotations
@@ -23,6 +23,14 @@ V2_NEW_METHODS = (
     "jobs.list",
     "notebook.update",
     "binding.abandon",
+)
+
+#: Added in cb.rpc v3 (CB-022): the learning-loop surface CB-008 proved in the backend.
+V3_NEW_METHODS = (
+    "review.queue",
+    "review.action",
+    "evidence.inspect",
+    "evidence.disputes",
 )
 
 
@@ -119,11 +127,11 @@ class ContractSetTest(unittest.TestCase):
                 self.assertRegex(entry["sha256"], r"^sha256:[a-f0-9]{64}$")
                 self.assertEqual(entry["version"], contracts.contract_version(entry["id"]))
 
-    def test_wire_contract_is_v2(self) -> None:
+    def test_wire_contract_is_v3(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 2)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 3)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v2"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v3"))
 
     def test_every_method_publishes_request_and_response_schemas(self) -> None:
         methods = contracts.method_names()
@@ -167,28 +175,39 @@ class ContractSetTest(unittest.TestCase):
 class V2AmendmentTest(unittest.TestCase):
     """CB-018: the additive v2 amendment that makes the UX screens implementable."""
 
-    def test_v1_documents_are_preserved_on_disk(self) -> None:
+    def test_v1_and_v2_documents_are_preserved_on_disk(self) -> None:
+        current = contracts.contract("cb.rpc")
         v1 = _document("rpc.v1.json")
-        v2 = contracts.contract("cb.rpc")
+        v2 = _document("rpc.v2.json")
         self.assertEqual(v1["x-contract-version"], 1)
         self.assertEqual(str(v1["$id"]), "https://contracts.coursebook.hermes/rpc/v1")
         self.assertEqual(len(v1["$defs"]["method"]["enum"]), 24)
+        self.assertEqual(v2["x-contract-version"], 2)
+        self.assertEqual(str(v2["$id"]), "https://contracts.coursebook.hermes/rpc/v2")
+        self.assertEqual(len(v2["$defs"]["method"]["enum"]), 34)
         for filename in ("errors.v1.json", "db.v1.json", "jobs.v1.json"):
             self.assertTrue((contracts.CONTRACT_DIR / filename).is_file(), filename)
-        # Every v1 method and payload survives; the only permitted edit is the wire-version
-        # constant echoed by health.get (v1 said 1, v2 must say 2).
-        for method in v1["$defs"]["method"]["enum"]:
-            with self.subTest(method=method):
-                self.assertIn(method, contracts.method_names())
-                v2_method = json.loads(json.dumps(v2["$defs"]["methods"]["properties"][method]))
-                if method == "health.get":
-                    v2_method["response"]["properties"]["contract_version"] = {"const": 1}
-                self.assertEqual(v1["$defs"]["methods"]["properties"][method], v2_method)
+
+        # Every superseded method and payload survives verbatim. The only permitted edit is the
+        # wire-version constant echoed by health.get, which follows the current contract version.
+        for document, version in ((v1, 1), (v2, 2)):
+            for method in document["$defs"]["method"]["enum"]:
+                with self.subTest(version=version, method=method):
+                    self.assertIn(method, contracts.method_names())
+                    carried = json.loads(json.dumps(current["$defs"]["methods"]["properties"][method]))
+                    if method == "health.get":
+                        carried["response"]["properties"]["contract_version"] = {
+                            "const": document["$defs"]["methods"]["properties"][method]
+                            ["response"]["properties"]["contract_version"]["const"]
+                        }
+                    self.assertEqual(document["$defs"]["methods"]["properties"][method], carried)
         self.assertEqual(
-            v2["$defs"]["methods"]["properties"]["health.get"]["response"]["properties"]
+            current["$defs"]["methods"]["properties"]["health.get"]["response"]["properties"]
             ["contract_version"]["const"],
-            2,
+            contracts.WIRE_CONTRACT_VERSION,
         )
+        # Superseded documents are not edited in place: their own envelopes still say what they said.
+        self.assertEqual(v2["$defs"]["envelope_request"]["properties"]["contract_version"]["const"], 2)
 
     def test_new_methods_are_present_with_airtight_bounded_schemas(self) -> None:
         for method in V2_NEW_METHODS:
@@ -421,5 +440,312 @@ class V2AmendmentTest(unittest.TestCase):
                 api.METHOD_HANDLERS.pop("library.list", None)
 
 
+class V3AmendmentTest(unittest.TestCase):
+    """CB-022: the additive v3 amendment that gives the review queue and Evidence tab a command path.
+
+    CB-008 implemented the semantics (``coursebook/review.py``, ``coursebook/evidence.py``); these
+    tests hold the contract to *that* backend: same field names, no second revision authority, no
+    reference answer in the evidence view, and no storage claim that the database does not keep.
+    """
+
+    def test_v3_adds_only_the_learning_loop_surface(self) -> None:
+        v2_methods = set(_document("rpc.v2.json")["$defs"]["method"]["enum"])
+        self.assertEqual(set(contracts.method_names()), v2_methods | set(V3_NEW_METHODS))
+        self.assertEqual(len(contracts.method_names()), 38)
+        for method in V3_NEW_METHODS:
+            with self.subTest(method=method):
+                schema = contracts.method_schema(method)
+                for side in ("request", "response"):
+                    self.assertEqual(schema[side]["type"], "object", side)
+                    if "$ref" in schema[side]:
+                        continue  # evidence.disputes.response reuses $defs/evidence_disputes
+                    self.assertIs(schema[side].get("additionalProperties"), False, side)
+                    self.assertEqual(_schema_problems(schema[side]), [], f"{method}.{side}")
+
+    def test_v3_claims_no_new_storage_and_no_new_error_code(self) -> None:
+        # Decision: the queue is derived from committed evidence + learner action events, and a
+        # dispute lives inside the attempt's provenance. Neither gets a table in v3, so cb.db and
+        # cb.errors stay at v2 and no migration is implied.
+        self.assertEqual(contracts.contract_version("cb.db"), 2)
+        self.assertEqual(contracts.contract_version("cb.errors"), 2)
+        tables = contracts.contract("cb.db")["tables"]
+        for absent in ("review_schedule", "review_items", "disputes"):
+            self.assertNotIn(absent, tables)
+        v2_codes = set(_document("errors.v2.json")["code_catalog"])
+        self.assertEqual(set(contracts.error_codes()), v2_codes)
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_review_queue_cannot_hide_a_backlog(self) -> None:
+        schema = contracts.method_schema("review.queue")
+        request = schema["request"]["properties"]
+        self.assertEqual(set(request), {"enrollment_id", "cap", "include_upcoming"})
+        # The clock is the backend's: a client cannot age its own queue into looking overdue.
+        self.assertNotIn("now", request)
+        self.assertLessEqual(request["cap"]["maximum"], 50)
+        response = schema["response"]
+        self.assertLessEqual(response["properties"]["items"]["maxItems"], 50)
+        for field in ("total_due", "total_overdue", "total_scheduled", "upcoming_hidden", "now", "cap"):
+            self.assertIn(field, response["required"])
+        # The cap may hide rows, never the counts.
+        self.assertIn("upcoming_hidden", response["required"])
+
+        item = contracts.contract("cb.rpc")["$defs"]["review_item"]
+        for field in ("interval_days", "step", "ladder_days", "last_evidence_at", "due_at", "overdue"):
+            self.assertIn(field, item["properties"])
+        # A schedule is arithmetic over a declared heuristic, not an attainment prediction.
+        forbidden = {"mastery", "retention", "probability", "attain", "attainment_estimate", "score"}
+        self.assertEqual(_property_names(item) & forbidden, set())
+        contracts.validate_response_payload(
+            "review.queue",
+            {
+                "enrollment_id": "enr_12345678",
+                "items": [
+                    {
+                        "objective_id": "obj_12345678",
+                        "title": "Order a drink politely",
+                        "ordinal": 1,
+                        "evidence_target": "recall",
+                        "state": "review_due",
+                        "interval_days": 1,
+                        "step": 0,
+                        "ladder_days": [1, 3, 7, 16, 35],
+                        "last_evidence_at": "2026-11-05T00:00:00+00:00",
+                        "due_at": "2026-11-06T00:00:00+00:00",
+                        "overdue": True,
+                        "overdue_days": 0,
+                    }
+                ],
+                "total_due": 1,
+                "total_overdue": 1,
+                "total_scheduled": 2,
+                "upcoming_hidden": 1,
+                "now": "2026-11-06T12:00:00+00:00",
+                "cap": 10,
+            },
+        )
+
+    def test_review_action_is_a_revision_fenced_learner_command(self) -> None:
+        schema = contracts.method_schema("review.action")
+        self.assertEqual(
+            set(schema["request"]["properties"]["action"]["enum"]),
+            {"snooze", "stretch", "drop", "resume"},
+        )
+        # Fencing lives in the envelope, once, for every learner command: the payload must not
+        # carry a second opinion about the revision, and the result must not echo a third.
+        for duplicated in ("expected_revision", "idempotency_key", "revision"):
+            self.assertNotIn(duplicated, schema["request"]["properties"])
+        self.assertNotIn("revision", schema["response"]["properties"])
+
+        rule = [
+            entry
+            for entry in contracts.contract("cb.rpc")["$defs"]["envelope_request"]["allOf"]
+            if "review.action" in entry.get("if", {}).get("properties", {}).get("method", {}).get("enum", [])
+        ]
+        self.assertEqual(len(rule), 1, "review.action needs exactly one envelope fence rule")
+        self.assertEqual(set(rule[0]["then"]["required"]), {"idempotency_key", "expected_revision"})
+
+        expected = {"idempotency_key", "expected_revision"}
+        missing_revision = api.dispatch(_envelope("review.action", {
+            "enrollment_id": "enr_12345678",
+            "objective_id": "obj_12345678",
+            "action": "snooze",
+        }, idempotency_key="idem-review-action-1"))
+        self.assertFalse(missing_revision["ok"])
+        self.assertEqual(missing_revision["error"]["code"], "VALIDATION_FAILED")
+        missing_key = api.dispatch(_envelope("review.action", {
+            "enrollment_id": "enr_12345678",
+            "objective_id": "obj_12345678",
+            "action": "snooze",
+        }, expected_revision=4))
+        self.assertFalse(missing_key["ok"])
+        self.assertEqual(missing_key["error"]["code"], "VALIDATION_FAILED")
+        fenced = api.dispatch(_envelope("review.action", {
+            "enrollment_id": "enr_12345678",
+            "objective_id": "obj_12345678",
+            "action": "snooze",
+        }, expected_revision=4, idempotency_key="idem-review-action-1"))
+        self.assertFalse(fenced["ok"])
+        # The handler is registered now, so a well-formed fenced envelope reaches it; the
+        # unknown enrollment is the handler's refusal, not the seam's.
+        self.assertEqual(fenced["error"]["code"], "NOT_FOUND")
+        self.assertNotIn("revision", fenced.get("result") or {})
+        self.assertTrue(expected <= set(rule[0]["then"]["required"]))
+
+        # drop is a scheduling preference, not mastery evidence: the response says what changed.
+        contracts.validate_response_payload(
+            "review.action",
+            {
+                "objective_id": "obj_12345678",
+                "action": "drop",
+                "recorded_at": "2026-11-06T12:00:00+00:00",
+                "state": "independent_evidence",
+                "due_at": None,
+            },
+        )
+
+    def test_evidence_inspect_answers_all_three_layers_and_disputes(self) -> None:
+        schema = contracts.method_schema("evidence.inspect")
+        self.assertEqual(set(schema["request"]["properties"]), {"enrollment_id", "objective_id", "limit"})
+        self.assertLessEqual(schema["request"]["properties"]["limit"]["maximum"], 200)
+        self.assertEqual(set(schema["response"]["required"]), {"l1", "l2", "l3", "disputes"})
+
+        defs = contracts.contract("cb.rpc")["$defs"]
+        for layer in ("evidence_l1", "evidence_l2", "evidence_l3", "evidence_disputes"):
+            self.assertIn(layer, defs)
+
+        # L1 is the raw record: the learner's own answer plus how it was produced.
+        for field in ("answer", "answer_hash", "criteria", "provenance", "dispute_count"):
+            self.assertIn(field, defs["evidence_attempt"]["properties"])
+        for field in ("kind", "is_action", "evidence_class", "layer"):
+            self.assertIn(field, defs["evidence_event"]["properties"])
+
+        # L2 must link down to L1 and must not be inferable from an action.
+        for field in ("independent", "delayed", "L2_evidence_ids", "attempt_classes"):
+            self.assertIn(field, defs["evidence_objective"]["properties"])
+
+        # L3 is a short revisable recommendation, never a persona or a percentage.
+        self.assertFalse(defs["evidence_l3"]["properties"]["is_persona"]["const"])
+        self.assertIn("is_persona", defs["evidence_l3"]["required"])
+        self.assertLessEqual(defs["evidence_l3"]["properties"]["recommendations"]["maxItems"], 5)
+        self.assertEqual(
+            set(defs["evidence_recommendation"]["properties"]["kind"]["enum"]),
+            {"needs_independent_evidence", "hint_contamination", "on_track"},
+        )
+
+        # Nothing here can leak a reference answer, rubric internals or a transcript.
+        forbidden = {
+            "reference_answer", "answer_key", "rubric", "rubric_internals", "grading_output",
+            "transcript", "persona", "mastery",
+        }
+        self.assertEqual(_property_names(schema) & forbidden, set())
+        self.assertEqual(_property_names(defs["evidence_l1"]) & forbidden, set())
+        self.assertEqual(_property_names(defs["evidence_l3"]) & forbidden, set())
+
+        contracts.validate_response_payload(
+            "evidence.inspect",
+            {
+                "l1": {
+                    "enrollment_id": "enr_12345678",
+                    "objective_id": None,
+                    "attempts": [],
+                    "events": [],
+                },
+                "l2": {"enrollment_id": "enr_12345678", "objective_id": None, "objectives": []},
+                "l3": {
+                    "enrollment_id": "enr_12345678",
+                    "recommendations": [],
+                    "as_of": None,
+                    "is_persona": False,
+                },
+                "disputes": {
+                    "enrollment_id": "enr_12345678",
+                    "disputes": [],
+                    "count": 0,
+                    "truncated": False,
+                },
+            },
+        )
+
+    def test_evidence_disputes_is_bounded_and_says_when_it_truncates(self) -> None:
+        schema = contracts.method_schema("evidence.disputes")
+        self.assertEqual(set(schema["request"]["properties"]), {"enrollment_id", "attempt_id", "limit"})
+        self.assertLessEqual(schema["request"]["properties"]["limit"]["maximum"], 200)
+        disputes = contracts.contract("cb.rpc")["$defs"]["evidence_disputes"]
+        self.assertLessEqual(disputes["properties"]["disputes"]["maxItems"], 200)
+        for field in ("count", "truncated", "disputes"):
+            self.assertIn(field, disputes["required"])
+
+        contracts.validate_response_payload("evidence.disputes", {
+            "enrollment_id": "enr_12345678",
+            "disputes": [
+                {
+                    "dispute_id": "dsp_12345678",
+                    "attempt_id": "att_12345678",
+                    "check_id": "chk_12345678",
+                    "verdict": "not_yet",
+                    "evidence_class": "cold",
+                    "state": "open",
+                    "note": "The answer is correct with a different honorific.",
+                    "created_at": "2026-11-06T12:00:00+00:00",
+                }
+            ],
+            "count": 1,
+            "truncated": False,
+        })
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "evidence.disputes", {"enrollment_id": "enr_12345678", "limit": 0}
+            )
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "evidence.disputes", {"enrollment_id": "enr_12345678", "limit": 201}
+            )
+
+    def test_v3_payloads_are_validated_before_the_handler(self) -> None:
+        # A registered handler does not weaken the seam: malformed payloads never reach it.
+        for method, payload in (
+            ("review.queue", {"enrollment_id": "enr_12345678", "cap": 0}),
+            ("review.queue", {"enrollment_id": "enr_12345678", "cap": 51}),
+            ("evidence.inspect", {"enrollment_id": "enr_12345678", "limit": 0}),
+        ):
+            with self.subTest(method=method, payload=payload):
+                response = api.dispatch(_envelope(method, payload))
+                self.assertFalse(response["ok"])
+                self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
+
+        # Well-formed payloads reach the wired handler, which refuses the unknown enrollment
+        # honestly instead of answering an empty queue / bundle.
+        for method, payload in (
+            ("review.queue", {"enrollment_id": "enr_12345678"}),
+            ("evidence.inspect", {"enrollment_id": "enr_12345678", "objective_id": "obj_12345678"}),
+            ("evidence.disputes", {"enrollment_id": "enr_12345678"}),
+        ):
+            with self.subTest(method=method):
+                response = api.dispatch(_envelope(method, payload))
+                self.assertFalse(response["ok"])
+                self.assertEqual(response["error"]["code"], "NOT_FOUND")
+
+        def handler(payload, envelope):
+            return 7, {
+                "enrollment_id": "enr_12345678",
+                "items": [],
+                "total_due": 0,
+                "total_overdue": 0,
+                "total_scheduled": 0,
+                "upcoming_hidden": 0,
+                "now": "2026-11-06T12:00:00+00:00",
+                "cap": 10,
+            }
+
+        # Swap in a contract-shaped fake and restore the kernel's real handler afterwards, so
+        # this stays a test of the dispatch seam rather than of the database.
+        saved = api.METHOD_HANDLERS.get("review.queue")
+        api.register_handler("review.queue", handler)
+        try:
+            response = api.dispatch(_envelope("review.queue", {"enrollment_id": "enr_12345678"}))
+            self.assertTrue(response["ok"], response)
+            self.assertEqual(response["contract_version"], 3)
+            self.assertEqual(response["revision"], 7)
+        finally:
+            if saved is not None:
+                api.METHOD_HANDLERS["review.queue"] = saved
+            else:
+                api.METHOD_HANDLERS.pop("review.queue", None)
+
+    def test_docs_publish_the_v3_surface_and_the_handler_contract(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for method in V3_NEW_METHODS:
+            self.assertIn(method, text, f"CONTRACTS.md does not document {method}")
+        for needle in (
+            "review.py",              # the implementer file Cinder wires
+            "evidence.py",
+            "grading_provenance_json",  # disputes stay inline; no v3 table
+            "derived",                  # the queue has no table of its own
+            "pack.list",                # explicitly deferred to v4, not a v3 extension
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md does not record the v3 decision on {needle!r}")
+
+
 if __name__ == "__main__":
     unittest.main()
+

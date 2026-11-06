@@ -1,0 +1,382 @@
+{
+  "enrollment_id": "enr_3762d13fdc454fa1b01e74fc6e5e3908",
+  "objective_id": "obj_e1433323b99e42ae8d5c824db0102cf6",
+  "stored_session_id": "stored-trace-session",
+  "run_id": "run_trace_0001",
+  "steps": [
+    {
+      "step": "wrong answer",
+      "classification": {
+        "kind": "answer",
+        "shows_answer": false,
+        "confidence": "bounded",
+        "creates_attempt": true
+      },
+      "verdict": "not_yet",
+      "hook": {
+        "context": "Coursebook result: not yet. Give one different explanation or representation, then one fresh check. Do not repeat the same item. Objective: obj_e1433323b99e42ae8d5c824db0102cf6."
+      },
+      "revision": 3,
+      "counts": {
+        "attempts": 1,
+        "transitions": 3,
+        "evidence": 1
+      }
+    },
+    {
+      "step": "clarification",
+      "classification": {
+        "kind": "clarification",
+        "shows_answer": false,
+        "confidence": "bounded",
+        "creates_attempt": false
+      },
+      "verdict": null,
+      "hook": null,
+      "revision": 3,
+      "counts": {
+        "attempts": 1,
+        "transitions": 3,
+        "evidence": 1
+      }
+    },
+    {
+      "step": "hint request",
+      "classification": {
+        "kind": "hint",
+        "shows_answer": false,
+        "confidence": "bounded",
+        "creates_attempt": false
+      },
+      "verdict": null,
+      "hook": null,
+      "revision": 3,
+      "counts": {
+        "attempts": 1,
+        "transitions": 3,
+        "evidence": 2
+      }
+    },
+    {
+      "step": "correct answer after hint",
+      "classification": {
+        "kind": "answer",
+        "shows_answer": false,
+        "confidence": "bounded",
+        "creates_attempt": true
+      },
+      "verdict": "pass",
+      "hook": {
+        "context": "Coursebook result: correct. This pass does not count as independent evidence: the answer followed a hint or a shown answer. Access may move on, the evidence map stays honest. Summarise what is still unproven for this objective and offer a fresh check. Objective: obj_e1433323b99e42ae8d5c824db0102cf6."
+      },
+      "revision": 4,
+      "counts": {
+        "attempts": 2,
+        "transitions": 4,
+        "evidence": 3
+      }
+    },
+    {
+      "step": "cold correct answer",
+      "classification": {
+        "kind": "answer",
+        "shows_answer": false,
+        "confidence": "bounded",
+        "creates_attempt": true
+      },
+      "verdict": "pass",
+      "hook": {
+        "context": "Coursebook result: correct. That counted as independent evidence for this objective. Teach the wrap-up for this objective, then move to the next section. Objective: obj_e1433323b99e42ae8d5c824db0102cf6."
+      },
+      "revision": 6,
+      "counts": {
+        "attempts": 3,
+        "transitions": 6,
+        "evidence": 5
+      }
+    }
+  ],
+  "library_next_step": {
+    "kind": "resolve_review_due",
+    "label": "Review 1 objective(s)"
+  },
+  "review_queue": {
+    "enrollment_id": "enr_3762d13fdc454fa1b01e74fc6e5e3908",
+    "now": "2026-11-06T09:28:47+00:00",
+    "cap": 10,
+    "total_due": 1,
+    "total_overdue": 1,
+    "total_scheduled": 1,
+    "items": [
+      {
+        "objective_id": "obj_e1433323b99e42ae8d5c824db0102cf6",
+        "title": "Compute the reduction",
+        "ordinal": 1,
+        "evidence_target": "procedure",
+        "state": "review_due",
+        "interval_days": 3,
+        "step": 0,
+        "ladder_days": [
+          3,
+          7,
+          16,
+          35
+        ],
+        "last_evidence_at": "2026-10-27T09:28:47+00:00",
+        "due_at": "2026-10-30T09:28:47+00:00",
+        "overdue": true,
+        "overdue_days": 7
+      }
+    ],
+    "upcoming_hidden": 0
+  },
+  "review_queue_after_snooze": {
+    "enrollment_id": "enr_3762d13fdc454fa1b01e74fc6e5e3908",
+    "now": "2026-11-06T09:28:47+00:00",
+    "cap": 10,
+    "total_due": 0,
+    "total_overdue": 0,
+    "total_scheduled": 1,
+    "items": [
+      {
+        "objective_id": "obj_e1433323b99e42ae8d5c824db0102cf6",
+        "title": "Compute the reduction",
+        "ordinal": 1,
+        "evidence_target": "procedure",
+        "state": "review_due",
+        "interval_days": 3,
+        "step": 0,
+        "ladder_days": [
+          3,
+          7,
+          16,
+          35
+        ],
+        "last_evidence_at": "2026-10-27T09:28:47+00:00",
+        "due_at": "2026-11-09T09:28:47+00:00",
+        "overdue": false,
+        "overdue_days": 0
+      }
+    ],
+    "upcoming_hidden": 0
+  },
+  "evidence": {
+    "l1": {
+      "enrollment_id": "enr_3762d13fdc454fa1b01e74fc6e5e3908",
+      "objective_id": null,
+      "attempts": [
+        {
+          "attempt_id": "att_a9b55d6c2e2645f8a2a4bf041817af91",
+          "check_id": "chk_9c13f86b5dd74da8bbdb01f3f1aef692",
+          "check_version": 2,
+          "answer": {
+            "kind": "text",
+            "text": "42.7"
+          },
+          "answer_hash": "sha256:f0a0c646585ad13936b0778f8e6afe332bb772ed7c8fc42885b020f57a114d23",
+          "verdict": "pass",
+          "evidence_class": "cold",
+          "criteria": [
+            {
+              "id": "c1",
+              "met": true,
+              "observed": "within tolerance (0 <= 0)"
+            }
+          ],
+          "state": "committed",
+          "provenance": {
+            "grader": "deterministic:numeric"
+          },
+          "dispute_count": 1,
+          "created_at": "2026-11-06T09:28:47.214266+00:00",
+          "committed_at": "2026-11-06T09:28:47.214267+00:00"
+        },
+        {
+          "attempt_id": "att_ffd79f06b56e4278bbe565e1baf2b931",
+          "check_id": "chk_490b5ce0b43148339d707730708842d3",
+          "check_version": 1,
+          "answer": {
+            "kind": "text",
+            "text": "42.7"
+          },
+          "answer_hash": "sha256:f0a0c646585ad13936b0778f8e6afe332bb772ed7c8fc42885b020f57a114d23",
+          "verdict": "pass",
+          "evidence_class": "hinted",
+          "criteria": [
+            {
+              "id": "c1",
+              "met": true,
+              "observed": "within tolerance (0 <= 0)"
+            }
+          ],
+          "state": "committed",
+          "provenance": {
+            "grader": "deterministic:numeric"
+          },
+          "dispute_count": 0,
+          "created_at": "2026-11-06T09:28:47.147047+00:00",
+          "committed_at": "2026-11-06T09:28:47.147048+00:00"
+        },
+        {
+          "attempt_id": "att_59e81fff25194dc78704d3f1d4adbcc1",
+          "check_id": "chk_490b5ce0b43148339d707730708842d3",
+          "check_version": 1,
+          "answer": {
+            "kind": "text",
+            "text": "1"
+          },
+          "answer_hash": "sha256:15f41b99f6db3755930908399361bbb88d181698cad6a7670f84110516f7dd96",
+          "verdict": "not_yet",
+          "evidence_class": "cold",
+          "criteria": [
+            {
+              "id": "c1",
+              "met": false,
+              "observed": "outside tolerance by 41.7"
+            }
+          ],
+          "state": "committed",
+          "provenance": {
+            "grader": "deterministic:numeric"
+          },
+          "dispute_count": 0,
+          "created_at": "2026-11-06T09:28:47.071355+00:00",
+          "committed_at": "2026-11-06T09:28:47.071356+00:00"
+        }
+      ],
+      "events": [
+        {
+          "evidence_id": "evd_629ce070944142efbdecfdbea9975589",
+          "objective_id": "obj_e1433323b99e42ae8d5c824db0102cf6",
+          "attempt_id": "att_a9b55d6c2e2645f8a2a4bf041817af91",
+          "layer": 1,
+          "kind": "attempt",
+          "evidence_class": "cold",
+          "is_action": false,
+          "created_at": "2026-11-06T09:28:47.214344+00:00"
+        },
+        {
+          "evidence_id": "evd_9e1237c428b346ecabf19e11f334b199",
+          "objective_id": "obj_e1433323b99e42ae8d5c824db0102cf6",
+          "attempt_id": "att_ffd79f06b56e4278bbe565e1baf2b931",
+          "layer": 1,
+          "kind": "attempt",
+          "evidence_class": "hinted",
+          "is_action": false,
+          "created_at": "2026-11-06T09:28:47.147128+00:00"
+        },
+        {
+          "evidence_id": "evd_d8237d5528ce487bab140bc1b888c3df",
+          "objective_id": "obj_e1433323b99e42ae8d5c824db0102cf6",
+          "attempt_id": "att_ffd79f06b56e4278bbe565e1baf2b931",
+          "layer": 1,
+          "kind": "hint_request",
+          "evidence_class": "hinted",
+          "is_action": true,
+          "created_at": "2026-11-06T09:28:47.099131+00:00"
+        },
+        {
+          "evidence_id": "evd_c2b953380aa94d30b5120bb08cc47d56",
+          "objective_id": "obj_e1433323b99e42ae8d5c824db0102cf6",
+          "attempt_id": "att_59e81fff25194dc78704d3f1d4adbcc1",
+          "layer": 1,
+          "kind": "attempt",
+          "evidence_class": "cold",
+          "is_action": false,
+          "created_at": "2026-11-06T09:28:47.071437+00:00"
+        },
+        {
+          "evidence_id": "evd_f7f1141246514ab9913291777d51bbf5",
+          "objective_id": "obj_e1433323b99e42ae8d5c824db0102cf6",
+          "attempt_id": "att_a9b55d6c2e2645f8a2a4bf041817af91",
+          "layer": 2,
+          "kind": "independent_evidence",
+          "evidence_class": "cold",
+          "is_action": false,
+          "created_at": "2026-10-27T09:28:47+00:00"
+        }
+      ]
+    },
+    "l2": {
+      "enrollment_id": "enr_3762d13fdc454fa1b01e74fc6e5e3908",
+      "objective_id": null,
+      "objectives": [
+        {
+          "objective_id": "obj_e1433323b99e42ae8d5c824db0102cf6",
+          "title": "Compute the reduction",
+          "ordinal": 1,
+          "evidence_target": "procedure",
+          "state": "review_due",
+          "independent": true,
+          "delayed": false,
+          "L2_evidence_ids": [
+            "evd_f7f1141246514ab9913291777d51bbf5"
+          ],
+          "independent_at": "2026-10-27T09:28:47+00:00",
+          "attempt_classes": {
+            "cold": 2,
+            "hinted": 1
+          },
+          "criteria": [
+            {
+              "check_spec": {
+                "audit_state": "passed",
+                "reference": {
+                  "kind": "numeric",
+                  "tolerance": {
+                    "abs": "0"
+                  },
+                  "value": "42.7"
+                },
+                "rubric": {
+                  "construct": "procedure",
+                  "criteria": [
+                    {
+                      "description": "Correct value",
+                      "id": "c1"
+                    }
+                  ],
+                  "pass_rule": "all"
+                },
+                "stimulus": {
+                  "prompt": "Compute the answer."
+                }
+              },
+              "description": "graded criterion",
+              "id": "c1"
+            }
+          ]
+        }
+      ]
+    },
+    "l3": {
+      "enrollment_id": "enr_3762d13fdc454fa1b01e74fc6e5e3908",
+      "recommendations": [
+        {
+          "kind": "on_track",
+          "text": "Every objective has at least one cold independent result. Keep the review queue honest.",
+          "objective_ids": [],
+          "basis": "layer2.independent == true for all objectives"
+        }
+      ],
+      "as_of": "2026-11-06T09:28:47.214344+00:00",
+      "is_persona": false
+    },
+    "disputes": {
+      "enrollment_id": "enr_3762d13fdc454fa1b01e74fc6e5e3908",
+      "disputes": [
+        {
+          "dispute_id": "dsp_8684993b08df4bc3a62ae57bfb7f3efb",
+          "attempt_id": "att_a9b55d6c2e2645f8a2a4bf041817af91",
+          "check_id": "chk_9c13f86b5dd74da8bbdb01f3f1aef692",
+          "verdict": "pass",
+          "evidence_class": "cold",
+          "state": "open",
+          "note": "The unit should be grams.",
+          "created_at": "2026-11-06T09:28:47.244276+00:00"
+        }
+      ],
+      "count": 1
+    }
+  }
+}

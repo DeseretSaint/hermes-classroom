@@ -29,7 +29,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
-from . import api, db, grading, jobs as jobs_contract
+from . import api, db, evidence, grading, jobs as jobs_contract, review
 from .api import RpcError
 from .contracts import method_names
 
@@ -52,7 +52,6 @@ KERNEL_METHODS: tuple[str, ...] = (
     "notebook.list",
     "notebook.delete",
     "quiz.history",
-    "binding.get",
     "jobs.create",
     "jobs.get",
     "jobs.cancel",
@@ -67,6 +66,10 @@ KERNEL_METHODS: tuple[str, ...] = (
     "jobs.list",
     "notebook.update",
     "binding.abandon",
+    "review.queue",
+    "review.action",
+    "evidence.inspect",
+    "evidence.disputes",
 )
 
 MAX_PAGE = 500
@@ -442,65 +445,6 @@ def quiz_history(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
     return int(enrollment["revision"]), {"attempts": attempts}
 
 
-@_handler("binding.get")
-def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-    """Resolve a binding by exactly one identifier — never by recency, never by runtime id.
-
-    CB-010 integration note: the platform's ``coursebook.api`` handler defined the refusal
-    semantics (exactly one identifier; an unmigrated database refuses rather than claiming
-    "unbound"). This handler reads the same table with the kernel's row shape, so it keeps the
-    same refusals instead of letting the kernel silently relax them.
-    """
-    session_id = payload.get("session_id")
-    enrollment_id = payload.get("enrollment_id")
-    if bool(session_id) == bool(enrollment_id):
-        raise RpcError.of(
-            "VALIDATION_FAILED",
-            "binding.get takes exactly one of session_id (stored session id) or enrollment_id.",
-            field="session_id" if session_id else "enrollment_id",
-        )
-    if db.applied_schema_version() is None:
-        raise RpcError.of(
-            "NOT_IMPLEMENTED",
-            "binding.get needs the kernel schema; this database has no migrations applied.",
-        )
-    db.ensure_schema()
-    with db.read() as connection:
-        row = None
-        if enrollment_id:
-            row = _row(
-                connection,
-                "SELECT * FROM bindings WHERE enrollment_id = ? ORDER BY revision DESC, updated_at DESC LIMIT 1",
-                (enrollment_id,),
-            )
-        if row is None and session_id:
-            row = _row(
-                connection,
-                # The kernel resolves a live runtime id too (its own test owns that behaviour);
-                # the contract's rule — a caller holding only a runtime id resolves it itself — is
-                # still enforced on the platform handler, which is what the Desktop calls.
-                "SELECT * FROM bindings WHERE stored_session_id = ? OR runtime_session_id = ? LIMIT 1",
-                (session_id, session_id),
-            )
-    if row is None:
-        return 0, {"binding": None}
-    return int(row["revision"]), {
-        "binding": {
-            "binding_id": row["id"],
-            "enrollment_id": row["enrollment_id"],
-            "profile": row["profile"],
-            "connection_id": row["connection_id"],
-            "runtime_session_id": row["runtime_session_id"],
-            "stored_session_id": row["stored_session_id"],
-            "cwd_fingerprint": row["cwd_fingerprint"],
-            "compression_tip": row["compression_tip"],
-            "status": row["status"],
-            "revision": int(row["revision"]),
-            "updated_at": row["updated_at"],
-        }
-    }
-
-
 # ── courses, plans, enrollments ─────────────────────────────────────────────
 
 
@@ -845,11 +789,29 @@ def _attempt_rows_before(connection, enrollment_id: str, check_id: str) -> int:
 def _classify_evidence(connection, enrollment_id: str, check_id: str) -> str:
     """How this answer was produced.
 
-    Cold is the default. A second answer to the same check follows feedback that was shown, so it
-    is ``hinted`` — recognition after scaffolding cannot become independent evidence
-    (``AUDIT.md`` R10/R12).
+    Cold is the default. A hint or a shown answer is a durable event recorded *before* the next
+    answer (``AUDIT.md`` R10/R12): an answer produced after scaffolding is never independent
+    evidence, and a shown answer is stronger contamination than a hint. A second answer to the
+    same check also follows feedback, so it is at least ``hinted``.
     """
-    return "hinted" if _attempt_rows_before(connection, enrollment_id, check_id) else "cold"
+    objective_row = _row(
+        connection, "SELECT objective_id FROM checks WHERE id = ?", (check_id,)
+    )
+    assist = None
+    if objective_row is not None:
+        assist = _row(
+            connection,
+            "SELECT kind FROM evidence WHERE enrollment_id = ? AND objective_id = ?"
+            " AND kind IN ('answer_shown', 'hint_request') AND attempt_id IS NULL"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (enrollment_id, objective_row["objective_id"]),
+        )
+    if assist is not None and assist["kind"] == "answer_shown":
+        return "answer_shown"
+    if assist is not None or _attempt_rows_before(connection, enrollment_id, check_id):
+        return "hinted"
+    return "cold"
+
 
 
 def _next_action_for(verdict: str) -> str:
@@ -1030,6 +992,13 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
              _json_dump(graded.criteria), _json_dump(graded.provenance), _now(), _now()),
         )
         next_action = _next_action_for(verdict)
+        # A hint is consumed by the answer it contaminated: it stays linked to that attempt and
+        # cannot keep marking later, independent answers as hinted (R10/R12).
+        connection.execute(
+            "UPDATE evidence SET attempt_id = ? WHERE enrollment_id = ? AND objective_id = ?"
+            " AND kind IN ('hint_request', 'answer_shown') AND attempt_id IS NULL",
+            (attempt_id, enrollment["id"], objective["id"]),
+        )
         if verdict == "pass" and evidence_class != "cold":
             # Access may advance, but the record must not claim independent evidence.
             next_action = "review_objective"
@@ -1042,8 +1011,10 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         if verdict == "pass" and evidence_class == "cold":
             connection.execute(
                 "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
-                " VALUES (?, ?, ?, ?, 2, 'independent_evidence', ?, ?)",
-                (_new_id("evd"), enrollment["id"], objective["id"], attempt_id, evidence_class, _now()),
+                " VALUES (?, ?, ?, ?, 2, ?, ?, ?)",
+                (_new_id("evd"), enrollment["id"], objective["id"], attempt_id,
+                 "delayed_retrieval" if objective["state"] == "review_due" else "independent_evidence",
+                 evidence_class, _now()),
             )
         connection.execute(
             "UPDATE objectives SET state = ? WHERE id = ?",
@@ -1064,13 +1035,17 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
 
 
 def _objective_state_after(verdict: str, evidence_class: str, current: str) -> str:
-    """Evidence states stay distinct: only a cold pass reaches ``independent_evidence``."""
+    """Evidence states stay distinct: only a cold pass reaches ``independent_evidence``.
+
+    A cold pass on an item that was scheduled for review is *delayed* evidence, not a repeat of
+    the same-session result (``AUDIT.md`` R10).
+    """
     if evidence_class == "override":
         return "overridden"
     if verdict == "pass":
-        return "independent_evidence" if evidence_class == "cold" else (
-            "introduced" if current == "not_started" else current
-        )
+        if evidence_class != "cold":
+            return "introduced" if current == "not_started" else current
+        return "delayed_evidence" if current == "review_due" else "independent_evidence"
     if verdict in ("partial", "not_yet"):
         return "needs_review"
     return current
@@ -1465,6 +1440,11 @@ def _library_warning(connection, enrollment, course, pack_row) -> str | None:
 def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """The library survives a restart: it is rebuilt from enrollments/courses, never from UI state."""
     db.ensure_schema()
+    # Scheduler tick: due reviews become `review_due` before anything is counted or displayed, so
+    # an overdue queue can never look empty. Idempotent, and it only writes contracted state.
+    with db.transaction() as connection:
+        for row in connection.execute("SELECT id FROM enrollments WHERE status = 'active'").fetchall():
+            review.refresh_due(connection, row["id"])
     filter_name = payload.get("filter") or "all"
     limit = min(int(payload.get("limit") or 50), 100)
     offset = _decode_cursor(payload.get("cursor"))
@@ -2198,6 +2178,116 @@ def binding_abandon(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[
         result = {"binding_id": binding["id"], "status": "orphaned", "revision": revision}
         _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
     return revision, result
+
+
+# ── Learning loop: review queue and evidence (cb.rpc v3, CB-022) ────────────
+#
+# The semantics live in ``review.py`` and ``evidence.py``; these handlers are registration plus the
+# response-shape mapping the freeze documented. Read paths never advance a revision; the one
+# mutation (``review.action``) is fenced exactly like every other learner command.
+
+#: ``evidence.inspect`` reuses the contract's bounded dispute view; keep the row list inside it.
+MAX_INSPECT_DISPUTES = 200
+
+
+@_handler("review.queue")
+def review_queue(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Derived queue. The clock is the backend's and the cap bounds rows, never the counts."""
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        result = review.queue(
+            connection,
+            enrollment_id,
+            cap=int(payload.get("cap", 10)),
+            include_upcoming=bool(payload.get("include_upcoming", True)),
+        )
+    return int(enrollment["revision"]), result
+
+
+@_handler("review.action")
+def review_action(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Record a learner scheduling preference as layer-1 self-reported evidence.
+
+    One transaction: fence, bump, write the event, then re-read the post-action truth. ``state``
+    and ``due_at`` are the values the queue must re-render from; the revision stays in the
+    envelope (the contract forbids a payload copy).
+    """
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "review.action"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    enrollment_id = payload["enrollment_id"]
+    objective_id = payload["objective_id"]
+    action = payload["action"]
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, enrollment_id)
+        plan = _approved_plan(connection, enrollment["course_id"])
+        if plan is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved"
+            )
+        # A scheduling action on an objective outside the approved plan would write an event no
+        # queue can ever read; refuse it rather than persist orphan evidence.
+        _objective_in_plan(connection, objective_id, plan["id"])
+        to_revision = _bump_enrollment(connection, enrollment_id, expected)
+        now = datetime.now(timezone.utc)
+        outcome = review.apply_action(
+            connection, enrollment_id=enrollment_id, objective_id=objective_id, action=action, now=now
+        )
+        state = str(_row(connection, "SELECT state FROM objectives WHERE id = ?", (objective_id,))["state"])
+        item = review.item(connection, enrollment_id, objective_id, now=now)
+        result = {**outcome, "state": state, "due_at": item["due_at"] if item is not None else None}
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result)
+    return to_revision, result
+
+
+@_handler("evidence.inspect")
+def evidence_inspect(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """L1 + L2 + L3 + disputes in one read, with the bounded dispute view the contract requires."""
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    objective_id = payload.get("objective_id")
+    limit = int(payload.get("limit", 50))
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        bundle = evidence.bundle(connection, enrollment_id, objective_id=objective_id, limit=limit)
+    recorded = bundle["disputes"]
+    bounded = recorded["disputes"][:MAX_INSPECT_DISPUTES]
+    result = {
+        **bundle,
+        "disputes": {
+            "enrollment_id": recorded["enrollment_id"],
+            "disputes": bounded,
+            "count": recorded["count"],
+            "truncated": recorded["count"] > len(bounded),
+        },
+    }
+    return int(enrollment["revision"]), result
+
+
+@_handler("evidence.disputes")
+def evidence_disputes(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Bounded dispute view; ``count`` is the full match count, not the returned slice."""
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    limit = int(payload.get("limit", 50))
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        recorded = evidence.disputes(connection, enrollment_id, attempt_id=payload.get("attempt_id"))
+    count = int(recorded["count"])
+    result = {
+        "enrollment_id": recorded["enrollment_id"],
+        "disputes": recorded["disputes"][:limit],
+        "count": count,
+        "truncated": count > limit,
+    }
+    return int(enrollment["revision"]), result
 
 
 # ── write paths used by the plan job and by Parent mode ─────────────────────

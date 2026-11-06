@@ -93,6 +93,28 @@ class PlanApprovalTest(KernelCase):
         self.assertEqual(len(transitions), 1)
         self.assertEqual(transitions[0]["to_revision"], 1)
 
+    def test_criteria_are_part_of_the_approved_hash(self) -> None:
+        from coursebook import domain
+
+        course_id, plan_id = self.new_course()
+        objective_id = self.seed_objective(plan_id)
+        enrollment_id = self.new_enrollment(course_id)
+        plan_hash = domain.plan_hash(plan_id)
+        # The plan's evidence criteria are inside the hash: editing them invalidates the approval.
+        self.execute(
+            "UPDATE objectives SET evidence_criteria_json = '[{\"id\":\"c1\",\"description\":\"weaker\"}]'"
+            " WHERE id = ?",
+            (objective_id,),
+        )
+        error = self.err(
+            "plan.approve",
+            {"enrollment_id": enrollment_id, "plan_id": plan_id, "plan_hash": plan_hash},
+            expected_revision=0,
+        )
+        self.assertEqual(error["code"], "VALIDATION_FAILED")
+        self.assertEqual(error["details"]["field"], "plan_hash")
+        self.assertNotEqual(error["details"]["current_plan_hash"], plan_hash)
+
     def test_stale_approval_is_refused_with_current_revision(self) -> None:
         from coursebook import domain
 
@@ -349,7 +371,7 @@ class BindingTest(KernelCase):
         lesson = self.prepare_lesson()
         self.assertEqual(self.ok("binding.get", {"enrollment_id": lesson["enrollment_id"]})["result"]["binding"], None)
 
-    def test_binding_resolves_by_stored_runtime_id_not_recency(self) -> None:
+    def test_binding_resolves_by_stored_id_only_never_recency(self) -> None:
         lesson = self.prepare_lesson()
         self.execute(
             "INSERT INTO bindings (id, enrollment_id, profile, connection_id, runtime_session_id,"
@@ -358,11 +380,15 @@ class BindingTest(KernelCase):
             " 'active', 0, '2026-01-01T00:00:00+00:00')",
             (lesson["enrollment_id"],),
         )
-        by_runtime = self.ok("binding.get", {"session_id": "runtime-abc"})["result"]["binding"]
-        self.assertEqual(by_runtime["stored_session_id"], "stored-xyz")
+        # A runtime id is a live-gateway id, not an identity: it must not resolve a binding (R1).
+        self.assertEqual(self.ok("binding.get", {"session_id": "runtime-abc"})["result"]["binding"], None)
         by_stored = self.ok("binding.get", {"session_id": "stored-xyz"})["result"]["binding"]
         self.assertEqual(by_stored["runtime_session_id"], "runtime-abc")
+        self.assertEqual(by_stored["matched_column"], "stored_session_id")
         self.assertEqual(self.ok("binding.get", {"session_id": "unknown-session"})["result"]["binding"], None)
+        # Exactly one identifier is accepted; two is a caller bug, not a preference order.
+        error = self.err("binding.get", {"session_id": "stored-xyz", "enrollment_id": lesson["enrollment_id"]})
+        self.assertEqual(error["code"], "VALIDATION_FAILED")
 
 
 if __name__ == "__main__":
