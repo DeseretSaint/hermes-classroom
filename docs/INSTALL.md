@@ -134,10 +134,10 @@ gate failed), `2` bad usage.
 bash scripts/validate-plugin.sh
 ```
 
-Observed: `Release gate passed: 3/3 checks on 444 files.` — the admission gate runs
-`hermes plugins validate`, `node --check desktop/plugin.js` and
-`python3 -m unittest tests.test_desktop_contracts` against a `git archive` export of `HEAD`, then
-removes the export.
+Observed on `bc4b2f9`: `Release gate passed: 3/3 checks on
+bc4b2f963fda82238d2047cb928b177f9e18c3fb (444 files).` The gate runs `hermes plugins validate`,
+`node --check desktop/plugin.js` and `python3 -m unittest tests.test_desktop_contracts` against a
+`git archive` export of `HEAD`, then removes the export.
 
 It exports first because the validator reads every directory it is given. Run from the checkout
 root, `hermes plugins validate .` walks `.worktrees/` (one worktree per kanban task, gitignored) and

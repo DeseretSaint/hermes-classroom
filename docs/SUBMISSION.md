@@ -76,17 +76,20 @@ package. Measured at `caa7cde`, same commit, same minute:
 | `hermes plugins validate .` at the repository root, 43 worktrees present | `✗ security scan — dangerous: destructive_home_rm (REVIEW_CB003.md:32)`, `Validation failed.`, exit 1 |
 | `bash scripts/validate-plugin.sh`, 443 files exported | `✓ security scan — safe`, `Validation passed.`, exit 0 |
 
-Observed gate output at `caa7cde`:
+Observed gate output at `bc4b2f9` (the commit that adds the script and this section):
 
 ```
-validate-plugin: gate caa7cde3d2851d08d2236ac473ef1e5d00c898c2 (head, 443 files)
+validate-plugin: gate bc4b2f963fda82238d2047cb928b177f9e18c3fb (head, 444 files)
+validate-plugin: export <temp dir> (removed on exit)
 ...16 admission check lines, 1 warning...
 Validation passed.
 desktop/plugin.js: syntax OK
 Ran 7 tests in 0.004s
 OK
-Release gate passed: 3/3 checks on caa7cde3d2851d08d2236ac473ef1e5d00c898c2 (443 files).
+Release gate passed: 3/3 checks on bc4b2f963fda82238d2047cb928b177f9e18c3fb (444 files).
 ```
+
+The same gate at `caa7cde` reports 3/3 on 443 files; the extra file is the script itself.
 
 `scripts/validate.sh` still points its admission step at the checkout root, so that one step can
 false-red while `.worktrees/` is populated; the other four steps (636 tests, `node --check`, doctor,
