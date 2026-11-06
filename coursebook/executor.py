@@ -51,6 +51,7 @@ TICK_SECONDS = 5.0
 
 _STOP = threading.Event()
 _TICK_TASK: Any = None
+_TICK_THREAD: Any = None
 
 
 def _resolve_search(explicit: Any) -> Any:
@@ -220,18 +221,30 @@ async def _tick_loop(interval: float) -> None:
 
 
 def start_tick(ctx: Any, *, interval: float | None = None) -> Any:
-    """Start the bounded tick in the agent process. Returns the spawned task, or ``None``.
+    """Start the bounded tick in the agent process. Returns the spawned task/thread, or ``None``.
 
     Only a host that exposes ``ctx.spawn_task`` gets a loop: a bare test context or a
     dashboard-only process has no agent event loop, and inventing a thread there would outlive
     the object that owns it. ``on_unload``, when present, stops the loop.
+
+    CB-011 integration fix (Vellum): ``ctx.spawn_task`` requires a *running* asyncio loop, but the
+    Hermes plugin loader calls ``register(ctx)`` synchronously (observed on ``hermes serve`` and
+    ``plugins doctor``: ``RuntimeWarning: coroutine '_tick_loop' was never awaited`` /
+    ``ERROR: Plugin registration failed: no running event loop``). The result was that no queued
+    ``plan`` job ever advanced in the real agent process, which is the whole Parent Studio pipeline.
+    So: use ``spawn_task`` when a loop is already running, otherwise own a daemon thread with its
+    own loop that calls the same bounded :func:`_tick_loop`. The pump itself is thread-safe
+    (``job_service.run_pending`` opens its own connections), and ``on_unload`` stops either shape.
+    Cinder owns this file: this is wiring only, no job state or provider logic changed.
     """
-    global _TICK_TASK
+    global _TICK_TASK, _TICK_THREAD
     spawn = getattr(ctx, "spawn_task", None)
     if not callable(spawn):
         return None
     if _TICK_TASK is not None and not getattr(_TICK_TASK, "done", lambda: True)():
         return _TICK_TASK
+    if _TICK_THREAD is not None and _TICK_THREAD.is_alive():
+        return _TICK_THREAD
     configured = interval
     if configured is None:
         try:
@@ -239,8 +252,31 @@ def start_tick(ctx: Any, *, interval: float | None = None) -> Any:
         except ValueError:
             configured = TICK_SECONDS
     _STOP.clear()
-    _TICK_TASK = spawn(_tick_loop(configured), name="coursebook-job-tick")
     unload = getattr(ctx, "on_unload", None)
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        # No loop at registration time: own one so the tick is not silently absent.
+        coro = _tick_loop(configured)
+
+        def run() -> None:
+            try:
+                asyncio.run(coro)
+            except Exception:  # noqa: BLE001 - a dead tick must not take the process down
+                logger.exception("coursebook job tick thread stopped")
+
+        _TICK_THREAD = threading.Thread(target=run, name="coursebook-job-tick", daemon=True)
+        _TICK_THREAD.start()
+        if callable(unload):
+            unload(stop)
+        logger.warning(
+            "coursebook job tick started on its own thread: kind=%s interval=%.1fs limit=%d",
+            JOB_KIND,
+            configured,
+            MAX_JOBS_PER_TICK,
+        )
+        return _TICK_THREAD
+    _TICK_TASK = spawn(_tick_loop(configured), name="coursebook-job-tick")
     if callable(unload):
         unload(stop)
     logger.info(
