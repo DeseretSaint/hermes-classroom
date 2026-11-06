@@ -2955,7 +2955,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
       jsx(QuietNote, {
         children: supports('lesson.assist')
           ? 'Hints and shown answers are recorded against the next attempt.'
-          : 'Hint, Show answer and Skip are not in this build’s contract; asking for a hint in the teaching chat records it against your next answer.'
+          : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
       }),
 
       jsx(sdk.ConfirmDialog, {
@@ -3568,8 +3568,8 @@ function TextbookView({ row, page, review, notebooks, outline, implemented, obje
         : jsx(QuietNote, {
             children:
               'This build can name the current section and every section with scheduled evidence. The complete ' +
-              'section list needs the v4 course.outline command (filed with the contract owner); rows light up ' +
-              'here automatically once that command is registered.'
+              'section list needs course.outline (cb.rpc v5); rows light up here automatically once that ' +
+              'command is registered.'
           }),
       rows.length === 0
         ? jsx(sdk.EmptyState, {

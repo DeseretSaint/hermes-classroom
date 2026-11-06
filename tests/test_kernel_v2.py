@@ -400,8 +400,13 @@ class RegistryTest(unittest.TestCase):
     def test_every_v2_method_is_registered_unless_another_package_owns_it(self) -> None:
         # ``pack.*`` belongs to Lattice (CB-004) and may or may not be wired when this branch is
         # merged; everything the kernel owns must be present, and nothing may be invented.
-        pack_methods = {"pack.preview", "pack.import", "pack.export"}
-        expected = set(method_names()) - pack_methods
+        pack_methods = {"pack.preview", "pack.import", "pack.export", "pack.list", "pack.inspect"}
+        # cb.rpc v5's three learning-workspace surfaces are frozen by CB-026 but their handlers land
+        # with Cinder's t_b13f5b47; until then ``api.dispatch`` validates the payload and answers
+        # NOT_IMPLEMENTED, and ``/runtime.implemented_methods`` must not name them. Listing them here
+        # keeps this a test of the kernel's own commands instead of a test of Cinder's branch.
+        pending_other_package = {"check.get", "course.outline", "lesson.assist"}
+        expected = set(method_names()) - pack_methods - pending_other_package
         implemented = set(api.implemented_methods())
         self.assertTrue(expected <= implemented, f"unregistered: {sorted(expected - implemented)}")
         self.assertTrue(implemented <= set(method_names()), "a handler exists for a non-contract method")

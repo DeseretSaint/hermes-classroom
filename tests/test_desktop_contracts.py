@@ -26,16 +26,21 @@ def _contract(name: str) -> dict:
 
 
 def _latest_rpc() -> dict:
-    """The newest frozen cb.rpc document on disk (`rpc.v3.json` today)."""
+    """The newest frozen cb.rpc document on disk (`rpc.v5.json` today)."""
     versions = sorted((ROOT / "contracts").glob("rpc.v*.json"), key=lambda path: int(re.findall(r"v(\d+)", path.name)[0]))
     return json.loads(versions[-1].read_text(encoding="utf-8"))
 
 
-#: Methods the Desktop gates on that the frozen contract does not define *yet*. Each one is filed
-#: with the contract owner (kanban t_5c626e59) and the UI renders an honest "not in this build"
-#: state instead of the control, so this list can only shrink. Keeping it here means a typo in a
-#: gated method name still fails, which is the point of the test.
-PENDING_CONTRACT_METHODS = {"check.get", "course.outline", "lesson.assist"}
+#: Methods the Desktop gates on that the frozen contract does not define. Empty since cb.rpc v5
+#: (CB-026, Atlas) froze `course.outline`, `check.get` and `lesson.assist`: the gate on each is now
+#: a runtime gate — `/runtime.implemented_methods` decides, and the honest "not in this build" state
+#: expires by itself when Cinder's handlers land. Keeping the (now empty) allowlist means a typo in
+#: a gated method name still fails here.
+PENDING_CONTRACT_METHODS: set[str] = set()
+
+#: The three v5 surfaces this workspace depends on; asserted present so a rename cannot silently
+#: turn a real control back into a permanently gated one.
+LEARNING_WORKSPACE_METHODS = {"check.get", "course.outline", "lesson.assist"}
 
 
 def _string_list(source: str, marker: str) -> list[str]:
@@ -77,6 +82,11 @@ class DesktopContractMirrorTest(unittest.TestCase):
         self.assertIn("const ROUTE_PATH = '/coursebook'", source)
         # One static segment: no nested or parameterised coursebook route literal.
         self.assertNotRegex(source, r"'/coursebook[/:]")
+
+    def test_the_learning_workspace_methods_are_frozen(self) -> None:
+        # cb.rpc v5 (CB-026) froze the three surfaces this workspace was originally built to gate.
+        methods = set(_latest_rpc()["$defs"]["method"]["enum"])
+        self.assertEqual(sorted(LEARNING_WORKSPACE_METHODS - methods), [])
 
     def test_every_gated_control_names_a_contract_method(self) -> None:
         # A control gated on a method that the contract does not define could never light up —
