@@ -55,10 +55,21 @@
   "sections": [
     {
       "ordinal": 1,
-      "title": "Identify and remove",
-      "lesson_intent": "Match the pad to the manual, then remove it with the listed tool.",
+      "title": "Identify the pad",
+      "lesson_intent": "Match the pad model to the manufacturer's manual before touching the brake.",
       "objective_refs": [
-        1,
+        1
+      ],
+      "context_needs": [
+        "manufacturer manual"
+      ],
+      "source_ids": []
+    },
+    {
+      "ordinal": 2,
+      "title": "Remove the worn pad",
+      "lesson_intent": "Remove the worn pad with the fastener the manual names, without damaging the caliper.",
+      "objective_refs": [
         2
       ],
       "context_needs": [
@@ -68,16 +79,27 @@
       "source_ids": []
     },
     {
-      "ordinal": 2,
-      "title": "Install and verify",
-      "lesson_intent": "Seat the new pad and run the manual's hand-verification checklist before any ride.",
+      "ordinal": 3,
+      "title": "Seat and tighten",
+      "lesson_intent": "Seat the new pad square and tighten the fastener to the manual's specification.",
       "objective_refs": [
-        3,
-        4
+        3
       ],
       "context_needs": [
         "manufacturer manual",
         "torque specification"
+      ],
+      "source_ids": []
+    },
+    {
+      "ordinal": 4,
+      "title": "Verify by hand",
+      "lesson_intent": "Run the manual's hand-verification checklist before any ride.",
+      "objective_refs": [
+        4
+      ],
+      "context_needs": [
+        "manufacturer manual"
       ],
       "source_ids": []
     }

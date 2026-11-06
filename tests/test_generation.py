@@ -156,6 +156,18 @@ def plan_from_fixture(name: str = "plan_ja"):
     return build
 
 
+def _unsourced(document: dict) -> dict:
+    """The fixture with every citation removed, so rule tests need no ledger."""
+    plan = json.loads(canonical_json(document))
+    plan["source_ids"] = []
+    for section in plan["sections"]:
+        section["source_ids"] = []
+    for objective in plan["objectives"]:
+        objective["support"] = "unverified"
+        objective.pop("source_ids", None)
+    return plan
+
+
 def validation_from_fixture(name: str = "validation_pass"):
     def build(request: gen.LLMRequest) -> gen.LLMResponse:
         document = fixture(name)
@@ -358,7 +370,7 @@ class PlanJobTest(GenerationTestBase):
         self.assertEqual(result["status"], "draft")
         self.assertEqual(result["validation_verdict"], "pass")
         self.assertEqual(result["objectives"], 4)
-        self.assertEqual(result["sections"], 3)
+        self.assertEqual(result["sections"], 4)
         self.assertEqual(result["research"]["status"], "ok")
 
         plan_row = self.rows("SELECT * FROM plans WHERE id = ?", (result["plan_id"],))[0]
@@ -366,7 +378,7 @@ class PlanJobTest(GenerationTestBase):
         self.assertIsNone(plan_row["approved_at"])
         self.assertEqual(plan_row["plan_hash"], result["plan_hash"])
         self.assertEqual(self.count("objectives"), 4)
-        self.assertEqual(self.count("gen_plan_sections"), 3)
+        self.assertEqual(self.count("gen_plan_sections"), 4)
 
         records = self.rows("SELECT * FROM gen_validation_records WHERE subject_kind = 'plan'")
         self.assertEqual(len(records), 1)
@@ -620,6 +632,30 @@ class PlanJobTest(GenerationTestBase):
         self.assertEqual(self.count("gen_validation_records"), 0)
         self.assertTrue(any("does not cover" in reason for reason in result["rejection_reasons"]))
 
+    def test_plan_instructions_require_one_section_per_objective(self) -> None:
+        text = gen._plan_instructions(
+            recipe="parent", dials={}, locale=None, research_status="unavailable"
+        )
+        self.assertIn("one section per objective", text)
+        self.assertIn("exactly one objective", text)
+
+    def test_a_section_that_covers_two_objectives_is_refused(self) -> None:
+        plan = _unsourced(plan_fixture("plan_ja"))
+        plan["sections"][0]["objective_refs"] = [1, 2]
+        with self.assertRaises(gen._RuleViolation) as raised:
+            gen.enforce_plan_rules(plan, recipe="committed", dials={"level": "L0"}, locale="ja-JP", ledger=[])
+        joined = " ".join(raised.exception.reasons)
+        self.assertIn("exactly one objective", joined)
+
+    def test_an_objective_without_exactly_one_section_is_refused(self) -> None:
+        plan = _unsourced(plan_fixture("plan_ja"))
+        plan["sections"] = plan["sections"][:2]  # objectives 3 and 4 now have no section
+        with self.assertRaises(gen._RuleViolation) as raised:
+            gen.enforce_plan_rules(plan, recipe="committed", dials={"level": "L0"}, locale="ja-JP", ledger=[])
+        joined = " ".join(raised.exception.reasons)
+        self.assertIn("objective 3", joined)
+        self.assertIn("exactly one section per objective", joined)
+
     def test_time_estimate_honesty_is_enforced(self) -> None:
         def dishonest(request: gen.LLMRequest) -> gen.LLMResponse:
             plan = plan_fixture("plan_ja", source_ids_from(request))
@@ -687,7 +723,7 @@ class PlanJobTest(GenerationTestBase):
         self.assertEqual(second["plan_id"], first["plan_id"])
         self.assertEqual(len(llm.requests), calls_before)  # no second spend
         self.assertEqual(self.count("plans"), 1)
-        self.assertEqual(self.count("gen_plan_sections"), 3)
+        self.assertEqual(self.count("gen_plan_sections"), 4)
         self.assertEqual(self.count("gen_validation_records"), 1)
         self.assertEqual(self.count("objects_placeholder") if False else self.count("sources"), 1)
 
@@ -761,6 +797,8 @@ class LessonJobTest(GenerationTestBase):
             {"job_id": job_id, "kind": "plan", "brief": {"plan_id": plan_result["plan_id"]}},
             llm,
             now=NOW,
+            # The default budget is sized for the happy path; retry scripts need headroom.
+            budget=gen.CostBudget(max_calls=32),
         )
 
     def test_lessons_require_an_approved_plan(self) -> None:
@@ -783,12 +821,12 @@ class LessonJobTest(GenerationTestBase):
         plan_result = self.approved_plan()
         llm = self.lesson_script(validation_from_fixture())
         result = self.run_lessons(plan_result, llm)
-        self.assertEqual(len(result["lessons"]), 3)
+        self.assertEqual(len(result["lessons"]), 4)
         self.assertTrue(all(item["state"] == "validated" for item in result["lessons"]))
         self.assertEqual(result["needs_review"], [])
-        self.assertEqual(self.count("gen_lessons"), 3)
-        self.assertEqual(self.count("checks"), 3)
-        self.assertEqual(self.count("gen_lesson_checks"), 3)
+        self.assertEqual(self.count("gen_lessons"), 4)
+        self.assertEqual(self.count("checks"), 4)
+        self.assertEqual(self.count("gen_lesson_checks"), 4)
         for item in result["lessons"]:
             check = self.rows("SELECT * FROM checks WHERE id = ?", (item["check_id"],))[0]
             self.assertEqual(check["audit_state"], "passed")
@@ -833,26 +871,53 @@ class LessonJobTest(GenerationTestBase):
         )[0]["target"]
         return str(ref)
 
+    def test_lesson_instructions_require_three_to_six_distinct_criteria(self) -> None:
+        text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
+        self.assertIn("3-6", text)
+        self.assertIn("distinct observable", text)
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v2")
+
+    def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
+        plan_result = self.approved_plan()
+        base = lesson_from_request()
+
+        def one_criterion(request: gen.LLMRequest) -> gen.LLMResponse:
+            payload = dict(base(request).parsed or {})
+            check = dict(payload["check"])
+            check["rubric"] = check["rubric"][:1]
+            payload["check"] = check
+            return response(payload, model="fake-author")
+
+        llm = self.lesson_script(validation_from_fixture(), generate=one_criterion)
+        result = self.run_lessons(plan_result, llm)
+        for lesson in result["lessons"]:
+            self.assertEqual(lesson["state"], "needs_review")
+            self.assertFalse(lesson["check_enabled"])
+            self.assertTrue(any("rubric" in reason for reason in lesson["rejection_reasons"]))
+        # Two authoring attempts per section, and no validator was handed a sub-minimum rubric.
+        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 2 * len(result["lessons"]))
+        self.assertEqual(llm.calls_for("coursebook.lesson.validate"), 0)
+
     def test_rejected_check_regenerates_once_with_reasons_then_passes(self) -> None:
         plan_result = self.approved_plan()
         reject = validation_from_fixture("validation_reject_check")
         accept = validation_from_fixture()
-        llm = self.lesson_script([reject, accept, accept, accept])
+        llm = self.lesson_script([reject, accept, accept, accept, accept])
         result = self.run_lessons(plan_result, llm)
         first = result["lessons"][0]
         self.assertEqual(first["state"], "validated")
         self.assertTrue(first["check_enabled"])
-        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 4)  # 2 for section 1 + 1 each
+        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 5)  # 2 for section 1 + 1 each
         second_generation = llm.requests[2]  # gen, validate(reject), regenerate
         self.assertIn("revision_instructions", second_generation.input_text)
         self.assertIn("ambiguous", second_generation.input_text)
-        self.assertEqual(self.count("gen_lessons"), 3)  # the rejected draft left no extra row
+        self.assertEqual(self.count("gen_lessons"), 4)  # the rejected draft left no extra row
 
     def test_second_validation_failure_parks_the_lesson_and_disables_the_check(self) -> None:
         plan_result = self.approved_plan()
         reject = validation_from_fixture("validation_reject_check")
         accept = validation_from_fixture()
-        llm = self.lesson_script([reject, reject, accept, accept])
+        llm = self.lesson_script([reject, reject, accept, accept, accept, accept])
         result = self.run_lessons(plan_result, llm)
         parked = result["lessons"][0]
         self.assertEqual(parked["state"], "needs_review")
@@ -864,7 +929,7 @@ class LessonJobTest(GenerationTestBase):
         with self.assertRaises(gen.LessonNotAvailable):
             gen.learner_page(self.connection, parked["lesson_id"])
         validation_rows = self.rows("SELECT * FROM gen_validation_records WHERE subject_kind = 'lesson'")
-        self.assertEqual(len(validation_rows), 3)
+        self.assertEqual(len(validation_rows), 4)
         rejected = [row for row in validation_rows if row["verdict"] == "reject"]
         self.assertEqual(len(rejected), 1)
         rejections = json.loads(rejected[0]["rejections_json"])
@@ -876,11 +941,11 @@ class LessonJobTest(GenerationTestBase):
         plan_result = self.approved_plan(fixture_name="plan_parent", recipe="parent", dials={}, locale=None)
         reject = validation_from_fixture("validation_reject_hazard")
         llm = self.lesson_script(
-            [reject, reject, reject, reject],
+            [reject, reject, reject, reject, reject, reject, reject, reject],
             generate=lesson_from_request("lesson_parent_unsafe"),
         )
         result = self.run_lessons(plan_result, llm)
-        self.assertEqual(len(result["needs_review"]), 2)
+        self.assertEqual(len(result["needs_review"]), 4)
         reasons = " ".join(result["lessons"][0]["rejection_reasons"])
         self.assertIn("hot", reasons.lower())
         with self.assertRaises(gen.LessonNotAvailable):
@@ -935,8 +1000,8 @@ class LessonJobTest(GenerationTestBase):
         self.assertEqual(len(llm.requests), calls)
         self.assertTrue(all(item["reused"] for item in second["lessons"]))
         self.assertEqual([item["lesson_id"] for item in first["lessons"]], [item["lesson_id"] for item in second["lessons"]])
-        self.assertEqual(self.count("gen_lessons"), 3)
-        self.assertEqual(self.count("checks"), 3)
+        self.assertEqual(self.count("gen_lessons"), 4)
+        self.assertEqual(self.count("checks"), 4)
 
     def test_accepted_alternatives_are_stored_and_used_by_grading_inputs(self) -> None:
         plan_result = self.approved_plan()

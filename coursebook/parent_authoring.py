@@ -490,21 +490,19 @@ def pack_sources(connection, course_id: str) -> list[dict[str, Any]]:
     return sources
 
 
-def _check_rubric(check: Any, objective: Any, page: Mapping[str, Any], section: Mapping[str, Any], notes: Mapping[str, Any]) -> list[str]:
-    """Real declared criteria only: the check rubric, the plan's evidence criteria, supervision.
+def _check_rubric(check: Any, objective: Any) -> list[str]:
+    """Real declared assessment criteria only: the check rubric plus the plan's evidence criteria.
 
-    Nothing is invented to reach the pack's three-criteria floor. If the declared criteria are
-    fewer than three, ``packs.validate_minima`` refuses the pack and the export reports it.
+    Supervision notes are safety instructions, already rendered in the parent guide; they are not
+    grading criteria and never enter a rubric. Nothing is invented to reach the pack's
+    three-criteria floor: if the declared criteria are fewer than three,
+    ``packs.validate_minima`` refuses the pack and the export reports it.
     """
     values: list[str] = []
     if check is not None:
         values.extend(_rubric_strings(_load(check["rubric_json"], {})))
     criteria = _load(objective["evidence_criteria_json"], []) if objective is not None else []
     for item in criteria:
-        text = " ".join(str(item or "").split())
-        if text and text not in values:
-            values.append(text)
-    for item in notes.get("supervision_notes") or []:
         text = " ".join(str(item or "").split())
         if text and text not in values:
             values.append(text)
@@ -568,9 +566,7 @@ def build_pack(connection, course, plan, composed: Sequence[Mapping[str, Any]]) 
                     f"check {check['id']} declares no reference answer.",
                 )
             stimulus = _load(check["stimulus_json"], {})
-            rubric = _check_rubric(
-                check, row, section.get("page") or {}, section, section.get("notes") or {}
-            )
+            rubric = _check_rubric(check, row)
             entry: dict[str, Any] = {
                 "check_id": str(check["id"]),
                 "version": int(check["version"]),
@@ -579,7 +575,17 @@ def build_pack(connection, course, plan, composed: Sequence[Mapping[str, Any]]) 
                 "rubric": rubric[:40],
                 "reference_answer": answer[:8000],
             }
-            accepted = [str(item) for item in reference.get("accepted_answers") or [] if str(item).strip()]
+            # Alternates are additional correct answers, never the reference answer echoed back:
+            # ``packs.validate_minima`` refuses a check that lists its own reference as one.
+            accepted: list[str] = []
+            seen: set[str] = set()
+            for item in reference.get("accepted_answers") or []:
+                text = str(item).strip()
+                key = _normalized(text)
+                if not text or key == _normalized(answer) or key in seen:
+                    continue
+                seen.add(key)
+                accepted.append(text)
             if accepted:
                 entry["accepted_alternatives"] = accepted[:40]
             if check["locale"]:

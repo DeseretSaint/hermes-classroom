@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author | `coursebook.plan.generate` | `plan-prompt.v1` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v1` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v2` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
@@ -111,8 +111,11 @@ per page, 600-character excerpt.
 Deterministic checks run before the validator, so a rule-breaking plan never consumes a validation
 call and can never look validated:
 
-* 4–8 objectives with contiguous ordinals; every section references an existing objective; every
-  objective appears in the check plan.
+* 4–8 objectives with contiguous ordinals; **one section per objective**: every section names
+  exactly one objective and every objective is named by exactly one section (`objective_refs` is
+  structurally one entry, and `enforce_plan_rules` refuses a coverage gap or a duplicate); every
+  objective appears in the check plan. The objective is the authoring and evidence unit, so a
+  plan cannot leave an objective without its own generated lesson and export section.
 * Time honesty (`AUDIT.md` R9): `basis: none` carries no attainment hours; `basis: model` requires
   low confidence; `basis: fsi` requires a benchmark that states it is not a self-study conversion;
   attainment hours never carry high confidence.
@@ -150,6 +153,12 @@ The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and 
 enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
 page against the linked checks before serving.
 
+**Rubric floor.** The lesson prompt (`lesson-prompt.v2`) asks for 3–6 criteria, each a distinct
+observable aspect of the response. `enforce_lesson_rules` refuses fewer than
+`packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
+`revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
+synthesised to reach the floor: a pack is exportable only when the author actually declared them.
+
 **Nuance worth keeping.** A selection check's correct choice necessarily appears among the
 stimulus choices. The invariant is that the *key* is not announced — the reference answer must not
 appear in the narrative (segments, worked example, explanation, media text) and no answer field may
@@ -176,7 +185,7 @@ independent validation.
 
 ## 8. Tests
 
-`tests/test_generation.py` (43 cases) and `tests/fixtures/generation/*.json` run entirely offline
+`tests/test_generation.py` (48 cases) and `tests/fixtures/generation/*.json` run entirely offline
 with a fake LLM and fake search seam. Covered: malformed JSON, empty and oversized plans,
 fabricated citations, contradictory sources, research unavailable, one-off quiz suppression,
 parent hazard rejection, rejected check regeneration and second-failure parking, accepted

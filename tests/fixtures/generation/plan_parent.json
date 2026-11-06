@@ -53,11 +53,10 @@
   "sections": [
     {
       "ordinal": 1,
-      "title": "Warm and cold at home",
-      "lesson_intent": "Parent names warm and cold objects the child can see, then sorts cards together.",
+      "title": "Warm things at home",
+      "lesson_intent": "Parent names warm objects the child can see, one at a time, and the child says each word back.",
       "objective_refs": [
-        1,
-        2
+        1
       ],
       "context_needs": [
         "picture cards",
@@ -67,14 +66,38 @@
     },
     {
       "ordinal": 2,
-      "title": "Why some jobs are for grown-ups",
-      "lesson_intent": "Parent explains the kettle rule and the child says it back in their own words.",
+      "title": "Cold things at home",
+      "lesson_intent": "Parent names cold objects, then sorts four picture cards into warm and cold together.",
       "objective_refs": [
-        3,
-        4
+        2
+      ],
+      "context_needs": [
+        "picture cards",
+        "kitchen tour"
+      ],
+      "source_ids": []
+    },
+    {
+      "ordinal": 3,
+      "title": "Why the kettle is a grown-up job",
+      "lesson_intent": "Parent explains the kettle rule and the child says the safety reason back.",
+      "objective_refs": [
+        3
       ],
       "context_needs": [
         "kettle within sight, unplugged"
+      ],
+      "source_ids": []
+    },
+    {
+      "ordinal": 4,
+      "title": "Explain one example",
+      "lesson_intent": "Parent asks the child to explain one warm or cold example in their own words.",
+      "objective_refs": [
+        4
+      ],
+      "context_needs": [
+        "kitchen tour"
       ],
       "source_ids": []
     }
