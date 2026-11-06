@@ -92,14 +92,14 @@ Release gate passed: 3/3 checks on bc4b2f963fda82238d2047cb928b177f9e18c3fb (444
 The same gate at `caa7cde` reports 3/3 on 443 files; the extra file is the script itself.
 
 `scripts/validate.sh` still points its admission step at the checkout root, so that one step can
-false-red while `.worktrees/` is populated; the other four steps (636 tests, `node --check`, doctor,
+false-red while `.worktrees/` is populated; the other four steps (tests, `node --check`, doctor,
 mounted backend trace) are unaffected. Read the admission verdict from `validate-plugin.sh`.
 
-Expected at 0.1.0 on the CB-014 tree: **636 tests pass** (`Ran 636 tests ... OK`),
-`desktop/plugin.js` syntax OK, `hermes plugins validate` passes all **16** admission checks with
-one warning (private core imports, see section 3), doctor reports **1 tool and 3 hooks**, the
-mounted backend trace passes **31/31** expectations, and `validate.sh` ends `Validation passed.`
-with exit 0.
+Expected at 0.1.0 on the CB-014 tree: **636 tests pass** (`Ran 636 tests ... OK`; 652 on master at
+`caa7cde`), `desktop/plugin.js` syntax OK, `hermes plugins validate` passes all **16** admission
+checks with one warning (private core imports, see section 3), doctor reports **1 tool and 3
+hooks**, the mounted backend trace passes **31/31** expectations, and `validate.sh` ends
+`Validation passed.` with exit 0.
 
 Fresh install path, in a throwaway home:
 
