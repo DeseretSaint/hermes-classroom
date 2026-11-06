@@ -1,0 +1,127 @@
+{
+  "at": "2026-11-06T21:30:16.011Z",
+  "objective": "row7-hide-reopen-pane-mid-attempt",
+  "verdicts": {
+    "paneMountedWhileHidden": false,
+    "hideControl": "clicked",
+    "showControl": "clicked",
+    "verdictVisibleAfterReopen": true,
+    "submitDisabledAfter": null,
+    "attemptsBlockAfter": null
+  },
+  "steps": [
+    {
+      "step": "bound-open-check",
+      "at": "2026-11-06T21:30:01.457Z",
+      "hash": "#/20261106_095109_eac24e",
+      "paneMounted": true,
+      "paneText": "COURSEBOOK\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nIndependent evidence\nCURRENT CHECK\nCheck v15\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncb-quiz-list-test\ncb-quiz-list-test2\ncb-readme\ncb015-residual\ncb015-test\ncb049-backend\ncb049-firstrun\ncb049-test\ncinder-d1\ncinder-d1-final\ncinder-d1-legacy\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nf01-test\nhermes-agent\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nSmart\nclient v0.23.0\nbackend v0.23.0",
+      "hasAnswerBox": true,
+      "answerDisabled": false,
+      "submitDisabled": true,
+      "verdict": null,
+      "attemptsBlock": null,
+      "sidebarToggle": [
+        "Hide sidebar",
+        "Swap sidebar sides",
+        "Hide right sidebar"
+      ],
+      "route": false
+    },
+    {
+      "step": "typed",
+      "at": "2026-11-06T21:30:02.025Z",
+      "hash": "#/20261106_095109_eac24e",
+      "paneMounted": true,
+      "paneText": "COURSEBOOK\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nIndependent evidence\nCURRENT CHECK\nCheck v15\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n2 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncb-quiz-list-test\ncb-quiz-list-test2\ncb-readme\ncb015-residual\ncb015-test\ncb049-backend\ncb049-firstrun\ncb049-test\ncinder-d1\ncinder-d1-final\ncinder-d1-legacy\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nf01-test\nhermes-agent\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nSmart\nclient v0.23.0\nbackend v0.23.0",
+      "hasAnswerBox": true,
+      "answerDisabled": false,
+      "submitDisabled": false,
+      "verdict": null,
+      "attemptsBlock": null,
+      "sidebarToggle": [
+        "Hide sidebar",
+        "Swap sidebar sides",
+        "Hide right sidebar"
+      ],
+      "route": false
+    },
+    {
+      "step": "submitted-then-hidden",
+      "at": "2026-11-06T21:30:02.053Z",
+      "hash": "#/20261106_095109_eac24e",
+      "paneMounted": false,
+      "paneText": "",
+      "hasAnswerBox": false,
+      "answerDisabled": null,
+      "submitDisabled": null,
+      "verdict": null,
+      "attemptsBlock": null,
+      "sidebarToggle": [
+        "Hide sidebar",
+        "Swap sidebar sides",
+        "Show right sidebar"
+      ],
+      "route": false,
+      "hideLabel": "Hide right sidebar",
+      "hideResult": "clicked"
+    },
+    {
+      "step": "hidden-while-settling",
+      "at": "2026-11-06T21:30:14.150Z",
+      "hash": "#/20261106_095109_eac24e",
+      "paneMounted": false,
+      "paneText": "",
+      "hasAnswerBox": false,
+      "answerDisabled": null,
+      "submitDisabled": null,
+      "verdict": null,
+      "attemptsBlock": null,
+      "sidebarToggle": [
+        "Hide sidebar",
+        "Swap sidebar sides",
+        "Show right sidebar"
+      ],
+      "route": false,
+      "paneMountedExpected": false
+    },
+    {
+      "step": "reopened",
+      "at": "2026-11-06T21:30:15.970Z",
+      "hash": "#/20261106_095109_eac24e",
+      "paneMounted": true,
+      "paneText": "COURSEBOOK\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v15\ndiscrimination\nCold attempt\nNot yet\ndoes not match an accepted answer\nThe backend recorded the next action.\nTry a new example\nExplain the difference\nHints and shown answers are recorded against the next attempt.\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n1 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncb-quiz-list-test\ncb-quiz-list-test2\ncb-readme\ncb015-residual\ncb015-test\ncb049-backend\ncb049-firstrun\ncb049-test\ncinder-d1\ncinder-d1-final\ncinder-d1-legacy\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nf01-test\nhermes-agent\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nSmart\nclient v0.23.0\nbackend v0.23.0",
+      "hasAnswerBox": false,
+      "answerDisabled": null,
+      "submitDisabled": null,
+      "verdict": "Not yet",
+      "attemptsBlock": null,
+      "sidebarToggle": [
+        "Hide sidebar",
+        "Swap sidebar sides",
+        "Hide right sidebar"
+      ],
+      "route": false,
+      "showLabel": "Show right sidebar",
+      "showResult": "clicked"
+    },
+    {
+      "step": "final",
+      "at": "2026-11-06T21:30:16.010Z",
+      "hash": "#/20261106_095109_eac24e",
+      "paneMounted": true,
+      "paneText": "COURSEBOOK\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v15\ndiscrimination\nCold attempt\nNot yet\ndoes not match an accepted answer\nThe backend recorded the next action.\nTry a new example\nExplain the difference\nHints and shown answers are recorded against the next attempt.\nOpen lesson chat\nContinue lesson\nFull course\nNothing due\n·\n1 independent\n·\n6 sources\n.HERMES\n.curator_backups\nassets\naudio_cache\nbackups\nbin\nbot_relay\ncache\ncb-quiz-list-test\ncb-quiz-list-test2\ncb-readme\ncb015-residual\ncb015-test\ncb049-backend\ncb049-firstrun\ncb049-test\ncinder-d1\ncinder-d1-final\ncinder-d1-legacy\ncomposer-pastes\ncoursebook-test\ncron\ndesktop\ndesktop-plugins\nf01-test\nhermes-agent\nTERMINAL\n127.0.0.1:44219\nBackend\nready\n.hermes\nSmart\nclient v0.23.0\nbackend v0.23.0",
+      "hasAnswerBox": false,
+      "answerDisabled": null,
+      "submitDisabled": null,
+      "verdict": "Not yet",
+      "attemptsBlock": null,
+      "sidebarToggle": [
+        "Hide sidebar",
+        "Swap sidebar sides",
+        "Hide right sidebar"
+      ],
+      "route": false
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "startedAt": "2026-11-06T21:20:18.878Z",
+  "steps": [
+    {
+      "step": "studio-destination",
+      "at": "2026-11-06T21:20:21.616Z",
+      "text": "Coursebook\nParent-led lesson packs: write the brief, review it, then teach it.\nNew lesson brief\nCourses\nLibrary\nParent Studio\nNo parent lesson packs yet\nA brief describes the child’s age and reading level, the setting and materials, what to leave out, and what"
+    },
+    {
+      "step": "brief-form-open",
+      "at": "2026-11-06T21:20:21.683Z"
+    },
+    {
+      "step": "brief-filled",
+      "at": "2026-11-06T21:20:22.127Z",
+      "filled": {
+        "cb-brief-title": "Boiling water and steam safety — one kitchen demonstration",
+        "cb-brief-goal": "Explain, in their own words, why steam burns worse than boiling water, and show the one safe place to stand while an adult pours hot water into a cup.",
+        "cb-brief-start": "Has watched water boil with an adult; can read short sentences.",
+        "cb-brief-reading": "Year 4, short sentences with a few technical words explained inline",
+        "cb-brief-materials": "kettle\nmetal spoon\nheat-proof jug\nthermometer",
+        "cb-brief-exclusions": "no open flame\nno child handling the kettle",
+        "cb-brief-supervision": "An adult pours and stands between the child and the kettle; the child watches from a marked line."
+      },
+      "egress": true
+    },
+    {
+      "step": "submit-affordance",
+      "at": "2026-11-06T21:20:22.174Z",
+      "disabled": false
+    },
+    {
+      "step": "plan-job-created",
+      "at": "2026-11-06T21:20:22.737Z",
+      "jobId": "job_27f922c7d2ba423ba41b6802e0c9bc19",
+      "state": "queued",
+      "text": "Queued. The job runner picks it up on its next tick; nothing is spent until it starts.\nIt runs in the background; leaving this page does not stop it.\nCancel generation",
+      "buttons": [
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All parent courses",
+        "Brief",
+        "Plan",
+        "Pages",
+        "Export",
+        "Reflection",
+        "Brief",
+        "Cancel generation",
+        "Duplicate brief"
+      ]
+    },
+    {
+      "step": "cancelled",
+      "at": "2026-11-06T21:20:25.865Z",
+      "jobId": "job_27f922c7d2ba423ba41b6802e0c9bc19",
+      "state": "cancelled",
+      "text": "Cancelled before it finished. The brief and any work that had already been saved are kept.\nRun this stage again",
+      "buttons": [
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All parent courses",
+        "Brief",
+        "Plan",
+        "Pages",
+        "Export",
+        "Reflection",
+        "Brief",
+        "Run this stage again",
+        "Duplicate brief"
+      ]
+    },
+    {
+      "step": "studio-list-after-cancel",
+      "at": "2026-11-06T21:20:28.625Z",
+      "text": "Coursebook\nParent-led lesson packs: write the brief, review it, then teach it.\nNew lesson brief\nCourses\nLibrary\nParent Studio\n1 authored course\nBoiling water and steam safety — one kitchen demonstration\nParent preparation\nupdated just now\nOpen studio"
+    },
+    {
+      "step": "reattached",
+      "at": "2026-11-06T21:20:30.243Z",
+      "jobId": "job_27f922c7d2ba423ba41b6802e0c9bc19",
+      "state": "cancelled",
+      "text": "Cancelled before it finished. The brief and any work that had already been saved are kept.\nRun this stage again",
+      "buttons": [
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All parent courses",
+        "Brief",
+        "Plan",
+        "Pages",
+        "Export",
+        "Reflection",
+        "Brief",
+        "Run this stage again",
+        "Duplicate brief"
+      ],
+      "courseText": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nBoiling water and steam safety — one kitchen demonstration\nParent preparation\nNo plan yet\nLesson set not approved\nYou are the operator · revision 0\nStudio view\nBrief\nYou are the operator of this course. Coursebook drafted material for you to teach; the child never chats with it. A brief is immutable once stored — changing the teaching comes from editing the plan, and copyin"
+    },
+    {
+      "step": "brief-preserved-on-reattach",
+      "at": "2026-11-06T21:20:30.290Z",
+      "briefStillThere": true
+    },
+    {
+      "step": "stage-requeued",
+      "at": "2026-11-06T21:20:31.049Z",
+      "jobId": "job_40849e53885345efb766a2f264f6267f",
+      "state": "queued",
+      "text": "Queued. The job runner picks it up on its next tick; nothing is spent until it starts.\nIt runs in the background; leaving this page does not stop it.\nCancel generation",
+      "buttons": [
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All parent courses",
+        "Brief",
+        "Plan",
+        "Pages",
+        "Export",
+        "Reflection",
+        "Brief",
+        "Cancel generation",
+        "Duplicate brief"
+      ]
+    }
+  ],
+  "shots": [
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7fffb4e9/docs/cb015-residual/row3-01-studio-empty.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7fffb4e9/docs/cb015-residual/row3-02-brief-filled.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7fffb4e9/docs/cb015-residual/row3-03-plan-queued.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7fffb4e9/docs/cb015-residual/row3-04-cancelled.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7fffb4e9/docs/cb015-residual/row3-05-reattached-cancelled.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7fffb4e9/docs/cb015-residual/row3-06-requeued.png"
+  ],
+  "jobIds": {
+    "plan": "job_27f922c7d2ba423ba41b6802e0c9bc19",
+    "retry": "job_40849e53885345efb766a2f264f6267f"
+  },
+  "finishedAt": "2026-11-06T21:20:31.089Z",
+  "result": {
+    "cancelledState": "cancelled",
+    "cancelledJobId": "job_27f922c7d2ba423ba41b6802e0c9bc19",
+    "retryJobId": "job_40849e53885345efb766a2f264f6267f",
+    "retryState": "queued",
+    "briefPreservedOnReattach": true,
+    "sameCourseAfterReattach": false
+  }
+}

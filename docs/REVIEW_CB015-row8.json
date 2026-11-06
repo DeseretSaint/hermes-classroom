@@ -1,0 +1,176 @@
+{
+  "at": "2026-11-06T21:39:43.301Z",
+  "cycles": [
+    {
+      "name": "awaiting-input",
+      "before": {
+        "hash": "#/coursebook",
+        "destination": "courses",
+        "objectiveTitle": "Choose the polite expression for a first confession",
+        "currentCheck": true,
+        "checkVersion": "2",
+        "needsRetry": false,
+        "overrideCopy": false,
+        "verdict": "Passed",
+        "attempts": "8 hr ago\nPassed\nCold attempt\nSAVED FROM THIS SECTION\n# Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standing. The English word stays fixed; the Japanese line moves. ## The four lines in this lesson | Relationship | Setting | Line | Romaji | English | |---|---|---|---|---| | friend | casual, after an outing | 好きだよ | suki da yo | I like you | | someone you respect but are not close to | private, first confession",
+        "detachedBanner": true,
+        "body": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 8 hr ago\nmissing\nThis section’s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\nLesson 2 — choosing by addressee, relationship and setting\nThere is no single Japanese line that means \"I love you\". The same feeling is carried by\ndifferent lines depending on who is listening, how close you are, and where you are standing.\nThe English word stays fixed; the Japanese line moves.\nThe four lines in this lesson\nRelationship\n\t\nSetting\n\t\nLine\n\t\nRomaji\n\t\nEnglish\nfriend\tcasual, after an outing\t好きだよ\tsuki da yo\tI like you\nsomeone you respect but are not close to\tprivate, first confession\t好きです\tsuki desu\tI like you (polite)\nclose partner\teveryday, warm\t大好き\tdaisuki\tI really like you\nlong-term partner\tprivate"
+      },
+      "after": {
+        "hash": "#/coursebook",
+        "destination": "courses",
+        "objectiveTitle": "Choose the polite expression for a first confession",
+        "currentCheck": true,
+        "checkVersion": "2",
+        "needsRetry": false,
+        "overrideCopy": false,
+        "verdict": "Passed",
+        "attempts": "8 hr ago\nPassed\nCold attempt\nSAVED FROM THIS SECTION\n# Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standing. The English word stays fixed; the Japanese line moves. ## The four lines in this lesson | Relationship | Setting | Line | Romaji | English | |---|---|---|---|---| | friend | casual, after an outing | 好きだよ | suki da yo | I like you | | someone you respect but are not close to | private, first confession",
+        "detachedBanner": true,
+        "body": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 8 hr ago\nmissing\nThis section’s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\nLesson 2 — choosing by addressee, relationship and setting\nThere is no single Japanese line that means \"I love you\". The same feeling is carried by\ndifferent lines depending on who is listening, how close you are, and where you are standing.\nThe English word stays fixed; the Japanese line moves.\nThe four lines in this lesson\nRelationship\n\t\nSetting\n\t\nLine\n\t\nRomaji\n\t\nEnglish\nfriend\tcasual, after an outing\t好きだよ\tsuki da yo\tI like you\nsomeone you respect but are not close to\tprivate, first confession\t好きです\tsuki desu\tI like you (polite)\nclose partner\teveryday, warm\t大好き\tdaisuki\tI really like you\nlong-term partner\tprivate"
+      },
+      "compare": {
+        "name": "awaiting-input",
+        "restarted": true,
+        "objectiveTitleSame": true,
+        "checkVersion": [
+          "2",
+          "2"
+        ],
+        "verdict": [
+          "Passed",
+          "Passed"
+        ],
+        "currentCheck": [
+          true,
+          true
+        ],
+        "needsRetry": [
+          false,
+          false
+        ],
+        "overrideCopy": [
+          false,
+          false
+        ],
+        "attemptsBefore": "8 hr ago\nPassed\nCold attempt\nSAVED FROM THIS SECTION\n# Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standing. The English word stays fixed; the Japanese line moves. ## The four lines in this lesson | Relationship | Setting | Line | Romaji | English | |---|---|---|---|---| | friend | casual, after an outing | 好きだよ | suki da yo | I like you | | someone you respect but are not close to | private, first confession",
+        "attemptsAfter": "8 hr ago\nPassed\nCold attempt\nSAVED FROM THIS SECTION\n# Lesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standing. The English word stays fixed; the Japanese line moves. ## The four lines in this lesson | Relationship | Setting | Line | Romaji | English | |---|---|---|---|---| | friend | casual, after an outing | 好きだよ | suki da yo | I like you | | someone you respect but are not close to | private, first confession",
+        "sameAttemptsBlock": true
+      }
+    },
+    {
+      "name": "graded",
+      "before": {
+        "hash": "#/coursebook",
+        "destination": "courses",
+        "objectiveTitle": "Tell everyday affection from a direct romantic declaration",
+        "currentCheck": true,
+        "checkVersion": "15",
+        "needsRetry": false,
+        "overrideCopy": false,
+        "verdict": "Not yet",
+        "attempts": "9 min ago\nNot yet\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nHinted\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 22 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 22 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 22 hr ago\nLearn how to say \"I love you\" in Japanese\nmodel_assessed\nfetched",
+        "detachedBanner": false,
+        "body": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 2 hr ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nNo teaching segments yet\nSegments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.\nCURRENT CHECK\nCheck v15\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n9 min ago\nNot yet\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nHinted\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto "
+      },
+      "after": {
+        "hash": "#/coursebook",
+        "destination": "courses",
+        "objectiveTitle": "Tell everyday affection from a direct romantic declaration",
+        "currentCheck": true,
+        "checkVersion": "15",
+        "needsRetry": false,
+        "overrideCopy": false,
+        "verdict": "Not yet",
+        "attempts": "9 min ago\nNot yet\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nHinted\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 22 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 22 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 22 hr ago\nLearn how to say \"I love you\" in Japanese\nmodel_assessed\nfetched",
+        "detachedBanner": false,
+        "body": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 2 hr ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nNo teaching segments yet\nSegments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.\nCURRENT CHECK\nCheck v15\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n9 min ago\nNot yet\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nHinted\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto "
+      },
+      "compare": {
+        "name": "graded",
+        "restarted": true,
+        "objectiveTitleSame": true,
+        "checkVersion": [
+          "15",
+          "15"
+        ],
+        "verdict": [
+          "Not yet",
+          "Not yet"
+        ],
+        "currentCheck": [
+          true,
+          true
+        ],
+        "needsRetry": [
+          false,
+          false
+        ],
+        "overrideCopy": [
+          false,
+          false
+        ],
+        "attemptsBefore": "9 min ago\nNot yet\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nHinted\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 22 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 22 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 22 hr ago\nLearn how to say \"I love you\" in Japanese\nmodel_assessed\nfetched",
+        "attemptsAfter": "9 min ago\nNot yet\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nCold attempt\n2 hr ago\nPassed\nHinted\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 22 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 22 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 22 hr ago\nLearn how to say \"I love you\" in Japanese\nmodel_assessed\nfetched",
+        "sameAttemptsBlock": true
+      }
+    },
+    {
+      "name": "overridden",
+      "before": {
+        "hash": "#/coursebook",
+        "destination": "courses",
+        "objectiveTitle": "Explain why register changes with the relationship",
+        "currentCheck": true,
+        "checkVersion": "2",
+        "needsRetry": false,
+        "overrideCopy": true,
+        "verdict": "Not yet",
+        "attempts": "8 hr ago\nNot yet\nOverride — not independent evidence\n8 hr ago\nGrading failed\nCold attempt\nSAVED FROM THIS SECTION\nattempt att_fd9ab53b recorded from the pane\nattempt att_fd9ab53b recorded from the pane\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 22 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 22 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 22 hr ago\nLea",
+        "detachedBanner": true,
+        "body": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nExplain why register changes with the relationship\nStart lesson\nView\nTextbook\nExplain why register changes with the relationship\nOverridden\ntransfer\nLast opened 8 hr ago\nstored_only\nThis section’s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nNo teaching segments yet\nSegments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.\nCURRENT CHECK\nCheck v2\ntransfer\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n8 hr ago\nNot yet\nOverride — not independent evidence\n8 hr ago\nGrading failed\nCold attempt\nSAVED FROM THIS SECTION\nattempt att_fd9ab53b recorded from the pane\nattempt att_fd9ab53b recorded from the pane\nSO"
+      },
+      "after": {
+        "hash": "#/coursebook",
+        "destination": "courses",
+        "objectiveTitle": "Explain why register changes with the relationship",
+        "currentCheck": true,
+        "checkVersion": "2",
+        "needsRetry": false,
+        "overrideCopy": true,
+        "verdict": "Not yet",
+        "attempts": "8 hr ago\nNot yet\nOverride — not independent evidence\n8 hr ago\nGrading failed\nCold attempt\nSAVED FROM THIS SECTION\nattempt att_fd9ab53b recorded from the pane\nattempt att_fd9ab53b recorded from the pane\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 22 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 22 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 22 hr ago\nLea",
+        "detachedBanner": true,
+        "body": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nExplain why register changes with the relationship\nStart lesson\nView\nTextbook\nExplain why register changes with the relationship\nOverridden\ntransfer\nLast opened 8 hr ago\nstored_only\nThis section’s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nNo teaching segments yet\nSegments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.\nCURRENT CHECK\nCheck v2\ntransfer\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n8 hr ago\nNot yet\nOverride — not independent evidence\n8 hr ago\nGrading failed\nCold attempt\nSAVED FROM THIS SECTION\nattempt att_fd9ab53b recorded from the pane\nattempt att_fd9ab53b recorded from the pane\nSO"
+      },
+      "compare": {
+        "name": "overridden",
+        "restarted": true,
+        "objectiveTitleSame": true,
+        "checkVersion": [
+          "2",
+          "2"
+        ],
+        "verdict": [
+          "Not yet",
+          "Not yet"
+        ],
+        "currentCheck": [
+          true,
+          true
+        ],
+        "needsRetry": [
+          false,
+          false
+        ],
+        "overrideCopy": [
+          true,
+          true
+        ],
+        "attemptsBefore": "8 hr ago\nNot yet\nOverride — not independent evidence\n8 hr ago\nGrading failed\nCold attempt\nSAVED FROM THIS SECTION\nattempt att_fd9ab53b recorded from the pane\nattempt att_fd9ab53b recorded from the pane\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 22 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 22 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 22 hr ago\nLea",
+        "attemptsAfter": "8 hr ago\nNot yet\nOverride — not independent evidence\n8 hr ago\nGrading failed\nCold attempt\nSAVED FROM THIS SECTION\nattempt att_fd9ab53b recorded from the pane\nattempt att_fd9ab53b recorded from the pane\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 22 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 22 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 22 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 22 hr ago\nLea",
+        "sameAttemptsBlock": true
+      }
+    }
+  ]
+}
