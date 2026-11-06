@@ -24,7 +24,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
 from . import api, db, grading, jobs as jobs_contract
@@ -55,6 +57,16 @@ KERNEL_METHODS: tuple[str, ...] = (
     "jobs.get",
     "jobs.cancel",
     "usage.summary",
+    "library.list",
+    "lesson.page",
+    "lesson.begin",
+    "enrollment.update",
+    "enrollment.delete",
+    "pack.delete",
+    "artifact.get",
+    "jobs.list",
+    "notebook.update",
+    "binding.abandon",
 )
 
 MAX_PAGE = 500
@@ -380,6 +392,7 @@ def notebook_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
             "source_ref": row["source_ref"],
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
+            "revision": int(row["revision"]),
         }
         for row in rows
     ]
@@ -1160,10 +1173,9 @@ def notebook_save(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
              payload.get("excerpt"), payload.get("note"), _json_dump(payload.get("tags") or []),
              payload.get("source_ref"), now, now),
         )
-        result = {"entry_id": entry_id, "revision": int(enrollment["revision"])}
-        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
-                  int(enrollment["revision"]), result)
-    return int(enrollment["revision"]), result
+        result = {"entry_id": entry_id, "revision": 0}
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
+    return 0, result
 
 
 @_handler("notebook.delete")
@@ -1175,8 +1187,8 @@ def notebook_delete(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[
             raise _not_found("notebook entry", payload["entry_id"])
         enrollment = _enrollment(connection, entry["enrollment_id"])
         connection.execute("DELETE FROM notebook_entries WHERE id = ?", (entry["id"],))
-        result = {"deleted": True, "revision": int(enrollment["revision"])}
-    return int(enrollment["revision"]), result
+        result = {"deleted": True, "revision": 0}
+    return 0, result
 
 
 # ── jobs ────────────────────────────────────────────────────────────────────
@@ -1184,10 +1196,18 @@ def notebook_delete(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[
 
 def _job_view(row) -> dict[str, Any]:
     progress = _json_load(row["progress_json"], {})
+    if not isinstance(progress, dict):
+        progress = {}
+    # ``cb.jobs`` allows only these progress keys and a real error object. Anything else in the
+    # JSON columns is dropped rather than smuggled into a typed field.
+    artifact_ids = [str(item) for item in (progress.get("artifact_ids") or [])][:200]
+    progress = {key: progress[key] for key in ("stage", "steps_done", "steps_total", "message") if key in progress}
     error = _json_load(row["error_json"], {})
+    if not (isinstance(error, dict) and {"code", "category", "message", "retryable"} <= set(error)):
+        error = None
     lease = None
-    if row["lease_owner"] or row["lease_expires_at"]:
-        lease = {"owner": row["lease_owner"] or "", "expires_at": row["lease_expires_at"]}
+    if row["lease_owner"] and row["lease_expires_at"]:
+        lease = {"owner": str(row["lease_owner"])[:120], "expires_at": row["lease_expires_at"]}
     return {
         "job_id": row["id"],
         "kind": row["kind"],
@@ -1196,10 +1216,10 @@ def _job_view(row) -> dict[str, Any]:
         "attempt_id": row["attempt_id"] or "",
         "brief": _json_load(row["brief_json"], {}),
         "checkpoint": _json_load(row["checkpoint_json"], {}),
-        "progress": progress if isinstance(progress, dict) else {},
+        "progress": progress,
         "lease": lease,
-        "artifact_ids": list(progress.get("artifact_ids") or []) if isinstance(progress, dict) else [],
-        "error": error or None,
+        "artifact_ids": artifact_ids,
+        "error": error,
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
         "cancel_requested_at": row["updated_at"] if row["state"] in ("cancel_requested", "cancelling") else None,
@@ -1310,6 +1330,856 @@ def usage_summary(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
         "artifacts": sum(int(row["artifact_count"] or 0) for row in rows),
         "unknown_fields": sorted(unknown),
     }
+
+
+# ── v2 reads: library, lesson page/runtime, artifact handle, jobs list ──────
+
+
+def _current_plan_sql(alias: str = "pl") -> str:
+    # Correlated on the plan row itself, so the fragment works wherever `pl` is in scope.
+    return (
+        f"{alias}.id = (SELECT id FROM plans WHERE course_id = {alias}.course_id"
+        " ORDER BY (state = 'approved') DESC, version DESC LIMIT 1)"
+    )
+
+
+def _encode_cursor(offset: int) -> str:
+    import base64
+
+    return base64.urlsafe_b64encode(str(offset).encode("ascii")).decode("ascii").rstrip("=")
+
+
+def _decode_cursor(cursor: str | None) -> int:
+    import base64
+
+    if not cursor:
+        return 0
+    try:
+        padded = cursor + "=" * (-len(cursor) % 4)
+        value = int(base64.urlsafe_b64decode(padded.encode("ascii")).decode("ascii"))
+    except Exception as exc:  # noqa: BLE001 - a bad cursor is caller input, not a crash
+        raise RpcError.of("VALIDATION_FAILED", "the cursor is not one this backend issued.", field="cursor") from exc
+    if value < 0:
+        raise RpcError.of("VALIDATION_FAILED", "the cursor is out of range.", field="cursor")
+    return value
+
+
+def _latest_binding(connection, enrollment_id: str, lesson_run_id: str | None = None) -> Any:
+    if lesson_run_id:
+        return _row(
+            connection,
+            "SELECT * FROM bindings WHERE enrollment_id = ? AND lesson_run_id = ?"
+            " ORDER BY revision DESC, updated_at DESC LIMIT 1",
+            (enrollment_id, lesson_run_id),
+        )
+    return _row(
+        connection,
+        "SELECT * FROM bindings WHERE enrollment_id = ? ORDER BY revision DESC, updated_at DESC LIMIT 1",
+        (enrollment_id,),
+    )
+
+
+def _library_next_step(connection, enrollment, course) -> dict[str, str]:
+    review_due = _row(
+        connection,
+        "SELECT COUNT(*) AS n FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+        f" WHERE pl.course_id = ? AND {_current_plan_sql()}"
+        " AND o.state IN ('review_due', 'needs_review')",
+        (course["id"],),
+    )
+    if review_due and int(review_due["n"]) > 0:
+        return {"kind": "resolve_review_due", "label": f"Review {int(review_due['n'])} objective(s)"}
+    run = _row(
+        connection,
+        "SELECT r.*, o.title AS objective_title FROM lesson_runs r"
+        " JOIN objectives o ON o.id = r.objective_id"
+        " WHERE r.enrollment_id = ? AND r.state IN ('active', 'paused')"
+        " ORDER BY r.updated_at DESC, r.rowid DESC LIMIT 1",
+        (enrollment["id"],),
+    )
+    if run is not None:
+        binding = _latest_binding(connection, enrollment["id"], run["id"])
+        if binding is not None and binding["status"] in ("detached", "branched", "orphaned"):
+            return {"kind": "rebind_session", "label": f"Rebind the chat for {run['objective_title']}"}
+        if binding is None or binding["status"] != "active":
+            return {"kind": "resume_lesson", "label": f"Resume {run['objective_title']}"}
+        return {"kind": "resume_lesson", "label": f"Continue {run['objective_title']}"}
+    if _approved_plan(connection, course["id"]) is None:
+        return {"kind": "review_plan", "label": "Review and approve the plan"}
+    pack = _row(connection, "SELECT state FROM packs WHERE id = ?", (course["pack_id"],)) if course["pack_id"] else None
+    if pack is not None and pack["state"] == "frozen":
+        return {"kind": "review_pack", "label": "Review the frozen imported pack"}
+    nxt = _row(
+        connection,
+        "SELECT title FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+        f" WHERE pl.course_id = ? AND {_current_plan_sql()}"
+        " AND o.state = 'not_started' ORDER BY o.ordinal LIMIT 1",
+        (course["id"],),
+    )
+    if nxt is None:
+        return {"kind": "review_plan", "label": "All sections have evidence; review the plan"}
+    return {"kind": "start_lesson", "label": f"Start {nxt['title']}"}
+
+
+def _library_warning(connection, enrollment, course, pack_row) -> str | None:
+    binding = _latest_binding(connection, enrollment["id"])
+    if binding is not None and binding["status"] in ("detached", "branched", "orphaned"):
+        return "detached_chat"
+    if pack_row is not None and pack_row["state"] == "frozen":
+        return "pack_frozen"
+    stale = _row(connection, "SELECT 1 AS hit FROM sources WHERE course_id = ? AND support_status = 'stale' LIMIT 1",
+                 (course["id"],))
+    if stale is not None:
+        return "stale_source"
+    draft = _row(
+        connection,
+        "SELECT 1 AS hit FROM plans p WHERE p.course_id = ? AND p.state = 'draft'"
+        " AND p.version > COALESCE((SELECT MAX(version) FROM plans WHERE course_id = ? AND state = 'approved'), 0)"
+        " LIMIT 1",
+        (course["id"], course["id"]),
+    )
+    if draft is not None:
+        return "plan_update"
+    return None
+
+
+@_handler("library.list")
+def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The library survives a restart: it is rebuilt from enrollments/courses, never from UI state."""
+    db.ensure_schema()
+    filter_name = payload.get("filter") or "all"
+    limit = min(int(payload.get("limit") or 50), 100)
+    offset = _decode_cursor(payload.get("cursor"))
+    clauses = ["c.status != 'deleted'"]
+    params: list[Any] = []
+    if filter_name == "archived":
+        clauses.append("(e.status = 'archived' OR c.status = 'archived')")
+    else:
+        clauses.append("e.status != 'archived' AND c.status != 'archived'")
+        if filter_name == "in_progress":
+            clauses.append("e.status IN ('active', 'paused')")
+        elif filter_name == "review_due":
+            clauses.append(
+                "EXISTS (SELECT 1 FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+                f" WHERE pl.course_id = c.id AND {_current_plan_sql()}"
+                " AND o.state IN ('review_due', 'needs_review'))"
+            )
+    if payload.get("recipe"):
+        clauses.append("c.recipe = ?")
+        params.append(payload["recipe"])
+    if payload.get("query"):
+        escaped = payload["query"].replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        clauses.append("(c.title LIKE ? ESCAPE '\\' OR e.learner_label LIKE ? ESCAPE '\\')")
+        params.extend([f"%{escaped}%", f"%{escaped}%"])
+    where = " AND ".join(clauses)
+    order = {
+        "title": "c.title COLLATE NOCASE ASC, e.id ASC",
+        "next_step": (
+            "(SELECT COUNT(*) FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+            f" WHERE pl.course_id = c.id AND {_current_plan_sql()}"
+            " AND o.state IN ('review_due','needs_review')) DESC, e.updated_at DESC, e.rowid DESC"
+        ),
+        "recent": "e.updated_at DESC, e.rowid DESC",
+    }.get(payload.get("sort") or "recent", "e.updated_at DESC, e.rowid DESC")
+    with db.read() as connection:
+        total = connection.execute(
+            f"SELECT COUNT(*) AS n FROM enrollments e JOIN courses c ON c.id = e.course_id WHERE {where}",
+            tuple(params),
+        ).fetchone()["n"]
+        rows = connection.execute(
+            "SELECT e.id AS enrollment_id, e.status AS enrollment_status, e.revision AS revision,"
+            " e.updated_at AS updated_at, e.learner_label AS learner_label, c.id AS course_id,"
+            " c.title AS title, c.recipe AS recipe, c.locale AS locale, c.status AS course_status,"
+            " c.pack_id AS course_pack_id, p.pack_id AS pack_stable_id, p.version AS pack_version,"
+            " p.source AS pack_source, p.state AS pack_state"
+            " FROM enrollments e JOIN courses c ON c.id = e.course_id"
+            " LEFT JOIN packs p ON p.id = c.pack_id"
+            f" WHERE {where} ORDER BY {order} LIMIT ? OFFSET ?",
+            (*params, limit, offset),
+        ).fetchall()
+        items = []
+        for row in rows:
+            enrollment = {"id": row["enrollment_id"]}
+            course = {"id": row["course_id"], "pack_id": row["course_pack_id"]}
+            pack_row = {"state": row["pack_state"]} if row["pack_state"] else None
+            release = None
+            if row["pack_stable_id"]:
+                release = (row["pack_stable_id"], row["pack_version"])
+            summary = connection.execute(
+                "SELECT"
+                " SUM(CASE WHEN o.state IN ('independent_evidence','delayed_evidence') THEN 1 ELSE 0 END) AS independent,"
+                " SUM(CASE WHEN o.state IN ('review_due','needs_review') THEN 1 ELSE 0 END) AS review_due,"
+                " COUNT(*) AS total"
+                " FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+                f" WHERE pl.course_id = ? AND {_current_plan_sql()}",
+                (row["course_id"],),
+            ).fetchone()
+            current = connection.execute(
+                "SELECT o.id FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+                f" WHERE pl.course_id = ? AND {_current_plan_sql()}"
+                " AND o.state IN ('introduced', 'needs_review', 'review_due', 'not_started')"
+                " ORDER BY o.ordinal LIMIT 1",
+                (row["course_id"],),
+            ).fetchone()
+            items.append({
+                "enrollment_id": row["enrollment_id"],
+                "course_id": row["course_id"],
+                "title": row["title"],
+                "subtitle": row["learner_label"],
+                "recipe": row["recipe"],
+                "level_label": None,
+                "locale": row["locale"],
+                "learner_label": row["learner_label"],
+                "enrollment_status": row["enrollment_status"],
+                "course_status": row["course_status"],
+                "provenance": {
+                    "source": (row["pack_source"] or "authored"),
+                    "pack_id": release[0] if release else None,
+                    "pack_version": release[1] if release and re.match(r"^\d+\.\d+\.\d+", str(release[1])) else None,
+                },
+                "next_step": _library_next_step(connection, enrollment, course),
+                "evidence_summary": {
+                    "independent": int(summary["independent"] or 0),
+                    "review_due": int(summary["review_due"] or 0),
+                    "total_objectives": int(summary["total"] or 0),
+                    "current_objective_id": current["id"] if current else None,
+                },
+                "warning": _library_warning(connection, enrollment, course, pack_row),
+                "updated_at": row["updated_at"],
+                "revision": int(row["revision"]),
+            })
+        courses_any = connection.execute("SELECT COUNT(*) AS n FROM courses WHERE status != 'deleted'").fetchone()["n"]
+        archived_any = connection.execute(
+            "SELECT COUNT(*) AS n FROM enrollments e JOIN courses c ON c.id = e.course_id"
+            " WHERE e.status = 'archived' OR c.status = 'archived'"
+        ).fetchone()["n"]
+    empty_reason = None
+    if total == 0:
+        if int(courses_any) == 0:
+            empty_reason = "no_courses"
+        elif int(archived_any) > 0 and filter_name == "all":
+            empty_reason = "all_archived"
+        else:
+            empty_reason = "no_matches"
+    next_cursor = _encode_cursor(offset + limit) if offset + limit < int(total) else None
+    return 0, {
+        "items": items,
+        "next_cursor": next_cursor,
+        "total": int(total),
+        "empty_reason": empty_reason,
+        "applied_filter": filter_name,
+    }
+
+
+def _lesson_binding_view(row) -> dict[str, Any] | None:
+    if row is None:
+        return None
+    return {
+        "binding_id": row["id"],
+        "status": row["status"],
+        "runtime_session_id": row["runtime_session_id"],
+        "stored_session_id": row["stored_session_id"],
+        "reattachable": bool(row["status"] == "active" and (row["runtime_session_id"] or row["stored_session_id"])),
+        "updated_at": row["updated_at"],
+    }
+
+
+def _session_state(row) -> str:
+    if row is None:
+        return "missing"
+    if row["runtime_session_id"]:
+        return "live"
+    if row["stored_session_id"]:
+        return "stored_only"
+    return "missing"
+
+
+@_handler("lesson.begin")
+def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Start or resume a durable lesson run. Titles and recency never decide which chat resumes."""
+    db.ensure_schema()
+    method = "lesson.begin"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    now = _now()
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        objective = _row(connection, "SELECT * FROM objectives WHERE id = ?", (payload["objective_id"],))
+        if objective is None:
+            raise _not_found("objective", payload["objective_id"])
+        plan = _row(connection, "SELECT course_id FROM plans WHERE id = ?", (objective["plan_id"],))
+        if plan is None or plan["course_id"] != enrollment["course_id"]:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "that objective does not belong to this enrollment's course.",
+                field="objective_id", reason="objective_not_in_enrollment_course",
+            )
+        run = _row(
+            connection,
+            "SELECT * FROM lesson_runs WHERE enrollment_id = ? AND objective_id = ?"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (enrollment["id"], objective["id"]),
+        )
+        if payload["mode"] == "fresh" and run is not None and run["state"] in ("active", "paused"):
+            connection.execute(
+                "UPDATE lesson_runs SET state = 'abandoned', revision = revision + 1, updated_at = ? WHERE id = ?",
+                (now, run["id"]),
+            )
+            run = None
+        if run is not None and run["state"] in ("active", "paused"):
+            binding = _latest_binding(connection, enrollment["id"], run["id"])
+            connection.execute("UPDATE lesson_runs SET last_opened_at = ? WHERE id = ?", (now, run["id"]))
+            if binding is not None and binding["status"] == "active":
+                run_state = "resumed"
+                resume = {"available": True, "reason": None}
+            else:
+                run_state = "needs_fresh_run"
+                reason = "no_binding" if binding is None else str(binding["status"])
+                if reason not in ("no_binding", "detached", "branched", "orphaned", "completed", "session_missing"):
+                    reason = "no_binding"
+                resume = {"available": False, "reason": reason}
+            result = {
+                "lesson_run_id": run["id"],
+                "run_state": run_state,
+                "binding": _lesson_binding_view(binding),
+                "resume": resume,
+                "revision": int(run["revision"]),
+            }
+        else:
+            run_id = _new_id("run")
+            connection.execute(
+                "INSERT INTO lesson_runs (id, enrollment_id, objective_id, state, revision, created_at,"
+                " updated_at, last_opened_at) VALUES (?, ?, ?, 'active', 0, ?, ?, ?)",
+                (run_id, enrollment["id"], objective["id"], now, now, now),
+            )
+            result = {
+                "lesson_run_id": run_id,
+                "run_state": "created",
+                "binding": None,
+                "resume": {"available": False, "reason": "no_binding"},
+                "revision": 0,
+            }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
+                  result["revision"], result)
+    return int(result["revision"]), result
+
+
+@_handler("lesson.page")
+def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The durable textbook page. Read-only: opening a section changes no evidence."""
+    db.ensure_schema()
+    with db.read() as connection:
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        course = _course_of_enrollment(connection, enrollment)
+        objective = _row(connection, "SELECT * FROM objectives WHERE id = ?", (payload["objective_id"],))
+        if objective is None:
+            raise _not_found("objective", payload["objective_id"])
+        plan = _row(connection, "SELECT course_id FROM plans WHERE id = ?", (objective["plan_id"],))
+        if plan is None or plan["course_id"] != course["id"]:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "that objective does not belong to this enrollment's course.",
+                field="objective_id", reason="objective_not_in_enrollment_course",
+            )
+        run = _row(
+            connection,
+            "SELECT * FROM lesson_runs WHERE enrollment_id = ? AND objective_id = ?"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (enrollment["id"], objective["id"]),
+        )
+        binding = _latest_binding(connection, enrollment["id"], run["id"]) if run else None
+        segments = connection.execute(
+            "SELECT * FROM lesson_segments WHERE lesson_run_id = ? ORDER BY ordinal LIMIT 500",
+            (run["id"],),
+        ).fetchall() if run else []
+        sources = connection.execute(
+            "SELECT * FROM sources WHERE course_id = ? ORDER BY fetched_at DESC LIMIT 200", (course["id"],)
+        ).fetchall()
+        artifacts = connection.execute(
+            "SELECT * FROM artifacts WHERE course_id = ? ORDER BY created_at DESC LIMIT 200", (course["id"],)
+        ).fetchall()
+        checks = connection.execute(
+            "SELECT c.*, (SELECT COUNT(*) FROM attempts a WHERE a.check_id = c.id) AS attempt_count"
+            " FROM checks c WHERE c.objective_id = ? ORDER BY c.version DESC LIMIT 100",
+            (objective["id"],),
+        ).fetchall()
+        notebooks = connection.execute(
+            "SELECT * FROM notebook_entries WHERE enrollment_id = ? AND objective_id = ?"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 200",
+            (enrollment["id"], objective["id"]),
+        ).fetchall()
+        attempts = connection.execute(
+            "SELECT a.* FROM attempts a JOIN checks c ON c.id = a.check_id"
+            " WHERE a.enrollment_id = ? AND c.objective_id = ?"
+            " ORDER BY a.created_at DESC, a.rowid DESC LIMIT 200",
+            (enrollment["id"], objective["id"]),
+        ).fetchall()
+    result = {
+        "enrollment_id": enrollment["id"],
+        "course": {"course_id": course["id"], "title": course["title"]},
+        "section": {
+            "objective_id": objective["id"],
+            "title": objective["title"],
+            "ordinal": int(objective["ordinal"]),
+            "state": objective["state"],
+            "evidence_target": objective["evidence_target"],
+            "last_opened_at": run["last_opened_at"] if run else None,
+        },
+        "runtime": {
+            "lesson_run_id": run["id"],
+            "binding_id": binding["id"] if binding else None,
+            "binding_status": binding["status"] if binding else "detached",
+            "session_state": _session_state(binding),
+            "last_active_at": binding["updated_at"] if binding else None,
+        } if run else None,
+        "segments": [
+            {
+                "segment_id": row["id"],
+                "ordinal": int(row["ordinal"]),
+                "kind": row["kind"],
+                "text": row["text"],
+                "artifact_id": row["artifact_id"],
+                "source_id": row["source_id"],
+                "created_at": row["created_at"],
+            }
+            for row in segments
+        ],
+        "sources": [
+            {
+                "source_id": row["id"],
+                "title": row["title"],
+                "url": row["url"],
+                "publisher": None,
+                "source_type": row["source_type"],
+                "support_status": row["support_status"],
+                "published_at": row["published_at"],
+                "fetched_at": row["fetched_at"],
+            }
+            for row in sources
+        ],
+        "artifacts": [
+            {
+                "artifact_id": row["id"],
+                "kind": row["kind"],
+                "mime": row["mime"],
+                "bytes": int(row["bytes"]),
+                "content_hash": row["content_hash"],
+            }
+            for row in artifacts
+        ],
+        "checks": [
+            {
+                "check_id": row["id"],
+                "version": int(row["version"]),
+                "evidence_target": row["evidence_target"],
+                "state": row["state"],
+                "audit_state": row["audit_state"],
+                "attempt_count": int(row["attempt_count"]),
+            }
+            for row in checks
+        ],
+        "notebook_entries": [
+            {
+                "entry_id": row["id"],
+                "kind": row["kind"],
+                "excerpt": row["excerpt"],
+                "note": row["note"],
+                "tags": _json_load(row["tags_json"], []),
+                "source_ref": row["source_ref"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+                "revision": int(row["revision"]),
+            }
+            for row in notebooks
+        ],
+        "attempts": [
+            {
+                "attempt_id": row["id"],
+                "check_id": row["check_id"],
+                "check_version": int(row["check_version"]),
+                "verdict": row["verdict"],
+                "evidence_class": row["evidence_class"],
+                "state": row["state"],
+                "created_at": row["created_at"],
+                "committed_at": row["committed_at"],
+            }
+            for row in attempts
+        ],
+        "state": objective["state"],
+        "revision": int(enrollment["revision"]),
+    }
+    return int(enrollment["revision"]), result
+
+
+@_handler("artifact.get")
+def artifact_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Artifact metadata plus a short-lived, session-bound download handle.
+
+    The filesystem path stays in the database: the contract forbids returning one, and the
+    gateway route resolves the handle against the authenticated session (Sable's route).
+    """
+    db.ensure_schema()
+    with db.read() as connection:
+        artifact = _row(connection, "SELECT * FROM artifacts WHERE id = ?", (payload["artifact_id"],))
+    if artifact is None:
+        raise _not_found("artifact", payload["artifact_id"])
+    provenance = _json_load(artifact["provenance_json"], {})
+    if not isinstance(provenance, dict):
+        provenance = {}
+    mime = str(artifact["mime"] or "")
+    if not re.match(r"^[a-z]+/[A-Za-z0-9.+-]+$", mime):
+        mime = "application/octet-stream"
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(timespec="microseconds")
+    handle = f"{artifact['id']}_{int(datetime.now(timezone.utc).timestamp()) + 300}"
+    source_ids = provenance.get("source_ids")
+    result = {
+        "artifact_id": artifact["id"],
+        "course_id": artifact["course_id"],
+        "kind": artifact["kind"],
+        "mime": mime,
+        "bytes": int(artifact["bytes"]),
+        "content_hash": artifact["content_hash"],
+        "provenance": {
+            "generator": provenance.get("generator"),
+            "model": provenance.get("model"),
+            "prompt_hash": provenance.get("prompt_hash"),
+            "source_ids": [str(item) for item in (source_ids or [])][:50],
+            "notes": provenance.get("notes"),
+        },
+        "download": {
+            "handle": handle,
+            "url": f"/api/plugins/coursebook/artifacts/{handle}",
+            "method": "GET",
+            "expires_at": expires_at,
+            "requires_session": True,
+            "single_use": False,
+        },
+    }
+    return 0, result
+
+
+@_handler("jobs.list")
+def jobs_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Activity/recovery list. Bounded, filterable, and honest about interrupted work."""
+    db.ensure_schema()
+    limit = min(int(payload.get("limit") or 50), 100)
+    offset = _decode_cursor(payload.get("cursor"))
+    clauses: list[str] = ["1=1"]
+    params: list[Any] = []
+    if payload.get("kind"):
+        clauses.append(f"kind IN ({','.join('?' for _ in payload['kind'])})")
+        params.extend(payload["kind"])
+    if payload.get("enrollment_id"):
+        clauses.append("json_extract(brief_json, '$.enrollment_id') = ?")
+        params.append(payload["enrollment_id"])
+    if payload.get("since"):
+        clauses.append("created_at >= ?")
+        params.append(payload["since"])
+    base_where = " AND ".join(clauses)
+    state_clause = ""
+    state_params: list[Any] = []
+    if payload.get("state"):
+        state_clause = f" AND state IN ({','.join('?' for _ in payload['state'])})"
+        state_params = list(payload["state"])
+    with db.read() as connection:
+        rows = connection.execute(
+            f"SELECT * FROM jobs WHERE {base_where}{state_clause}"
+            " ORDER BY updated_at DESC, rowid DESC LIMIT ? OFFSET ?",
+            (*params, *state_params, limit, offset),
+        ).fetchall()
+        counts_row = connection.execute(
+            "SELECT"
+            " SUM(CASE WHEN state = 'queued' THEN 1 ELSE 0 END) AS queued,"
+            " SUM(CASE WHEN state IN ('running','cancel_requested','cancelling') THEN 1 ELSE 0 END) AS running,"
+            " SUM(CASE WHEN state = 'failed' THEN 1 ELSE 0 END) AS failed,"
+            " SUM(CASE WHEN state = 'interrupted_requires_retry' THEN 1 ELSE 0 END) AS interrupted,"
+            " COUNT(*) AS total"
+            f" FROM jobs WHERE {base_where}",
+            tuple(params),
+        ).fetchone()
+    total = int(counts_row["total"] or 0)
+    return 0, {
+        "jobs": [_job_view(row) for row in rows],
+        "next_cursor": _encode_cursor(offset + limit) if offset + limit < total else None,
+        "counts": {
+            "queued": int(counts_row["queued"] or 0),
+            "running": int(counts_row["running"] or 0),
+            "failed": int(counts_row["failed"] or 0),
+            "interrupted": int(counts_row["interrupted"] or 0),
+        },
+    }
+
+
+# ── v2 mutations: enrollment lifecycle, notebook edit, binding abandon, deletes ──
+
+
+_ENROLLMENT_ACTIONS = {"archive": "archived", "unarchive": "active", "pause": "paused", "resume": "active"}
+
+
+@_handler("enrollment.update")
+def enrollment_update(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "enrollment.update"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        target = _ENROLLMENT_ACTIONS[payload["action"]]
+        if int(enrollment["revision"]) != expected:
+            raise _stale("the enrollment moved on.", int(enrollment["revision"]))
+        if enrollment["status"] == target:
+            result = {"enrollment_id": enrollment["id"], "status": target, "revision": int(enrollment["revision"])}
+            _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
+                      result["revision"], result)
+            return result["revision"], result
+        to_revision = _bump_enrollment(connection, enrollment["id"], expected)
+        connection.execute("UPDATE enrollments SET status = ? WHERE id = ?", (target, enrollment["id"]))
+        result = {"enrollment_id": enrollment["id"], "status": target, "revision": to_revision}
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result)
+    return to_revision, result
+
+
+def _enrollment_scope(connection, enrollment) -> dict[str, Any]:
+    enrollment_id = enrollment["id"]
+    course_id = enrollment["course_id"]
+    counts = {
+        "attempts": int(connection.execute(
+            "SELECT COUNT(*) AS n FROM attempts WHERE enrollment_id = ?", (enrollment_id,)
+        ).fetchone()["n"]),
+        "transitions": int(connection.execute(
+            "SELECT COUNT(*) AS n FROM transitions WHERE enrollment_id = ?", (enrollment_id,)
+        ).fetchone()["n"]),
+        "notebook_entries": int(connection.execute(
+            "SELECT COUNT(*) AS n FROM notebook_entries WHERE enrollment_id = ?", (enrollment_id,)
+        ).fetchone()["n"]),
+        "lesson_runs": int(connection.execute(
+            "SELECT COUNT(*) AS n FROM lesson_runs WHERE enrollment_id = ?", (enrollment_id,)
+        ).fetchone()["n"]),
+        "artifacts_owned": int(connection.execute(
+            "SELECT COUNT(*) AS n FROM artifacts WHERE course_id = ?", (course_id,)
+        ).fetchone()["n"]),
+        "jobs": int(connection.execute(
+            "SELECT COUNT(*) AS n FROM jobs WHERE json_extract(brief_json, '$.enrollment_id') = ?",
+            (enrollment_id,),
+        ).fetchone()["n"]),
+    }
+    scope_hash = _canonical_hash({"scope": "enrollment", "enrollment_id": enrollment_id, "counts": counts})
+    summary = (
+        f"Deletes {counts['attempts']} attempt(s), {counts['transitions']} transition(s), "
+        f"{counts['notebook_entries']} notebook entr(ies) and {counts['lesson_runs']} lesson run(s). "
+        "Keeps the course, plan and objectives, pack provenance, shared artifacts, Hermes transcripts "
+        "and already exported files."
+    )
+    return {
+        "scope_id": enrollment_id,
+        "counts": counts,
+        "preserved": {
+            "course": True,
+            "plan_and_objectives": True,
+            "pack_provenance": True,
+            "shared_artifacts": True,
+            "hermes_transcripts": True,
+            "exported_files": True,
+        },
+        "scope_hash": scope_hash,
+        "summary": summary,
+    }
+
+
+@_handler("enrollment.delete")
+def enrollment_delete(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Explicit destructive scope, previewed by hash. Deleting chat never reaches this command."""
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "enrollment.delete"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        if int(enrollment["revision"]) != expected:
+            raise _stale("the enrollment moved on; re-preview the data scope.", int(enrollment["revision"]))
+        scope = _enrollment_scope(connection, enrollment)
+        if payload.get("dry_run"):
+            result = {"deleted": False, "data_scope": scope, "revision": int(enrollment["revision"])}
+            _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
+                      result["revision"], result)
+            return result["revision"], result
+        if payload.get("data_scope_hash") != scope["scope_hash"]:
+            error = RpcError.of(
+                "DELETE_SCOPE_STALE",
+                "the deletion scope changed since it was previewed; nothing was deleted.",
+                current_data_scope_hash=scope["scope_hash"],
+            )
+            error.error["current_revision"] = int(enrollment["revision"])
+            raise error
+        enrollment_id = enrollment["id"]
+        connection.execute(
+            "DELETE FROM lesson_segments WHERE lesson_run_id IN"
+            " (SELECT id FROM lesson_runs WHERE enrollment_id = ?)", (enrollment_id,)
+        )
+        connection.execute("DELETE FROM evidence WHERE enrollment_id = ?", (enrollment_id,))
+        connection.execute("DELETE FROM transitions WHERE enrollment_id = ?", (enrollment_id,))
+        connection.execute("DELETE FROM attempts WHERE enrollment_id = ?", (enrollment_id,))
+        connection.execute("DELETE FROM notebook_entries WHERE enrollment_id = ?", (enrollment_id,))
+        connection.execute("DELETE FROM lesson_runs WHERE enrollment_id = ?", (enrollment_id,))
+        connection.execute("DELETE FROM bindings WHERE enrollment_id = ?", (enrollment_id,))
+        connection.execute("DELETE FROM usage_events WHERE enrollment_id = ?", (enrollment_id,))
+        connection.execute("DELETE FROM enrollments WHERE id = ?", (enrollment_id,))
+        result = {"deleted": True, "data_scope": scope, "revision": 0}
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
+    return 0, result
+
+
+def _pack_scope(connection, pack_id: str) -> dict[str, Any]:
+    ids = [row["id"] for row in connection.execute("SELECT id FROM packs WHERE pack_id = ?", (pack_id,))]
+    if not ids:
+        raise _not_found("pack", pack_id)
+    placeholders = ",".join("?" for _ in ids)
+    course_ids = [row["id"] for row in connection.execute(
+        f"SELECT id FROM courses WHERE pack_id IN ({placeholders})", tuple(ids)
+    )]
+    course_placeholders = ",".join("?" for _ in course_ids) or "''"
+    counts = {
+        "courses": len(course_ids),
+        "enrollments": int(connection.execute(
+            f"SELECT COUNT(*) AS n FROM enrollments WHERE course_id IN ({course_placeholders})",
+            tuple(course_ids),
+        ).fetchone()["n"]) if course_ids else 0,
+        "artifacts": int(connection.execute(
+            f"SELECT COUNT(*) AS n FROM artifacts WHERE course_id IN ({course_placeholders})",
+            tuple(course_ids),
+        ).fetchone()["n"]) if course_ids else 0,
+        "sources": int(connection.execute(
+            f"SELECT COUNT(*) AS n FROM sources WHERE course_id IN ({course_placeholders})",
+            tuple(course_ids),
+        ).fetchone()["n"]) if course_ids else 0,
+        "jobs": int(connection.execute(
+            "SELECT COUNT(*) AS n FROM jobs WHERE json_extract(brief_json, '$.pack_id') = ?", (pack_id,)
+        ).fetchone()["n"]),
+    }
+    scope_hash = _canonical_hash({"scope": "pack", "pack_id": pack_id, "counts": counts})
+    summary = (
+        f"Removes {counts['courses']} course(s) imported from this pack and freezes its content. "
+        "Evidence, attempts, notebook entries, the source ledger and exported files are kept."
+    )
+    return {
+        "scope_id": f"pack_{pack_id}"[:128],
+        "pack_id": pack_id,
+        "counts": counts,
+        "preserved": {
+            "evidence": True,
+            "attempts": True,
+            "notebook_entries": True,
+            "source_ledger": True,
+            "exported_files": True,
+        },
+        "scope_hash": scope_hash,
+        "summary": summary,
+    }
+
+
+@_handler("pack.delete")
+def pack_delete(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Freeze imported pack content. Evidence and attempts are never cascaded away."""
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "pack.delete"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        rows = connection.execute("SELECT * FROM packs WHERE pack_id = ?", (payload["pack_id"],)).fetchall()
+        if not rows:
+            raise _not_found("pack", payload["pack_id"])
+        revision = max(int(row["revision"]) for row in rows)
+        if revision != expected:
+            raise _stale("the pack record moved on.", revision)
+        scope = _pack_scope(connection, payload["pack_id"])
+        if payload.get("dry_run"):
+            result = {"deleted": False, "data_scope": scope, "revision": revision}
+            _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+            return revision, result
+        if payload.get("data_scope_hash") != scope["scope_hash"]:
+            error = RpcError.of(
+                "DELETE_SCOPE_STALE",
+                "the deletion scope changed since it was previewed; nothing was deleted.",
+                current_data_scope_hash=scope["scope_hash"],
+            )
+            error.error["current_revision"] = revision
+            raise error
+        connection.execute(
+            "UPDATE packs SET state = 'frozen', revision = revision + 1 WHERE pack_id = ?", (payload["pack_id"],)
+        )
+        result = {"deleted": True, "data_scope": scope, "revision": revision + 1}
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision + 1, result)
+    return revision + 1, result
+
+
+@_handler("notebook.update")
+def notebook_update(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Edit note/tags under the entry's own revision fence. Provenance is immutable here."""
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "notebook.update"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        entry = _row(connection, "SELECT * FROM notebook_entries WHERE id = ?", (payload["entry_id"],))
+        if entry is None:
+            raise _not_found("notebook entry", payload["entry_id"])
+        if int(entry["revision"]) != expected:
+            raise _stale("the notebook entry changed; re-read before editing.", int(entry["revision"]))
+        note = payload["note"] if "note" in payload else entry["note"]
+        tags = payload["tags"] if "tags" in payload else _json_load(entry["tags_json"], [])
+        connection.execute(
+            "UPDATE notebook_entries SET note = ?, tags_json = ?, revision = revision + 1, updated_at = ?"
+            " WHERE id = ?",
+            (note, _json_dump(tags), _now(), entry["id"]),
+        )
+        revision = int(entry["revision"]) + 1
+        result = {"entry_id": entry["id"], "revision": revision}
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+    return revision, result
+
+
+@_handler("binding.abandon")
+def binding_abandon(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Detach a binding deliberately. Evidence stays; the next turn must rebind."""
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "binding.abandon"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        binding = _row(connection, "SELECT * FROM bindings WHERE id = ?", (payload["binding_id"],))
+        if binding is None:
+            raise _not_found("binding", payload["binding_id"])
+        if int(binding["revision"]) != expected:
+            raise _stale("the binding moved on.", int(binding["revision"]))
+        revision = int(binding["revision"]) + 1
+        connection.execute(
+            "UPDATE bindings SET status = 'orphaned', revision = ?, updated_at = ? WHERE id = ?",
+            (revision, _now(), binding["id"]),
+        )
+        result = {"binding_id": binding["id"], "status": "orphaned", "revision": revision}
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+    return revision, result
 
 
 # ── write paths used by the plan job and by Parent mode ─────────────────────

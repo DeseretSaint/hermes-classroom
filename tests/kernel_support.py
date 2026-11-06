@@ -25,8 +25,8 @@ def request(
     idempotency_key: str | None = None,
 ) -> dict:
     body = {
-        "contract": "cb.rpc",
-        "contract_version": 1,
+        "contract": api.RPC_CONTRACT,
+        "contract_version": api.RPC_CONTRACT_VERSION,
         "method": method,
         "operation_id": operation_id or f"op-{method.replace('.', '-')}-{os.urandom(4).hex()}",
         "payload": payload if payload is not None else {},
