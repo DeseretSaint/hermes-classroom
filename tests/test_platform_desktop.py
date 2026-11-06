@@ -233,7 +233,12 @@ class DesktopRegistrationTest(unittest.TestCase):
 
     def test_reads_the_backend_registry_at_register_time(self) -> None:
         paths = [call["path"] for call in self.payload["restCalls"]]
-        self.assertIn("/runtime", paths, "the client must read the mounted wire version + method registry")
+        # `?profile=` is the explicit "current profile" scope a single-home host gets (CB-013);
+        # the door is still the same /runtime route.
+        self.assertTrue(
+            any(path.split("?", 1)[0] == "/runtime" for path in paths),
+            f"the client must read the mounted wire version + method registry: {paths}",
+        )
 
     def test_wire_version_is_taken_from_the_backend_not_hardcoded(self) -> None:
         # A v2 contract must not require a Desktop edit.

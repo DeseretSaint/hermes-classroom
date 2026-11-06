@@ -31,6 +31,7 @@ from typing import Any, Callable
 
 from . import (
     api,
+    bindings,
     db,
     evidence,
     grading,
@@ -903,7 +904,8 @@ def _binding_refusal(connection, enrollment_id: str) -> None:
     """Only an ``active`` binding may accept a submit. No binding means no chat is bound yet."""
     row = _row(
         connection,
-        "SELECT status FROM bindings WHERE enrollment_id = ? ORDER BY revision DESC, updated_at DESC LIMIT 1",
+        "SELECT status FROM bindings WHERE enrollment_id = ?"
+        + bindings.GOVERNING_ORDER,
         (enrollment_id,),
     )
     if row is not None and row["status"] != "active":
@@ -1427,12 +1429,12 @@ def _latest_binding(connection, enrollment_id: str, lesson_run_id: str | None = 
         return _row(
             connection,
             "SELECT * FROM bindings WHERE enrollment_id = ? AND lesson_run_id = ?"
-            " ORDER BY revision DESC, updated_at DESC LIMIT 1",
+            + bindings.GOVERNING_ORDER,
             (enrollment_id, lesson_run_id),
         )
     return _row(
         connection,
-        "SELECT * FROM bindings WHERE enrollment_id = ? ORDER BY revision DESC, updated_at DESC LIMIT 1",
+        "SELECT * FROM bindings WHERE enrollment_id = ?" + bindings.GOVERNING_ORDER,
         (enrollment_id,),
     )
 

@@ -30,6 +30,10 @@ from coursebook import contracts  # noqa: E402 - path must be set first
 
 WIRE_VERSION = contracts.WIRE_CONTRACT_VERSION
 
+#: One durable session id for the whole trace. The probe never invents a second one: the bind
+#: seam's job is to prove it refuses a chat that is already bound, so re-use is the point.
+PROBE_STORED_SESSION = "sess_probe_durable_0001"
+
 
 def load_router():
     spec = importlib.util.spec_from_file_location(
@@ -119,9 +123,26 @@ def main() -> int:
     )
 
     schema = client.get("/api/plugins/coursebook/schema")
+    # Name the contract set instead of counting it: the count drifted once (cb.vocabulary was
+    # frozen in the CB-027 projection closure and the probe still said "six"), which made the
+    # admission gate fail on a correct tree. An id set catches a missing or renamed contract and
+    # cannot pass by coincidence when one is added.
+    expected_contracts = {
+        "cb.vocabulary",
+        "cb.errors",
+        "cb.rpc",
+        "cb.db",
+        "cb.jobs",
+        "cb.pack",
+        "cb.projection",
+    }
+    inventory = schema.json()["result"]["contracts"] if schema.status_code == 200 else []
     record(
-        "GET /schema lists all six frozen contracts",
-        schema.status_code == 200 and len(schema.json()["result"]["contracts"]) == 6,
+        "GET /schema lists every frozen contract with its version and hash",
+        schema.status_code == 200
+        and {item.get("id") for item in inventory} == expected_contracts
+        and all(item.get("sha256", "").startswith("sha256:") for item in inventory)
+        and any(item.get("id") == "cb.rpc" and item.get("version") == WIRE_VERSION for item in inventory),
         None,
         schema,
     )
@@ -378,6 +399,74 @@ def main() -> int:
         )
     else:
         record("the export artifact is on disk where the probe expects it", False, None, expired)
+
+    # ── session binding seam: the write half of binding.get (nothing else creates a binding) ──
+    listed = client.post("/api/plugins/coursebook/rpc", json=envelope("library.list", {}))
+    items = (listed.json().get("result") or {}).get("items") or []
+    row = next((item for item in items if item.get("enrollment_id") == enrollment_id), {})
+    objective_id = ((row.get("evidence_summary") or {}).get("current_objective_id")) or ""
+    begun = client.post(
+        "/api/plugins/coursebook/rpc",
+        json=envelope(
+            "lesson.begin",
+            {"enrollment_id": enrollment_id, "objective_id": objective_id, "mode": "fresh"},
+            idempotency_key="probe-bind-run-0001",
+        ),
+    )
+    run_id = (begun.json().get("result") or {}).get("lesson_run_id", "")
+    bind_payload = {
+        "stored_session_id": PROBE_STORED_SESSION,
+        "enrollment_id": enrollment_id,
+        "objective_id": objective_id,
+        "lesson_run_id": run_id,
+        "profile": "probe",
+    }
+    bound = client.post("/api/plugins/coursebook/sessions/bind", json=bind_payload)
+    record(
+        "POST /sessions/bind writes the active binding the pane and the pre-turn gate read",
+        bound.json().get("ok") is True
+        and bound.json().get("created") is True
+        and bound.json()["binding"]["stored_session_id"] == PROBE_STORED_SESSION
+        and bound.json()["binding"]["lesson_run_id"] == run_id
+        and bound.json()["binding"]["status"] == "active",
+        None,
+        bound,
+    )
+
+    read_back = client.post(
+        "/api/plugins/coursebook/rpc",
+        json=envelope("binding.get", {"session_id": PROBE_STORED_SESSION}),
+    )
+    read_body = read_back.json().get("result") or {}
+    record(
+        "binding.get answers by the stored id the seam wrote, not by recency",
+        read_back.json().get("ok") is True
+        and bool(read_body.get("binding"))
+        and read_body["binding"]["matched_column"] == "stored_session_id"
+        and read_body["binding"]["status"] == "active"
+        and read_body["binding"]["stored_session_id"] == PROBE_STORED_SESSION,
+        None,
+        read_back,
+    )
+
+    repeated = client.post("/api/plugins/coursebook/sessions/bind", json=bind_payload)
+    record(
+        "repeating the same bind is idempotent — one row, never a second chat",
+        repeated.json().get("ok") is True and repeated.json().get("created") is False,
+        None,
+        repeated,
+    )
+
+    runtime_only = client.post(
+        "/api/plugins/coursebook/rpc",
+        json=envelope("binding.get", {"session_id": "rt_probe_runtime_only"}),
+    )
+    record(
+        "a runtime id is never accepted as the stored id",
+        (runtime_only.json().get("result") or {}).get("binding") is None,
+        None,
+        runtime_only,
+    )
 
     # ── reimport: resume keeps progress, fresh separates it; a tampered pack leaves no residue ──
     def library_total() -> int:

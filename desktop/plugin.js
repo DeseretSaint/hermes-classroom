@@ -143,12 +143,82 @@ const host = sdk.host
  * envelope and `implemented` gates any control that would call an unimplemented command. When
  * the frozen contract is amended (v2 adds library.list / lesson.* / artifact.get / jobs.list /
  * notebook.update), this module needs no edit — it re-reads the version and the method list.
+ *
+ * `singleHome` is the host's own declaration that this backend process serves exactly ONE home
+ * (``HERMES_COURSEBOOK_SINGLE_HOME=1``, set by ``scripts/install-local.sh``). It changes only
+ * one thing: :func:`rest` then states the scope explicitly as `?profile=` — "the current
+ * profile", the host's documented spelling for "no profile scope" — instead of letting the app
+ * append the ambient profile, which on an isolated backend resolves to a DIFFERENT home (and is
+ * forwarded to that profile's plugin host). Multi-profile hosting never advertises the flag and
+ * keeps today's behaviour.
  */
-let backendWire = { contractVersion: 1, implemented: null, error: null }
+let backendWire = { contractVersion: 1, implemented: null, error: null, singleHome: false }
 
 /** Route-level intents the palette and keybind can hand to an already-mounted page. */
 const intentListeners = new Set()
 let pendingIntent = null
+
+/**
+ * A fresh run this Desktop opened, waiting for its chat to get a durable id.
+ *
+ * `lesson.begin` returns the run before the chat exists; a draft has no stored session id until
+ * its first turn. The pane therefore arms the exact run it started (never "the newest run") and
+ * calls the `POST /sessions/bind` host seam once the focused chat has a stored id. One arming is
+ * one attempt: the intent is consumed by the bind call, expires after 15 minutes, and never
+ * survives a reload as a guess about which chat the user meant.
+ */
+const PENDING_BIND_TTL_MS = 15 * 60 * 1000
+let pendingBind = null
+
+function armPendingBind({ enrollmentId, objectiveId, lessonRunId, profile }) {
+  if (!enrollmentId || !objectiveId || !lessonRunId) {
+    pendingBind = null
+    return null
+  }
+  pendingBind = {
+    enrollmentId,
+    objectiveId,
+    lessonRunId,
+    profile: profile || null,
+    armedAt: Date.now()
+  }
+  return pendingBind
+}
+
+function pendingBindFor(profile) {
+  if (!pendingBind) return null
+  if (Date.now() - pendingBind.armedAt > PENDING_BIND_TTL_MS) {
+    pendingBind = null
+    return null
+  }
+  if (pendingBind.profile && profile && pendingBind.profile !== profile) return null
+  return pendingBind
+}
+
+/**
+ * Bind the focused chat to the armed run. Returns the seam response, or null when nothing is
+ * armed. The seam — not this file — decides whether the bind is legal, so a refusal is rendered
+ * as the seam's own code and message.
+ */
+async function bindPendingChat(storedSessionId, profile) {
+  const intent = pendingBindFor(profile)
+  if (!intent || !storedSessionId || !pluginContext) return null
+  pendingBind = null
+  try {
+    return await rest('/sessions/bind', {
+      method: 'POST',
+      body: {
+        stored_session_id: storedSessionId,
+        enrollment_id: intent.enrollmentId,
+        objective_id: intent.objectiveId,
+        lesson_run_id: intent.lessonRunId,
+        profile: intent.profile || profile || currentScope().profile || undefined
+      }
+    })
+  } catch (error) {
+    return { ok: false, code: 'HOST_UNAVAILABLE', message: describeError(error) }
+  }
+}
 
 function requestIntent(intent) {
   pendingIntent = intent
@@ -233,7 +303,7 @@ async function rpc(method, payload = {}, options = {}) {
   }
   let response
   try {
-    response = await requireContext().rest('/rpc', {
+    response = await rest('/rpc', {
       method: 'POST',
       body,
       timeoutMs: options.timeoutMs
@@ -266,19 +336,69 @@ function backendSupports(method) {
 
 async function loadBackendWire() {
   try {
-    const runtime = await requireContext().rest('/runtime')
+    // Ask for "the current profile" explicitly. On a single-home backend the ambient profile
+    // resolves elsewhere, so an unscoped `/runtime` would describe a different process.
+    const runtime = await requireContext().rest('/runtime?profile=')
     const version = Number(runtime && runtime.wire_version)
     backendWire = {
       contractVersion: Number.isFinite(version) && version > 0 ? version : 1,
       implemented: Array.isArray(runtime && runtime.implemented_methods)
         ? new Set(runtime.implemented_methods)
         : null,
-      error: null
+      error: null,
+      singleHome: runtime?.single_home_host === true
     }
   } catch (error) {
-    backendWire = { contractVersion: backendWire.contractVersion, implemented: null, error }
+    backendWire = {
+      contractVersion: backendWire.contractVersion,
+      implemented: null,
+      error,
+      singleHome: false
+    }
   }
   return backendWire
+}
+
+/** The backend facts, loaded once per page (the registry is static for a mounted process). */
+let wireReady = null
+
+function ensureBackendWire() {
+  if (!wireReady) {
+    wireReady = loadBackendWire().then((wire) => {
+      // A dead backend is a fact for this call, not for the life of the page: let the next
+      // call probe again instead of pinning `singleHome: false` forever.
+      if (wire.error) wireReady = null
+      return wire
+    })
+  }
+  return wireReady
+}
+
+/** State the profile scope explicitly (`profile=` = the current profile) for a single-home host. */
+function scopePath(path) {
+  const target = String(path || '')
+  if (!backendWire.singleHome || !target) return target
+  try {
+    const parsed = new URL(target, 'http://coursebook.invalid')
+    if (parsed.searchParams.has('profile')) return target
+    parsed.searchParams.set('profile', '')
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return target
+  }
+}
+
+/**
+ * The one REST door this module uses.
+ *
+ * Same `ctx.rest` seam as everywhere else, plus the single-home scope decision. It waits for the
+ * `/runtime` probe so a call issued before boot finishes cannot fall back to the ambient profile
+ * and read another home; `loadBackendWire` itself calls `ctx.rest` directly, so this cannot
+ * recurse.
+ */
+async function rest(path, options) {
+  await ensureBackendWire()
+  return requireContext().rest(scopePath(path), options)
 }
 
 /**
@@ -359,12 +479,12 @@ function describeError(error) {
 
 async function fetchHealth() {
   if (!pluginContext) throw new Error('Coursebook is not registered')
-  return pluginContext.rest('/health')
+  return rest('/health')
 }
 
 async function fetchSchema() {
   if (!pluginContext) throw new Error('Coursebook is not registered')
-  return pluginContext.rest('/schema')
+  return rest('/schema')
 }
 
 /**
@@ -771,7 +891,7 @@ function usePackIntake(enabled) {
     }
     ;(async () => {
       try {
-        const response = await pluginContext.rest('/packs/intake')
+        const response = await rest('/packs/intake')
         if (cancelled) return
         const available = Boolean(response && (response.can_grant || response.available))
         setState({ status: available ? 'available' : 'unsupported', info: response || null, error: null })
@@ -1063,7 +1183,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
       try {
         if (!folder) throw new Error('Choose a folder first.')
         const path = `${folder.path.replace(/\/$/, '')}/${entry.path}`
-        const granted = await pluginContext.rest('/packs/grant', { method: 'POST', body: { path } })
+        const granted = await rest('/packs/grant', { method: 'POST', body: { path } })
         if (!granted || !granted.ok || !granted.staged_id) {
           throw new Error((granted && granted.message) || 'The backend did not mint a staged pack.')
         }
@@ -3158,6 +3278,14 @@ function SectionPage({ row, objectiveId, page, implemented, onBack, onStartFresh
         setNotice(opened.ok ? 'Resumed the existing bound chat.' : opened.message)
         return
       }
+      // The chat that is about to open has no stored id yet: arm the exact run and let the pane
+      // bind it on the first turn. A resume path already had a binding, so it never arms.
+      armPendingBind({
+        enrollmentId: row.enrollment_id,
+        objectiveId,
+        lessonRunId: outcome.lesson_run_id,
+        profile: row.profile || currentScope().profile
+      })
       const started = startLessonChat(row.profile || currentScope().profile)
       setNotice(
         started
@@ -4552,6 +4680,12 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
         setNotice(opened.ok ? 'Resumed the bound lesson chat.' : opened.message)
         return
       }
+      armPendingBind({
+        enrollmentId: row.enrollment_id,
+        objectiveId: target,
+        lessonRunId: outcome.lesson_run_id,
+        profile: profile || currentScope().profile
+      })
       const started = startLessonChat(profile || currentScope().profile)
       setNotice(
         started
@@ -4798,6 +4932,13 @@ function LessonPaneBody({ binding, storedId }) {
       setNotice(`${response.error.code}: ${describeError(response.error)}`)
       return
     }
+    const outcome = response.result
+    armPendingBind({
+      enrollmentId: binding.enrollment_id,
+      objectiveId,
+      lessonRunId: outcome.lesson_run_id,
+      profile
+    })
     const started = startLessonChat(profile)
     setNotice(
       started
@@ -5114,7 +5255,34 @@ function CoursebookPage() {
  * never guesses one from recency.
  */
 function CoursebookPane() {
-  const { state } = useSessionBinding()
+  const { state, storedId, reload } = useSessionBinding()
+  const scopeProfile = currentScope().profile
+  const [bindNote, setBindNote] = useState(null)
+  const attemptedBind = useRef(null)
+
+  useEffect(() => {
+    // A run this Desktop opened is armed. Bind it to the focused chat once that chat has a
+    // durable id and no binding of its own — by the exact stored id, never the runtime id and
+    // never "the newest chat". One attempt per stored id; the seam decides legality.
+    if (!storedId || attemptedBind.current === storedId) return undefined
+    if (state.status !== 'ready' || state.binding) return undefined
+    if (!pendingBindFor(scopeProfile)) return undefined
+    let cancelled = false
+    attemptedBind.current = storedId
+    bindPendingChat(storedId, scopeProfile).then((response) => {
+      if (cancelled || !response) return
+      if (response.ok) {
+        setBindNote('This lesson is bound to this chat.')
+        reload()
+      } else {
+        setBindNote(`${response.code}: ${response.message || 'this chat could not be bound.'}`)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [storedId, state.status, state.binding, scopeProfile, reload])
+
   const openCoursebook = useCallback(() => {
     host.navigate(ROUTE_PATH)
   }, [])
@@ -5165,12 +5333,16 @@ function CoursebookPane() {
       action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
     })
   } else {
-    body = jsx(LessonPaneBody, { binding: state.binding, storedId: state.storedId })
+    body = jsx(LessonPaneBody, { binding: state.binding, storedId })
   }
 
   return jsxs('div', {
     className: 'flex h-full min-h-0 flex-col px-3 py-2',
-    children: [jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }), body]
+    children: [
+      jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }),
+      bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-tertiary)', children: bindNote }) : null,
+      body
+    ]
   })
 }
 
@@ -5187,6 +5359,8 @@ function useSessionBinding() {
   const storedId = useHostValue(host.state.focusedStoredSessionId)
   const runtimeId = useHostValue(host.state.focusedSessionId)
   const [state, setState] = useState({ status: 'idle', binding: null, error: null })
+  const [ticket, setTicket] = useState(0)
+  const reload = useCallback(() => setTicket((value) => value + 1), [])
 
   useEffect(() => {
     if (!storedId) {
@@ -5216,9 +5390,9 @@ function useSessionBinding() {
     return () => {
       cancelled = true
     }
-  }, [storedId])
+  }, [storedId, ticket])
 
-  return { storedId, runtimeId, state }
+  return { storedId, runtimeId, state, reload }
 }
 
 function ContractList() {
