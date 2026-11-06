@@ -316,6 +316,20 @@ async def runtime() -> dict[str, Any]:
     """
     api, contracts, db = _api(), _contracts(), _db()
     problems = contracts.audit_contracts()
+    try:
+        pin = db.single_home_pin()
+        storage = {
+            "single_home_flag": db.SINGLE_HOME_FLAG,
+            # Process-level, not per-request: tells the Desktop half that this backend serves ONE
+            # home, so it should state its scope explicitly (`?profile=` = current profile) instead
+            # of letting the app guess an ambient profile that resolves to a different home.
+            "single_home_host": db.is_single_home_host(),
+            "single_home_pinned": pin is not None,
+            "single_home_pin": str(pin) if pin is not None else None,
+        }
+    except Exception:  # noqa: BLE001 - diagnostics must never fail the probe
+        logger.warning("coursebook: could not resolve the single-home storage pin")
+        storage = {}
     return {
         "backend_package": _BACKEND_PACKAGE,
         "plugin_root": str(_PLUGIN_ROOT),
@@ -325,4 +339,5 @@ async def runtime() -> dict[str, Any]:
         "implemented_methods": list(api.implemented_methods()),
         "contract_problems": problems,
         "db_path": str(db.database_path()),
+        **storage,
     }

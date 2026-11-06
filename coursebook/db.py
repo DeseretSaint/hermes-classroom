@@ -20,6 +20,7 @@ The only handle is ``plugins.plugin_storage.plugin_db("coursebook")`` (``docs/AR
 from __future__ import annotations
 
 import hashlib
+import os
 import sqlite3
 import threading
 from contextlib import contextmanager
@@ -32,6 +33,17 @@ from .contracts import contract
 
 #: How long a writer waits for the write lock before failing. Bounded on purpose.
 BUSY_TIMEOUT_MS = 5000
+
+#: Set to ``1`` by ``scripts/install-local.sh`` for a dedicated single-home backend.
+#:
+#: An isolated backend serves exactly one home, but the Desktop half reports ``sharedRemote`` and
+#: appends ``?profile=<launch profile>`` to every plugin request. The host's profile scope then
+#: resolves ``plugins.plugin_storage`` against the *default* home (``~/.hermes``), i.e. the
+#: operator's live profile — not this process's launch home. With this flag set, Coursebook pins
+#: its own storage to the launch home whenever the active scope points outside that home, so the
+#: pane reads the database the seeder wrote. Multi-profile hosting never sets it, and the default
+#: path is byte-for-byte the host's.
+SINGLE_HOME_FLAG = "HERMES_COURSEBOOK_SINGLE_HOME"
 
 _TX_DEPTH = 0
 _TX_LOCK = threading.Lock()
@@ -59,14 +71,59 @@ def migration_table() -> str:
     return str(db_contract()["migration_table"])
 
 
-def database_path() -> Path:
-    """``<hermes home>/plugin-data/coursebook/data.db`` for the *active* profile.
+def _within(child: Path, parent: Path) -> bool:
+    """Whether ``child`` is ``parent`` or lives under it (symlinks resolved, case-normalized)."""
+    try:
+        child_key = os.path.normcase(str(child.expanduser().resolve(strict=False)))
+        parent_key = os.path.normcase(str(parent.expanduser().resolve(strict=False)))
+    except OSError:  # pragma: no cover - unresolvable path on a broken filesystem
+        return False
+    return child_key == parent_key or child_key.startswith(parent_key + os.sep)
 
-    Resolved per call: never cache this across a profile switch.
+
+def is_single_home_host() -> bool:
+    """Whether this process declared itself a dedicated single-home backend (the flag is set)."""
+    return os.environ.get(SINGLE_HOME_FLAG, "").strip().lower() in {"1", "true", "yes"}
+
+
+def single_home_pin() -> Path | None:
+    """The launch home to pin storage to, or None to let the host resolve it as usual.
+
+    Only acts when :data:`SINGLE_HOME_FLAG` is set (a dedicated single-home backend). Even then
+    it returns None while the active scope is the launch home or a profile inside it, so a
+    gateway that really does serve several profiles keeps the host's per-profile storage.
     """
+    if not is_single_home_host():
+        return None
+    try:  # the host module is present in a gateway/tool process, absent in a bare test run
+        from hermes_constants import get_hermes_home, get_process_hermes_home
+
+        launch = Path(get_process_hermes_home())
+        active = Path(get_hermes_home())
+    except Exception:  # noqa: BLE001 - no host, no pin: never invent a scope
+        return None
+    return None if _within(active, launch) else launch
+
+
+def data_root() -> Path:
+    """``<plugin data>/`` for the active profile, resolved per call (never cached)."""
+    pinned = single_home_pin()
+    if pinned is not None:
+        root = pinned / "plugin-data" / PACKAGE_ID
+        root.mkdir(parents=True, exist_ok=True)
+        return root
     from plugins.plugin_storage import plugin_data_dir
 
-    return plugin_data_dir(PACKAGE_ID) / "data.db"
+    return plugin_data_dir(PACKAGE_ID)
+
+
+def database_path() -> Path:
+    """``<plugin data>/data.db`` for the *active* profile.
+
+    Resolved per call: never cache this across a profile switch. When :func:`single_home_pin`
+    applies, this is the launch home's database, not a ``?profile=`` scope that escaped it.
+    """
+    return data_root() / "data.db"
 
 
 def migration_files() -> list[Path]:
@@ -96,11 +153,25 @@ def connect() -> sqlite3.Connection:
     ``plugin_db`` already applies WAL (with the shared fallbacks), ``foreign_keys=ON`` and the
     busy timeout. Setting ``isolation_level = None`` here means *this* module decides exactly
     when a transaction starts, so ``BEGIN IMMEDIATE`` cannot land inside an implicit one.
-    """
-    from plugins.plugin_storage import plugin_db
 
+    When :func:`single_home_pin` applies, the pinned file is opened through the same host
+    ``open_db`` policy with the same arguments, because ``plugin_db`` would resolve the path from
+    the request's ``?profile=`` scope again.
+    """
     try:
-        connection = plugin_db(PACKAGE_ID)
+        if single_home_pin() is None:
+            from plugins.plugin_storage import plugin_db
+
+            connection = plugin_db(PACKAGE_ID)
+        else:  # single-home backend: same policy, path pinned to the launch home
+            from hermes_cli.sqlite_util import open_db
+
+            connection = open_db(
+                database_path(),
+                db_label=f"plugin-data/{PACKAGE_ID}/data.db",
+                foreign_keys=True,
+                check_same_thread=False,
+            )
     except Exception as exc:  # noqa: BLE001 - surfaced as a typed failure, never swallowed
         raise DatabaseUnavailable(f"cannot open coursebook database: {exc}") from exc
     connection.row_factory = sqlite3.Row

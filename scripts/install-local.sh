@@ -79,7 +79,18 @@ print(f"marker: {marker}")
 PY
 
 echo
-echo "== 3/5 enable the agent half in this home =="
+echo "== 3/5 single-home flag for an isolated backend =="
+# The Desktop half reports sharedRemote and appends ?profile=<launch profile>. On an isolated
+# backend that scope escapes to the DEFAULT home (~/.hermes), which is the operator's live profile.
+# This flag makes Coursebook pin its own storage to this install's home instead (coursebook/db.py).
+# Multi-profile gateways never set it.
+ENV_FILE="$HOME_DIR/coursebook-single-home.env"
+printf 'export %s=1\n' HERMES_COURSEBOOK_SINGLE_HOME > "$ENV_FILE"
+echo "wrote $ENV_FILE"
+echo "start the backend with it:  set -a; . $ENV_FILE; HERMES_HOME=$HOME_DIR hermes serve --isolated --port 44219"
+
+echo
+echo "== 4/5 enable the agent half in this home =="
 if [[ "$DO_ENABLE" == "1" ]]; then
   HERMES_HOME="$HOME_DIR" "$HERMES_BIN" plugins enable coursebook
 else
@@ -87,13 +98,13 @@ else
 fi
 
 echo
-echo "== 4/5 discover it in this home =="
+echo "== 5/6 discover it in this home =="
 HERMES_HOME="$HOME_DIR" "$HERMES_BIN" plugins list --plain --no-bundled | grep -q coursebook \
   || { echo "coursebook is not listed in this home" >&2; exit 1; }
 echo "discovered: coursebook"
 
 echo
-echo "== 5/5 admission gates =="
+echo "== 6/6 admission gates =="
 HERMES_HOME="$HOME_DIR" "$HERMES_BIN" plugins validate "$SOURCE" | tail -1
 HERMES_HOME="$HOME_DIR" "$HERMES_BIN" plugins doctor "$SOURCE" | tail -3
 

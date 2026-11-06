@@ -63,10 +63,12 @@ TEACHING_ROLES = ("section", "learner_page", "parent_guide")
 
 
 def data_root() -> Path:
-    """``<plugin data>/`` for the active profile, resolved per call (never cached)."""
-    from plugins.plugin_storage import plugin_data_dir
+    """``<plugin data>/`` for the active profile, resolved per call (never cached).
 
-    return plugin_data_dir(PACKAGE_ID)
+    ``db.data_root`` owns the single-home pin (CB-013), so the pack library, the staging area and
+    the sqlite file always agree on one home.
+    """
+    return db.data_root()
 
 
 def library_root() -> Path:

@@ -143,8 +143,16 @@ const host = sdk.host
  * envelope and `implemented` gates any control that would call an unimplemented command. When
  * the frozen contract is amended (v2 adds library.list / lesson.* / artifact.get / jobs.list /
  * notebook.update), this module needs no edit — it re-reads the version and the method list.
+ *
+ * `singleHome` is the host's own declaration that this backend process serves exactly ONE home
+ * (``HERMES_COURSEBOOK_SINGLE_HOME=1``, set by ``scripts/install-local.sh``). It changes only
+ * one thing: :func:`rest` then states the scope explicitly as `?profile=` — "the current
+ * profile", the host's documented spelling for "no profile scope" — instead of letting the app
+ * append the ambient profile, which on an isolated backend resolves to a DIFFERENT home (and is
+ * forwarded to that profile's plugin host). Multi-profile hosting never advertises the flag and
+ * keeps today's behaviour.
  */
-let backendWire = { contractVersion: 1, implemented: null, error: null }
+let backendWire = { contractVersion: 1, implemented: null, error: null, singleHome: false }
 
 /** Route-level intents the palette and keybind can hand to an already-mounted page. */
 const intentListeners = new Set()
@@ -197,7 +205,7 @@ async function bindPendingChat(storedSessionId, profile) {
   if (!intent || !storedSessionId || !pluginContext) return null
   pendingBind = null
   try {
-    return await pluginContext.rest('/sessions/bind', {
+    return await rest('/sessions/bind', {
       method: 'POST',
       body: {
         stored_session_id: storedSessionId,
@@ -295,7 +303,7 @@ async function rpc(method, payload = {}, options = {}) {
   }
   let response
   try {
-    response = await requireContext().rest('/rpc', {
+    response = await rest('/rpc', {
       method: 'POST',
       body,
       timeoutMs: options.timeoutMs
@@ -328,19 +336,69 @@ function backendSupports(method) {
 
 async function loadBackendWire() {
   try {
-    const runtime = await requireContext().rest('/runtime')
+    // Ask for "the current profile" explicitly. On a single-home backend the ambient profile
+    // resolves elsewhere, so an unscoped `/runtime` would describe a different process.
+    const runtime = await requireContext().rest('/runtime?profile=')
     const version = Number(runtime && runtime.wire_version)
     backendWire = {
       contractVersion: Number.isFinite(version) && version > 0 ? version : 1,
       implemented: Array.isArray(runtime && runtime.implemented_methods)
         ? new Set(runtime.implemented_methods)
         : null,
-      error: null
+      error: null,
+      singleHome: runtime?.single_home_host === true
     }
   } catch (error) {
-    backendWire = { contractVersion: backendWire.contractVersion, implemented: null, error }
+    backendWire = {
+      contractVersion: backendWire.contractVersion,
+      implemented: null,
+      error,
+      singleHome: false
+    }
   }
   return backendWire
+}
+
+/** The backend facts, loaded once per page (the registry is static for a mounted process). */
+let wireReady = null
+
+function ensureBackendWire() {
+  if (!wireReady) {
+    wireReady = loadBackendWire().then((wire) => {
+      // A dead backend is a fact for this call, not for the life of the page: let the next
+      // call probe again instead of pinning `singleHome: false` forever.
+      if (wire.error) wireReady = null
+      return wire
+    })
+  }
+  return wireReady
+}
+
+/** State the profile scope explicitly (`profile=` = the current profile) for a single-home host. */
+function scopePath(path) {
+  const target = String(path || '')
+  if (!backendWire.singleHome || !target) return target
+  try {
+    const parsed = new URL(target, 'http://coursebook.invalid')
+    if (parsed.searchParams.has('profile')) return target
+    parsed.searchParams.set('profile', '')
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return target
+  }
+}
+
+/**
+ * The one REST door this module uses.
+ *
+ * Same `ctx.rest` seam as everywhere else, plus the single-home scope decision. It waits for the
+ * `/runtime` probe so a call issued before boot finishes cannot fall back to the ambient profile
+ * and read another home; `loadBackendWire` itself calls `ctx.rest` directly, so this cannot
+ * recurse.
+ */
+async function rest(path, options) {
+  await ensureBackendWire()
+  return requireContext().rest(scopePath(path), options)
 }
 
 /**
@@ -421,12 +479,12 @@ function describeError(error) {
 
 async function fetchHealth() {
   if (!pluginContext) throw new Error('Coursebook is not registered')
-  return pluginContext.rest('/health')
+  return rest('/health')
 }
 
 async function fetchSchema() {
   if (!pluginContext) throw new Error('Coursebook is not registered')
-  return pluginContext.rest('/schema')
+  return rest('/schema')
 }
 
 /**
@@ -833,7 +891,7 @@ function usePackIntake(enabled) {
     }
     ;(async () => {
       try {
-        const response = await pluginContext.rest('/packs/intake')
+        const response = await rest('/packs/intake')
         if (cancelled) return
         const available = Boolean(response && (response.can_grant || response.available))
         setState({ status: available ? 'available' : 'unsupported', info: response || null, error: null })
@@ -1125,7 +1183,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
       try {
         if (!folder) throw new Error('Choose a folder first.')
         const path = `${folder.path.replace(/\/$/, '')}/${entry.path}`
-        const granted = await pluginContext.rest('/packs/grant', { method: 'POST', body: { path } })
+        const granted = await rest('/packs/grant', { method: 'POST', body: { path } })
         if (!granted || !granted.ok || !granted.staged_id) {
           throw new Error((granted && granted.message) || 'The backend did not mint a staged pack.')
         }
