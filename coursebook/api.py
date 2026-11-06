@@ -93,7 +93,7 @@ register_handler("schema.get", _schema_get)
 # A caller holding only a runtime id must resolve it first (`host.state.focusedStoredSessionId`
 # on the Desktop half); this backend does not accept a runtime id as a stand-in.
 
-BINDING_COLUMNS = (
+BINDING_COLUMNS: tuple[str, ...] = (
     "id",
     "enrollment_id",
     "profile",
@@ -106,6 +106,12 @@ BINDING_COLUMNS = (
     "revision",
     "updated_at",
 )
+
+#: Section identity, added by the ``cb.db`` v2 migration. A v1 binding table has neither column and
+#: every binding there is a course-level chat, so the fields are answered as ``null`` rather than
+#: omitted: the pane must be able to tell "this chat is bound to no single section" from "this build
+#: did not answer". The ``bindings`` object is an open object in ``cb.rpc`` v5.
+BINDING_SECTION_COLUMNS: tuple[str, ...] = ("lesson_run_id", "objective_id")
 
 
 def _binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
@@ -134,15 +140,20 @@ def _binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
     from contextlib import closing
 
     with closing(db.connect()) as connection:
+        present = {info[1] for info in connection.execute("PRAGMA table_info(bindings)")}
+        selected: list[str] = list(BINDING_COLUMNS)
+        columns: list[str] = list(BINDING_COLUMNS) + list(BINDING_SECTION_COLUMNS)
+        for name in BINDING_SECTION_COLUMNS:
+            selected.append(name if name in present else f"NULL AS {name}")
         row = connection.execute(
-            f"SELECT {', '.join(BINDING_COLUMNS)} FROM bindings WHERE {column} = ? "
+            f"SELECT {', '.join(selected)} FROM bindings WHERE {column} = ? "
             "ORDER BY (status = 'active') DESC, updated_at DESC LIMIT 1",
             (value,),
         ).fetchone()
 
     if row is None:
         return 0, {"binding": None}
-    binding = {name: row[name] for name in BINDING_COLUMNS}
+    binding = {name: row[name] for name in columns}
     binding["matched_column"] = column
     return 0, {"binding": binding}
 

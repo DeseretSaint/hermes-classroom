@@ -460,6 +460,43 @@ No table, no column, no migration and no error code is added: every field is der
 `plans`/`objectives`/`checks`/`lesson_runs`/`attempts`, or written to the existing `evidence` table
 (`cb.db` v2). `cb.errors`, `cb.db`, `cb.jobs`, `cb.pack` and `cb.projection` stay at their versions.
 
+### `binding.get` section identity (additive within v5 — CB-009 pane scope)
+
+CB-009 found that `binding.get` returned neither `bindings.objective_id` nor `bindings.lesson_run_id`
+even though `cb.db` v2 stores both, so the Coursebook pane could scope only by enrollment: it had to
+render `library_item.evidence_summary.current_objective_id`, the enrollment's *current* section. A
+chat bound to section 3 therefore displayed section 1's page and section 1's detached run. Live
+evidence at the time: chat `20261106_072357_ad7e67` was bound active to `obj_9b596207…`
+(`bind_eacdfd2382ed494582a00539e84b3465`) while the pane rendered `obj_2ec4b8ec…`.
+
+The `binding` member of the `binding.get` response is declared as an **open object**
+(`{"type": "object"}`, no `additionalProperties: false`) in `rpc.v5.json`, and `cb.db` v2 already
+carries both columns. Emitting two fields the schema already permits is therefore additive within
+v5: **no v6, no schema file change, no version bump.** `rpc.v5.json` is untouched on disk, so the
+sha256 pins in `tests/test_contracts.py` still hold and every other v5 payload is byte-identical.
+
+Both fields are required on **every** non-null `binding` answer:
+
+| Field | Source | Meaning |
+|---|---|---|
+| `objective_id` | `bindings.objective_id` | the one section this chat governs; `null` for a legacy/course-level binding |
+| `lesson_run_id` | `bindings.lesson_run_id` | the run that section was opened under; `null` when the binding never named a run |
+
+Rules:
+
+* **Status semantics are unchanged.** `status` is still the row's own status (`active`, `paused`,
+  `detached`, `branched`, `orphaned`, `completed`) for the chat the request named. The section fields
+  do not derive, override or relax it; a detached binding still refuses a submit.
+* **`null` means "no section", never "this build did not answer".** A `cb.db` v1 binding table has no
+  `lesson_runs`; the platform seam answers both fields as `null` there rather than omitting them,
+  because every v1 binding is a course-level chat. A client can then tell a course-level chat from
+  an unanswered field.
+* **The write half already agrees.** `coursebook.bindings._view` has emitted both fields since
+  CB-013; this amendment makes the read half (`binding.get`) match the row `bind_session` wrote, so
+  there is one shape for a binding on the wire and not two.
+* The value is read from the row, never recomputed from "the current section" or from recency: the
+  pane scopes to the bound section, which is the point (AUDIT R1).
+
 ### What these three methods may not return
 
 This is the reason the methods are small. Each one is a *view*, and a view that leaks the grading
@@ -683,6 +720,7 @@ backups, provider-side data, or artifacts referenced by another course.
 | v4 | 2026-11-06 | CB-024 additive amendment. 40 RPC methods (+pack.list, pack.inspect) reading the existing library index and `packs` row; no new table, column, migration or error code. New contract `cb.projection` v1 freezes the pack-check → check-spec mapping (six audit rules, deterministic projection, conformance vectors) with two importer divergences recorded for Lattice. |
 | v4 (projection closure) | 2026-11-06 | CB-025 (importer commits `577d268`, `725ffbf`) closed both `cb.projection` v1 divergences: R5 gained the non-empty guard and R6 withholds a check its manifest declares failed, so the bundled Japanese pack's `obj-register-transfer` opens through the dispatcher. `x-known-divergences` now records both as `resolved` with the implementing commit, the `declared_failed_withholds` vector reports the ordinary `import_audit_failed` problem, and `$defs.check_spec.declared_audit_state` is narrowed to `passed`/`unreviewed`. No RPC method, table, migration, wire constant or handler changed; `cb.projection` stays v1. |
 | v5 | 2026-11-06 | CB-026 additive amendment. 43 RPC methods (+course.outline, check.get, lesson.assist) so CB-009 can render the Textbook section list, the Plan tab, the structured check prompt and the pane's Hint/Show answer; `lesson.assist` is fenced in the envelope. No new table, column, migration or error code — every field is derived from `plans`/`objectives`/`checks`/`lesson_runs`/`attempts`, and the assist event is the layer-1 `evidence` row the chat hook already writes. `section_titles` deliberately omitted (no heading storage). Superseded files pinned by sha256. |
+| v5 (binding scope) | 2026-11-06 | CB-009 finding: `binding.get` now answers `objective_id` and `lesson_run_id` from the `bindings` row so the pane scopes to the bound section instead of the enrollment's current one. Additive inside v5 because `binding` is an open object in `rpc.v5.json` and `cb.db` v2 already stores both columns: **no v6, no schema edit, no version bump, no status-semantics change**. `null` = legacy/course-level binding; the platform seam answers `null` on a v1 binding table rather than omitting the fields. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
