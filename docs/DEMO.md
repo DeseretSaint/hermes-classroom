@@ -1,11 +1,24 @@
 # Demo script skeleton
 
-Status: not recordable. Coursebook 0.1.0 has no course creation, no chat binding, no grading and
-no export, so every shot below is blocked. This document fixes the composition, the narration
-and the disclosure rules now, so the recording is a capture job and not a design job.
+Status: not recordable. The blocker is the desktop surface, not the backend. On the installed
+candidate (`f4a42f34`) the `#/coursebook` route renders the session home: the pane and the sidebar
+item load, the route page never mounts. That is CB-QA-09 (`t_bfe339b2`), reproduced on this build
+and recorded in `docs/REVIEW_CB014.md`.
 
-Recording starts only after Sentinel passes the demo scenarios on the build being recorded.
-Recording and publishing need DeseretSaint's approval.
+The build does perform the four flows this file previously said were missing. Course creation and
+pack export run on this commit: `pack.import` creates a course and enrollment, `pack.export` returns
+a hashed archive (`tests/adversarial/evidence/attack-packs.json`, P17, P18, P20), and the CB-014 run
+log counts 31/31 mounted backend expectations (`/tmp/cb014-validate.log`). Chat binding is written by
+`POST /sessions/bind` and read back by `binding.get` in that same log. Grading commits exactly one
+attempt and one transition per submit, and fails closed on an invalid, hung or throwing grader
+(`tests/adversarial/evidence/attack-state.json`, S01, S02, S10-S12). None of it is visible, because
+the screen those flows belong to does not mount.
+
+Shots 0-8s, 34-40s, 47-62s and 62-73s need surfaces that do not render, so they cannot be captured.
+
+Gate status: NOT MET. Recording starts only after Sentinel passes the demo scenarios (U01-U04) on
+the exact build being recorded. Nothing is recorded before that, and no recording is labeled as
+having passed this gate. Recording and publishing also need DeseretSaint's approval.
 
 ## Rules
 
@@ -35,6 +48,10 @@ Times are targets. Total must stay under 90 seconds.
 | 62-73s | Export preview | Export the pack; show the file list, rights and the no-upload statement | "The pack carries teaching material, not the learner's history, and it uploads nothing." | Live | Pack export |
 | 73-82s | Lesson media | Show the sourced visual and audio, then the text alternative and the next review date | "A sourced visual, spoken, with the text right here. The next review is scheduled." | Media precomputed and disclosed; navigation live | Media, scheduling |
 | 82-86s | Closing card | Static end card | "A chat answers. Coursebook makes the next step depend on what you did." | Static | None |
+
+The four rows marked 0-8s, 34-40s, 47-62s and 62-73s are the ones that need the unmounted route.
+They stay in the script as targets, not as shots that can be captured today. A partial cut that
+drops them is a different video with different claims, not this script.
 
 ## Precomputed and live split
 
@@ -77,6 +94,6 @@ tell which seconds were generated earlier without reading the post.
 
 ## What cannot be claimed from this script
 
-The script proves a governed loop on one prepared pack. It does not prove learning efficacy, does
-not prove behavior with other packs, and does not prove a public community index. Those are not in
-the video and not in the submission text.
+Recorded, this script proves a governed loop on one prepared pack. It does not prove learning
+efficacy, does not prove behavior with other packs, and does not prove a public community index.
+Those are not in the video and not in the submission text.
