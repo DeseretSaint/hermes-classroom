@@ -1,0 +1,895 @@
+{
+  "home": "/home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/cb014-attack-state-anzld52n",
+  "results": {
+    "J01": {
+      "detail": "first=job_2715080a51984947acbbf35229877f21 second=job_2715080a51984947acbbf35229877f21 jobs=1",
+      "elapsed_s": 0.08,
+      "evidence": {
+        "first": {
+          "job_id": "job_2715080a51984947acbbf35229877f21",
+          "state": "queued"
+        },
+        "second": {
+          "job_id": "job_2715080a51984947acbbf35229877f21",
+          "state": "queued"
+        }
+      },
+      "title": "the same operation id never mints a second job or a second spend",
+      "verdict": "PASS"
+    },
+    "J02": {
+      "detail": "outcomes=['w1:claimed', 'w2:JobLeaseLost']",
+      "elapsed_s": 0.11,
+      "evidence": {
+        "outcomes": [
+          "w1:claimed",
+          "w2:JobLeaseLost"
+        ]
+      },
+      "title": "two concurrent claims cannot both own one job",
+      "verdict": "PASS"
+    },
+    "J03": {
+      "detail": "state=cancelled claimed=False usage=0",
+      "elapsed_s": 0.1,
+      "evidence": {
+        "cancelled": {
+          "job_id": "job_b1c8c4312cf6487f9d25645fd445433f",
+          "state": "cancelled"
+        }
+      },
+      "title": "cancelling a queued job spends nothing and cannot be claimed",
+      "verdict": "PASS"
+    },
+    "J04": {
+      "detail": "state=completed_late usage=0",
+      "elapsed_s": 0.55,
+      "evidence": {
+        "state": "completed_late"
+      },
+      "title": "a stage that finishes after a cancel becomes completed_late, not a second artifact",
+      "verdict": "PASS"
+    },
+    "J05": {
+      "detail": "state_after_restart=interrupted_requires_retry checkpoint={'last_stage': 'gather', 'sources': ['a']}",
+      "elapsed_s": 0.23,
+      "evidence": {
+        "checkpoint": {
+          "last_stage": "gather",
+          "sources": [
+            "a"
+          ]
+        },
+        "state": "interrupted_requires_retry"
+      },
+      "title": "a restart marks a live-lease job interrupted and resumes its checkpoint",
+      "verdict": "PASS"
+    },
+    "J06": {
+      "detail": "state=completed executed=['plan']",
+      "elapsed_s": 0.23,
+      "evidence": {
+        "calls": [
+          "plan"
+        ]
+      },
+      "title": "resuming an interrupted job skips a finished stage and does not repeat spend",
+      "verdict": "PASS"
+    },
+    "S01": {
+      "detail": "same_attempt=True attempts=1 transitions=1 evidence=2",
+      "elapsed_s": 0.33,
+      "evidence": {
+        "first": {
+          "contract_version": 6,
+          "ok": true,
+          "operation_id": "op-attempt-submit-848d89d8",
+          "result": {
+            "attempt_id": "att_b000f1bb21b24153b856f3c517aefca2",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "within tolerance (0 <= 0)"
+              }
+            ],
+            "evidence_class": "cold",
+            "next_action": "complete_objective",
+            "revision": 3,
+            "verdict": "pass"
+          },
+          "revision": 3
+        },
+        "second": {
+          "contract_version": 6,
+          "ok": true,
+          "operation_id": "op-attempt-submit-2d4431d3",
+          "result": {
+            "attempt_id": "att_b000f1bb21b24153b856f3c517aefca2",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "within tolerance (0 <= 0)"
+              }
+            ],
+            "evidence_class": "cold",
+            "next_action": "complete_objective",
+            "revision": 3,
+            "verdict": "pass"
+          },
+          "revision": 3
+        }
+      },
+      "title": "duplicate submit with the same idempotency key replays, never double-commits",
+      "verdict": "PASS"
+    },
+    "S02": {
+      "detail": "ok=1 refused=1 codes=['STALE_REVISION'] attempts=1 transitions=1",
+      "elapsed_s": 0.28,
+      "evidence": {
+        "results": [
+          {
+            "contract_version": 6,
+            "ok": true,
+            "operation_id": "op-attempt-submit-a6abe55c",
+            "result": {
+              "attempt_id": "att_b11e2b2fb91044b3a733b14b46d704c1",
+              "criteria": [
+                {
+                  "id": "c1",
+                  "met": true,
+                  "observed": "within tolerance (0 <= 0)"
+                }
+              ],
+              "evidence_class": "cold",
+              "next_action": "complete_objective",
+              "revision": 3,
+              "verdict": "pass"
+            },
+            "revision": 3
+          },
+          {
+            "contract_version": 6,
+            "error": {
+              "category": "conflict",
+              "code": "STALE_REVISION",
+              "current_revision": 3,
+              "details": {
+                "current_revision": 3
+              },
+              "message": "the enrollment moved on while this answer was being graded.",
+              "retryable": false
+            },
+            "ok": false,
+            "operation_id": "op-attempt-submit-71a9239d"
+          }
+        ]
+      },
+      "title": "two concurrent submits at one revision: exactly one attempt and one transition",
+      "verdict": "PASS"
+    },
+    "S03": {
+      "detail": "code=STALE_REVISION attempts_before=0 after=0",
+      "elapsed_s": 0.24,
+      "evidence": {
+        "error": {
+          "category": "conflict",
+          "code": "STALE_REVISION",
+          "current_revision": 2,
+          "details": {
+            "current_revision": 2
+          },
+          "message": "the enrollment moved on before this answer was graded.",
+          "retryable": false
+        }
+      },
+      "title": "a stale revision is refused before grading and writes nothing",
+      "verdict": "PASS"
+    },
+    "S04": {
+      "detail": "second_ok=False code=CHECK_STALE attempts=1 transitions=1",
+      "elapsed_s": 0.27,
+      "evidence": {
+        "first": {
+          "contract_version": 6,
+          "ok": true,
+          "operation_id": "op-attempt-submit-a110c2c7",
+          "result": {
+            "attempt_id": "att_a3dce653d09f4984b1c99f2dc879fe84",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "within tolerance (0 <= 0)"
+              }
+            ],
+            "evidence_class": "cold",
+            "next_action": "complete_objective",
+            "revision": 3,
+            "verdict": "pass"
+          },
+          "revision": 3
+        },
+        "second": {
+          "contract_version": 6,
+          "error": {
+            "category": "conflict",
+            "code": "CHECK_STALE",
+            "current_revision": 3,
+            "details": {
+              "check_state": "closed",
+              "current_revision": 3
+            },
+            "message": "that check is closed; no attempt was created.",
+            "retryable": false
+          },
+          "ok": false,
+          "operation_id": "op-attempt-submit-aca7ae42"
+        }
+      },
+      "title": "a second answer to a closed check writes no attempt and no transition",
+      "verdict": "PASS"
+    },
+    "S05": {
+      "detail": "hook_blocked=False evidence_class=['answer_shown', 'answer_shown']",
+      "elapsed_s": 0.33,
+      "evidence": {
+        "attempt": {
+          "contract_version": 6,
+          "ok": true,
+          "operation_id": "op-attempt-submit-0210d46a",
+          "result": {
+            "attempt_id": "att_53262f429abb477495b606137c81b147",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "within tolerance (0 <= 0)"
+              }
+            ],
+            "evidence_class": "answer_shown",
+            "next_action": "review_objective",
+            "revision": 3,
+            "verdict": "pass"
+          },
+          "revision": 3
+        },
+        "evidence": [
+          {
+            "attempt_id": "att_53262f429abb477495b606137c81b147",
+            "created_at": "2026-11-06T16:48:58.172717+00:00",
+            "enrollment_id": "enr_a6455fb8ac6049f8862a092f9a5a0090",
+            "evidence_class": "answer_shown",
+            "id": "evd_a7ab9ec6fdaf4d76ab935f37c711dd12",
+            "kind": "answer_shown",
+            "layer": 1,
+            "objective_id": "obj_6e6e96d69729454faf332395d721d268"
+          },
+          {
+            "attempt_id": "att_53262f429abb477495b606137c81b147",
+            "created_at": "2026-11-06T16:48:58.198347+00:00",
+            "enrollment_id": "enr_a6455fb8ac6049f8862a092f9a5a0090",
+            "evidence_class": "answer_shown",
+            "id": "evd_8ea7c4f6457044f59160c00d94cea115",
+            "kind": "attempt",
+            "layer": 1,
+            "objective_id": "obj_6e6e96d69729454faf332395d721d268"
+          }
+        ],
+        "hook": null
+      },
+      "title": "a shown answer contaminates exactly the next attempt (never independent evidence)",
+      "verdict": "PASS"
+    },
+    "S06": {
+      "detail": "objective_overridden=True objective=[{'objective_id': 'obj_edcef8f672f94d0b997ff5077c2ed533', 'ordinal': 1, 'title': 'Objective', 'evidence_target': 'procedure', 'state': 'overridden', 'check_state': 'closed', 'attempt_count': 1, 'independent': False, 'last_opened_at': '2026-11-06T16:48:58.461700+00:00'}] independent_rows=0",
+      "elapsed_s": 0.29,
+      "evidence": {
+        "evidence": [
+          {
+            "attempt_id": "att_bb6c85852ec647a4a9747defba55d6ee",
+            "created_at": "2026-11-06T16:48:58.489444+00:00",
+            "enrollment_id": "enr_9273b5c48a6240108f37b73758d8ee17",
+            "evidence_class": "override",
+            "id": "evd_645694834c06401c80284986972875e9",
+            "kind": "override",
+            "layer": 1,
+            "objective_id": "obj_edcef8f672f94d0b997ff5077c2ed533"
+          }
+        ],
+        "hook": {
+          "context": "Coursebook result: not yet. Access was granted by an override. This is not mastery and is labelled as such. Teach the wrap-up for this objective, then move to the next section. Objective: obj_edcef8f672f94d0b997ff5077c2ed533."
+        },
+        "outline": {
+          "enrollment_id": "enr_9273b5c48a6240108f37b73758d8ee17",
+          "objectives": [
+            {
+              "attempt_count": 1,
+              "check_state": "closed",
+              "evidence_target": "procedure",
+              "independent": false,
+              "last_opened_at": "2026-11-06T16:48:58.461700+00:00",
+              "objective_id": "obj_edcef8f672f94d0b997ff5077c2ed533",
+              "ordinal": 1,
+              "state": "overridden",
+              "title": "Objective"
+            }
+          ],
+          "plan": {
+            "plan_hash": "sha256:e1ff46f1b2dc3516dadddbf3f1a1ee5c197fe0131636fcb65d5014f98ce32228",
+            "plan_id": "pln_da7cf2beb603410195efa2ab6919309e",
+            "state": "approved",
+            "version": 1
+          },
+          "total": 1,
+          "truncated": false
+        }
+      },
+      "title": "override grants access but never a pass or independent evidence",
+      "verdict": "PASS"
+    },
+    "S07": {
+      "detail": "open_check_reference_leaks=['/evidence.inspect/result/l2/objectives[0]/criteria[0]/check_spec/reference={\"kind\": \"numeric\", \"tolerance\": {\"abs\": \"0\"}, \"value\": \"4\"}'] post_submit_reference_leaks=['/evidence.inspect/result/l2/objectives[0]/criteria[0]/check_spec/reference={\"kind\": \"numeric\", \"tolerance\": {\"abs\": \"0\"}, \"value\": \"4\"}'] secret_present=False",
+      "elapsed_s": 0.29,
+      "evidence": {
+        "open_surfaces": {
+          "check.get": {
+            "contract_version": 6,
+            "error": {
+              "category": "validation",
+              "code": "VALIDATION_FAILED",
+              "details": {
+                "path": "<payload>"
+              },
+              "message": "check.get request payload invalid at <payload>: {'check_id': 'chk_1e1fea3d12d2448eaff9fcad9aa07c78'} is not valid under any of the given schemas",
+              "retryable": false
+            },
+            "ok": false,
+            "operation_id": "op-check-get-ec374a05"
+          },
+          "check.open": {
+            "check_id": "chk_1e1fea3d12d2448eaff9fcad9aa07c78",
+            "check_version": 1,
+            "evidence_target": "procedure",
+            "revision": 2
+          },
+          "evidence.inspect": {
+            "contract_version": 6,
+            "ok": true,
+            "operation_id": "op-evidence-inspect-dadb1866",
+            "result": {
+              "disputes": {
+                "count": 0,
+                "disputes": [],
+                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "truncated": false
+              },
+              "l1": {
+                "attempts": [],
+                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "events": [],
+                "objective_id": null
+              },
+              "l2": {
+                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "objective_id": null,
+                "objectives": [
+                  {
+                    "L2_evidence_ids": [],
+                    "attempt_classes": {},
+                    "criteria": [
+                      {
+                        "check_spec": {
+                          "audit_state": "passed",
+                          "reference": {
+                            "kind": "numeric",
+                            "tolerance": {
+                              "abs": "0"
+                            },
+                            "value": "4"
+                          },
+                          "rubric": {
+                            "construct": "procedure",
+                            "criteria": [
+                              {
+                                "description": "Correct value",
+                                "id": "c1"
+                              }
+                            ],
+                            "pass_rule": "all"
+                          },
+                          "stimulus": {
+                            "prompt": "Compute 2+2."
+                          }
+                        },
+                        "description": "graded",
+                        "id": "c1"
+                      }
+                    ],
+                    "delayed": false,
+                    "evidence_target": "procedure",
+                    "independent": false,
+                    "independent_at": null,
+                    "objective_id": "obj_6980b08eeac84b8dbc9ad7252d4d472c",
+                    "ordinal": 1,
+                    "state": "not_started",
+                    "title": "Objective"
+                  }
+                ]
+              },
+              "l3": {
+                "as_of": null,
+                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "is_persona": false,
+                "recommendations": [
+                  {
+                    "basis": "layer2.independent == false",
+                    "kind": "needs_independent_evidence",
+                    "objective_ids": [
+                      "obj_6980b08eeac84b8dbc9ad7252d4d472c"
+                    ],
+                    "text": "1 objective(s) have no cold independent evidence yet."
+                  }
+                ]
+              }
+            },
+            "revision": 2
+          },
+          "lesson.page": {
+            "contract_version": 6,
+            "ok": true,
+            "operation_id": "op-lesson-page-05ea5ac0",
+            "result": {
+              "artifacts": [],
+              "attempts": [],
+              "checks": [
+                {
+                  "attempt_count": 0,
+                  "audit_state": "passed",
+                  "check_id": "chk_1e1fea3d12d2448eaff9fcad9aa07c78",
+                  "evidence_target": "procedure",
+                  "state": "open",
+                  "version": 1
+                }
+              ],
+              "course": {
+                "course_id": "crs_a07bb52ce3694cd39a2a6e82ed67942c",
+                "title": "Attack lesson"
+              },
+              "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+              "notebook_entries": [],
+              "revision": 2,
+              "runtime": {
+                "binding_id": "bind_2cb435eebda04952ab67c902869b4baf",
+                "binding_status": "active",
+                "last_active_at": "2026-11-06T16:48:58.747259+00:00",
+                "lesson_run_id": "run_a2c6e1151a8b497c8c3c37e97f69733f",
+                "session_state": "stored_only"
+              },
+              "section": {
+                "evidence_target": "procedure",
+                "last_opened_at": "2026-11-06T16:48:58.747259+00:00",
+                "objective_id": "obj_6980b08eeac84b8dbc9ad7252d4d472c",
+                "ordinal": 1,
+                "state": "not_started",
+                "title": "Objective"
+              },
+              "segments": [],
+              "sources": [],
+              "state": "not_started"
+            },
+            "revision": 2
+          }
+        },
+        "post_surfaces": {
+          "attempt.submit": {
+            "contract_version": 6,
+            "ok": true,
+            "operation_id": "op-attempt-submit-0252d041",
+            "result": {
+              "attempt_id": "att_502a83ac3cb5474b9fd0405a98d8b568",
+              "criteria": [
+                {
+                  "id": "c1",
+                  "met": true,
+                  "observed": "within tolerance (0 <= 0)"
+                }
+              ],
+              "evidence_class": "cold",
+              "next_action": "complete_objective",
+              "revision": 3,
+              "verdict": "pass"
+            },
+            "revision": 3
+          },
+          "check.get": {
+            "contract_version": 6,
+            "error": {
+              "category": "validation",
+              "code": "VALIDATION_FAILED",
+              "details": {
+                "path": "<payload>"
+              },
+              "message": "check.get request payload invalid at <payload>: {'check_id': 'chk_1e1fea3d12d2448eaff9fcad9aa07c78'} is not valid under any of the given schemas",
+              "retryable": false
+            },
+            "ok": false,
+            "operation_id": "op-check-get-ec374a05"
+          },
+          "check.open": {
+            "check_id": "chk_1e1fea3d12d2448eaff9fcad9aa07c78",
+            "check_version": 1,
+            "evidence_target": "procedure",
+            "revision": 2
+          },
+          "evidence.inspect": {
+            "contract_version": 6,
+            "ok": true,
+            "operation_id": "op-evidence-inspect-dadb1866",
+            "result": {
+              "disputes": {
+                "count": 0,
+                "disputes": [],
+                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "truncated": false
+              },
+              "l1": {
+                "attempts": [],
+                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "events": [],
+                "objective_id": null
+              },
+              "l2": {
+                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "objective_id": null,
+                "objectives": [
+                  {
+                    "L2_evidence_ids": [],
+                    "attempt_classes": {},
+                    "criteria": [
+                      {
+                        "check_spec": {
+                          "audit_state": "passed",
+                          "reference": {
+                            "kind": "numeric",
+                            "tolerance": {
+                              "abs": "0"
+                            },
+                            "value": "4"
+                          },
+                          "rubric": {
+                            "construct": "procedure",
+                            "criteria": [
+                              {
+                                "description": "Correct value",
+                                "id": "c1"
+                              }
+                            ],
+                            "pass_rule": "all"
+                          },
+                          "stimulus": {
+                            "prompt": "Compute 2+2."
+                          }
+                        },
+                        "description": "graded",
+                        "id": "c1"
+                      }
+                    ],
+                    "delayed": false,
+                    "evidence_target": "procedure",
+                    "independent": false,
+                    "independent_at": null,
+                    "objective_id": "obj_6980b08eeac84b8dbc9ad7252d4d472c",
+                    "ordinal": 1,
+                    "state": "not_started",
+                    "title": "Objective"
+                  }
+                ]
+              },
+              "l3": {
+                "as_of": null,
+                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "is_persona": false,
+                "recommendations": [
+                  {
+                    "basis": "layer2.independent == false",
+                    "kind": "needs_independent_evidence",
+                    "objective_ids": [
+                      "obj_6980b08eeac84b8dbc9ad7252d4d472c"
+                    ],
+                    "text": "1 objective(s) have no cold independent evidence yet."
+                  }
+                ]
+              }
+            },
+            "revision": 2
+          },
+          "lesson.page": {
+            "contract_version": 6,
+            "ok": true,
+            "operation_id": "op-lesson-page-05ea5ac0",
+            "result": {
+              "artifacts": [],
+              "attempts": [],
+              "checks": [
+                {
+                  "attempt_count": 0,
+                  "audit_state": "passed",
+                  "check_id": "chk_1e1fea3d12d2448eaff9fcad9aa07c78",
+                  "evidence_target": "procedure",
+                  "state": "open",
+                  "version": 1
+                }
+              ],
+              "course": {
+                "course_id": "crs_a07bb52ce3694cd39a2a6e82ed67942c",
+                "title": "Attack lesson"
+              },
+              "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+              "notebook_entries": [],
+              "revision": 2,
+              "runtime": {
+                "binding_id": "bind_2cb435eebda04952ab67c902869b4baf",
+                "binding_status": "active",
+                "last_active_at": "2026-11-06T16:48:58.747259+00:00",
+                "lesson_run_id": "run_a2c6e1151a8b497c8c3c37e97f69733f",
+                "session_state": "stored_only"
+              },
+              "section": {
+                "evidence_target": "procedure",
+                "last_opened_at": "2026-11-06T16:48:58.747259+00:00",
+                "objective_id": "obj_6980b08eeac84b8dbc9ad7252d4d472c",
+                "ordinal": 1,
+                "state": "not_started",
+                "title": "Objective"
+              },
+              "segments": [],
+              "sources": [],
+              "state": "not_started"
+            },
+            "revision": 2
+          }
+        }
+      },
+      "title": "the reference answer never appears in learner-facing API responses while a check is open",
+      "verdict": "FAIL"
+    },
+    "S08": {
+      "detail": "context_returned=True forbidden_hits=[]",
+      "elapsed_s": 0.3,
+      "evidence": {
+        "answer_hook": {
+          "context": "Coursebook result: correct. That counted as independent evidence for this objective. Teach the wrap-up for this objective, then move to the next section. Objective: obj_4c8662748f3b40749761f9195f15daae."
+        },
+        "clarification": null
+      },
+      "title": "the pre-turn teaching context carries no reference answer or rubric key",
+      "verdict": "PASS"
+    },
+    "S09": {
+      "detail": "attempts=0 hook=None revision=2",
+      "elapsed_s": 0.25,
+      "evidence": {
+        "hook": null
+      },
+      "title": "a clarification inside an open check creates no attempt and consumes no retry",
+      "verdict": "PASS"
+    },
+    "S10": {
+      "detail": "response_ok=True attempt_verdict=needs_retry transitions=0",
+      "elapsed_s": 0.22,
+      "evidence": {
+        "attempts": [
+          {
+            "answer_hash": "sha256:b9e8bd219f5f0fd64b9879084f6fcb3a9951e2bf0b88d9a00eb00ccc9487b021",
+            "answer_json": "{\"kind\":\"text\",\"text\":\"a wrong but fluent answer\"}",
+            "answer_kind": "text",
+            "attempt_nonce": "nonce-e3f1a87bf1e7",
+            "check_id": "chk_d78ec3a9151746b389a65f1db50a0232",
+            "check_version": 1,
+            "committed_at": null,
+            "created_at": "2026-11-06T16:48:59.543989+00:00",
+            "criteria_json": "[]",
+            "enrollment_id": "enr_573db137f161433aa303fb97c3b5067c",
+            "evidence_class": "cold",
+            "grading_provenance_json": "{\"failure\":\"GradingUnavailable: aux grader returned no criteria observations\",\"grader\":\"unavailable\"}",
+            "id": "att_f32752cf500243afa94ca95b8cc13ede",
+            "state": "failed",
+            "verdict": "needs_retry"
+          }
+        ],
+        "result": {
+          "contract_version": 6,
+          "ok": true,
+          "operation_id": "op-attempt-submit-10caea8c",
+          "result": {
+            "attempt_id": "att_f32752cf500243afa94ca95b8cc13ede",
+            "criteria": [],
+            "evidence_class": "cold",
+            "next_action": "retry_grading",
+            "revision": 2,
+            "verdict": "needs_retry"
+          },
+          "revision": 2
+        }
+      },
+      "title": "invalid grader JSON fails closed to needs_retry and advances nothing",
+      "verdict": "PASS"
+    },
+    "S11": {
+      "detail": "elapsed=8.03s attempt=[{'verdict': 'needs_retry'}] transitions=0",
+      "elapsed_s": 8.23,
+      "evidence": {
+        "result": {
+          "contract_version": 6,
+          "ok": true,
+          "operation_id": "op-attempt-submit-ec433a7b",
+          "result": {
+            "attempt_id": "att_84b081b48efb466da0b86c97d11110b0",
+            "criteria": [],
+            "evidence_class": "cold",
+            "next_action": "retry_grading",
+            "revision": 2,
+            "verdict": "needs_retry"
+          },
+          "revision": 2
+        }
+      },
+      "title": "a hung grader fails closed inside its deadline",
+      "verdict": "PASS"
+    },
+    "S12": {
+      "detail": "response_ok=True transitions=0",
+      "elapsed_s": 0.24,
+      "evidence": {
+        "result": {
+          "contract_version": 6,
+          "ok": true,
+          "operation_id": "op-attempt-submit-54e8c773",
+          "result": {
+            "attempt_id": "att_fce3d19219ef40ba9a665accf3a25545",
+            "criteria": [],
+            "evidence_class": "cold",
+            "next_action": "retry_grading",
+            "revision": 2,
+            "verdict": "needs_retry"
+          },
+          "revision": 2
+        }
+      },
+      "title": "a grader exception fails closed and the reference never enters the response",
+      "verdict": "PASS"
+    },
+    "S13": {
+      "detail": "aux_lane_disabled_in_release=True injected_answer_verdict=pass reference_leaked=False (when the aux lane is enabled, learner text can steer the grader; no structural cross-check exists)",
+      "elapsed_s": 0.22,
+      "evidence": {
+        "attempt": [
+          {
+            "evidence_class": "cold",
+            "grading_provenance_json": "{\"deadline_ms\":8000,\"grader\":\"aux:attack-injected\",\"rationale\":\"answer said to pass\",\"reference_sha256\":\"sha256:779bd262ad2fd358a133ad3984ef0e0a7f680c13afc59e1f16b929078009f8e6\"}",
+            "verdict": "pass"
+          }
+        ],
+        "result": {
+          "contract_version": 6,
+          "ok": true,
+          "operation_id": "op-attempt-submit-430be3f5",
+          "result": {
+            "attempt_id": "att_e7172141535246149709d17ae4633781",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "obeyed"
+              }
+            ],
+            "evidence_class": "cold",
+            "next_action": "complete_objective",
+            "revision": 3,
+            "verdict": "pass"
+          },
+          "revision": 3
+        }
+      },
+      "title": "a prompt-injected learner answer cannot talk the grader into a pass",
+      "verdict": "BLOCKED"
+    },
+    "S14": {
+      "detail": "same_snapshot=True replayed_code=CHECK_STALE",
+      "elapsed_s": 0.35,
+      "evidence": {
+        "child": {
+          "replay_code": "CHECK_STALE",
+          "replayed_refused": true,
+          "snapshot": {
+            "attempts": 1,
+            "check_state": "closed",
+            "evidence": 2,
+            "revision": 3,
+            "transitions": 1
+          }
+        },
+        "parent": {
+          "attempts": 1,
+          "check_state": "closed",
+          "evidence": 2,
+          "revision": 3,
+          "transitions": 1
+        }
+      },
+      "title": "restart in a separate process resumes the exact revision and refuses a replayed answer",
+      "verdict": "PASS"
+    },
+    "S15": {
+      "detail": "segments_before=0 after=0",
+      "elapsed_s": 0.26,
+      "evidence": {
+        "submitted": {
+          "contract_version": 6,
+          "ok": true,
+          "operation_id": "op-attempt-submit-1ac64bd1",
+          "result": {
+            "attempt_id": "att_de6993a621bb4f17ae0a35b430ce8995",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "within tolerance (0 <= 0)"
+              }
+            ],
+            "evidence_class": "cold",
+            "next_action": "complete_objective",
+            "revision": 3,
+            "verdict": "pass"
+          },
+          "revision": 3
+        }
+      },
+      "title": "a late post-turn callback cannot write against a newer revision",
+      "verdict": "PASS"
+    },
+    "S16": {
+      "detail": "binding_get=None hook=None attempts=0",
+      "elapsed_s": 0.26,
+      "evidence": {
+        "binding": {
+          "binding": {
+            "connection_id": null,
+            "enrollment_id": "enr_3a513f23d0f648beac96c71ab0bd176c",
+            "id": "bind_de20095a7e164101b9549f941b2121b6",
+            "lesson_run_id": "run_67d76210477b434fb76c82fc68a976a1",
+            "matched_column": "stored_session_id",
+            "objective_id": "obj_e9f1f9e8c9e74790b906d2f1a6b323dc",
+            "profile": "cbqa",
+            "revision": 0,
+            "runtime_session_id": null,
+            "status": "active",
+            "stored_session_id": "sess-detach-1",
+            "updated_at": "2026-11-06T16:49:09.061413+00:00"
+          },
+          "created": true
+        },
+        "get": {
+          "contract_version": 6,
+          "error": {
+            "category": "validation",
+            "code": "VALIDATION_FAILED",
+            "details": {
+              "path": "<payload>"
+            },
+            "message": "binding.get request payload invalid at <payload>: Additional properties are not allowed ('stored_session_id' was unexpected)",
+            "retryable": false
+          },
+          "ok": false,
+          "operation_id": "op-binding-get-078b2ccd"
+        },
+        "hook": null
+      },
+      "title": "a detached binding refuses submission instead of grading into the void",
+      "verdict": "PASS"
+    }
+  },
+  "suite": "attack_state"
+}

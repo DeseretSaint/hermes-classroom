@@ -1,0 +1,49 @@
+[
+  {
+    "step": "pack.import",
+    "http": 200,
+    "body": {
+      "ok": true,
+      "contract_version": 6,
+      "operation_id": "cb014-pack-import",
+      "revision": 0,
+      "result": {
+        "pack_id": "japanese-affection-context-l0",
+        "course_id": "crs_5275f3e97f6a4f6a9971a134c4949dee",
+        "enrollment_id": "enr_e5643ca21edb4ec5a731b029872c64d1",
+        "revision": 0
+      }
+    }
+  },
+  {
+    "step": "course.get",
+    "http": 200,
+    "ok": true,
+    "result_keys": [
+      "course",
+      "revision"
+    ],
+    "error": null
+  },
+  {
+    "step": "course.outline",
+    "http": 200,
+    "ok": true,
+    "result_keys": [
+      "enrollment_id",
+      "objectives",
+      "plan",
+      "total",
+      "truncated"
+    ],
+    "error": null
+  },
+  {
+    "step": "registry",
+    "contract_methods": 51,
+    "implemented": 51,
+    "contract_problems": [],
+    "course.get": true,
+    "course.outline": true
+  }
+]
