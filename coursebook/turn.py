@@ -25,7 +25,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from . import api, db
+from . import api, db, evidence
 
 # ── classification ──────────────────────────────────────────────────────────
 
@@ -229,12 +229,19 @@ def _enrollment_revision(connection, enrollment_id: str) -> int:
 
 
 def _record_assist(connection, *, enrollment_id: str, objective_id: str, attempt_id: str | None,
-                   kind: str, evidence_class: str) -> None:
-    """A hint is a durable L1 event, recorded *before* the answer it contaminates."""
-    connection.execute(
-        "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
-        " VALUES (?, ?, ?, ?, 1, ?, ?, ?)",
-        (_random_evidence_id(), enrollment_id, objective_id, attempt_id, kind, evidence_class, db.utcnow()),
+                   kind: str, evidence_class: str) -> str:
+    """A hint is a durable L1 event, recorded *before* the answer it contaminates.
+
+    One writer with ``lesson.assist`` (:func:`coursebook.evidence.record_assist`): the chat hook
+    and the Desktop pane must write the same row shape for the same learner action.
+    """
+    return evidence.record_assist(
+        connection,
+        enrollment_id=enrollment_id,
+        objective_id=objective_id,
+        attempt_id=attempt_id,
+        kind=kind,
+        evidence_class=evidence_class,
     )
 
 

@@ -10,7 +10,7 @@
 * v5 added no storage,
 
 because all of that lives on the CB-008/CB-022 kernel branch. This module closes the gap: it drives
-the real commands, composes each response with the derivations the contract freezes, and validates
+the real commands through ``api.dispatch`` — the same handlers the Desktop calls — and validates
 every payload against ``rpc.v5.json``.
 
 Run it in a worktree that contains the backend kernel:
@@ -25,17 +25,18 @@ from __future__ import annotations
 
 # This module is branch-dependent by design: it imports the Python kernel, so static analysis on a
 # branch without it reports unresolved imports.
-# pyright: reportMissingImports=false, reportAttributeAccessIssue=false, reportPossiblyUnboundVariable=false, reportGeneralTypeIssues=false
+# pyright: reportMissingImports=false, reportAttributeAccessIssue=false, reportPossiblyUnboundVariable=false, reportGeneralTypeIssues=false, reportAssignmentType=false, reportArgumentType=false
 
 import json
+import os
 import unittest
 
 from coursebook import contracts
 
 try:  # The kernel and its fixtures live on Cinder's branches.
-    from coursebook import api, db, domain
+    from coursebook import api, domain
     from coursebook.api import RpcError
-    from tests.kernel_support import KernelCase
+    from tests.kernel_support import KernelCase, request
 
     _KERNEL_AVAILABLE = True
     _KERNEL_WHY = ""
@@ -47,8 +48,12 @@ except ImportError as exc:  # pragma: no cover - depends on the branch being che
         """Placeholder so the module imports (and skips honestly) where the kernel is absent."""
 
 
-#: Keys a stimulus may carry onto the wire. Anything else in checks.stimulus_json is dropped.
-STIMULUS_KEYS = ("prompt", "format", "choices", "learner_instructions")
+def _dispatch(method: str, payload: dict, **kwargs) -> dict:
+    """Run the shipped handler through the real dispatch seam, not a local re-derivation."""
+    response = api.dispatch(request(method, payload, **kwargs))
+    if not response["ok"]:
+        raise RpcError(response["error"])
+    return response
 
 
 def _json(value, default):
@@ -65,173 +70,38 @@ def _json(value, default):
 
 
 def outline_view(enrollment_id: str, *, limit: int = 400) -> dict:
-    """The frozen ``course.outline`` derivation, composed from real rows.
+    """Drive the shipped ``course.outline`` handler through dispatch.
 
-    This is the reference implementation of the contract text, not a second authority: every field
-    is one query over an existing row, and the plan rule is the kernel's own
-    (``_approved_plan`` then highest version).
+    Every assertion below is unchanged from the pre-handler proof: it is the same contract text,
+    now checked against the code the Desktop actually calls.
     """
-    with db.read() as connection:
-        enrollment = domain._enrollment(connection, enrollment_id)
-        plan = domain._approved_plan(connection, enrollment["course_id"])
-        if plan is None:
-            plan = domain._row(
-                connection, "SELECT * FROM plans WHERE course_id = ? ORDER BY version DESC LIMIT 1",
-                (enrollment["course_id"],),
-            )
-        if plan is None:
-            return {"enrollment_id": enrollment_id, "plan": None, "objectives": [], "total": 0,
-                    "truncated": False}
-        total = int(domain._row(
-            connection, "SELECT COUNT(*) AS n FROM objectives WHERE plan_id = ?", (plan["id"],)
-        )["n"])
-        rows = connection.execute(
-            "SELECT o.*,"
-            " (SELECT c.state FROM checks c WHERE c.objective_id = o.id"
-            "   ORDER BY c.version DESC LIMIT 1) AS check_state,"
-            " (SELECT COUNT(*) FROM attempts a JOIN checks c ON c.id = a.check_id"
-            "   WHERE c.objective_id = o.id AND a.enrollment_id = ? AND a.state = 'committed')"
-            "   AS attempt_count,"
-            " (SELECT MAX(r.last_opened_at) FROM lesson_runs r"
-            "   WHERE r.objective_id = o.id AND r.enrollment_id = ?) AS last_opened_at"
-            " FROM objectives o WHERE o.plan_id = ? ORDER BY o.ordinal LIMIT ?",
-            (enrollment_id, enrollment_id, plan["id"], limit),
-        ).fetchall()
-    objectives = [
-        {
-            "objective_id": row["id"],
-            "ordinal": int(row["ordinal"]),
-            "title": row["title"],
-            "evidence_target": row["evidence_target"],
-            "state": row["state"],
-            "check_state": row["check_state"] or "none",
-            "attempt_count": int(row["attempt_count"]),
-            "independent": row["state"] in ("independent_evidence", "delayed_evidence"),
-            "last_opened_at": row["last_opened_at"],
-        }
-        for row in rows
-    ]
-    return {
-        "enrollment_id": enrollment_id,
-        "plan": {
-            "plan_id": plan["id"],
-            "version": int(plan["version"]),
-            "state": plan["state"],
-            "plan_hash": plan["plan_hash"],
-        },
-        "objectives": objectives,
-        "total": total,
-        "truncated": total > len(objectives),
-    }
-
-
-def stimulus_view(stored) -> dict:
-    """Closed allowlist projection. An unknown stored key is dropped, never echoed."""
-    if not isinstance(stored, dict):
-        raise RpcError.of("VALIDATION_FAILED", "the stored check has no stimulus.",
-                          reason="stimulus_missing_prompt")
-    prompt = stored.get("prompt")
-    if not isinstance(prompt, str) or not prompt.strip():
-        raise RpcError.of("VALIDATION_FAILED", "the stored check has no stimulus prompt.",
-                          reason="stimulus_missing_prompt")
-    choices = stored.get("choices")
-    return {
-        "prompt": prompt[:8000],
-        "format": stored.get("format") if stored.get("format") in ("text", "selection", "verification")
-        else "text",
-        "choices": [str(choice)[:200] for choice in (choices if isinstance(choices, list) else [])][:8],
-        "learner_instructions": (
-            str(stored["learner_instructions"])[:400]
-            if isinstance(stored.get("learner_instructions"), str) else None
-        ),
-    }
+    return _dispatch("course.outline", {"enrollment_id": enrollment_id, "limit": limit})["result"]
 
 
 def check_view(enrollment_id: str, *, check_id: str | None = None,
                objective_id: str | None = None) -> dict:
-    """The frozen ``check.get`` derivation: resolve, authorise, then project the stimulus."""
-    with db.read() as connection:
-        enrollment = domain._enrollment(connection, enrollment_id)
-        plan = domain._approved_plan(connection, enrollment["course_id"])
-        if plan is None:
-            raise RpcError.of("VALIDATION_FAILED", "the course plan is not approved.",
-                              reason="plan_not_approved")
-        if check_id is not None:
-            check = domain._row(connection, "SELECT * FROM checks WHERE id = ?", (check_id,))
-            if check is None:
-                raise RpcError.of("NOT_FOUND", f"no check {check_id}.", entity="check")
-            objective = domain._row(
-                connection, "SELECT * FROM objectives WHERE id = ?", (check["objective_id"],)
-            )
-            owner = domain._row(connection, "SELECT course_id FROM plans WHERE id = ?",
-                                (objective["plan_id"],))
-            if owner is None or owner["course_id"] != enrollment["course_id"]:
-                raise RpcError.of("VALIDATION_FAILED",
-                                  "that check does not belong to this enrollment's course.",
-                                  field="check_id", reason="check_not_in_enrollment_course")
-        else:
-            objective = domain._objective_in_plan(connection, objective_id, plan["id"])
-            check = domain._row(
-                connection,
-                "SELECT * FROM checks WHERE objective_id = ? ORDER BY (state = 'open') DESC,"
-                " version DESC LIMIT 1",
-                (objective["id"],),
-            )
-            if check is None:
-                raise RpcError.of("NOT_FOUND", "that objective has no check.", entity="check")
-        attempt_count = int(domain._row(
-            connection,
-            "SELECT COUNT(*) AS n FROM attempts WHERE enrollment_id = ? AND check_id = ?"
-            " AND state = 'committed'",
-            (enrollment_id, check["id"]),
-        )["n"])
-    return {
-        "check_id": check["id"],
-        "objective_id": objective["id"],
-        "check_version": int(check["version"]),
-        "evidence_target": check["evidence_target"],
-        "state": check["state"],
-        "audit_state": check["audit_state"],
-        "stimulus": stimulus_view(_json(check["stimulus_json"], {})),
-        "attempt_count": attempt_count,
-    }
+    """Drive the shipped ``check.get`` handler; it resolves, authorises, and projects the stimulus."""
+    payload = {"enrollment_id": enrollment_id}
+    if check_id is not None:
+        payload["check_id"] = check_id
+    else:
+        payload["objective_id"] = objective_id
+    return _dispatch("check.get", payload)["result"]
 
 
 def assist(lesson: dict, kind: str, *, expected_revision: int) -> tuple[int, dict]:
-    """The frozen ``lesson.assist`` write path, composed from kernel primitives.
-
-    Fenced and bumped like ``review.action``; the event itself is the layer-1 row the chat hook
-    writes (``attempt_id`` NULL, consumed by the next committed attempt).
-    """
-    if kind not in ("hint_request", "answer_shown"):
-        raise RpcError.of("VALIDATION_FAILED", "unknown assist kind.", field="kind")
-    evidence_class = "answer_shown" if kind == "answer_shown" else "hinted"
-    with db.transaction() as connection:
-        enrollment = domain._enrollment(connection, lesson["enrollment_id"])
-        plan = domain._approved_plan(connection, enrollment["course_id"])
-        if plan is None:
-            raise RpcError.of("VALIDATION_FAILED", "the course plan is not approved.",
-                              reason="plan_not_approved")
-        domain._objective_in_plan(connection, lesson["objective_id"], plan["id"])
-        open_check = domain._row(
-            connection,
-            "SELECT id FROM checks WHERE objective_id = ? AND state = 'open'"
-            " ORDER BY version DESC LIMIT 1",
-            (lesson["objective_id"],),
-        )
-        if open_check is None:
-            raise RpcError.of("VALIDATION_FAILED", "there is no open check to assist.",
-                              reason="no_open_check")
-        domain._binding_refusal(connection, enrollment["id"])
-        to_revision = domain._bump_enrollment(connection, enrollment["id"], expected_revision)
-        event_id = domain._new_id("evd")
-        connection.execute(
-            "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind,"
-            " evidence_class, created_at) VALUES (?, ?, ?, NULL, 1, ?, ?, ?)",
-            (event_id, enrollment["id"], lesson["objective_id"], kind, evidence_class, domain._now()),
-        )
-    return to_revision, {"event_id": event_id, "kind": kind, "evidence_class": evidence_class,
-                         "revision": to_revision}
+    """Drive the shipped ``lesson.assist`` command (fenced, idempotent, one layer-1 row)."""
+    response = _dispatch(
+        "lesson.assist",
+        {
+            "enrollment_id": lesson["enrollment_id"],
+            "objective_id": lesson["objective_id"],
+            "kind": kind,
+        },
+        expected_revision=expected_revision,
+        idempotency_key=f"proof-assist-{os.urandom(8).hex()}",
+    )
+    return int(response["revision"]), response["result"]
 
 
 @unittest.skipUnless(_KERNEL_AVAILABLE, _KERNEL_WHY)

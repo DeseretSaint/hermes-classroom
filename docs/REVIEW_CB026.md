@@ -129,3 +129,16 @@ Real-backend proof (copy of `wt/cb-023-cinder` @ `9c23428` with this contract se
 * **Sentinel** — the new attack surfaces worth probing: a check whose stored stimulus carries an
   answer (must not render); assist events with no open check; two concurrent assists and a submit
   racing them; an outline for an enrollment whose plan is a draft.
+
+## Registration note (Cinder, t_b13f5b47)
+
+The three handlers are registered in `coursebook/domain.py` and share one writer
+(`evidence.record_assist`) with the chat hook; `scripts/proof_contract_v5.py` now drives them
+through `api.dispatch` (11/11) and `tests/test_kernel_v5_handlers.py` pins replay, conflict, stale
+fencing, no transitions row and the read-only revision 0.
+
+The existing divergence 1 above was left as recorded, deliberately: `turn.pre_turn` still writes
+the assist event without bumping the revision, because `pre_turn` is the session-lifecycle path and
+a bump there changes the post-turn observer's compare-and-swap for every chat turn, not just the
+hint path; the pane path is fenced separately and the two paths still write the same row.
+

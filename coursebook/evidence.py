@@ -16,7 +16,10 @@ entitled to inspect and dispute them (``AUDIT.md`` R11/R12).
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
+
+from . import db
 
 #: L1 kinds that are learner *actions*, never evidence of knowing something.
 ACTION_KINDS = (
@@ -30,6 +33,26 @@ ACTION_KINDS = (
 
 #: L1 kinds that record a graded result.
 ATTEMPT_KINDS = ("attempt", "override")
+
+#: The one mapping from a learner assist *action* to the class the next attempt inherits. The
+#: chat hook and ``lesson.assist`` both go through :func:`record_assist`, so they cannot drift.
+ASSIST_CLASSES: dict[str, str] = {"hint_request": "hinted", "answer_shown": "answer_shown"}
+
+
+def record_assist(connection, *, enrollment_id: str, objective_id: str, attempt_id: str | None,
+                  kind: str, evidence_class: str) -> str:
+    """Write one layer-1 assist event and return its id.
+
+    The event is ``attempt_id`` NULL until the next committed attempt consumes it; a hint that
+    could not be consumed is not allowed to stand in for knowing something.
+    """
+    event_id = f"evd_{uuid.uuid4().hex}"
+    connection.execute(
+        "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind,"
+        " evidence_class, created_at) VALUES (?, ?, ?, ?, 1, ?, ?, ?)",
+        (event_id, enrollment_id, objective_id, attempt_id, kind, evidence_class, db.utcnow()),
+    )
+    return event_id
 
 
 def _json(value: Any, default: Any) -> Any:

@@ -112,6 +112,17 @@ def main() -> int:
         None,
         runtime,
     )
+    # CB-026: the pane's Hint/Show answer and Textbook index are gated on this list, so the probe
+    # names them rather than trusting a count.
+    v5_methods = {"course.outline", "check.get", "lesson.assist"}
+    record(
+        "GET /runtime lists the three cb.rpc v5 learning surfaces",
+        runtime.status_code == 200
+        and isinstance(implemented, list)
+        and v5_methods <= set(implemented),
+        None,
+        runtime,
+    )
 
     rpc_health = client.post("/api/plugins/coursebook/rpc", json=envelope("health.get", {}))
     record(

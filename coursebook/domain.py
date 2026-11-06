@@ -70,6 +70,9 @@ KERNEL_METHODS: tuple[str, ...] = (
     "review.action",
     "evidence.inspect",
     "evidence.disputes",
+    "course.outline",
+    "check.get",
+    "lesson.assist",
 )
 
 MAX_PAGE = 500
@@ -2288,6 +2291,239 @@ def evidence_disputes(payload: dict[str, Any], envelope: dict[str, Any]) -> tupl
         "truncated": count > limit,
     }
     return int(enrollment["revision"]), result
+
+
+# ── v5: outline and check stimulus (read-only views) ────────────────────────
+
+#: The closed allowlist `check.get` may project from ``checks.stimulus_json``. Anything else the
+#: importer or generator stored is dropped rather than echoed: a smuggled answer key must not
+#: reach the pane through a read.
+STIMULUS_FORMATS: tuple[str, ...] = ("text", "selection", "verification")
+OUTLINE_OBJECTIVE_LIMIT = 400
+STIMULUS_PROMPT_LIMIT = 8000
+
+
+def _stimulus_view(stored: Any) -> dict[str, Any]:
+    """Project a stored stimulus onto the three contracted keys (+ optional instructions)."""
+    if not isinstance(stored, dict):
+        raise RpcError.of(
+            "VALIDATION_FAILED", "the stored check has no stimulus.", reason="stimulus_missing_prompt"
+        )
+    prompt = stored.get("prompt")
+    if not isinstance(prompt, str) or not prompt.strip():
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "the stored check has no stimulus prompt.",
+            reason="stimulus_missing_prompt",
+        )
+    declared_format = stored.get("format")
+    choices = stored.get("choices")
+    instructions = stored.get("learner_instructions")
+    return {
+        "prompt": prompt[:STIMULUS_PROMPT_LIMIT],
+        # An imported pack check declares no format; an open answer is the honest reading.
+        "format": declared_format if declared_format in STIMULUS_FORMATS else "text",
+        "choices": [str(choice)[:200] for choice in (choices if isinstance(choices, list) else [])][:8],
+        "learner_instructions": str(instructions)[:400] if isinstance(instructions, str) else None,
+    }
+
+
+@_handler("course.outline")
+def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The Textbook section index and the Plan tab: one read, every field derived, revision 0.
+
+    The plan rule is ``library.list``'s: approved first, else the highest version, which is the
+    draft the Plan tab asks the learner to approve. No revision bump and no transitions row —
+    opening the outline cannot change evidence.
+    """
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    limit = int(payload.get("limit", OUTLINE_OBJECTIVE_LIMIT))
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        plan = _approved_plan(connection, enrollment["course_id"])
+        if plan is None:
+            plan = _row(
+                connection,
+                "SELECT * FROM plans WHERE course_id = ? ORDER BY version DESC LIMIT 1",
+                (enrollment["course_id"],),
+            )
+        if plan is None:
+            return 0, {
+                "enrollment_id": enrollment_id,
+                "plan": None,
+                "objectives": [],
+                "total": 0,
+                "truncated": False,
+            }
+        total = int(
+            _row(connection, "SELECT COUNT(*) AS n FROM objectives WHERE plan_id = ?", (plan["id"],))["n"]
+        )
+        rows = connection.execute(
+            "SELECT o.*,"
+            " (SELECT c.state FROM checks c WHERE c.objective_id = o.id"
+            "   ORDER BY c.version DESC LIMIT 1) AS check_state,"
+            " (SELECT COUNT(*) FROM attempts a JOIN checks c ON c.id = a.check_id"
+            "   WHERE c.objective_id = o.id AND a.enrollment_id = ? AND a.state = 'committed')"
+            "   AS attempt_count,"
+            " (SELECT MAX(r.last_opened_at) FROM lesson_runs r"
+            "   WHERE r.objective_id = o.id AND r.enrollment_id = ?) AS last_opened_at"
+            " FROM objectives o WHERE o.plan_id = ? ORDER BY o.ordinal LIMIT ?",
+            (enrollment_id, enrollment_id, plan["id"], limit),
+        ).fetchall()
+    objectives = [
+        {
+            "objective_id": row["id"],
+            "ordinal": int(row["ordinal"]),
+            "title": row["title"],
+            "evidence_target": row["evidence_target"],
+            "state": row["state"],
+            "check_state": row["check_state"] or "none",
+            "attempt_count": int(row["attempt_count"]),
+            # A view of the state, not a second claim: independence is what the row says.
+            "independent": row["state"] in ("independent_evidence", "delayed_evidence"),
+            "last_opened_at": row["last_opened_at"],
+        }
+        for row in rows
+    ]
+    return 0, {
+        "enrollment_id": enrollment_id,
+        "plan": {
+            "plan_id": plan["id"],
+            "version": int(plan["version"]),
+            "state": plan["state"],
+            "plan_hash": plan["plan_hash"],
+        },
+        "objectives": objectives,
+        "total": total,
+        "truncated": total > len(objectives),
+    }
+
+
+@_handler("check.get")
+def check_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The question, never the key: resolve, authorise, then project the closed allowlist.
+
+    Membership mirrors ``check.open`` / ``attempt.submit``: the approved plan must exist for the
+    enrollment's course and the check must belong to that course. Read-only, revision 0.
+    """
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        plan = _approved_plan(connection, enrollment["course_id"])
+        if plan is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved"
+            )
+        if payload.get("check_id") is not None:
+            check = _row(connection, "SELECT * FROM checks WHERE id = ?", (payload["check_id"],))
+            if check is None:
+                raise _not_found("check", payload["check_id"])
+            objective = _row(
+                connection, "SELECT * FROM objectives WHERE id = ?", (check["objective_id"],)
+            )
+            if objective is None:
+                raise _not_found("objective", check["objective_id"])
+            owner = _row(
+                connection, "SELECT course_id FROM plans WHERE id = ?", (objective["plan_id"],)
+            )
+            if owner is None or owner["course_id"] != enrollment["course_id"]:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "that check does not belong to this enrollment's course.",
+                    field="check_id",
+                    reason="check_not_in_enrollment_course",
+                )
+        else:
+            objective = _objective_in_plan(connection, payload["objective_id"], plan["id"])
+            check = _row(
+                connection,
+                "SELECT * FROM checks WHERE objective_id = ? ORDER BY (state = 'open') DESC,"
+                " version DESC LIMIT 1",
+                (objective["id"],),
+            )
+            if check is None:
+                raise RpcError.of("NOT_FOUND", "that objective has no check.", entity="check")
+        attempt_count = int(
+            _row(
+                connection,
+                "SELECT COUNT(*) AS n FROM attempts WHERE enrollment_id = ? AND check_id = ?"
+                " AND state = 'committed'",
+                (enrollment_id, check["id"]),
+            )["n"]
+        )
+    return 0, {
+        "check_id": check["id"],
+        "objective_id": objective["id"],
+        "check_version": int(check["version"]),
+        "evidence_target": check["evidence_target"],
+        "state": check["state"],
+        "audit_state": check["audit_state"],
+        "stimulus": _stimulus_view(_json_load(check["stimulus_json"], {})),
+        "attempt_count": attempt_count,
+    }
+
+
+@_handler("lesson.assist")
+def lesson_assist(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Pane Hint / Show answer: the same layer-1 event the chat hook writes, revision-fenced.
+
+    The bump is not ceremony. ``attempt.submit`` classifies evidence inside its read transaction
+    and grades outside any transaction, so a hint recorded mid-grade would be invisible to that
+    classification and the answer would commit ``cold``. Bumping makes the in-flight submit lose
+    the fence. No transitions row: an assist is an action, not a learner transition.
+    """
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "lesson.assist"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    enrollment_id = payload["enrollment_id"]
+    objective_id = payload["objective_id"]
+    kind = payload["kind"]
+    evidence_class = evidence.ASSIST_CLASSES[kind]
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, enrollment_id)
+        plan = _approved_plan(connection, enrollment["course_id"])
+        if plan is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved"
+            )
+        _objective_in_plan(connection, objective_id, plan["id"])
+        open_check = _row(
+            connection,
+            "SELECT id FROM checks WHERE objective_id = ? AND state = 'open'"
+            " ORDER BY version DESC LIMIT 1",
+            (objective_id,),
+        )
+        if open_check is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "there is no open check to assist.", reason="no_open_check"
+            )
+        _binding_refusal(connection, enrollment["id"])
+        to_revision = _bump_enrollment(connection, enrollment_id, expected)
+        event_id = evidence.record_assist(
+            connection,
+            enrollment_id=enrollment["id"],
+            objective_id=objective_id,
+            attempt_id=None,
+            kind=kind,
+            evidence_class=evidence_class,
+        )
+        result = {
+            "event_id": event_id,
+            "kind": kind,
+            "evidence_class": evidence_class,
+            "revision": to_revision,
+        }
+        _remember(
+            connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result
+        )
+    return to_revision, result
 
 
 # ── write paths used by the plan job and by Parent mode ─────────────────────
