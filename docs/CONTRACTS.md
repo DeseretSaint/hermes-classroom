@@ -376,21 +376,31 @@ A pack's own `audit_state` can refuse a check (`failed`) and can never grant one
 declares `passed` on a check whose reference answer is in the stimulus is still withheld, because
 the deterministic audit is the only gate.
 
-### Divergences between `cb.projection` v1 and the importer as shipped
+### Divergence record: both entries closed by CB-025
 
-The freeze found two places where `coursebook/pack_flow.py` does not implement the frozen rules.
-Both are recorded in the contract's `x-known-divergences` and both have conformance vectors in
-`examples` (marked `divergence`), so the fix is a test result rather than an opinion:
+The freeze found two places where `coursebook/pack_flow.py` did not implement the frozen rules. Both
+are recorded in the contract's `x-known-divergences` and both keep their conformance vector in
+`examples` (marked `divergence` as provenance). Lattice closed both in CB-025 (commits `577d268`,
+`725ffbf`), so the entries are `status: resolved` with a `resolved_by` commit instead of open defects:
 
-| Id | Importer as shipped | Contract requires | Effect |
+| Id | Importer when frozen | Contract requires | Now |
 |---|---|---|---|
-| `empty-alternatives` | `all(...)` over an empty alternatives list is vacuously true, so **every** check that declares no accepted alternatives is withheld | an empty/whitespace-only list is not a flaw; the reference answer is already an accepted form | the bundled Japanese demo pack ships exactly this: `chk-register-transfer-1` declares `accepted_alternatives: []`, so `obj-register-transfer` gets no spec and `check.open` refuses it with `objective_not_checkable` (proved in `scripts/proof_contract_v4.py`) |
-| `declared-audit-failed` | a check declaring `audit_state: failed` is still projected when the automated audit passes, so the spec says `audit_state: passed` while `declared_audit_state: failed` | the author's `failed` withholds gradability | the stored spec contradicts its own provenance, and an item its author marked failed can be graded |
+| `empty-alternatives` | `all(...)` over an empty alternatives list was vacuously true, so **every** check declaring no accepted alternatives was withheld | an empty/whitespace-only list is not a flaw; the reference answer is already an accepted form | R5 has the non-empty guard. The bundled demo pack's `chk-register-transfer-1` (`accepted_alternatives: []`) projects, and `obj-register-transfer` opens through the real dispatcher (`ok: true`, `rubric_only`) |
+| `declared-audit-failed` | a check declaring `audit_state: failed` was still projected when the automated audit passed, so the spec said `audit_state: passed` while `declared_audit_state: failed` | the author's `failed` withholds gradability | R6 withholds it; `check_spec_from_pack_check` returns `None`, so `declared_audit_state` in a stored spec is only `unreviewed` or `passed` |
 
-Until Lattice lands both fixes, the contract is the authority and the importer is wrong.
-`scripts/proof_contract_v4.py` asserts every frozen vector, passes 11 of 13 unchanged, and **pins**
-each of the two divergences to its exact current shape — so a third, undocumented divergence fails
-the proof, and fixing either one turns its pin red with a message to update `x-known-divergences`.
+`test_projection_matches_every_frozen_vector` no longer skips `divergence` examples: all 13 vectors
+and both `objective_examples` run and match. The pinning tests that held the divergences in place were
+deleted in the same commit, so a new divergence now shows up as a red vector rather than a red pin.
+
+One wording fix came with the closure. R6 is listed as an audit rule with its own `problem`, and
+`problem_order` says every failing problem is reported, but the `declared_failed_withholds` vector
+used to expect `reason: "declared_audit_failed"` with `problems: []` — a reason vocabulary no
+implementation emitted. The vector now expects what the shipped importer produces and what the other
+five rules produce: `{"kind": "none", "reason": "import_audit_failed", "problems": ["the pack declares
+this check failed its own audit"]}`. `declared_audit_state` in `$defs.check_spec` is likewise narrowed
+to `passed`/`unreviewed`, which is what the projection note already claimed. Neither change alters a
+stored spec, a wire payload or a handler, because the projection returns a spec or `None` and never
+emits `reason`/`problems`; they make the frozen text agree with itself.
 
 ### Handlers to register (after this freeze)
 
@@ -490,6 +500,7 @@ backups, provider-side data, or artifacts referenced by another course.
 | v2 | 2026-11-06 | CB-018 additive amendment. 34 RPC methods (+library.list, lesson.page, lesson.begin, enrollment.update, enrollment.delete, pack.delete, artifact.get, jobs.list, notebook.update, binding.abandon), +DELETE_SCOPE_STALE, +lesson_runs/lesson_segments and revision fencing in cb.db v2, +$defs.job_state in cb.jobs v2. |
 | v3 | 2026-11-06 | CB-022 additive amendment. 38 RPC methods (+review.queue, review.action, evidence.inspect, evidence.disputes) with `review.action` fenced in the envelope; no new table, column, migration or error code — the queue stays derived and disputes stay in `attempts.grading_provenance_json`. `pack.list` deferred to a future v4. |
 | v4 | 2026-11-06 | CB-024 additive amendment. 40 RPC methods (+pack.list, pack.inspect) reading the existing library index and `packs` row; no new table, column, migration or error code. New contract `cb.projection` v1 freezes the pack-check → check-spec mapping (six audit rules, deterministic projection, conformance vectors) with two importer divergences recorded for Lattice. |
+| v4 (projection closure) | 2026-11-06 | CB-025 (importer commits `577d268`, `725ffbf`) closed both `cb.projection` v1 divergences: R5 gained the non-empty guard and R6 withholds a check its manifest declares failed, so the bundled Japanese pack's `obj-register-transfer` opens through the dispatcher. `x-known-divergences` now records both as `resolved` with the implementing commit, the `declared_failed_withholds` vector reports the ordinary `import_audit_failed` problem, and `$defs.check_spec.declared_audit_state` is narrowed to `passed`/`unreviewed`. No RPC method, table, migration, wire constant or handler changed; `cb.projection` stays v1. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
