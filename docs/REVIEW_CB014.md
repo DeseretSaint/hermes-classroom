@@ -171,12 +171,14 @@ run against a real migrated SQLite database in a throwaway `HERMES_HOME` through
 cd .worktrees/t_d72bb1a4
 python3 tests/adversarial/attack_state.py --json tests/adversarial/evidence/attack-state.json
 python3 tests/adversarial/attack_packs.py --json tests/adversarial/evidence/attack-packs.json
+python3 tests/adversarial/verify_v6_reads.py --json tests/adversarial/evidence/verify-v6-reads.json
 bash scripts/validate.sh                     # full admission gate
 ```
 
 Raw evidence digests:
 `attack-state.json sha256:dfefe4a3910f0ce0e6bc629ea4012f09835ae41937c1ff123c3dce0e34882d2c`
 `attack-packs.json sha256:1ba56a1b6432dd1495d59efb0984b9b53d1d4c5185c9ef6b4e646904647807ad`
+`verify-v6-reads.json sha256:acceebd8615035f5ddc1efd9b917a51c58423436f795db620d65d9bce964fc92`
 
 Isolation: every scenario runs in its own fresh `HERMES_HOME` under the scratch dir; hostile archives
 are generated on the fly under `tests/adversarial/packs/` (git-ignored product fixtures live in
@@ -189,5 +191,30 @@ are generated on the fly under `tests/adversarial/packs/` (git-ignored product f
   substitute the pane for the route, because that would accept a claim the release cannot make.
 - No CDP five-state capture was re-attempted; CB-013's own packet already documents why.
 - The aux-grader lane is not enabled in this build, so S13 is a seam-level risk, not a live-path result.
-- `course.get` and `course.outline` are frozen in cb.rpc v6 but unimplemented in this build (probe
-  reports 31/34 registered); not a defect by itself, but any UI claim resting on them is unsupported.
+- **Corrected 2026-11-06T17:04Z (t_652f3d71).** An earlier revision of this bullet read
+  "`course.get` and `course.outline` are frozen in cb.rpc v6 but unimplemented in this build (probe
+  reports 31/34 registered)". That is false for this candidate and is withdrawn. Measured on
+  `f4a42f3`/`270edae`: `GET /runtime` reports `contract_methods: 51`, 51 implemented,
+  `contract_problems: []`, with `course.get` and `course.outline` both registered; both handlers
+  exist (`coursebook/domain.py` `@_handler("course.get")` line 316, `@_handler("course.outline")`
+  line 2384) and both answer live on a throwaway `HERMES_HOME` after `pack.import` — `course.get`
+  → `{course, revision}`, `course.outline` → `{enrollment_id, plan, objectives, total, truncated}`,
+  `ok: true` both times (`tests/adversarial/evidence/verify-v6-reads.json`
+  sha256:acceebd8615035f5ddc1efd9b917a51c58423436f795db620d65d9bce964fc92, produced by
+  `tests/adversarial/verify_v6_reads.py`; `tests.test_kernel_commands` +
+  `tests.test_kernel_v5_handlers` → 42 tests OK). The "31/34" string appears verbatim in
+  `docs/REVIEW_CB008.md` §4, whose gate ran against the **34-method cb.rpc v2** registry;
+  `course.outline` did not exist before cb.rpc v5 (CB-026), and nothing in this pass measured a
+  34-method registry. The figure is not a measurement of this build and must not be cited for it.
+  UI claims resting on these reads remain unsupported for the stated reason only: the route does
+  not render (CB-QA-09).
+
+## Report corrections
+
+- **2026-11-06T17:04Z, t_652f3d71 — stale registry claim withdrawn.** The limits bullet above was
+  the only row in this report citing a pre-CB-011 registry. Audited the rest: line 5 states 51
+  declared methods (re-measured, correct); the "31/31 mounted expectations" figures in the gate and
+  retest rows count `scripts/probe-backend.py` steps, not contract methods, and the probe still
+  prints "All 31 backend expectations passed". No other contract-version or method-count claim in
+  this file needed a change.
+
