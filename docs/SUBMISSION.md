@@ -207,11 +207,28 @@ approval.
 | Auxiliary grader accepts a persuaded pass (CB-QA-11) | The open-response lane cannot distinguish an honest pass from an injected one, so the lane ships disabled | Cinder |
 | Demo gate not met | Sentinel's demo scenarios have not passed on the release commit, and recording needs operator approval | Sentinel, DeseretSaint |
 | License absent | Redistribution and catalog listing are unsafe without one | DeseretSaint |
-| Repository not pushed | No commit sha to pin, no README at a public URL | DeseretSaint |
-| Catalog pin is the skeleton commit | The entry's text describes 0.1.0; the sha still points at `e1f1cab`, so the entry must be re-pinned after the last code merge and the docs commit | Harbor, DeseretSaint |
+| Public listing not authorised | The private source backup is pushed; making the repository public, tagging and announcing are publication under the operator gate | DeseretSaint |
+| No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
 Verified on this branch, so they are not blockers: 52/52 `cb.rpc` v7 methods mounted with no
 contract problems, schema v4 from migrations `0001`-`0004`, 674 tests and 31/31 mounted backend
 expectations under `scripts/validate.sh`, pack round-trip and export hash matching, and eight
 `parent.*` methods. Those paths are implemented and tested; the UI halves are unverified until the
 gateway condition in the first row is fixed or explained.
+
+## 8. Review packet (as of 2026-11-06)
+
+| Item | Value |
+| --- | --- |
+| Repository | `https://github.com/DeseretSaint/hermes-classroom` (private; source backup only) |
+| Backup branch | `wt/cb-016-harbor` at `eb80a65`, pushed; contains every commit below |
+| Release commit (pinned) | `7f80f35b8dec6bb995469dfb915e870cb35fe6f3` — `validate-plugin.sh --ref` 3/3 on 793 files |
+| Parent gates commit | `e93b8c5` — `validate.sh` exit 0, 674 tests, 31/31 backend expectations |
+| Tag | none. Publication gate closed; a tag is forbidden until sign-off |
+| Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
+| Verification evidence | `docs/CB016-RELEASE-VERIFICATION.md`, `docs/cb016-verify/` |
+| Catalog draft | `catalog/coursebook.yaml` pinned to `7f80f35`, validator `OK: 1 file(s) valid`; not submitted |
+| Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and four partial (`[~]`: 5, 6, 10, 11) |
+
+The pinned commit and the branch head differ by one catalog-only commit (`eb80a65`), because the
+catalog cannot pin itself. The installed tree at `7f80f35` is the one the gates ran on.
