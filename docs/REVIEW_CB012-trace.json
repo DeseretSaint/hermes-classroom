@@ -1,0 +1,326 @@
+{
+  "generated_at": "2026-11-06T09:27:23Z",
+  "schema_version": 2,
+  "jobs": [
+    {
+      "job_id": "job_d835c2b9ddec49c8b0eccb3d49475250",
+      "kind": "research",
+      "state": "completed",
+      "attempt_id": "att_a0b32cb607ad427f9ad1171ceb27dc0f",
+      "operation_id": null,
+      "checkpoint": {
+        "duration_ms": 42,
+        "last_stage": "research",
+        "ledger_size": 1,
+        "queries": [
+          {
+            "error": null,
+            "query": "braise short ribs safely",
+            "result_count": 1
+          },
+          {
+            "error": null,
+            "query": "braise short ribs safely beginner guide",
+            "result_count": 1
+          }
+        ],
+        "research_run_id": "df0e4359cf6d81fb",
+        "research_status": "ok",
+        "source_count": 1
+      },
+      "progress": {
+        "message": "ledger recorded 1 sources",
+        "stage": "research",
+        "stages": [
+          {
+            "artifact_ids": [],
+            "at": "2026-11-06T09:27:22Z",
+            "stage": "derive_queries",
+            "steps_done": 1,
+            "steps_total": 2
+          },
+          {
+            "artifact_ids": [],
+            "at": "2026-11-06T09:27:22Z",
+            "stage": "research",
+            "steps_done": 2,
+            "steps_total": 2
+          }
+        ],
+        "steps_done": 2,
+        "steps_total": 2
+      },
+      "error": {}
+    },
+    {
+      "job_id": "job_7e31d9fcd45c488d8e34e2c7988db506",
+      "kind": "media",
+      "state": "completed",
+      "attempt_id": "att_15fd520761094cb5a8df0a54afabdcb1",
+      "operation_id": null,
+      "checkpoint": {
+        "cache_hit": false,
+        "degraded": false,
+        "label": "Deterministic schematic rendered from structured facts.",
+        "last_stage": "expose",
+        "media_marker": "MEDIA: /home/deseretsaint/.hermes/profiles/cinder/cache/scratch/cb012-trace-b8or08tj/artifacts/objects/87/871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
+        "reason": null,
+        "renderer": [
+          {
+            "active_content": false,
+            "artifact_id": "art_595ae42a879e47c1b0df3d12819e75e2",
+            "content_hash": "sha256:871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
+            "description": "Oven 150 C; internal 95 C",
+            "label": "Deterministic schematic rendered from structured facts.",
+            "mime": "image/svg+xml"
+          }
+        ],
+        "source_hash": "904404eea763d6d69fe41b6c4f217a47bb49bc2624d71e09d453119804aa1b98",
+        "spec_hash": "fa64dbe70d1ab53f1c5130ada6910b32071a126286525695b86d80965290960b",
+        "text_equivalent": "Oven 150 C; internal 95 C",
+        "triage": {}
+      },
+      "progress": {
+        "message": "renderer manifest ready",
+        "stage": "expose",
+        "stages": [
+          {
+            "artifact_ids": [],
+            "at": "2026-11-06T09:27:22Z",
+            "stage": "validate_spec",
+            "steps_done": 1,
+            "steps_total": 3
+          },
+          {
+            "artifact_ids": [
+              "art_595ae42a879e47c1b0df3d12819e75e2"
+            ],
+            "at": "2026-11-06T09:27:22Z",
+            "stage": "generate",
+            "steps_done": 2,
+            "steps_total": 3
+          },
+          {
+            "artifact_ids": [],
+            "at": "2026-11-06T09:27:22Z",
+            "stage": "expose",
+            "steps_done": 3,
+            "steps_total": 3
+          }
+        ],
+        "steps_done": 3,
+        "steps_total": 3
+      },
+      "error": {}
+    },
+    {
+      "job_id": "job_4cd5a393d0164774ad3d86ff62baadab",
+      "kind": "export",
+      "state": "interrupted_requires_retry",
+      "attempt_id": "att_11de69cd2b09444384a538210c453d4f",
+      "operation_id": null,
+      "checkpoint": {},
+      "progress": {},
+      "error": {}
+    }
+  ],
+  "research_job": {
+    "job_id": "job_d835c2b9ddec49c8b0eccb3d49475250",
+    "kind": "research",
+    "state": "completed",
+    "operation_id": null,
+    "attempt_id": "att_a0b32cb607ad427f9ad1171ceb27dc0f",
+    "brief": {
+      "budget": {
+        "max_page_chars": 6000,
+        "max_pages": 6,
+        "max_queries": 4,
+        "max_results_per_query": 5,
+        "max_sources": 6
+      },
+      "course_id": "crs_ca055fed1552473ebef2d0a9f47b8f9f",
+      "dials": {},
+      "goal": "braise short ribs safely",
+      "locale": null,
+      "recipe": "casual"
+    },
+    "checkpoint": {
+      "duration_ms": 42,
+      "last_stage": "research",
+      "ledger_size": 1,
+      "queries": [
+        {
+          "error": null,
+          "query": "braise short ribs safely",
+          "result_count": 1
+        },
+        {
+          "error": null,
+          "query": "braise short ribs safely beginner guide",
+          "result_count": 1
+        }
+      ],
+      "research_run_id": "df0e4359cf6d81fb",
+      "research_status": "ok",
+      "source_count": 1
+    },
+    "progress": {
+      "stage": "research",
+      "steps_done": 2,
+      "steps_total": 2,
+      "message": "ledger recorded 1 sources"
+    },
+    "lease": null,
+    "artifact_ids": [],
+    "error": null,
+    "created_at": "2026-11-06T09:27:22Z",
+    "updated_at": "2026-11-06T09:27:22Z",
+    "cancel_requested_at": null
+  },
+  "media_job": {
+    "job_id": "job_7e31d9fcd45c488d8e34e2c7988db506",
+    "kind": "media",
+    "state": "completed",
+    "operation_id": null,
+    "attempt_id": "att_15fd520761094cb5a8df0a54afabdcb1",
+    "brief": {
+      "course_id": "crs_ca055fed1552473ebef2d0a9f47b8f9f",
+      "kind": "visual",
+      "language": null,
+      "role": "schematic",
+      "voice": null
+    },
+    "checkpoint": {
+      "cache_hit": false,
+      "degraded": false,
+      "label": "Deterministic schematic rendered from structured facts.",
+      "last_stage": "expose",
+      "media_marker": "MEDIA: /home/deseretsaint/.hermes/profiles/cinder/cache/scratch/cb012-trace-b8or08tj/artifacts/objects/87/871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
+      "reason": null,
+      "renderer": [
+        {
+          "active_content": false,
+          "artifact_id": "art_595ae42a879e47c1b0df3d12819e75e2",
+          "content_hash": "sha256:871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
+          "description": "Oven 150 C; internal 95 C",
+          "label": "Deterministic schematic rendered from structured facts.",
+          "mime": "image/svg+xml"
+        }
+      ],
+      "source_hash": "904404eea763d6d69fe41b6c4f217a47bb49bc2624d71e09d453119804aa1b98",
+      "spec_hash": "fa64dbe70d1ab53f1c5130ada6910b32071a126286525695b86d80965290960b",
+      "text_equivalent": "Oven 150 C; internal 95 C",
+      "triage": {}
+    },
+    "progress": {
+      "stage": "expose",
+      "steps_done": 3,
+      "steps_total": 3,
+      "message": "renderer manifest ready"
+    },
+    "lease": null,
+    "artifact_ids": [
+      "art_595ae42a879e47c1b0df3d12819e75e2"
+    ],
+    "error": null,
+    "created_at": "2026-11-06T09:27:22Z",
+    "updated_at": "2026-11-06T09:27:22Z",
+    "cancel_requested_at": null
+  },
+  "artifact_hashes_match_db": true,
+  "artifacts": [
+    {
+      "artifact_id": "art_595ae42a879e47c1b0df3d12819e75e2",
+      "kind": "visual",
+      "mime": "image/svg+xml",
+      "bytes": 792,
+      "content_hash": "sha256:871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
+      "db_content_hash": "871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
+      "path_name": "871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
+      "provenance": {
+        "label": "Deterministic schematic rendered from structured facts.",
+        "language": null,
+        "permission": null,
+        "policy": "media-policy/1",
+        "provider": "deterministic.schematic",
+        "role": "schematic",
+        "source_hash": "904404eea763d6d69fe41b6c4f217a47bb49bc2624d71e09d453119804aa1b98",
+        "source_ids": [],
+        "spec_hash": "fa64dbe70d1ab53f1c5130ada6910b32071a126286525695b86d80965290960b",
+        "text_equivalent": "Oven 150 C; internal 95 C",
+        "voice": null
+      }
+    }
+  ],
+  "usage_ledger": [
+    {
+      "provider": "web_search",
+      "model": null,
+      "tokens_json": "{}",
+      "duration_ms": 0,
+      "artifact_count": 0,
+      "operation_id": "job_d835c2b9ddec49c8b0eccb3d49475250"
+    },
+    {
+      "provider": "web_search",
+      "model": null,
+      "tokens_json": "{}",
+      "duration_ms": 0,
+      "artifact_count": 0,
+      "operation_id": "job_d835c2b9ddec49c8b0eccb3d49475250"
+    },
+    {
+      "provider": "web_extract",
+      "model": null,
+      "tokens_json": "{}",
+      "duration_ms": 0,
+      "artifact_count": 0,
+      "operation_id": "job_d835c2b9ddec49c8b0eccb3d49475250"
+    },
+    {
+      "provider": "deterministic.schematic",
+      "model": null,
+      "tokens_json": "{}",
+      "duration_ms": 69,
+      "artifact_count": 1,
+      "operation_id": "job_7e31d9fcd45c488d8e34e2c7988db506"
+    }
+  ],
+  "source_ledger": [
+    {
+      "source_id": "c398e271eb2d0d55",
+      "url": "https://example.test/source-0",
+      "title": "Authoritative reference",
+      "fetched_at": "2026-11-06T09:27:22Z",
+      "published_at": "2025-05-01T00:00:00Z",
+      "support_status": "unassessed"
+    }
+  ],
+  "fallback": {
+    "artifact": null,
+    "text_equivalent": "Transcript text",
+    "degraded": true,
+    "reason": "provider unavailable (voice ja-voice-a is not installed); delivered as text",
+    "triage": {
+      "voice": "ja-voice-a",
+      "language": "ja-JP",
+      "reason": "voice ja-voice-a is not installed",
+      "options": [
+        "keep_cached_original",
+        "use_text_fallback",
+        "choose_new_voice"
+      ],
+      "silent_substitution": false
+    },
+    "label": "Narration — the transcript is the authoritative text; this is not pronunciation assessment."
+  },
+  "restart_reconciliation": {
+    "interrupted": 1,
+    "cancelled": 0,
+    "artifacts": {
+      "staging": 0,
+      "objects": 0
+    }
+  },
+  "dead_job_state": "interrupted_requires_retry"
+}

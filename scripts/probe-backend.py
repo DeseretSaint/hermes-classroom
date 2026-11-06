@@ -152,16 +152,21 @@ def main() -> int:
         json=envelope("binding.get", {"session_id": "stored-session-abc"}),
     )
     record(
-        "POST /rpc binding.get on an unmigrated database refuses instead of claiming 'unbound'",
-        binding_unmigrated.json().get("error", {}).get("code") == "NOT_IMPLEMENTED",
+        # With the kernel merged, every command migrates on first use, so an empty migrated
+        # database can answer `{binding: null}` truthfully. It still must not invent a binding.
+        "POST /rpc binding.get on a fresh database migrates and returns an explicit null binding",
+        binding_unmigrated.json().get("ok") is True
+        and binding_unmigrated.json().get("result", {}).get("binding") is None,
         None,
         binding_unmigrated,
     )
 
-    later = client.post("/api/plugins/coursebook/rpc", json=envelope("library.list", {}))
+    # `library.list` is implemented now; `pack.preview` belongs to the pack package and is the
+    # honest "frozen in cb.rpc, no handler in this build" example.
+    later = client.post("/api/plugins/coursebook/rpc", json=envelope("pack.preview", {"staged_id": "stg_0123456789"}))
     record(
-        "POST /rpc for a method not in the mounted contract is refused, never faked",
-        later.json().get("ok") is False,
+        "POST /rpc for a method with no handler is refused, never faked",
+        later.json().get("error", {}).get("code") == "NOT_IMPLEMENTED",
         None,
         later,
     )
