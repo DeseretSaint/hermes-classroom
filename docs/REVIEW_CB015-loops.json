@@ -1,0 +1,417 @@
+{
+  "steps": [
+    {
+      "step": "early-section-detached",
+      "at": "2026-11-06T16:51:07.303Z",
+      "hash": "#/coursebook",
+      "route": "/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\nLast opened 6 min ago\nmissing\nThis section’s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n# Lesson 1 — two ways of saying it\nThis is a demonstration lesson for an adult beginner (L0). Every Japanese line is followed by\nromaji and an English meaning. Romaji is a scaffold: it helps you hear the shape of the line, and\nit is not evidence that you can read Japanese.\n## Dialogue A — two friends, after a film\nMika: たのしかったね。 (tanoshikatta ne.) — \"That was fun, wasn't it?\"\nJun: うん。また行こう。 (un. mata ikou.) — \"Yeah. Let's go again.\"\nMika: うん、好きだよ。 (un, suki da yo.) — \"Yeah, I like you.\"\n`好き` (suki) is a na-adjective: it describes the person or thing that is liked, not an action\nthe speaker performs. `好きだよ` (suki da yo) is the casual form, used with friends and people you\nare already close to. The final `よ` (yo) softens the statement and offers it as new information.\n## Dialogue B — a confession\nAoi: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"\nThis is the shape of a **告白** (kokuhaku), a romantic confession. The polite form `好きです`\n(suki desu) carries the se",
+      "panePresent": true,
+      "bindingDetached": true,
+      "submitDisabled": true,
+      "modes": []
+    },
+    {
+      "step": "fresh-run-armed",
+      "at": "2026-11-06T16:51:09.095Z",
+      "hash": "#/",
+      "route": null,
+      "destination": null,
+      "routeText": "",
+      "panePresent": true,
+      "bindingDetached": false,
+      "submitDisabled": null,
+      "modes": []
+    },
+    {
+      "step": "teaching-turn-complete",
+      "at": "2026-11-06T16:52:27.192Z",
+      "hash": "#/20261106_095109_eac24e",
+      "route": null,
+      "destination": null,
+      "routeText": "",
+      "panePresent": true,
+      "bindingDetached": false,
+      "submitDisabled": true,
+      "modes": []
+    },
+    {
+      "step": "section-bound",
+      "at": "2026-11-06T16:52:35.217Z",
+      "hash": "#/coursebook",
+      "route": "/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 1 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou ha",
+      "panePresent": true,
+      "bindingDetached": false,
+      "submitDisabled": true,
+      "modes": [
+        "graded"
+      ]
+    },
+    {
+      "step": "wrong-answer-typed",
+      "at": "2026-11-06T16:52:35.586Z",
+      "hash": "#/coursebook",
+      "route": "/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 1 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou ha",
+      "panePresent": true,
+      "bindingDetached": false,
+      "submitDisabled": false,
+      "modes": [
+        "graded"
+      ]
+    },
+    {
+      "step": "wrong-answer-graded",
+      "at": "2026-11-06T16:52:36.796Z",
+      "hash": "#/coursebook",
+      "route": "/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 1 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou ha",
+      "panePresent": true,
+      "bindingDetached": false,
+      "submitDisabled": true,
+      "modes": [
+        "graded"
+      ],
+      "verdict": "ATTEMPTS ON THIS SECTION\njust now\nNot yet\nHinted\n1 min ago\nNot yet\nCold attempt\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 17 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 17 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 17 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 17 hr ago\nLearn how to say \"I love you\" in Japanese\nmodel_assessed\nfetched 17 hr ago\nHonorific speech in Japanese\nmodel_assessed\nfetched 17 hr ago\nCOURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNot started\nCURRENT CHECK\nCheck v1\ndiscrimination\nYour answer\n\nThe question and any choices are shown above; this field"
+    },
+    {
+      "step": "notebook-dialog",
+      "at": "2026-11-06T16:52:38.306Z",
+      "hash": "#/coursebook",
+      "route": "/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 1 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou ha",
+      "panePresent": true,
+      "bindingDetached": false,
+      "submitDisabled": true,
+      "modes": [
+        "graded"
+      ],
+      "saved": "clicked(1)",
+      "dialog": {
+        "text": "Save to notebook\n\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\n\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\n\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n\n---\n\n**Your check** — one frame, three endings:\n\nYou have never spoken to this person. You want to ask them to date you, ",
+        "inputs": [
+          {
+            "tag": "INPUT",
+            "id": "",
+            "value": "",
+            "placeholder": "Search sessions…"
+          },
+          {
+            "tag": "TEXTAREA",
+            "id": "cb-attempt-answer",
+            "value": "",
+            "placeholder": "Type the answer you would give in the lesson."
+          },
+          {
+            "tag": "TEXTAREA",
+            "id": "cb-note-excerpt",
+            "value": "**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\n\nHere it i",
+            "placeholder": ""
+          },
+          {
+            "tag": "TEXTAREA",
+            "id": "cb-note-note",
+            "value": "",
+            "placeholder": "Why this matters to you."
+          },
+          {
+            "tag": "INPUT",
+            "id": "cb-note-tags",
+            "value": "",
+            "placeholder": "register, politeness"
+          }
+        ]
+      }
+    },
+    {
+      "step": "section-returned-for-notebook",
+      "at": "2026-11-06T16:54:07.657Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 3 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nCURRENT CHECK\nCheck v1\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n1 min ago\nNot yet\nHinted\n3 min ago\nNot yet\nCold attempt\nSOURCES ON THIS COURSE\nMarugoto: Japanes",
+      "modalOpen": false
+    },
+    {
+      "step": "notebook-dialog-filled",
+      "at": "2026-11-06T16:54:09.410Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 3 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nCURRENT CHECK\nCheck v1\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n2 min ago\nNot yet\nHinted\n3 min ago\nNot yet\nCold attempt\nSOURCES ON THIS COURSE\nMarugoto: Japanes",
+      "modalOpen": true
+    },
+    {
+      "step": "notebook-dialog-buttons",
+      "at": "2026-11-06T16:54:09.528Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 3 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nCURRENT CHECK\nCheck v1\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n2 min ago\nNot yet\nHinted\n3 min ago\nNot yet\nCold attempt\nSOURCES ON THIS COURSE\nMarugoto: Japanes",
+      "modalOpen": true,
+      "dialogButtons": [
+        {
+          "t": "Cancel",
+          "disabled": false
+        },
+        {
+          "t": "Save to notebook",
+          "disabled": false
+        },
+        {
+          "t": "Close",
+          "disabled": false
+        }
+      ]
+    },
+    {
+      "step": "notebook-saved",
+      "at": "2026-11-06T16:54:12.033Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 3 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nCURRENT CHECK\nCheck v1\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n2 min ago\nNot yet\nHinted\n3 min ago\nNot yet\nCold attempt\nSAVED FROM THIS SECTION\n**Lesson 1 — Tel",
+      "modalOpen": false,
+      "confirmed": "clicked"
+    },
+    {
+      "step": "notebook-list",
+      "at": "2026-11-06T16:54:13.604Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nNotebook\nAll tags\nRecently saved\nOldest first\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nPoliteness alone is not the separator; the request is what makes it a confession.\nlesson_segment\nregister\npoliteness\nsaved just now\nOpen in textbook\nContinue from here\nEdit note and tags\nRemove from notebook",
+      "modalOpen": false
+    },
+    {
+      "step": "notebook-search",
+      "at": "2026-11-06T16:54:15.464Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nNotebook\nAll tags\nRecently saved\nOldest first\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nPoliteness alone is not the separator; the request is what makes it a confession.\nlesson_segment\nregister\npoliteness\nsaved just now\nOpen in textbook\nContinue from here\nEdit note and tags\nRemove from notebook",
+      "modalOpen": false
+    },
+    {
+      "step": "notebook-tag-menu",
+      "at": "2026-11-06T16:54:17.160Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nNotebook\nAll tags\nRecently saved\nOldest first\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nPoliteness alone is not the separator; the request is what makes it a confession.\nlesson_segment\nregister\npoliteness\nsaved just now\nOpen in textbook\nContinue from here\nEdit note and tags\nRemove from notebook",
+      "modalOpen": false,
+      "menu": [
+        "All tags",
+        "politeness",
+        "register"
+      ]
+    },
+    {
+      "step": "notebook-tag-filter",
+      "at": "2026-11-06T16:54:18.969Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nNotebook\nregister\nRecently saved\nOldest first\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nPoliteness alone is not the separator; the request is what makes it a confession.\nlesson_segment\nregister\npoliteness\nsaved just now\nOpen in textbook\nContinue from here\nEdit note and tags\nRemove from notebook",
+      "modalOpen": false,
+      "picked": "clicked"
+    },
+    {
+      "step": "notebook-open-in-textbook",
+      "at": "2026-11-06T16:54:39.964Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 3 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nCURRENT CHECK\nCheck v1\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n2 min ago\nNot yet\nHinted\n3 min ago\nNot yet\nCold attempt\nSAVED FROM THIS SECTION\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*) Here it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it. | Ending you add | Line | Romaji | What that ending does | |---|---|---|---| | `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. | | `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *wha",
+      "modalOpen": false,
+      "jumped": "clicked"
+    },
+    {
+      "step": "notebook-section-identity",
+      "at": "2026-11-06T16:54:40.025Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 3 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nCURRENT CHECK\nCheck v1\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n2 min ago\nNot yet\nHinted\n3 min ago\nNot yet\nCold attempt\nSAVED FROM THIS SECTION\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*) Here it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it. | Ending you add | Line | Romaji | What that ending does | |---|---|---|---| | `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. | | `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *wha",
+      "modalOpen": false,
+      "hasLessonHeading": true,
+      "heading": "Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target",
+      "attempts": "\n2 min ago\nNot yet\nHinted\n3 min ago\nNot yet\nCold attempt\nSAVED FROM THIS SECTION\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*) Here it i",
+      "checkQuestion": ""
+    },
+    {
+      "step": "quizzes-list",
+      "at": "2026-11-06T16:54:41.530Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nNot yet\nHinted\n2 min ago\nOpen attempt\nBoth lines are equally romantic. Politeness has nothing to do with how the line is heard.\nNot yet\nCold attempt\n3 min ago\nOpen attempt\nI am ready for this section. Remind me what separates casual 好きだよ from the polite confession, then give me the check.",
+      "modalOpen": false
+    },
+    {
+      "step": "quizzes-result-rows",
+      "at": "2026-11-06T16:54:41.577Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nNot yet\nHinted\n2 min ago\nOpen attempt\nBoth lines are equally romantic. Politeness has nothing to do with how the line is heard.\nNot yet\nCold attempt\n3 min ago\nOpen attempt\nI am ready for this section. Remind me what separates casual 好きだよ from the polite confession, then give me the check.",
+      "modalOpen": false,
+      "rows": [
+        "Passed",
+        "Partly there",
+        "Not yet",
+        "Grading failed"
+      ]
+    },
+    {
+      "step": "quiz-review",
+      "at": "2026-11-06T16:54:43.981Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nNo attempt matches\nYour attempts are still here; these filters just exclude them.\nClear filters",
+      "modalOpen": false,
+      "openedQuiz": "clicked:Passed"
+    },
+    {
+      "step": "quiz-review-identity",
+      "at": "2026-11-06T16:54:44.031Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nNo attempt matches\nYour attempts are still here; these filters just exclude them.\nClear filters",
+      "modalOpen": false,
+      "hasOriginalAnswer": false,
+      "hasFeedback": false,
+      "readOnlyControls": [
+        "Evidence",
+        "Sources",
+        "Quizzes",
+        "All results",
+        "Passed",
+        "Partly there",
+        "Not yet",
+        "Grading failed",
+        "All assistance",
+        "Cold",
+        "Hinted",
+        "Answer shown",
+        "Override",
+        "Clear filters"
+      ],
+      "snippet": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nNo attempt matches\nYour attempts are still here; these filters just exclude them.\nClear filters"
+    },
+    {
+      "step": "quiz-new-version-missing",
+      "at": "2026-11-06T16:54:44.031Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nNo attempt matches\nYour attempts are still here; these filters just exclude them.\nClear filters",
+      "modalOpen": false,
+      "newVersion": "missing"
+    },
+    {
+      "step": "late-section-detached",
+      "at": "2026-11-06T16:54:52.155Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nExplain why register changes with the relationship\nStart lesson\nView\nTextbook\nExplain why register changes with the relationship\nNot started\ntransfer\nLast opened 9 min ago\nmissing\nThis section’s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n# Lesson 3 — a new context, then explain your choice\nLesson 2 gave you the map. This lesson asks you to use it without the table in front of you.\n## Practice 1 — a first confession\nYou are at a quiet café. You have known the other person for a few weeks, you respect them, and\nyou are not close yet. You want to say that you like them and ask to see them again.\nWrite the line you would use. Then write one sentence in English saying which cue in the\nsituation made you choose it.\n## Practice 2 — a settled partnership\nYou are at home with your spouse of ten years. It is a private moment, and the feeling is deep\nrather than new.\nWrite the line you would use. Then write one sentence saying why this line differs from\nPractice 1 — or why it does not.\n## Practice 3 — explain the register\nIn English, explain why a first confession to someone you respect calls for a different line from\na settled partnership. Name the addressee, the relationship and the setting in your answer.\n## Practice 4 — a line that does not fit\nA learner says: \"I will use the strongest line I know, because stronger means more sincere.\"\nIn English, explain what this reasoning misses about addressee, relationship and setting.\n## After you answer\nYour answers are checked as attempts, not as a claim of fluency. A correct answer to one item is\nnot durable mastery, and a repeated near-identical item is not evidence of transfer. If you miss\none, the next step is a new item that targets the same idea in a different situation.\nRomaji may be used in an answer as a scaffold. A romaji-only answer is not evidence that you can\nread Japanese script, so read the kana forms in Lesson 2 alongside it.\ncheck_prompt\nSave to notebook\nIn English, explain why a first confession to someone you respect calls for a different line from a settled partnership. Name the addressee, the relationship and the setting, and then say what would change if the same words were said to a close friend in public.\nCURRENT CHECK\nCheck v1\ntransfer\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documen",
+      "modalOpen": false,
+      "earlyCount": 1
+    },
+    {
+      "step": "late-run-armed",
+      "at": "2026-11-06T16:54:53.905Z",
+      "hash": "#/",
+      "destination": null,
+      "routeText": "",
+      "modalOpen": false,
+      "lateHash": "#/",
+      "lateTitle": "Explain why register changes with the relationship"
+    },
+    {
+      "step": "late-run-turn-complete",
+      "at": "2026-11-06T16:55:04.037Z",
+      "hash": "#/20261106_095453_7c8c5e",
+      "destination": null,
+      "routeText": "",
+      "modalOpen": false
+    },
+    {
+      "step": "early-section-after-late-run",
+      "at": "2026-11-06T16:55:12.262Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 4 min ago\nstored_only\nThis section’s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*)\nHere it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it.\n| Ending you add | Line | Romaji | What that ending does |\n|---|---|---|---|\n| `だ` + `よ` | 好きだよ | suki da yo | Friend-register. `よ` offers it as news, low-stakes, between people already close. |\n| `です` | 好きです | suki desu | Polite copula (丁寧語, teineigo). It changes *how* you're speaking, not *what* you're doing — politeness by itself is not romance. |\n| `です` + a request | 好きです。付き合ってください。 | suki desu. tsukiatte kudasai. | The polite statement plus 付き合ってください (tsukiatte kudasai) — \"please go out with me.\" The request is what turns liking into a 告白 (kokuhaku). |\nSo the separator isn't the politeness dial alone. It's **state vs. ask**: one ending reports a feeling; the other asks for a relationship, and only the ask is a confession.\n---\n**Your check** — one frame, three endings:\nYou have never spoken to this person. You want to ask them to date you, and you're writing it rather than saying it. Same opening `好き` (suki) each time.\n① 好きだよ (suki da yo)\n② 好きです (suki desu)\n③ 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.)\nWhich ending do you close with — and which word in your choice is the one doing the asking?\n**Send just your answer** in one line: the number, then that word. Kana preferred, romaji accepted, no English, no explanation.\nCURRENT CHECK\nCheck v1\ndiscrimination\nYour answer\nThe question and any choices are shown above; this field records what you answered.\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\nSubmit answer\nEdit answer\nHints and shown answers are recorded against the next attempt.\nATTEMPTS ON THIS SECTION\n3 min ago\nNot yet\nHinted\n4 min ago\nNot yet\nCold attempt\nSAVED FROM THIS SECTION\n**Lesson 1 — Tell everyday affection from a direct romantic declaration** (evidence target: *discrimination*) Here it is as a different picture: not two separate lines, but **one frame with three possible endings**. The opening stays `好き` (suki) — a na-adjective, \"liked\" — and everything that matters happens after it. | Ending you add | Line | Romaji | What that ending does | |---|---|---|---| | `だ` + `よ` | 好きだよ | suki da yo",
+      "modalOpen": false
+    },
+    {
+      "step": "quizzes-open",
+      "at": "2026-11-06T16:55:37.116Z",
+      "hash": "#/coursebook",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nGrading failed\nCold attempt\njust now\nOpen attempt\nGive me the transfer check for this section, in one question.\nNot yet\nHinted\n3 min ago\nOpen attempt\nBoth lines are equally romantic. Politeness has nothing to do with how the line is heard.\nNot yet\nCold attempt\n4 min ago\nOpen attempt\nI am ready for this section. Remind me what separates casual 好きだよ from the polite confession, then give me the check.",
+      "modalOpen": false
+    },
+    {
+      "step": "quiz-review-opened",
+      "at": "2026-11-06T16:55:39.721Z",
+      "hash": "#/coursebook",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nGrading failed\nCold attempt\njust now\nClose\nGive me the transfer check for this section, in one question.\nReviewing is read-only. Nothing here consumes a retry or changes the old grade.\nNo criterion detail was stored for this attempt.\nGrader\nunavailable\nCheck version\nv1\nDisputes\n0\nReview lesson\nTry a new version\nSave to notebook\nDispute this grade\nRecord dispute\nA dispute never overwrites the original verdict; a re-grade would be a new operation.\nNot yet\nHinted\n3 min ago\nOpen attempt\nBoth lines are equally romantic. Politeness has nothing to do with how the line is heard.\nNot yet\nCold attempt\n4 min ago\nOpen attempt\nI am ready for this section. Remind me what separates casual 好きだよ from the polite confession, then give me the check.",
+      "modalOpen": false,
+      "clicked": "clicked(3)"
+    },
+    {
+      "step": "quiz-review-detail",
+      "at": "2026-11-06T16:55:39.770Z",
+      "hash": "#/coursebook",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nGrading failed\nCold attempt\njust now\nClose\nGive me the transfer check for this section, in one question.\nReviewing is read-only. Nothing here consumes a retry or changes the old grade.\nNo criterion detail was stored for this attempt.\nGrader\nunavailable\nCheck version\nv1\nDisputes\n0\nReview lesson\nTry a new version\nSave to notebook\nDispute this grade\nRecord dispute\nA dispute never overwrites the original verdict; a re-grade would be a new operation.\nNot yet\nHinted\n3 min ago\nOpen attempt\nBoth lines are equally romantic. Politeness has nothing to do with how the line is heard.\nNot yet\nCold attempt\n4 min ago\nOpen attempt\nI am ready for this section. Remind me what separates casual 好きだよ from the polite confession, then give me the check.",
+      "modalOpen": false,
+      "answer": "",
+      "verdict": "Passed",
+      "hasCriteria": false,
+      "controls": [
+        "Passed",
+        "Partly there",
+        "Not yet",
+        "Grading failed",
+        "All assistance",
+        "Cold",
+        "Hinted",
+        "Answer shown",
+        "Override",
+        "Close",
+        "Review lesson",
+        "Try a new version",
+        "Save to notebook",
+        "Record dispute",
+        "Open attempt",
+        "Open attempt"
+      ],
+      "tail": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nGrading failed\nCold attempt\njust now\nClose\n\nGive me the transfer check for this section, in one question.\n\nReviewing is read-only. Nothing here consumes a retry or changes the old grade.\n\nNo criterion detail was stored for this attempt.\n\nGrader\nunavailable\nCheck version\nv1\nDisputes\n0\nReview lesson\nTry a new version\nSave to notebook\nDispute this grade\nRecord dispute\n\nA dispute never overwrites the original verdict; a re-grade would be a new operation.\n\nNot yet\nHinted\n3 min ago\nOpen attempt\n\nBoth lines are equally romantic. Politeness has nothing to do with how the line is heard.\n\nNot yet\nCold attempt\n4 min ago\nOpen attempt\n\nI am ready for this section. Remind me what separates casual 好きだよ from the polite confession, then give me the check."
+    },
+    {
+      "step": "quiz-new-version",
+      "at": "2026-11-06T16:55:43.275Z",
+      "hash": "#/coursebook",
+      "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nGrading failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nVALIDATION_FAILED: no unused, audited variant of this check exists; a replay would not be a challenge.\nGrading failed\nCold attempt\njust now\nClose\nGive me the transfer check for this section, in one question.\nReviewing is read-only. Nothing here consumes a retry or changes the old grade.\nNo criterion detail was stored for this attempt.\nGrader\nunavailable\nCheck version\nv1\nDisputes\n0\nReview lesson\nTry a new version\nSave to notebook\nDispute this grade\nRecord dispute\nA dispute never overwrites the original verdict; a re-grade would be a new operation.\nNot yet\nHinted\n3 min ago\nOpen attempt\nBoth lines are equally romantic. Politeness has nothing to do with how the line is heard.\nNot yet\nCold attempt\n4 min ago\nOpen attempt\nI am ready for this section. Remind me what separates casual 好きだよ from the polite confession, then give me the check.",
+      "modalOpen": false,
+      "newVersion": "clicked:Try a new version"
+    },
+    {
+      "step": "quiz-new-version-tail",
+      "at": "2026-11-06T16:55:43.323Z",
+      "tail": "g failed\nAll assistance\nCold\nHinted\nAnswer shown\nOverride\nVALIDATION_FAILED: no unused, audited variant of this check exists; a replay would not be a challenge.\nGrading failed\nCold attempt\njust now\nClose\nGive me the transfer check for this section, in one question.\nReviewing is read-only. Nothing here consumes a retry or changes the old grade.\nNo criterion detail was stored for this attempt.\nGrader\nunavailable\nCheck version\nv1\nDisputes\n0\nReview lesson\nTry a new version\nSave to notebook\nDispute this grade\nRecord dispute\nA dispute never overwrites the original verdict; a re-grade would be a new operation.\nNot yet\nHinted\n3 min ago\nOpen attempt\nBoth lines are equally romantic. Politeness has nothing to do with how the line is heard.\nNot yet\nCold attempt\n4 min ago\nOpen attempt\nI am ready for this section. Remind me what separates casual 好きだよ from the polite confession, then give me the check."
+    }
+  ],
+  "shots": [
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/10-section-detached-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/11-bound-chat-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/12-section-bound-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/13-wrong-answer-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/14-notebook-dialog-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/14-notebook-dialog-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/15-notebook-saved-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/16-notebook-list-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/17-notebook-search-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/18-notebook-tag-filter-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/19-notebook-to-section-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/20-quizzes-list-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/21-quiz-review-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/23-late-section-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/24-early-section-intact-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/21-quiz-review-dark.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/22-quiz-new-version-dark.png"
+  ]
+}

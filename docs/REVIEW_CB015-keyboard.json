@@ -1,0 +1,322 @@
+{
+  "measuredAt": "2026-11-06T17:08:45.259Z",
+  "route": {
+    "found": true,
+    "tabs": 6,
+    "state": {
+      "tag": "BUTTON",
+      "id": "cb-view-picker",
+      "role": "combobox",
+      "name": "Course view",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": false,
+      "visible": true
+    }
+  },
+  "strip": {
+    "moved": true,
+    "steps": 1,
+    "pressed": [
+      "Courses",
+      "Textbook"
+    ]
+  },
+  "textbookAfterEnter": {
+    "textbook": true,
+    "rows": 55
+  },
+  "sectionOpened": false,
+  "answerStop": {
+    "found": true,
+    "tabs": 62,
+    "state": {
+      "tag": "TEXTAREA",
+      "id": "cb-attempt-answer",
+      "role": null,
+      "name": "Type the answer you would give in the lesson.",
+      "inRoute": false,
+      "outline": false,
+      "boxShadow": false,
+      "visible": true
+    }
+  },
+  "submit": {
+    "present": true,
+    "disabled": false,
+    "reason": "Submit answer\nEdit answer"
+  },
+  "submitted": true,
+  "escape": {
+    "reached": false,
+    "error": "Error: never reached Save to notebook"
+  },
+  "textOnly": {
+    "visibleControls": 62,
+    "unnamed": []
+  },
+  "keyboardStops": 576,
+  "focusVisibleMisses": 10,
+  "reducedMotion": {
+    "maxTransition": 0.00001,
+    "maxAnimation": 0.00001,
+    "animated": 533
+  },
+  "stopsSample": [
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Courses",
+      "inRoute": true,
+      "outline": true,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Library",
+      "inRoute": true,
+      "outline": true,
+      "boxShadow": false,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Parent Studio",
+      "inRoute": true,
+      "outline": true,
+      "boxShadow": false,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "All courses",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Resume lesson",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": "cb-view-picker",
+      "role": "combobox",
+      "name": "Course view",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": false,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Courses",
+      "inRoute": true,
+      "outline": true,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Library",
+      "inRoute": true,
+      "outline": true,
+      "boxShadow": false,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Parent Studio",
+      "inRoute": true,
+      "outline": true,
+      "boxShadow": false,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "All courses",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Resume lesson",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": "cb-view-picker",
+      "role": "combobox",
+      "name": "Course view",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": false,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Open section",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Courses",
+      "inRoute": true,
+      "outline": true,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Library",
+      "inRoute": true,
+      "outline": true,
+      "boxShadow": false,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Parent Studio",
+      "inRoute": true,
+      "outline": true,
+      "boxShadow": false,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "All courses",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Resume lesson",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": "cb-view-picker",
+      "role": "combobox",
+      "name": "Course view",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": false,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Open section",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Open section",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Open section",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Open section",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Open section",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    },
+    {
+      "tag": "BUTTON",
+      "id": null,
+      "role": null,
+      "name": "Open section",
+      "inRoute": true,
+      "outline": false,
+      "boxShadow": true,
+      "visible": true
+    }
+  ],
+  "shots": [
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/60-keyboard-textbook.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/61-keyboard-answer.png",
+    "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_de9a872d/docs/cb015-shots/62-keyboard-reduced-motion.png"
+  ]
+}
