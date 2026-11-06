@@ -46,6 +46,15 @@ ACTION_KINDS = {
 
 _CURRENT_PLAN = "pl.id = (SELECT id FROM plans WHERE course_id = pl.course_id AND state = 'approved' ORDER BY version DESC LIMIT 1)"
 
+#: Objective states the queue may show. ``review_due``/``needs_review`` are already scheduled;
+#: ``independent_evidence``/``delayed_evidence`` get their clock start from a cold layer-2 pass.
+ELIGIBLE_STATES: tuple[str, ...] = (
+    "independent_evidence",
+    "delayed_evidence",
+    "review_due",
+    "needs_review",
+)
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -117,10 +126,11 @@ def _item(connection, objective, *, enrollment_id: str, now: datetime) -> dict[s
 
 
 def _eligible_objectives(connection, enrollment_id: str) -> list[Any]:
+    states = ", ".join(f"'{state}'" for state in ELIGIBLE_STATES)
     return connection.execute(
         "SELECT o.* FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
         f" WHERE pl.course_id = (SELECT course_id FROM enrollments WHERE id = ?) AND {_CURRENT_PLAN}"
-        " AND o.state IN ('independent_evidence','delayed_evidence','review_due','needs_review')"
+        f" AND o.state IN ({states})"
         " ORDER BY o.ordinal",
         (enrollment_id,),
     ).fetchall()
@@ -166,6 +176,29 @@ def queue(connection, enrollment_id: str, *, now: datetime | None = None,
         "items": (due_items + upcoming)[:limited] if include_upcoming else due_items[:limited],
         "upcoming_hidden": max(0, len(upcoming) - limited),
     }
+
+
+def item(connection, enrollment_id: str, objective_id: str, *,
+         now: datetime | None = None) -> dict[str, Any] | None:
+    """The derived queue item for exactly one objective, or ``None``.
+
+    Same derivation as :func:`queue` without the cap. ``review.action`` needs the post-action
+    ``due_at`` for the objective it just touched, and a capped queue may legitimately omit that
+    row, so it cannot be read back out of ``queue()["items"]``.
+    """
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    states = ", ".join(f"'{state}'" for state in ELIGIBLE_STATES)
+    objective = connection.execute(
+        "SELECT o.* FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+        " WHERE o.id = ? AND pl.course_id = (SELECT course_id FROM enrollments WHERE id = ?)"
+        f" AND {_CURRENT_PLAN} AND o.state IN ({states})",
+        (objective_id, enrollment_id),
+    ).fetchone()
+    if objective is None:
+        return None
+    return _item(connection, objective, enrollment_id=enrollment_id, now=now)
 
 
 def refresh_due(connection, enrollment_id: str, *, now: datetime | None = None) -> dict[str, Any]:

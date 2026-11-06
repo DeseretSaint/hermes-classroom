@@ -112,6 +112,20 @@ def main() -> int:
         runtime,
     )
 
+    # CB-022 wired the four learning-loop handlers: 35 of the 38 frozen cb.rpc v3 methods are
+    # implemented, and the only ones still unregistered are Lattice's pack.* methods.
+    contract_methods = set(contracts.method_names())
+    unregistered = contract_methods - set(implemented or ())
+    record(
+        "GET /runtime registers 35 of 38 cb.rpc v3 methods (pack.* still unregistered)",
+        runtime.status_code == 200
+        and len(contract_methods) == 38
+        and len(implemented or ()) == 35
+        and unregistered == {"pack.preview", "pack.import", "pack.export"},
+        None,
+        runtime,
+    )
+
     rpc_health = client.post("/api/plugins/coursebook/rpc", json=envelope("health.get", {}))
     record(
         "POST /rpc health.get",
@@ -160,7 +174,7 @@ def main() -> int:
 
     later = client.post("/api/plugins/coursebook/rpc", json=envelope("pack.preview", {}))
     record(
-        "POST /rpc for a method not in the mounted contract is refused, never faked",
+        "POST /rpc for an unregistered method is refused, never faked",
         later.json().get("ok") is False,
         None,
         later,

@@ -560,7 +560,9 @@ class V3AmendmentTest(unittest.TestCase):
             "action": "snooze",
         }, expected_revision=4, idempotency_key="idem-review-action-1"))
         self.assertFalse(fenced["ok"])
-        self.assertEqual(fenced["error"]["code"], "NOT_IMPLEMENTED")
+        # The handler is registered now, so a well-formed fenced envelope reaches it; the
+        # unknown enrollment is the handler's refusal, not the seam's.
+        self.assertEqual(fenced["error"]["code"], "NOT_FOUND")
         self.assertNotIn("revision", fenced.get("result") or {})
         self.assertTrue(expected <= set(rule[0]["then"]["required"]))
 
@@ -674,7 +676,8 @@ class V3AmendmentTest(unittest.TestCase):
                 "evidence.disputes", {"enrollment_id": "enr_12345678", "limit": 201}
             )
 
-    def test_v3_payloads_are_validated_before_any_handler(self) -> None:
+    def test_v3_payloads_are_validated_before_the_handler(self) -> None:
+        # A registered handler does not weaken the seam: malformed payloads never reach it.
         for method, payload in (
             ("review.queue", {"enrollment_id": "enr_12345678", "cap": 0}),
             ("review.queue", {"enrollment_id": "enr_12345678", "cap": 51}),
@@ -685,6 +688,8 @@ class V3AmendmentTest(unittest.TestCase):
                 self.assertFalse(response["ok"])
                 self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
 
+        # Well-formed payloads reach the wired handler, which refuses the unknown enrollment
+        # honestly instead of answering an empty queue / bundle.
         for method, payload in (
             ("review.queue", {"enrollment_id": "enr_12345678"}),
             ("evidence.inspect", {"enrollment_id": "enr_12345678", "objective_id": "obj_12345678"}),
@@ -693,7 +698,7 @@ class V3AmendmentTest(unittest.TestCase):
             with self.subTest(method=method):
                 response = api.dispatch(_envelope(method, payload))
                 self.assertFalse(response["ok"])
-                self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
+                self.assertEqual(response["error"]["code"], "NOT_FOUND")
 
         def handler(payload, envelope):
             return 7, {
@@ -707,6 +712,9 @@ class V3AmendmentTest(unittest.TestCase):
                 "cap": 10,
             }
 
+        # Swap in a contract-shaped fake and restore the kernel's real handler afterwards, so
+        # this stays a test of the dispatch seam rather than of the database.
+        saved = api.METHOD_HANDLERS.get("review.queue")
         api.register_handler("review.queue", handler)
         try:
             response = api.dispatch(_envelope("review.queue", {"enrollment_id": "enr_12345678"}))
@@ -714,7 +722,10 @@ class V3AmendmentTest(unittest.TestCase):
             self.assertEqual(response["contract_version"], 3)
             self.assertEqual(response["revision"], 7)
         finally:
-            api.METHOD_HANDLERS.pop("review.queue", None)
+            if saved is not None:
+                api.METHOD_HANDLERS["review.queue"] = saved
+            else:
+                api.METHOD_HANDLERS.pop("review.queue", None)
 
     def test_docs_publish_the_v3_surface_and_the_handler_contract(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
