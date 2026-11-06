@@ -8,7 +8,7 @@
 # while sha and description disagree; gate 11 is exactly that check.
 name: coursebook
 repo: https://github.com/DeseretSaint/hermes-classroom
-sha: 3d7dfde0534d52621cb57b7833e412762fd28730
+sha: 32f67b8d5527e691529caa965821823b7b774ddf
 description: >-
   A native Hermes Desktop learning workspace where a lesson is governed state rather than chat:
   one objective at a time, typed checks, bounded grading, transactional transitions, inspectable
@@ -32,7 +32,7 @@ tier: community
 category: desktop
 requires_hermes: ">=0.23.0"
 version: "0.1.0"
-docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/3d7dfde0534d52621cb57b7833e412762fd28730/docs/INSTALL.md
+docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/32f67b8d5527e691529caa965821823b7b774ddf/docs/INSTALL.md
 readme: true
 platforms: []
 known_issues:
