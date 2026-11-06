@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
@@ -25,18 +26,19 @@ from jsonschema.exceptions import ValidationError
 CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 
 #: Contract id -> file name. Order is the inventory order reported by ``schema.get``.
+#: The v1 files stay on disk as immutable history; only the current version is in the inventory.
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
-    "cb.errors": "errors.v1.json",
-    "cb.rpc": "rpc.v1.json",
-    "cb.db": "db.v1.json",
-    "cb.jobs": "jobs.v1.json",
+    "cb.errors": "errors.v2.json",
+    "cb.rpc": "rpc.v2.json",
+    "cb.db": "db.v2.json",
+    "cb.jobs": "jobs.v2.json",
     "cb.pack": "pack-manifest.v1.json",
 }
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 1
+WIRE_CONTRACT_VERSION = 2
 
 
 class ContractError(Exception):
@@ -223,20 +225,26 @@ def audit_contracts() -> list[str]:
     """Return human-readable problems; an empty list means the contract set is coherent.
 
     Checks the invariants that a JSON Schema alone cannot express across documents:
-    unique ids, one version per document, every vocabulary ``$ref`` resolvable, and the
-    error-code enum matching the catalog.
+    unique ids, ``$id`` agreeing with the declared version, every ``$ref`` resolving to the
+    *current* version of its target contract, the error-code enum matching the catalog, and the
+    RPC method enum matching the payload schemas one-for-one.
     """
     problems: list[str] = []
     seen_ids: set[str] = set()
+    uri_by_contract: dict[str, str] = {}
     for contract_id in CONTRACT_FILES:
         document = contract(contract_id)
         uri = str(document["$id"])
         if uri in seen_ids:
             problems.append(f"duplicate $id {uri}")
         seen_ids.add(uri)
+        uri_by_contract[contract_id] = uri
         version = document.get("x-contract-version")
         if not isinstance(version, int) or version < 1:
             problems.append(f"{contract_id}: x-contract-version must be a positive integer")
+        elif not uri.endswith(f"/v{version}"):
+            problems.append(f"{contract_id}: $id {uri} does not end with /v{version}")
+
     codes = set(error_codes())
     catalog = set(error_catalog())
     if codes != catalog:
@@ -244,29 +252,71 @@ def audit_contracts() -> list[str]:
             "cb.errors code enum and code_catalog disagree: "
             f"enum-only={sorted(codes - catalog)} catalog-only={sorted(catalog - codes)}"
         )
+
+    method_enum = list(contract("cb.rpc")["$defs"]["method"]["enum"])
+    if len(method_enum) != len(set(method_enum)):
+        problems.append("cb.rpc method enum contains duplicates")
+    payload_schemas = contract("cb.rpc")["$defs"]["methods"]["properties"]
+    if set(method_enum) != set(payload_schemas):
+        problems.append(
+            "cb.rpc method enum and $defs.methods disagree: "
+            f"enum-only={sorted(set(method_enum) - set(payload_schemas))} "
+            f"schema-only={sorted(set(payload_schemas) - set(method_enum))}"
+        )
+    for method in method_enum:
+        entry = payload_schemas.get(method) or {}
+        missing = {"request", "response"} - set(entry)
+        if missing:
+            problems.append(f"cb.rpc method {method!r} is missing payload schema(s): {', '.join(sorted(missing))}")
+
+    # Cross-document references must target the version currently in the inventory.
+    current_version: dict[str, int] = {}
+    for contract_id, uri in uri_by_contract.items():
+        base, _, version = uri.rpartition("/v")
+        current_version[base] = int(version)
+    vocabulary_prefix = uri_by_contract["cb.vocabulary"] + "#/$defs/"
     vocabulary_ids = set(contract("cb.vocabulary").get("$defs", {}))
     for contract_id in CONTRACT_FILES:
-        raw = (CONTRACT_DIR / CONTRACT_FILES[contract_id]).read_text(encoding="utf-8")
-        for name in _vocabulary_refs(raw):
-            if name not in vocabulary_ids:
-                problems.append(f"{contract_id}: references undefined vocabulary definition {name!r}")
+        for ref in _collect_refs(contract(contract_id)):
+            if ref.startswith(vocabulary_prefix):
+                name = ref[len(vocabulary_prefix):].split("/")[0]
+                if name not in vocabulary_ids:
+                    problems.append(
+                        f"{contract_id}: references undefined vocabulary definition {name!r}"
+                    )
+            match = _CONTRACT_REF.match(ref)
+            if match:
+                base = f"https://contracts.coursebook.hermes/{match.group(1)}"
+                ref_version = int(match.group(2))
+                expected = current_version.get(base)
+                if expected is None:
+                    problems.append(f"{contract_id}: $ref targets unknown contract {ref}")
+                elif ref_version != expected:
+                    problems.append(
+                        f"{contract_id}: $ref {ref} targets v{ref_version} but {base} is at v{expected}"
+                    )
+
     if WIRE_CONTRACT_ID not in CONTRACT_FILES:
         problems.append(f"wire contract {WIRE_CONTRACT_ID} is not in the inventory")
+    elif contract_version(WIRE_CONTRACT_ID) != WIRE_CONTRACT_VERSION:
+        problems.append(
+            f"wire contract constant is v{WIRE_CONTRACT_VERSION} but {WIRE_CONTRACT_ID} is at "
+            f"v{contract_version(WIRE_CONTRACT_ID)}"
+        )
     return problems
 
 
-_VOCAB_PREFIX = "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/"
+_CONTRACT_REF = re.compile(r"^https://contracts\.coursebook\.hermes/([a-z0-9-]+)/v(\d+)(?:#|$)")
 
 
-def _vocabulary_refs(document_text: str) -> Iterable[str]:
-    index = 0
-    while True:
-        index = document_text.find(_VOCAB_PREFIX, index)
-        if index == -1:
-            return
-        start = index + len(_VOCAB_PREFIX)
-        end = start
-        while end < len(document_text) and (document_text[end].isalnum() or document_text[end] == "_"):
-            end += 1
-        yield document_text[start:end]
-        index = end
+def _collect_refs(node: Any) -> Iterable[str]:
+    """Every ``$ref`` string in a parsed contract document."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "$ref" and isinstance(value, str):
+                yield value
+            else:
+                yield from _collect_refs(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _collect_refs(item)

@@ -12,7 +12,7 @@ from coursebook import api, contracts
 def request(method: str, payload: dict | None = None, **overrides):
     body = {
         "contract": "cb.rpc",
-        "contract_version": 1,
+        "contract_version": contracts.WIRE_CONTRACT_VERSION,
         "method": method,
         "operation_id": f"op-{method.replace('.', '-')}-0001",
         "payload": payload if payload is not None else {},
@@ -39,7 +39,7 @@ class DispatchTest(unittest.TestCase):
     def test_health_reports_contract_and_db_block(self) -> None:
         response = api.dispatch(request("health.get"))
         result = response["result"]
-        self.assertEqual(result["contract_version"], 1)
+        self.assertEqual(result["contract_version"], contracts.WIRE_CONTRACT_VERSION)
         self.assertIn("ready", result["db"])
         self.assertIn("schema_version", result["db"])
 
@@ -65,7 +65,7 @@ class DispatchTest(unittest.TestCase):
         self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
 
     def test_wrong_contract_version_is_validation_failure(self) -> None:
-        response = api.dispatch(request("health.get", contract_version=2))
+        response = api.dispatch(request("health.get", contract_version=contracts.WIRE_CONTRACT_VERSION + 1))
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
 

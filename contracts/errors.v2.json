@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.coursebook.hermes/errors/v2",
+  "title": "Coursebook error envelope v2",
+  "description": "Every failure the backend reports, in HTTP or inside an RPC response, uses this object. The catalog below is the single authority for codes, categories, retryability and status mapping; coursebook.contracts reads it rather than duplicating it. v2 adds DELETE_SCOPE_STALE for the previewed-scope deletion protocol.",
+  "x-contract-id": "cb.errors",
+  "x-contract-version": 2,
+  "x-owner": "atlas",
+  "x-status": "frozen",
+  "type": "object",
+  "$defs": {
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "category",
+        "message",
+        "retryable"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "VALIDATION_FAILED",
+            "NOT_FOUND",
+            "CONTRACT_VERSION_UNSUPPORTED",
+            "STALE_REVISION",
+            "IDEMPOTENCY_CONFLICT",
+            "BINDING_NOT_ACTIVE",
+            "CHECK_STALE",
+            "DELETE_SCOPE_STALE",
+            "GRADER_UNAVAILABLE",
+            "HOST_UNAVAILABLE",
+            "TOPOLOGY_UNSUPPORTED",
+            "PACK_REJECTED",
+            "POLICY_VIOLATION",
+            "JOB_NOT_CANCELLABLE",
+            "JOB_STATE_INVALID",
+            "NOT_IMPLEMENTED",
+            "INTERNAL_ERROR"
+          ]
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "validation",
+            "conflict",
+            "state",
+            "capability",
+            "content",
+            "internal"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "description": "Operator-readable, already localized for the caller. Never contains reference answers, keys or secrets."
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "Whether repeating the same request may succeed. A non-retryable error must not be retried automatically."
+        },
+        "details": {
+          "type": "object",
+          "maxProperties": 32,
+          "additionalProperties": true,
+          "description": "Structured, non-sensitive context (field name, failing rule, rejected path)."
+        },
+        "current_revision": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Present on conflict responses so the client can reconcile without a second read."
+        },
+        "operation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        }
+      }
+    },
+    "code_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "VALIDATION_FAILED": {
+          "type": "object"
+        },
+        "NOT_FOUND": {
+          "type": "object"
+        },
+        "CONTRACT_VERSION_UNSUPPORTED": {
+          "type": "object"
+        },
+        "STALE_REVISION": {
+          "type": "object"
+        },
+        "IDEMPOTENCY_CONFLICT": {
+          "type": "object"
+        },
+        "BINDING_NOT_ACTIVE": {
+          "type": "object"
+        },
+        "CHECK_STALE": {
+          "type": "object"
+        },
+        "GRADER_UNAVAILABLE": {
+          "type": "object"
+        },
+        "HOST_UNAVAILABLE": {
+          "type": "object"
+        },
+        "TOPOLOGY_UNSUPPORTED": {
+          "type": "object"
+        },
+        "PACK_REJECTED": {
+          "type": "object"
+        },
+        "POLICY_VIOLATION": {
+          "type": "object"
+        },
+        "JOB_NOT_CANCELLABLE": {
+          "type": "object"
+        },
+        "JOB_STATE_INVALID": {
+          "type": "object"
+        },
+        "NOT_IMPLEMENTED": {
+          "type": "object"
+        },
+        "INTERNAL_ERROR": {
+          "type": "object"
+        },
+        "DELETE_SCOPE_STALE": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  "code_catalog": {
+    "VALIDATION_FAILED": {
+      "category": "validation",
+      "retryable": false,
+      "http": 422,
+      "summary": "Request or payload violates the frozen contract."
+    },
+    "NOT_FOUND": {
+      "category": "validation",
+      "retryable": false,
+      "http": 404,
+      "summary": "Referenced record does not exist for this scope."
+    },
+    "CONTRACT_VERSION_UNSUPPORTED": {
+      "category": "validation",
+      "retryable": false,
+      "http": 400,
+      "summary": "Caller and backend disagree on a contract version."
+    },
+    "STALE_REVISION": {
+      "category": "conflict",
+      "retryable": false,
+      "http": 409,
+      "summary": "Expected revision is not current; caller must reconcile against current_revision."
+    },
+    "IDEMPOTENCY_CONFLICT": {
+      "category": "conflict",
+      "retryable": false,
+      "http": 409,
+      "summary": "Idempotency key was reused with a different payload hash."
+    },
+    "BINDING_NOT_ACTIVE": {
+      "category": "state",
+      "retryable": false,
+      "http": 409,
+      "summary": "Session binding is paused, detached, branched or orphaned; reconcile before submitting."
+    },
+    "CHECK_STALE": {
+      "category": "conflict",
+      "retryable": false,
+      "http": 409,
+      "summary": "The open check has been superseded; no attempt was created."
+    },
+    "GRADER_UNAVAILABLE": {
+      "category": "capability",
+      "retryable": true,
+      "http": 503,
+      "summary": "Grading could not finish. The answer is saved; no progress changed."
+    },
+    "HOST_UNAVAILABLE": {
+      "category": "capability",
+      "retryable": true,
+      "http": 503,
+      "summary": "The Hermes host (gateway, auxiliary model, media provider) is unavailable."
+    },
+    "TOPOLOGY_UNSUPPORTED": {
+      "category": "capability",
+      "retryable": false,
+      "http": 501,
+      "summary": "Desktop and backend do not share a filesystem/authority topology; the operation is refused rather than faked."
+    },
+    "PACK_REJECTED": {
+      "category": "content",
+      "retryable": false,
+      "http": 422,
+      "summary": "Pack failed schema, bounds, hash, MIME or active-content validation. Nothing was adopted."
+    },
+    "POLICY_VIOLATION": {
+      "category": "content",
+      "retryable": false,
+      "http": 403,
+      "summary": "Untrusted content attempted to change policy, tools, rubrics, state, reminders or exports."
+    },
+    "JOB_NOT_CANCELLABLE": {
+      "category": "state",
+      "retryable": false,
+      "http": 409,
+      "summary": "Job is already terminal or cancelling."
+    },
+    "JOB_STATE_INVALID": {
+      "category": "state",
+      "retryable": false,
+      "http": 409,
+      "summary": "Requested job transition is not in the frozen job state machine."
+    },
+    "NOT_IMPLEMENTED": {
+      "category": "internal",
+      "retryable": false,
+      "http": 501,
+      "summary": "Contract method is frozen but its handler is not implemented in this build."
+    },
+    "INTERNAL_ERROR": {
+      "category": "internal",
+      "retryable": true,
+      "http": 500,
+      "summary": "Unexpected backend failure. Details are logged, not returned verbatim."
+    },
+    "DELETE_SCOPE_STALE": {
+      "category": "conflict",
+      "retryable": false,
+      "http": 409,
+      "summary": "The deletion data scope changed after it was previewed; re-preview before deleting. Nothing was deleted."
+    }
+  },
+  "x-supersedes": "https://contracts.coursebook.hermes/errors/v2"
+}
