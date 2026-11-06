@@ -490,6 +490,12 @@ def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         )
     if row is None:
         return 0, {"binding": None}
+    # `cb.db` v2 stores the section a chat is bound to. Emitting it is what lets the pane scope to
+    # the bound section instead of the enrollment's current one (a chat bound to section 3 was
+    # rendering section 1's page and section 1's detached run). The `bindings` object in
+    # `cb.rpc` v5 is an open object, so these two additive fields need no version bump; `status`
+    # stays the row's own status, never derived from the section.
+    section_columns = row.keys()
     return int(row["revision"]), {
         "binding": {
             "binding_id": row["id"],
@@ -499,6 +505,8 @@ def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             "connection_id": row["connection_id"],
             "runtime_session_id": row["runtime_session_id"],
             "stored_session_id": row["stored_session_id"],
+            "lesson_run_id": row["lesson_run_id"] if "lesson_run_id" in section_columns else None,
+            "objective_id": row["objective_id"] if "objective_id" in section_columns else None,
             "cwd_fingerprint": row["cwd_fingerprint"],
             "compression_tip": row["compression_tip"],
             "status": row["status"],

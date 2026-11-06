@@ -64,6 +64,11 @@ class BindSessionCase(KernelCase):
         self.assertIsNotNone(found)
         self.assertEqual(found["binding_id"], binding["id"])
         self.assertEqual(found["matched_column"], "stored_session_id")
+        # CB-009 pane scope: the read half must name the section the chat is bound to, or the pane
+        # falls back to the enrollment's current objective and shows a different section.
+        self.assertEqual(found["objective_id"], self.lesson["objective_id"])
+        self.assertEqual(found["lesson_run_id"], self.run_id)
+        self.assertEqual(found["status"], "active")
 
     def test_repeating_the_same_bind_is_idempotent(self) -> None:
         first = self.bind()

@@ -385,10 +385,42 @@ class BindingTest(KernelCase):
         by_stored = self.ok("binding.get", {"session_id": "stored-xyz"})["result"]["binding"]
         self.assertEqual(by_stored["runtime_session_id"], "runtime-abc")
         self.assertEqual(by_stored["matched_column"], "stored_session_id")
+        # A legacy/course-level binding (no lesson_run_id) reports no section rather than a guess.
+        self.assertIsNone(by_stored["objective_id"])
+        self.assertIsNone(by_stored["lesson_run_id"])
         self.assertEqual(self.ok("binding.get", {"session_id": "unknown-session"})["result"]["binding"], None)
         # Exactly one identifier is accepted; two is a caller bug, not a preference order.
         error = self.err("binding.get", {"session_id": "stored-xyz", "enrollment_id": lesson["enrollment_id"]})
         self.assertEqual(error["code"], "VALIDATION_FAILED")
+
+    def test_binding_reports_the_section_it_is_bound_to(self) -> None:
+        """The pane scopes by `binding.objective_id`; `evidence_summary` is the enrollment's current."""
+        lesson = self.prepare_lesson()
+        run = self.ok(
+            "lesson.begin",
+            {
+                "enrollment_id": lesson["enrollment_id"],
+                "objective_id": lesson["objective_id"],
+                "mode": "fresh",
+            },
+            idempotency_key="begin-scope-key-0001",
+        )["result"]
+        self.execute(
+            "INSERT INTO bindings (id, enrollment_id, profile, connection_id, runtime_session_id,"
+            " stored_session_id, lesson_run_id, objective_id, cwd_fingerprint, compression_tip,"
+            " status, revision, updated_at)"
+            " VALUES ('bnd_scope_x', ?, 'cinder', NULL, 'runtime-scope', 'stored-scope', ?, ?,"
+            " NULL, NULL, 'active', 0, '2026-01-01T00:00:00+00:00')",
+            (lesson["enrollment_id"], run["lesson_run_id"], lesson["objective_id"]),
+        )
+        binding = self.ok("binding.get", {"session_id": "stored-scope"})["result"]["binding"]
+        self.assertEqual(binding["objective_id"], lesson["objective_id"])
+        self.assertEqual(binding["lesson_run_id"], run["lesson_run_id"])
+        # Additive fields must not disturb the status the pane renders for this chat.
+        self.assertEqual(binding["status"], "active")
+        by_enrollment = self.ok("binding.get", {"enrollment_id": lesson["enrollment_id"]})["result"]["binding"]
+        self.assertEqual(by_enrollment["objective_id"], lesson["objective_id"])
+        self.assertEqual(by_enrollment["lesson_run_id"], run["lesson_run_id"])
 
 
 if __name__ == "__main__":
