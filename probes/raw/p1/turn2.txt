@@ -1,0 +1,5 @@
+↪ restored workspace dir: /home/deseretsaint/.hermes/profiles/cbqa/test-root/isolated_course
+↻ Resumed session local-2b0aa1e20e904f60c6dbd58bdb98b7ddaf8c07a54e31e866757eee0d5f5ced6b "Call cb_probe_ids once and reply DONE #2" (1 user message, 6 total messages)
+RESUMED
+
+session_id: local-2b0aa1e20e904f60c6dbd58bdb98b7ddaf8c07a54e31e866757eee0d5f5ced6b

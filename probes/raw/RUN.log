@@ -1,0 +1,242 @@
+=== p1_ids.sh ===
+{
+  "probe": "p1",
+  "status": "PASS",
+  "checks": {
+    "turns_observed": 2,
+    "session_id_stable_across_resume": true,
+    "turn_id_changes_per_turn": true,
+    "turn_id_prefixed_by_session_id": true,
+    "task_id_equals_session_id": true,
+    "on_session_start_fires_once": true,
+    "tool_receives_session_and_task_but_no_turn_id": true,
+    "tool_agent_cwd_is_course_dir": true,
+    "tool_process_cwd_is_gateway_cwd": true
+  }
+}
+RESULT probe=p1-compaction BLOCKED compressor no-op/refusal on the available transcript; post_compaction never fired
+RESULT probe=p1 PASS session id stable, turn id per-turn, gateway cwd not session cwd
+
+=== p2_injection.sh ===
+{
+  "probe": "p2",
+  "status": "FAIL",
+  "checks": {
+    "injected_text_persisted_in_api_content": true,
+    "display_content_left_clean": true,
+    "user_rows": 1
+  },
+  "note": "FAIL = pre_llm_call injection is not ephemeral on this runtime: it is stored in api_content and replayed."
+}
+RESULT probe=p2-replay FAIL model saw the sentinel on a resumed turn where injection was disabled
+RESULT probe=p2 FAIL pre_llm_call injection persisted in api_content and replayed; docs claim ephemerality
+
+=== p3_context.sh ===
+isolated: "markers": ["CB_CTX_COURSE"] 
+repo_course: "markers": ["CB_CTX_REPO", "CB_CTX_COURSE"] 
+repo_root: "markers": ["CB_CTX_REPO"] 
+outside: "markers": [] 
+ignore_rules: "markers": [] 
+{
+  "probe": "p3",
+  "status": "PASS",
+  "checks": {
+    "isolated": true,
+    "repo_course": true,
+    "repo_root": true,
+    "outside": true,
+    "ignore_rules": true
+  },
+  "observed": {
+    "isolated": [
+      "CB_CTX_COURSE"
+    ],
+    "repo_course": [
+      "CB_CTX_COURSE",
+      "CB_CTX_REPO"
+    ],
+    "repo_root": [
+      "CB_CTX_REPO"
+    ],
+    "outside": [],
+    "ignore_rules": []
+  },
+  "note": "repo_course expects repo policy to leak on this runtime; that is why a course workspace must live outside git roots."
+}
+RESULT probe=p3 PASS isolated/outside/ignore-rules load only the intended policy; in-repo parent policy leaks (documented constraint)
+
+=== p4_grading.sh ===
+{
+  "probe": "p4",
+  "status": "PASS",
+  "checks": {
+    "realistic_samples": 5,
+    "all_realistic_json": true,
+    "latency_p50_under_4s": true,
+    "latency_p95_under_8s": true,
+    "timeout_raises": true,
+    "outage_model_differs_from_pin": true,
+    "jsonschema_available": true,
+    "schema_violation_raises": true,
+    "invalid_accepted_without_package": true
+  },
+  "latency_s": {
+    "p50": 2.215,
+    "p95": 4.273,
+    "samples": [
+      1.583,
+      1.658,
+      2.215,
+      3.148,
+      4.273
+    ]
+  },
+  "scenarios": {
+    "invalid_json": {
+      "scenario": "invalid_json",
+      "timeout": null,
+      "ok": true,
+      "elapsed_s": 10.225,
+      "content_type": "json",
+      "parsed": {
+        "answer": 42
+      },
+      "provider": "nous",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "usage": 588,
+      "text_head": "{\"answer\":42}",
+      "audit": {
+        "plugin_id": "cb-probe",
+        "purpose": "qa-probe-grade",
+        "profile": "",
+        "schema_name": "",
+        "task": "cb_grader"
+      },
+      "observed_path": "json"
+    },
+    "timeout": {
+      "scenario": "timeout",
+      "timeout": 0.001,
+      "ok": false,
+      "elapsed_s": 3.408,
+      "error_type": "APITimeoutError",
+      "error": "Request timed out."
+    },
+    "outage": {
+      "scenario": "outage",
+      "timeout": null,
+      "ok": true,
+      "elapsed_s": 10.357,
+      "content_type": "json",
+      "parsed": {
+        "verdict": "pass",
+        "criteria": [
+          "meets all required course learning objectives",
+          "score of 42 exceeds the minimum passing threshold for the coursebook assessment"
+        ]
+      },
+      "provider": "nous",
+      "model": "stepfun/step-3.7-flash:free",
+      "usage": 682,
+      "text_head": "{\n  \"verdict\": \"pass\",\n  \"criteria\": [\"meets all required course learning objectives\", \"score of 42 exceeds the minimum passing threshold for the coursebook assessment\"]\n}",
+      "audit": {
+        "plugin_id": "cb-probe",
+        "purpose": "qa-probe-grade",
+        "profile": "",
+        "schema_name": "coursebook_grade",
+        "task": "cb_grader_bad"
+      }
+    },
+    "schema_ok": {
+      "scenario": "schema_ok",
+      "timeout": null,
+      "ok": true,
+      "elapsed_s": 1.227,
+      "content_type": "json",
+      "parsed": {
+        "verdict": "pass",
+        "criteria": [
+          "Correct: 6*7=42 matches the answer."
+        ]
+      },
+      "provider": "nous",
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "usage": 226,
+      "text_head": "{\"verdict\":\"pass\",\"criteria\":[\"Correct: 6*7=42 matches the answer.\"]}",
+      "audit": {
+        "plugin_id": "cb-probe",
+        "purpose": "qa-probe-grade",
+        "profile": "",
+        "schema_name": "coursebook_grade",
+        "task": "cb_grader"
+      }
+    }
+  }
+}
+RESULT probe=p4 PASS normal grading is fast and fail-closed; see p4/assert.json for outage/model-substitution caveat
+
+=== p5_media.sh ===
+{
+  "probe": "p5",
+  "status": "PASS",
+  "checks": {
+    "artifact_exists": true,
+    "text_fallback_exists": true,
+    "extract_media_finds_plain_tag": true,
+    "gateway_auto_append_excludes_plugin_tool": true,
+    "hash_recorded": true
+  },
+  "seam": {
+    "artifact_exists": true,
+    "artifact_bytes": 70,
+    "text_fallback_exists": true,
+    "text_fallback_head": "# Coursebook text alternative\n\nA 1x1 probe image stands in for a sourced visual. Text lessons remain complete without it",
+    "extract_media_plain_text": [
+      "/home/deseretsaint/.hermes/profiles/cbqa/test-root/artifacts/cli_p5.png"
+    ],
+    "extract_media_from_json_tool_result": [],
+    "auto_append_allowlist": [
+      "image_generate",
+      "text_to_speech",
+      "text_to_speech_tool"
+    ],
+    "auto_append_for_plugin_tool": [],
+    "plugin_tool_is_allowlisted": false,
+    "voice_directive": false
+  }
+}
+RESULT probe=p5 PASS artifact+text fallback exist and MEDIA tag parses on plain text; Desktop renderer is provenance-scoped
+RESULT probe=p5-render BLOCKED no renderer contribution in the skeleton and no Electron session driven in this pass; host contract verified only
+
+=== p6_cron.sh ===
+{
+  "probe": "p6",
+  "status": "PASS",
+  "checks": {
+    "omitted_delivery_stored_as_local": true,
+    "explicit_target_stored_verbatim": true,
+    "created_paused": true,
+    "duplicate_name_creates_second_job": true,
+    "origin_absent_without_gateway_session": true
+  }
+}
+RESULT probe=p6 PASS omitted=local, explicit target stored verbatim, duplicate names create duplicates (plugin must dedupe)
+
+=== p7_authority.sh ===
+{
+  "probe": "p7",
+  "status": "PASS",
+  "checks": {
+    "submit_first": true,
+    "submit_duplicate": true,
+    "submit_conflict": true,
+    "submit_stale": true,
+    "hook_exception_turn_proceeded": true,
+    "hook_timeout_turn_proceeded": true,
+    "hook_did_not_run_after_timeout": true,
+    "submit_worked_while_hook_disabled": true
+  }
+}
+RESULT probe=p7 PASS submit_attempt idempotent/durable with no hook; hook fails open and a timed-out hook stops firing
+
+=== verdict summary ===

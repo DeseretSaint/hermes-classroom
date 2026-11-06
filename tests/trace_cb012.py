@@ -76,6 +76,112 @@ def main() -> int:
         fallback = artifacts.produce_with_fallback(store, voice, no_voice, course_id=course_id,
                                                    mime="audio/wav")
 
+        # ── cb.rpc dispatcher trace: jobs.create -> queued -> claimed -> completed ──────
+        # Every mutation below goes through the frozen envelope and the same dispatcher the
+        # Desktop pane uses, so the trace proves the handler wiring, not just the service.
+        from coursebook import api
+
+        def dispatch(method: str, payload: dict, *, expected_revision: int | None = None,
+                     idempotency_key: str | None = None) -> dict:
+            body = {
+                "contract": api.RPC_CONTRACT,
+                "contract_version": api.RPC_CONTRACT_VERSION,
+                "method": method,
+                "operation_id": f"trace-{method.replace('.', '-')}",
+                "payload": payload,
+            }
+            if expected_revision is not None:
+                body["expected_revision"] = expected_revision
+            if idempotency_key is not None:
+                body["idempotency_key"] = idempotency_key
+            return api.dispatch(body)
+
+        created = dispatch("jobs.create", {"kind": "research", "brief": {"goal": "trace dispatcher job"}})
+        assert created["ok"], created
+        trace_job_id = created["result"]["job_id"]
+        lifecycle = [{"step": "jobs.create", "state": created["result"]["state"],
+                      "revision": created["revision"]}]
+        lease = job_service.claim(trace_job_id, owner="trace-worker")
+        lifecycle.append({"step": "claim", "state": "running", "attempt_id": lease.attempt_id})
+        lifecycle.append({"step": "finish", "state": job_service.finish(lease)})
+        fetched = dispatch("jobs.get", {"job_id": trace_job_id})
+        lifecycle.append({"step": "jobs.get", "state": fetched["result"]["job"]["state"]})
+        assert fetched["result"]["job"]["state"] == "completed", fetched
+
+        # ── cb.rpc dispatcher trace: a stale source refuses grading with CHECK_STALE ────
+        trace_course = dispatch(
+            "course.create", {"title": "Trace stale course", "recipe": "committed", "goal": "Braise"}
+        )["result"]
+        trace_plan_id = trace_course["plan_id"]
+        trace_spec = {
+            "audit_state": "passed",
+            "stimulus": {"prompt": "Compute the answer."},
+            "reference": {"kind": "numeric", "value": "4", "tolerance": {"abs": "0"}},
+            "rubric": {"construct": "procedure", "pass_rule": "all",
+                       "criteria": [{"id": "c1", "description": "Correct value"}]},
+        }
+        objective_id = domain.record_objective(
+            trace_plan_id, title="Compute", evidence_target="procedure",
+            criteria=[{"id": "c1", "description": "graded criterion", "check_spec": trace_spec}],
+        )
+        enrollment_id = dispatch(
+            "enrollment.create", {"course_id": trace_course["course_id"], "learner_label": "Trace"}
+        )["result"]["enrollment_id"]
+        approved_revision = dispatch(
+            "plan.approve",
+            {"enrollment_id": enrollment_id, "plan_id": trace_plan_id,
+             "plan_hash": domain.plan_hash(trace_plan_id)},
+            expected_revision=0,
+        )["result"]["revision"]
+        opened = dispatch(
+            "check.open", {"enrollment_id": enrollment_id, "objective_id": objective_id},
+            expected_revision=approved_revision,
+        )["result"]
+
+        from coursebook import generation
+        from coursebook import sources as source_ledger
+
+        source_id = "src_trace_stale_1"
+        with db.transaction() as connection:
+            generation.ensure_schema(connection)
+            connection.execute(
+                "INSERT INTO sources (id, course_id, url, title, source_type, published_at, fetched_at,"
+                " support_status, claim_count, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (source_id, trace_course["course_id"], "https://example.test/trace", "Trace source",
+                 "web", "2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z", "model_assessed", 1,
+                 "2026-02-01T00:00:00Z"),
+            )
+            connection.execute(
+                "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title, lesson_intent,"
+                " objective_refs_json, context_needs_json, source_ids_json) VALUES (?,?,?,?,?,?,?,?,?)",
+                ("sec_trace_1", trace_plan_id, 1, domain.plan_hash(trace_plan_id), "Trace section",
+                 "Learn", "[1]", "[]", json.dumps([source_id])),
+            )
+            connection.execute(
+                "INSERT INTO gen_research_runs (id, course_id, job_id, status, queries_json,"
+                " sources_json, reason, created_at) VALUES (?,?,?,?,?,?,?,?)",
+                ("run_trace_1", trace_course["course_id"], None, "ok", "[]",
+                 json.dumps([{"source_id": source_id, "url": "https://example.test/trace",
+                              "content_hash": research.sha256_of_text("old body")}]),
+                 None, "2026-02-01T00:00:00Z"),
+            )
+        with db.transaction() as connection:
+            refreshed = source_ledger.refresh(
+                connection, source_id, {"content": "new body", "title": "Trace source"}
+            )
+        stale = dispatch(
+            "attempt.submit",
+            {"enrollment_id": enrollment_id, "check_id": opened["check_id"],
+             "check_version": opened["check_version"], "attempt_nonce": "trace-stale-nonce",
+             "answer": {"kind": "text", "text": "4"}},
+            expected_revision=opened["revision"],
+            idempotency_key="trace-stale-key",
+        )
+        assert stale["ok"] is False and stale["error"]["code"] == "CHECK_STALE", stale
+        with db.read() as connection:
+            attempts_after_stale = connection.execute("SELECT COUNT(*) AS n FROM attempts").fetchone()["n"]
+        assert attempts_after_stale == 0, attempts_after_stale
+
         # Restart reconciliation against a job left running by a dead worker.
         dead = job_service.create("export", {"goal": "trace"})["job_id"]
         job_service.claim(dead, owner="dead-worker")
@@ -135,6 +241,21 @@ def main() -> int:
             ],
             "fallback": fallback.to_dict(),
             "restart_reconciliation": reconciliation,
+            "dispatcher_job_lifecycle": {
+                "job_id": trace_job_id,
+                "steps": lifecycle,
+                "final_state": fetched["result"]["job"]["state"],
+            },
+            "dispatcher_stale_refusal": {
+                "refresh": {
+                    "source_id": refreshed.source_id,
+                    "support_status": refreshed.support_status,
+                    "changed": refreshed.changed,
+                    "review_required": refreshed.review_required,
+                },
+                "error": stale["error"],
+                "attempts_written": attempts_after_stale,
+            },
             "dead_job_state": next(
                 (row["state"] for row in job_rows if row["id"] == dead), None
             ),

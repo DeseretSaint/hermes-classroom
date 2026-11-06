@@ -1,8 +1,12 @@
 # CB-012 review packet — research, source ledger, artifacts and durable jobs
 
-Owner: Cinder. Branch: `wt/cb-012-cinder` (this worktree). Base: `master` `df224b8` + a merge of
-the CB-002 kernel branch (`wt/cb-002-cinder`), because this package implements behaviour on top of
-the kernel tables and the kernel was not yet merged to `master` when the worktree was created.
+Owner: Cinder. Branch: `wt/cb-012-cinder` (this worktree).
+
+Base: `master` at the cb.rpc v5 freeze (`7b7c906`), which carries the CB-023 kernel
+(`coursebook/domain.py`, `evidence.py`, `turn.py`, `grading.py`, `review.py`, migrations) and the
+CB-010/CB-021/CB-026 surfaces. This branch originally grew from the CB-002 lineage; it was rebased
+onto that freeze and the 15 semantic conflicts in `coursebook/domain.py` were resolved in favour
+of the newer grading semantics (see §8).
 
 ## 1. What landed
 
@@ -35,7 +39,7 @@ the old worker's next checkpoint/finish raises `JobLeaseLost` and cannot touch t
 
 ```
 python3 -m unittest discover -s tests -t .
-Ran 391 tests ... OK
+Ran 538 tests ... OK
 ```
 
 New suites:
@@ -75,13 +79,17 @@ migrated `HERMES_HOME`. Observed values:
 * ledger: `https://example.test/source-0`, `support_status: unassessed`, real fetch date;
 * fallback: `degraded: true`, reason `voice ja-voice-a is not installed`, triage options
   `[keep_cached_original, use_text_fallback, choose_new_voice]`.
+* dispatcher trace (the same `api.dispatch` the Desktop pane uses):
+  `jobs.create` → `queued`, `claim` → `running`, `finish` → `completed`, `jobs.get` → `completed`;
+  and a real source refresh (`support_status: stale`, `review_required: true`) followed by
+  `attempt.submit` → `CHECK_STALE` with `attempts_written: 0`.
 
 ### 3.3 Gates
 
 ```
-bash scripts/validate.sh      -> Validation passed (unit tests, node --check, admission,
-                                 runtime contracts, mounted backend trace, 9/9 expectations)
-python3 -m unittest ...       -> 389 tests OK
+python3 -m unittest discover -s tests -t .   -> Ran 538 tests ... OK
+node --check desktop/plugin.js               -> OK
+hermes plugins validate .                    -> Validation passed
 ```
 
 ## 4. Acceptance mapping
@@ -109,15 +117,15 @@ No Desktop file was touched by this package.
 
 ## 6. Cross-owner edits (declared, not silent)
 
-* `tests/test_platform_binding.py` — the pre-kernel stub expectations were updated to the merged
-  kernel handler: `binding.get` now migrates on first use, resolves stored or live runtime ids,
-  returns `binding_id`, and refuses two identifiers with `VALIDATION_FAILED`.
+* `tests/test_platform_binding.py` — the pre-kernel stub expectations were kept (master's v5
+  pins), and a `KernelBindingHandlerTest` class was added that pins the kernel handler and proves
+  the durable shape (`binding_id`, revision, `matched_column`).
 * `coursebook/domain.py` — `binding.get` now refuses ambiguity (both identifiers) instead of
-  silently preferring one.
-* `scripts/probe-backend.py` — two expectations referenced the pre-kernel behaviour
-  (`binding.get` NOT_IMPLEMENTED on an unmigrated DB; `library.list` unimplemented). Updated to
-  the kernel truth (fresh DB migrates and returns an explicit null binding; `pack.preview` is the
-  honest unimplemented example).
+  silently preferring one, and matches `stored_session_id` only (runtime ids are not durable
+  identity — see §8).
+* `scripts/probe-backend.py` — the `binding.get` fresh-database expectation was updated to the
+  kernel truth (migrates, returns an explicit null binding). The CB-026 v5 method assertion and
+  the CB-010 "no handler" refusal (`course.teleport`) were both kept.
 * `coursebook/generation.py` — one call added in `_persist_research` so a changed source marks
   dependent checks stale before the new immutable run snapshot is written.
 * `coursebook/research.py` — added `ResearchCancelled` and two re-raise points so a cancel is not
@@ -138,3 +146,30 @@ No Desktop file was touched by this package.
 * Startup reconciliation currently runs when `coursebook.hooks` is imported by the plugin host
   (once per process, only on an already-migrated DB). If the host ever needs an explicit
   `on_load` hook, `job_service.ensure_startup_reconciled()` is the entry point.
+
+## 8. Rebase onto the cb.rpc v5 spine — resolutions and changed expectations
+
+`master` had moved on: the CB-023 kernel owns `coursebook/domain.py`, `evidence.py`, `turn.py`,
+`grading.py`, `review.py`, and the v5 handler set. This branch's `domain.py` predated that
+grading semantics. Conflicts were resolved as follows (nothing in the spine was reverted):
+
+| Area | Resolution |
+|---|---|
+| `domain.py` imports | Union: `evidence`, `review` (master) + `job_service`, `sources` (this package). |
+| `attempt.submit` grading path | Master's `evidence_class` classification (hint/`answer_shown` consumption, hinted-on-repeat), `delayed_evidence` state and evidence layers kept verbatim. This package's `source_ledger.assert_check_current(...)` inserted between the audit/state checks and `_binding_refusal`, still inside the read-only pre-grade transaction. |
+| `jobs.create` | Kept this package's handler: one `BEGIN IMMEDIATE`, idempotency replay, `job_service.create(...)` on the same connection (durable `queued` row). |
+| `binding.get` | Kept this package's handler (it did not exist in master's kernel), but **changed** to match master's R1 semantics: matches `stored_session_id` only, reports `matched_column`, and still returns the durable `binding_id`/`revision` shape. |
+| `evidence.py` / `turn.py` | Master's v5 versions kept — this package never owned them. |
+| `hooks.py` | Master's `turn`-based gate + `pack_flow` registration kept; this package's `reconcile_on_startup()` / `STARTUP_RECONCILIATION` appended after both registrations. |
+| `tests/test_contracts.py` | Master's v5 pins win. |
+| `tests/test_job_service.py`, `test_sources.py`, `test_workers.py`, `test_artifacts.py` | Taken from this package as-is; all green on the merged spine. |
+| `tests/test_platform_binding.py` | Master's v5 pins kept, plus a kernel-handler class (§6). |
+| `scripts/probe-backend.py` | Union: the CB-026 v5 method assertion is unchanged; the "no handler" probe uses `course.teleport` (CB-010 truth) instead of `pack.preview`, which now has a handler. |
+
+**Changed cb-012 expectation (called out for review):** the original CB-012 `binding.get`
+resolved a binding by `stored_session_id` **or** `runtime_session_id` and returned only
+`binding_id`. The v5 spine (`coursebook/api.py`, `AUDIT.md` R1, `tests/test_kernel_commands.py`)
+requires stored-id-only matching with `matched_column`, and the Desktop maps a runtime id to the
+stored id before calling. The handler was changed to the v5 rule; `runtime_session_id` is still
+returned in the payload, but never used as an identity. This is the only behavioural expectation
+from the original CB-012 packet that changed.

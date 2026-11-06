@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-11-06T09:27:23Z",
+  "generated_at": "2026-11-06T10:26:08Z",
   "schema_version": 2,
   "jobs": [
     {
-      "job_id": "job_d835c2b9ddec49c8b0eccb3d49475250",
+      "job_id": "job_5aad7e66c7664414aa86ece163d2240b",
       "kind": "research",
       "state": "completed",
-      "attempt_id": "att_a0b32cb607ad427f9ad1171ceb27dc0f",
+      "attempt_id": "att_a4382f5cda53465bb67e58a446aecaf7",
       "operation_id": null,
       "checkpoint": {
-        "duration_ms": 42,
+        "duration_ms": 27,
         "last_stage": "research",
         "ledger_size": 1,
         "queries": [
@@ -24,7 +24,7 @@
             "result_count": 1
           }
         ],
-        "research_run_id": "df0e4359cf6d81fb",
+        "research_run_id": "757b6c2e40043ec7",
         "research_status": "ok",
         "source_count": 1
       },
@@ -34,14 +34,14 @@
         "stages": [
           {
             "artifact_ids": [],
-            "at": "2026-11-06T09:27:22Z",
+            "at": "2026-11-06T10:26:07Z",
             "stage": "derive_queries",
             "steps_done": 1,
             "steps_total": 2
           },
           {
             "artifact_ids": [],
-            "at": "2026-11-06T09:27:22Z",
+            "at": "2026-11-06T10:26:07Z",
             "stage": "research",
             "steps_done": 2,
             "steps_total": 2
@@ -53,22 +53,22 @@
       "error": {}
     },
     {
-      "job_id": "job_7e31d9fcd45c488d8e34e2c7988db506",
+      "job_id": "job_ffcfee84611640e1927fc3f06c1c8814",
       "kind": "media",
       "state": "completed",
-      "attempt_id": "att_15fd520761094cb5a8df0a54afabdcb1",
+      "attempt_id": "att_6e99e707db2b4514b6578bcfabbfc9e6",
       "operation_id": null,
       "checkpoint": {
         "cache_hit": false,
         "degraded": false,
         "label": "Deterministic schematic rendered from structured facts.",
         "last_stage": "expose",
-        "media_marker": "MEDIA: /home/deseretsaint/.hermes/profiles/cinder/cache/scratch/cb012-trace-b8or08tj/artifacts/objects/87/871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
+        "media_marker": "MEDIA: /home/deseretsaint/.hermes/profiles/cinder/cache/scratch/cb012-trace-oy4unrxp/artifacts/objects/87/871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
         "reason": null,
         "renderer": [
           {
             "active_content": false,
-            "artifact_id": "art_595ae42a879e47c1b0df3d12819e75e2",
+            "artifact_id": "art_030bb58381cb430faf4a6cc2f0f3fd74",
             "content_hash": "sha256:871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
             "description": "Oven 150 C; internal 95 C",
             "label": "Deterministic schematic rendered from structured facts.",
@@ -86,23 +86,23 @@
         "stages": [
           {
             "artifact_ids": [],
-            "at": "2026-11-06T09:27:22Z",
+            "at": "2026-11-06T10:26:07Z",
             "stage": "validate_spec",
             "steps_done": 1,
             "steps_total": 3
           },
           {
             "artifact_ids": [
-              "art_595ae42a879e47c1b0df3d12819e75e2"
+              "art_030bb58381cb430faf4a6cc2f0f3fd74"
             ],
-            "at": "2026-11-06T09:27:22Z",
+            "at": "2026-11-06T10:26:07Z",
             "stage": "generate",
             "steps_done": 2,
             "steps_total": 3
           },
           {
             "artifact_ids": [],
-            "at": "2026-11-06T09:27:22Z",
+            "at": "2026-11-06T10:26:07Z",
             "stage": "expose",
             "steps_done": 3,
             "steps_total": 3
@@ -114,10 +114,20 @@
       "error": {}
     },
     {
-      "job_id": "job_4cd5a393d0164774ad3d86ff62baadab",
+      "job_id": "job_012bcb9b097e4fccad8771a3a0e43164",
+      "kind": "research",
+      "state": "completed",
+      "attempt_id": "att_c46c303f45b4404aac7da6c2e6344a8d",
+      "operation_id": "trace-jobs-create",
+      "checkpoint": {},
+      "progress": {},
+      "error": {}
+    },
+    {
+      "job_id": "job_d10758c1f8c948ff90cef0c1a74bc756",
       "kind": "export",
       "state": "interrupted_requires_retry",
-      "attempt_id": "att_11de69cd2b09444384a538210c453d4f",
+      "attempt_id": "att_3d99f67183ac47788a0b41b2ed8f9f14",
       "operation_id": null,
       "checkpoint": {},
       "progress": {},
@@ -125,11 +135,11 @@
     }
   ],
   "research_job": {
-    "job_id": "job_d835c2b9ddec49c8b0eccb3d49475250",
+    "job_id": "job_5aad7e66c7664414aa86ece163d2240b",
     "kind": "research",
     "state": "completed",
     "operation_id": null,
-    "attempt_id": "att_a0b32cb607ad427f9ad1171ceb27dc0f",
+    "attempt_id": "att_a4382f5cda53465bb67e58a446aecaf7",
     "brief": {
       "budget": {
         "max_page_chars": 6000,
@@ -138,14 +148,14 @@
         "max_results_per_query": 5,
         "max_sources": 6
       },
-      "course_id": "crs_ca055fed1552473ebef2d0a9f47b8f9f",
+      "course_id": "crs_01a746107e7846ac95f336c12f4e4192",
       "dials": {},
       "goal": "braise short ribs safely",
       "locale": null,
       "recipe": "casual"
     },
     "checkpoint": {
-      "duration_ms": 42,
+      "duration_ms": 27,
       "last_stage": "research",
       "ledger_size": 1,
       "queries": [
@@ -160,7 +170,7 @@
           "result_count": 1
         }
       ],
-      "research_run_id": "df0e4359cf6d81fb",
+      "research_run_id": "757b6c2e40043ec7",
       "research_status": "ok",
       "source_count": 1
     },
@@ -173,18 +183,18 @@
     "lease": null,
     "artifact_ids": [],
     "error": null,
-    "created_at": "2026-11-06T09:27:22Z",
-    "updated_at": "2026-11-06T09:27:22Z",
+    "created_at": "2026-11-06T10:26:07Z",
+    "updated_at": "2026-11-06T10:26:07Z",
     "cancel_requested_at": null
   },
   "media_job": {
-    "job_id": "job_7e31d9fcd45c488d8e34e2c7988db506",
+    "job_id": "job_ffcfee84611640e1927fc3f06c1c8814",
     "kind": "media",
     "state": "completed",
     "operation_id": null,
-    "attempt_id": "att_15fd520761094cb5a8df0a54afabdcb1",
+    "attempt_id": "att_6e99e707db2b4514b6578bcfabbfc9e6",
     "brief": {
-      "course_id": "crs_ca055fed1552473ebef2d0a9f47b8f9f",
+      "course_id": "crs_01a746107e7846ac95f336c12f4e4192",
       "kind": "visual",
       "language": null,
       "role": "schematic",
@@ -195,12 +205,12 @@
       "degraded": false,
       "label": "Deterministic schematic rendered from structured facts.",
       "last_stage": "expose",
-      "media_marker": "MEDIA: /home/deseretsaint/.hermes/profiles/cinder/cache/scratch/cb012-trace-b8or08tj/artifacts/objects/87/871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
+      "media_marker": "MEDIA: /home/deseretsaint/.hermes/profiles/cinder/cache/scratch/cb012-trace-oy4unrxp/artifacts/objects/87/871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
       "reason": null,
       "renderer": [
         {
           "active_content": false,
-          "artifact_id": "art_595ae42a879e47c1b0df3d12819e75e2",
+          "artifact_id": "art_030bb58381cb430faf4a6cc2f0f3fd74",
           "content_hash": "sha256:871a2ceaa5bb67a736ffdfad89f38a82e036c3a5a3a61ffc04ba8260b5c3e6c7",
           "description": "Oven 150 C; internal 95 C",
           "label": "Deterministic schematic rendered from structured facts.",
@@ -220,17 +230,17 @@
     },
     "lease": null,
     "artifact_ids": [
-      "art_595ae42a879e47c1b0df3d12819e75e2"
+      "art_030bb58381cb430faf4a6cc2f0f3fd74"
     ],
     "error": null,
-    "created_at": "2026-11-06T09:27:22Z",
-    "updated_at": "2026-11-06T09:27:22Z",
+    "created_at": "2026-11-06T10:26:07Z",
+    "updated_at": "2026-11-06T10:26:07Z",
     "cancel_requested_at": null
   },
   "artifact_hashes_match_db": true,
   "artifacts": [
     {
-      "artifact_id": "art_595ae42a879e47c1b0df3d12819e75e2",
+      "artifact_id": "art_030bb58381cb430faf4a6cc2f0f3fd74",
       "kind": "visual",
       "mime": "image/svg+xml",
       "bytes": 792,
@@ -259,7 +269,7 @@
       "tokens_json": "{}",
       "duration_ms": 0,
       "artifact_count": 0,
-      "operation_id": "job_d835c2b9ddec49c8b0eccb3d49475250"
+      "operation_id": "job_5aad7e66c7664414aa86ece163d2240b"
     },
     {
       "provider": "web_search",
@@ -267,7 +277,7 @@
       "tokens_json": "{}",
       "duration_ms": 0,
       "artifact_count": 0,
-      "operation_id": "job_d835c2b9ddec49c8b0eccb3d49475250"
+      "operation_id": "job_5aad7e66c7664414aa86ece163d2240b"
     },
     {
       "provider": "web_extract",
@@ -275,25 +285,33 @@
       "tokens_json": "{}",
       "duration_ms": 0,
       "artifact_count": 0,
-      "operation_id": "job_d835c2b9ddec49c8b0eccb3d49475250"
+      "operation_id": "job_5aad7e66c7664414aa86ece163d2240b"
     },
     {
       "provider": "deterministic.schematic",
       "model": null,
       "tokens_json": "{}",
-      "duration_ms": 69,
+      "duration_ms": 37,
       "artifact_count": 1,
-      "operation_id": "job_7e31d9fcd45c488d8e34e2c7988db506"
+      "operation_id": "job_ffcfee84611640e1927fc3f06c1c8814"
     }
   ],
   "source_ledger": [
     {
-      "source_id": "c398e271eb2d0d55",
+      "source_id": "86d7b37fe1e7a0a8",
       "url": "https://example.test/source-0",
       "title": "Authoritative reference",
-      "fetched_at": "2026-11-06T09:27:22Z",
+      "fetched_at": "2026-11-06T10:26:07Z",
       "published_at": "2025-05-01T00:00:00Z",
       "support_status": "unassessed"
+    },
+    {
+      "source_id": "src_trace_stale_1",
+      "url": "https://example.test/trace",
+      "title": "Trace source",
+      "fetched_at": "2026-11-06T10:26:08Z",
+      "published_at": "2026-01-01T00:00:00Z",
+      "support_status": "stale"
     }
   ],
   "fallback": {
@@ -321,6 +339,52 @@
       "staging": 0,
       "objects": 0
     }
+  },
+  "dispatcher_job_lifecycle": {
+    "job_id": "job_012bcb9b097e4fccad8771a3a0e43164",
+    "steps": [
+      {
+        "step": "jobs.create",
+        "state": "queued",
+        "revision": 0
+      },
+      {
+        "step": "claim",
+        "state": "running",
+        "attempt_id": "att_c46c303f45b4404aac7da6c2e6344a8d"
+      },
+      {
+        "step": "finish",
+        "state": "completed"
+      },
+      {
+        "step": "jobs.get",
+        "state": "completed"
+      }
+    ],
+    "final_state": "completed"
+  },
+  "dispatcher_stale_refusal": {
+    "refresh": {
+      "source_id": "src_trace_stale_1",
+      "support_status": "stale",
+      "changed": true,
+      "review_required": true
+    },
+    "error": {
+      "code": "CHECK_STALE",
+      "category": "conflict",
+      "message": "This check's source changed; it is paused for review instead of grading against stale content.",
+      "retryable": false,
+      "details": {
+        "check_id": "chk_e569570e93544bfabdf9e4485b9797f2",
+        "source_id": "src_trace_stale_1",
+        "source_title": "Trace source",
+        "support_status": "stale",
+        "objective_id": "obj_78dac75e387448f78bd19b7c3893e1e0"
+      }
+    },
+    "attempts_written": 0
   },
   "dead_job_state": "interrupted_requires_retry"
 }

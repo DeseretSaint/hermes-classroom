@@ -1,0 +1,8 @@
+{
+  "scenario": "timeout",
+  "timeout": 0.001,
+  "ok": false,
+  "elapsed_s": 3.408,
+  "error_type": "APITimeoutError",
+  "error": "Request timed out."
+}

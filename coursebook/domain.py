@@ -29,7 +29,16 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
-from . import api, db, grading, job_service, jobs as jobs_contract, sources as source_ledger
+from . import (
+    api,
+    db,
+    evidence,
+    grading,
+    job_service,
+    jobs as jobs_contract,
+    review,
+    sources as source_ledger,
+)
 from .api import RpcError
 from .contracts import method_names
 
@@ -52,7 +61,6 @@ KERNEL_METHODS: tuple[str, ...] = (
     "notebook.list",
     "notebook.delete",
     "quiz.history",
-    "binding.get",
     "jobs.create",
     "jobs.get",
     "jobs.cancel",
@@ -67,6 +75,13 @@ KERNEL_METHODS: tuple[str, ...] = (
     "jobs.list",
     "notebook.update",
     "binding.abandon",
+    "review.queue",
+    "review.action",
+    "evidence.inspect",
+    "evidence.disputes",
+    "course.outline",
+    "check.get",
+    "lesson.assist",
 )
 
 MAX_PAGE = 500
@@ -444,7 +459,14 @@ def quiz_history(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
 
 @_handler("binding.get")
 def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-    """Resolve a binding by stored/runtime session id or enrollment id — never by recency."""
+    """Resolve a binding by stored session id or enrollment id — never by recency.
+
+    A binding carries both ids (``cb.db`` -> bindings): ``runtime_session_id`` is the id the
+    gateway uses for the live chat, ``stored_session_id`` is the durable id that survives
+    compression/rotation. They are never interchangeable (``AUDIT.md`` R1), so this handler
+    matches ``stored_session_id`` only and reports which column matched. A caller holding only
+    a runtime id resolves it on the Desktop half first.
+    """
     db.ensure_schema()
     session_id = payload.get("session_id")
     enrollment_id = payload.get("enrollment_id")
@@ -453,28 +475,24 @@ def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         # identifiers cannot prove which one the answer came from.
         raise RpcError.of(
             "VALIDATION_FAILED",
-            "binding.get takes exactly one of session_id or enrollment_id.",
+            "binding.get takes exactly one of session_id (stored session id) or enrollment_id.",
             field="session_id" if session_id else "enrollment_id",
         )
+    column = "enrollment_id" if enrollment_id else "stored_session_id"
+    value = str(enrollment_id if enrollment_id else session_id)
     with db.read() as connection:
-        row = None
-        if enrollment_id:
-            row = _row(
-                connection,
-                "SELECT * FROM bindings WHERE enrollment_id = ? ORDER BY revision DESC, updated_at DESC LIMIT 1",
-                (enrollment_id,),
-            )
-        if row is None and session_id:
-            row = _row(
-                connection,
-                "SELECT * FROM bindings WHERE stored_session_id = ? OR runtime_session_id = ? LIMIT 1",
-                (session_id, session_id),
-            )
+        row = _row(
+            connection,
+            f"SELECT * FROM bindings WHERE {column} = ?"
+            " ORDER BY (status = 'active') DESC, revision DESC, updated_at DESC LIMIT 1",
+            (value,),
+        )
     if row is None:
         return 0, {"binding": None}
     return int(row["revision"]), {
         "binding": {
             "binding_id": row["id"],
+            "id": row["id"],
             "enrollment_id": row["enrollment_id"],
             "profile": row["profile"],
             "connection_id": row["connection_id"],
@@ -485,6 +503,7 @@ def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             "status": row["status"],
             "revision": int(row["revision"]),
             "updated_at": row["updated_at"],
+            "matched_column": column,
         }
     }
 
@@ -833,11 +852,29 @@ def _attempt_rows_before(connection, enrollment_id: str, check_id: str) -> int:
 def _classify_evidence(connection, enrollment_id: str, check_id: str) -> str:
     """How this answer was produced.
 
-    Cold is the default. A second answer to the same check follows feedback that was shown, so it
-    is ``hinted`` — recognition after scaffolding cannot become independent evidence
-    (``AUDIT.md`` R10/R12).
+    Cold is the default. A hint or a shown answer is a durable event recorded *before* the next
+    answer (``AUDIT.md`` R10/R12): an answer produced after scaffolding is never independent
+    evidence, and a shown answer is stronger contamination than a hint. A second answer to the
+    same check also follows feedback, so it is at least ``hinted``.
     """
-    return "hinted" if _attempt_rows_before(connection, enrollment_id, check_id) else "cold"
+    objective_row = _row(
+        connection, "SELECT objective_id FROM checks WHERE id = ?", (check_id,)
+    )
+    assist = None
+    if objective_row is not None:
+        assist = _row(
+            connection,
+            "SELECT kind FROM evidence WHERE enrollment_id = ? AND objective_id = ?"
+            " AND kind IN ('answer_shown', 'hint_request') AND attempt_id IS NULL"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (enrollment_id, objective_row["objective_id"]),
+        )
+    if assist is not None and assist["kind"] == "answer_shown":
+        return "answer_shown"
+    if assist is not None or _attempt_rows_before(connection, enrollment_id, check_id):
+        return "hinted"
+    return "cold"
+
 
 
 def _next_action_for(verdict: str) -> str:
@@ -1021,6 +1058,13 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
              _json_dump(graded.criteria), _json_dump(graded.provenance), _now(), _now()),
         )
         next_action = _next_action_for(verdict)
+        # A hint is consumed by the answer it contaminated: it stays linked to that attempt and
+        # cannot keep marking later, independent answers as hinted (R10/R12).
+        connection.execute(
+            "UPDATE evidence SET attempt_id = ? WHERE enrollment_id = ? AND objective_id = ?"
+            " AND kind IN ('hint_request', 'answer_shown') AND attempt_id IS NULL",
+            (attempt_id, enrollment["id"], objective["id"]),
+        )
         if verdict == "pass" and evidence_class != "cold":
             # Access may advance, but the record must not claim independent evidence.
             next_action = "review_objective"
@@ -1033,8 +1077,10 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         if verdict == "pass" and evidence_class == "cold":
             connection.execute(
                 "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
-                " VALUES (?, ?, ?, ?, 2, 'independent_evidence', ?, ?)",
-                (_new_id("evd"), enrollment["id"], objective["id"], attempt_id, evidence_class, _now()),
+                " VALUES (?, ?, ?, ?, 2, ?, ?, ?)",
+                (_new_id("evd"), enrollment["id"], objective["id"], attempt_id,
+                 "delayed_retrieval" if objective["state"] == "review_due" else "independent_evidence",
+                 evidence_class, _now()),
             )
         connection.execute(
             "UPDATE objectives SET state = ? WHERE id = ?",
@@ -1055,13 +1101,17 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
 
 
 def _objective_state_after(verdict: str, evidence_class: str, current: str) -> str:
-    """Evidence states stay distinct: only a cold pass reaches ``independent_evidence``."""
+    """Evidence states stay distinct: only a cold pass reaches ``independent_evidence``.
+
+    A cold pass on an item that was scheduled for review is *delayed* evidence, not a repeat of
+    the same-session result (``AUDIT.md`` R10).
+    """
     if evidence_class == "override":
         return "overridden"
     if verdict == "pass":
-        return "independent_evidence" if evidence_class == "cold" else (
-            "introduced" if current == "not_started" else current
-        )
+        if evidence_class != "cold":
+            return "introduced" if current == "not_started" else current
+        return "delayed_evidence" if current == "review_due" else "independent_evidence"
     if verdict in ("partial", "not_yet"):
         return "needs_review"
     return current
@@ -1455,6 +1505,11 @@ def _library_warning(connection, enrollment, course, pack_row) -> str | None:
 def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """The library survives a restart: it is rebuilt from enrollments/courses, never from UI state."""
     db.ensure_schema()
+    # Scheduler tick: due reviews become `review_due` before anything is counted or displayed, so
+    # an overdue queue can never look empty. Idempotent, and it only writes contracted state.
+    with db.transaction() as connection:
+        for row in connection.execute("SELECT id FROM enrollments WHERE status = 'active'").fetchall():
+            review.refresh_due(connection, row["id"])
     filter_name = payload.get("filter") or "all"
     limit = min(int(payload.get("limit") or 50), 100)
     offset = _decode_cursor(payload.get("cursor"))
@@ -2188,6 +2243,349 @@ def binding_abandon(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[
         result = {"binding_id": binding["id"], "status": "orphaned", "revision": revision}
         _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
     return revision, result
+
+
+# ── Learning loop: review queue and evidence (cb.rpc v3, CB-022) ────────────
+#
+# The semantics live in ``review.py`` and ``evidence.py``; these handlers are registration plus the
+# response-shape mapping the freeze documented. Read paths never advance a revision; the one
+# mutation (``review.action``) is fenced exactly like every other learner command.
+
+#: ``evidence.inspect`` reuses the contract's bounded dispute view; keep the row list inside it.
+MAX_INSPECT_DISPUTES = 200
+
+
+@_handler("review.queue")
+def review_queue(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Derived queue. The clock is the backend's and the cap bounds rows, never the counts."""
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        result = review.queue(
+            connection,
+            enrollment_id,
+            cap=int(payload.get("cap", 10)),
+            include_upcoming=bool(payload.get("include_upcoming", True)),
+        )
+    return int(enrollment["revision"]), result
+
+
+@_handler("review.action")
+def review_action(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Record a learner scheduling preference as layer-1 self-reported evidence.
+
+    One transaction: fence, bump, write the event, then re-read the post-action truth. ``state``
+    and ``due_at`` are the values the queue must re-render from; the revision stays in the
+    envelope (the contract forbids a payload copy).
+    """
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "review.action"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    enrollment_id = payload["enrollment_id"]
+    objective_id = payload["objective_id"]
+    action = payload["action"]
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, enrollment_id)
+        plan = _approved_plan(connection, enrollment["course_id"])
+        if plan is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved"
+            )
+        # A scheduling action on an objective outside the approved plan would write an event no
+        # queue can ever read; refuse it rather than persist orphan evidence.
+        _objective_in_plan(connection, objective_id, plan["id"])
+        to_revision = _bump_enrollment(connection, enrollment_id, expected)
+        now = datetime.now(timezone.utc)
+        outcome = review.apply_action(
+            connection, enrollment_id=enrollment_id, objective_id=objective_id, action=action, now=now
+        )
+        state = str(_row(connection, "SELECT state FROM objectives WHERE id = ?", (objective_id,))["state"])
+        item = review.item(connection, enrollment_id, objective_id, now=now)
+        result = {**outcome, "state": state, "due_at": item["due_at"] if item is not None else None}
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result)
+    return to_revision, result
+
+
+@_handler("evidence.inspect")
+def evidence_inspect(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """L1 + L2 + L3 + disputes in one read, with the bounded dispute view the contract requires."""
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    objective_id = payload.get("objective_id")
+    limit = int(payload.get("limit", 50))
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        bundle = evidence.bundle(connection, enrollment_id, objective_id=objective_id, limit=limit)
+    recorded = bundle["disputes"]
+    bounded = recorded["disputes"][:MAX_INSPECT_DISPUTES]
+    result = {
+        **bundle,
+        "disputes": {
+            "enrollment_id": recorded["enrollment_id"],
+            "disputes": bounded,
+            "count": recorded["count"],
+            "truncated": recorded["count"] > len(bounded),
+        },
+    }
+    return int(enrollment["revision"]), result
+
+
+@_handler("evidence.disputes")
+def evidence_disputes(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Bounded dispute view; ``count`` is the full match count, not the returned slice."""
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    limit = int(payload.get("limit", 50))
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        recorded = evidence.disputes(connection, enrollment_id, attempt_id=payload.get("attempt_id"))
+    count = int(recorded["count"])
+    result = {
+        "enrollment_id": recorded["enrollment_id"],
+        "disputes": recorded["disputes"][:limit],
+        "count": count,
+        "truncated": count > limit,
+    }
+    return int(enrollment["revision"]), result
+
+
+# ── v5: outline and check stimulus (read-only views) ────────────────────────
+
+#: The closed allowlist `check.get` may project from ``checks.stimulus_json``. Anything else the
+#: importer or generator stored is dropped rather than echoed: a smuggled answer key must not
+#: reach the pane through a read.
+STIMULUS_FORMATS: tuple[str, ...] = ("text", "selection", "verification")
+OUTLINE_OBJECTIVE_LIMIT = 400
+STIMULUS_PROMPT_LIMIT = 8000
+
+
+def _stimulus_view(stored: Any) -> dict[str, Any]:
+    """Project a stored stimulus onto the three contracted keys (+ optional instructions)."""
+    if not isinstance(stored, dict):
+        raise RpcError.of(
+            "VALIDATION_FAILED", "the stored check has no stimulus.", reason="stimulus_missing_prompt"
+        )
+    prompt = stored.get("prompt")
+    if not isinstance(prompt, str) or not prompt.strip():
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "the stored check has no stimulus prompt.",
+            reason="stimulus_missing_prompt",
+        )
+    declared_format = stored.get("format")
+    choices = stored.get("choices")
+    instructions = stored.get("learner_instructions")
+    return {
+        "prompt": prompt[:STIMULUS_PROMPT_LIMIT],
+        # An imported pack check declares no format; an open answer is the honest reading.
+        "format": declared_format if declared_format in STIMULUS_FORMATS else "text",
+        "choices": [str(choice)[:200] for choice in (choices if isinstance(choices, list) else [])][:8],
+        "learner_instructions": str(instructions)[:400] if isinstance(instructions, str) else None,
+    }
+
+
+@_handler("course.outline")
+def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The Textbook section index and the Plan tab: one read, every field derived, revision 0.
+
+    The plan rule is ``library.list``'s: approved first, else the highest version, which is the
+    draft the Plan tab asks the learner to approve. No revision bump and no transitions row —
+    opening the outline cannot change evidence.
+    """
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    limit = int(payload.get("limit", OUTLINE_OBJECTIVE_LIMIT))
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        plan = _approved_plan(connection, enrollment["course_id"])
+        if plan is None:
+            plan = _row(
+                connection,
+                "SELECT * FROM plans WHERE course_id = ? ORDER BY version DESC LIMIT 1",
+                (enrollment["course_id"],),
+            )
+        if plan is None:
+            return 0, {
+                "enrollment_id": enrollment_id,
+                "plan": None,
+                "objectives": [],
+                "total": 0,
+                "truncated": False,
+            }
+        total = int(
+            _row(connection, "SELECT COUNT(*) AS n FROM objectives WHERE plan_id = ?", (plan["id"],))["n"]
+        )
+        rows = connection.execute(
+            "SELECT o.*,"
+            " (SELECT c.state FROM checks c WHERE c.objective_id = o.id"
+            "   ORDER BY c.version DESC LIMIT 1) AS check_state,"
+            " (SELECT COUNT(*) FROM attempts a JOIN checks c ON c.id = a.check_id"
+            "   WHERE c.objective_id = o.id AND a.enrollment_id = ? AND a.state = 'committed')"
+            "   AS attempt_count,"
+            " (SELECT MAX(r.last_opened_at) FROM lesson_runs r"
+            "   WHERE r.objective_id = o.id AND r.enrollment_id = ?) AS last_opened_at"
+            " FROM objectives o WHERE o.plan_id = ? ORDER BY o.ordinal LIMIT ?",
+            (enrollment_id, enrollment_id, plan["id"], limit),
+        ).fetchall()
+    objectives = [
+        {
+            "objective_id": row["id"],
+            "ordinal": int(row["ordinal"]),
+            "title": row["title"],
+            "evidence_target": row["evidence_target"],
+            "state": row["state"],
+            "check_state": row["check_state"] or "none",
+            "attempt_count": int(row["attempt_count"]),
+            # A view of the state, not a second claim: independence is what the row says.
+            "independent": row["state"] in ("independent_evidence", "delayed_evidence"),
+            "last_opened_at": row["last_opened_at"],
+        }
+        for row in rows
+    ]
+    return 0, {
+        "enrollment_id": enrollment_id,
+        "plan": {
+            "plan_id": plan["id"],
+            "version": int(plan["version"]),
+            "state": plan["state"],
+            "plan_hash": plan["plan_hash"],
+        },
+        "objectives": objectives,
+        "total": total,
+        "truncated": total > len(objectives),
+    }
+
+
+@_handler("check.get")
+def check_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The question, never the key: resolve, authorise, then project the closed allowlist.
+
+    Membership mirrors ``check.open`` / ``attempt.submit``: the approved plan must exist for the
+    enrollment's course and the check must belong to that course. Read-only, revision 0.
+    """
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        plan = _approved_plan(connection, enrollment["course_id"])
+        if plan is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved"
+            )
+        if payload.get("check_id") is not None:
+            check = _row(connection, "SELECT * FROM checks WHERE id = ?", (payload["check_id"],))
+            if check is None:
+                raise _not_found("check", payload["check_id"])
+            objective = _row(
+                connection, "SELECT * FROM objectives WHERE id = ?", (check["objective_id"],)
+            )
+            if objective is None:
+                raise _not_found("objective", check["objective_id"])
+            owner = _row(
+                connection, "SELECT course_id FROM plans WHERE id = ?", (objective["plan_id"],)
+            )
+            if owner is None or owner["course_id"] != enrollment["course_id"]:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "that check does not belong to this enrollment's course.",
+                    field="check_id",
+                    reason="check_not_in_enrollment_course",
+                )
+        else:
+            objective = _objective_in_plan(connection, payload["objective_id"], plan["id"])
+            check = _row(
+                connection,
+                "SELECT * FROM checks WHERE objective_id = ? ORDER BY (state = 'open') DESC,"
+                " version DESC LIMIT 1",
+                (objective["id"],),
+            )
+            if check is None:
+                raise RpcError.of("NOT_FOUND", "that objective has no check.", entity="check")
+        attempt_count = int(
+            _row(
+                connection,
+                "SELECT COUNT(*) AS n FROM attempts WHERE enrollment_id = ? AND check_id = ?"
+                " AND state = 'committed'",
+                (enrollment_id, check["id"]),
+            )["n"]
+        )
+    return 0, {
+        "check_id": check["id"],
+        "objective_id": objective["id"],
+        "check_version": int(check["version"]),
+        "evidence_target": check["evidence_target"],
+        "state": check["state"],
+        "audit_state": check["audit_state"],
+        "stimulus": _stimulus_view(_json_load(check["stimulus_json"], {})),
+        "attempt_count": attempt_count,
+    }
+
+
+@_handler("lesson.assist")
+def lesson_assist(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Pane Hint / Show answer: the same layer-1 event the chat hook writes, revision-fenced.
+
+    The bump is not ceremony. ``attempt.submit`` classifies evidence inside its read transaction
+    and grades outside any transaction, so a hint recorded mid-grade would be invisible to that
+    classification and the answer would commit ``cold``. Bumping makes the in-flight submit lose
+    the fence. No transitions row: an assist is an action, not a learner transition.
+    """
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "lesson.assist"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    enrollment_id = payload["enrollment_id"]
+    objective_id = payload["objective_id"]
+    kind = payload["kind"]
+    evidence_class = evidence.ASSIST_CLASSES[kind]
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, enrollment_id)
+        plan = _approved_plan(connection, enrollment["course_id"])
+        if plan is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved"
+            )
+        _objective_in_plan(connection, objective_id, plan["id"])
+        open_check = _row(
+            connection,
+            "SELECT id FROM checks WHERE objective_id = ? AND state = 'open'"
+            " ORDER BY version DESC LIMIT 1",
+            (objective_id,),
+        )
+        if open_check is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "there is no open check to assist.", reason="no_open_check"
+            )
+        _binding_refusal(connection, enrollment["id"])
+        to_revision = _bump_enrollment(connection, enrollment_id, expected)
+        event_id = evidence.record_assist(
+            connection,
+            enrollment_id=enrollment["id"],
+            objective_id=objective_id,
+            attempt_id=None,
+            kind=kind,
+            evidence_class=evidence_class,
+        )
+        result = {
+            "event_id": event_id,
+            "kind": kind,
+            "evidence_class": evidence_class,
+            "revision": to_revision,
+        }
+        _remember(
+            connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result
+        )
+    return to_revision, result
 
 
 # ── write paths used by the plan job and by Parent mode ─────────────────────

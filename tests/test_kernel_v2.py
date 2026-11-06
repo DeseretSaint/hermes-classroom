@@ -398,9 +398,10 @@ class ArtifactGetTest(KernelCase):
 
 class RegistryTest(unittest.TestCase):
     def test_every_v2_method_is_registered_unless_another_package_owns_it(self) -> None:
-        # ``pack.*`` belongs to Lattice (CB-004) and may or may not be wired when this branch is
-        # merged; everything the kernel owns must be present, and nothing may be invented.
-        pack_methods = {"pack.preview", "pack.import", "pack.export"}
+        # ``pack.*`` belongs to Lattice (CB-004, and CB-024 adds list/inspect) and may or may not
+        # be wired when this branch is merged; everything the kernel owns must be present, and
+        # nothing may be invented. Explicit allowance beats silently dropping the check.
+        pack_methods = {"pack.preview", "pack.import", "pack.export", "pack.list", "pack.inspect"}
         expected = set(method_names()) - pack_methods
         implemented = set(api.implemented_methods())
         self.assertTrue(expected <= implemented, f"unregistered: {sorted(expected - implemented)}")
