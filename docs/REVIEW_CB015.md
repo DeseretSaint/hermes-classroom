@@ -137,8 +137,9 @@ unreadable. Stills `50`–`54`.
   field was reached by Tab (62 stops from the route's first control), typed with a real
   keyboard event and **submitted with Enter**; the submit was accepted.
 - **Escape**: the notebook dialog opens and **closes on one Escape** (`49`, and the JSON
-  `escape` record), but focus lands on `<body>` rather than returning to the `Save to notebook`
-  trigger. That is a real (minor) a11y defect, recorded rather than papered over.
+  `escape` record). Focus used to land on `<body>`; that is **fixed and re-proved** in §11 —
+  `docs/REVIEW_CB015-a11y2.json` now shows `document.activeElement` is the `Save to notebook`
+  trigger after the dialog closes (`61-after-escape-focus.png`).
 - **Reduced motion**: with `prefers-reduced-motion: reduce`, the maximum computed transition
   and animation duration on the route is **0.00001 s** (Chromium's zero), i.e. no motion
   theatre.
@@ -187,20 +188,20 @@ not driven through the Desktop UI; **open** = not proven.
 | # | proof | status | evidence |
 |---|---|---|---|
 | 1 | fresh profile → sidebar → preview → import → lesson | partial | first-run and list were live in the first pass (`00-first-run-dark.png`); this pass imported through `pack.grant/preview/import` (`seed-demo-course.py` output, §4) and opened lessons live. The *UI* import dialog needs a native folder picker and was not driven. |
-| 2 | backend disabled → enable → brief kept | open | not driven this pass |
+| 2 | backend disabled → enable → brief kept | **live@015** | `docs/REVIEW_CB015-fault-backend-off.json`: the isolated gateway on 44220 was stopped (pid recorded), the page rendered `Backend off` + the enable instructions + `Open Capabilities` / `Check again` with **zero rows and no New course**, then the gateway was started again and the page's own `Check again` returned both enrollments with their revisions. While the whole gateway is down the host paints its own CONNECTING view over the workspace (host-owned), so `70-plugin-half-disabled-dark.png` isolates the plugin half: surface stays mounted, names `VALIDATION_FAILED`, no fake rows, `Try again` recovers. |
 | 3 | new goal → cancel → reattach → approve edited plan | live@other | CB-011 (`docs/REVIEW_CB011.md` on `wt/cb-011-live`, plan job completed, edit + plan.approve verified) |
 | 4 | chat and pane answers race → one attempt | open | not driven this pass |
 | 5 | wrong answer → alternate representation → clarification not a retry | partial | wrong answer live (`Not yet / Hinted`, §3); the "hint is not a retry" accounting is CB-009/CB-013 evidence |
-| 6 | grader timeout → needs_retry → override recorded | partial | live grading failure recorded `Grading failed / Grader unavailable` (§3); override path CB-013 (`21-pane-needs-retry`, `22-pane-overridden-evidence`) |
+| 6 | grader timeout → needs_retry → override recorded | **live@015** | `docs/REVIEW_CB015-needs-retry.json`: the open-response check on the JP course's 4th section fails closed (`I couldn’t grade this attempt`, `Retry grading` / `Edit answer` / `Move on…`), Retry re-sent the same nonce and stayed `needs_retry`, and `Move on… → Record override` recorded the override (`Access granted — not independent evidence` seen before the section reload; durable row `Override — not independent evidence` + objective badge `Overridden`). |
 | 7 | hide/reopen/split pane mid-attempt → no lost answer | live@other | CB-009 pane runs (`docs/REVIEW_CB009-pane-chat.json`, `pane-12/13/14`) |
 | 8 | restart at every attempt state | live@other | CB-013 restart-resume (isolated backend cycled, same data.db, same attempt rows) |
 | 9 | parent edit after approval → reapproval before export | live@other | CB-011 export gate: `no_final_approval` refusal |
 | 10 | invalid/malicious pack → precise error, no residue | boundary | adversarial suite 21/21 hostile packs rejected with zero residue (`tests/adversarial/evidence/attack-packs.json`, CB-014). The UI folder grant needs a native dialog. |
-| 11 | offline → cached lesson, research paused | open | not driven this pass |
-| 12 | source stale → impact banner, old evidence kept | open | not driven this pass |
+| 11 | offline → cached lesson, research paused | **live@015** | `docs/REVIEW_CB015-fault-offline.json`: `Network.emulateNetworkConditions(offline)` → `navigator.onLine=false`, the header renders `Offline` + a sentence naming what still works and what is paused, `New course` is absent while offline, a course opens from what the profile already has, and the notice clears when the connection returns (`64`–`66`). |
+| 12 | source stale → impact banner, old evidence kept | open | documented limitation, see §11 — the state is written only by `sources.apply_run`, which is called from `generation.py:1862` inside the research/generation pipeline when a re-fetched source's content hash changes. None of the 51 contract methods in `/runtime` mutates a source, so the Desktop cannot reach it; producing it needs a live re-fetch whose content we do not control. |
 | 13 | reimport same pack → resume vs fresh | boundary | `pack.import` modes exercised by `seed-demo-course.py --mode fresh/resume`; not clicked through the UI |
-| 14 | course/chat/pack deletion distinct and recoverable | open | not driven this pass |
-| 15 | keyboard / text-only / reduced motion / 200 % / narrow | **live@015** | §5 (`docs/REVIEW_CB015-keyboard.json`), Escape focus-return defect noted |
+| 14 | course/chat/pack deletion distinct and recoverable | **live@015** | `docs/REVIEW_CB015-delete-paths.json` (all six verdicts true, stills `76`–`81`): archive through the row's own menu hides it from the default list (2→1 rows); the `Archived` filter shows it; `Unarchive course` returns both titles to `All`; `Delete enrollment…` opens a scoped confirm (attempts/notes/runs/jobs + `Course and plan kept` / `Hermes transcripts kept`) and removes the row; `Remove pack…` previews `Evidence kept` and freezes the pack. Driving this exposed a real defect — the delete preview sent no `idempotency_key`, so the confirm could never open — fixed in `desktop/plugin.js`. Chat deletion stays host-owned. |
+| 15 | keyboard / text-only / reduced motion / 200 % / narrow | **live@015** | §5 (`docs/REVIEW_CB015-keyboard.json`); both recorded defects (Escape focus return, view-strip name) fixed and re-proved — `docs/REVIEW_CB015-a11y2.json`, §11(1)/(2) |
 | 16 | 50+ objectives, long names, long JP/EN, many sources | **live@015** | §4 (`docs/REVIEW_CB015-perf.json`) |
 | 17 | teaching moment → tag/search → exact section → new run | **live@015** | §3 (`docs/REVIEW_CB015-loops.json`, steps `notebook-*`, `notebook-section-identity`) |
 | 18 | past quiz unchanged → new version → both inspectable | **live@015** | §3; new version refused honestly (`VALIDATION_FAILED`), both attempts remain inspectable (`20`, `21`, `22`, `47`, `48`) |
@@ -247,11 +248,10 @@ not exercise it in the live window.
 ## 9. Defects and limits found this pass
 
 1. **Escape does not return focus to the trigger** (minor a11y). The dialog closes on one
-   Escape; `document.activeElement` is `<body>` afterwards. Recorded, not fixed here to avoid
-   a late change to the only dialog on the route.
+   Escape; `document.activeElement` was `<body>` afterwards. **Fixed in §11(1) and re-proved.**
 2. **The view strip is a combobox, not a tablist.** `#cb-view-picker` is a single Tab stop;
-   ArrowRight switches views. Keyboard-operable, but its accessible name is only
-   "Course view" — the selected view is not in the name.
+   ArrowRight switches views. Keyboard-operable, but its accessible name was only
+   "Course view" — the selected view was not in the name. **Fixed in §11(2) and re-proved.**
 3. **Host tab order cost.** Reaching the route from `<body>` requires traversing the session
    list (~500 stops in this profile). Host-owned, reported here because a keyboard user feels
    it before they reach the plugin.
@@ -268,13 +268,100 @@ not exercise it in the live window.
 7. **Perf fixture** `cb015-perf-long-l0` is a repetition fixture, licensed `local_only`, and is
    not teaching material. It exists only to stress the route.
 
+## 11. Re-run after the supervisor unblock (the rows that moved)
+
+Five items were dispatched after the first packet was accepted as a partial. This section says
+exactly what changed and what did not.
+
+**(1) Escape now returns focus to the trigger — fixed and re-proved.** `desktop/plugin.js`
+gained `useReturnFocus(open)`, used by `NotebookSaveDialog`: it records the element that had
+focus when the dialog opened and, one frame after the host's own cleanup, focuses it again if it
+is still connected. `docs/REVIEW_CB015-a11y2.json` (`escapeFocusReturn`): dialog opens, one real
+Escape closes it, `document.activeElement` is the `Save to notebook` button — not `<body>`
+(`61-after-escape-focus.png`).
+
+**(2) The view picker's name carries the selected view — fixed and re-proved.** The narrow-layout
+combobox now reads `aria-label="Course view: Textbook"` and, after a real Enter/ArrowDown/Enter
+keyboard change, `Course view: Notebook` (`viewPickerName` in the same JSON, `62`/`63`).
+
+**(3) Offline — implemented and fault-injected.** The route had no offline state at all, so the
+header now listens to the browser's own `online`/`offline` events (`useOnline()`): an `Offline`
+badge plus one sentence naming what keeps working and what is paused, with `New course` and
+`New lesson brief` absent while offline. Driven with CDP `Network.emulateNetworkConditions` —
+`docs/REVIEW_CB015-fault-offline.json` (all four verdicts true, stills `64`–`66`).
+
+**(4) needs_retry → override — driven end to end.** `docs/REVIEW_CB015-needs-retry.json`: the
+open-response check fails closed, Retry grading keeps `needs_retry` (same nonce, no second
+attempt), and `Move on… → Record override` produces `Access granted — not independent evidence`
+before the section reloads; the durable attempt row and the objective badge keep the override.
+Stills `72`–`75`.
+
+**(5) Backend off — driven both ways.** `REVIEW_CB015-fault-backend-off.json` (whole gateway
+stopped and restarted: `Backend off`, enable instructions, `Check again`, no fake rows, both
+enrollments back) and `REVIEW_CB015-fault-plugin-off.json` (only the Python half disabled: the
+surface stays mounted and names a scoped `VALIDATION_FAILED` instead of showing an empty list).
+Still `70`, `71`.
+
+**(1b) Driving the deletion path exposed a real defect, now fixed.** `enrollment.delete`'s preview
+call — the dry run behind `Delete enrollment…` — sent no `idempotency_key`, so `cb.rpc` refused it
+(`VALIDATION_FAILED: 'idempotency_key' is a required property`) and `setPendingDelete` never ran.
+The destructive path was **unreachable from the UI**: the row menu opened, the item was clickable,
+and nothing happened except a warning toast. `pack.delete`'s preview had always passed
+`{expectedRevision, idempotencyKey}`, so the asymmetry was the bug. Both `onDelete` call sites
+(course list and course detail) now pass a row-derived key plus the row revision; the detail
+surface had also copied the pack's key namespace (`cb-pack-delete-…`) and now uses `cb-delete-…`.
+Verified live: the confirm renders the real scope (`55 lesson run(s)`, `Course and plan kept: yes`).
+
+**(6) Deletion paths — driven end to end (proof 14).** `docs/REVIEW_CB015-delete-paths.json`,
+six verdicts true, stills `76`–`81`:
+archive from the row's own menu hides the course from the default list (2 rows → 1); the
+`Archived` filter shows it; `Unarchive course` puts both titles back in `All`; `Delete
+enrollment…` shows the scoped counts + kept rows and removes the row on confirm; `Remove pack…`
+previews `Evidence kept` and freezes the pack without cascading.
+
+Two harness corrections are recorded rather than hidden: the row menu opens only through the
+pointer pipeline (a synthetic `el.click()` leaves it closed — that is what stopped the earlier
+pass), and the probe's own `archiveRecoverable` predicate tested the row text for the word
+"Unarchive", which is a menu item and never appears in the row. The verdict in the JSON was
+recomputed from that run's recorded steps by `scripts/cb015-delete-verdict.mjs`, which writes
+`verdictBasis` naming the step each field comes from; no step was re-driven or invented.
+
+**Still not proven — and why (no manufacture):**
+
+- **source stale (proof 12).** The state is written only by `sources.apply_run`, called from
+  `generation.py:1862` inside the research/generation pipeline when a re-fetched source's content
+  hash differs from the recorded one. None of the 51 contract methods in `/runtime`
+  (`artifact.get … usage.summary`) mutates a source, so no Desktop control can reach it, and
+  manufacturing it would mean a hand-written DB row or a live web re-fetch whose content we do not
+  control. It stays open, deliberately, rather than being faked.
+- **pack UI states (proofs 1/10/13).** `pack.preview` / `pack.import` require
+  `pluginContext.files.requestFolder()`, a native folder picker this headless rig cannot drive.
+  Proven at the RPC boundary, not through the dialog.
+- **chat deletion.** Host-owned transcript action; the plugin does not own or simulate it.
+- Rig state after this pass: the JP enrollment is active again; the perf pack is **frozen** by the
+  pack-delete step (`pack.delete` = freeze, evidence kept), so it is no longer re-importable —
+  future runs must regenerate it with `cb015-perf-pack.py`.
+
+**Gates re-run after these changes:** `node --check desktop/plugin.js` OK,
+`node scripts/cb015-hygiene.mjs` **0 findings / 13 rules**, `python3 -m unittest
+tests.test_desktop_contracts` **7/7 OK**, full suite **652 tests OK**, and both a11y checks
+re-proved after the plugin edit (`REVIEW_CB015-a11y2.json`).
+
 ## 10. Review packet contents
 
 - `docs/REVIEW_CB015.md` (this file)
 - `docs/REVIEW_CB015-loops.json` — every loop step, live
 - `docs/REVIEW_CB015-perf.json` — 55-objective pack measurements
 - `docs/REVIEW_CB015-keyboard.json` — 576 key stops, text-only, reduced motion, Escape
+- `docs/REVIEW_CB015-a11y2.json` — Escape focus return + view-picker name, re-proved
+- `docs/REVIEW_CB015-fault-offline.json` — emulated offline, rendered state
+- `docs/REVIEW_CB015-fault-backend-off.json` — whole gateway stopped and restarted
+- `docs/REVIEW_CB015-fault-plugin-off.json` — only the Python half disabled
+- `docs/REVIEW_CB015-needs-retry.json` — needs_retry → retry → override, end to end
+- `docs/REVIEW_CB015-delete-paths.json` — archive / unarchive / delete / pack freeze
 - `docs/REVIEW_CB015-gallery.json` — gallery manifest
-- `docs/cb015-shots/10`–`24`, `40`–`54`, `60`–`62` — stills
+- `docs/cb015-shots/10`–`24`, `40`–`54`, `60`–`81` — stills
 - `scripts/cb015-hygiene.mjs`, `cb015-lib.mjs`, `cb015-loops-*.mjs`, `cb015-perf.mjs`,
-  `cb015-perf-pack.py`, `cb015-keyboard.mjs`, `cb015-gallery2.mjs`
+  `cb015-perf-pack.py`, `cb015-keyboard.mjs`, `cb015-gallery2.mjs`, `cb015-a11y2.mjs`,
+  `cb015-fault-offline.mjs`, `cb015-fault-backend-off.mjs`, `cb015-fault-plugin-off.mjs`,
+  `cb015-needs-retry.mjs`, `cb015-delete-paths.mjs`, `cb015-delete-verdict.mjs`

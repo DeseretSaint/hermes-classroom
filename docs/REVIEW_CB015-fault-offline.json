@@ -1,0 +1,63 @@
+{
+  "at": "2026-11-06T17:56:03.387Z",
+  "steps": [
+    {
+      "step": "online-baseline",
+      "at": "2026-11-06T17:56:07.894Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "online": true,
+      "badge": false,
+      "offlineSentence": false,
+      "hasNewCourse": true,
+      "hasNewBrief": false,
+      "rows": 2,
+      "excerpt": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\n0 independent · 55 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson\nJapanese affection and register — an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n0 independent · 1 due · 4 objectives\nFrom a local pack · v1.0.0\nOpen"
+    },
+    {
+      "step": "offline-courses",
+      "at": "2026-11-06T17:56:07.901Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "online": false,
+      "badge": true,
+      "offlineSentence": true,
+      "hasNewCourse": false,
+      "hasNewBrief": false,
+      "rows": 2,
+      "excerpt": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nOffline\nOffline. Lessons, notes and review keep working from what this profile already saved. Creating a course, writing a brief and grading open answers are paused until the connection returns.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\n0 independent · 55 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson\nJapanese affection and register — an L0 demonstration classroom\nC"
+    },
+    {
+      "step": "offline-course-detail",
+      "at": "2026-11-06T17:56:10.165Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "online": false,
+      "badge": true,
+      "offlineSentence": true,
+      "hasNewCourse": false,
+      "hasNewBrief": false,
+      "rows": 0,
+      "excerpt": "Coursebook\nOne objective, its evidence and the next permitted action.\nOffline\nOffline. Lessons, notes and review keep working from what this profile already saved. Creating a course, writing a brief and grading open answers are paused until the connection returns.\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nObjective 1: register in context 1\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nObjective 1: register in context 1\nNot started\ncomprehension\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\nResume lesson\nOpen this section\nREVIEW\nNothing due. The review queue stays quiet until evidence is scheduled.\nRECENT EVENT\nNo attempt "
+    },
+    {
+      "step": "back-online",
+      "at": "2026-11-06T17:56:10.327Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "online": true,
+      "badge": false,
+      "offlineSentence": false,
+      "hasNewCourse": true,
+      "hasNewBrief": false,
+      "rows": 0,
+      "excerpt": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nObjective 1: register in context 1\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nObjective 1: register in context 1\nNot started\ncomprehension\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\nResume lesson\nOpen this section\nREVIEW\nNothing due. The review queue stays quiet until evidence is scheduled.\nRECENT EVENT\nNo attempt has been recorded on this course yet.\nTHIS COURSE\nRecipe\ncasual\nEnrollment\nrevision 2\nactive\nEvidence\n55 objectives · 0 due\n0 independent\nProvenance\ncb015-perf-long-l0 v1.0.0\nLocal pac"
+    }
+  ],
+  "verdict": {
+    "offlineSpaceNamed": true,
+    "createActionsAbsentOffline": true,
+    "cachedContentRendered": true,
+    "noticeClearedOnline": true
+  }
+}

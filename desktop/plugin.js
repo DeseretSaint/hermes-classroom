@@ -534,6 +534,58 @@ function useHealth() {
   return { state, reload }
 }
 
+/**
+ * True while the renderer reports a live connection.
+ *
+ * Offline is a state, not an error: this page keeps showing what it already read and says which
+ * work is paused. It is driven by the browser's own online/offline events, so an emulated
+ * disconnect (CDP `Network.emulateNetworkConditions`) is the same signal a real one produces.
+ */
+function useOnline() {
+  const read = () => (typeof navigator === 'undefined' ? true : navigator.onLine !== false)
+  const [online, setOnline] = useState(read)
+  useEffect(() => {
+    const sync = () => setOnline(read())
+    window.addEventListener('online', sync)
+    window.addEventListener('offline', sync)
+    return () => {
+      window.removeEventListener('online', sync)
+      window.removeEventListener('offline', sync)
+    }
+  }, [])
+  return online
+}
+
+/**
+ * A dialog is a detour, not a destination: when it closes, focus goes back to the control that
+ * opened it rather than to `<body>`.
+ *
+ * The host dialog restores the element it captured at open, but a row re-render inside the
+ * plugin can replace that node — so the nearest live control is focused explicitly, one frame
+ * after the host's own cleanup, and only if it is still connected.
+ */
+function useReturnFocus(open) {
+  const saved = useRef(null)
+  useEffect(() => {
+    if (!open) return undefined
+    const active = typeof document === 'undefined' ? null : document.activeElement
+    saved.current = active && active !== document.body && typeof active.focus === 'function' ? active : null
+    return () => {
+      const target = saved.current
+      saved.current = null
+      if (!target) return
+      const restore = () => {
+        if (target.isConnected && typeof target.focus === 'function') target.focus({ preventScroll: true })
+      }
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(restore)
+      } else {
+        restore()
+      }
+    }
+  }, [open])
+}
+
 /** The backend's method registry, so a control can be absent instead of dead. */
 function useRuntime(healthStatus) {
   const [implemented, setImplemented] = useState(backendWire.implemented)
@@ -1795,7 +1847,18 @@ function CoursesView({ implemented, onStartCreate, createOpen, onOpen }) {
   )
 
   const onDelete = useCallback(async (row) => {
-    const response = await rpc('enrollment.delete', { enrollment_id: row.enrollment_id, dry_run: true })
+    // A preview is still a contract call: cb.rpc requires idempotency_key at the root. Without it
+    // this dry run was refused (VALIDATION_FAILED: 'idempotency_key' is a required property) and
+    // the confirm never opened — the destructive path was unreachable from the UI. The key is
+    // derived from the row, so re-opening the same preview is the same operation.
+    const response = await rpc(
+      'enrollment.delete',
+      { enrollment_id: row.enrollment_id, dry_run: true },
+      {
+        idempotencyKey: `cb-enrollment-delete-preview-${row.enrollment_id}`,
+        expectedRevision: row.revision
+      }
+    )
     if (!response.ok) {
       host.notify({
         kind: 'warning',
@@ -2164,7 +2227,18 @@ function LibraryView({ implemented, createOpen }) {
   )
 
   const onDelete = useCallback(async (row) => {
-    const response = await rpc('enrollment.delete', { enrollment_id: row.enrollment_id, dry_run: true })
+    // A preview is still a contract call: cb.rpc requires idempotency_key at the root. Without it
+    // this dry run was refused (VALIDATION_FAILED: 'idempotency_key' is a required property) and
+    // the confirm never opened — the destructive path was unreachable from the UI. The key is
+    // derived from the row, so re-opening the same preview is the same operation.
+    const response = await rpc(
+      'enrollment.delete',
+      { enrollment_id: row.enrollment_id, dry_run: true },
+      {
+        idempotencyKey: `cb-enrollment-delete-preview-${row.enrollment_id}`,
+        expectedRevision: row.revision
+      }
+    )
     if (!response.ok) {
       host.notify({ kind: 'warning', message: `${response.error.code}: ${describeError(response.error)}` })
       return
@@ -2183,7 +2257,7 @@ function LibraryView({ implemented, createOpen }) {
         data_scope_hash: deleteScope.scope_hash
       },
       {
-        idempotencyKey: `cb-pack-delete-${pendingDelete.enrollment_id}-${deleteScope.scope_id}`,
+        idempotencyKey: `cb-delete-${pendingDelete.enrollment_id}-${deleteScope.scope_id}`,
         expectedRevision: pendingDelete.revision
       }
     )
@@ -3121,6 +3195,7 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const supports = (method) => Boolean(implemented && implemented.has(method))
+  useReturnFocus(open)
 
   useEffect(() => {
     if (!open) return
@@ -4707,6 +4782,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
     if (nextView === 'textbook') setOpenSectionId(null)
   }, [])
 
+  const viewLabel = (LEARNING_VIEWS.find((option) => option.id === view) || { label: view }).label
+
   const startLesson = useCallback(
     async (mode) => {
       const target = objectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id)
@@ -4888,7 +4965,9 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
                 {
                   id: 'cb-view-picker',
                   className: 'w-44',
-                  'aria-label': 'Course view',
+                  // The selected view is part of the name: a combobox whose name is only
+                  // "Course view" makes a screen-reader user open it to learn where they are.
+                  'aria-label': `Course view: ${viewLabel}`,
                   children: jsx(sdk.SelectValue, {})
                 },
                 'trigger'
@@ -7305,6 +7384,7 @@ function CoursebookPage() {
   }
 
   const statusCopy = backendCopy(health.status)
+  const online = useOnline()
   const showDestinationNav = health.status === 'ready' && !creating && !importing
 
   return jsxs('div', {
@@ -7340,20 +7420,29 @@ function CoursebookPage() {
               jsxs('div', {
                 className: 'flex shrink-0 flex-wrap items-center justify-end gap-2',
                 children: [
+                  online ? null : jsx(sdk.Badge, { variant: 'warn', children: 'Offline' }),
                   statusCopy ? jsx(sdk.Badge, { variant: health.status === 'unavailable' ? 'warn' : 'muted', children: statusCopy }) : null,
-                  health.status === 'ready' && !creating && !importing && destination === 'courses' && canCreate
+                  health.status === 'ready' && online && !creating && !importing && destination === 'courses' && canCreate
                     ? jsx(sdk.Button, { onClick: () => setCreating(true), size: 'sm', variant: 'default', children: 'New course' })
                     : null,
                   health.status === 'ready' && !creating && !importing && destination === 'library' && canImport
                     ? jsx(sdk.Button, { onClick: onImportPlaceholder, size: 'sm', variant: 'default', children: 'Import pack' })
                     : null,
-                  health.status === 'ready' && !studioSeed && destination === 'studio' && !studioCourse && canAuthor
+                  health.status === 'ready' && online && !studioSeed && destination === 'studio' && !studioCourse && canAuthor
                     ? jsx(sdk.Button, { onClick: () => setStudioSeed({ initial: null, note: null }), size: 'sm', variant: 'default', children: 'New lesson brief' })
                     : null
                 ]
               })
             ]
           }),
+          online
+            ? null
+            : jsx('div', {
+                className: 'text-xs text-(--ui-text-secondary)',
+                children:
+                  'Offline. Lessons, notes and review keep working from what this profile already saved. ' +
+                  'Creating a course, writing a brief and grading open answers are paused until the connection returns.'
+              }),
           showDestinationNav
             ? jsx(sdk.SegmentedControl, {
                 onChange: changeDestination,
