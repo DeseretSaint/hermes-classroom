@@ -1,6 +1,7 @@
 # CB-004 review packet — pack system, safe import/export, demo classrooms
 
 Owner: **Lattice**. Branch `wt/cb-004-lattice`, based on CB-001/CB-018 (`09d6027`).
+Implementation commit: `44681c1`; this review packet is the follow-up commit.
 `cb.pack` stays **v1** (`contracts/pack-manifest.v1.json`); the card was rebased onto **`cb.rpc`
 v2** before completion, and every new surface is read from the contracts rather than restated.
 
