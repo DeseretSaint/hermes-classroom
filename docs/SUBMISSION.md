@@ -50,7 +50,7 @@ Run on the exact commit that will be pinned. Nothing else counts as evidence.
 
 ```
 bash scripts/validate-plugin.sh          # the release gate: a clean export of the commit
-bash scripts/validate.sh                 # the pre-merge gate, from the checkout
+bash scripts/validate.sh                 # the pre-merge gate: admission on an export of the tree
 hermes plugins doctor .
 hermes plugins doctor coursebook
 ```
@@ -91,9 +91,11 @@ Release gate passed: 3/3 checks on bc4b2f963fda82238d2047cb928b177f9e18c3fb (444
 
 The same gate at `caa7cde` reports 3/3 on 443 files; the extra file is the script itself.
 
-`scripts/validate.sh` still points its admission step at the checkout root, so that one step can
-false-red while `.worktrees/` is populated; the other four steps (tests, `node --check`, doctor,
-mounted backend trace) are unaffected. Read the admission verdict from `validate-plugin.sh`.
+`scripts/validate.sh` uses the same export for its admission step: step 3 exports the tracked working
+tree with `scripts/lib/gate-export.sh` and validates that copy, so a populated `.worktrees/` farm no
+longer changes the verdict, while an uncommitted edit to a tracked file still fails the step. Steps
+1, 2, 4 and 5 (tests, `node --check`, doctor, mounted backend trace) run against the checkout as
+before.
 
 Expected at 0.1.0 on the CB-014 tree: **636 tests pass** (`Ran 636 tests ... OK`; 652 on master at
 `caa7cde`), `desktop/plugin.js` syntax OK, `hermes plugins validate` passes all **16** admission

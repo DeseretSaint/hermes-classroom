@@ -29,14 +29,15 @@
 set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Export helper shared with scripts/validate.sh (step 3 of the pre-merge gate).
+# shellcheck source=scripts/lib/gate-export.sh
+. "$REPO/scripts/lib/gate-export.sh"
 HERMES_BIN="${HERMES_BIN:-hermes}"
 NODE_BIN="${NODE_BIN:-node}"
 PYTHON_BIN="${COURSEBOOK_PYTHON:-python3}"
 
 MODE="head"
 REF="HEAD"
-SCRATCH=""
-INDEX_FILE=""
 
 usage() {
   cat <<'EOF'
@@ -56,12 +57,7 @@ die() {
 }
 
 cleanup() {
-  if [ -n "$SCRATCH" ] && [ -d "$SCRATCH" ]; then
-    rm -rf -- "$SCRATCH"
-  fi
-  if [ -n "$INDEX_FILE" ] && [ -f "$INDEX_FILE" ]; then
-    rm -f -- "$INDEX_FILE"
-  fi
+  gate_export_cleanup
 }
 
 trap cleanup EXIT INT TERM
@@ -120,34 +116,16 @@ fi
 
 # --- export ------------------------------------------------------------------
 
-SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/coursebook-gate.XXXXXXXX")" || die "mktemp failed"
-case "$SCRATCH" in
-  "$REPO" | "$REPO"/*) die "scratch dir $SCRATCH is inside the checkout; unset TMPDIR or point it outside" ;;
+gate_export_tree "$REPO" "$MODE" "$REF"
+EXPORT_STATUS=$?
+case "$EXPORT_STATUS" in
+  0) ;;
+  1) die "export of $REF failed" ;;
+  *) die "could not export $REF; see the message above" ;;
 esac
 
-export_tree() {
-  if [ "$MODE" = "worktree" ]; then
-    # Build a tree from tracked files as they exist on disk: modifications and
-    # deletions included, untracked and ignored paths excluded.
-    local tree
-    INDEX_FILE="$(mktemp "${TMPDIR:-/tmp}/coursebook-index.XXXXXXXX")" || return 1
-    GIT_INDEX_FILE="$INDEX_FILE" git read-tree HEAD || return 1
-    GIT_INDEX_FILE="$INDEX_FILE" git add -u -- . || return 1
-    tree="$(GIT_INDEX_FILE="$INDEX_FILE" git write-tree)" || return 1
-    git archive --format=tar "$tree"
-    return $?
-  fi
-  git archive --format=tar "$COMMIT"
-}
-
-export_tree | tar -x -C "$SCRATCH"
-EXPORT_RC=("${PIPESTATUS[@]}")
-if [ "${EXPORT_RC[0]}" -ne 0 ] || [ "${EXPORT_RC[1]}" -ne 0 ]; then
-  die "export of $REF failed"
-fi
-
-FILE_COUNT="$(find "$SCRATCH" -type f | wc -l | tr -d ' ')"
-[ "$FILE_COUNT" -gt 0 ] || die "export is empty"
+SCRATCH="$GATE_EXPORT_DIR"
+FILE_COUNT="$GATE_EXPORT_FILES"
 
 printf 'validate-plugin: gate %s (%s, %s files)\n' "$COMMIT" "$MODE" "$FILE_COUNT"
 printf 'validate-plugin: export %s (removed on exit)\n' "$SCRATCH"

@@ -215,9 +215,10 @@ are picked up by the gateway, which needs a restart to re-import the backend.
 
 Run `bash scripts/validate.sh` before proposing a merge. It is the pre-merge gate and covers tests,
 module syntax, catalog admission, runtime registration and the mounted backend trace. Its admission
-step still points `hermes plugins validate` at the checkout root, so it can report `dangerous` for
-files in the gitignored `.worktrees/` tree; read the admission verdict from
-`bash scripts/validate-plugin.sh`, which validates an export of `HEAD` instead (see section 6).
+step validates an export of the tracked working tree (`scripts/lib/gate-export.sh`), not the
+checkout root, so the gitignored `.worktrees/` tree is never scanned and an uncommitted edit to a
+tracked file still fails that step. `bash scripts/validate-plugin.sh` is the release gate for a
+pinned commit (see section 6).
 
 ## 9. Uninstall and revoke
 
@@ -272,7 +273,7 @@ app is the scoped, previewed data deletion (`enrollment.delete`).
 | `NOT_IMPLEMENTED` from an RPC call | A method declared in `cb.rpc` has no handler in this process. Not expected when all 51 are mounted | Check `/runtime` for the mounted list; a partial install or a stale gateway is the usual cause |
 | `db.ready: false` in the status tool | Either the store is unprovisioned (no `/health` call yet) or a migration did not complete | Call `health.get` once; if it stays false, check the gateway log for the migration error |
 | `hermes plugins validate` fails the capability probe | `jsonschema` is missing from the Hermes interpreter | `hermes plugins validate . --install-deps` |
-| `security scan — dangerous` naming a file you never wrote, e.g. `REVIEW_CB003.md:32` | The validator was pointed at the checkout root, so it read the gitignored `.worktrees/` tree of other kanban tasks | Run `bash scripts/validate-plugin.sh`, which exports the commit and validates the export |
+| `security scan — dangerous` naming a file you never wrote, e.g. `REVIEW_CB003.md:32` | Someone ran `hermes plugins validate` at the checkout root, so the validator read the gitignored `.worktrees/` tree of other kanban tasks | Run `bash scripts/validate.sh` or `bash scripts/validate-plugin.sh`, which validate an export and never scan the checkout root |
 | `tracked files differ from HEAD; commit them, or run --worktree` | The release gate pins a commit; uncommitted edits are not in the export | Commit, or run `bash scripts/validate-plugin.sh --worktree` to gate the local edits |
 | `scratch dir … is inside the checkout` | `TMPDIR` points into the repository | Point `TMPDIR` outside the checkout, or unset it; the export must not be scanned by itself |
 | `hermes plugins doctor` reports a hook or tool mismatch | `plugin.yaml` declarations drifted from `register()` | Fix the declaration or the registration; admission compares the two |
