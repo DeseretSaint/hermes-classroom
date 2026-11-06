@@ -1,0 +1,1684 @@
+{
+  "wire": {
+    "backend_package": "coursebook_plugin_backend",
+    "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_6fb0b580",
+    "wire_contract": "cb.rpc",
+    "wire_version": 6,
+    "contract_methods": 51,
+    "implemented_methods": [
+      "artifact.get",
+      "attempt.dispute",
+      "attempt.override",
+      "attempt.submit",
+      "binding.abandon",
+      "binding.get",
+      "check.get",
+      "check.open",
+      "course.create",
+      "course.get",
+      "course.outline",
+      "enrollment.create",
+      "enrollment.delete",
+      "enrollment.update",
+      "evidence.disputes",
+      "evidence.inspect",
+      "health.get",
+      "jobs.cancel",
+      "jobs.create",
+      "jobs.get",
+      "jobs.list",
+      "lesson.assist",
+      "lesson.begin",
+      "lesson.page",
+      "library.list",
+      "notebook.delete",
+      "notebook.list",
+      "notebook.save",
+      "notebook.update",
+      "pack.delete",
+      "pack.export",
+      "pack.import",
+      "pack.inspect",
+      "pack.list",
+      "pack.preview",
+      "parent.blueprint.read",
+      "parent.brief.create",
+      "parent.brief.get",
+      "parent.export",
+      "parent.final.approve",
+      "parent.plan.edit",
+      "parent.reflection.list",
+      "parent.reflection.record",
+      "plan.approve",
+      "plan.replan",
+      "progression.challenge_out",
+      "quiz.history",
+      "review.action",
+      "review.queue",
+      "schema.get",
+      "usage.summary"
+    ],
+    "contract_problems": [],
+    "db_path": "/home/deseretsaint/.hermes/coursebook-test/home/plugin-data/coursebook/data.db",
+    "single_home_flag": "HERMES_COURSEBOOK_SINGLE_HOME",
+    "single_home_host": true,
+    "single_home_pinned": false,
+    "single_home_pin": null
+  },
+  "calls": [
+    {
+      "method": "parent.brief.get",
+      "contract_version": 6,
+      "expected_revision": null,
+      "idempotency_key": null,
+      "request": {
+        "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-brief-get-1793983330428473196",
+        "revision": 0,
+        "result": {
+          "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+          "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb",
+          "brief": {
+            "title": "Japanese caf\u00e9 basics",
+            "goal": "Order coffee in Japanese politely",
+            "starting_point": null,
+            "age_band": "8-10",
+            "reading_level": "early reader",
+            "duration_minutes": 20,
+            "setting": "home",
+            "materials": [
+              "menu card"
+            ],
+            "exclusions": [],
+            "supervision": "An adult is nearby.",
+            "desired_pages": 2,
+            "desired_visuals": "none",
+            "narration": "script",
+            "locale": "ja-JP",
+            "egress_acknowledged": true,
+            "redaction_requested": false
+          },
+          "plan_job": {
+            "job_id": "job_129f262d6f9049888f4405522de031f3",
+            "kind": "plan",
+            "state": "completed",
+            "submitted_at": "2026-11-06T16:42:06Z"
+          },
+          "created_at": "2026-11-06T16:42:06.191583+00:00"
+        }
+      }
+    },
+    {
+      "method": "parent.blueprint.read",
+      "contract_version": 6,
+      "expected_revision": null,
+      "idempotency_key": null,
+      "request": {
+        "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-blueprint-read-1793983330441956940",
+        "revision": 0,
+        "result": {
+          "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+          "recipe": "parent",
+          "plan": {
+            "plan_id": "b536363d46aed681",
+            "version": 1,
+            "state": "approved",
+            "plan_hash": "sha256:08257773421d90465e85316d2de234e4e09214f194650a070122d5798257df9d"
+          },
+          "approval": {
+            "state": "none",
+            "plan_hash": null,
+            "content_hash": null,
+            "approved_at": null,
+            "invalidated_reason": null
+          },
+          "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+          "export": {
+            "ready": false,
+            "blocked_reason": "no_final_approval"
+          },
+          "tabs": {
+            "parent_guide": [
+              {
+                "role": "parent_guide",
+                "title": "01 \u00b7 Warm things at home",
+                "objective_id": "659f64346eec5e0d",
+                "text": "# Parent guide \u2014 Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen\nEvi",
+                "sha256": "sha256:42f35fce7e113b0658c63fb04fdfa9bad4036f8534c0decd0eb6abf6a8c7b981",
+                "bytes": 852,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "parent_guide",
+                "title": "02 \u00b7 Cold things at home",
+                "objective_id": "2445f6e53d49aa35",
+                "text": "# Parent guide \u2014 Cold things at home\n\nObjective: Sort picture cards into warm and cold\nEvidence targ",
+                "sha256": "sha256:4f158b46992b30e1ab51f81ab31570671e303e8b0afe1981a73a9c8caffe4311",
+                "bytes": 841,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "parent_guide",
+                "title": "03 \u00b7 Why the kettle is a grown-up job",
+                "objective_id": "3d3cf1fec802f990",
+                "text": "# Parent guide \u2014 Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\nE",
+                "sha256": "sha256:fc12b00f3d5664a9ed76e3e5d00df2c739a43df7d5ca36ed55e66c72734db33e",
+                "bytes": 843,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "parent_guide",
+                "title": "04 \u00b7 Explain one example",
+                "objective_id": "ca34ef44e89dafae",
+                "text": "# Parent guide \u2014 Explain one example\n\nObjective: Explain one example in their own words\nEvidence tar",
+                "sha256": "sha256:1f91652098fd9ff3654d119d8aa2f60a9e43954c6f2948a9cd12d1e7edf80115",
+                "bytes": 814,
+                "source": "authored",
+                "truncated": true
+              }
+            ],
+            "learner_pages": [
+              {
+                "role": "learner_page",
+                "title": "01 \u00b7 Warm things at home",
+                "objective_id": "659f64346eec5e0d",
+                "text": "# Warm things at home\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+                "sha256": "sha256:27fe76fe11d262564bb7c6527e482ff43afaf99fab270991dcfd9d2c9ba8de46",
+                "bytes": 549,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "learner_page",
+                "title": "02 \u00b7 Cold things at home",
+                "objective_id": "2445f6e53d49aa35",
+                "text": "# Cold things at home\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+                "sha256": "sha256:4673e2c07a2ff497c99d13195047e12afd4ceac56c895866b2b459e7caf91b3c",
+                "bytes": 549,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "learner_page",
+                "title": "03 \u00b7 Why the kettle is a grown-up job",
+                "objective_id": "3d3cf1fec802f990",
+                "text": "# Why the kettle is a grown-up job\n\n## Name one of each\nPoint at the kettle: it holds hot water. Poi",
+                "sha256": "sha256:d46ee0c524b7c781a1651b24b34c19ba9c01a3a647c3cd12bc55da88bcad67d6",
+                "bytes": 562,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "learner_page",
+                "title": "04 \u00b7 Explain one example",
+                "objective_id": "ca34ef44e89dafae",
+                "text": "# Explain one example\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+                "sha256": "sha256:ca1689654060de525e8b17201728dcf43f037ca6de4e0e1ff575dde5b817bd7c",
+                "bytes": 549,
+                "source": "authored",
+                "truncated": true
+              }
+            ],
+            "answers": [
+              {
+                "role": "answer_guide",
+                "title": "01 \u00b7 Warm things at home",
+                "objective_id": "659f64346eec5e0d",
+                "text": "# Answer guide \u2014 Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen\n\n##",
+                "sha256": "sha256:716e9bc3f27906bd0f2e29bdd24dcc230246b1aa4a243e6e1097105a1c73375f",
+                "bytes": 376,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "answer_guide",
+                "title": "02 \u00b7 Cold things at home",
+                "objective_id": "2445f6e53d49aa35",
+                "text": "# Answer guide \u2014 Cold things at home\n\nObjective: Sort picture cards into warm and cold\n\n## Reference",
+                "sha256": "sha256:b0fc0b7638c2fdb32d2fee4d42ede1f936a4f40501c8a3333e3147d578bdc44c",
+                "bytes": 366,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "answer_guide",
+                "title": "03 \u00b7 Why the kettle is a grown-up job",
+                "objective_id": "3d3cf1fec802f990",
+                "text": "# Answer guide \u2014 Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\n\n",
+                "sha256": "sha256:4fc2255622b37a7e25e33b9a99e13d17fd47cbde6bf6596492a773b275aed32c",
+                "bytes": 378,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "answer_guide",
+                "title": "04 \u00b7 Explain one example",
+                "objective_id": "ca34ef44e89dafae",
+                "text": "# Answer guide \u2014 Explain one example\n\nObjective: Explain one example in their own words\n\n## Referenc",
+                "sha256": "sha256:e69a009cb0dd49407f36e245979e0e35bc5df06a9949de63bb30e7f8701f2639",
+                "bytes": 367,
+                "source": "authored",
+                "truncated": true
+              }
+            ],
+            "narration": [
+              {
+                "role": "narration",
+                "title": "01 \u00b7 Warm things at home",
+                "objective_id": "659f64346eec5e0d",
+                "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+                "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+                "bytes": 153,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "narration",
+                "title": "02 \u00b7 Cold things at home",
+                "objective_id": "2445f6e53d49aa35",
+                "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+                "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+                "bytes": 153,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "narration",
+                "title": "03 \u00b7 Why the kettle is a grown-up job",
+                "objective_id": "3d3cf1fec802f990",
+                "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+                "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+                "bytes": 153,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "narration",
+                "title": "04 \u00b7 Explain one example",
+                "objective_id": "ca34ef44e89dafae",
+                "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+                "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+                "bytes": 153,
+                "source": "authored",
+                "truncated": true
+              }
+            ]
+          },
+          "sources": [
+            {
+              "source_id": "2b28cb65304a5139",
+              "title": "Polite greetings in Japanese",
+              "url": "https://example.org/greetings",
+              "support_status": "model_assessed",
+              "fetched_at": "2026-11-06T12:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "library.list",
+      "contract_version": 6,
+      "expected_revision": null,
+      "idempotency_key": null,
+      "request": {
+        "filter": "all",
+        "recipe": "parent",
+        "limit": 100,
+        "sort": "recent"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-library-list-1793983330463859838",
+        "revision": 0,
+        "result": {
+          "items": [
+            {
+              "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb",
+              "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+              "title": "Japanese caf\u00e9 basics",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "ja-JP",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "start_lesson",
+                "label": "Start Name one warm and one cold thing in the kitchen"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 4,
+                "current_objective_id": "659f64346eec5e0d"
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T16:42:06.329270+00:00",
+              "revision": 1
+            },
+            {
+              "enrollment_id": "enr_176897ff32584282955b085634837b2b",
+              "course_id": "crs_e58e8ef3fcb54777ac4d8c17636307e5",
+              "title": "Japanese caf\u00e9 basics",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "ja-JP",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "start_lesson",
+                "label": "Start Name one warm and one cold thing in the kitchen"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 4,
+                "current_objective_id": "3e76000b29ae121f"
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T16:41:50.536648+00:00",
+              "revision": 2
+            },
+            {
+              "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+              "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+              "title": "Japanese caf\u00e9 basics",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "ja-JP",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "start_lesson",
+                "label": "Start Name one warm and one cold thing in the kitchen"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 4,
+                "current_objective_id": "2e6288c0ee324e28"
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T16:39:12.697821+00:00",
+              "revision": 2
+            },
+            {
+              "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+              "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "start_lesson",
+                "label": "Start Name the parts: half, quarter and eighth (kitchen table)"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 6,
+                "current_objective_id": "81c3865ea1928504"
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T16:38:28.425696+00:00",
+              "revision": 3
+            },
+            {
+              "enrollment_id": "enr_f7979943032a4e4c8ea244910780e966",
+              "course_id": "crs_66dfba72ef9e4182b05bc250b7d5f097",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "start_lesson",
+                "label": "Start Name halves of a real object (kitchen table)"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 5,
+                "current_objective_id": "04b1feaec24e256b"
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T16:27:09.299041+00:00",
+              "revision": 2
+            },
+            {
+              "enrollment_id": "enr_784e5e696f674e77be99b80d061dd32f",
+              "course_id": "crs_1f27d4072f774876adc62c369502593f",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "start_lesson",
+                "label": "Start Name halves of a real object (kitchen table)"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 6,
+                "current_objective_id": "35add4bc254a5d4e"
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T16:18:55.458728+00:00",
+              "revision": 2
+            },
+            {
+              "enrollment_id": "enr_6810b5a559f94c628caaa7e2f31b556d",
+              "course_id": "crs_d45c75b0d6a540e8bc5d890812866305",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 0,
+                "current_objective_id": null
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T16:09:17.908595+00:00",
+              "revision": 0
+            },
+            {
+              "enrollment_id": "enr_35245a0815e647048882369b6252afd8",
+              "course_id": "crs_5b00a07f93ee44f880f57d3cb51d777e",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 0,
+                "current_objective_id": null
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T16:04:11.418029+00:00",
+              "revision": 0
+            },
+            {
+              "enrollment_id": "enr_3ef0ef2f18e4450e925382eb2ad5d5df",
+              "course_id": "crs_0425a98fcbb546f8b4b2e0b014bf1a6f",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 0,
+                "current_objective_id": null
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T15:58:24.932524+00:00",
+              "revision": 0
+            },
+            {
+              "enrollment_id": "enr_a18e081a3379458cb8dc58e8bc0b510c",
+              "course_id": "crs_ef4b1721bb574db2ab0a1113484f744a",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "start_lesson",
+                "label": "Start Name halves of a real object (kitchen table)"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 6,
+                "current_objective_id": "0281a4687d05e389"
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T15:53:19.398013+00:00",
+              "revision": 2
+            },
+            {
+              "enrollment_id": "enr_6fd46e75b5f245e4b4a0c1f7453194a5",
+              "course_id": "crs_88e1ec88b4944a50a1b180cd33f3936c",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 0,
+                "current_objective_id": null
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T15:49:53.301413+00:00",
+              "revision": 0
+            },
+            {
+              "enrollment_id": "enr_36daa3bf81e24bfca20e464c8d961f88",
+              "course_id": "crs_ffa47ef1ca2c48bd98881fc0d280aa4d",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 0,
+                "current_objective_id": null
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T15:47:28.324648+00:00",
+              "revision": 0
+            },
+            {
+              "enrollment_id": "enr_460d2db6585f41aa9b04fb4fe8e0799c",
+              "course_id": "crs_7df0a98d00d34ff488b3dde2d599c3db",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 0,
+                "current_objective_id": null
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T15:29:58.302444+00:00",
+              "revision": 0
+            },
+            {
+              "enrollment_id": "enr_0d6e90f945734098a2245276d79c28d5",
+              "course_id": "crs_2eab8b4076624f2daa945ffec14901a8",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 0,
+                "current_objective_id": null
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T15:29:22.784574+00:00",
+              "revision": 0
+            },
+            {
+              "enrollment_id": "enr_a7463e5310774324a934032d802460e5",
+              "course_id": "crs_1e75a5483bee4d90a8ab0ce32caf35a0",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 0,
+                "current_objective_id": null
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T15:26:44.549306+00:00",
+              "revision": 0
+            },
+            {
+              "enrollment_id": "enr_403017b82b3940a5b1c276bef9d98079",
+              "course_id": "crs_2fcca2cd77fd499cb5a38606f82cf083",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 0,
+                "current_objective_id": null
+              },
+              "warning": null,
+              "updated_at": "2026-11-06T15:25:11.084538+00:00",
+              "revision": 0
+            },
+            {
+              "enrollment_id": "enr_5927318c52ae4055b340dfc9f9e04eed",
+              "course_id": "crs_058ea2a0d3744d1c9596607d3b71c06e",
+              "title": "Kitchen fractions for a 9-year-old",
+              "subtitle": null,
+              "recipe": "parent",
+              "level_label": null,
+              "locale": "en",
+              "learner_label": null,
+              "enrollment_status": "active",
+              "course_status": "draft",
+              "provenance": {
+                "source": "authored",
+                "pack_id": null,
+                "pack_version": null
+              },
+              "next_step": {
+                "kind": "review_plan",
+                "label": "Review and approve the plan"
+              },
+              "evidence_summary": {
+                "independent": 0,
+                "review_due": 0,
+                "total_objectives": 6,
+                "current_objective_id": "bb10a864fc34c668"
+              },
+              "warning": "plan_update",
+              "updated_at": "2026-11-06T15:23:50.548924+00:00",
+              "revision": 0
+            }
+          ],
+          "next_cursor": null,
+          "total": 17,
+          "empty_reason": null,
+          "applied_filter": "all"
+        }
+      }
+    },
+    {
+      "method": "parent.final.approve",
+      "contract_version": 6,
+      "expected_revision": 1,
+      "idempotency_key": "cb011-final-1793983330511196066",
+      "request": {
+        "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb",
+        "plan_id": "b536363d46aed681",
+        "plan_hash": "sha256:08257773421d90465e85316d2de234e4e09214f194650a070122d5798257df9d",
+        "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+        "note": "Parent reviewed the pages, the answer guide and the narration script."
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-final-approve-1793983330511198026",
+        "revision": 2,
+        "result": {
+          "approval_id": "apr_aa685c096fdf43d0be29878f121d365a",
+          "state": "active",
+          "plan_hash": "sha256:08257773421d90465e85316d2de234e4e09214f194650a070122d5798257df9d",
+          "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+          "approved_at": "2026-11-06T16:42:10.516480+00:00",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "method": "parent.blueprint.read",
+      "contract_version": 6,
+      "expected_revision": null,
+      "idempotency_key": null,
+      "request": {
+        "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-blueprint-read-1793983330554564305",
+        "revision": 0,
+        "result": {
+          "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+          "recipe": "parent",
+          "plan": {
+            "plan_id": "b536363d46aed681",
+            "version": 1,
+            "state": "approved",
+            "plan_hash": "sha256:08257773421d90465e85316d2de234e4e09214f194650a070122d5798257df9d"
+          },
+          "approval": {
+            "state": "active",
+            "plan_hash": "sha256:08257773421d90465e85316d2de234e4e09214f194650a070122d5798257df9d",
+            "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+            "approved_at": "2026-11-06T16:42:10.516480+00:00",
+            "invalidated_reason": null
+          },
+          "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+          "export": {
+            "ready": true,
+            "blocked_reason": null
+          },
+          "tabs": {
+            "parent_guide": [
+              {
+                "role": "parent_guide",
+                "title": "01 \u00b7 Warm things at home",
+                "objective_id": "659f64346eec5e0d",
+                "text": "# Parent guide \u2014 Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen\nEvi",
+                "sha256": "sha256:42f35fce7e113b0658c63fb04fdfa9bad4036f8534c0decd0eb6abf6a8c7b981",
+                "bytes": 852,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "parent_guide",
+                "title": "02 \u00b7 Cold things at home",
+                "objective_id": "2445f6e53d49aa35",
+                "text": "# Parent guide \u2014 Cold things at home\n\nObjective: Sort picture cards into warm and cold\nEvidence targ",
+                "sha256": "sha256:4f158b46992b30e1ab51f81ab31570671e303e8b0afe1981a73a9c8caffe4311",
+                "bytes": 841,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "parent_guide",
+                "title": "03 \u00b7 Why the kettle is a grown-up job",
+                "objective_id": "3d3cf1fec802f990",
+                "text": "# Parent guide \u2014 Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\nE",
+                "sha256": "sha256:fc12b00f3d5664a9ed76e3e5d00df2c739a43df7d5ca36ed55e66c72734db33e",
+                "bytes": 843,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "parent_guide",
+                "title": "04 \u00b7 Explain one example",
+                "objective_id": "ca34ef44e89dafae",
+                "text": "# Parent guide \u2014 Explain one example\n\nObjective: Explain one example in their own words\nEvidence tar",
+                "sha256": "sha256:1f91652098fd9ff3654d119d8aa2f60a9e43954c6f2948a9cd12d1e7edf80115",
+                "bytes": 814,
+                "source": "authored",
+                "truncated": true
+              }
+            ],
+            "learner_pages": [
+              {
+                "role": "learner_page",
+                "title": "01 \u00b7 Warm things at home",
+                "objective_id": "659f64346eec5e0d",
+                "text": "# Warm things at home\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+                "sha256": "sha256:27fe76fe11d262564bb7c6527e482ff43afaf99fab270991dcfd9d2c9ba8de46",
+                "bytes": 549,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "learner_page",
+                "title": "02 \u00b7 Cold things at home",
+                "objective_id": "2445f6e53d49aa35",
+                "text": "# Cold things at home\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+                "sha256": "sha256:4673e2c07a2ff497c99d13195047e12afd4ceac56c895866b2b459e7caf91b3c",
+                "bytes": 549,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "learner_page",
+                "title": "03 \u00b7 Why the kettle is a grown-up job",
+                "objective_id": "3d3cf1fec802f990",
+                "text": "# Why the kettle is a grown-up job\n\n## Name one of each\nPoint at the kettle: it holds hot water. Poi",
+                "sha256": "sha256:d46ee0c524b7c781a1651b24b34c19ba9c01a3a647c3cd12bc55da88bcad67d6",
+                "bytes": 562,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "learner_page",
+                "title": "04 \u00b7 Explain one example",
+                "objective_id": "ca34ef44e89dafae",
+                "text": "# Explain one example\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+                "sha256": "sha256:ca1689654060de525e8b17201728dcf43f037ca6de4e0e1ff575dde5b817bd7c",
+                "bytes": 549,
+                "source": "authored",
+                "truncated": true
+              }
+            ],
+            "answers": [
+              {
+                "role": "answer_guide",
+                "title": "01 \u00b7 Warm things at home",
+                "objective_id": "659f64346eec5e0d",
+                "text": "# Answer guide \u2014 Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen\n\n##",
+                "sha256": "sha256:716e9bc3f27906bd0f2e29bdd24dcc230246b1aa4a243e6e1097105a1c73375f",
+                "bytes": 376,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "answer_guide",
+                "title": "02 \u00b7 Cold things at home",
+                "objective_id": "2445f6e53d49aa35",
+                "text": "# Answer guide \u2014 Cold things at home\n\nObjective: Sort picture cards into warm and cold\n\n## Reference",
+                "sha256": "sha256:b0fc0b7638c2fdb32d2fee4d42ede1f936a4f40501c8a3333e3147d578bdc44c",
+                "bytes": 366,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "answer_guide",
+                "title": "03 \u00b7 Why the kettle is a grown-up job",
+                "objective_id": "3d3cf1fec802f990",
+                "text": "# Answer guide \u2014 Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\n\n",
+                "sha256": "sha256:4fc2255622b37a7e25e33b9a99e13d17fd47cbde6bf6596492a773b275aed32c",
+                "bytes": 378,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "answer_guide",
+                "title": "04 \u00b7 Explain one example",
+                "objective_id": "ca34ef44e89dafae",
+                "text": "# Answer guide \u2014 Explain one example\n\nObjective: Explain one example in their own words\n\n## Referenc",
+                "sha256": "sha256:e69a009cb0dd49407f36e245979e0e35bc5df06a9949de63bb30e7f8701f2639",
+                "bytes": 367,
+                "source": "authored",
+                "truncated": true
+              }
+            ],
+            "narration": [
+              {
+                "role": "narration",
+                "title": "01 \u00b7 Warm things at home",
+                "objective_id": "659f64346eec5e0d",
+                "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+                "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+                "bytes": 153,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "narration",
+                "title": "02 \u00b7 Cold things at home",
+                "objective_id": "2445f6e53d49aa35",
+                "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+                "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+                "bytes": 153,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "narration",
+                "title": "03 \u00b7 Why the kettle is a grown-up job",
+                "objective_id": "3d3cf1fec802f990",
+                "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+                "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+                "bytes": 153,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "narration",
+                "title": "04 \u00b7 Explain one example",
+                "objective_id": "ca34ef44e89dafae",
+                "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+                "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+                "bytes": 153,
+                "source": "authored",
+                "truncated": true
+              }
+            ]
+          },
+          "sources": [
+            {
+              "source_id": "2b28cb65304a5139",
+              "title": "Polite greetings in Japanese",
+              "url": "https://example.org/greetings",
+              "support_status": "model_assessed",
+              "fetched_at": "2026-11-06T12:00:00Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "parent.export",
+      "contract_version": 6,
+      "expected_revision": null,
+      "idempotency_key": "cb011-export-1793983330610555685",
+      "request": {
+        "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-parent-export-1793983330610557435",
+        "revision": 0,
+        "result": {
+          "export_id": "exp_4196cebbd2ad4933a9ef094a99584d01",
+          "pack": {
+            "pack_id": "parent-crs-60369f196bb44cf2abfadc54d8a2a477",
+            "pack_version": "1.0.0",
+            "manifest_hash": "sha256:023cadb072aebb8fc6c6ba006d975ef1d0d7914d87f87ef8320d424e6ba8dd44"
+          },
+          "files": [
+            {
+              "role": "answer_guide",
+              "name": "answer-guide/01-warm-things-at-home.md",
+              "sha256": "sha256:716e9bc3f27906bd0f2e29bdd24dcc230246b1aa4a243e6e1097105a1c73375f",
+              "bytes": 376,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "answer_guide",
+              "name": "answer-guide/02-cold-things-at-home.md",
+              "sha256": "sha256:b0fc0b7638c2fdb32d2fee4d42ede1f936a4f40501c8a3333e3147d578bdc44c",
+              "bytes": 366,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "answer_guide",
+              "name": "answer-guide/03-why-the-kettle-is-a-grown-up-job.md",
+              "sha256": "sha256:4fc2255622b37a7e25e33b9a99e13d17fd47cbde6bf6596492a773b275aed32c",
+              "bytes": 378,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "answer_guide",
+              "name": "answer-guide/04-explain-one-example.md",
+              "sha256": "sha256:e69a009cb0dd49407f36e245979e0e35bc5df06a9949de63bb30e7f8701f2639",
+              "bytes": 367,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "learner_page",
+              "name": "lessons/01-warm-things-at-home.md",
+              "sha256": "sha256:27fe76fe11d262564bb7c6527e482ff43afaf99fab270991dcfd9d2c9ba8de46",
+              "bytes": 549,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "learner_page",
+              "name": "lessons/02-cold-things-at-home.md",
+              "sha256": "sha256:4673e2c07a2ff497c99d13195047e12afd4ceac56c895866b2b459e7caf91b3c",
+              "bytes": 549,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "learner_page",
+              "name": "lessons/03-why-the-kettle-is-a-grown-up-job.md",
+              "sha256": "sha256:d46ee0c524b7c781a1651b24b34c19ba9c01a3a647c3cd12bc55da88bcad67d6",
+              "bytes": 562,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "learner_page",
+              "name": "lessons/04-explain-one-example.md",
+              "sha256": "sha256:ca1689654060de525e8b17201728dcf43f037ca6de4e0e1ff575dde5b817bd7c",
+              "bytes": 549,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "parent_guide",
+              "name": "parent-guide/01-warm-things-at-home.md",
+              "sha256": "sha256:42f35fce7e113b0658c63fb04fdfa9bad4036f8534c0decd0eb6abf6a8c7b981",
+              "bytes": 852,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "parent_guide",
+              "name": "parent-guide/02-cold-things-at-home.md",
+              "sha256": "sha256:4f158b46992b30e1ab51f81ab31570671e303e8b0afe1981a73a9c8caffe4311",
+              "bytes": 841,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "parent_guide",
+              "name": "parent-guide/03-why-the-kettle-is-a-grown-up-job.md",
+              "sha256": "sha256:fc12b00f3d5664a9ed76e3e5d00df2c739a43df7d5ca36ed55e66c72734db33e",
+              "bytes": 843,
+              "mime": "text/markdown"
+            },
+            {
+              "role": "parent_guide",
+              "name": "parent-guide/04-explain-one-example.md",
+              "sha256": "sha256:1f91652098fd9ff3654d119d8aa2f60a9e43954c6f2948a9cd12d1e7edf80115",
+              "bytes": 814,
+              "mime": "text/markdown"
+            }
+          ],
+          "artifacts": [
+            {
+              "artifact_id": "art_dcdbb56172134f0999027918923b7f4e",
+              "kind": "pack",
+              "mime": "application/zip",
+              "bytes": 8871,
+              "content_hash": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4"
+            },
+            {
+              "artifact_id": "art_6fd375af49384553ae023f448c8390a0",
+              "kind": "pdf",
+              "mime": "application/pdf",
+              "bytes": 7352,
+              "content_hash": "sha256:d04996a33fa939172547ace5e2dc2ae685cce232aada81255e04c1e09efc4adb"
+            },
+            {
+              "artifact_id": "art_54bc1053a0664161af82fb95b4d15dcd",
+              "kind": "export",
+              "mime": "application/zip",
+              "bytes": 8871,
+              "content_hash": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4"
+            }
+          ],
+          "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+          "exported_at": "2026-11-06T16:42:10.644650+00:00"
+        }
+      }
+    },
+    {
+      "method": "artifact.get",
+      "contract_version": 6,
+      "expected_revision": null,
+      "idempotency_key": null,
+      "request": {
+        "artifact_id": "art_dcdbb56172134f0999027918923b7f4e"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-artifact-get-1793983330690220558",
+        "revision": 0,
+        "result": {
+          "artifact_id": "art_dcdbb56172134f0999027918923b7f4e",
+          "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+          "kind": "pack",
+          "mime": "application/zip",
+          "bytes": 8871,
+          "content_hash": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4",
+          "provenance": {
+            "generator": "coursebook.parent_export",
+            "model": null,
+            "prompt_hash": null,
+            "source_ids": [],
+            "notes": "authored parent pack for course crs_60369f196bb44cf2abfadc54d8a2a477; manifest sha256:023cadb072aebb8fc6c6ba006d975ef1d0d7914d87f87ef8320d424e6ba8dd44"
+          },
+          "download": {
+            "handle": "art_dcdbb56172134f0999027918923b7f4e_1793983630",
+            "url": "/api/plugins/coursebook/artifacts/art_dcdbb56172134f0999027918923b7f4e_1793983630",
+            "method": "GET",
+            "expires_at": "2026-11-06T16:47:10.699392+00:00",
+            "requires_session": true,
+            "single_use": false
+          }
+        }
+      }
+    },
+    {
+      "method": "artifact.get",
+      "contract_version": 6,
+      "expected_revision": null,
+      "idempotency_key": null,
+      "request": {
+        "artifact_id": "art_6fd375af49384553ae023f448c8390a0"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-artifact-get-1793983330700050521",
+        "revision": 0,
+        "result": {
+          "artifact_id": "art_6fd375af49384553ae023f448c8390a0",
+          "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+          "kind": "pdf",
+          "mime": "application/pdf",
+          "bytes": 7352,
+          "content_hash": "sha256:d04996a33fa939172547ace5e2dc2ae685cce232aada81255e04c1e09efc4adb",
+          "provenance": {
+            "generator": "coursebook.parent_export",
+            "model": null,
+            "prompt_hash": null,
+            "source_ids": [],
+            "notes": "selectable-text low-ink handout for course crs_60369f196bb44cf2abfadc54d8a2a477; manifest sha256:023cadb072aebb8fc6c6ba006d975ef1d0d7914d87f87ef8320d424e6ba8dd44"
+          },
+          "download": {
+            "handle": "art_6fd375af49384553ae023f448c8390a0_1793983630",
+            "url": "/api/plugins/coursebook/artifacts/art_6fd375af49384553ae023f448c8390a0_1793983630",
+            "method": "GET",
+            "expires_at": "2026-11-06T16:47:10.702923+00:00",
+            "requires_session": true,
+            "single_use": false
+          }
+        }
+      }
+    },
+    {
+      "method": "artifact.get",
+      "contract_version": 6,
+      "expected_revision": null,
+      "idempotency_key": null,
+      "request": {
+        "artifact_id": "art_54bc1053a0664161af82fb95b4d15dcd"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-artifact-get-1793983330703400755",
+        "revision": 0,
+        "result": {
+          "artifact_id": "art_54bc1053a0664161af82fb95b4d15dcd",
+          "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+          "kind": "export",
+          "mime": "application/zip",
+          "bytes": 8871,
+          "content_hash": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4",
+          "provenance": {
+            "generator": "coursebook.parent_export",
+            "model": null,
+            "prompt_hash": null,
+            "source_ids": [],
+            "notes": "parent.export of course crs_60369f196bb44cf2abfadc54d8a2a477 from enrollment enr_af2b9cf4832243b1a42542fcad397dfb; content_hash sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67"
+          },
+          "download": {
+            "handle": "art_54bc1053a0664161af82fb95b4d15dcd_1793983630",
+            "url": "/api/plugins/coursebook/artifacts/art_54bc1053a0664161af82fb95b4d15dcd_1793983630",
+            "method": "GET",
+            "expires_at": "2026-11-06T16:47:10.705423+00:00",
+            "requires_session": true,
+            "single_use": false
+          }
+        }
+      }
+    }
+  ],
+  "result": {
+    "wire_version": 6,
+    "phase": "approve",
+    "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+    "book": {
+      "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+      "recipe": "parent",
+      "plan": {
+        "plan_id": "b536363d46aed681",
+        "version": 1,
+        "state": "approved",
+        "plan_hash": "sha256:08257773421d90465e85316d2de234e4e09214f194650a070122d5798257df9d"
+      },
+      "approval": {
+        "state": "active",
+        "plan_hash": "sha256:08257773421d90465e85316d2de234e4e09214f194650a070122d5798257df9d",
+        "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+        "approved_at": "2026-11-06T16:42:10.516480+00:00",
+        "invalidated_reason": null
+      },
+      "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+      "export": {
+        "ready": true,
+        "blocked_reason": null
+      },
+      "tabs": {
+        "parent_guide": [
+          {
+            "role": "parent_guide",
+            "title": "01 \u00b7 Warm things at home",
+            "objective_id": "659f64346eec5e0d",
+            "text": "# Parent guide \u2014 Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen\nEvi",
+            "sha256": "sha256:42f35fce7e113b0658c63fb04fdfa9bad4036f8534c0decd0eb6abf6a8c7b981",
+            "bytes": 852,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "parent_guide",
+            "title": "02 \u00b7 Cold things at home",
+            "objective_id": "2445f6e53d49aa35",
+            "text": "# Parent guide \u2014 Cold things at home\n\nObjective: Sort picture cards into warm and cold\nEvidence targ",
+            "sha256": "sha256:4f158b46992b30e1ab51f81ab31570671e303e8b0afe1981a73a9c8caffe4311",
+            "bytes": 841,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "parent_guide",
+            "title": "03 \u00b7 Why the kettle is a grown-up job",
+            "objective_id": "3d3cf1fec802f990",
+            "text": "# Parent guide \u2014 Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\nE",
+            "sha256": "sha256:fc12b00f3d5664a9ed76e3e5d00df2c739a43df7d5ca36ed55e66c72734db33e",
+            "bytes": 843,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "parent_guide",
+            "title": "04 \u00b7 Explain one example",
+            "objective_id": "ca34ef44e89dafae",
+            "text": "# Parent guide \u2014 Explain one example\n\nObjective: Explain one example in their own words\nEvidence tar",
+            "sha256": "sha256:1f91652098fd9ff3654d119d8aa2f60a9e43954c6f2948a9cd12d1e7edf80115",
+            "bytes": 814,
+            "source": "authored",
+            "truncated": true
+          }
+        ],
+        "learner_pages": [
+          {
+            "role": "learner_page",
+            "title": "01 \u00b7 Warm things at home",
+            "objective_id": "659f64346eec5e0d",
+            "text": "# Warm things at home\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+            "sha256": "sha256:27fe76fe11d262564bb7c6527e482ff43afaf99fab270991dcfd9d2c9ba8de46",
+            "bytes": 549,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "learner_page",
+            "title": "02 \u00b7 Cold things at home",
+            "objective_id": "2445f6e53d49aa35",
+            "text": "# Cold things at home\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+            "sha256": "sha256:4673e2c07a2ff497c99d13195047e12afd4ceac56c895866b2b459e7caf91b3c",
+            "bytes": 549,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "learner_page",
+            "title": "03 \u00b7 Why the kettle is a grown-up job",
+            "objective_id": "3d3cf1fec802f990",
+            "text": "# Why the kettle is a grown-up job\n\n## Name one of each\nPoint at the kettle: it holds hot water. Poi",
+            "sha256": "sha256:d46ee0c524b7c781a1651b24b34c19ba9c01a3a647c3cd12bc55da88bcad67d6",
+            "bytes": 562,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "learner_page",
+            "title": "04 \u00b7 Explain one example",
+            "objective_id": "ca34ef44e89dafae",
+            "text": "# Explain one example\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+            "sha256": "sha256:ca1689654060de525e8b17201728dcf43f037ca6de4e0e1ff575dde5b817bd7c",
+            "bytes": 549,
+            "source": "authored",
+            "truncated": true
+          }
+        ],
+        "answers": [
+          {
+            "role": "answer_guide",
+            "title": "01 \u00b7 Warm things at home",
+            "objective_id": "659f64346eec5e0d",
+            "text": "# Answer guide \u2014 Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen\n\n##",
+            "sha256": "sha256:716e9bc3f27906bd0f2e29bdd24dcc230246b1aa4a243e6e1097105a1c73375f",
+            "bytes": 376,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "answer_guide",
+            "title": "02 \u00b7 Cold things at home",
+            "objective_id": "2445f6e53d49aa35",
+            "text": "# Answer guide \u2014 Cold things at home\n\nObjective: Sort picture cards into warm and cold\n\n## Reference",
+            "sha256": "sha256:b0fc0b7638c2fdb32d2fee4d42ede1f936a4f40501c8a3333e3147d578bdc44c",
+            "bytes": 366,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "answer_guide",
+            "title": "03 \u00b7 Why the kettle is a grown-up job",
+            "objective_id": "3d3cf1fec802f990",
+            "text": "# Answer guide \u2014 Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\n\n",
+            "sha256": "sha256:4fc2255622b37a7e25e33b9a99e13d17fd47cbde6bf6596492a773b275aed32c",
+            "bytes": 378,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "answer_guide",
+            "title": "04 \u00b7 Explain one example",
+            "objective_id": "ca34ef44e89dafae",
+            "text": "# Answer guide \u2014 Explain one example\n\nObjective: Explain one example in their own words\n\n## Referenc",
+            "sha256": "sha256:e69a009cb0dd49407f36e245979e0e35bc5df06a9949de63bb30e7f8701f2639",
+            "bytes": 367,
+            "source": "authored",
+            "truncated": true
+          }
+        ],
+        "narration": [
+          {
+            "role": "narration",
+            "title": "01 \u00b7 Warm things at home",
+            "objective_id": "659f64346eec5e0d",
+            "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+            "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+            "bytes": 153,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "narration",
+            "title": "02 \u00b7 Cold things at home",
+            "objective_id": "2445f6e53d49aa35",
+            "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+            "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+            "bytes": 153,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "narration",
+            "title": "03 \u00b7 Why the kettle is a grown-up job",
+            "objective_id": "3d3cf1fec802f990",
+            "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+            "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+            "bytes": 153,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "narration",
+            "title": "04 \u00b7 Explain one example",
+            "objective_id": "ca34ef44e89dafae",
+            "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+            "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+            "bytes": 153,
+            "source": "authored",
+            "truncated": true
+          }
+        ]
+      },
+      "sources": [
+        {
+          "source_id": "2b28cb65304a5139",
+          "title": "Polite greetings in Japanese",
+          "url": "https://example.org/greetings",
+          "support_status": "model_assessed",
+          "fetched_at": "2026-11-06T12:00:00Z"
+        }
+      ]
+    },
+    "export": {
+      "export_id": "exp_4196cebbd2ad4933a9ef094a99584d01",
+      "pack": {
+        "pack_id": "parent-crs-60369f196bb44cf2abfadc54d8a2a477",
+        "pack_version": "1.0.0",
+        "manifest_hash": "sha256:023cadb072aebb8fc6c6ba006d975ef1d0d7914d87f87ef8320d424e6ba8dd44"
+      },
+      "files": [
+        {
+          "role": "answer_guide",
+          "name": "answer-guide/01-warm-things-at-home.md",
+          "sha256": "sha256:716e9bc3f27906bd0f2e29bdd24dcc230246b1aa4a243e6e1097105a1c73375f",
+          "bytes": 376,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "answer_guide",
+          "name": "answer-guide/02-cold-things-at-home.md",
+          "sha256": "sha256:b0fc0b7638c2fdb32d2fee4d42ede1f936a4f40501c8a3333e3147d578bdc44c",
+          "bytes": 366,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "answer_guide",
+          "name": "answer-guide/03-why-the-kettle-is-a-grown-up-job.md",
+          "sha256": "sha256:4fc2255622b37a7e25e33b9a99e13d17fd47cbde6bf6596492a773b275aed32c",
+          "bytes": 378,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "answer_guide",
+          "name": "answer-guide/04-explain-one-example.md",
+          "sha256": "sha256:e69a009cb0dd49407f36e245979e0e35bc5df06a9949de63bb30e7f8701f2639",
+          "bytes": 367,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "learner_page",
+          "name": "lessons/01-warm-things-at-home.md",
+          "sha256": "sha256:27fe76fe11d262564bb7c6527e482ff43afaf99fab270991dcfd9d2c9ba8de46",
+          "bytes": 549,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "learner_page",
+          "name": "lessons/02-cold-things-at-home.md",
+          "sha256": "sha256:4673e2c07a2ff497c99d13195047e12afd4ceac56c895866b2b459e7caf91b3c",
+          "bytes": 549,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "learner_page",
+          "name": "lessons/03-why-the-kettle-is-a-grown-up-job.md",
+          "sha256": "sha256:d46ee0c524b7c781a1651b24b34c19ba9c01a3a647c3cd12bc55da88bcad67d6",
+          "bytes": 562,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "learner_page",
+          "name": "lessons/04-explain-one-example.md",
+          "sha256": "sha256:ca1689654060de525e8b17201728dcf43f037ca6de4e0e1ff575dde5b817bd7c",
+          "bytes": 549,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "parent_guide",
+          "name": "parent-guide/01-warm-things-at-home.md",
+          "sha256": "sha256:42f35fce7e113b0658c63fb04fdfa9bad4036f8534c0decd0eb6abf6a8c7b981",
+          "bytes": 852,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "parent_guide",
+          "name": "parent-guide/02-cold-things-at-home.md",
+          "sha256": "sha256:4f158b46992b30e1ab51f81ab31570671e303e8b0afe1981a73a9c8caffe4311",
+          "bytes": 841,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "parent_guide",
+          "name": "parent-guide/03-why-the-kettle-is-a-grown-up-job.md",
+          "sha256": "sha256:fc12b00f3d5664a9ed76e3e5d00df2c739a43df7d5ca36ed55e66c72734db33e",
+          "bytes": 843,
+          "mime": "text/markdown"
+        },
+        {
+          "role": "parent_guide",
+          "name": "parent-guide/04-explain-one-example.md",
+          "sha256": "sha256:1f91652098fd9ff3654d119d8aa2f60a9e43954c6f2948a9cd12d1e7edf80115",
+          "bytes": 814,
+          "mime": "text/markdown"
+        }
+      ],
+      "artifacts": [
+        {
+          "artifact_id": "art_dcdbb56172134f0999027918923b7f4e",
+          "kind": "pack",
+          "mime": "application/zip",
+          "bytes": 8871,
+          "content_hash": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4"
+        },
+        {
+          "artifact_id": "art_6fd375af49384553ae023f448c8390a0",
+          "kind": "pdf",
+          "mime": "application/pdf",
+          "bytes": 7352,
+          "content_hash": "sha256:d04996a33fa939172547ace5e2dc2ae685cce232aada81255e04c1e09efc4adb"
+        },
+        {
+          "artifact_id": "art_54bc1053a0664161af82fb95b4d15dcd",
+          "kind": "export",
+          "mime": "application/zip",
+          "bytes": 8871,
+          "content_hash": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4"
+        }
+      ],
+      "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67",
+      "exported_at": "2026-11-06T16:42:10.644650+00:00"
+    }
+  }
+}

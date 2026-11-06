@@ -1,0 +1,7 @@
+ok  parent.brief.get
+ok  parent.blueprint.read
+REFUSED parent.final.approve VALIDATION_FAILED: RPC request violates cb.rpc at <root>: 'expected_revision' is a required property {"path": "<root>"}
+ok  parent.blueprint.read
+   approval: {"state": "active", "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb", "content_hash": "sha256:4421af59955700174d4eda5e9a638eff159c0cbf486743ef088aedb696f4fc36", "approved_at": "2026-11-06T16:38:28.425717+00:00", "invalidated_reason": null}
+   export: {"ready": true, "blocked_reason": null}
+REFUSED parent.export POLICY_VIOLATION: some approved objectives have no generated section; regenerate lessons before exporting. {"reason": "no_generated_content", "problems": ["objective eccdb72cfb0b82eb has no generated section", "objective 4dc25504e52068ef has no generated section", "objective 75c1d8432f062825 has no generated section"]}
