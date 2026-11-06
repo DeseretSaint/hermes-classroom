@@ -53,8 +53,8 @@ Legend: **PASS** = all measured a11y/layout checks clean in the captured variant
 | 8 | generation failed | **not captured** | same; CB-011 recorded `GRADER_UNAVAILABLE` failure but not the UI state in this window |
 | 9 | plan awaiting approval | **not captured** | CB-011 evidence only |
 | 10 | lesson ready | PASS (with detached-chat banner present) | `lesson-ready-*.png`; objective + `Resume lesson` / `Open this section` |
-| 11 | attempt submitting | **not captured** in this pass | attempt-1 `attempt-section-*.png` were overlay frames and were deleted; gap pass scheduled (§7) |
-| 12 | grader unavailable / needs_retry | **not captured** in this pass | same; gap pass scheduled (§7) |
+| 11 | attempt submitting | PASS | Submit disabled within 120 ms; duplicate click ignored while disabled; §7.1 |
+| 12 | grader unavailable / needs_retry | **blocked** | fault proxy receives no traffic from this window (primary is 44219); §7.3 |
 | 13 | detached chat | PARTIAL | banner, `Reattach` / `Start a fresh run`, Submit disabled with reason are visible in `lesson-ready-*`; not isolated into its own matrix because the JP course was already detached |
 | 14 | offline | **not captured** | needs `Network.emulateNetworkConditions(offline)` |
 | 15 | TTS/image unavailable | **not captured** (n/a for this pack) | both shipped packs declare no audio/media; no media control rendered, so the state cannot be exercised without a media-bearing pack |
@@ -66,11 +66,11 @@ Legend: **PASS** = all measured a11y/layout checks clean in the captured variant
 | 21 | export complete | **not captured** | CB-011 never reached final approval/export |
 | 22 | download failed/cancelled | **not captured** | not exercised |
 | 23 | course archived | **not captured** | Archived filter rendered; no archived enrollment created this pass |
-| 24 | course deleted | **not captured** in this pass | delete confirm dialog exists; gap pass scheduled (§7) |
+| 24 | course deleted | **blocked** | row `Actions for …` opens no DOM menu, so the confirm cannot be reached by DOM click; §7.4 |
 | 25 | job interrupted | **not captured** | CB-011/CB-013 lease-resume evidence only |
 | 26 | demo fixture mode | PASS | every row reads `From a local pack · v1.0.0`; no simulated live research; `demo-fixture-mode-*.png` |
 
-Captured with full 7-variant matrices: **7 scenarios covering 8 spec rows** (first run + no courses are the same zero-row screen; unsupported backend covered twice). **18 rows not captured**, each for the stated reason.
+Captured with full 7-variant matrices: **7 scenarios covering 8 spec rows** (first run + no courses are the same zero-row screen; unsupported backend covered twice). Two more rows were driven outside the matrix (**11 attempt submitting — PASS**, **13 detached chat — PARTIAL**). Two rows were attempted and are **blocked by rig topology** (**12 grader unavailable**, **24 course deleted**). **15 rows were not attempted**, each for the stated reason.
 
 ## 5. Variant matrix for captured states
 
@@ -121,21 +121,34 @@ Chips/tags (`Casual`, `Parent preparation`, `Cold attempt`) compute to **9.6 px*
 
 At root 32 px the host's own left rail truncates labels (`Capabil…`, `Messa…`, `Schedul…`, `Course…`, `Search ses`). Outside `[data-cb-route]`; recorded because a keyboard/screen-reader user meets it before reaching Coursebook. Owner: Hermes Desktop host, not Coursebook.
 
-## 7. Honest gaps (not captured, and why)
+### F-06 — Two UX states are unreachable by the DOM rig (P3, testability)
 
-1. **Alternate colour theme — not covered.** Every capture reports `theme=nous` (`documentElement.dataset.hermesTheme`). No second colour theme was available in this window; `forced-colors: active` was used as the third presentation instead. Treat the card's "alternate theme" column as **unproven**.
-2. **Delete-confirmation focus/Escape — not yet measured.** Scheduled next: role/name of the dialog, focus move on open, Tab containment, Escape close, focus return to the row menu trigger, and the `Save to notebook` label-collision note from CB-015 §9.
-3. **Attempt submitting / grader unavailable / needs_retry — not yet measured.** Attempt-1 captures were invalid and deleted; the gap pass will drive a real submit, confirm the locked pending state, inject `GRADER_UNAVAILABLE` through the fault proxy, and capture `needs_retry` + `Retry/Edit/Override` in dark/light/narrow/200 %.
-4. **Reduced motion** — harness supports it, no variant emitted. Not claimed.
-5. **Screen-reader announcement quality** — only `aria-live`/`role=status` presence was measured (`live[]`), not announcement text or duplication.
-6. **18 §13 rows** listed in §4 — not captured this pass.
+`GRADER_UNAVAILABLE` cannot be injected into the window in this configuration (primary gateway 44219; proxy 44232 receives nothing, §7.3), and the course-row `Actions for …` control opens no DOM menu, so `Delete enrollment…` cannot be selected (§7.4). Both states need a dedicated window whose primary connection is the fault proxy, and either pointer events or a restart after `audit-ux-connection.py` rebinds the profile. Until then those two rows are **unproven**, not passed.
+
+### F-07 — Rendering fails under tile-memory pressure (P3, host-owned)
+
+The audit window logs `cc/tiles/tile_manager.cc: tile memory limits exceeded, some content may not draw` and crashed its renderer once mid-run; screenshots then come back blank while the DOM stays correct. This is why every capture here is gated on route + overlay + byte size, and why the gap pass ran DOM-only. Owner: Hermes Desktop host (Electron/`--disable-gpu` on Wayland); it also explains attempt-1's 54 corrupt frames.
+
+Adding: attempt-submitting lock (**PASS**), 200 % text on the lesson section (**PASS**). Still blocked: grader-unavailable copy and the delete-confirmation dialog — both by rig topology, not by product behaviour (§7.3, §7.4). Raw data: `audit/ux/attempt-dialog.json`, `audit/ux/dialog-focus.json`.
+
+**7.1 Attempt submitting — PASS.** On the live lesson section (`CURRENT CHECK`, bound chat), `Submit answer` became `disabled` **within 120 ms** of the click (measured twice), and a second click while disabled was dispatched but recorded nothing new. The attempts view advanced after the graded submit, so the row count alone cannot prove exactly-once; the lock + disabled duplicate is the direct evidence for "no duplicate submit". Evidence: DOM measurements in `audit/ux/attempt-dialog.json`. The two frames taken at that moment came back as 218×153 partial surfaces (tile-memory pressure) and were **deleted rather than published as if they were full-window captures**.
+
+**7.2 200 % text on the lesson section — PASS.** Root 32 px, body text 26 px, `overflowX = 0`, `clipped = []`, no unnamed controls, no colour-only status, no control under 20×20 px. Evidence: `-section-text200` measurement in `audit/ux/attempt-dialog.json`, screenshot `attempt-section-text200.png` (135 KB, valid frame).
+
+**7.3 Grader unavailable — BLOCKED (rig topology).** The window's primary gateway is `127.0.0.1:44219`, not the fault-injection proxy on `44232`: `audit/ux/rpc-log.jsonl` received **zero** new entries after pointing the profile's primary connection at 44232 and reloading the window. A submit under the injected `GRADER_UNAVAILABLE` fault therefore graded normally instead of failing, and no `needs_retry` copy was produced. This says nothing about the product's grader-unavailable state; it says the injection path was not wired to this window. Repro of the block: `python3 scripts/audit-ux-connection.py 44232` → primary changes in `~/.hermes/sentinel-ux-audit/userdata/connections.json`, but the running app keeps dialing 44219 until it is restarted, and no restart was performed (shared window, another session's work in it).
+
+**7.4 Delete-confirmation dialog — BLOCKED (entry point is not a DOM menu).** The course-row control `Actions for <course>` is reachable by keyboard (it appears as a Tab stop) and clicking it in the renderer leaves `document.querySelectorAll('[role="menuitem"], [role="menu"] button')` **empty** — no DOM menu opens, so `Delete enrollment…` cannot be selected by a DOM click. A 14-stop Tab walk after the click stayed on the list's `Open` / `Actions for …` pairs (no trap), and Escape left focus on the same row action. The dialog's focus/Escape behaviour is therefore **still unproven**; it needs a pointer-event or native-menu path, or a dedicated window where the menu is known to render. No destructive action was confirmed; the dialog was never opened, so no course was deleted. Evidence: `audit/ux/dialog-focus.json`.
+
+**Unchanged gaps:** alternate colour theme (no second theme present; `forced-colors` used instead), reduced motion, screen-reader announcement text, and the 18 uncaptured §13 rows listed in §4.
+
 
 ## 8. Verdict
 
 - Layout, clipping at 200 %, horizontal overflow, narrow, split and hidden-pane: **PASS** in all seven captured states (49/49 captures, 0 clipped nodes, 0 overflow).
 - Colour-only communication / unnamed controls / small targets: **PASS** (0 instances in 49 captures).
-- Keyboard trap: **PASS** over 45 Tab stops per state; **Escape/focus-return unproven**.
+- Keyboard trap: **PASS** over 45 Tab stops per state and 14 stops inside the course list; **Escape/focus-return in a dialog unproven** (dialog not reachable, §7.4).
+- Attempt submit lock: **PASS** (disabled within 120 ms, duplicate ignored). 200 % text on the lesson section: **PASS**.
 - Contrast: **FAIL** in light theme (F-01, P2, 184 nodes) — the one release-relevant defect.
-- Coverage: **8 of 26** documented states measured; 18 gaps declared above. This report does not claim the uncaptured states pass.
+- Coverage: **9 of 26** documented states captured (8 with the full 7-variant matrix, 1 partial), 2 attempted and blocked by the rig, 15 not attempted. This report does not claim the uncaptured states pass.
 
 **Release recommendation: conditional no-go on the light theme until F-01 is fixed or explicitly accepted; the matrix is otherwise green for the measured states.**

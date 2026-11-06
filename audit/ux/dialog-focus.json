@@ -1,0 +1,76 @@
+{
+  "listReached": true,
+  "listText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 2 due\nReview\nJapanese affection and register — an L0 de",
+  "trigger": {
+    "name": "Actions for Japanese affection and register — an L0 demonstration classroom",
+    "focused": true
+  },
+  "items": [],
+  "deleteClicked": null,
+  "dialog": {
+    "open": false,
+    "body": "1\nCoursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 2 due\nReview\nJapanese affection and register — an L0 "
+  },
+  "walk": {
+    "stops": [
+      "BUTTON:Open",
+      "BUTTON:Actions for Japanese café basics",
+      "BUTTON:Open",
+      "BUTTON:Actions for Japanese café basics",
+      "BUTTON:Open",
+      "BUTTON:Actions for Japanese café basics",
+      "BUTTON:Open",
+      "BUTTON:Actions for Kitchen fractions for a 9-year-old",
+      "BUTTON:Open",
+      "BUTTON:Actions for Kitchen fractions for a 9-year-old",
+      "BUTTON:Open",
+      "BUTTON:Actions for Kitchen fractions for a 9-year-old",
+      "BUTTON:Open",
+      "BUTTON:Actions for Kitchen fractions for a 9-year-old"
+    ],
+    "trap": null
+  },
+  "walkEndInside": null,
+  "escape": {
+    "before": {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "Actions for Kitchen fractions for a 9-year-old",
+      "inRoute": true,
+      "visible": true,
+      "outline": "none",
+      "ring": "shadow",
+      "x": 92,
+      "y": 450
+    },
+    "after": {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "Actions for Kitchen fractions for a 9-year-old",
+      "inRoute": true,
+      "visible": true,
+      "outline": "none",
+      "ring": "shadow",
+      "x": 92,
+      "y": 450
+    },
+    "openAfter": false,
+    "returned": true,
+    "active": "Actions for Kitchen fractions for a 9-year-old"
+  },
+  "trigger200": true,
+  "delete200": false,
+  "dialog200": {
+    "open": false,
+    "body": "1\nCoursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 2 due\nReview\nJapanese affection and register — an L0 "
+  },
+  "dialog200Measure": {
+    "rootFont": "32px",
+    "viewport": {
+      "w": 558,
+      "h": 767
+    },
+    "overflowX": 0,
+    "clipped": []
+  }
+}

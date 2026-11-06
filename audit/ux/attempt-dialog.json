@@ -1,0 +1,133 @@
+{
+  "port": "9351",
+  "at": "2026-11-06T19:34:30.729Z",
+  "methods": "DOM only; screenshots best-effort",
+  "graderReached": true,
+  "graderBefore": {
+    "submitDisabled": null,
+    "rows": 4
+  },
+  "graderFilled": true,
+  "graderClicked": true,
+  "graderAfter": {
+    "route": true,
+    "text": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNeeds review\ndiscrimination\nLast opened 4 min ago\nstored_only\nContinue here\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nNo teaching segments yet\nSegments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.\nCURRENT CHECK\nCheck v11\ndiscrimination\nHinted\nNot yet\ndoes not match an accepted answer\n\nThe backend recorded the next action.\n\nTry a new example\nExplain the difference\n\nHints and shown answers are recorded against the next attempt.\n\nATTEMPTS ON THIS SECTION\njust now\nNot yet\nHinted\n2 min ago\nNot yet\nHinted\n4 min ago\nNot yet\nCold attempt\n14 min ago\nPassed\nCold attempt\n15 min ago\nPassed\nCold attempt\nSOURCES ON THIS COURSE\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nauthoritative_documentation\nfetched 20 hr ago\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nfetched 20 hr ago\nWiktionary — 好き (suki)\nmodel_assessed\nfetched 20 hr ago\nWiktionary — 愛する (aisuru)\nmodel_assessed\nfetched 20 hr ago\nLearn how to say \"I love you\" in Japanese\nmodel_assessed\nfetched 20 hr ago\nHonorific speech in Japanese\nmodel_assessed\nfetched 20 hr ago",
+    "buttons": [
+      "New course",
+      "Courses",
+      "Library",
+      "Parent Studio",
+      "All courses",
+      "Start lesson",
+      "Overview",
+      "Textbook",
+      "Notebook",
+      "Quizzes",
+      "Plan",
+      "Evidence",
+      "Sources",
+      "Textbook",
+      "Continue here",
+      "Start a fresh run",
+      "All sections",
+      "Try a new example",
+      "Explain the difference"
+    ],
+    "submitDisabled": null,
+    "rows": 3,
+    "alerts": []
+  },
+  "graderShot": {
+    "path": "docs/a11y-shots/attempt-grader-unavailable-dark.png",
+    "size": 108673,
+    "valid": true
+  },
+  "deleteFlow": {
+    "trigger": null,
+    "items": [],
+    "clicked": null
+  },
+  "dialog": {
+    "open": false
+  },
+  "dialogShot": {
+    "path": "docs/a11y-shots/delete-confirm-dark.png",
+    "size": 108673,
+    "valid": true
+  },
+  "dialogWalk": {
+    "stops": [
+      "BUTTON:Try a new example",
+      "BUTTON:Explain the difference",
+      "BUTTON:",
+      "BUTTON:Registered gateways: 127.0.0.1:44219",
+      "BUTTON:Backend ready",
+      "BUTTON:deseretsaint",
+      "BUTTON:Smart",
+      "BUTTON:client v0.23.0",
+      "BUTTON:backend v0.23.0",
+      "BUTTON:Show sidebar · 1 unread session",
+      "BUTTON:Open settings",
+      "BUTTON:Layout editor",
+      "BUTTON:HUD mode",
+      "BUTTON:Swap sidebar sides"
+    ],
+    "trap": null,
+    "endInside": null
+  },
+  "escape": {
+    "before": {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "Swap sidebar sides",
+      "inRoute": false,
+      "visible": true,
+      "outline": "none",
+      "ring": "shadow",
+      "x": 481,
+      "y": 17
+    },
+    "after": {
+      "tag": "BUTTON",
+      "role": "",
+      "name": "Swap sidebar sides",
+      "inRoute": false,
+      "visible": true,
+      "outline": "none",
+      "ring": "shadow",
+      "x": 481,
+      "y": 17
+    },
+    "dialogStillOpen": false,
+    "focusReturnedToTrigger": false,
+    "activeName": "Swap sidebar sides"
+  },
+  "escapeShot": {
+    "path": "docs/a11y-shots/delete-after-escape-dark.png",
+    "size": 109119,
+    "valid": true
+  },
+  "deleteFlow200": {
+    "trigger": null,
+    "items": [],
+    "clicked": null
+  },
+  "dialog200": {
+    "open": false
+  },
+  "dialog200Measure": {
+    "rootFont": "32px",
+    "viewport": {
+      "w": 1281,
+      "h": 901
+    },
+    "overflowX": 0,
+    "clipped": [],
+    "smallTargets": []
+  },
+  "dialog200Shot": {
+    "path": "docs/a11y-shots/delete-confirm-text200.png",
+    "size": 118436,
+    "valid": true
+  }
+}
