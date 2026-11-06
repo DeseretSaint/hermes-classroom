@@ -1,0 +1,19 @@
+ok  parent.brief.get
+ok  parent.blueprint.read
+ok  library.list
+ok  parent.final.approve
+ok  parent.blueprint.read
+   revision: 2
+   approval: {"state": "active", "plan_hash": "sha256:08257773421d90465e85316d2de234e4e09214f194650a070122d5798257df9d", "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67", "approved_at": "2026-11-06T16:42:10.516480+00:00", "invalidated_reason": null}
+   export: {"ready": true, "blocked_reason": null}
+ok  parent.export
+   exported: {"export_id": "exp_4196cebbd2ad4933a9ef094a99584d01", "pack": {"pack_id": "parent-crs-60369f196bb44cf2abfadc54d8a2a477", "pack_version": "1.0.0", "manifest_hash": "sha256:023cadb072aebb8fc6c6ba006d975ef1d0d7914d87f87ef8320d424e6ba8dd44"}, "content_hash": "sha256:3629c6e34505fe17fc090e820a8d2123c88c9200f6aecb0104fcf0d94bc2dd67", "exported_at": "2026-11-06T16:42:10.644650+00:00"}
+   files: [{"role": "answer_guide", "name": "answer-guide/01-warm-things-at-home.md", "bytes": 376, "mime": "text/markdown"}, {"role": "answer_guide", "name": "answer-guide/02-cold-things-at-home.md", "bytes": 366, "mime": "text/markdown"}, {"role": "answer_guide", "name": "answer-guide/03-why-the-kettle-is-a-grown-up-job.md", "bytes": 378, "mime": "text/markdown"}, {"role": "answer_guide", "name": "answer-guide/04-explain-one-example.md", "bytes": 367, "mime": "text/markdown"}, {"role": "learner_page", "name": "lessons/01-warm-things-at-home.md", "bytes": 549, "mime": "text/markdown"}, {"role": "learner_page", "name": "lessons/02-cold-things-at-home.md", "bytes": 549, "mime": "text/markdown"}, {"role": "learner_page", "name": "lessons/03-why-the-kettle-is-a-grown-up-job.md", "bytes": 562, "mime": "text/markdown"}, {"role": "learner_page", "name": "lessons/04-explain-one-example.md", "bytes": 549, "mime": "text/markdown"}, {"role": "parent_guide", "name": "parent-guide/01-warm-things-at-home.md", "bytes": 852, "mime": "text/markdown"}, {"role": "parent_guide", "name": "parent-guide/02-cold-things-at-home.md", "bytes": 841, "mime": "text/markdown"}, {"role": "parent_guide", "name": "parent-guide/03-why-the-kettle-is-a-grown-up-job.md", "bytes": 843, "mime": "text/markdown"}, {"role": "parent_guide", "name": "parent-guide/04-explain-one-example.md", "bytes": 814, "mime": "text/markdown"}]
+   artifacts: [{"artifact_id": "art_dcdbb56172134f0999027918923b7f4e", "kind": "pack", "bytes": 8871}, {"artifact_id": "art_6fd375af49384553ae023f448c8390a0", "kind": "pdf", "bytes": 7352}, {"artifact_id": "art_54bc1053a0664161af82fb95b4d15dcd", "kind": "export", "bytes": 8871}]
+ok  artifact.get
+   artifact.get: {"artifact_id": "art_dcdbb56172134f0999027918923b7f4e", "mime": "application/zip", "bytes": 8871, "content_hash": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4"}
+ok  artifact.get
+   artifact.get: {"artifact_id": "art_6fd375af49384553ae023f448c8390a0", "mime": "application/pdf", "bytes": 7352, "content_hash": "sha256:d04996a33fa939172547ace5e2dc2ae685cce232aada81255e04c1e09efc4adb"}
+ok  artifact.get
+   artifact.get: {"artifact_id": "art_54bc1053a0664161af82fb95b4d15dcd", "mime": "application/zip", "bytes": 8871, "content_hash": "sha256:7bfdda689753a53366f28a6671bbebf6e3a6e53bda5de28ee2183322d4cb26e4"}
+trace: /home/deseretsaint/.hermes/profiles/vellum/cache/scratch/cb011-d2-approve-trace.json

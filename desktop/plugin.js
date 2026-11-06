@@ -6632,7 +6632,7 @@ function StudioBlueprintView({ book }) {
 }
 
 /** Export: gated on the backend's own `export.blocked_reason`, files and downloads from the response. */
-function StudioExportPanel({ course, book, supported, onChanged }) {
+function StudioExportPanel({ course, book, revision, onRevision, supported, onChanged }) {
   const [formats, setFormats] = useState({ pack: true, pdf: true })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -6661,15 +6661,24 @@ function StudioExportPanel({ course, book, supported, onChanged }) {
         plan_hash: planHash,
         content_hash: contentHash
       },
-      { idempotencyKey: newOperationId('parent-final-approve') }
+      {
+        expectedRevision: typeof revision === 'number' ? revision : 0,
+        idempotencyKey: newOperationId('parent-final-approve')
+      }
     )
     setApproving(false)
     if (!response.ok) {
-      setApproveError(describeError(response.error))
+      const nextRevision = staleRevision(response)
+      if (nextRevision !== null && typeof onRevision === 'function') onRevision(nextRevision)
+      setApproveError(
+        describeError(response.error) +
+          (nextRevision !== null ? ' The course revision was refreshed; press Approve this lesson set again.' : '')
+      )
       return
     }
+    if (typeof onRevision === 'function') onRevision(Number(response.result.revision) || 0)
     if (typeof onChanged === 'function') onChanged()
-  }, [course.enrollment_id, plan.plan_id, planHash, contentHash, onChanged])
+  }, [course.enrollment_id, plan.plan_id, planHash, contentHash, revision, onRevision, onChanged])
 
   const run = useCallback(async () => {
     setBusy(true)
@@ -7072,7 +7081,14 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
   } else if (view === 'blueprint') {
     body = jsx(StudioBlueprintView, { book })
   } else if (view === 'export') {
-    body = jsx(StudioExportPanel, { course, book, supported: supports, onChanged: reloadAll })
+    body = jsx(StudioExportPanel, {
+      course,
+      book,
+      revision,
+      onRevision,
+      supported: supports,
+      onChanged: reloadAll
+    })
   } else {
     body = jsx(StudioReflectionView, {
       course,

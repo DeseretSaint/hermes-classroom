@@ -61,7 +61,14 @@ def call(method: str, payload: dict, *, expected_revision: int | None = None,
     if idempotency_key is not None:
         body["idempotency_key"] = idempotency_key
     response = _request("POST", "/api/plugins/coursebook/rpc?profile=", body)
-    LOG.append({"method": method, "request": payload, "response": response})
+    LOG.append({
+        "method": method,
+        "contract_version": VERSION,
+        "expected_revision": expected_revision,
+        "idempotency_key": idempotency_key,
+        "request": payload,
+        "response": response,
+    })
     flag = "ok " if response.get("ok") else "REFUSED"
     detail = ""
     if not response.get("ok"):
@@ -221,26 +228,60 @@ def phase_full(course_id: str) -> dict:
             "book": book, "plan": plan, "job_id": job_id}
 
 
+def current_revision(enrollment_id: str) -> int:
+    """The enrollment revision the studio fences its own commands on.
+
+    ``library.list`` is where the studio's parent-course rows get ``revision`` (``course.outline``
+    is deliberately revision 0: opening an outline must never move state).
+    """
+    listing = result(call("library.list", {"filter": "all", "recipe": "parent", "limit": 100,
+                                           "sort": "recent"}))
+    for item in listing.get("items") or []:
+        if item.get("enrollment_id") == enrollment_id:
+            return int(item.get("revision") or 0)
+    raise SystemExit(f"enrollment {enrollment_id} is not in the parent library listing")
+
+
 def phase_approve_and_export(course_id: str) -> dict:
     brief = read_brief(course_id)
     enrollment_id = brief.get("enrollment_id")
     book = blueprint(course_id)
     plan = book.get("plan") or {}
-    revision = None
+    if not enrollment_id:
+        print(f"   course {course_id} has no enrollment to approve")
+        return {"course_id": course_id, "book": book, "export": {}}
+    # parent.final.approve is revision-fenced like every other lesson mutation (cb.rpc v6
+    # allOf: idempotency_key + expected_revision). Read the revision the Desktop studio reads
+    # (course.outline) instead of sending the command without one.
+    revision = current_revision(enrollment_id)
+    payload = {
+        "enrollment_id": enrollment_id,
+        "plan_id": plan.get("plan_id"),
+        "plan_hash": plan.get("plan_hash"),
+        "content_hash": book.get("content_hash"),
+        "note": "Parent reviewed the pages, the answer guide and the narration script.",
+    }
     final = call(
         "parent.final.approve",
-        {
-            "enrollment_id": enrollment_id,
-            "plan_id": plan.get("plan_id"),
-            "plan_hash": plan.get("plan_hash"),
-            "content_hash": book.get("content_hash"),
-            "note": "Parent reviewed the pages, the answer guide and the narration script.",
-        },
+        payload,
+        expected_revision=revision,
         idempotency_key=f"cb011-final-{time.time_ns()}",
     )
+    if not final.get("ok") and (final.get("error") or {}).get("code") == "STALE_REVISION":
+        # The course moved between the read and the command: re-read and send the new fence
+        # once, which is what the studio's stale-revision refresh does.
+        revision = current_revision(enrollment_id)
+        print(f"   retrying parent.final.approve at revision {revision}")
+        final = call(
+            "parent.final.approve",
+            payload,
+            expected_revision=revision,
+            idempotency_key=f"cb011-final-{time.time_ns()}",
+        )
     if final.get("ok"):
         revision = int(result(final)["revision"])
     book = blueprint(course_id)
+    print("   revision:", revision)
     print("   approval:", json.dumps(book.get("approval")))
     print("   export:", json.dumps(book.get("export")))
     exported = call("parent.export", {"enrollment_id": enrollment_id},
