@@ -906,14 +906,27 @@ class V4AmendmentTest(unittest.TestCase):
                 self.assertFalse(response["ok"])
                 self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
 
-        for method, payload in (
-            ("pack.list", {}),
-            ("pack.inspect", {"pack_id": "japanese-affection-context-l0", "pack_version": "1.0.0"}),
-        ):
-            with self.subTest(method=method):
-                response = api.dispatch(_envelope(method, payload))
-                self.assertFalse(response["ok"])
-                self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
+        # A valid payload reaches whatever handler is installed: the v4 methods are wired on the
+        # pack-lifecycle branch, so validation must happen before dispatch rather than refusing
+        # the call because no handler exists. A recorder stands in for the real handler here so
+        # this contract test stays independent of the pack library.
+        previous = api.METHOD_HANDLERS.get("pack.list")
+        seen: list[dict] = []
+
+        def recording_handler(payload, envelope):
+            seen.append(dict(payload))
+            return 0, {"items": [], "total": 0, "truncated": False, "applied_filter": "all"}
+
+        api.register_handler("pack.list", recording_handler)
+        try:
+            response = api.dispatch(_envelope("pack.list", {}))
+            self.assertTrue(response["ok"], response.get("error"))
+            self.assertEqual(seen, [{}])
+        finally:
+            if previous is None:
+                api.METHOD_HANDLERS.pop("pack.list", None)
+            else:
+                api.register_handler("pack.list", previous)
 
         def leaking_handler(payload, envelope):
             item = _pack_item()
@@ -932,7 +945,10 @@ class V4AmendmentTest(unittest.TestCase):
             self.assertEqual(response["error"]["code"], "INTERNAL_ERROR")
             self.assertIn("directory", response["error"]["message"])
         finally:
-            api.METHOD_HANDLERS.pop("pack.list", None)
+            if previous is None:
+                api.METHOD_HANDLERS.pop("pack.list", None)
+            else:
+                api.register_handler("pack.list", previous)
 
     def test_docs_publish_the_v4_surface_and_the_projection_authority(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")

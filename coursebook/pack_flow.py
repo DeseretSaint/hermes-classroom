@@ -47,7 +47,13 @@ from .api import RpcError
 from .archive import PackRejected, PackLibrary, StagingArea
 
 #: Methods this module owns. ``pack.delete`` stays with the kernel: it owns data-scope previews.
-PACK_METHODS: tuple[str, ...] = ("pack.preview", "pack.import", "pack.export")
+PACK_METHODS: tuple[str, ...] = (
+    "pack.preview",
+    "pack.import",
+    "pack.export",
+    "pack.list",
+    "pack.inspect",
+)
 
 #: Roles whose content may be rendered as a lesson segment on import.
 TEACHING_ROLES = ("section", "learner_page", "parent_guide")
@@ -867,6 +873,186 @@ def pack_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
     }
 
 
+# ── installed-pack reads (cb.rpc v4) ───────────────────────────────────────
+
+
+def _pack_rows() -> dict[tuple[str, str], Mapping[str, Any]]:
+    """Kernel ``packs`` rows keyed by ``(pack_id, version)``.
+
+    A library read can be the first thing a fresh profile asks for, before anything ran
+    ``ensure_schema``; a missing table therefore means "no kernel rows", not an error.
+    """
+    try:
+        with db.read() as connection:
+            rows = connection.execute(
+                "SELECT pack_id, version, state, revision FROM packs"
+            ).fetchall()
+    except sqlite3.Error:
+        return {}
+    return {(str(row["pack_id"]), str(row["version"])): row for row in rows}
+
+
+def _adopted_manifest(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Read the stored manifest of an adopted pack for its declared counts and recipe."""
+    directory = Path(str(record["directory"]))
+    return packs.load_manifest(directory / packs.root_file())
+
+
+def _pack_list_item(
+    record: Mapping[str, Any],
+    manifest: Mapping[str, Any],
+    rows: Mapping[tuple[str, str], Mapping[str, Any]],
+) -> dict[str, Any]:
+    """One ``pack.list`` row: the library index joined to the kernel row on identity.
+
+    The kernel row wins for ``state``/``revision`` (``pack.delete`` fences on the revision);
+    the index's own copy is the fallback adoption writes. Neither the index's absolute
+    ``directory`` nor the manifest itself is part of the row: a path is storage, and
+    ``pack.inspect`` is the read that returns the manifest.
+    """
+    pack_id = str(record["pack_id"])
+    version = str(record["version"])
+    row = rows.get((pack_id, version))
+    return {
+        "pack_id": pack_id,
+        "pack_version": version,
+        "content_hash": str(record["manifest_hash"]),
+        "recipe": str(manifest["recipe"]),
+        "source": str(record.get("source") or "local"),
+        "state": str(row["state"]) if row is not None else str(record.get("state") or "installed"),
+        "revision": int(row["revision"]) if row is not None else int(record.get("revision") or 0),
+        "installed_at": str(record["installed_at"]),
+        "file_count": len(manifest["files"]),
+        "expanded_bytes": sum(int(entry["bytes"]) for entry in manifest["files"]),
+        "license": copy.deepcopy(manifest["license"]),
+    }
+
+
+def pack_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """``pack.list``: every adopted identity, enrolled or not, with its deletion revision.
+
+    ``library.list`` answers "what is enrolled"; this answers "what is installed". Ordering is
+    ``installed_at`` descending, then ``pack_id``, then ``pack_version`` ascending, so two
+    renders of the same library agree. ``limit`` slices the response; ``total`` always counts
+    every matching identity and ``truncated`` says whether the slice omitted rows.
+    """
+    rows = _pack_rows()
+    wanted_id = payload.get("pack_id")
+    wanted_version = payload.get("pack_version")
+    applied_filter = str(payload.get("filter") or "all")
+    limit = int(payload.get("limit") or 100)
+
+    matched: list[dict[str, Any]] = []
+    for record in library().list():
+        if wanted_id is not None and str(record.get("pack_id")) != str(wanted_id):
+            continue
+        if wanted_version is not None and str(record.get("version")) != str(wanted_version):
+            continue
+        try:
+            manifest = _adopted_manifest(record)
+        except PackRejected as exc:
+            # The library index points at content this build cannot read back. Refuse with the
+            # contract's PACK_REJECTED rather than letting a ValueError become INTERNAL_ERROR.
+            raise _rejected(
+                f"installed pack {record.get('pack_id')} {record.get('version')} cannot be read: {exc}",
+                "pack_unreadable",
+                pack_id=str(record.get("pack_id")),
+                pack_version=str(record.get("version")),
+            ) from exc
+        item = _pack_list_item(record, manifest, rows)
+        if applied_filter != "all" and item["state"] != applied_filter:
+            continue
+        matched.append(item)
+
+    # Stable sorts: identity ascending first, then the primary key descending.
+    matched.sort(key=lambda item: (item["pack_id"], item["pack_version"]))
+    matched.sort(key=lambda item: item["installed_at"], reverse=True)
+
+    return 0, {
+        "items": matched[:limit],
+        "total": len(matched),
+        "truncated": len(matched) > limit,
+        "applied_filter": applied_filter,
+    }
+
+
+def pack_inspect(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """``pack.inspect``: one installed pack read from the library, no upload grant.
+
+    The adopted directory is read back through :meth:`PackLibrary.read`, which re-validates
+    the manifest and re-hashes every declared file. Drifted or missing content is *reported*
+    (``integrity.hashes_match: false``) so a review screen can refuse the export instead of
+    the pane dying; only an identity absent from the library (or an unreadable manifest) is an
+    error. The response carries the same four independent trust labels as ``pack.preview`` —
+    never a ``safe``/``verified`` verdict.
+    """
+    pack_id = str(payload["pack_id"])
+    pack_version = str(payload["pack_version"])
+    record = _installed_record(pack_id, pack_version)
+    if record is None:
+        raise RpcError.of(
+            "NOT_FOUND",
+            f"pack {pack_id} {pack_version} is not in the installed pack library.",
+            pack_id=pack_id,
+            pack_version=pack_version,
+        )
+
+    directory = Path(str(record["directory"]))
+    hashes_match = True
+    try:
+        manifest, files = library().read(pack_id, pack_version)
+    except PackRejected as exc:
+        if not directory.is_dir():
+            raise RpcError.of(
+                "NOT_FOUND",
+                f"pack {pack_id} {pack_version} has no adopted directory to inspect.",
+                pack_id=pack_id,
+                pack_version=pack_version,
+            ) from exc
+        try:
+            manifest = _adopted_manifest(record)
+        except PackRejected as unreadable:
+            raise _rejected(
+                f"installed pack {pack_id} {pack_version} cannot be read: {unreadable}",
+                "pack_unreadable",
+                pack_id=pack_id,
+                pack_version=pack_version,
+            ) from unreadable
+        # Content drifted from the manifest; read what is on disk and let hashes_match say so.
+        files = {}
+        hashes_match = False
+        for entry in manifest["files"]:
+            target = directory / str(entry["path"])
+            files[str(entry["path"])] = target.read_bytes() if target.is_file() else b""
+
+    declared = {str(entry["path"]): entry for entry in manifest["files"]}
+    hashes_match = (
+        hashes_match
+        and packs.content_hash(manifest) == str(record["manifest_hash"])
+        and set(files) == set(declared)
+        and all(
+            packs.file_sha256(files[path]) == str(entry["sha256"])
+            and len(files[path]) == int(entry["bytes"])
+            for path, entry in declared.items()
+        )
+    )
+    document = packs.preview(
+        manifest,
+        integrity={
+            "hashes_match": hashes_match,
+            "file_count": len(manifest["files"]),
+            "expanded_bytes": sum(int(entry["bytes"]) for entry in manifest["files"]),
+        },
+        automated_checks_passed=True,
+    )
+    return 0, {
+        "pack": _pack_list_item(record, manifest, _pack_rows()),
+        "manifest": document["manifest"],
+        "integrity": document["integrity"],
+        "trust": document["trust"],
+    }
+
+
 # ── download seam (route owner: Sable) ─────────────────────────────────────
 
 
@@ -1009,12 +1195,14 @@ def build_conversion(
 
 
 def ensure_registered() -> tuple[str, ...]:
-    """Bind the three pack methods. Called at import; safe to call again."""
+    """Bind the pack methods. Called at import; safe to call again."""
     registered = []
     for method, handler in (
         ("pack.preview", pack_preview),
         ("pack.import", pack_import),
         ("pack.export", pack_export),
+        ("pack.list", pack_list),
+        ("pack.inspect", pack_inspect),
     ):
         api.register_handler(method, handler)
         registered.append(method)

@@ -398,16 +398,13 @@ class ArtifactGetTest(KernelCase):
 
 class RegistryTest(unittest.TestCase):
     def test_every_v2_method_is_registered_unless_another_package_owns_it(self) -> None:
-        # ``pack.*`` belongs to Lattice (CB-004 pack schema, CB-010 pack lifecycle) and may or may
-        # not be wired when this branch is merged; everything the kernel owns must be present, and
-        # nothing may be invented. The v4 reads (``pack.list``/``pack.inspect``) are specified in
-        # docs/CONTRACTS.md §v4 as a separate pack-lifecycle handler card.
+        # ``pack.*`` belongs to Lattice's pack lifecycle, which is merged into this tree; only
+        # the three methods this build does not wire are excused. If this set stays large the
+        # test is hiding missing handlers instead of proving them.
         lattice_pack_methods = {
             "pack.preview",
             "pack.import",
             "pack.export",
-            "pack.list",
-            "pack.inspect",
         }
         expected = set(method_names()) - lattice_pack_methods
         implemented = set(api.implemented_methods())

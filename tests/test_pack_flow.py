@@ -561,8 +561,174 @@ class CheckAuditTest(unittest.TestCase):
         self.assertIsNotNone(pack_flow.check_spec_from_pack_check(check, recipe="casual"))
 
 
+class InstalledPackReadTest(PackFlowCase):
+    """cb.rpc v4: ``pack.list`` / ``pack.inspect`` read installed packs, grant-free."""
+
+    def install(self, source: Path = JAPANESE, *, name: str = "pack.zip") -> dict:
+        staged_id, manifest = self.grant(source, name=name)
+        self.import_pack(staged_id)
+        return manifest
+
+    def adopt_only(self, source: Path = JAPANESE, *, name: str = "adopted-only.zip") -> dict:
+        """Adopt without importing: an identity installed with no ``packs`` row."""
+        manifest, files = archive.read_directory(source)
+        destination = self.work / name
+        archive.write_archive(destination, manifest, files)
+        staged = pack_flow.staging().stage(pack_flow.grant_local_file(destination))
+        pack_flow.validate_and_audit(staged)
+        pack_flow.library().adopt(staged, source="local")
+        return manifest
+
+    # ── pack.list ──────────────────────────────────────────────────────
+    def test_list_slices_to_limit_but_reports_the_true_total(self) -> None:
+        from coursebook import contracts
+
+        japanese = self.install()
+        parent = self.install(PARENT, name="parent.zip")
+
+        full = self.ok("pack.list", {})["result"]
+        contracts.validate_response_payload("pack.list", full)
+        self.assertEqual(full["total"], 2)
+        self.assertEqual(len(full["items"]), 2)
+        self.assertFalse(full["truncated"])
+        self.assertEqual(full["applied_filter"], "all")
+        self.assertEqual(
+            {item["pack_id"] for item in full["items"]},
+            {japanese["pack_id"], parent["pack_id"]},
+        )
+
+        limited = self.ok("pack.list", {"limit": 1})["result"]
+        contracts.validate_response_payload("pack.list", limited)
+        self.assertEqual(limited["total"], 2)
+        self.assertEqual(len(limited["items"]), 1)
+        self.assertTrue(limited["truncated"])
+
+        # Documented ordering: installed_at desc, then pack_id, then pack_version asc.
+        expected = sorted(
+            full["items"],
+            key=lambda item: (item["pack_id"], item["pack_version"]),
+        )
+        expected.sort(key=lambda item: item["installed_at"], reverse=True)
+        self.assertEqual([item["pack_id"] for item in full["items"]], [item["pack_id"] for item in expected])
+
+        filtered = self.ok("pack.list", {"filter": "installed"})["result"]
+        self.assertEqual(filtered["total"], 2)
+        self.assertEqual(filtered["applied_filter"], "installed")
+        none_frozen = self.ok("pack.list", {"filter": "frozen"})["result"]
+        self.assertEqual(none_frozen["total"], 0)
+        self.assertEqual(none_frozen["items"], [])
+
+    def test_an_adopted_pack_without_a_packs_row_is_listed(self) -> None:
+        from coursebook import contracts
+
+        manifest = self.adopt_only()
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM packs"), 0)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM enrollments"), 0)
+
+        listing = self.ok("pack.list", {})["result"]
+        contracts.validate_response_payload("pack.list", listing)
+        self.assertEqual(listing["total"], 1)
+        row = listing["items"][0]
+        self.assertEqual(row["pack_id"], manifest["pack_id"])
+        self.assertEqual(row["pack_version"], manifest["pack_version"])
+        # The index is the fallback authority when the kernel has no row yet.
+        self.assertEqual(row["state"], "installed")
+        self.assertEqual(row["revision"], 0)
+        self.assertEqual(row["content_hash"], manifest["content_hash"])
+
+    def test_a_list_row_carries_no_path_and_no_manifest(self) -> None:
+        manifest = self.install()
+        listing = self.ok("pack.list", {})["result"]
+        row = listing["items"][0]
+        self.assertEqual(
+            set(row),
+            {
+                "pack_id",
+                "pack_version",
+                "content_hash",
+                "recipe",
+                "source",
+                "state",
+                "revision",
+                "installed_at",
+                "file_count",
+                "expanded_bytes",
+                "license",
+            },
+        )
+        self.assertEqual(row["file_count"], len(manifest["files"]))
+        self.assertEqual(
+            row["expanded_bytes"], sum(int(entry["bytes"]) for entry in manifest["files"])
+        )
+        text = json.dumps(listing)
+        self.assertNotIn("directory", text)
+        self.assertNotIn("manifest", text)
+        self.assertNotIn(str(self.home), text)
+        # No enrollment claim either: library.list owns that fact.
+        for forbidden in ("course_id", "enrollment_id", "enrolled"):
+            self.assertNotIn(forbidden, row)
+
+    # ── pack.inspect ───────────────────────────────────────────────────
+    def test_inspect_reports_matching_hashes_and_separate_trust_labels(self) -> None:
+        from coursebook import contracts
+
+        manifest = self.install()
+        response = self.ok(
+            "pack.inspect",
+            {"pack_id": manifest["pack_id"], "pack_version": manifest["pack_version"]},
+        )["result"]
+        contracts.validate_response_payload("pack.inspect", response)
+        self.assertEqual(
+            set(response), {"pack", "manifest", "integrity", "trust"}
+        )
+        self.assertEqual(response["manifest"]["pack_id"], manifest["pack_id"])
+        self.assertTrue(response["integrity"]["hashes_match"])
+        self.assertEqual(response["integrity"]["file_count"], len(manifest["files"]))
+        labels = response["trust"]["labels"]
+        self.assertIn("integrity_verified", labels)
+        self.assertIn("automated_checks_passed", labels)
+        self.assertNotIn("human_review_recorded", labels)
+        self.assertNotIn("safe", labels)
+        self.assertNotIn("verified", labels)
+        self.assertNotIn("directory", json.dumps(response))
+        self.assertNotIn(str(self.home), json.dumps(response))
+
+    def test_inspect_reports_drift_instead_of_raising(self) -> None:
+        manifest = self.install()
+        record = pack_flow.library().list()[0]
+        directory = Path(str(record["directory"]))
+        entry = manifest["files"][0]
+        target = directory / str(entry["path"])
+        original = target.read_bytes()
+        try:
+            target.write_bytes(original + b"x")
+            drifted = self.ok(
+                "pack.inspect",
+                {"pack_id": manifest["pack_id"], "pack_version": manifest["pack_version"]},
+            )["result"]
+            self.assertFalse(drifted["integrity"]["hashes_match"])
+            self.assertNotIn("integrity_verified", drifted["trust"]["labels"])
+        finally:
+            target.write_bytes(original)
+
+        restored = self.ok(
+            "pack.inspect",
+            {"pack_id": manifest["pack_id"], "pack_version": manifest["pack_version"]},
+        )["result"]
+        self.assertTrue(restored["integrity"]["hashes_match"])
+        self.assertIn("integrity_verified", restored["trust"]["labels"])
+
+    def test_inspect_unknown_identity_is_not_found(self) -> None:
+        manifest = self.install()
+        error = self.err(
+            "pack.inspect",
+            {"pack_id": manifest["pack_id"], "pack_version": "9.9.9"},
+        )
+        self.assertEqual(error["code"], "NOT_FOUND")
+
+
 class RegistryTest(unittest.TestCase):
-    def test_the_three_pack_methods_are_registered_and_frozen(self) -> None:
+    def test_every_pack_method_is_registered_and_frozen(self) -> None:
         from coursebook.contracts import method_names
 
         frozen = set(method_names())
