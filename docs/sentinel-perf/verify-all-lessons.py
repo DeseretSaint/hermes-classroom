@@ -3,16 +3,24 @@
 from __future__ import annotations
 
 import json
+import os
 import urllib.request
 import uuid
 from pathlib import Path
 
-BASE = "http://127.0.0.1:44241"
-TOKEN = "sentinel-perf-token"
+# The recorded rig's defaults stay the defaults; a fresh rig overrides them by environment so the
+# same script can verify any seed without editing it.
+BASE = os.environ.get("COURSEBOOK_VERIFY_BASE", "http://127.0.0.1:44241")
+TOKEN = os.environ.get("COURSEBOOK_VERIFY_TOKEN", "sentinel-perf-token")
 COURSES = {
     "legal-60": "enr_e3464043da494c20a66257c7d340f898",
     "overcap-55": "enr_5b8683c2286945399f34992af7f68351",
 }
+_override = os.environ.get("COURSEBOOK_VERIFY_ENROLLMENTS")
+if _override:
+    _path = Path(_override)
+    COURSES = json.loads(_path.read_text() if _path.is_file() else _override)
+_OUT = Path(os.environ.get("COURSEBOOK_VERIFY_OUT", "docs/sentinel-perf/results/lesson-readability.json"))
 
 
 def call(path, body=None):
@@ -66,5 +74,5 @@ for name, enrollment in COURSES.items():
         "max_segment_chars": max(segment_sizes) if segment_sizes else None,
     }
 
-Path("docs/sentinel-perf/results/lesson-readability.json").write_text(json.dumps(out, indent=2) + "\n")
+Path(_OUT).write_text(json.dumps(out, indent=2) + "\n")
 print(json.dumps(out, indent=2))
