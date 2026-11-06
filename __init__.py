@@ -30,6 +30,8 @@ TOOLSET = "coursebook"
 
 def register(ctx: Any) -> None:
     """Wire the agent half. Called once by the Hermes plugin loader."""
+    # A declared config_schema key is only honest when its reader is wired here, at register.
+    tools.configure(getattr(ctx, "get_config", None))
     ctx.register_tool(
         name=tools.STATUS_TOOL_NAME,
         toolset=TOOLSET,

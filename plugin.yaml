@@ -29,6 +29,13 @@ provides_hooks:
 python_dependencies:
   - "jsonschema>=4.0,<5"
 
-# No requires_env and no config_schema in the skeleton: Coursebook stores no secrets, and a
-# settings field that nothing reads would be a partially wired control. config_schema arrives in
-# the same change as the code that consumes it (see docs/WORK_PACKAGES.md).
+# No requires_env in the skeleton: Coursebook stores no secrets. Every key below has a reader
+# wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field
+# nothing reads would be a partially wired control, so the schema and the reader move together.
+config_schema:
+  status_include_contracts:
+    type: bool
+    default: true
+    description: >-
+      Include the frozen-contract inventory summary (contract count, implemented method count,
+      error-code count) in the coursebook_status tool output. Read by coursebook.tools.

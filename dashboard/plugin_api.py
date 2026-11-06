@@ -115,6 +115,11 @@ async def runtime() -> dict[str, Any]:
 
     Deliberately separate from ``health.get``: it describes the *process*, not the profile's
     course state, and it is the endpoint a doctor/QA probe reads.
+
+    ``implemented_methods`` is the registry itself (``coursebook.api.METHOD_HANDLERS``), not a
+    second list. A Desktop surface that needs to know whether a frozen command can run reads this
+    instead of assuming a method exists because the contract names it — which is what lets the
+    client absorb a contract amendment (v2) without a code change.
     """
     api, contracts, db = _api(), _contracts(), _db()
     problems = contracts.audit_contracts()
@@ -123,6 +128,8 @@ async def runtime() -> dict[str, Any]:
         "plugin_root": str(_PLUGIN_ROOT),
         "wire_contract": api.RPC_CONTRACT,
         "wire_version": api.RPC_CONTRACT_VERSION,
+        "contract_methods": len(api.method_names()),
+        "implemented_methods": list(api.implemented_methods()),
         "contract_problems": problems,
         "db_path": str(db.database_path()),
     }
