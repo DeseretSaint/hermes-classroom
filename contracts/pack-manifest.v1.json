@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.coursebook.hermes/pack-manifest/v1",
+  "title": "Coursebook pack manifest v1",
+  "description": "A pack is versioned declarative JSON plus bounded declared media. It contains no executable code, no arbitrary tool calls, no provider settings, no credentials, no local paths, no transcripts, no learning history and no secrets. Pack identity is pack_id + immutable semantic version + the exact manifest/content hash. Validation is allowlist-first: unknown fields are rejected, not stored.",
+  "x-contract-id": "cb.pack",
+  "x-contract-version": 1,
+  "x-owner": "atlas",
+  "x-implementer": "lattice",
+  "x-status": "frozen",
+  "limits": {
+    "max_manifest_bytes": 262144,
+    "max_files": 2000,
+    "max_expanded_bytes": 134217728,
+    "max_single_file_bytes": 33554432,
+    "max_string_chars": 20000,
+    "max_list_items": 2000
+  },
+  "root_file": "pack.json",
+  "archive_rule": "One root directory; normalized unique relative paths; no links, devices or includes; hash verification; decoder/MIME validation; atomic adopt or complete rejection.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "contract_version",
+    "pack_id",
+    "pack_version",
+    "title",
+    "recipe",
+    "minimum_coursebook_version",
+    "license",
+    "attribution",
+    "objectives",
+    "files",
+    "content_hash"
+  ],
+  "properties": {
+    "contract": {"const": "cb.pack"},
+    "contract_version": {"const": 1},
+    "pack_id": {"type": "string", "minLength": 3, "maxLength": 128, "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "pack_version": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/semver"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 200},
+    "subtitle": {"type": "string", "maxLength": 300},
+    "recipe": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/recipe"},
+    "locale": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/locale"},
+    "level_label": {"type": "string", "maxLength": 40},
+    "minimum_coursebook_version": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/semver"},
+    "derived_from": {
+      "oneOf": [
+        {"type": "object", "additionalProperties": false, "required": ["pack_id", "pack_version"], "properties": {
+          "pack_id": {"type": "string", "maxLength": 128},
+          "pack_version": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/semver"}
+        }},
+        {"type": "null"}
+      ]
+    },
+    "contributors": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "role"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 120},
+          "url": {"type": "string", "maxLength": 500},
+          "role": {"type": "string", "enum": ["author", "reviewer", "translator", "illustrator", "narrator", "source"]}
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "redistribution"],
+      "properties": {
+        "id": {"type": "string", "enum": ["unspecified", "CC-BY-4.0", "CC-BY-SA-4.0", "CC-BY-NC-4.0", "CC-BY-NC-SA-4.0", "CC-BY-ND-4.0", "CC0-1.0", "public-domain", "all-rights-reserved"]},
+        "redistribution": {"type": "string", "enum": ["unset", "allowed", "local_only", "forbidden"]},
+        "note": {"type": "string", "maxLength": 1000},
+        "per_artifact": {
+          "type": "array",
+          "maxItems": 2000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "license_id", "attribution"],
+            "properties": {
+              "path": {"type": "string", "maxLength": 500},
+              "license_id": {"type": "string", "maxLength": 60},
+              "attribution": {"type": "string", "maxLength": 1000}
+            }
+          }
+        }
+      }
+    },
+    "attribution": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "content_notes": {"type": "array", "maxItems": 50, "items": {"type": "string", "maxLength": 1000}},
+    "safety_notes": {"type": "array", "maxItems": 50, "items": {"type": "string", "maxLength": 1000}},
+    "accessibility_notes": {"type": "array", "maxItems": 50, "items": {"type": "string", "maxLength": 1000}},
+    "default_dials": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pace": {"type": "string", "enum": ["light", "steady", "intense"]},
+        "depth": {"type": "string", "enum": ["survey", "working", "deep"]},
+        "assessment": {"type": "string", "enum": ["none", "self_check", "graded"]},
+        "autonomy": {"type": "string", "enum": ["guided", "balanced", "independent"]}
+      }
+    },
+    "objectives": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 400,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["objective_id", "ordinal", "title", "evidence_target", "evidence_criteria"],
+        "properties": {
+          "objective_id": {"type": "string", "minLength": 3, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"},
+          "ordinal": {"type": "integer", "minimum": 1},
+          "title": {"type": "string", "minLength": 1, "maxLength": 300},
+          "evidence_target": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/evidence_target"},
+          "evidence_criteria": {"type": "array", "minItems": 1, "maxItems": 20, "items": {"type": "string", "maxLength": 1000}},
+          "estimated_minutes": {"type": ["integer", "null"], "minimum": 1, "maximum": 600},
+          "sections": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["section_id", "title", "path"],
+              "properties": {
+                "section_id": {"type": "string", "minLength": 3, "maxLength": 128},
+                "title": {"type": "string", "minLength": 1, "maxLength": 300},
+                "path": {"type": "string", "maxLength": 500}
+              }
+            }
+          },
+          "checks": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["check_id", "version", "evidence_target", "stimulus", "rubric", "reference_answer"],
+              "properties": {
+                "check_id": {"type": "string", "minLength": 3, "maxLength": 128},
+                "version": {"type": "integer", "minimum": 1},
+                "evidence_target": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/evidence_target"},
+                "stimulus": {"type": "string", "minLength": 1, "maxLength": 8000},
+                "rubric": {"type": "array", "minItems": 1, "maxItems": 40, "items": {"type": "string", "maxLength": 1000}},
+                "reference_answer": {"type": "string", "minLength": 1, "maxLength": 8000},
+                "accepted_alternatives": {"type": "array", "maxItems": 40, "items": {"type": "string", "maxLength": 2000}},
+                "locale": {"type": "string", "maxLength": 35},
+                "audit_state": {"type": "string", "enum": ["passed", "failed", "unreviewed"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "title", "source_type"],
+        "properties": {
+          "source_id": {"type": "string", "minLength": 3, "maxLength": 128},
+          "title": {"type": "string", "minLength": 1, "maxLength": 500},
+          "url": {"type": "string", "maxLength": 1000},
+          "publisher": {"type": "string", "maxLength": 300},
+          "source_type": {"type": "string", "enum": ["primary", "secondary", "reference", "course_material", "unverified"]},
+          "published_at": {"type": "string", "maxLength": 40},
+          "fetched_at": {"type": "string", "maxLength": 40},
+          "support_status": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/source_support_status"},
+          "license_note": {"type": "string", "maxLength": 500},
+          "bundled": {"type": "boolean", "default": false}
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "bytes", "mime", "role"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "pattern": "^(?!/)(?!.*\\.\\.)(?!.*\\\\)[A-Za-z0-9._/-]+$"
+          },
+          "sha256": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash"},
+          "bytes": {"type": "integer", "minimum": 0, "maximum": 33554432},
+          "mime": {"type": "string", "enum": ["text/markdown", "text/plain", "application/json", "image/png", "image/jpeg", "image/webp", "audio/mpeg", "audio/wav", "audio/ogg", "application/pdf"]},
+          "role": {"type": "string", "enum": ["section", "check", "rubric", "source_note", "visual", "narration", "parent_guide", "learner_page", "answer_guide", "manifest"]},
+          "text_equivalent": {"type": ["string", "null"], "maxLength": 8000},
+          "description": {"type": ["string", "null"], "maxLength": 2000}
+        }
+      }
+    },
+    "content_hash": {
+      "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash",
+      "description": "SHA-256 over the canonical JSON manifest with content_hash removed plus every file's path+sha256, in manifest order. The hash previewed is exactly the hash imported."
+    },
+    "trust": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "labels": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/pack_trust_label"}
+        },
+        "reviewed_by": {"type": "string", "maxLength": 200},
+        "reviewed_at": {"type": "string", "maxLength": 40}
+      }
+    }
+  },
+  "excluded_by_construction": [
+    "transcripts",
+    "attempts",
+    "evidence",
+    "notebook entries and personal notes",
+    "provider/model settings",
+    "credentials and API keys",
+    "local absolute paths",
+    "executable code, scripts and tool calls",
+    "active HTML/SVG",
+    "parent reflections"
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.coursebook.hermes/vocabulary/v1",
+  "title": "Coursebook shared vocabulary v1",
+  "description": "Single authority for every enum shared by more than one Coursebook contract. Other contracts reference these definitions by absolute $id; nothing may redeclare them.",
+  "x-contract-id": "cb.vocabulary",
+  "x-contract-version": 1,
+  "x-owner": "atlas",
+  "x-status": "frozen",
+  "x-change-policy": "Semantic changes require a new version file and an Atlas decision recorded in docs/CONTRACTS.md.",
+  "type": "object",
+  "$defs": {
+    "recipe": {
+      "type": "string",
+      "enum": ["one_off", "casual", "committed", "companion", "parent"],
+      "description": "Course recipe. Parent recipes are authored in Parent Studio, never in a learner chat."
+    },
+    "evidence_class": {
+      "type": "string",
+      "enum": ["cold", "hinted", "answer_shown", "self_reported", "parent_reported", "override"],
+      "description": "How an attempt's evidence was produced. Only `cold` can count as independent evidence; `override` grants access, never mastery."
+    },
+    "evidence_target": {
+      "type": "string",
+      "enum": ["recall", "comprehension", "production", "discrimination", "procedure", "transfer"],
+      "description": "What a check measures. Recognition may not substitute for production; a repeated near-identical item may not substitute for transfer."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["pass", "partial", "not_yet", "needs_retry", "clarification"],
+      "description": "Outcome of grading one attempt. `needs_retry` means the grader could not finish; it never advances state. `clarification` consumes no retry and creates no error evidence."
+    },
+    "next_action": {
+      "type": "string",
+      "enum": [
+        "continue",
+        "retry_attempt",
+        "explain",
+        "select_alternative",
+        "review_objective",
+        "complete_objective",
+        "complete_course",
+        "await_override",
+        "retry_grading",
+        "rebind_session"
+      ],
+      "description": "The only permitted transition the backend offers after a committed attempt."
+    },
+    "answer_kind": {
+      "type": "string",
+      "enum": ["text", "selection"],
+      "description": "Contest attempts are text or structured selections only. Audio/image answers are rejected with a text alternative."
+    },
+    "objective_state": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "introduced",
+        "independent_evidence",
+        "delayed_evidence",
+        "review_due",
+        "needs_review",
+        "overridden"
+      ],
+      "description": "Objective state vocabulary. Evidence states are deliberately distinct; there is no global `mastered`."
+    },
+    "binding_status": {
+      "type": "string",
+      "enum": ["active", "paused", "detached", "branched", "completed", "orphaned"],
+      "description": "Lesson session binding status. Only `active` may accept a submit."
+    },
+    "job_kind": {
+      "type": "string",
+      "enum": ["plan", "research", "media", "export", "import"],
+      "description": "Backend job families. Research and media never run inside the pre-turn grading hook."
+    },
+    "pack_trust_label": {
+      "type": "string",
+      "enum": [
+        "integrity_verified",
+        "automated_checks_passed",
+        "human_review_recorded",
+        "model_assessed_support"
+      ],
+      "description": "Trust dimensions kept separate on purpose. There is no universal safe/true/verified badge."
+    },
+    "source_support_status": {
+      "type": "string",
+      "enum": ["unassessed", "model_assessed", "conflicting", "authoritative_documentation", "stale", "unreachable"],
+      "description": "Claim support is an assessment, not provenance. Provenance alone never implies support."
+    },
+    "locale": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 35,
+      "pattern": "^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$",
+      "description": "BCP-47-shaped locale tag. Content and grading assumptions attach to it."
+    },
+    "sha256_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+      "description": "Random, Coursebook-minted id. Titles and paths are never identity."
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Monotonic per aggregate. Compare-and-swap fence for every mutation."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 UTC with an explicit offset."
+    }
+  }
+}
