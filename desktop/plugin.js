@@ -6197,6 +6197,28 @@ function StudioPlanView({
   const [notice, setNotice] = useState(null)
   const [lessonJobId, setLessonJobId] = useState(null)
 
+  // A plan version carries its authored document (sections and research) in `gen_plan_documents`,
+  // keyed by plan_id, and only the plan-authoring job writes that row. `plan.replan` copies the
+  // outline rows but not the document, so a lessons job for a replanned version fails
+  // `INTERNAL_ERROR: plan … has no authored document`. The latest plan-kind job's checkpoint names
+  // the plan_id it authored; when that is not the version on screen, this version was never
+  // authored. Unknown stays unknown: the action is hidden only on a proven mismatch.
+  const planJob = useRpcQuery(
+    'jobs.get',
+    { job_id: planJobId },
+    `studio-plan-job-${planJobId}`,
+    Boolean(planJobId) && supported('jobs.get')
+  )
+  const latestPlanJob = planJob && planJob.data && planJob.data.job ? planJob.data.job : null
+  const authoredPlanId =
+    latestPlanJob &&
+    (!latestPlanJob.brief || !latestPlanJob.brief.stage || latestPlanJob.brief.stage === 'plan') &&
+    (latestPlanJob.state === 'completed' || latestPlanJob.state === 'completed_late') &&
+    latestPlanJob.checkpoint
+      ? latestPlanJob.checkpoint.plan_id
+      : null
+  const lacksAuthoredDocument = Boolean(plan && authoredPlanId && authoredPlanId !== plan.plan_id)
+
   // The editor's displayed order. Local until Save changes sends it as a permutation.
   useEffect(() => setOrder(null), [outline.data])
   const displayObjectives = order
@@ -6423,7 +6445,7 @@ function StudioPlanView({
                     children: 'Approve plan'
                   })
                 : null,
-              !isDraft && !editing
+              !isDraft && !editing && !lacksAuthoredDocument
                 ? jsx(sdk.Button, {
                     size: 'sm',
                     variant: 'default',
@@ -6450,6 +6472,14 @@ function StudioPlanView({
         children:
           'Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.'
       }),
+      lacksAuthoredDocument
+        ? jsx('p', {
+            className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+            'data-cb-plan-document': 'missing',
+            children:
+              `Plan v${plan.version} was created by Start a new plan version. Its authored document (the plan's sections and research) belongs to the version you approved and is not carried forward, so lessons cannot be generated from this version and Generate lessons is withheld rather than failing. No approved lesson set can be rebuilt here; start a new course from a brief to author a fresh plan.`
+          })
+        : null,
       notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
       error ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: error }) : null,
       planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onChanged }) : null,
