@@ -628,6 +628,11 @@ then, both paths write the same evidence event; they differ only in the fence.
 
 ### Handlers Cinder must register (after this freeze)
 
+**Registration status: landed in CB-014.** All three methods are mounted in `coursebook/domain.py`
+and appear in `/runtime.implemented_methods`; the CB-014 candidate implements 51 of 51 contract
+methods. The paragraph recording the pre-registration behaviour is kept below as history — it is
+not a statement about this build.
+
 The backing rows all exist; wiring is derivation plus response mapping, no new semantics.
 
 | Method | Register in | Backing code | Handler must do |
@@ -640,10 +645,12 @@ One writer: factor the insert currently inlined in `turn._record_assist` into
 `evidence.record_assist(connection, ...)` and have **both** `turn.py` and `domain.py` call it, so the
 hook and the pane cannot drift in `kind`/`evidence_class` mapping.
 
-Until registration lands, `api.dispatch` answers `NOT_IMPLEMENTED` for all three (the payload is
-still validated first), and the Desktop gates its controls on `/runtime.implemented_methods` — which
-is why the pane's Hint/Show answer and the Textbook index stay in the honest "not in this build"
-state rather than becoming dead buttons.
+Before CB-014 registered them, `api.dispatch` answered `NOT_IMPLEMENTED` for all three (the payload
+was still validated first); that remains the seam's behaviour for any method with no handler. The
+Desktop gates its controls on `/runtime.implemented_methods`, so a control whose method is not
+mounted renders in the honest "not in this build" state rather than becoming a dead button — and
+since CB-014 the three methods behind the pane's Hint/Show answer and the Textbook index are
+mounted.
 
 Run `python3 -m unittest scripts.proof_contract_v5 -v` in a worktree that contains the CB-008/CB-022
 kernel: it drives real commands against a real SQLite database built by the real migrations, composes
@@ -881,6 +888,12 @@ Cinder (sibling card, `t_a356c8a8`). The contract fixes the seam it needs:
 
 ### Handlers Cinder must register (after this freeze)
 
+**Registration status: landed in CB-014.** All eight `parent.*` methods are registered — seven in
+`coursebook/domain.py`, with `parent.export` split between `coursebook/pack_flow.py` (builder) and
+`domain.py` (handler) — and all eight appear in `/runtime.implemented_methods`. The
+pre-registration sentence below is kept as the record of the seam's behaviour without a handler,
+not as a claim about this build.
+
 | Method | Register in | Backing code | Handler must do |
 |---|---|---|---|
 | `parent.brief.create` | `coursebook/domain.py` (`@_handler`) | `course.create`/`enrollment.create`/`jobs.create` bodies, `_idempotent_lookup`, `_remember` | one transaction: replay the key; insert course (`recipe: parent`), enrollment, queued `plan` job with the brief (including `enrollment_id` and `stage: plan`); return the three ids |
@@ -891,9 +904,10 @@ Cinder (sibling card, `t_a356c8a8`). The contract fixes the seam it needs:
 | `parent.export` | `coursebook/pack_flow.py` (builder) + `domain.py` (handler) | `packs.export_allowlist`, `packs.FILE_ROLES`, `packs.PRIVATE_FIELDS`, `artifacts.make_pdf`, `pack_flow` pack writer | refuse unless the active approval's `content_hash` matches; build pack + PDF; return the manifest's exact file list and both artifact refs |
 | `parent.reflection.record` / `parent.reflection.list` | `coursebook/domain.py` | `parent_reflections` | insert with the current hashes / bounded read ordered by `created_at` |
 
-Until registration lands, `api.dispatch` answers `NOT_IMPLEMENTED` for all eight (the payload is
-still validated first), and the Desktop gates on `/runtime.implemented_methods`. Vellum's CB-011 UI
-consumes this contract; it does not need a second amendment.
+Before CB-014 registered them, `api.dispatch` answered `NOT_IMPLEMENTED` for all eight (the payload
+was still validated first); an unregistered method still fails exactly that way. The Desktop gates
+on `/runtime.implemented_methods`. Vellum's CB-011 UI consumes this contract; it does not need a
+second amendment.
 
 ### Migration impact (cb.db v3)
 
