@@ -29,7 +29,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
-from . import api, db, grading, jobs as jobs_contract, review
+from . import api, db, evidence, grading, jobs as jobs_contract, review
 from .api import RpcError
 from .contracts import method_names
 
@@ -66,6 +66,10 @@ KERNEL_METHODS: tuple[str, ...] = (
     "jobs.list",
     "notebook.update",
     "binding.abandon",
+    "review.queue",
+    "review.action",
+    "evidence.inspect",
+    "evidence.disputes",
 )
 
 MAX_PAGE = 500
@@ -2174,6 +2178,116 @@ def binding_abandon(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[
         result = {"binding_id": binding["id"], "status": "orphaned", "revision": revision}
         _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
     return revision, result
+
+
+# ── Learning loop: review queue and evidence (cb.rpc v3, CB-022) ────────────
+#
+# The semantics live in ``review.py`` and ``evidence.py``; these handlers are registration plus the
+# response-shape mapping the freeze documented. Read paths never advance a revision; the one
+# mutation (``review.action``) is fenced exactly like every other learner command.
+
+#: ``evidence.inspect`` reuses the contract's bounded dispute view; keep the row list inside it.
+MAX_INSPECT_DISPUTES = 200
+
+
+@_handler("review.queue")
+def review_queue(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Derived queue. The clock is the backend's and the cap bounds rows, never the counts."""
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        result = review.queue(
+            connection,
+            enrollment_id,
+            cap=int(payload.get("cap", 10)),
+            include_upcoming=bool(payload.get("include_upcoming", True)),
+        )
+    return int(enrollment["revision"]), result
+
+
+@_handler("review.action")
+def review_action(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Record a learner scheduling preference as layer-1 self-reported evidence.
+
+    One transaction: fence, bump, write the event, then re-read the post-action truth. ``state``
+    and ``due_at`` are the values the queue must re-render from; the revision stays in the
+    envelope (the contract forbids a payload copy).
+    """
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "review.action"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    enrollment_id = payload["enrollment_id"]
+    objective_id = payload["objective_id"]
+    action = payload["action"]
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, enrollment_id)
+        plan = _approved_plan(connection, enrollment["course_id"])
+        if plan is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved"
+            )
+        # A scheduling action on an objective outside the approved plan would write an event no
+        # queue can ever read; refuse it rather than persist orphan evidence.
+        _objective_in_plan(connection, objective_id, plan["id"])
+        to_revision = _bump_enrollment(connection, enrollment_id, expected)
+        now = datetime.now(timezone.utc)
+        outcome = review.apply_action(
+            connection, enrollment_id=enrollment_id, objective_id=objective_id, action=action, now=now
+        )
+        state = str(_row(connection, "SELECT state FROM objectives WHERE id = ?", (objective_id,))["state"])
+        item = review.item(connection, enrollment_id, objective_id, now=now)
+        result = {**outcome, "state": state, "due_at": item["due_at"] if item is not None else None}
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result)
+    return to_revision, result
+
+
+@_handler("evidence.inspect")
+def evidence_inspect(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """L1 + L2 + L3 + disputes in one read, with the bounded dispute view the contract requires."""
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    objective_id = payload.get("objective_id")
+    limit = int(payload.get("limit", 50))
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        bundle = evidence.bundle(connection, enrollment_id, objective_id=objective_id, limit=limit)
+    recorded = bundle["disputes"]
+    bounded = recorded["disputes"][:MAX_INSPECT_DISPUTES]
+    result = {
+        **bundle,
+        "disputes": {
+            "enrollment_id": recorded["enrollment_id"],
+            "disputes": bounded,
+            "count": recorded["count"],
+            "truncated": recorded["count"] > len(bounded),
+        },
+    }
+    return int(enrollment["revision"]), result
+
+
+@_handler("evidence.disputes")
+def evidence_disputes(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Bounded dispute view; ``count`` is the full match count, not the returned slice."""
+    db.ensure_schema()
+    enrollment_id = payload["enrollment_id"]
+    limit = int(payload.get("limit", 50))
+    with db.read() as connection:
+        enrollment = _enrollment(connection, enrollment_id)
+        recorded = evidence.disputes(connection, enrollment_id, attempt_id=payload.get("attempt_id"))
+    count = int(recorded["count"])
+    result = {
+        "enrollment_id": recorded["enrollment_id"],
+        "disputes": recorded["disputes"][:limit],
+        "count": count,
+        "truncated": count > limit,
+    }
+    return int(enrollment["revision"]), result
 
 
 # ── write paths used by the plan job and by Parent mode ─────────────────────

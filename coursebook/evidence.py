@@ -235,10 +235,15 @@ def disputes(connection, enrollment_id: str, *, attempt_id: str | None = None) -
     return {"enrollment_id": enrollment_id, "disputes": items, "count": len(items)}
 
 
-def bundle(connection, enrollment_id: str, *, objective_id: str | None = None) -> dict[str, Any]:
-    """The whole inspectable evidence view the pane needs, in one read."""
+def bundle(connection, enrollment_id: str, *, objective_id: str | None = None,
+           limit: int = 200) -> dict[str, Any]:
+    """The whole inspectable evidence view the pane needs, in one read.
+
+    ``limit`` bounds the layer-1 attempt/event lists only (the contract's ``evidence.inspect``
+    ``limit``); L2 is per-objective and L3 is already capped.
+    """
     return {
-        "l1": layer1(connection, enrollment_id, objective_id=objective_id),
+        "l1": layer1(connection, enrollment_id, objective_id=objective_id, limit=limit),
         "l2": layer2(connection, enrollment_id, objective_id=objective_id),
         "l3": layer3(connection, enrollment_id),
         "disputes": disputes(connection, enrollment_id),
