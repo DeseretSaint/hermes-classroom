@@ -1,6 +1,8 @@
 # CB-019 review packet — governed generation + independent validation
 
 Branch: `wt/cb-019-quill` · Owner: Quill · Base: `0c323be` (CB-001 skeleton)
+Code commits: **54b8fbc** (modules, tests, fixtures, `docs/GENERATION.md`) and **6c73600**
+(atomic persistence of the plan and lesson bundles). This packet is the following commit.
 Status: **not merged**. Atlas integrates.
 
 ## 1. What landed
@@ -57,8 +59,8 @@ one fetched source.
 
 ```json
 {
-  "plan_id": "3a3554cf45dc37d6",
-  "plan_hash": "sha256:f05fde070a5c1ffc71a1ce818266dac670c5c0991d36672b327c5163e14e4a3f",
+  "plan_id": "f20cf4a6ac45af30",
+  "plan_hash": "sha256:6805dd805559dc2514833569321d9887a4496bb2f63fd1d39f35555e893d1cf3",
   "plan_version": 1,
   "status": "draft",
   "validation_verdict": "pass",
@@ -70,6 +72,10 @@ one fetched source.
   "usage": {"calls": 2, "input_tokens": 240, "output_tokens": 480, "cost_usd": 0.02}
 }
 ```
+
+Ids and therefore the plan hash are minted per run (the plan cites the ledger source id), so a
+fresh run produces a different hash over identical plan text. The document above is one real run of
+the pipeline; `tests/fixtures/generation/plan_ja.json` is the stable payload it was generated from.
 
 Plan body (excerpt; full document in `tests/fixtures/generation/plan_ja.json` and in the persisted
 `gen_plan_documents.document_json`):
@@ -126,10 +132,10 @@ claim verdict, `claim_count = 2`), 2 `usage_events`, 1 `gen_validation_records`.
 
 ```json
 {
-  "id": "93113e34af0b6004",
+  "id": "7ca4053dad3cb5d7",
   "subject_kind": "plan",
-  "subject_id": "3a3554cf45dc37d6",
-  "subject_hash": "sha256:f05fde070a5c1ffc71a1ce818266dac670c5c0991d36672b327c5163e14e4a3f",
+  "subject_id": "f20cf4a6ac45af30",
+  "subject_hash": "sha256:6805dd805559dc2514833569321d9887a4496bb2f63fd1d39f35555e893d1cf3",
   "generator_prompt_version": "plan-prompt.v1",
   "validator_prompt_version": "validation-prompt.v1",
   "validator_model": "fake-validator",
@@ -161,13 +167,13 @@ rationale to restate.
 Same approved plan, lesson 1 submitted twice with an ambiguous selection check:
 
 ```
-lesson b3a517790d07609d  state=needs_review  check_enabled=false
+lesson 70d55b48cb69945e  state=needs_review  check_enabled=false
   rejection_reasons:
     "check:1: The stimulus asks for a polite opener but both こんにちは and ありがとうございます are
      acceptable openers, so the key is ambiguous."
-  checks.b0052805e8e19832  audit_state=failed  state=closed
+  checks.4cfc9e99216cb88a  audit_state=failed  state=closed
   learner_page() -> LessonNotAvailable:
-    "lesson 'b3a517790d07609d' is 'needs_review': no learner-facing check is enabled"
+    "lesson '70d55b48cb69945e' is 'needs_review': no learner-facing check is enabled"
 sections 2 and 3 validated normally (audit_state=passed, state=open).
 ```
 
