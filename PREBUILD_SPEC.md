@@ -111,10 +111,14 @@ retrieval check, homework, exit ticket. Recipes transform or remove states rathe
 unbounded new ones.
 
 - One-off substitutes physical/task verification for a quiz and omits homework.
+  Completion means `instruction_complete` plus an explicit verification checklist, which may
+  be `self_reported`; it never implies independently verified physical completion or mastery.
 - Casual allows self-checks and optional reviews.
 - Casual with checks disabled advances only on explicit Next and records
   `instruction_complete`/`self_reported`; the UI says no independent evidence was collected.
 - Committed requires the stated evidence criteria and capstone.
+  The capstone cannot be challenged out. An override can unlock later access but leaves the
+  end state labelled `not independently demonstrated`.
 - Companion aligns to the external syllabus.
 - Companion also asks exam/evaluator/deadline and labels imported material `unofficial`; no
   exam prediction, accommodation equivalence, proctoring, or past-paper redistribution claim.
@@ -162,6 +166,13 @@ Course workspace (backend-owned, outside git roots)
 
 SQLite is the source of truth. Markdown/JSON/PDF/audio are exports or content artifacts, not
 parallel authorities. Large media lives in content-addressed storage with metadata in SQLite.
+
+Use one short-lived SQLite connection per unit of work, `BEGIN IMMEDIATE` for fenced mutations,
+foreign keys, bounded busy timeout/retry, transactional migrations, and guaranteed connection
+cleanup. Provider calls, archive generation, and long artifact writes never run inside a DB
+transaction. External artifacts follow staged write → fsync/atomic rename → DB commit, with
+orphan reconciliation. Export retries reuse the immutable successful artifact id/hash rather
+than regenerate it.
 
 Evidence is inspectable at three layers: L1 raw attempts/events, L2 current objective evidence
 linked to L1, and L3 short revisable plan recommendations linked to L2. L3 is not a learner
@@ -232,6 +243,17 @@ Coursebook UI/owned tool. It returns the committed verdict and next permitted ac
 hook is an adapter for free-text submissions and calls the same command; it is not the sole
 boundary. If a hook fails open, the next Coursebook action reconciles the pending attempt and
 refuses advancement. Clarifying questions do not consume retries or create error evidence.
+
+Inbound chat is classified before attempt creation: answer, clarification, hint/answer request,
+skip/override, or ordinary conversation. Explicit pane controls are deterministic; ambiguous
+free text uses a bounded classifier and defaults to clarification, never a failed answer.
+Contest attempts are text/structured selections only; audio/image answers are rejected with a
+text alternative until their transcription/evidence semantics are implemented and tested.
+
+`submit_attempt` persists its result before the UI renders it. Repeating the same idempotency
+key and payload hash returns the original result; reusing the key with another payload is a
+conflict; a stale check/revision returns `409` with the current objective/revision and no new
+attempt. A disconnected client retrieves the committed result by attempt/idempotency key.
 
 After a grade commits, the pane immediately displays its local verdict and offers **Continue
 lesson**. That explicit action sends a transition-specific continuation prompt to the bound
@@ -312,6 +334,14 @@ generate guide/learner pages/answers/optional narration → offline parent-led u
 construction. Planning uses backend jobs rather than persistent child-related chat sessions
 where possible.
 
+The persistent workflow is `draft → reviewed → plan_approved(hash) → generating →
+final_approved(content_hash) → exported → reflected`. Draft edits have revisions but do not
+claim to invalidate an approval that does not yet exist. Artifact dependencies allow partial
+regeneration; editing one activity must not rerun unrelated TTS. Reflection can propose changes
+to level, duration, representation, and revisit objectives for a new draft, with parent review;
+it never silently changes a published pack. Duplicate brief supports different learners/levels.
+Export validation rejects answer keys/rubrics on learner pages.
+
 There are two approval events: **plan approval** before expensive artifact generation and
 **final pack approval** after the actual pages/answers/transcript/activity instructions exist.
 Export/use requires the second. Editing between them invalidates the appropriate approval.
@@ -335,6 +365,13 @@ A pack is versioned declarative JSON/Markdown plus bounded declared media. It co
 objective ids, lesson/check/rubric versions, sources, attribution, licenses, content notes,
 default dials, and minimum Coursebook version. It contains no executable code, arbitrary tool
 calls, provider settings, credentials, local paths, transcripts, learning history, or secrets.
+
+Pack identity is `pack_id` + immutable semantic version + exact manifest/content hash. Local
+forks get a new pack id/version and retain `derived_from` plus contributors. The hash previewed
+is exactly the hash imported. Archives are size/count prechecked and staged outside adopted
+course storage; interrupted staging is cleaned/reconciled on startup. Parent packs import into
+Parent Studio, not silently into an adult graded recipe; any future conversion is an explicit
+new-draft action. Too-old Coursebook versions refuse import with the required/current version.
 
 Import steps: stage → validate schema/limits/hashes/MIME → sanitize preview → show author,
 end state, sources/support, licenses, content notes, media size, and version → explicit import
@@ -362,6 +399,9 @@ Trust states are separate: integrity verified, automated checks passed, human re
 and model-assessed source support. No universal “safe/true” badge. Correction/revocation is
 supported. A public registry requires maintainers, CI, report/takedown, license-dispute, and
 spam processes; local import/export does not depend on that service.
+Offline packs cannot learn about revocation automatically. An explicit Check for updates or
+source refresh may fetch correction/revocation notices; otherwise show last checked/unknown,
+never silently current.
 
 ## 12. Jobs, reminders, usage, and failure behavior
 
@@ -372,6 +412,13 @@ Jobs persist request brief/input references and safe resume checkpoints, so a fa
 job can be edited and retried without reconstructing the form. Cancellation marks the job and
 stops future stages; an already-running provider call reconciles its result by operation id
 and cannot produce duplicate artifacts or evidence.
+
+Workers have persistent job-attempt ids, leases/fencing, side-effect checkpoints, and startup
+reconciliation. `ctx.spawn_task` is only a best-effort in-process runner and is cancelled on
+unload; its loss does not imply successful cancellation. States include `cancel_requested`,
+`cancelling`, `cancelled`, `completed_late`, and `interrupted_requires_retry`. Non-idempotent
+provider/media calls reconcile by job-attempt/artifact key before any retry; an uncertain
+operation never blindly reruns spend.
 
 Generated downloads use an authenticated artifact endpoint plus
 `captureGatewayFileDownload()` on an explicit user gesture. Import uses a backend upload route
@@ -423,6 +470,11 @@ Course/enrollment state is scoped by `(connection_id, profile, course_id, enroll
 Desktop views and REST queries carry that owner explicitly rather than assuming a global
 profile name is unique.
 
+A cross-course **Review** queue owns due retrieval items, overdue handling, and a configurable
+daily cap. Overdue items accumulate once, never multiply. Cap-reached shows remaining work
+honestly. Snooze, stretch, and drop are explicit recovery choices with evidence/schedule
+consequences; drop does not invent a pass.
+
 Lifecycle commands are distinct: archive enrollment (reversible), delete bound chat (course
 evidence retained), delete imported pack content (retain evidence and mark content frozen),
 and delete personal course data (explicit destructive scope). Deletion never claims to erase
@@ -462,6 +514,8 @@ is the differentiator; everything else depends on its correctness.
 
 ### Identity/state
 - duplicate submissions and two windows commit once;
+- same idempotency key/payload returns the persisted original result; key/payload mismatch and
+  stale check/revision conflict without creating a second attempt;
 - timeout/late callback cannot change a newer revision;
 - restart after every state restores the same state;
 - rename/branch/edit/delete/compress/repeat behave explicitly;
@@ -496,6 +550,7 @@ is the differentiator; everything else depends on its correctness.
 ### Reliability/accessibility
 - Parent edits invalidate approval; setting/supervision checks and passenger-only car rules
   are enforced.
+- learner-page export rejects answer keys/rubrics; plan and final-pack approvals are distinct;
 - Backend timezone/DST behavior is tested independently of display timezone.
 - provider/web/media failures do not fabricate outcomes or lose usage;
 - jobs cancel/reconnect/recover without duplicate artifacts;

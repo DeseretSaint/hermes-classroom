@@ -60,6 +60,11 @@ The sidebar destination opens **Courses** with four top-level destinations:
 3. **Parent Studio** — parent brief, research/approval, pack preview/export, reflections.
 4. **Activity** — running/failed jobs, source changes, delivery/usage, recovery.
 
+Courses includes a **Review** section across enrollments. It shows due items once, overdue age
+without multiplying work, a daily cap with honest remaining count, and Snooze/Stretch/Drop
+recovery actions. Drop changes scheduling, not evidence. Empty Review says “Nothing due” and
+offers the next textbook section rather than inventing practice.
+
 `Textbook`, `Notebook`, `Quizzes`, `Plan`, `Evidence`, and `Sources` are views of a selected
 course, not more sidebar destinations. Avoid a second deep navigation rail. **Library** and
 **Parent Studio** remain top-level destinations; sharing is an action on a course/pack.
@@ -272,6 +277,10 @@ a retry or changes the old grade. Actions: **Review lesson**, **Try a new versio
 grade**, **Save to notebook**. A new version is a fresh attempt/run with a new check version;
 the original remains inspectable.
 
+Dispute opens a detail panel with the original attempt/rubric and an append-only history. A
+re-grade, if requested, uses a new grading operation/version and never overwrites the original.
+The user accepts the new annotation or keeps the original verdict; either outcome is visible.
+
 ### Plan
 
 Flat objective list with state vocabulary:
@@ -363,6 +372,11 @@ hash + attempt nonce. One answer cannot produce two attempts or two transitions.
 After grading, the pane shows the verdict immediately. **Continue lesson** sends the committed
 public continuation to the bound chat. If that teaching turn fails, the grade stays committed
 and Continue retries without regrading; the UI never pretends the teaching response occurred.
+
+If grading itself fails, copy is: “I couldn’t grade this attempt. Your answer is saved; no
+progress was changed.” Actions are Retry grading, Edit answer, and Move on (records override).
+Detached/branched/orphaned bindings show a banner with Reattach if valid, Start a new governed
+run, or Abandon binding; Submit is disabled until reconciled.
 
 ### Feedback presentation
 
@@ -586,7 +600,8 @@ Suggested final 82–86 seconds:
 - 25–34s: correct new attempt → exactly one evidence transition;
 - 34–40s: save the explanation to Notebook and reopen its exact textbook section;
 - 40–47s: restart/resume identical pending state;
-- 47–62s: Parent Studio review → polished guide/learner page;
+- 47–62s: Parent Studio final review of already-generated pages → final approval → polished
+  guide/learner page export (plan approval/generation happened beforehand and is disclosed);
 - 62–73s: export pack → allowlisted files/rights/no-upload preview;
 - 73–82s: sourced visual/audio + text alternative and next review;
 - 82–86s: “A chat answers. Coursebook makes the next step depend on what you did.”
