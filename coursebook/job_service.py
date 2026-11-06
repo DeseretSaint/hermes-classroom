@@ -20,6 +20,7 @@ Frozen rules enforced here:
 from __future__ import annotations
 
 import os
+import threading
 import uuid
 from contextlib import closing
 from dataclasses import dataclass, field
@@ -474,6 +475,41 @@ def _record_usage(
         )
 
 
+def _run_with_heartbeat(
+    lease: Lease,
+    stage: Stage,
+    heartbeat_seconds: float | None = None,
+) -> "StageResult":
+    """Run one stage while keeping its lease alive.
+
+    A stage is where the provider work happens: the lesson stage authors a section at a time and
+    can run for several minutes, far past ``LEASE_SECONDS``. Renewing only *between* stages meant
+    a live job's lease lapsed mid-stage, so any other process's startup reconciliation (or a
+    crash-recovery pass) was entitled to reclaim it — the lesson stage died
+    ``interrupted_requires_retry`` seconds after it began. The lease now expires only when the
+    worker process is actually gone, which is the only thing a lease can prove.
+    """
+    interval = heartbeat_seconds if heartbeat_seconds is not None else max(1.0, LEASE_SECONDS / 3.0)
+    stop = threading.Event()
+
+    def beat() -> None:
+        while not stop.wait(interval):
+            try:
+                renew(lease)
+            except JobLeaseLost:
+                return  # the fence is gone; the stage's own fenced writes will report it
+            except Exception:  # noqa: BLE001 - a transient miss must not kill the stage
+                continue
+
+    thread = threading.Thread(target=beat, name=f"job-heartbeat-{lease.job_id}", daemon=True)
+    thread.start()
+    try:
+        return stage.run(lease)
+    finally:
+        stop.set()
+        thread.join(timeout=5.0)
+
+
 def execute(
     job_id: str,
     stages: Sequence[Stage],
@@ -481,6 +517,7 @@ def execute(
     owner: str | None = None,
     skip_stages: Iterable[str] = (),
     now: datetime | None = None,
+    heartbeat_seconds: float | None = None,
 ) -> dict[str, Any]:
     """Run stages under one lease, checkpointing after each, honoring cancellation.
 
@@ -506,7 +543,7 @@ def execute(
                 return _view(job_id)
             renew(lease)
             try:
-                result = stage.run(lease)
+                result = _run_with_heartbeat(lease, stage, heartbeat_seconds)
             except ResearchCancelled as exc:
                 usage = list(getattr(exc, "usage", []) or [])
                 if usage:

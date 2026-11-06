@@ -6627,16 +6627,44 @@ function StudioBlueprintView({ book }) {
 }
 
 /** Export: gated on the backend's own `export.blocked_reason`, files and downloads from the response. */
-function StudioExportPanel({ course, book, supported }) {
+function StudioExportPanel({ course, book, supported, onChanged }) {
   const [formats, setFormats] = useState({ pack: true, pdf: true })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [exported, setExported] = useState(null)
   const [artifacts, setArtifacts] = useState({})
+  const [approving, setApproving] = useState(false)
+  const [approveError, setApproveError] = useState(null)
 
   const status = (book && book.data && book.data.export) || { ready: false, blocked_reason: 'no_generated_content' }
   const approval = (book && book.data && book.data.approval) || { state: 'none' }
+  const plan = (book && book.data && book.data.plan) || {}
+  const planHash = plan.plan_hash || null
+  const contentHash = (book && book.data && book.data.content_hash) || null
   const chosen = [formats.pack ? 'pack' : null, formats.pdf ? 'pdf' : null].filter(Boolean)
+
+  // Final approval is its own gate: the plan approved an outline, this approves the exact
+  // generated lesson set, fenced by the content hash the backend served (never computed here).
+  const approveFinal = useCallback(async () => {
+    setApproving(true)
+    setApproveError(null)
+    const response = await rpc(
+      'parent.final.approve',
+      {
+        enrollment_id: course.enrollment_id,
+        plan_id: plan.plan_id,
+        plan_hash: planHash,
+        content_hash: contentHash
+      },
+      { idempotencyKey: newOperationId('parent-final-approve') }
+    )
+    setApproving(false)
+    if (!response.ok) {
+      setApproveError(describeError(response.error))
+      return
+    }
+    if (typeof onChanged === 'function') onChanged()
+  }, [course.enrollment_id, plan.plan_id, planHash, contentHash, onChanged])
 
   const run = useCallback(async () => {
     setBusy(true)
@@ -6688,6 +6716,46 @@ function StudioExportPanel({ course, book, supported }) {
           })
         ]
       }),
+      jsx(sdk.PanelSectionLabel, { children: 'FINAL APPROVAL' }),
+      jsx('div', {
+        className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+        children:
+          'Approving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it.'
+      }),
+      approval.state === 'active'
+        ? jsx('div', {
+            className: 'text-xs text-(--ui-text-secondary)',
+            children: `Lesson set approved${approval.approved_at ? ' on ' + whenLabel(approval.approved_at) : ''}${
+              approval.content_hash ? ' for content hash ' + approval.content_hash : ''
+            }.`
+          })
+        : jsxs('div', {
+            className: 'flex flex-col gap-2',
+            children: [
+              !planHash || !contentHash
+                ? jsx('div', {
+                    className: 'text-xs text-(--ui-text-secondary)',
+                    children: !planHash
+                      ? 'There is no approved plan to approve a lesson set for yet.'
+                      : 'No generated pages exist yet, so there is nothing to approve. Generate the lessons from the Plan view first.'
+                  })
+                : !supported('parent.final.approve')
+                  ? jsx('div', {
+                      className: 'text-xs text-(--ui-text-secondary)',
+                      children: 'This backend does not implement parent.final.approve yet.'
+                    })
+                  : null,
+              jsx(sdk.Button, {
+                variant: 'secondary',
+                size: 'sm',
+                className: 'self-start',
+                disabled: approving || !planHash || !contentHash || !supported('parent.final.approve'),
+                onClick: approveFinal,
+                children: approving ? 'Approving the lesson set' : 'Approve this lesson set'
+              }),
+              approveError ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: approveError }) : null
+            ]
+          }),
       status.ready
         ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Export is available: the approved lesson set matches the pages shown.' })
         : jsx('div', {
@@ -6999,7 +7067,7 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
   } else if (view === 'blueprint') {
     body = jsx(StudioBlueprintView, { book })
   } else if (view === 'export') {
-    body = jsx(StudioExportPanel, { course, book, supported: supports })
+    body = jsx(StudioExportPanel, { course, book, supported: supports, onChanged: reloadAll })
   } else {
     body = jsx(StudioReflectionView, {
       course,
