@@ -96,9 +96,10 @@ def main() -> int:
     )
 
     schema = client.get("/api/plugins/coursebook/schema")
+    listed = {entry["id"] for entry in schema.json()["result"]["contracts"]} if schema.status_code == 200 else set()
     record(
-        "GET /schema lists all six frozen contracts",
-        schema.status_code == 200 and len(schema.json()["result"]["contracts"]) == 6,
+        "GET /schema lists every frozen contract in the inventory",
+        schema.status_code == 200 and listed == set(contracts.contract_ids()),
         None,
         schema,
     )
@@ -108,6 +109,17 @@ def main() -> int:
     record(
         "GET /runtime exposes the backend method registry (Desktop reads this)",
         runtime.status_code == 200 and isinstance(implemented, list) and "binding.get" in implemented,
+        None,
+        runtime,
+    )
+    # CB-026: the pane's Hint/Show answer and Textbook index are gated on this list, so the probe
+    # names them rather than trusting a count.
+    v5_methods = {"course.outline", "check.get", "lesson.assist"}
+    record(
+        "GET /runtime lists the three cb.rpc v5 learning surfaces",
+        runtime.status_code == 200
+        and isinstance(implemented, list)
+        and v5_methods <= set(implemented),
         None,
         runtime,
     )
@@ -158,9 +170,9 @@ def main() -> int:
         binding_unmigrated,
     )
 
-    later = client.post("/api/plugins/coursebook/rpc", json=envelope("library.list", {}))
+    later = client.post("/api/plugins/coursebook/rpc", json=envelope("pack.preview", {}))
     record(
-        "POST /rpc for a method not in the mounted contract is refused, never faked",
+        "POST /rpc for a frozen method with no handler is refused, never faked",
         later.json().get("ok") is False,
         None,
         later,
