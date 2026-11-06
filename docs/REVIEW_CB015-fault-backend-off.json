@@ -1,0 +1,63 @@
+{
+  "at": "2026-11-06T17:56:49.164Z",
+  "base": "http://127.0.0.1:44220",
+  "steps": [
+    {
+      "step": "backend-ready-baseline",
+      "at": "2026-11-06T17:56:53.671Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "hasRoute": true,
+      "backendOffBadge": false,
+      "unavailableTitle": false,
+      "enableInstructions": false,
+      "hasOpenCapabilities": false,
+      "hasCheckAgain": false,
+      "hasNewCourse": true,
+      "rows": 2,
+      "title": "Coursebook",
+      "excerpt": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\n0 independent · 55 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson\nJapanese affection and register — an L0 demonstra"
+    },
+    {
+      "step": "backend-off",
+      "at": "2026-11-06T17:56:59.976Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "hasRoute": true,
+      "backendOffBadge": true,
+      "unavailableTitle": true,
+      "enableInstructions": true,
+      "hasOpenCapabilities": true,
+      "hasCheckAgain": true,
+      "hasNewCourse": false,
+      "rows": 0,
+      "title": "Coursebook",
+      "excerpt": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nBackend off\nCoursebook needs its agent plugin\nThe Desktop half is enabled but its Python backend is not answering for this profile. Enable Coursebook under Capabilities → Plugins, then restart the gateway. Desktop and backend halves are enabled separately.\nOpen Capabilities\nCheck again\nError invoking remote method 'hermes:api': Error: connect ECONNREFUSED 127.0.0.1:44220"
+    },
+    {
+      "step": "backend-enabled-again",
+      "at": "2026-11-06T17:57:02.500Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "hasRoute": true,
+      "backendOffBadge": false,
+      "unavailableTitle": false,
+      "enableInstructions": false,
+      "hasOpenCapabilities": false,
+      "hasCheckAgain": false,
+      "hasNewCourse": true,
+      "rows": 2,
+      "title": "Coursebook",
+      "excerpt": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\n0 independent · 55 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson\nJapanese affection and register — an L0 demonstra",
+      "backendUpAfterSeconds": 2.084
+    }
+  ],
+  "verdict": {
+    "offStateNamed": true,
+    "enableInstructionsInText": true,
+    "recoveryActionPresent": true,
+    "noFakeContentWhileDown": true,
+    "dataKeptAcrossCycle": true,
+    "recoveredByItsOwnAction": true
+  }
+}

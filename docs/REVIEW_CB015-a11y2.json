@@ -1,0 +1,40 @@
+{
+  "at": "2026-11-06T18:12:43.670Z",
+  "checks": {
+    "escapeFocusReturn": {
+      "trigger": "Save to notebook",
+      "dialogOpenAtOpen": {
+        "open": true,
+        "title": "Save to notebook"
+      },
+      "afterEscape": {
+        "dialogOpen": false,
+        "activeTag": "button",
+        "activeText": "Save to notebook",
+        "activeIsBody": false,
+        "activeIsTrigger": true,
+        "triggerConnected": true,
+        "triggerText": "Save to notebook"
+      }
+    },
+    "viewPickerName": {
+      "atTextbook": {
+        "found": true,
+        "visible": true,
+        "ariaLabel": "Course view: Textbook",
+        "text": "Textbook",
+        "role": "combobox",
+        "tabIndex": 0
+      },
+      "afterKeyboardChange": {
+        "found": true,
+        "visible": true,
+        "ariaLabel": "Course view: Notebook",
+        "text": "Notebook",
+        "role": "combobox",
+        "tabIndex": 0
+      },
+      "routeTextAfterChange": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nPack f"
+    }
+  }
+}

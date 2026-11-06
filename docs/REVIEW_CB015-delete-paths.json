@@ -1,0 +1,123 @@
+{
+  "at": "2026-11-06T18:11:55.280Z",
+  "steps": [
+    {
+      "step": "courses-baseline",
+      "at": "2026-11-06T18:11:59.787Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "rows": 2,
+      "previews": 0,
+      "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\n0 independent · 55 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson\nJapanese affection and register — an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n0 independent · 1 due · 4 objectives\nFrom a local pack · v1.0.0\nOpen",
+      "dialogText": null,
+      "dialogOpen": false
+    },
+    {
+      "step": "archived-hidden-by-default",
+      "at": "2026-11-06T18:12:02.545Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "rows": 1,
+      "previews": 0,
+      "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\n0 independent · 55 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+      "dialogText": null,
+      "dialogOpen": false
+    },
+    {
+      "step": "archived-filter-shows-it",
+      "at": "2026-11-06T18:12:04.352Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "rows": 1,
+      "previews": 0,
+      "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese affection and register — an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n0 independent · 1 due · 4 objectives\nFrom a local pack · v1.0.0\nOpen",
+      "dialogText": null,
+      "dialogOpen": false
+    },
+    {
+      "step": "unarchived-back-in-all",
+      "at": "2026-11-06T18:12:08.685Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "rows": 2,
+      "previews": 0,
+      "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese affection and register — an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n0 independent · 1 due · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\n0 independent · 55 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+      "dialogText": null,
+      "dialogOpen": false
+    },
+    {
+      "step": "delete-preview",
+      "at": "2026-11-06T18:12:09.371Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "rows": 2,
+      "previews": 0,
+      "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese affection and register — an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n0 independent · 1 due · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title that must wrap without clipping the row or the objective header at 200% text\n0 independent · 55 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+      "dialogText": "Delete this enrollment?\nThis deletes the learning data for “Japanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window” on this profile. The course content and the pack it came from are kept.\nAttempts\n0\nNotebook entries\n0\nLesson runs\n55\nJobs\n0\nCourse and plan kept\nyes\nHermes transcripts kept\nyes\nCancel\nDelete enrollment\nClose",
+      "dialogOpen": true
+    },
+    {
+      "step": "enrollment-deleted",
+      "at": "2026-11-06T18:12:11.625Z",
+      "hash": "#/coursebook",
+      "destination": "courses",
+      "rows": 1,
+      "previews": 0,
+      "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese affection and register — an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n0 independent · 1 due · 4 objectives\nFrom a local pack · v1.0.0\nOpen",
+      "dialogText": null,
+      "dialogOpen": false
+    },
+    {
+      "step": "library-before-pack-delete",
+      "at": "2026-11-06T18:12:11.828Z",
+      "hash": "#/coursebook",
+      "destination": "library",
+      "rows": 0,
+      "previews": 1,
+      "text": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport pack\nCourses\nLibrary\nParent Studio\nPacks installed on this profile, by where they came from. No marketplace ranking and no verified badge.\nAll\nBundled\nLocal\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\nv1.0.0\n4 objectives\nPreview",
+      "dialogText": null,
+      "dialogOpen": false
+    },
+    {
+      "step": "pack-delete-preview",
+      "at": "2026-11-06T18:12:13.231Z",
+      "hash": "#/coursebook",
+      "destination": "library",
+      "rows": 0,
+      "previews": 1,
+      "text": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport pack\nCourses\nLibrary\nParent Studio\nPacks installed on this profile, by where they came from. No marketplace ranking and no verified badge.\nAll\nBundled\nLocal\nAll packs\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\njapanese-affection-context-l0\nv1.0.0\nWHAT THE BACKEND RECORDED\nNext step\nReview 1 objective(s)\nEnrollment\nrevision 14\nactive\nEvidence\n4 objectives · 1 due\n0 independent\nLast change\n11/6/2026, 11:12:04 AM\nArchive\nDelete enrollment…\nExport pack…\nRemove pack…\nSources, rights, checks and file integrity come from the pack preview command. This build shows only what the backend recorded for this pack, so nothing here is inferred.\nRemove this pack\nDeleting a pack freezes its content so it cannot be imported again. Courses, attempts, notebook notes and earlier exports are kept, so evidence does not disappear with the pack.\nCourses from this pack\n1\nEnrollments\n1\nArtifacts\n0\nEvidence kept\nyes\nAttempts kept\nyes\nNotebook notes kept\nyes\nRemoves 1 course(s) imported from this pack and freezes its content. Evidence, attempts, notebook entries, the source ledger and exported files are kept.\nFreeze this pack\nClose",
+      "dialogText": null,
+      "dialogOpen": false
+    },
+    {
+      "step": "pack-frozen",
+      "at": "2026-11-06T18:12:15.785Z",
+      "hash": "#/coursebook",
+      "destination": "library",
+      "rows": 0,
+      "previews": 1,
+      "text": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport pack\nCourses\nLibrary\nParent Studio\nPacks installed on this profile, by where they came from. No marketplace ranking and no verified badge.\nAll\nBundled\nLocal\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\nv1.0.0\n4 objectives\nPreview",
+      "dialogText": null,
+      "dialogOpen": false
+    }
+  ],
+  "verdict": {
+    "archivedHiddenByDefault": true,
+    "archiveRecoverable": true,
+    "deleteScopedPreview": true,
+    "deleteRemovedRow": true,
+    "packPreviewKeepsEvidence": true,
+    "packDistinctFromEnrollment": true
+  },
+  "verdictBasis": {
+    "note": "Recomputed from the steps captured in this file. The probe's inline archiveRecoverable predicate tested the row text for \"Unarchive\", which is a menu item and never in the row; the recovery proof is that \"unarchived-back-in-all\" shows 2 rows with both titles after the menu action. No step was re-driven or invented.",
+    "perField": {
+      "archivedHiddenByDefault": "steps.archived-hidden-by-default.rows === 1",
+      "archiveRecoverable": "steps.unarchived-back-in-all.rows === 2 && /Japanese affection/ in its text",
+      "deleteScopedPreview": "steps.delete-preview.dialogText names kept course and kept transcripts",
+      "deleteRemovedRow": "steps.enrollment-deleted.rows === 1 and no dialog open",
+      "packPreviewKeepsEvidence": "steps.pack-delete-preview.text contains \"Evidence kept\"",
+      "packDistinctFromEnrollment": "steps.library-before-pack-delete.text renders Preview (pack), not enrollment actions"
+    }
+  }
+}

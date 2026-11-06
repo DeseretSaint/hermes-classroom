@@ -171,6 +171,19 @@ export function rel(path) {
   return new URL(`../${path}`, import.meta.url).pathname
 }
 
+/**
+ * Reload the page and attach to the fresh document.
+ *
+ * A plugin edit is only live after a reload, and a reload tears down the evaluated context the
+ * open socket was talking to — so the socket is closed first, then a new one attaches.
+ */
+export async function hardReload(cdp, { settleMs = 4500 } = {}) {
+  await cdp.send('Page.reload', { ignoreCache: false }).catch(() => {})
+  cdp.close()
+  await new Promise((resolve) => setTimeout(resolve, settleMs))
+  return connect()
+}
+
 export async function writeJson(path, value) {
   const { writeFileSync, mkdirSync } = await import('node:fs')
   const { dirname, resolve } = await import('node:path')

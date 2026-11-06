@@ -1,0 +1,61 @@
+{
+  "at": "2026-11-06T18:01:09.733Z",
+  "config": "/home/deseretsaint/.hermes/cb015-test/home/config.yaml",
+  "steps": [
+    {
+      "step": "plugin-enabled-baseline",
+      "at": "2026-11-06T18:01:14.240Z",
+      "hash": "#/coursebook",
+      "hasRoute": true,
+      "routeVisible": true,
+      "hostConnecting": false,
+      "backendOffCopy": false,
+      "scopedError": false,
+      "errorLine": null,
+      "hasTryAgain": false,
+      "hasCheckAgain": false,
+      "hasNewCourse": true,
+      "rows": 2,
+      "excerpt": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title th"
+    },
+    {
+      "step": "plugin-half-disabled",
+      "at": "2026-11-06T18:01:23.596Z",
+      "hash": "#/coursebook",
+      "hasRoute": true,
+      "routeVisible": true,
+      "hostConnecting": false,
+      "backendOffCopy": false,
+      "scopedError": true,
+      "errorLine": "VALIDATION_FAILED: RPC request violates cb.rpc at contract_version: 6 was expected This page will not show an empty list in place of a failed read.",
+      "hasTryAgain": true,
+      "hasCheckAgain": false,
+      "hasNewCourse": false,
+      "rows": 0,
+      "excerpt": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nYour courses could not be read\nVALIDATION_FAILED: RPC request violates cb.rpc at contract_version: 6 was expected This page will not show an empty list in place of a failed read.\nTry again\nOpen Capabilities"
+    },
+    {
+      "step": "plugin-enabled-again",
+      "at": "2026-11-06T18:01:32.913Z",
+      "hash": "#/coursebook",
+      "hasRoute": true,
+      "routeVisible": true,
+      "hostConnecting": false,
+      "backendOffCopy": false,
+      "scopedError": false,
+      "errorLine": null,
+      "hasTryAgain": false,
+      "hasCheckAgain": false,
+      "hasNewCourse": true,
+      "rows": 2,
+      "excerpt": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese register across fifty-five situations — a deliberately long course title used to prove the route stays readable at 200% text and in a 460px window\nCasual\nResume Objective 55: register in context 55 — with a deliberately long title th"
+    }
+  ],
+  "verdict": {
+    "surfaceStillMounted": true,
+    "noFakeRowsWhileDown": true,
+    "namedFailure": true,
+    "recoveryAffordance": true,
+    "dataKeptAcrossCycle": true
+  }
+}
