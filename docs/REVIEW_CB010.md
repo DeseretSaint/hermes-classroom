@@ -106,6 +106,9 @@ POST /rpc pack.import mode=fresh   distinct course_id/enrollment_id, same pack_i
 POST /rpc pack.preview (tampered)  PACK_REJECTED · library total unchanged
 ```
 
+`python3 scripts/probe-backend.py --trace docs/REVIEW_CB010-trace.json` writes the full 20-step
+trace (sha256 `11b960094f07686510e7415ebdc0d58cb1f2ce86341f7645e30fd152688977fd`).
+
 `python3 scripts/pack-flow-trace.py` (real run, throwaway `HERMES_HOME`):
 
 ```
