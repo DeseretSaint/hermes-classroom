@@ -140,6 +140,7 @@ class DesktopRegistrationTest(unittest.TestCase):
         (react_dir / "index.js").write_text(
             "export const useCallback = (fn) => fn\n"
             "export const useEffect = () => {}\n"
+            "export const useRef = (initial) => ({ current: initial })\n"
             "export const useState = (initial) => [initial, () => {}]\n",
             encoding="utf-8",
         )
