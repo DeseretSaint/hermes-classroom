@@ -1181,6 +1181,90 @@ class ParentPipelineExportTest(KernelCase):
         self.assertEqual(lesson_job["checkpoint"]["lessons"], 3)
 
 
+    def test_a_version_that_never_authored_its_own_document_carries_from_the_last_authored_one(self) -> None:
+        """The live rig's shape: v3 was replanned before the fix, so only v1 has a document.
+
+        A later replan of v3 must walk back to v1's outline, not refuse because the source version
+        has no document of its own.
+        """
+        created = self.ok(
+            "parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key="key-brief-chain"
+        )["result"]
+        course_id = created["course_id"]
+        enrollment_id = created["enrollment_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.plan.generate": plan_from_fixture("plan_parent"),
+                    "coursebook.plan.validate": validation_from_fixture(),
+                }
+            )
+        )
+        plan_ref = self.ok("parent.brief.get", {"course_id": course_id})["result"]["plan_job"]
+        plan_job = self.ok("jobs.get", {"job_id": plan_ref["job_id"]})["result"]["job"]
+        first_plan_id = plan_job["checkpoint"]["plan_id"]
+        revision = self.approve(enrollment_id, first_plan_id, 0)
+        objectives = self.rows(
+            "SELECT id FROM objectives WHERE plan_id = ? ORDER BY ordinal", (first_plan_id,)
+        )
+        changes = [{"objective_id": row["id"], "change": "keep"} for row in objectives]
+        first_replan = self.ok(
+            "plan.replan",
+            {"enrollment_id": enrollment_id, "objective_changes": changes},
+            expected_revision=revision,
+            idempotency_key="key-chain-1",
+        )["result"]
+        middle_plan_id = str(
+            self.scalar(
+                "SELECT id FROM plans WHERE course_id = ? AND state = 'draft' ORDER BY version DESC LIMIT 1",
+                (course_id,),
+            )
+        )
+        # Simulate a version created before this fix: approved, but with no authored outline.
+        with db.transaction() as connection:
+            connection.execute("DELETE FROM gen_plan_sections WHERE plan_id = ?", (middle_plan_id,))
+            connection.execute("DELETE FROM gen_plan_documents WHERE plan_id = ?", (middle_plan_id,))
+        middle_revision = self.approve(enrollment_id, middle_plan_id, first_replan["revision"])
+        middle_objectives = self.rows(
+            "SELECT id FROM objectives WHERE plan_id = ? ORDER BY ordinal", (middle_plan_id,)
+        )
+        second_replan = self.ok(
+            "plan.replan",
+            {"enrollment_id": enrollment_id,
+             "objective_changes": [{"objective_id": row["id"], "change": "keep"} for row in middle_objectives]},
+            expected_revision=middle_revision,
+            idempotency_key="key-chain-2",
+        )["result"]
+        last_plan_id = str(
+            self.scalar(
+                "SELECT id FROM plans WHERE course_id = ? AND state = 'draft' ORDER BY version DESC LIMIT 1",
+                (course_id,),
+            )
+        )
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM gen_plan_documents WHERE plan_id = ?", (last_plan_id,)), 1,
+            "the carry must fall back to the last version that actually has a document",
+        )
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM gen_plan_sections WHERE plan_id = ?", (last_plan_id,)), 4
+        )
+        self.approve(enrollment_id, last_plan_id, second_replan["revision"])
+        lesson_job_id = self.ok(
+            "jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": last_plan_id}}
+        )["result"]["job_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.lesson.generate": parent_lesson_response(),
+                    "coursebook.lesson.validate": validation_from_fixture(),
+                }
+            )
+        )
+        lesson_job = self.ok("jobs.get", {"job_id": lesson_job_id})["result"]["job"]
+        self.assertEqual(lesson_job["state"], "completed", lesson_job.get("error"))
+        self.assertEqual(lesson_job["checkpoint"]["lessons"], 4)
+
+
 def _has_path_key(value) -> bool:
     """True when a response object names a local path anywhere (v6 forbids every such field)."""
     if isinstance(value, dict):

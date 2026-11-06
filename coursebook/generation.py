@@ -1867,6 +1867,7 @@ def carry_plan_outline(
         return None
 
     source = None
+    document_row = None
     if source_plan_id is not None:
         source = _row_dict(
             connection.execute(
@@ -1874,22 +1875,35 @@ def carry_plan_outline(
                 (str(source_plan_id), str(plan["course_id"])),
             ).fetchone()
         )
-    if source is None:
+        if source is not None:
+            document_row = _row_dict(
+                connection.execute(
+                    "SELECT * FROM gen_plan_documents WHERE plan_id = ?", (str(source["id"]),)
+                ).fetchone()
+            )
+            if document_row is None:
+                # A version created before this fix (or by any path that never authored it) has no
+                # document of its own. Walk back to the nearest earlier version that does, which is
+                # the same outline folded into that version.
+                source = None
+    if source is None or document_row is None:
         source = _row_dict(
             connection.execute(
                 "SELECT p.* FROM plans p JOIN gen_plan_documents d ON d.plan_id = p.id"
-                " WHERE p.course_id = ? AND p.version < ? ORDER BY p.version DESC LIMIT 1",
-                (str(plan["course_id"]), int(plan["version"])),
+                " WHERE p.course_id = ? AND p.version < ? AND p.id != ?"
+                " ORDER BY p.version DESC LIMIT 1",
+                (str(plan["course_id"]), int(plan["version"]), str(plan["id"])),
             ).fetchone()
         )
+        document_row = None
     if source is None or str(source["id"]) == str(plan["id"]):
         return None
-
-    document_row = _row_dict(
-        connection.execute(
-            "SELECT * FROM gen_plan_documents WHERE plan_id = ?", (str(source["id"]),)
-        ).fetchone()
-    )
+    if document_row is None:
+        document_row = _row_dict(
+            connection.execute(
+                "SELECT * FROM gen_plan_documents WHERE plan_id = ?", (str(source["id"]),)
+            ).fetchone()
+        )
     if document_row is None:
         return None
     digest = str(document_row["plan_hash"] or "")
