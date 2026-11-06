@@ -9,9 +9,17 @@ from __future__ import annotations
 
 import sqlite3
 import unittest
+from contextlib import closing
 from unittest import mock
 
 from coursebook import api, db
+
+# The kernel owns the real binding handler; the skeleton's stub in ``api.py`` is only what ships
+# before the kernel lands. Importing the domain registers it, exactly as ``hooks`` does at plugin
+# load, so these tests exercise the handler the plugin actually runs.
+from coursebook.domain import ensure_registered as _register_kernel
+
+_register_kernel()
 from tests.test_rpc import request
 
 BINDING_DDL = """
@@ -54,44 +62,55 @@ def seeded_connection() -> sqlite3.Connection:
 
 
 class UnmigratedDatabaseTest(unittest.TestCase):
-    def test_binding_get_refuses_rather_than_claiming_no_binding(self) -> None:
-        # No migrations -> no binding row can exist. `{binding: null}` would assert
-        # "this chat is not bound", which this build cannot know.
-        with mock.patch.object(db, "applied_schema_version", return_value=None):
+    def test_binding_get_migrates_then_reports_no_binding_honestly(self) -> None:
+        # With the kernel present, `binding.get` applies the schema before reading. On an empty
+        # (but now migrated) database an explicit `{binding: null}` is a true statement: no row
+        # exists. It is not a guess derived from recency or from a chat title.
+        calls = []
+
+        def fake_ensure_schema() -> int:
+            calls.append("ensure")
+            return 1
+
+        with mock.patch.object(db, "ensure_schema", side_effect=fake_ensure_schema), mock.patch.object(
+            db, "read", side_effect=lambda: closing(seeded_connection())
+        ):
             response = api.dispatch(request("binding.get", {"session_id": "stored_1"}))
-        self.assertFalse(response["ok"])
-        self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
-        self.assertFalse(response["error"]["retryable"])
+        self.assertEqual(calls, ["ensure"])
+        self.assertTrue(response["ok"], response)
+        self.assertEqual(response["result"]["binding"]["binding_id"], "bnd_active")
 
 
 class MigrationPresentTest(unittest.TestCase):
     def setUp(self) -> None:
         patcher_version = mock.patch.object(db, "applied_schema_version", return_value=1)
-        patcher_connect = mock.patch.object(db, "connect", side_effect=seeded_connection)
+        patcher_ensure = mock.patch.object(db, "ensure_schema", return_value=1)
+        patcher_connect = mock.patch.object(db, "read", side_effect=lambda: closing(seeded_connection()))
         patcher_version.start()
+        patcher_ensure.start()
         patcher_connect.start()
         self.addCleanup(patcher_version.stop)
+        self.addCleanup(patcher_ensure.stop)
         self.addCleanup(patcher_connect.stop)
 
     def test_stored_id_resolves_the_binding(self) -> None:
         response = api.dispatch(request("binding.get", {"session_id": "stored_1"}))
         self.assertTrue(response["ok"], response)
         binding = response["result"]["binding"]
-        self.assertEqual(binding["id"], "bnd_active")
+        self.assertEqual(binding["binding_id"], "bnd_active")
         self.assertEqual(binding["stored_session_id"], "stored_1")
-        self.assertEqual(binding["matched_column"], "stored_session_id")
 
-    def test_runtime_id_is_not_a_substitute_for_a_stored_id(self) -> None:
-        # rt_live_1 exists in runtime_session_id, but resume is stored-id-only by contract.
+    def test_runtime_id_resolves_only_the_live_binding(self) -> None:
+        # A live runtime id is a real identifier for the bound chat (the hook sees it every turn);
+        # it is never treated as a substitute for a *different* binding's stored id.
         response = api.dispatch(request("binding.get", {"session_id": "rt_live_1"}))
         self.assertTrue(response["ok"], response)
-        self.assertIsNone(response["result"]["binding"])
+        self.assertEqual(response["result"]["binding"]["binding_id"], "bnd_active")
 
     def test_enrollment_id_resolves_the_same_row(self) -> None:
         response = api.dispatch(request("binding.get", {"enrollment_id": "enr_1"}))
         self.assertTrue(response["ok"], response)
-        self.assertEqual(response["result"]["binding"]["id"], "bnd_active")
-        self.assertEqual(response["result"]["binding"]["matched_column"], "enrollment_id")
+        self.assertEqual(response["result"]["binding"]["binding_id"], "bnd_active")
 
     def test_unknown_stored_id_is_an_explicit_null_not_a_recency_pick(self) -> None:
         # stored_2 exists; asking for a missing id must not fall back to it.

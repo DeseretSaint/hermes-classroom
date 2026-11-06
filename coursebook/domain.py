@@ -448,8 +448,14 @@ def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
     db.ensure_schema()
     session_id = payload.get("session_id")
     enrollment_id = payload.get("enrollment_id")
-    if not session_id and not enrollment_id:
-        raise RpcError.of("VALIDATION_FAILED", "provide session_id or enrollment_id.", field="session_id")
+    if bool(session_id) == bool(enrollment_id):
+        # Ambiguity is refused rather than resolved by precedence: a caller that sends two
+        # identifiers cannot prove which one the answer came from.
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "binding.get takes exactly one of session_id or enrollment_id.",
+            field="session_id" if session_id else "enrollment_id",
+        )
     with db.read() as connection:
         row = None
         if enrollment_id:
