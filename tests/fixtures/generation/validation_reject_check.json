@@ -1,0 +1,64 @@
+{
+  "verdict": "reject",
+  "criteria": [
+    {
+      "id": "objective_alignment",
+      "verdict": "pass",
+      "reason": "objective_alignment checked"
+    },
+    {
+      "id": "source_support",
+      "verdict": "pass",
+      "reason": "source_support checked"
+    },
+    {
+      "id": "factual_correctness",
+      "verdict": "pass",
+      "reason": "factual_correctness checked"
+    },
+    {
+      "id": "answer_uniqueness",
+      "verdict": "fail",
+      "reason": "two choices both satisfy the prompt"
+    },
+    {
+      "id": "alternative_coverage",
+      "verdict": "fail",
+      "reason": "two choices both satisfy the prompt"
+    },
+    {
+      "id": "rubric_consistency",
+      "verdict": "pass",
+      "reason": "rubric_consistency checked"
+    },
+    {
+      "id": "internal_contradiction",
+      "verdict": "pass",
+      "reason": "internal_contradiction checked"
+    },
+    {
+      "id": "answer_leakage",
+      "verdict": "pass",
+      "reason": "answer_leakage checked"
+    },
+    {
+      "id": "hazard_age_appropriateness",
+      "verdict": "pass",
+      "reason": "hazard_age_appropriateness checked"
+    },
+    {
+      "id": "evidence_target_fit",
+      "verdict": "pass",
+      "reason": "evidence_target_fit checked"
+    }
+  ],
+  "rejections": [
+    {
+      "item": "check:1",
+      "criterion": "answer_uniqueness",
+      "reason": "The stimulus asks for a polite opener but both こんにちは and ありがとうございます are acceptable openers, so the key is ambiguous.",
+      "fix_hint": "Make the stimulus name the moment (entering, not leaving) and accept both openers as alternatives."
+    }
+  ],
+  "claim_verdicts": []
+}

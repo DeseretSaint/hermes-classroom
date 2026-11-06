@@ -1,0 +1,82 @@
+{
+  "section_title": "Greeting and opening",
+  "segments": [
+    {
+      "kind": "model",
+      "heading": "Two phrases you will hear",
+      "body": "お願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms."
+    },
+    {
+      "kind": "explain",
+      "heading": "Why register matters",
+      "body": "Standard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met."
+    },
+    {
+      "kind": "guided",
+      "heading": "Say it with romaji visible",
+      "body": "Repeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading."
+    }
+  ],
+  "worked_example": {
+    "prompt": "You want to ask for a menu politely.",
+    "steps": [
+      "Say お願いします with a small bow",
+      "Wait for the staff member to respond",
+      "Thank them with ありがとうございます"
+    ],
+    "answer": "お願いします (onegaishimasu)"
+  },
+  "learner_explanation": "Pick the phrase that fits entering a shop and speaking to staff for the first time. Script is shown; romaji is available as a scaffold until you no longer need it.",
+  "check": {
+    "kind": "quiz",
+    "stimulus": {
+      "prompt": "You walk into a café and the staff look up. Which phrase opens the interaction politely?",
+      "format": "selection",
+      "choices": [
+        "ありがとうございます",
+        "こんにちは",
+        "さようなら"
+      ]
+    },
+    "learner_instructions": "Choose one phrase. Romaji is shown after your first attempt, not before.",
+    "evidence_target": "production",
+    "accepted_answers": [
+      "こんにちは"
+    ],
+    "accepted_alternatives": [
+      [
+        "konnichiwa"
+      ]
+    ],
+    "rubric": [
+      {
+        "criterion": "polite greeting",
+        "weight": 1.0,
+        "description": "Selects a greeting used when entering a shop"
+      }
+    ],
+    "reference_answer": "こんにちは",
+    "assistance_policy": {
+      "hint": "after_attempt",
+      "answer_marks_evidence_class": "hinted"
+    },
+    "scaffolds": {
+      "romaji": true,
+      "furigana": true,
+      "english_meaning": true
+    }
+  },
+  "sources": [
+    "SRC_ALPHA"
+  ],
+  "media": [
+    {
+      "kind": "visual",
+      "purpose": "Show the two phrases side by side in large type",
+      "spec": "two-line card, Japanese script above romaji, high contrast",
+      "text_equivalent": "Card shows お願いします (onegaishimasu) and ありがとうございます (arigatou gozaimasu)"
+    }
+  ],
+  "parent_notes": null,
+  "supervision_notes": []
+}

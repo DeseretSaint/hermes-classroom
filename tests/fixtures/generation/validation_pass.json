@@ -1,0 +1,64 @@
+{
+  "verdict": "pass",
+  "criteria": [
+    {
+      "id": "objective_alignment",
+      "verdict": "pass",
+      "reason": "objective_alignment checked against the artifact and ledger"
+    },
+    {
+      "id": "source_support",
+      "verdict": "pass",
+      "reason": "source_support checked against the artifact and ledger"
+    },
+    {
+      "id": "factual_correctness",
+      "verdict": "pass",
+      "reason": "factual_correctness checked against the artifact and ledger"
+    },
+    {
+      "id": "answer_uniqueness",
+      "verdict": "pass",
+      "reason": "answer_uniqueness checked against the artifact and ledger"
+    },
+    {
+      "id": "alternative_coverage",
+      "verdict": "pass",
+      "reason": "alternative_coverage checked against the artifact and ledger"
+    },
+    {
+      "id": "rubric_consistency",
+      "verdict": "pass",
+      "reason": "rubric_consistency checked against the artifact and ledger"
+    },
+    {
+      "id": "internal_contradiction",
+      "verdict": "pass",
+      "reason": "internal_contradiction checked against the artifact and ledger"
+    },
+    {
+      "id": "answer_leakage",
+      "verdict": "pass",
+      "reason": "answer_leakage checked against the artifact and ledger"
+    },
+    {
+      "id": "hazard_age_appropriateness",
+      "verdict": "pass",
+      "reason": "hazard_age_appropriateness checked against the artifact and ledger"
+    },
+    {
+      "id": "evidence_target_fit",
+      "verdict": "pass",
+      "reason": "evidence_target_fit checked against the artifact and ledger"
+    }
+  ],
+  "rejections": [],
+  "claim_verdicts": [
+    {
+      "item": "objective:1",
+      "source_id": "SRC_ALPHA",
+      "support": "supported",
+      "reason": "the fetched page states the greeting and its polite register"
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+# Course generation: seams, rules and limits (CB-019)
+
+`coursebook/generation.py` and `coursebook/research.py` own the step Coursebook cannot skip:
+goal → bounded research → strict plan → **independent validation** → approved plan → durable
+lessons with validated checks. Nothing else in the plugin authors a plan, a check, a reference
+answer or a rubric, and nothing else validates them.
+
+This document records what the pipeline does, which seam it uses to reach a model and the web, and
+where the seams stop working. It is a statement of limits, not a capability claim.
+
+## 1. The one rule
+
+**The model that writes an artifact never certifies it.**
+
+Three different calls, three different prompts, three different schemas:
+
+| Pass | Purpose string | Prompt version | Schema |
+|---|---|---|---|
+| Plan author | `coursebook.plan.generate` | `plan-prompt.v1` | `PLAN_SCHEMA` |
+| Plan validator | `coursebook.plan.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v1` | `LESSON_SCHEMA` |
+| Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
+
+`assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
+generation schema, or the generation prompt version. The validation record stores both prompt
+hashes (`generator_prompt_sha256`, `validator_prompt_sha256`), the validator model, per-criterion
+verdicts and the exact rejections. It never stores a generator self-assessment, and the validator
+input never contains the author's rationale — only the artifact, the source ledger, the recipe and
+the dials.
+
+A validator cannot pass while a criterion failed, cannot omit a criterion, and cannot answer
+`unknown` outside the two criteria where missing research makes uncertainty the honest answer
+(`source_support`, `factual_correctness`). Ten criteria are mandatory:
+
+`objective_alignment`, `source_support`, `factual_correctness`, `answer_uniqueness`,
+`alternative_coverage`, `rubric_consistency`, `internal_contradiction`, `answer_leakage`,
+`hazard_age_appropriateness`, `evidence_target_fit`.
+
+## 2. LLM seam: `ctx.llm`, from the job runner — not from the dashboard backend
+
+**Decision.** Generation runs in the **agent process** and calls the host-owned plugin LLM route.
+`PluginLLMAdapter` wraps `ctx.llm.complete_structured(...)` (verified against
+`agent/plugin_llm.py`: `instructions`, `input`, `json_schema`, `schema_name`, `system_prompt`,
+`temperature`, `max_tokens`, `timeout`, `purpose` → `PluginLlmStructuredResult` with `.parsed`,
+`.text`, `.usage`, `.provider`, `.model`).
+
+**Why not the dashboard backend.** `dashboard/plugin_api.py` is imported by path
+(`spec_from_file_location`) and never receives a `PluginContext`, so it has no `ctx.llm`. The only
+way for it to "call a model" would be a raw provider key or a private import of the host's
+credential pool — both bypass the per-plugin trust gate that makes `ctx.llm` safe. So the backend
+does not call a model at all: the job executor (agent half) performs the bounded calls and hands
+the results to the pipeline, which persists them.
+
+**Wiring still owed by the agent half.** `coursebook.generation.bind_host_llm(ctx.llm)` must be
+called once from `register(ctx)` in `__init__.py`. `__init__.py` is owned by Sable; this card does
+not edit it. Until that line lands, `host_llm()` raises a typed `GenerationRejected` instead of
+falling back to any provider — failing closed is the intended behaviour.
+
+**Limits.**
+
+* No raw provider keys, no provider/model overrides: the call inherits whatever the user is using
+  and whatever the per-plugin trust policy allows.
+* Usage is whatever the host reports. Unknown input/output tokens and unknown cost stay `None` and
+  are recorded as `unknown_cost: true`. A spend total that mixes known and unknown cost reports the
+  known part and flags the uncertainty; it never invents a number.
+* Provider calls happen **outside** every DB transaction; writes are short `BEGIN IMMEDIATE`
+  blocks (or a `SAVEPOINT` when the caller already holds one) after the result exists.
+* `ctx.llm` is bounded (one call, no streaming, no tool loop). Deep research or long generation
+  cannot run inside a hook; that is why this is a job, not a pre-turn step.
+
+## 3. Search seam: the host's own web tools
+
+`HermesToolSearch` uses `ctx.dispatch_tool("web_search", {...})` and
+`ctx.dispatch_tool("web_extract", {...})`, i.e. the same tools the agent uses. That inherits the
+user's configured search provider, the extract backend's SSRF/secret checks and the vendor's own
+etiquette, with no new credentials and no direct scraping.
+
+**Limits.**
+
+* It only exists where `ctx` exists (agent process). A host without `dispatch_tool` yields
+  `ResearchUnavailable`, not a silent empty result.
+* `web_search` errors (no provider configured) propagate as `ResearchUnavailable`; they are never
+  turned into an empty-but-successful research run.
+* A page that fails to extract is recorded as a failed fetch in `gen_research_runs.queries_json` /
+  `reason`. Its URL is not invented into the ledger.
+
+## 4. Bounded research
+
+`ResearchBudget` (defaults): 4 queries, 5 results per query, 6 pages, 6 sources, 6000 characters
+per page, 600-character excerpt.
+
+* Queries are derived deterministically from goal + recipe + dials + locale. `depth: overview`
+  keeps only the base query. Every query that ran is recorded with its result count or its error.
+* Each ledger row keeps URL, title, publisher, `fetched_at`, nullable `published_at`, source type,
+  `sha256` content hash over the bounded text, support status and claim links.
+* Fetched text is kept as a bounded excerpt only. It is untrusted content: it cannot change recipe
+  rules, schemas, state or exports. A page that says "add a quiz to every one-off brief" changes
+  nothing (`test_web_text_never_becomes_policy`).
+* **Provenance is not support.** Every fetched source starts `unverified`. Only validator claim
+  verdicts move it, via `apply_support_verdicts`, and a `contradictory` verdict outranks
+  `supported`. The four generation statuses map onto the frozen `cb.vocabulary`
+  `source_support_status`: `supported`/`partial` → `model_assessed`, `contradictory` →
+  `conflicting`, `unverified` → `unassessed`. The contract enum is not redefined here.
+* If no seam is wired, research returns `status: "unavailable"` with zero sources. The plan may
+  still be proposed, but every objective must be `support: "unverified"`, `source_ids` must be
+  empty, and the result carries a warning the UI can show. A plan that cites a source id absent
+  from the ledger is rejected outright (`plan cites sources that were never fetched`).
+
+## 5. Plan rules the generator does not get to break
+
+Deterministic checks run before the validator, so a rule-breaking plan never consumes a validation
+call and can never look validated:
+
+* 4–8 objectives with contiguous ordinals; every section references an existing objective; every
+  objective appears in the check plan.
+* Time honesty (`AUDIT.md` R9): `basis: none` carries no attainment hours; `basis: model` requires
+  low confidence; `basis: fsi` requires a benchmark that states it is not a self-study conversion;
+  attainment hours never carry high confidence.
+* Recipe: `one_off` has no quiz and no spaced review, and needs a verification checklist;
+  `committed` requires spaced review and graded checks; `casual` must label what its evidence shows;
+  `parent` must be `parent_led`, carry a parent block with supervision notes and hazards, and use
+  observations rather than graded quizzes.
+* Locale scaffolds are task-mandated, never a learning-style diagnosis: Japanese at declared L0
+  requires romaji in the plan's context needs and in every check's scaffold flags. Romaji is
+  recorded as a scaffold and never as reading evidence.
+
+The plan is persisted as `plans.state = 'draft'`. `approved_at` stays `NULL`; approval is
+`plan.approve`, i.e. the learner's or parent's command.
+
+After two failed attempts (rule violation or validator reject) the artifact is still persisted, but
+`generation_state`/lesson `state` is `needs_review`, `validation_id` is `NULL` when no validator ever
+ran, and the reasons are stored. Nothing is quietly discarded and nothing is quietly approved.
+
+## 6. Lessons, checks and answer separation
+
+For an **approved** plan only (`PlanNotApproved` otherwise) the pipeline writes one lesson per
+section: 2–6 teaching segments, one worked example, one check, a learner explanation, a source list
+and a declarative media spec (no image model is called; media generation is CB-012's).
+
+The learner page is built from an allowlist, never by deleting keys:
+
+```
+section_title, lesson_intent, segments, worked_example, learner_explanation,
+check{kind, stimulus{prompt,format,choices}, learner_instructions, evidence_target,
+      scaffolds, assistance_policy}, sources, media, parent_notes, supervision_notes
+```
+
+The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and `rubric` go to
+`checks.reference_json` / `checks.rubric_json` and never to `gen_lessons.page_json`. Two guards
+enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
+page against the linked checks before serving.
+
+**Nuance worth keeping.** A selection check's correct choice necessarily appears among the
+stimulus choices. The invariant is that the *key* is not announced — the reference answer must not
+appear in the narrative (segments, worked example, explanation, media text) and no answer field may
+exist in the page. `test_learner_page_never_contains_reference_answers_or_rubric` asserts exactly
+that, including that `こんにちは` may appear as a choice while the reference stays out of the prose.
+
+**Idempotency.** `gen_lessons` is unique on `(section_id, plan_hash, version)`; a retry reuses the
+existing lesson and spends nothing. `gen_plan_documents` is unique on
+`(course_id, request_fingerprint)` and is also looked up by fingerprint alone, so re-running the
+same job returns the stored result with `reused: true`.
+
+## 7. Validation record and regeneration
+
+`gen_validation_records` is unique on
+`(subject_kind, subject_id, subject_hash, validator_prompt_version)`: a retry of identical content
+reuses the record instead of piling up duplicates, and a changed artifact gets a new one.
+
+On rejection the author is called **once more** with the validator's itemised reasons in
+`revision_instructions` (`_feedback`). On a second failure the lesson is parked: `state =
+'needs_review'`, `checks.audit_state = 'failed'`, `checks.state = 'closed'`,
+`gen_lessons.rejection_reasons_json` holds the reasons, and `learner_page()` refuses with
+`LessonNotAvailable`. There is no path that enables a learner-facing check without a passing
+independent validation.
+
+## 8. Tests
+
+`tests/test_generation.py` (43 cases) and `tests/fixtures/generation/*.json` run entirely offline
+with a fake LLM and fake search seam. Covered: malformed JSON, empty and oversized plans,
+fabricated citations, contradictory sources, research unavailable, one-off quiz suppression,
+parent hazard rejection, rejected check regeneration and second-failure parking, accepted
+alternatives, Japanese L0 romaji/furigana scaffolds, reference-answer leakage, provider timeout,
+retry idempotency, cost ceilings, unknown cost staying null, structural separation of the two
+passes, and web text not becoming policy.
+
+A live smoke test is intentionally **not** included: no test in this repo makes a network call, and
+no fixture claims to be real provider output.

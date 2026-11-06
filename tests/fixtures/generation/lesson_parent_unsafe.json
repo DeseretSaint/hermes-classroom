@@ -1,0 +1,71 @@
+{
+  "section_title": "Warm and cold at home",
+  "segments": [
+    {
+      "kind": "model",
+      "heading": "Warm things",
+      "body": "The kettle, the toaster and the oven make things warm. Ask your grown-up before going near any of them."
+    },
+    {
+      "kind": "guided",
+      "heading": "Try it yourself",
+      "body": "Have the child fill the kettle at the sink and switch it on, then touch the side to feel the warmth."
+    }
+  ],
+  "worked_example": {
+    "prompt": "Which things are warm?",
+    "steps": [
+      "Point at the kettle",
+      "Say warm",
+      "Point at the fridge",
+      "Say cold"
+    ],
+    "answer": "kettle and fridge"
+  },
+  "learner_explanation": "Look around the kitchen and name one warm and one cold thing.",
+  "check": {
+    "kind": "observation",
+    "stimulus": {
+      "prompt": "Ask the child to name one warm and one cold thing.",
+      "format": "text",
+      "choices": []
+    },
+    "learner_instructions": "Parent records the child's answer.",
+    "evidence_target": "recall",
+    "accepted_answers": [
+      "kettle is warm",
+      "fridge is cold"
+    ],
+    "accepted_alternatives": [],
+    "rubric": [
+      {
+        "criterion": "names one of each",
+        "weight": 1.0,
+        "description": "Child names a warm and a cold object"
+      }
+    ],
+    "reference_answer": "kettle warm, fridge cold",
+    "assistance_policy": {
+      "hint": "available",
+      "answer_marks_evidence_class": "none"
+    },
+    "scaffolds": {
+      "romaji": false,
+      "furigana": false,
+      "english_meaning": false
+    }
+  },
+  "sources": [],
+  "media": [
+    {
+      "kind": "visual",
+      "purpose": "Warm and cold picture cards",
+      "spec": "four cards, large print, no realistic flame imagery",
+      "text_equivalent": "Cards show kettle, fridge, toaster and ice cube with labels"
+    }
+  ],
+  "parent_notes": "Let the child explore the kitchen freely while you set the table.",
+  "supervision_notes": [
+    "Adult nearby"
+  ]
+}

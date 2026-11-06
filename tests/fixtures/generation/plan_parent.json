@@ -1,0 +1,143 @@
+{
+  "title": "Kitchen science: warm and cold",
+  "learner_outcome": "With a parent, the child sorts safe kitchen actions into warm and cold and explains one example in their own words.",
+  "delivery": "parent_led",
+  "time_estimate": {
+    "sessions_per_week": 2,
+    "minutes_per_session": 15,
+    "weeks": 2,
+    "basis": "none",
+    "confidence": "low",
+    "rationale": "Two short parent-led sessions; no attainment claim is made for a 15-minute activity.",
+    "benchmark": null,
+    "attainment_hours": null
+  },
+  "objectives": [
+    {
+      "ordinal": 1,
+      "title": "Name one warm and one cold thing in the kitchen",
+      "evidence_target": "recall",
+      "evidence_criteria": [
+        "Names one of each with a parent present"
+      ],
+      "support": "unverified"
+    },
+    {
+      "ordinal": 2,
+      "title": "Sort picture cards into warm and cold",
+      "evidence_target": "discrimination",
+      "evidence_criteria": [
+        "Sorts four cards with no more than one prompt"
+      ],
+      "support": "unverified"
+    },
+    {
+      "ordinal": 3,
+      "title": "Say why the kettle is a grown-up job",
+      "evidence_target": "comprehension",
+      "evidence_criteria": [
+        "Gives one safety reason"
+      ],
+      "support": "unverified"
+    },
+    {
+      "ordinal": 4,
+      "title": "Explain one example in their own words",
+      "evidence_target": "production",
+      "evidence_criteria": [
+        "Produces one sentence about a warm or cold thing"
+      ],
+      "support": "unverified"
+    }
+  ],
+  "sections": [
+    {
+      "ordinal": 1,
+      "title": "Warm and cold at home",
+      "lesson_intent": "Parent names warm and cold objects the child can see, then sorts cards together.",
+      "objective_refs": [
+        1,
+        2
+      ],
+      "context_needs": [
+        "picture cards",
+        "kitchen tour"
+      ],
+      "source_ids": []
+    },
+    {
+      "ordinal": 2,
+      "title": "Why some jobs are for grown-ups",
+      "lesson_intent": "Parent explains the kettle rule and the child says it back in their own words.",
+      "objective_refs": [
+        3,
+        4
+      ],
+      "context_needs": [
+        "kettle within sight, unplugged"
+      ],
+      "source_ids": []
+    }
+  ],
+  "check_plan": [
+    {
+      "objective_ref": 1,
+      "kind": "observation",
+      "evidence_target": "recall",
+      "count": 1,
+      "independent_evidence": false
+    },
+    {
+      "objective_ref": 2,
+      "kind": "observation",
+      "evidence_target": "discrimination",
+      "count": 1,
+      "independent_evidence": false
+    },
+    {
+      "objective_ref": 3,
+      "kind": "observation",
+      "evidence_target": "comprehension",
+      "count": 1,
+      "independent_evidence": false
+    },
+    {
+      "objective_ref": 4,
+      "kind": "observation",
+      "evidence_target": "production",
+      "count": 1,
+      "independent_evidence": false
+    }
+  ],
+  "context_needs": [
+    "picture cards",
+    "large print",
+    "parent script"
+  ],
+  "source_ids": [],
+  "exclusions": [
+    "No child chat: the parent leads every step.",
+    "No heat, flame or kettle operation by the child; the kettle stays unplugged and out of reach.",
+    "No claim of developmental assessment."
+  ],
+  "spaced_review": false,
+  "evidence_note": null,
+  "parent": {
+    "age_band": "6-8",
+    "reading_level": "early reader, large print preferred",
+    "supervision_notes": [
+      "Adult stays within arm's reach for the whole activity",
+      "Kettle stays unplugged and out of reach"
+    ],
+    "hazards": [
+      "hot water in the kettle",
+      "sharp drawer nearby"
+    ],
+    "setting_materials": [
+      "kitchen table",
+      "four picture cards",
+      "crayons"
+    ],
+    "parent_facing_summary": "Two 15-minute kitchen sessions where you name warm and cold things and explain one grown-up job."
+  }
+}
