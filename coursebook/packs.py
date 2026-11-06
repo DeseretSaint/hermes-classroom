@@ -30,9 +30,11 @@ import copy
 import hashlib
 import json
 import re
+import warnings as warnings_module
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from . import segments
 from .contracts import ContractError, contract, validate
 
 CONTRACT_ID = "cb.pack"
@@ -509,6 +511,60 @@ def _answer_key_problems(root: Path, manifest: Mapping[str, Any]) -> list[str]:
     return problems
 
 
+# ── Authoring warnings ──────────────────────────────────────────────────────
+
+
+class PackAuthoringWarning(UserWarning):
+    """A pack is contract-valid but an authoring bound will make import refuse it.
+
+    A warning, not a refusal: the import path owns refusal (``segments.audit_objective_texts``
+    raises ``PACK_REJECTED`` before the first write). Preview, export and the fixture validator
+    raise this as a Python warning naming the file and its measured length.
+    """
+
+
+def authoring_warnings(manifest: Mapping[str, Any], files: Mapping[str, bytes]) -> list[str]:
+    """Warnings from the content itself, for a manifest and its section bytes."""
+    mime_by_path = {str(entry["path"]): str(entry.get("mime") or "") for entry in manifest.get("files") or []}
+    texts: dict[str, str] = {}
+    for path in segments.declared_section_paths(manifest):
+        data = files.get(path)
+        if data is None or not mime_by_path.get(path, "").startswith("text/"):
+            continue
+        try:
+            texts[path] = bytes(data).decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+    return segments.authoring_warnings(manifest, texts)
+
+
+def audit_warnings(directory: str | Path, *, manifest: Mapping[str, Any] | None = None) -> list[str]:
+    """Authoring warnings for an unpacked pack directory; empty means none.
+
+    Sits beside :func:`audit_bundle`, which returns hard problems. Nothing here is a rejection.
+    """
+    root = Path(directory)
+    if manifest is None:
+        try:
+            manifest = load_manifest(root / root_file())
+        except PackRejected:
+            return []
+    files: dict[str, bytes] = {}
+    for path in segments.declared_section_paths(manifest):
+        candidate = root / path
+        if candidate.is_file():
+            files[path] = candidate.read_bytes()
+    return authoring_warnings(manifest, files)
+
+
+def warn_authoring_bound(manifest: Mapping[str, Any], files: Mapping[str, bytes]) -> list[str]:
+    """Emit :class:`PackAuthoringWarning` for every file over the lesson-section bound."""
+    found = authoring_warnings(manifest, files)
+    for message in found:
+        warnings_module.warn(message, PackAuthoringWarning, stacklevel=3)
+    return found
+
+
 # ── Trust and preview ───────────────────────────────────────────────────────
 
 
@@ -618,6 +674,11 @@ def build_export(
             raise PackRejected(f"cannot export {path!r}: bytes do not match the declared hash")
         if len(provided[path]) != int(entry["bytes"]):
             raise PackRejected(f"cannot export {path!r}: bytes do not match the declared size")
+
+    # Authoring bound: an over-long lesson section is still exportable (the pack is contract-valid
+    # and export is not the refusal seam), but the author is warned here, naming the file and its
+    # measured length, before the bytes leave Coursebook. Import owns the refusal.
+    warn_authoring_bound(manifest, provided)
 
     source = {key: copy.deepcopy(manifest[key]) for key in export_allowlist() if key in manifest}
     source.pop("files", None)

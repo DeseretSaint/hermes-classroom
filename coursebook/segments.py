@@ -70,6 +70,58 @@ def max_segments_per_page() -> int:
     return lesson_page_caps()[1]
 
 
+def lesson_section_char_bound() -> int:
+    """Characters one lesson section may hold before it can never render on one lesson page.
+
+    Derived, never a second constant: the product of the contract's per-segment character cap and
+    its per-page segment budget (8,000 x 500 = 4,000,000 at ``cb.rpc`` v7). The page budget also
+    carries the objective's check prompts, so import's own refusal can sit below this number; this
+    is the absolute ceiling for a single section, and the authoring warning names it.
+    """
+    limit, budget = lesson_page_caps()
+    return limit * budget
+
+
+def declared_section_paths(manifest: Mapping[str, Any]) -> list[str]:
+    """Every file path an objective declares as a ``sections[]`` entry, in manifest order."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for objective in manifest.get("objectives") or []:
+        for section in objective.get("sections") or []:
+            path = str(section.get("path") or "")
+            if path and path not in seen:
+                seen.add(path)
+                ordered.append(path)
+    return ordered
+
+
+def authoring_warnings(manifest: Mapping[str, Any], texts: Mapping[str, str]) -> list[str]:
+    """Non-blocking warnings for a pack that is contract-valid but cannot be read as authored.
+
+    A lesson section above :func:`lesson_section_char_bound` characters would need more segments
+    than one ``lesson.page`` returns, so its tail can never render. Import refuses such a pack
+    before any write (:func:`audit_objective_texts`); this function only warns, naming the file and
+    its measured length, so an author learns it while the pack is still a draft.
+    """
+    bound = lesson_section_char_bound()
+    limit, budget = lesson_page_caps()
+    warnings: list[str] = []
+    for path in declared_section_paths(manifest):
+        text = texts.get(path)
+        if text is None or len(text) <= bound:
+            continue
+        warnings.append(
+            f"section file {path!r} measures {len(text):,} characters, above the "
+            f"{bound:,}-character authoring bound for one lesson section (cb.rpc lesson.page "
+            f"returns at most {budget:,} segments of {limit:,} characters, so a section of "
+            f"{bound:,} characters is the most one page can carry); the page budget also carries "
+            "the objective's check prompts, so import may refuse a slightly shorter section. "
+            "Import will refuse this pack before writing anything. Split the section into smaller "
+            "files."
+        )
+    return warnings
+
+
 def _ends_with_heading(piece: str) -> bool:
     for line in reversed(piece.rstrip().splitlines()):
         if line.strip():
