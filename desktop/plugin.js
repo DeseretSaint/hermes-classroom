@@ -6198,26 +6198,15 @@ function StudioPlanView({
   const [lessonJobId, setLessonJobId] = useState(null)
 
   // A plan version carries its authored document (sections and research) in `gen_plan_documents`,
-  // keyed by plan_id, and only the plan-authoring job writes that row. `plan.replan` copies the
-  // outline rows but not the document, so a lessons job for a replanned version fails
-  // `INTERNAL_ERROR: plan … has no authored document`. The latest plan-kind job's checkpoint names
-  // the plan_id it authored; when that is not the version on screen, this version was never
-  // authored. Unknown stays unknown: the action is hidden only on a proven mismatch.
-  const planJob = useRpcQuery(
-    'jobs.get',
-    { job_id: planJobId },
-    `studio-plan-job-${planJobId}`,
-    Boolean(planJobId) && supported('jobs.get')
-  )
-  const latestPlanJob = planJob && planJob.data && planJob.data.job ? planJob.data.job : null
-  const authoredPlanId =
-    latestPlanJob &&
-    (!latestPlanJob.brief || !latestPlanJob.brief.stage || latestPlanJob.brief.stage === 'plan') &&
-    (latestPlanJob.state === 'completed' || latestPlanJob.state === 'completed_late') &&
-    latestPlanJob.checkpoint
-      ? latestPlanJob.checkpoint.plan_id
-      : null
-  const lacksAuthoredDocument = Boolean(plan && authoredPlanId && authoredPlanId !== plan.plan_id)
+  // keyed by plan_id. `plan.replan` now carries that document onto a content-preserving new version
+  // (keep / retitle / defer / remove), so a replanned plan is authorable again — the version is no
+  // longer unauthorable just because it was replanned. Two cases still leave the version without a
+  // covering document: a structural `add` through the editor (no authored section exists for a new
+  // objective) and a version whose replan could not carry. No wire field declares authorship, so the
+  // studio does not guess before the click: it reads the refusal the lessons job itself returns and
+  // withholds the action for that plan version instead of offering the same failure twice.
+  const [lessonDocumentGap, setLessonDocumentGap] = useState(null)
+  const planIdOnScreen = plan && plan.plan_id
 
   // The editor's displayed order. Local until Save changes sends it as a permutation.
   useEffect(() => setOrder(null), [outline.data])
@@ -6380,10 +6369,26 @@ function StudioPlanView({
     startEditing()
   }, [plan, objectives, course.enrollment_id, revision, onRevision, onChanged, startEditing])
 
+  // Clear the gap when the screen moves to another plan version (a replan or a fresh authoring job
+  // that completed and reloaded the outline).
+  useEffect(() => setLessonDocumentGap(null), [planIdOnScreen])
+
   const settled = useCallback(
     (job) => {
-      if (job && (job.state === 'completed' || job.state === 'completed_late')) onChanged()
-      else onJobSettled(job)
+      if (!job) return
+      const isLessons = job.brief && job.brief.stage === 'lessons'
+      const message = (job.error && job.error.message) || ''
+      if (isLessons && job.state === 'failed' && /no authored document|outline covers objectives/i.test(message)) {
+        setLessonDocumentGap(message)
+        onJobSettled(job)
+        return
+      }
+      if (job.state === 'completed' || job.state === 'completed_late') {
+        if (isLessons) setLessonDocumentGap(null)
+        onChanged()
+        return
+      }
+      onJobSettled(job)
     },
     [onChanged, onJobSettled]
   )
@@ -6445,7 +6450,7 @@ function StudioPlanView({
                     children: 'Approve plan'
                   })
                 : null,
-              !isDraft && !editing && !lacksAuthoredDocument
+              !isDraft && !editing && !lessonDocumentGap
                 ? jsx(sdk.Button, {
                     size: 'sm',
                     variant: 'default',
@@ -6472,12 +6477,13 @@ function StudioPlanView({
         children:
           'Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.'
       }),
-      lacksAuthoredDocument
+      lessonDocumentGap
         ? jsx('p', {
             className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
             'data-cb-plan-document': 'missing',
             children:
-              `Plan v${plan.version} was created by Start a new plan version. Its authored document (the plan's sections and research) belongs to the version you approved and is not carried forward, so lessons cannot be generated from this version and Generate lessons is withheld rather than failing. No approved lesson set can be rebuilt here; start a new course from a brief to author a fresh plan.`
+              `Lessons cannot be generated from this plan version: ${lessonDocumentGap} ` +
+              'The authored outline (its sections and research) belongs to the version that was written with the plan, and this version has changes it does not cover, so Generate lessons is withheld rather than offered as a second failure. Start a new plan version to author an outline that covers every objective.'
           })
         : null,
       notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
