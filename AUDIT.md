@@ -383,7 +383,7 @@ product development.
 - evidence map and exact restart/resume;
 - one Coursebook-owned visual/audio artifact with text fallback;
 - parent brief → source/plan approval → parent guide + learner-page export;
-- privacy-stripped local pack export and reimport;
+- allowlisted local pack export and reimport, with full content/metadata review;
 - SQLite-backed operation/usage ledger and honest unavailable states;
 - clean install/enable/restart/revoke/uninstall and validation/doctor.
 
