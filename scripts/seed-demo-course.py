@@ -64,13 +64,22 @@ def main() -> int:
     staged = granted["staged_id"]
     print(f"staged : {staged}")
 
+    # The wire version is read from the backend, never assumed: a hard-coded version turns every
+    # seed run into a VALIDATION_FAILED the moment the contract advances.
+    runtime = call(args.base_url, args.token, "/runtime")
+    wire_version = int(runtime.get("wire_version") or 0)
+    if not wire_version:
+        print(f"backend did not report a wire_version: {runtime}", file=sys.stderr)
+        return 1
+    print(f"wire   : cb.rpc v{wire_version}")
+
     preview = call(
         args.base_url,
         args.token,
         "/rpc",
         {
             "contract": "cb.rpc",
-            "contract_version": 5,
+            "contract_version": wire_version,
             "method": "pack.preview",
             "operation_id": f"seed-preview-{uuid.uuid4().hex[:8]}",
             "payload": {"staged_id": staged},
@@ -89,7 +98,7 @@ def main() -> int:
         "/rpc",
         {
             "contract": "cb.rpc",
-            "contract_version": 5,
+            "contract_version": wire_version,
             "method": "pack.import",
             "operation_id": f"seed-import-{uuid.uuid4().hex[:8]}",
             "idempotency_key": f"seed-import-{uuid.uuid4().hex}",
