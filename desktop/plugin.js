@@ -6197,11 +6197,41 @@ function StudioPlanView({
   const [notice, setNotice] = useState(null)
   const [lessonJobId, setLessonJobId] = useState(null)
 
+  // A plan version carries its authored document (sections and research) in `gen_plan_documents`,
+  // keyed by plan_id. `plan.replan` now carries that document onto a content-preserving new version
+  // (keep / retitle / defer / remove), so a replanned plan is authorable again — the version is no
+  // longer unauthorable just because it was replanned. Two cases still leave the version without a
+  // covering document: a structural `add` through the editor (no authored section exists for a new
+  // objective) and a version whose replan could not carry. No wire field declares authorship, so the
+  // studio does not guess before the click: it reads the refusal the lessons job itself returns and
+  // withholds the action for that plan version instead of offering the same failure twice.
+  const [lessonDocumentGap, setLessonDocumentGap] = useState(null)
+  const planIdOnScreen = plan && plan.plan_id
+
   // The editor's displayed order. Local until Save changes sends it as a permutation.
   useEffect(() => setOrder(null), [outline.data])
   const displayObjectives = order
     ? order.map((id) => objectives.find((objective) => objective.objective_id === id)).filter(Boolean)
     : objectives
+
+  // A new plan version (plan.replan) is a new set of objective rows with new ids. The editor is
+  // opened right after that replan, before the outline reload lands, so its drafts can be keyed by
+  // the previous version's ids — every title input then renders empty. Backfill a draft for any
+  // objective that has none while the editor is open, so a title is never shown as blank.
+  useEffect(() => {
+    if (!editing) return
+    setDrafts((previous) => {
+      let changed = false
+      const next = { ...previous }
+      for (const objective of objectives) {
+        if (!next[objective.objective_id]) {
+          next[objective.objective_id] = { title: objective.title, evidence_target: objective.evidence_target }
+          changed = true
+        }
+      }
+      return changed ? next : previous
+    })
+  }, [editing, objectives])
 
   const startEditing = useCallback(() => {
     const next = {}
@@ -6293,17 +6323,35 @@ function StudioPlanView({
     if (!plan) return
     setBusy(true)
     setError(null)
+    // `plan.approve` fences on the digest recomputed from the plan rows, and an edit changes it the
+    // moment it is saved. The page's `book` query can still hold the pre-edit digest for a render or
+    // two, and submitting that is refused `VALIDATION_FAILED: the approved hash does not match the
+    // current plan content`. Read the digest directly at approve time instead of trusting the render.
+    let hash = planHash
+    if (supported('parent.blueprint.read')) {
+      const fresh = await rpc('parent.blueprint.read', { course_id: course.course_id })
+      const freshHash = fresh && fresh.ok && fresh.result && fresh.result.plan ? fresh.result.plan.plan_hash : null
+      if (freshHash) hash = freshHash
+    }
+    if (!hash) {
+      setBusy(false)
+      setError('The plan digest is not available yet. Re-read the plan and try again.')
+      return
+    }
     const response = await rpc(
       'plan.approve',
-      { enrollment_id: course.enrollment_id, plan_id: plan.plan_id, plan_hash: planHash },
+      { enrollment_id: course.enrollment_id, plan_id: plan.plan_id, plan_hash: hash },
       { expectedRevision: revision, idempotencyKey: newOperationId('plan-approve') }
     )
     setBusy(false)
     if (!response.ok) {
       const nextRevision = staleRevision(response)
       if (nextRevision !== null) onRevision(nextRevision)
+      const hashMismatch = /plan content/i.test((response.error && response.error.message) || '')
+      if (hashMismatch) onChanged()
       setError(
         `${response.error.code}: ${describeError(response.error)}` +
+          (hashMismatch ? ' The plan was re-read; press Approve plan again.' : '') +
           (nextRevision !== null ? ' The course revision was refreshed; press Approve plan again.' : '')
       )
       return
@@ -6311,7 +6359,7 @@ function StudioPlanView({
     onRevision(response.result.revision)
     setNotice('Plan approved. The outline and activities are now fixed; the generated pages are a separate approval.')
     onChanged()
-  }, [plan, course.enrollment_id, revision, onRevision, onChanged])
+  }, [plan, course.enrollment_id, course.course_id, planHash, revision, onRevision, onChanged, supported])
 
   const generateLessons = useCallback(async () => {
     if (!plan) return
@@ -6358,10 +6406,26 @@ function StudioPlanView({
     startEditing()
   }, [plan, objectives, course.enrollment_id, revision, onRevision, onChanged, startEditing])
 
+  // Clear the gap when the screen moves to another plan version (a replan or a fresh authoring job
+  // that completed and reloaded the outline).
+  useEffect(() => setLessonDocumentGap(null), [planIdOnScreen])
+
   const settled = useCallback(
     (job) => {
-      if (job && (job.state === 'completed' || job.state === 'completed_late')) onChanged()
-      else onJobSettled(job)
+      if (!job) return
+      const isLessons = job.brief && job.brief.stage === 'lessons'
+      const message = (job.error && job.error.message) || ''
+      if (isLessons && job.state === 'failed' && /no authored document|outline covers objectives/i.test(message)) {
+        setLessonDocumentGap(message)
+        onJobSettled(job)
+        return
+      }
+      if (job.state === 'completed' || job.state === 'completed_late') {
+        if (isLessons) setLessonDocumentGap(null)
+        onChanged()
+        return
+      }
+      onJobSettled(job)
     },
     [onChanged, onJobSettled]
   )
@@ -6423,7 +6487,7 @@ function StudioPlanView({
                     children: 'Approve plan'
                   })
                 : null,
-              !isDraft && !editing
+              !isDraft && !editing && !lessonDocumentGap
                 ? jsx(sdk.Button, {
                     size: 'sm',
                     variant: 'default',
@@ -6450,6 +6514,15 @@ function StudioPlanView({
         children:
           'Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.'
       }),
+      lessonDocumentGap
+        ? jsx('p', {
+            className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+            'data-cb-plan-document': 'missing',
+            children:
+              `Lessons cannot be generated from this plan version: ${lessonDocumentGap} ` +
+              'The authored outline (its sections and research) belongs to the version that was written with the plan, and this version has changes it does not cover, so Generate lessons is withheld rather than offered as a second failure. Start a new plan version to author an outline that covers every objective.'
+          })
+        : null,
       notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
       error ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: error }) : null,
       planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onChanged }) : null,
