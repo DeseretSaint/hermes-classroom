@@ -1,0 +1,30 @@
+{
+  "process": "stage2 (separate process, same database)",
+  "binding_found_by_stored_id": true,
+  "binding_status": "active",
+  "lesson_begin": {
+    "binding": {
+      "binding_id": "bnd_trace",
+      "reattachable": true,
+      "runtime_session_id": "rt-live",
+      "status": "active",
+      "stored_session_id": "stored-trace-session",
+      "updated_at": "2026-11-06T09:28:47.045474+00:00"
+    },
+    "lesson_run_id": "run_trace_0001",
+    "resume": {
+      "available": true,
+      "reason": null
+    },
+    "revision": 0,
+    "run_state": "resumed"
+  },
+  "reconcile": {
+    "status": "active",
+    "changed": false,
+    "binding_id": "bnd_trace",
+    "revision": 1
+  },
+  "attempts_after_restart": 3,
+  "transitions_after_restart": 6
+}

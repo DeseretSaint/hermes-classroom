@@ -29,7 +29,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
-from . import api, db, grading, jobs as jobs_contract
+from . import api, db, grading, jobs as jobs_contract, review
 from .api import RpcError
 from .contracts import method_names
 
@@ -52,7 +52,6 @@ KERNEL_METHODS: tuple[str, ...] = (
     "notebook.list",
     "notebook.delete",
     "quiz.history",
-    "binding.get",
     "jobs.create",
     "jobs.get",
     "jobs.cancel",
@@ -442,47 +441,6 @@ def quiz_history(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
     return int(enrollment["revision"]), {"attempts": attempts}
 
 
-@_handler("binding.get")
-def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-    """Resolve a binding by stored/runtime session id or enrollment id — never by recency."""
-    db.ensure_schema()
-    session_id = payload.get("session_id")
-    enrollment_id = payload.get("enrollment_id")
-    if not session_id and not enrollment_id:
-        raise RpcError.of("VALIDATION_FAILED", "provide session_id or enrollment_id.", field="session_id")
-    with db.read() as connection:
-        row = None
-        if enrollment_id:
-            row = _row(
-                connection,
-                "SELECT * FROM bindings WHERE enrollment_id = ? ORDER BY revision DESC, updated_at DESC LIMIT 1",
-                (enrollment_id,),
-            )
-        if row is None and session_id:
-            row = _row(
-                connection,
-                "SELECT * FROM bindings WHERE stored_session_id = ? OR runtime_session_id = ? LIMIT 1",
-                (session_id, session_id),
-            )
-    if row is None:
-        return 0, {"binding": None}
-    return int(row["revision"]), {
-        "binding": {
-            "binding_id": row["id"],
-            "enrollment_id": row["enrollment_id"],
-            "profile": row["profile"],
-            "connection_id": row["connection_id"],
-            "runtime_session_id": row["runtime_session_id"],
-            "stored_session_id": row["stored_session_id"],
-            "cwd_fingerprint": row["cwd_fingerprint"],
-            "compression_tip": row["compression_tip"],
-            "status": row["status"],
-            "revision": int(row["revision"]),
-            "updated_at": row["updated_at"],
-        }
-    }
-
-
 # ── courses, plans, enrollments ─────────────────────────────────────────────
 
 
@@ -827,11 +785,29 @@ def _attempt_rows_before(connection, enrollment_id: str, check_id: str) -> int:
 def _classify_evidence(connection, enrollment_id: str, check_id: str) -> str:
     """How this answer was produced.
 
-    Cold is the default. A second answer to the same check follows feedback that was shown, so it
-    is ``hinted`` — recognition after scaffolding cannot become independent evidence
-    (``AUDIT.md`` R10/R12).
+    Cold is the default. A hint or a shown answer is a durable event recorded *before* the next
+    answer (``AUDIT.md`` R10/R12): an answer produced after scaffolding is never independent
+    evidence, and a shown answer is stronger contamination than a hint. A second answer to the
+    same check also follows feedback, so it is at least ``hinted``.
     """
-    return "hinted" if _attempt_rows_before(connection, enrollment_id, check_id) else "cold"
+    objective_row = _row(
+        connection, "SELECT objective_id FROM checks WHERE id = ?", (check_id,)
+    )
+    assist = None
+    if objective_row is not None:
+        assist = _row(
+            connection,
+            "SELECT kind FROM evidence WHERE enrollment_id = ? AND objective_id = ?"
+            " AND kind IN ('answer_shown', 'hint_request') AND attempt_id IS NULL"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (enrollment_id, objective_row["objective_id"]),
+        )
+    if assist is not None and assist["kind"] == "answer_shown":
+        return "answer_shown"
+    if assist is not None or _attempt_rows_before(connection, enrollment_id, check_id):
+        return "hinted"
+    return "cold"
+
 
 
 def _next_action_for(verdict: str) -> str:
@@ -1012,6 +988,13 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
              _json_dump(graded.criteria), _json_dump(graded.provenance), _now(), _now()),
         )
         next_action = _next_action_for(verdict)
+        # A hint is consumed by the answer it contaminated: it stays linked to that attempt and
+        # cannot keep marking later, independent answers as hinted (R10/R12).
+        connection.execute(
+            "UPDATE evidence SET attempt_id = ? WHERE enrollment_id = ? AND objective_id = ?"
+            " AND kind IN ('hint_request', 'answer_shown') AND attempt_id IS NULL",
+            (attempt_id, enrollment["id"], objective["id"]),
+        )
         if verdict == "pass" and evidence_class != "cold":
             # Access may advance, but the record must not claim independent evidence.
             next_action = "review_objective"
@@ -1024,8 +1007,10 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         if verdict == "pass" and evidence_class == "cold":
             connection.execute(
                 "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
-                " VALUES (?, ?, ?, ?, 2, 'independent_evidence', ?, ?)",
-                (_new_id("evd"), enrollment["id"], objective["id"], attempt_id, evidence_class, _now()),
+                " VALUES (?, ?, ?, ?, 2, ?, ?, ?)",
+                (_new_id("evd"), enrollment["id"], objective["id"], attempt_id,
+                 "delayed_retrieval" if objective["state"] == "review_due" else "independent_evidence",
+                 evidence_class, _now()),
             )
         connection.execute(
             "UPDATE objectives SET state = ? WHERE id = ?",
@@ -1046,13 +1031,17 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
 
 
 def _objective_state_after(verdict: str, evidence_class: str, current: str) -> str:
-    """Evidence states stay distinct: only a cold pass reaches ``independent_evidence``."""
+    """Evidence states stay distinct: only a cold pass reaches ``independent_evidence``.
+
+    A cold pass on an item that was scheduled for review is *delayed* evidence, not a repeat of
+    the same-session result (``AUDIT.md`` R10).
+    """
     if evidence_class == "override":
         return "overridden"
     if verdict == "pass":
-        return "independent_evidence" if evidence_class == "cold" else (
-            "introduced" if current == "not_started" else current
-        )
+        if evidence_class != "cold":
+            return "introduced" if current == "not_started" else current
+        return "delayed_evidence" if current == "review_due" else "independent_evidence"
     if verdict in ("partial", "not_yet"):
         return "needs_review"
     return current
@@ -1447,6 +1436,11 @@ def _library_warning(connection, enrollment, course, pack_row) -> str | None:
 def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """The library survives a restart: it is rebuilt from enrollments/courses, never from UI state."""
     db.ensure_schema()
+    # Scheduler tick: due reviews become `review_due` before anything is counted or displayed, so
+    # an overdue queue can never look empty. Idempotent, and it only writes contracted state.
+    with db.transaction() as connection:
+        for row in connection.execute("SELECT id FROM enrollments WHERE status = 'active'").fetchall():
+            review.refresh_due(connection, row["id"])
     filter_name = payload.get("filter") or "all"
     limit = min(int(payload.get("limit") or 50), 100)
     offset = _decode_cursor(payload.get("cursor"))
