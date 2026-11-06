@@ -402,7 +402,17 @@ class RegistryTest(unittest.TestCase):
         # be wired when this branch is merged; everything the kernel owns must be present, and
         # nothing may be invented. Explicit allowance beats silently dropping the check.
         pack_methods = {"pack.preview", "pack.import", "pack.export", "pack.list", "pack.inspect"}
-        expected = set(method_names()) - pack_methods
+        # cb.rpc v6 (CB-011) froze the Parent Studio family before its handlers exist. They are
+        # Cinder's card t_a356c8a8; until it lands, dispatch answers NOT_IMPLEMENTED and the
+        # Desktop gates on /runtime.implemented_methods. This allowance must shrink to empty when
+        # that card merges — it is a wiring status, not a second contract.
+        pending_v6 = {
+            "parent.brief.create", "parent.brief.get", "parent.plan.edit",
+            "parent.final.approve", "parent.blueprint.read", "parent.export",
+            "parent.reflection.record", "parent.reflection.list",
+        }
+        self.assertTrue(pending_v6 <= set(method_names()), "allowance names a non-contract method")
+        expected = set(method_names()) - pack_methods - pending_v6
         implemented = set(api.implemented_methods())
         self.assertTrue(expected <= implemented, f"unregistered: {sorted(expected - implemented)}")
         self.assertTrue(implemented <= set(method_names()), "a handler exists for a non-contract method")

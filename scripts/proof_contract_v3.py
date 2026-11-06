@@ -83,7 +83,9 @@ class V3BackendProof(KernelCase):
         # whatever the current wire version is (v4 added pack reads on top of them).
         self.assertGreaterEqual(contracts.WIRE_CONTRACT_VERSION, 3)
         self.assertEqual(contracts.contract_version("cb.rpc"), contracts.WIRE_CONTRACT_VERSION)
-        self.assertEqual(contracts.contract_version("cb.db"), 2)
+        # Version-agnostic: cb.db v3 (CB-011) is additive over the v2 snapshot this proof froze
+        # against, so a later storage version must not fail the proof.
+        self.assertGreaterEqual(contracts.contract_version("cb.db"), 2)
 
     def test_review_queue_output_is_contract_legal_as_returned(self) -> None:
         lesson = self.lesson()
