@@ -5503,7 +5503,13 @@ function JobStateText({ job }) {
   if (job.state === 'queued') {
     return jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Queued. The job runner picks it up on its next tick; nothing is spent until it starts.' })
   }
-  if (job.state === 'running' || job.state === 'cancel_requested' || job.state === 'cancelling') {
+  if (job.state === 'cancel_requested' || job.state === 'cancelling') {
+    return jsx('div', {
+      className: 'text-xs text-(--ui-text-secondary)',
+      children: 'Cancelling. The current provider call is not aborted; the job stops before its next step.'
+    })
+  }
+  if (job.state === 'running') {
     return jsx('div', {
       className: 'text-xs text-(--ui-text-secondary)',
       children: `Working${progress.stage ? ` (${progress.stage})` : ''}${message}`
@@ -5516,6 +5522,12 @@ function JobStateText({ job }) {
     return jsx('div', {
       className: 'text-xs text-(--ui-text-secondary)',
       children: 'Interrupted: the worker stopped mid-job. Its checkpoint was kept; run the stage again to finish it.'
+    })
+  }
+  if (job.state === 'cancelled') {
+    return jsx('div', {
+      className: 'text-xs text-(--ui-text-secondary)',
+      children: 'Cancelled before it finished. The brief and any work that had already been saved are kept.'
     })
   }
   const error = job.error || {}
@@ -5575,10 +5587,79 @@ function useStudioJob(jobId, onSettled) {
   return job
 }
 
-function StudioJobLine({ jobId, onSettled }) {
+function StudioJobLine({ jobId, onSettled, onRunAgain }) {
   const job = useStudioJob(jobId, onSettled)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
   if (!jobId) return null
-  return jsx('div', { className: 'flex flex-col gap-1', 'data-cb-job-id': jobId, children: jsx(JobStateText, { job }) })
+
+  const state = job && job.state
+  const running = state === 'queued' || state === 'running'
+  const retryable = Boolean(
+    onRunAgain && job && job.brief && (state === 'cancelled' || state === 'failed' || state === 'interrupted_requires_retry')
+  )
+
+  const cancel = async () => {
+    setBusy(true)
+    setError(null)
+    const response = await rpc('jobs.cancel', { job_id: jobId })
+    setBusy(false)
+    if (!response.ok) setError(response.error)
+  }
+
+  // Re-queue the same stage from the brief the job itself stored. The parent re-reads, so the line
+  // shows the new job id rather than pretending the cancelled one resumed.
+  const runAgain = async () => {
+    setBusy(true)
+    setError(null)
+    const response = await rpc(
+      'jobs.create',
+      { kind: job.kind || 'plan', brief: job.brief },
+      { idempotencyKey: newOperationId('stage-again') }
+    )
+    setBusy(false)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    if (onRunAgain) onRunAgain(response.result.job_id)
+  }
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-1',
+    'data-cb-job-id': jobId,
+    'data-cb-job-state': state || 'reading',
+    children: [
+      jsx(JobStateText, { job }),
+      running ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'It runs in the background; leaving this page does not stop it.' }) : null,
+      running
+        ? jsx(sdk.Button, {
+            size: 'sm',
+            variant: 'secondary',
+            disabled: busy,
+            onClick: cancel,
+            className: 'self-start',
+            children: busy ? 'Cancelling' : 'Cancel generation'
+          })
+        : null,
+      retryable
+        ? jsx(sdk.Button, {
+            size: 'sm',
+            variant: 'secondary',
+            disabled: busy,
+            onClick: runAgain,
+            className: 'self-start',
+            children: busy ? 'Starting' : 'Run this stage again'
+          })
+        : null,
+      error
+        ? jsx('div', {
+            className: 'text-xs text-(--ui-text-secondary)',
+            children: `${error.code ? error.code + ': ' : ''}${describeError(error)}`
+          })
+        : null
+    ]
+  })
 }
 
 /** The studio list: authored parent courses only. Imported packs stay in Library. */
@@ -6049,7 +6130,7 @@ function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplic
         children: [
           jsx(PackReviewLine, { label: 'Job', value: plane.job_id || '—' }),
           jsx(PackReviewLine, { label: 'Submitted', value: plane.submitted_at ? whenLabel(plane.submitted_at) : '—' }),
-          jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled })
+          jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onJobSettled })
         ]
       }),
       latestProposal
@@ -6299,9 +6380,9 @@ function StudioPlanView({
     return jsx(EmptyState, {
       title: 'No plan yet',
       description: planJobId
-        ? 'The plan job is still working. This screen fills itself when the plan is written; nothing is shown from a template.'
+        ? 'This screen fills itself when the plan is written; nothing is shown from a template.'
         : 'No plan job is attached to this course, so there is nothing to review. Start a new brief.',
-      children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled }) : null
+      children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled, onRunAgain: onChanged }) : null
     })
   }
 
@@ -6371,7 +6452,7 @@ function StudioPlanView({
       }),
       notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
       error ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: error }) : null,
-      planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled }) : null,
+      planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onChanged }) : null,
       lessonJobId ? jsx(StudioJobLine, { jobId: lessonJobId, onSettled: settled }) : null,
 
       !isDraft && contentReady

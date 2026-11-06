@@ -1,0 +1,354 @@
+{
+  "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+  "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+  "wire_version": 6,
+  "revision_after": 4,
+  "before": {
+    "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+    "recipe": "parent",
+    "plan": {
+      "plan_id": "7bb33ee2d3642375",
+      "version": 1,
+      "state": "approved",
+      "plan_hash": "sha256:aff7b511f92c95587758fdae59c4a015a39fd6571b0ad441181ca43ca21dc94e"
+    },
+    "approval": {
+      "state": "active",
+      "plan_hash": "sha256:aff7b511f92c95587758fdae59c4a015a39fd6571b0ad441181ca43ca21dc94e",
+      "content_hash": "sha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934",
+      "approved_at": "2026-11-06T16:39:12.697843+00:00",
+      "invalidated_reason": null
+    },
+    "content_hash": "sha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934",
+    "export": {
+      "ready": true,
+      "blocked_reason": null
+    },
+    "tabs": {
+      "parent_guide": [
+        {
+          "role": "parent_guide",
+          "title": "01 \u00b7 Warm things at home",
+          "objective_id": "2e6288c0ee324e28",
+          "text": "# Parent guide \u2014 Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen\nEvi",
+          "sha256": "sha256:42f35fce7e113b0658c63fb04fdfa9bad4036f8534c0decd0eb6abf6a8c7b981",
+          "bytes": 852,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "parent_guide",
+          "title": "02 \u00b7 Cold things at home",
+          "objective_id": "2ff2b3fd737bf641",
+          "text": "# Parent guide \u2014 Cold things at home\n\nObjective: Sort picture cards into warm and cold\nEvidence targ",
+          "sha256": "sha256:4f158b46992b30e1ab51f81ab31570671e303e8b0afe1981a73a9c8caffe4311",
+          "bytes": 841,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "parent_guide",
+          "title": "03 \u00b7 Why the kettle is a grown-up job",
+          "objective_id": "513b68d9f0251aff",
+          "text": "# Parent guide \u2014 Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\nE",
+          "sha256": "sha256:fc12b00f3d5664a9ed76e3e5d00df2c739a43df7d5ca36ed55e66c72734db33e",
+          "bytes": 843,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "parent_guide",
+          "title": "04 \u00b7 Explain one example",
+          "objective_id": "5862866fb7e6edaf",
+          "text": "# Parent guide \u2014 Explain one example\n\nObjective: Explain one example in their own words\nEvidence tar",
+          "sha256": "sha256:1f91652098fd9ff3654d119d8aa2f60a9e43954c6f2948a9cd12d1e7edf80115",
+          "bytes": 814,
+          "source": "authored",
+          "truncated": true
+        }
+      ],
+      "learner_pages": [
+        {
+          "role": "learner_page",
+          "title": "01 \u00b7 Warm things at home",
+          "objective_id": "2e6288c0ee324e28",
+          "text": "# Warm things at home\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+          "sha256": "sha256:27fe76fe11d262564bb7c6527e482ff43afaf99fab270991dcfd9d2c9ba8de46",
+          "bytes": 549,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "learner_page",
+          "title": "02 \u00b7 Cold things at home",
+          "objective_id": "2ff2b3fd737bf641",
+          "text": "# Cold things at home\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+          "sha256": "sha256:4673e2c07a2ff497c99d13195047e12afd4ceac56c895866b2b459e7caf91b3c",
+          "bytes": 549,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "learner_page",
+          "title": "03 \u00b7 Why the kettle is a grown-up job",
+          "objective_id": "513b68d9f0251aff",
+          "text": "# Why the kettle is a grown-up job\n\n## Name one of each\nPoint at the kettle: it holds hot water. Poi",
+          "sha256": "sha256:d46ee0c524b7c781a1651b24b34c19ba9c01a3a647c3cd12bc55da88bcad67d6",
+          "bytes": 562,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "learner_page",
+          "title": "04 \u00b7 Explain one example",
+          "objective_id": "5862866fb7e6edaf",
+          "text": "# Explain one example\n\n## Name one of each\nPoint at the kettle: it holds hot water. Point at the fri",
+          "sha256": "sha256:ca1689654060de525e8b17201728dcf43f037ca6de4e0e1ff575dde5b817bd7c",
+          "bytes": 549,
+          "source": "authored",
+          "truncated": true
+        }
+      ],
+      "answers": [
+        {
+          "role": "answer_guide",
+          "title": "01 \u00b7 Warm things at home",
+          "objective_id": "2e6288c0ee324e28",
+          "text": "# Answer guide \u2014 Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen\n\n##",
+          "sha256": "sha256:716e9bc3f27906bd0f2e29bdd24dcc230246b1aa4a243e6e1097105a1c73375f",
+          "bytes": 376,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "answer_guide",
+          "title": "02 \u00b7 Cold things at home",
+          "objective_id": "2ff2b3fd737bf641",
+          "text": "# Answer guide \u2014 Cold things at home\n\nObjective: Sort picture cards into warm and cold\n\n## Reference",
+          "sha256": "sha256:b0fc0b7638c2fdb32d2fee4d42ede1f936a4f40501c8a3333e3147d578bdc44c",
+          "bytes": 366,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "answer_guide",
+          "title": "03 \u00b7 Why the kettle is a grown-up job",
+          "objective_id": "513b68d9f0251aff",
+          "text": "# Answer guide \u2014 Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\n\n",
+          "sha256": "sha256:4fc2255622b37a7e25e33b9a99e13d17fd47cbde6bf6596492a773b275aed32c",
+          "bytes": 378,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "answer_guide",
+          "title": "04 \u00b7 Explain one example",
+          "objective_id": "5862866fb7e6edaf",
+          "text": "# Answer guide \u2014 Explain one example\n\nObjective: Explain one example in their own words\n\n## Referenc",
+          "sha256": "sha256:e69a009cb0dd49407f36e245979e0e35bc5df06a9949de63bb30e7f8701f2639",
+          "bytes": 367,
+          "source": "authored",
+          "truncated": true
+        }
+      ],
+      "narration": [
+        {
+          "role": "narration",
+          "title": "01 \u00b7 Warm things at home",
+          "objective_id": "2e6288c0ee324e28",
+          "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+          "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+          "bytes": 153,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "narration",
+          "title": "02 \u00b7 Cold things at home",
+          "objective_id": "2ff2b3fd737bf641",
+          "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+          "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+          "bytes": 153,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "narration",
+          "title": "03 \u00b7 Why the kettle is a grown-up job",
+          "objective_id": "513b68d9f0251aff",
+          "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+          "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+          "bytes": 153,
+          "source": "authored",
+          "truncated": true
+        },
+        {
+          "role": "narration",
+          "title": "04 \u00b7 Explain one example",
+          "objective_id": "5862866fb7e6edaf",
+          "text": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.\nPut each card under",
+          "sha256": "sha256:64b4978d9a3ae22bb3d4a3dd160e9f1803c09d2533196a98ad818c6fb5b5accb",
+          "bytes": 153,
+          "source": "authored",
+          "truncated": true
+        }
+      ]
+    },
+    "sources": [
+      {
+        "source_id": "40671cc1667ed1b2",
+        "title": "Polite greetings in Japanese",
+        "url": "https://example.org/greetings",
+        "support_status": "model_assessed",
+        "fetched_at": "2026-11-06T12:00:00Z"
+      }
+    ]
+  },
+  "after_replan": {
+    "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+    "recipe": "parent",
+    "plan": {
+      "plan_id": "pln_4a4e0887d3f94750a4fc391343eaa938",
+      "version": 2,
+      "state": "draft",
+      "plan_hash": "sha256:ea1fa869453bac5afd4a6e5ba6e81364c28cdaf1bc4c8f62e2a00c765e9106f8"
+    },
+    "approval": {
+      "state": "active",
+      "plan_hash": "sha256:aff7b511f92c95587758fdae59c4a015a39fd6571b0ad441181ca43ca21dc94e",
+      "content_hash": "sha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934",
+      "approved_at": "2026-11-06T16:39:12.697843+00:00",
+      "invalidated_reason": null
+    },
+    "content_hash": "sha256:4a283d883311fde52ee734a0fb376d37578e0e90e98cadc4b8620c567911f96a",
+    "export": {
+      "ready": false,
+      "blocked_reason": "plan_not_approved"
+    },
+    "tabs": {
+      "parent_guide": [],
+      "learner_pages": [],
+      "answers": [],
+      "narration": []
+    },
+    "sources": [
+      {
+        "source_id": "40671cc1667ed1b2",
+        "title": "Polite greetings in Japanese",
+        "url": "https://example.org/greetings",
+        "support_status": "model_assessed",
+        "fetched_at": "2026-11-06T12:00:00Z"
+      }
+    ]
+  },
+  "after_edit": {
+    "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+    "recipe": "parent",
+    "plan": {
+      "plan_id": "pln_4a4e0887d3f94750a4fc391343eaa938",
+      "version": 3,
+      "state": "draft",
+      "plan_hash": "sha256:95594eb8361a8b0260b0fa929ed82556b3412ba5f39690a979e84f7e03650dae"
+    },
+    "approval": {
+      "state": "superseded",
+      "plan_hash": "sha256:aff7b511f92c95587758fdae59c4a015a39fd6571b0ad441181ca43ca21dc94e",
+      "content_hash": "sha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934",
+      "approved_at": "2026-11-06T16:39:12.697843+00:00",
+      "invalidated_reason": "course_edited"
+    },
+    "content_hash": "sha256:05224fefde62998b84c7977612056f2e2ac5e61a760bb91bea5c3cb2a103d288",
+    "export": {
+      "ready": false,
+      "blocked_reason": "plan_not_approved"
+    },
+    "tabs": {
+      "parent_guide": [],
+      "learner_pages": [],
+      "answers": [],
+      "narration": []
+    },
+    "sources": [
+      {
+        "source_id": "40671cc1667ed1b2",
+        "title": "Polite greetings in Japanese",
+        "url": "https://example.org/greetings",
+        "support_status": "model_assessed",
+        "fetched_at": "2026-11-06T12:00:00Z"
+      }
+    ]
+  },
+  "export_attempt": {
+    "ok": false,
+    "error": {
+      "code": "POLICY_VIOLATION",
+      "category": "content",
+      "message": "the plan must be approved before the authored course can be exported.",
+      "retryable": false,
+      "details": {
+        "reason": "plan_not_approved",
+        "course_id": "crs_3ea89399cb7b4385a6baba8e02883150"
+      }
+    }
+  },
+  "calls": [
+    {
+      "method": "parent.blueprint.read",
+      "expected_revision": null,
+      "ok": true,
+      "error": null,
+      "revision": 0
+    },
+    {
+      "method": "course.outline",
+      "expected_revision": null,
+      "ok": true,
+      "error": null,
+      "revision": 0
+    },
+    {
+      "method": "plan.replan",
+      "expected_revision": 2,
+      "ok": true,
+      "error": null,
+      "revision": 3
+    },
+    {
+      "method": "parent.blueprint.read",
+      "expected_revision": null,
+      "ok": true,
+      "error": null,
+      "revision": 0
+    },
+    {
+      "method": "parent.plan.edit",
+      "expected_revision": 3,
+      "ok": true,
+      "error": null,
+      "revision": 4
+    },
+    {
+      "method": "parent.blueprint.read",
+      "expected_revision": null,
+      "ok": true,
+      "error": null,
+      "revision": 0
+    },
+    {
+      "method": "parent.export",
+      "expected_revision": null,
+      "ok": false,
+      "error": {
+        "code": "POLICY_VIOLATION",
+        "category": "content",
+        "message": "the plan must be approved before the authored course can be exported.",
+        "retryable": false,
+        "details": {
+          "reason": "plan_not_approved",
+          "course_id": "crs_3ea89399cb7b4385a6baba8e02883150"
+        }
+      },
+      "revision": null
+    }
+  ]
+}

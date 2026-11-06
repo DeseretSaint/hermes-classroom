@@ -1,0 +1,105 @@
+{
+  "at": "2026-11-06T21:35:43.872Z",
+  "outcome": "complete",
+  "verdicts": {
+    "generationSettled": "Finished — pla",
+    "blockedBeforeReapproval": {
+      "approval": "Changes need review",
+      "blocked": "No lesson pages have been generated yet.",
+      "exportDisabled": true
+    },
+    "afterReapproval": {
+      "approval": "Changes need review",
+      "approvedLessonCopy": null,
+      "exportDisabled": true
+    },
+    "exported": {
+      "files": false,
+      "sentence": null
+    }
+  },
+  "steps": [
+    {
+      "step": "plan-view",
+      "at": "2026-11-06T21:35:23.876Z",
+      "text": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v3\nChanges need review\nYou are the operator · revision 5\nChanges need review\nYou changed the course title or goal after approving the lesson set.\nNo lesson pages have been generated yet.\nStudio view\nPlan\nPlan approved · v3\nplan sha256:95594eb8361a…\nGenerate lessons\nStart a new plan version\nApproving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.\nFinished — plan authored (draft)\nOUTLINE AND ACTIVITIES (4)\n01\nName one warm and one cold thing in the kitchen (revised)\nrecall\nState: not_started · check: none\n02\nSort picture cards into warm and cold\ndiscrimination\nState: not_started · check: none\n03\nSay why the kettle is a grown-up job\ncomprehension\nState: not_started · check: none\n04\nExplain one example in their own words\nproduction\nState: not_started · check: none\nSOURCES AND REVIEW NOTES\nSources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here.\nPolite greetings in Japanese\nmodel_assessed\nhttps://example.org/greetings\nA draft plan can be edited freely. An approved plan is changed only by starting a new version, so what you approved stays exact.",
+      "planLine": "Plan approved · v3",
+      "lessonSetApproval": null,
+      "approvedLessonCopy": null,
+      "blockedCopy": "No lesson pages have been generated yet.",
+      "exportDisabled": null,
+      "exportedFiles": false,
+      "exportSentence": null,
+      "jobText": "Finished — plan authored (draft)"
+    },
+    {
+      "step": "generate-clicked",
+      "at": "2026-11-06T21:35:23.883Z",
+      "text": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v3\nChanges need review\nYou are the operator · revision 5\nChanges need review\nYou changed the course title or goal after approving the lesson set.\nNo lesson pages have been generated yet.\nStudio view\nPlan\nPlan approved · v3\nplan sha256:95594eb8361a…\nGenerate lessons\nStart a new plan version\nApproving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.\nFinished — plan authored (draft)\nOUTLINE AND ACTIVITIES (4)\n01\nName one warm and one cold thing in the kitchen (revised)\nrecall\nState: not_started · check: none\n02\nSort picture cards into warm and cold\ndiscrimination\nState: not_started · check: none\n03\nSay why the kettle is a grown-up job\ncomprehension\nState: not_started · check: none\n04\nExplain one example in their own words\nproduction\nState: not_started · check: none\nSOURCES AND REVIEW NOTES\nSources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here.\nPolite greetings in Japanese\nmodel_assessed\nhttps://example.org/greetings\nA draft plan can be edited freely. An approved plan is changed only by starting a new version, so what you approved stays exact.",
+      "planLine": "Plan approved · v3",
+      "lessonSetApproval": null,
+      "approvedLessonCopy": null,
+      "blockedCopy": "No lesson pages have been generated yet.",
+      "exportDisabled": null,
+      "exportedFiles": false,
+      "exportSentence": null,
+      "jobText": "Finished — plan authored (draft)",
+      "gen": "clicked"
+    },
+    {
+      "step": "generation-settled",
+      "at": "2026-11-06T21:35:28.888Z",
+      "text": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v3\nChanges need review\nYou are the operator · revision 5\nChanges need review\nYou changed the course title or goal after approving the lesson set.\nNo lesson pages have been generated yet.\nStudio view\nPlan\nPlan approved · v3\nplan sha256:95594eb8361a…\nGenerate lessons\nStart a new plan version\nApproving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.\nFinished — plan authored (draft)\nFailed (INTERNAL_ERROR).\nplan 'pln_4a4e0887d3f94750a4fc391343eaa938' has no authored document\nOUTLINE AND ACTIVITIES (4)\n01\nName one warm and one cold thing in the kitchen (revised)\nrecall\nState: not_started · check: none\n02\nSort picture cards into warm and cold\ndiscrimination\nState: not_started · check: none\n03\nSay why the kettle is a grown-up job\ncomprehension\nState: not_started · check: none\n04\nExplain one example in their own words\nproduction\nState: not_started · check: none\nSOURCES AND REVIEW NOTES\nSources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here.\nPolite greetings in Japanese\nmodel_assessed\nhttps://example.org/greetings\nA draft plan can be edited freely. An approved plan is changed only by starting a new version, so what you approved stays exact.",
+      "planLine": "Plan approved · v3",
+      "lessonSetApproval": null,
+      "approvedLessonCopy": null,
+      "blockedCopy": "No lesson pages have been generated yet.",
+      "exportDisabled": null,
+      "exportedFiles": false,
+      "exportSentence": null,
+      "jobText": "Finished — plan authored (draft)",
+      "settled": "Finished — pla"
+    },
+    {
+      "step": "export-view-after-generation",
+      "at": "2026-11-06T21:35:31.797Z",
+      "text": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v3\nChanges need review\nYou are the operator · revision 5\nChanges need review\nYou changed the course title or goal after approving the lesson set.\nNo lesson pages have been generated yet.\nStudio view\nExport\nEXPORT GATE\nPlan\napproved · v3\nLesson set approval\nChanges need review\nApproved content hash\nsha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934\nCurrent content hash\nsha256:05224fefde62998b84c7977612056f2e2ac5e61a760bb91bea5c3cb2a103d288\nFINAL APPROVAL\nApproving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it.\nApprove this lesson set\nNo lesson pages have been generated yet.\nFORMATS\nPack archive (parent guide, learner pages, answer guide).\nPrintable PDF: selectable text, low-ink layout, no color-only answers.\nExport the approved files",
+      "planLine": "approved · v3",
+      "lessonSetApproval": "Changes need review",
+      "approvedLessonCopy": null,
+      "blockedCopy": "No lesson pages have been generated yet.",
+      "exportDisabled": true,
+      "exportedFiles": false,
+      "exportSentence": null,
+      "jobText": null
+    },
+    {
+      "step": "lesson-set-reapproved",
+      "at": "2026-11-06T21:35:35.809Z",
+      "text": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v3\nChanges need review\nYou are the operator · revision 5\nChanges need review\nYou changed the course title or goal after approving the lesson set.\nNo lesson pages have been generated yet.\nStudio view\nExport\nEXPORT GATE\nPlan\napproved · v3\nLesson set approval\nChanges need review\nApproved content hash\nsha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934\nCurrent content hash\nsha256:05224fefde62998b84c7977612056f2e2ac5e61a760bb91bea5c3cb2a103d288\nFINAL APPROVAL\nApproving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it.\nApprove this lesson set\nthere is no generated lesson content to approve yet.\nNo lesson pages have been generated yet.\nFORMATS\nPack archive (parent guide, learner pages, answer guide).\nPrintable PDF: selectable text, low-ink layout, no color-only answers.\nExport the approved files",
+      "planLine": "approved · v3",
+      "lessonSetApproval": "Changes need review",
+      "approvedLessonCopy": null,
+      "blockedCopy": "No lesson pages have been generated yet.",
+      "exportDisabled": true,
+      "exportedFiles": false,
+      "exportSentence": null,
+      "jobText": null,
+      "approve": "clicked"
+    },
+    {
+      "step": "exported",
+      "at": "2026-11-06T21:35:43.847Z",
+      "text": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v3\nChanges need review\nYou are the operator · revision 5\nChanges need review\nYou changed the course title or goal after approving the lesson set.\nNo lesson pages have been generated yet.\nStudio view\nExport\nEXPORT GATE\nPlan\napproved · v3\nLesson set approval\nChanges need review\nApproved content hash\nsha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934\nCurrent content hash\nsha256:05224fefde62998b84c7977612056f2e2ac5e61a760bb91bea5c3cb2a103d288\nFINAL APPROVAL\nApproving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it.\nApprove this lesson set\nthere is no generated lesson content to approve yet.\nNo lesson pages have been generated yet.\nFORMATS\nPack archive (parent guide, learner pages, answer guide).\nPrintable PDF: selectable text, low-ink layout, no color-only answers.\nExport the approved files",
+      "planLine": "approved · v3",
+      "lessonSetApproval": "Changes need review",
+      "approvedLessonCopy": null,
+      "blockedCopy": "No lesson pages have been generated yet.",
+      "exportDisabled": true,
+      "exportedFiles": false,
+      "exportSentence": null,
+      "jobText": null,
+      "exportClick": "disabled"
+    }
+  ]
+}

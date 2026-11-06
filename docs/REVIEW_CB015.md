@@ -189,13 +189,13 @@ not driven through the Desktop UI; **open** = not proven.
 |---|---|---|---|
 | 1 | fresh profile → sidebar → preview → import → lesson | partial | first-run and list were live in the first pass (`00-first-run-dark.png`); this pass imported through `pack.grant/preview/import` (`seed-demo-course.py` output, §4) and opened lessons live. The *UI* import dialog needs a native folder picker and was not driven. |
 | 2 | backend disabled → enable → brief kept | **live@015** | `docs/REVIEW_CB015-fault-backend-off.json`: the isolated gateway on 44220 was stopped (pid recorded), the page rendered `Backend off` + the enable instructions + `Open Capabilities` / `Check again` with **zero rows and no New course**, then the gateway was started again and the page's own `Check again` returned both enrollments with their revisions. While the whole gateway is down the host paints its own CONNECTING view over the workspace (host-owned), so `70-plugin-half-disabled-dark.png` isolates the plugin half: surface stays mounted, names `VALIDATION_FAILED`, no fake rows, `Try again` recovers. |
-| 3 | new goal → cancel → reattach → approve edited plan | live@other | CB-011 (`docs/REVIEW_CB011.md` on `wt/cb-011-live`, plan job completed, edit + plan.approve verified) |
+| 3 | new goal → cancel → reattach → approve edited plan | partial | **cancel + reattach driven, approve-edited-plan not.** The Desktop had no cancel affordance at all (`jobs.cancel` was never called), so this branch adds one to the job line — `Cancel generation` while queued/running, a named `cancelled` state, and `Run this stage again` re-queuing the job's own stored brief. Driven on the disposable `~/.hermes/cb015-residual` rig: `docs/REVIEW_CB015-row3a.json` + `docs/cb015-residual/row3-0{3,4,5,6}.png` show the plan job `job_27f922c7…` queued → **cancelled** by the button, the course reopened as `cancelled` with its brief preserved, then `Run this stage again` producing `job_40849e53…`. That second job completed (`plan authored (needs_review)`, 5 objectives), but the **edit-then-approve half was not finished**: `scripts/cb015r-row3b.mjs` could not open the Plan editor (`Edit plan` never rendered after the view switch), so no approved-plan artifact exists. |
 | 4 | chat and pane answers race → one attempt | open | not driven this pass |
 | 5 | wrong answer → alternate representation → clarification not a retry | partial | wrong answer live (`Not yet / Hinted`, §3); the "hint is not a retry" accounting is CB-009/CB-013 evidence |
 | 6 | grader timeout → needs_retry → override recorded | **live@015** | `docs/REVIEW_CB015-needs-retry.json`: the open-response check on the JP course's 4th section fails closed (`I couldn’t grade this attempt`, `Retry grading` / `Edit answer` / `Move on…`), Retry re-sent the same nonce and stayed `needs_retry`, and `Move on… → Record override` recorded the override (`Access granted — not independent evidence` seen before the section reload; durable row `Override — not independent evidence` + objective badge `Overridden`). |
-| 7 | hide/reopen/split pane mid-attempt → no lost answer | live@other | CB-009 pane runs (`docs/REVIEW_CB009-pane-chat.json`, `pane-12/13/14`) |
-| 8 | restart at every attempt state | live@other | CB-013 restart-resume (isolated backend cycled, same data.db, same attempt rows) |
-| 9 | parent edit after approval → reapproval before export | live@other | CB-011 export gate: `no_final_approval` refusal |
+| 7 | hide/reopen/split pane mid-attempt → no lost answer | live@015 (hide + reopen; split not driven) | `docs/REVIEW_CB015-row7.json`: in the bound chat's pane (Check v15), a real answer was typed into `#cb-attempt-answer`, `Submit answer` clicked, and the host's right sidebar hidden **immediately** (`Hide right sidebar`, leaving `Show right sidebar` as the only toggle). While hidden the pane painted nothing; reopening it showed the committed verdict **Not yet**. The attempt count for that check went **0 → 1** (one row, `att_8ff275dc95c4455ab3bf6cc3288815ba`, state `committed`), so nothing was lost and nothing was submitted twice. Stills `row7-01..03`. **Split was not driven** — the layout editor did not expose a split at this width, so that half of the row is still unproven. |
+| 8 | restart at every attempt state | partial | `docs/REVIEW_CB015-row8.json`: the isolated gateway (44219, same `data.db`) was **cycled** and the window hard-reloaded at three states, each read before and after on the same section: **awaiting input** (ordinal 2, Check v2, open check), **graded** (ordinal 1, Check v15, `Not yet`), **overridden** (ordinal 4, `Override — not independent evidence`). Every cycle returned the same objective title, the same check version, the same verdict/override copy and a byte-identical `ATTEMPTS ON THIS SECTION` block (`sameAttemptsBlock: true` in all three). **Not restarted:** `submitting` (mid-flight), a standalone `needs_retry`, and `detached`. The row stays partial on those three states. |
+| 9 | parent edit after approval → reapproval before export | partial | **refusal half driven, restoration half blocked by a backend gap.** On `crs_3ea89…` (active final approval, `export.ready=true`), `docs/REVIEW_CB015-row9-rpc.json` shows `plan.replan` then `parent.plan.edit` turning the approval `superseded` (`course_edited`) and the export gate `ready:false` with `parent.export` refusing `POLICY_VIOLATION / plan_not_approved`; `direct parent.plan.edit on an approved plan` is refused `plan_not_draft` ("use plan.replan"). In the UI, `docs/REVIEW_CB015-row9-ui.json` records the Export screen after that edit: badge **Changes need review**, `Lesson set approval — Changes need review`, the blocked sentence, and `Export the approved files` **disabled**; after `Approve plan` it is still blocked with export disabled. The **reapproval → export** step could not be completed: the replanned plan has no `gen_plan_documents` row, so `Generate lessons` fails `INTERNAL_ERROR: plan 'pln_4a4e0887…' has no authored document` (`docs/REVIEW_CB015-row9-ui2.json`, job `job_5779b460…`) and there is no lesson set to re-approve. That is a backend authoring gap for Atlas, not a UI proof. |
 | 10 | invalid/malicious pack → precise error, no residue | boundary | adversarial suite 21/21 hostile packs rejected with zero residue (`tests/adversarial/evidence/attack-packs.json`, CB-014). The UI folder grant needs a native dialog. |
 | 11 | offline → cached lesson, research paused | **live@015** | `docs/REVIEW_CB015-fault-offline.json`: `Network.emulateNetworkConditions(offline)` → `navigator.onLine=false`, the header renders `Offline` + a sentence naming what still works and what is paused, `New course` is absent while offline, a course opens from what the profile already has, and the notice clears when the connection returns (`64`–`66`). |
 | 12 | source stale → impact banner, old evidence kept | open | documented limitation, see §11 — the state is written only by `sources.apply_run`, which is called from `generation.py:1862` inside the research/generation pipeline when a re-fetched source's content hash changes. None of the 51 contract methods in `/runtime` mutates a source, so the Desktop cannot reach it; producing it needs a live re-fetch whose content we do not control. |
@@ -207,9 +207,11 @@ not driven through the Desktop UI; **open** = not proven.
 | 18 | past quiz unchanged → new version → both inspectable | **live@015** | §3; new version refused honestly (`VALIDATION_FAILED`), both attempts remain inspectable (`20`, `21`, `22`, `47`, `48`) |
 | 19 | jump early/late → separate runs, later evidence intact | **live@015** | §3 steps `late-run-*`, `early-evidence-intact`, `23`, `24` |
 
-Result: **6 rows live in this worktree, 4 more live on a sibling worktree, 3 partial, 2
-boundary-only, 4 open.** I did not manufacture the missing runs to turn this into 19 green
-rows.
+Result: **10 rows live in this worktree (2, 6, 7, 11, 14, 15, 16, 17, 18, 19 — row 7 with the
+split half named as unproven), 5 partial (1, 3, 5, 8, 9), 2 boundary-only (10, 13), 2 open (4, 12).**
+No row is counted live on a sibling worktree any more: the four rows the packet downgraded were
+either re-driven here or re-scoped in §12 with the missing half named. 10 + 5 + 2 + 2 = 19. I did
+not manufacture the missing runs to turn this into 19 green rows.
 
 ## 8. State matrix (UX_SPEC §13, 26 states)
 
@@ -347,6 +349,37 @@ recomputed from that run's recorded steps by `scripts/cb015-delete-verdict.mjs`,
 tests.test_desktop_contracts` **7/7 OK**, full suite **652 tests OK**, and both a11y checks
 re-proved after the plugin edit (`REVIEW_CB015-a11y2.json`).
 
+## 12. Residual pass on rows 3, 7, 8, 9 (answers `REVIEW_PACKET.md` §5)
+
+The packet downgraded these four rows from `live@other` after re-reading the artifacts they cited;
+this pass either re-drove the decisive half or re-scoped the row with the exact gap. Nothing here
+is inferred from the earlier worktrees.
+
+| Row | Driven this pass | Missing half, named |
+|---|---|---|
+| 3 | `Cancel generation` → job `cancelled`; leave/reopen the course and the cancelled job and its brief are still shown; `Run this stage again` re-queues the job's own brief (`job_40849e53…`, completed, 5 objectives). `docs/REVIEW_CB015-row3a.json`, stills `row3-03..06` | `Edit plan` never rendered for the requeued draft (`scripts/cb015r-row3b.mjs` timed out at 20 s on the Plan view), so no edited-plan approval was recorded |
+| 7 | Answer typed in the pane, submitted, right sidebar hidden in the same tick, verdict read back after reopening; **one** attempt row (`att_8ff275dc…`), count 0 → 1. `docs/REVIEW_CB015-row7.json`, stills `row7-01..03` | **Split** pane during the attempt was not driven; the layout editor exposed no split at this width |
+| 8 | Backend cycled at **awaiting input**, **graded** and **overridden**; each returned the same objective, check version, verdict/override copy and an identical attempts block. `docs/REVIEW_CB015-row8.json`, stills `row8-*` | **submitting** (mid-flight), standalone **needs_retry**, and **detached** were not restarted in this pass |
+| 9 | After an active approval, replan + edit supersede it; the Export screen shows `Changes need review`, the blocked sentence and a **disabled** export; the RPC refuses `plan_not_approved`. `docs/REVIEW_CB015-row9-rpc.json`, `docs/REVIEW_CB015-row9-ui.json`, stills `row9-01..03` | Reapproval → export could not run: the replanned plan has no authored document, so `Generate lessons` fails `INTERNAL_ERROR` and no lesson set exists to re-approve (`docs/REVIEW_CB015-row9-ui2.json`) |
+
+**Defect this pass found (backend authoring, for Atlas).** `plan.replan` writes a new `plans` row but
+no `gen_plan_documents` row, so the lesson job fails closed with
+`plan '<id>' has no authored document` and an authored course can never reach final approval or
+export after a replan. The UI is honest about it (the job line shows `Failed (INTERNAL_ERROR)`), but
+the authoring loop is incomplete. `parent.plan.edit` on an approved plan is refused `plan_not_draft`
+by design ("use plan.replan"), so replan is the only edit path and the gap is on the kernel side.
+I did not hand-write a plan document to make row 9 green.
+
+**UI change carried by this branch (row 3).** `desktop/plugin.js` gained a job-line affordance that
+did not exist: `Cancel generation` for a queued/running job (`jobs.cancel`), an explicit `cancelled`
+sentence, and `Run this stage again` (re-`jobs.create` from the job's stored brief, then re-read the
+parent so the line shows the new job id instead of pretending the old one resumed). It is exercised
+by `docs/REVIEW_CB015-row3a.json`; nothing else in the plugin changed.
+
+**Rig used.** The writes were made against the disposable `~/.hermes/coursebook-test` home (gateway
+44219, window CDP 9337) and, for the cancel/reattach run, the disposable `~/.hermes/cb015-residual`
+home (gateway 44225, window CDP 9341). The operator profile was not used.
+
 ## 10. Review packet contents
 
 - `docs/REVIEW_CB015.md` (this file)
@@ -360,6 +393,11 @@ re-proved after the plugin edit (`REVIEW_CB015-a11y2.json`).
 - `docs/REVIEW_CB015-needs-retry.json` — needs_retry → retry → override, end to end
 - `docs/REVIEW_CB015-delete-paths.json` — archive / unarchive / delete / pack freeze
 - `docs/REVIEW_CB015-gallery.json` — gallery manifest
+- `docs/REVIEW_CB015-row3a.json` — cancel generation → reattach → re-queue (§12)
+- `docs/REVIEW_CB015-row7.json` — pane hidden mid-attempt, one committed attempt (§12)
+- `docs/REVIEW_CB015-row8.json` — backend cycled at three attempt states (§12)
+- `docs/REVIEW_CB015-row9-rpc.json`, `-row9-ui.json`, `-row9-ui2.json` — edit-after-approval gate (§12)
+- `docs/cb015-residual/row3-*`, `row7-*`, `row8-*`, `row9-*` — stills for §12
 - `docs/cb015-shots/10`–`24`, `40`–`54`, `60`–`81` — stills
 - `scripts/cb015-hygiene.mjs`, `cb015-lib.mjs`, `cb015-loops-*.mjs`, `cb015-perf.mjs`,
   `cb015-perf-pack.py`, `cb015-keyboard.mjs`, `cb015-gallery2.mjs`, `cb015-a11y2.mjs`,
