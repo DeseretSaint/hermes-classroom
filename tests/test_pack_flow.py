@@ -505,6 +505,61 @@ class CheckAuditTest(unittest.TestCase):
         self.assertEqual(spec["declared_audit_state"], "unreviewed")
         self.assertEqual(spec["reference"]["kind"], "exact")
 
+    def test_no_accepted_alternatives_is_not_a_flaw(self) -> None:
+        # cb.projection R5: the reference answer is already an accepted form.
+        check = {
+            "check_id": "chk-3",
+            "version": 1,
+            "evidence_target": "recall",
+            "stimulus": "What is the capital of Utah?",
+            "rubric": ["Names Salt Lake City"],
+            "reference_answer": "Salt Lake City",
+            "accepted_alternatives": [],
+            "audit_state": "unreviewed",
+        }
+        self.assertEqual(pack_flow.audit_check_for_import(check), (True, []))
+        spec = pack_flow.check_spec_from_pack_check(check, recipe="casual")
+        self.assertIsNotNone(spec)
+        self.assertEqual(spec["reference"], {"kind": "exact", "answers": ["Salt Lake City"]})
+
+    def test_alternatives_that_only_repeat_the_reference_are_withheld(self) -> None:
+        # cb.projection R5, negative half: a list in disguise is still a flaw.
+        check = {
+            "check_id": "chk-4",
+            "version": 1,
+            "evidence_target": "recall",
+            "stimulus": "What is 2 + 2?",
+            "rubric": ["States four"],
+            "reference_answer": "4",
+            "accepted_alternatives": ["4", " 4 "],
+            "audit_state": "unreviewed",
+        }
+        self.assertEqual(
+            pack_flow.audit_check_for_import(check),
+            (False, ["accepted alternatives do not add an accepted form"]),
+        )
+        self.assertIsNone(pack_flow.check_spec_from_pack_check(check, recipe="casual"))
+
+    def test_a_check_its_author_marked_failed_is_never_graded(self) -> None:
+        # cb.projection R6: a declaration can never grant gradability, and may always refuse it.
+        check = {
+            "check_id": "chk-5",
+            "version": 1,
+            "evidence_target": "recall",
+            "stimulus": "What is 2 + 2?",
+            "rubric": ["States four"],
+            "reference_answer": "4",
+            "accepted_alternatives": ["four"],
+            "audit_state": "failed",
+        }
+        passed, problems = pack_flow.audit_check_for_import(check)
+        self.assertFalse(passed)
+        self.assertIn("the pack declares this check failed its own audit", problems)
+        self.assertIsNone(pack_flow.check_spec_from_pack_check(check, recipe="casual"))
+        # A declared 'passed' or 'unreviewed' still has to pass R1-R5 on its own.
+        check["audit_state"] = "passed"
+        self.assertIsNotNone(pack_flow.check_spec_from_pack_check(check, recipe="casual"))
+
 
 class RegistryTest(unittest.TestCase):
     def test_the_three_pack_methods_are_registered_and_frozen(self) -> None:

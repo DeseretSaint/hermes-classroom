@@ -189,9 +189,10 @@ def _stimulus_text(check: Mapping[str, Any]) -> str:
 def audit_check_for_import(check: Mapping[str, Any]) -> tuple[bool, list[str]]:
     """Deterministic pre-import audit of one manifest check. Never a human review.
 
-    A check becomes gradable only when *this* audit passes. The pack's own declared
-    ``audit_state`` is preserved alongside it, so a caller can see that no human review was
-    claimed (``trust.labels`` still has no ``human_review_recorded``).
+    A check becomes gradable only when *this* audit passes, which includes the author's own
+    ``audit_state`` never being ``failed``. The declared state is preserved alongside the
+    automated one, so a caller can see that no human review was claimed (``trust.labels`` still
+    has no ``human_review_recorded``).
     """
     problems: list[str] = []
     stimulus = _stimulus_text(check)
@@ -206,8 +207,19 @@ def audit_check_for_import(check: Mapping[str, Any]) -> tuple[bool, list[str]]:
     if reference and stimulus and reference.casefold() in stimulus.casefold():
         problems.append("reference answer appears in the stimulus")
     alternatives = [str(item) for item in check.get("accepted_alternatives") or []]
-    if reference and all(alternative.strip().casefold() == reference.casefold() for alternative in alternatives if alternative.strip()):
+    # cb.projection R5: the reference answer is already an accepted form, so declaring no
+    # alternative is not a flaw. Fail only when non-empty alternatives all repeat it.
+    non_empty_alternatives = [alternative for alternative in alternatives if alternative.strip()]
+    if reference and non_empty_alternatives and not any(
+        alternative.strip().casefold() != reference.casefold()
+        for alternative in non_empty_alternatives
+    ):
         problems.append("accepted alternatives do not add an accepted form")
+    # cb.projection R6: an author's declaration can never grant gradability and may always
+    # refuse it. Grading an item its own author marked failed would make the stored spec
+    # contradict its provenance.
+    if str(check.get("audit_state") or "unreviewed") == "failed":
+        problems.append("the pack declares this check failed its own audit")
     return (not problems), problems
 
 

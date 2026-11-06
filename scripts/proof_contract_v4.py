@@ -282,8 +282,6 @@ class V4PackReadProof(KernelCase):
         document = contracts.contract("cb.projection")
         checked = 0
         for example in document["examples"]:
-            if example.get("divergence"):
-                continue  # pinned separately, below
             with self.subTest(example=example["name"]):
                 actual = pack_flow.check_spec_from_pack_check(example["check"], recipe=example["recipe"])
                 expectation = example["expect"]
@@ -293,34 +291,7 @@ class V4PackReadProof(KernelCase):
                 else:
                     self.assertIsNone(actual)
                 checked += 1
-        self.assertGreaterEqual(checked, 10, "the passing vector set must not shrink")
-
-    def test_projection_divergences_are_pinned_to_their_documented_shape(self) -> None:
-        """The two open importer divergences, asserted exactly.
-
-        The contract is the authority. Until Lattice applies it, this test proves the gap is the
-        documented one and nothing worse. When the importer is fixed these assertions flip, which
-        is the signal to empty ``x-known-divergences`` and delete this test.
-        """
-        document = contracts.contract("cb.projection")
-        empty_alternatives = next(
-            item for item in document["examples"] if item.get("divergence") == "empty-alternatives"
-        )
-        declared_failed = next(
-            item for item in document["examples"] if item.get("divergence") == "declared-audit-failed"
-        )
-
-        withheld = pack_flow.check_spec_from_pack_check(empty_alternatives["check"], recipe="one_off")
-        self.assertIsNone(withheld, "empty-alternatives appears fixed: update cb.projection")
-        passed, problems = pack_flow.audit_check_for_import(empty_alternatives["check"])
-        self.assertFalse(passed)
-        self.assertEqual(problems, ["accepted alternatives do not add an accepted form"])
-
-        graded = pack_flow.check_spec_from_pack_check(declared_failed["check"], recipe="casual")
-        self.assertIsNotNone(graded, "declared-audit-failed appears fixed: update cb.projection")
-        contracts.validate_definition("cb.projection", "check_spec", graded)
-        self.assertEqual(graded["audit_state"], "passed")
-        self.assertEqual(graded["declared_audit_state"], "failed")
+        self.assertGreaterEqual(checked, 13, "the frozen vector set must not shrink")
 
     def test_objective_criteria_matches_the_frozen_vectors(self) -> None:
         for example in contracts.contract("cb.projection")["objective_examples"]:
@@ -349,27 +320,19 @@ class V4PackReadProof(KernelCase):
                     if manifest["recipe"] == "parent":
                         self.assertEqual(graded, {}, "a parent pack must never yield a graded check")
                     else:
-                        for check_id in withheld:
-                            # No demo check may be withheld for any reason other than the
-                            # documented empty-alternatives divergence.
-                            alternatives = [
-                                str(item)
-                                for item in by_check[check_id].get("accepted_alternatives") or []
-                                if str(item).strip()
-                            ]
-                            self.assertEqual(
-                                alternatives,
-                                [],
-                                f"{check_id} withheld by a rule other than the documented divergence",
-                            )
+                        self.assertEqual(
+                            withheld,
+                            {},
+                            "a casual demo pack may not withhold a check: every check must project",
+                        )
 
-    def test_bundled_japanese_pack_objective_is_ungradable_until_the_divergence_is_fixed(self) -> None:
-        """Demo falsification: the shipped demo pack has a check the shipped importer withholds.
+    def test_bundled_japanese_pack_transfer_objective_opens(self) -> None:
+        """The demo pack's fourth objective is gradable through the real dispatcher.
 
-        `chk-register-transfer-1` declares `accepted_alternatives: []`; the importer's vacuous
-        `all(...)` withholds it, so `objective_criteria` writes no spec and `check.open` refuses
-        with `objective_not_checkable`. When `empty-alternatives` is fixed this test flips, which is
-        the signal to delete it and clear the divergence from `cb.projection`.
+        `chk-register-transfer-1` declares no `accepted_alternatives`. Under R5 that is not a
+        flaw: the reference answer is already an accepted form, so the check projects a
+        rubric-only spec for its transfer target, `objective_criteria` writes it, and
+        `check.open` reaches the kernel instead of refusing with `objective_not_checkable`.
         """
         objective_ordinal = 4
         manifest = packs.load_manifest(JAPANESE / packs.root_file())
@@ -381,7 +344,7 @@ class V4PackReadProof(KernelCase):
                 for entry in pack_flow.objective_criteria(objective, recipe="casual")
             )
         ]
-        self.assertEqual(withheld, ["obj-register-transfer"], "the demo pack's ungradable set changed")
+        self.assertEqual(withheld, [], "a demo objective is still ungradable")
 
         installed = self.install()
         objective_id = self.scalar(
@@ -390,14 +353,23 @@ class V4PackReadProof(KernelCase):
             (installed["course_id"], objective_ordinal - 1),
         )
         self.assertIsNotNone(objective_id)
-        response = self.dispatch(
+        self.assertEqual(
+            self.scalar("SELECT evidence_target FROM objectives WHERE id = ?", (objective_id,)),
+            "transfer",
+        )
+        response = self.ok(
             "check.open",
             {"enrollment_id": installed["enrollment_id"], "objective_id": objective_id},
             expected_revision=0,
         )
-        self.assertFalse(response["ok"])
-        self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
-        self.assertEqual(response["error"]["details"]["reason"], "objective_not_checkable")
+        opened = response["result"]
+        self.assertTrue(str(opened["check_id"]).startswith("chk_"))
+        self.assertEqual(opened["check_version"], 1)
+        self.assertEqual(opened["evidence_target"], "transfer")
+        # The kernel stored the projected spec, and the spec is the rubric-only shape of R5/R6.
+        stored = self.scalar("SELECT reference_json FROM checks WHERE id = ?", (opened["check_id"],))
+        self.assertIn("rubric_only", str(stored))
+        self.assertNotIn("chk-register-transfer-1", str(stored))
 
 
 if __name__ == "__main__":
