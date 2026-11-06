@@ -125,6 +125,24 @@ Next attempt should either (a) write a `connections.json` v2 entry of `kind: "re
 server URL and let the app encrypt the token through its own settings IPC, or (b) capture on the
 machine-level gateway after its cycle, using the operator's already-connected window.
 
+## 7. Gateway cycle — blocked by the approval policy, not attempted
+
+The detached `hermes gateway restart` this card depends on was **refused by the unattended
+approval guard** ("Command flagged as dangerous (stop/restart hermes gateway (kills running
+agents)) but single-query mode runs without a user present to approve it"). It cannot be worked
+around from here, and it must not be: the guard exists so a headless worker cannot restart the
+gateway that hosts other bots. An operator (or a session with
+`approvals.single_query_mode: approve`) has to run it:
+
+```
+HERMES_HOME=/home/deseretsaint/.hermes hermes gateway restart
+```
+
+After that, `hermes gateway status` should show the new `plugin_host_child` and
+`/api/plugins/coursebook/runtime` on the machine-level server should list `course.outline`,
+`check.get`, `lesson.assist` (they are absent today because PID 360123 holds the pre-CB-009 module
+set).
+
 ## 6. Command transcript
 
 See `docs/REVIEW_CB013-transcript.txt` for the verbatim gate, install, lifecycle and backend
