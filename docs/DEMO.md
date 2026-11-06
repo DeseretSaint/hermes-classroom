@@ -1,4 +1,4 @@
-# Demo script skeleton
+# Demo script (0.1.0 candidate)
 
 Status: not recordable. The blocker is the desktop surface, not the backend. On the installed
 candidate (`f4a42f34`) the `#/coursebook` route renders the session home: the pane and the sidebar

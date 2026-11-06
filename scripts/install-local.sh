@@ -51,7 +51,7 @@ echo "source : $SOURCE ($COMMIT)"
 echo "home   : $HOME_DIR"
 echo
 
-echo "== 1/5 agent half: link the package =="
+echo "== 1/6 agent half: link the package =="
 mkdir -p "$HOME_DIR/plugins"
 if [[ -e "$PLUGIN_TARGET" && ! -L "$PLUGIN_TARGET" ]]; then
   echo "refusing to replace a real directory: $PLUGIN_TARGET" >&2
@@ -61,7 +61,7 @@ ln -sfn "$SOURCE" "$PLUGIN_TARGET"
 readlink -f "$PLUGIN_TARGET"
 
 echo
-echo "== 2/5 desktop half: materialize the app root copy =="
+echo "== 2/6 desktop half: materialize the app root copy =="
 mkdir -p "$DESKTOP_TARGET"
 cp "$SOURCE/desktop/plugin.js" "$DESKTOP_TARGET/plugin.js"
 python3 - "$DESKTOP_TARGET" "$SOURCE" <<'PY'
@@ -79,7 +79,7 @@ print(f"marker: {marker}")
 PY
 
 echo
-echo "== 3/5 single-home flag for an isolated backend =="
+echo "== 3/6 single-home flag for an isolated backend =="
 # The Desktop half reports sharedRemote and appends ?profile=<launch profile>. On an isolated
 # backend that scope escapes to the DEFAULT home (~/.hermes), which is the operator's live profile.
 # This flag makes Coursebook pin its own storage to this install's home instead (coursebook/db.py).
@@ -90,7 +90,7 @@ echo "wrote $ENV_FILE"
 echo "start the backend with it:  set -a; . $ENV_FILE; HERMES_HOME=$HOME_DIR hermes serve --isolated --port 44219"
 
 echo
-echo "== 4/5 enable the agent half in this home =="
+echo "== 4/6 enable the agent half in this home =="
 if [[ "$DO_ENABLE" == "1" ]]; then
   HERMES_HOME="$HOME_DIR" "$HERMES_BIN" plugins enable coursebook
 else
