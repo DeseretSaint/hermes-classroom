@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import unittest
 import zipfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from coursebook import db, domain, executor, generation, job_service, packs, parent_authoring as authoring
@@ -48,24 +48,66 @@ PARENT_BRIEF = {
 }
 
 
-def rich_lesson_response(extra_criteria: int = 2):
-    """``lesson_from_request`` with a rubric that satisfies the pack's three-criteria floor."""
-    base = lesson_from_request()
+def parent_lesson_response(rubric_criteria: int = 3):
+    """A parent-observation lesson in the shape the lesson-prompt.v2 instructions ask for.
+
+    Three distinct observable criteria, an observation check, parent notes and supervision notes.
+    ``accepted_answers`` deliberately repeats the reference answer: the shipped lesson fixtures do
+    exactly that, and the export must drop it from ``accepted_alternatives``.
+    """
 
     def build(request):
-        result = base(request)
-        payload = dict(result.parsed or {})
-        rubric = list((payload.get("check") or {}).get("rubric") or [])
-        for index in range(extra_criteria):
-            rubric.append(
+        payload = json.loads(request.input_text)
+        section = payload.get("section") or {}
+        objective = payload.get("objective") or {}
+        lesson = {
+            "section_title": section.get("title") or "Kitchen science",
+            "segments": [
                 {
-                    "criterion": f"declared-{index}",
-                    "weight": 1.0,
-                    "description": f"Declared observable criterion {index + 1}",
-                }
-            )
-        payload["check"] = {**payload["check"], "rubric": rubric}
-        return response(payload, model="fake-author")
+                    "kind": "model",
+                    "heading": "Name one of each",
+                    "body": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.",
+                },
+                {
+                    "kind": "guided",
+                    "heading": "Sort the cards",
+                    "body": "Put each card under the warm or cold heading and say the word out loud.",
+                },
+            ],
+            "worked_example": {
+                "prompt": "Which card belongs under warm?",
+                "steps": ["Look at the picture", "Say the object name", "Choose warm"],
+                "answer": "The pot card",
+            },
+            "learner_explanation": "You will name warm and cold things, then sort the picture cards together.",
+            "check": {
+                "kind": "observation",
+                "stimulus": {
+                    "prompt": "Which card belongs under warm?",
+                    "format": "selection",
+                    "choices": ["kettle card", "fridge card"],
+                },
+                "learner_instructions": "Watch the child choose one card.",
+                "evidence_target": objective.get("evidence_target") or "recall",
+                "accepted_answers": ["kettle card"],
+                "rubric": [
+                    {
+                        "criterion": f"observable-{index + 1}",
+                        "weight": 1.0,
+                        "description": f"Observable criterion {index + 1}: the child performs the described step.",
+                    }
+                    for index in range(rubric_criteria)
+                ],
+                "reference_answer": "kettle card",
+                "assistance_policy": {"hint": "available", "answer_marks_evidence_class": "hinted"},
+                "scaffolds": {"romaji": False, "furigana": False, "english_meaning": False},
+            },
+            "parent_notes": "Point at each object before asking.",
+            "supervision_notes": ["An adult stays within arm's reach for the whole activity"],
+            "sources": [],
+            "media": [],
+        }
+        return response(lesson, model="fake-parent-author")
 
     return build
 
@@ -184,7 +226,11 @@ class ExecutorTest(KernelCase):
             dead, stage="plan", steps_done=1, steps_total=1,
             checkpoint={"plan_id": "pln_resume_me"}, now=NOW,
         )
-        report = job_service.reconcile_startup(now=NOW)
+        # A real crash stops renewing, so the lease is what has to lapse before recovery may
+        # touch the row. (Reclaiming on owner mismatch is the bug that killed live jobs.)
+        report = job_service.reconcile_startup(
+            now=NOW + timedelta(seconds=job_service.LEASE_SECONDS + 1)
+        )
         self.assertEqual(report["interrupted"], 1)
         view = self.job(job_id)
         self.assertEqual(view["state"], "interrupted_requires_retry")
@@ -217,8 +263,8 @@ class ExecutorTest(KernelCase):
         view = self.job(lesson_job)
         self.assertEqual(view["kind"], "plan", "there is no lesson job kind in cb.vocabulary")
         self.assertEqual(view["state"], "completed")
-        self.assertEqual(view["checkpoint"]["lessons"], 3)
-        self.assertEqual(self.scalar("SELECT COUNT(*) FROM gen_lessons"), 3)
+        self.assertEqual(view["checkpoint"]["lessons"], 4)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM gen_lessons"), 4)
 
     def test_pump_does_nothing_on_an_unmigrated_store(self) -> None:
         import os
@@ -267,7 +313,16 @@ class ExecutorTest(KernelCase):
 
         module = load_plugin_package()
         ctx = TickContext()
-        module.register(ctx)
+
+        # The Hermes loader calls register() synchronously, so the spawn_task branch only exists
+        # when a loop is already running. Before this test ran under a loop it asserted behaviour
+        # no real host provides (which is exactly the bug that left jobs queued forever).
+        import asyncio
+
+        async def register_inside_a_running_loop() -> None:
+            module.register(ctx)
+
+        asyncio.run(register_inside_a_running_loop())
         self.assertEqual(ctx.spawned, ["coursebook-job-tick"])
         self.assertEqual(len(ctx.unloads), 1, "the loop must be stopped on unload")
         ctx.unloads[0]()
@@ -351,7 +406,9 @@ class ParentSeedMixin(KernelCase):
                         json.dumps(
                             {
                                 "reference_answer": "Politely greet the staff",
-                                "accepted_answers": [],
+                                # The shipped lesson author copies accepted answers into the
+                                # reference answer slot; the export must not echo it back.
+                                "accepted_answers": ["Politely greet the staff"],
                                 "accepted_alternatives": [],
                             }
                         ),
@@ -528,6 +585,29 @@ class ParentExportTest(ParentSeedMixin):
             idempotency_key=key,
         )["result"]
 
+    def test_exported_rubrics_are_assessment_criteria_only(self) -> None:
+        """The rubric is the check's criteria plus the plan's evidence criteria, nothing else."""
+        with db.read() as connection:
+            course = connection.execute("SELECT * FROM courses WHERE id = ?", (self.course_id,)).fetchone()
+            plan = connection.execute("SELECT * FROM plans WHERE id = ?", (self.plan_id,)).fetchone()
+            composed = authoring.sections(connection, course, plan)
+        section = next(item for item in composed if item.get("check") is not None)
+        rubric = authoring._check_rubric(section["check"], section["objective"])
+        self.assertEqual(
+            rubric,
+            [
+                "Greets politely",
+                "Uses the polite register",
+                "Speaks clearly",
+                "Declared criterion A",
+                "Declared criterion B",
+            ],
+        )
+        self.assertFalse(
+            any("adult listens" in item.casefold() for item in rubric),
+            "a supervision note is a safety instruction, not a grading criterion",
+        )
+
     def test_blueprint_refusal_before_approval_and_no_path_leaks(self) -> None:
         brief = self.blueprint()
         self.assertEqual(brief["export"]["blocked_reason"], "no_final_approval")
@@ -629,6 +709,24 @@ class ParentExportTest(ParentSeedMixin):
         self.assertEqual(error["details"]["reason"], "changes_need_review")
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 0)
 
+    def test_a_short_rubric_still_refuses_export_with_the_named_problems(self) -> None:
+        """A lesson stored before the floor existed is refused, not bypassed or padded."""
+        with db.transaction() as connection:
+            connection.execute(
+                "UPDATE checks SET rubric_json = ?",
+                (json.dumps({"criteria": [{"criterion": "a", "description": "Greets politely"}]}),),
+            )
+            connection.execute(
+                "UPDATE objectives SET evidence_criteria_json = ?",
+                (json.dumps(["Declared criterion A"]),),
+            )
+        self.approve_final()
+        error = self.err("parent.export", {"enrollment_id": self.enrollment_id}, idempotency_key="key-export-short")
+        self.assertEqual(error["code"], "POLICY_VIOLATION")
+        self.assertEqual(error["details"]["reason"], "export_not_exportable")
+        self.assertIn("rubric criteria; minimum is 3", error["message"])
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 0)
+
     def test_reflections_are_recorded_and_never_exported(self) -> None:
         self.approve_final()
         recorded = self.ok(
@@ -653,6 +751,120 @@ class ParentExportTest(ParentSeedMixin):
         with zipfile.ZipFile(Path(str(pack_row["path"]))) as bundle:
             for name in bundle.namelist():
                 self.assertNotIn(b"Repeat the greeting next week.", bundle.read(name))
+
+
+class ParentPipelineExportTest(KernelCase):
+    """``plan_parent`` through the real executor pipeline, approved and exported with no seeding."""
+
+    def pump(self, llm: FakeLLM) -> None:
+        executor.pump_once(llm=llm, search=FakeSearch(), now=NOW)
+
+    def test_a_real_generated_parent_course_exports_and_meets_the_pack_minima(self) -> None:
+        created = self.ok(
+            "parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key="key-brief-e2e"
+        )["result"]
+        course_id = created["course_id"]
+        enrollment_id = created["enrollment_id"]
+
+        # 1. The plan job really ran: one section per objective, four of each.
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.plan.generate": plan_from_fixture("plan_parent"),
+                    "coursebook.plan.validate": validation_from_fixture(),
+                }
+            )
+        )
+        plan_ref = self.ok("parent.brief.get", {"course_id": course_id})["result"]["plan_job"]
+        plan_job = self.ok("jobs.get", {"job_id": plan_ref["job_id"]})["result"]["job"]
+        self.assertEqual(plan_job["state"], "completed")
+        plan_id = plan_job["checkpoint"]["plan_id"]
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM gen_plan_sections"), 4)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM gen_lessons"), 0)  # nothing seeded
+
+        # 2. The lesson job really ran: four validated lessons, none parked.
+        revision = self.approve(enrollment_id, plan_id, 0)
+        lesson_job_id = self.ok(
+            "jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": plan_id}}
+        )["result"]["job_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.lesson.generate": parent_lesson_response(),
+                    "coursebook.lesson.validate": validation_from_fixture(),
+                }
+            )
+        )
+        lesson_job = self.ok("jobs.get", {"job_id": lesson_job_id})["result"]["job"]
+        self.assertEqual(lesson_job["state"], "completed")
+        self.assertEqual(
+            [row["state"] for row in self.rows("SELECT state FROM gen_lessons ORDER BY created_at")],
+            ["validated"] * 4,
+        )
+
+        # 3. Approve exactly the served content, then export it.
+        blueprint = self.ok("parent.blueprint.read", {"course_id": course_id})["result"]
+        self.assertEqual(len(blueprint["tabs"]["narration"]), 4)
+        approval = self.ok(
+            "parent.final.approve",
+            {
+                "enrollment_id": enrollment_id,
+                "plan_id": plan_id,
+                "plan_hash": blueprint["plan"]["plan_hash"],
+                "content_hash": blueprint["content_hash"],
+            },
+            expected_revision=revision,
+            idempotency_key="key-final-e2e",
+        )["result"]
+        self.assertEqual(approval["state"], "active")
+
+        result = self.ok(
+            "parent.export", {"enrollment_id": enrollment_id}, idempotency_key="key-export-e2e"
+        )["result"]
+        self.assertEqual(result["content_hash"], approval["content_hash"])
+        roles = {item["role"] for item in result["files"]}
+        self.assertEqual(roles, {"parent_guide", "learner_page", "answer_guide"})
+        self.assertTrue(all(item["mime"] == "text/markdown" for item in result["files"]))
+
+        # The narration script is served as a tab (clipped to the request limit) and written in full
+        # inside the exported parent guide.
+        served_script = blueprint["tabs"]["narration"][0]["text"].strip()
+        self.assertTrue(served_script)
+        with db.read() as connection:
+            pack_row = connection.execute(
+                "SELECT path FROM artifacts WHERE id = ?",
+                (next(item["artifact_id"] for item in result["artifacts"] if item["kind"] == "pack"),),
+            ).fetchone()
+        archive = Path(str(pack_row["path"]))
+        with zipfile.ZipFile(archive) as bundle:
+            names = bundle.namelist()
+            manifest_name = [name for name in names if name.endswith("/pack.json")].pop()
+            document = json.loads(bundle.read(manifest_name))
+            guide_name = next(name for name in names if "/parent-guide/" in name)
+            guide_text = bundle.read(guide_name).decode("utf-8")
+        self.assertIn("## Narration script", guide_text)
+        self.assertIn(served_script.splitlines()[0], guide_text)
+
+        # Every check is teachable and carries assessment criteria only.
+        authored = {
+            f"Observable criterion {index}: the child performs the described step."
+            for index in (1, 2, 3)
+        }
+        supervision = "An adult stays within arm's reach for the whole activity"
+        for objective in document["objectives"]:
+            self.assertEqual(len(objective["sections"]), 1)
+            self.assertEqual(len(objective["checks"]), 1)
+            check = objective["checks"][0]
+            self.assertGreaterEqual(len(check["rubric"]), packs.MIN_RUBRIC_CRITERIA)
+            self.assertTrue(
+                set(check["rubric"]) <= authored | set(objective["evidence_criteria"]),
+                "a rubric entry must come from the check or the plan's evidence criteria",
+            )
+            self.assertFalse(
+                any(supervision.casefold() in item.casefold() for item in check["rubric"]),
+                "supervision notes are not grading criteria",
+            )
+            self.assertNotIn(check["reference_answer"], check.get("accepted_alternatives") or [])
 
 
 def _has_path_key(value) -> bool:

@@ -74,7 +74,7 @@
       "response": {
         "ok": true,
         "contract_version": 6,
-        "operation_id": "cb011-parent-brief-get-1793979423856215042",
+        "operation_id": "cb011-parent-brief-get-1793979475995574708",
         "revision": 0,
         "result": {
           "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
@@ -124,7 +124,7 @@
       "response": {
         "ok": true,
         "contract_version": 6,
-        "operation_id": "cb011-parent-brief-get-1793979423859593992",
+        "operation_id": "cb011-parent-brief-get-1793979475998402474",
         "revision": 0,
         "result": {
           "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
@@ -174,181 +174,14 @@
       "response": {
         "ok": true,
         "contract_version": 6,
-        "operation_id": "cb011-course-outline-1793979423862608306",
-        "revision": 0,
-        "result": {
-          "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
-          "plan": {
-            "plan_id": "dbbb508ee1191d18",
-            "version": 1,
-            "state": "draft",
-            "plan_hash": "sha256:7fd45cbb67cca4308195b7309c8f56cd1956eb9ea5ea661f8f4895f83a8f84aa"
-          },
-          "objectives": [
-            {
-              "objective_id": "81c3865ea1928504",
-              "ordinal": 1,
-              "title": "Name the parts: half, quarter and eighth",
-              "evidence_target": "recall",
-              "state": "not_started",
-              "check_state": "none",
-              "attempt_count": 0,
-              "independent": false,
-              "last_opened_at": null
-            },
-            {
-              "objective_id": "5dcbaba99dc508d3",
-              "ordinal": 2,
-              "title": "Explain that fair shares must be equal in size",
-              "evidence_target": "comprehension",
-              "state": "not_started",
-              "check_state": "none",
-              "attempt_count": 0,
-              "independent": false,
-              "last_opened_at": null
-            },
-            {
-              "objective_id": "eccdb72cfb0b82eb",
-              "ordinal": 3,
-              "title": "Cut a soft food into halves and then quarters with a table knife",
-              "evidence_target": "procedure",
-              "state": "not_started",
-              "check_state": "none",
-              "attempt_count": 0,
-              "independent": false,
-              "last_opened_at": null
-            },
-            {
-              "objective_id": "4dc25504e52068ef",
-              "ordinal": 4,
-              "title": "Measure half, quarter and eighth of a cup",
-              "evidence_target": "discrimination",
-              "state": "not_started",
-              "check_state": "none",
-              "attempt_count": 0,
-              "independent": false,
-              "last_opened_at": null
-            },
-            {
-              "objective_id": "1379f5a0b09adc30",
-              "ordinal": 5,
-              "title": "Explain the steps they took, in order",
-              "evidence_target": "production",
-              "state": "not_started",
-              "check_state": "none",
-              "attempt_count": 0,
-              "independent": false,
-              "last_opened_at": null
-            },
-            {
-              "objective_id": "75c1d8432f062825",
-              "ordinal": 6,
-              "title": "Apply halves and quarters to a new food or a small set of objects",
-              "evidence_target": "transfer",
-              "state": "not_started",
-              "check_state": "none",
-              "attempt_count": 0,
-              "independent": false,
-              "last_opened_at": null
-            }
-          ],
-          "total": 6,
-          "truncated": false
-        }
-      }
-    },
-    {
-      "method": "parent.blueprint.read",
-      "request": {
-        "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26"
-      },
-      "response": {
-        "ok": true,
-        "contract_version": 6,
-        "operation_id": "cb011-parent-blueprint-read-1793979423865467451",
-        "revision": 0,
-        "result": {
-          "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
-          "recipe": "parent",
-          "plan": {
-            "plan_id": "dbbb508ee1191d18",
-            "version": 1,
-            "state": "draft",
-            "plan_hash": "sha256:959d22d626f53b0d19d7b484f7714bc9031e205548387fd9896363ed526f104a"
-          },
-          "approval": {
-            "state": "none",
-            "plan_hash": null,
-            "content_hash": null,
-            "approved_at": null,
-            "invalidated_reason": null
-          },
-          "content_hash": "sha256:5ef477fe0cb19ed4133301944e3b00d386b811d82cecfb21c4340ef6815b56c5",
-          "export": {
-            "ready": false,
-            "blocked_reason": "plan_not_approved"
-          },
-          "tabs": {
-            "parent_guide": [],
-            "learner_pages": [],
-            "answers": [],
-            "narration": []
-          },
-          "sources": []
-        }
-      }
-    },
-    {
-      "method": "parent.plan.edit",
-      "request": {
-        "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
-        "plan_id": "dbbb508ee1191d18",
-        "expected_plan_hash": "sha256:959d22d626f53b0d19d7b484f7714bc9031e205548387fd9896363ed526f104a",
-        "objective_edits": [
-          {
-            "objective_id": "81c3865ea1928504",
-            "title": "Name the parts: half, quarter and eighth (kitchen table)"
-          }
-        ]
-      },
-      "response": {
-        "ok": true,
-        "contract_version": 6,
-        "operation_id": "cb011-parent-plan-edit-1793979423868392015",
-        "revision": 1,
-        "result": {
-          "plan_id": "dbbb508ee1191d18",
-          "plan_version": 2,
-          "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb",
-          "objective_ids": [
-            "81c3865ea1928504",
-            "5dcbaba99dc508d3",
-            "eccdb72cfb0b82eb",
-            "4dc25504e52068ef",
-            "1379f5a0b09adc30",
-            "75c1d8432f062825"
-          ],
-          "changes_need_review": true,
-          "revision": 1
-        }
-      }
-    },
-    {
-      "method": "course.outline",
-      "request": {
-        "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d"
-      },
-      "response": {
-        "ok": true,
-        "contract_version": 6,
-        "operation_id": "cb011-course-outline-1793979423903345860",
+        "operation_id": "cb011-course-outline-1793979476000820033",
         "revision": 0,
         "result": {
           "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
           "plan": {
             "plan_id": "dbbb508ee1191d18",
             "version": 2,
-            "state": "draft",
+            "state": "approved",
             "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
           },
           "objectives": [
@@ -425,20 +258,43 @@
       }
     },
     {
-      "method": "plan.approve",
+      "method": "parent.blueprint.read",
       "request": {
-        "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
-        "plan_id": "dbbb508ee1191d18",
-        "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
+        "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26"
       },
       "response": {
         "ok": true,
         "contract_version": 6,
-        "operation_id": "cb011-plan-approve-1793979423907178407",
-        "revision": 2,
+        "operation_id": "cb011-parent-blueprint-read-1793979476003415670",
+        "revision": 0,
         "result": {
-          "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb",
-          "revision": 2
+          "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+          "recipe": "parent",
+          "plan": {
+            "plan_id": "dbbb508ee1191d18",
+            "version": 2,
+            "state": "approved",
+            "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
+          },
+          "approval": {
+            "state": "none",
+            "plan_hash": null,
+            "content_hash": null,
+            "approved_at": null,
+            "invalidated_reason": null
+          },
+          "content_hash": "sha256:06d0c98a0f7a6f6f05bc74e42dd76ba657adf2fba839b000acfc749db759ee6f",
+          "export": {
+            "ready": false,
+            "blocked_reason": "no_generated_content"
+          },
+          "tabs": {
+            "parent_guide": [],
+            "learner_pages": [],
+            "answers": [],
+            "narration": []
+          },
+          "sources": []
         }
       }
     },
@@ -450,7 +306,7 @@
       "response": {
         "ok": true,
         "contract_version": 6,
-        "operation_id": "cb011-course-outline-1793979423941392048",
+        "operation_id": "cb011-course-outline-1793979476005957188",
         "revision": 0,
         "result": {
           "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
@@ -545,10 +401,10 @@
       "response": {
         "ok": true,
         "contract_version": 6,
-        "operation_id": "cb011-jobs-create-1793979423945652531",
+        "operation_id": "cb011-jobs-create-1793979476009134761",
         "revision": 0,
         "result": {
-          "job_id": "job_b26a4b9203f24d4a870e28959b5ccada",
+          "job_id": "job_06388582367a40af8c69d01dd9c3964a",
           "state": "queued"
         }
       }
@@ -556,19 +412,19 @@
     {
       "method": "jobs.get",
       "request": {
-        "job_id": "job_b26a4b9203f24d4a870e28959b5ccada"
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
       },
       "response": {
         "ok": true,
         "contract_version": 6,
-        "operation_id": "cb011-jobs-get-1793979423973950944",
+        "operation_id": "cb011-jobs-get-1793979476017169722",
         "revision": 0,
         "result": {
           "job": {
-            "job_id": "job_b26a4b9203f24d4a870e28959b5ccada",
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
             "kind": "plan",
             "state": "queued",
-            "operation_id": "cb011-jobs-create-1793979423945652531",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
             "attempt_id": "unassigned",
             "brief": {
               "plan_id": "dbbb508ee1191d18",
@@ -579,8 +435,8 @@
             "lease": null,
             "artifact_ids": [],
             "error": null,
-            "created_at": "2026-11-06T15:37:03Z",
-            "updated_at": "2026-11-06T15:37:03Z",
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
             "cancel_requested_at": null
           }
         }
@@ -589,56 +445,20 @@
     {
       "method": "jobs.get",
       "request": {
-        "job_id": "job_b26a4b9203f24d4a870e28959b5ccada"
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
       },
       "response": {
         "ok": true,
         "contract_version": 6,
-        "operation_id": "cb011-jobs-get-1793979428977211372",
+        "operation_id": "cb011-jobs-get-1793979481019340102",
         "revision": 0,
         "result": {
           "job": {
-            "job_id": "job_b26a4b9203f24d4a870e28959b5ccada",
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
             "kind": "plan",
-            "state": "running",
-            "operation_id": "cb011-jobs-create-1793979423945652531",
-            "attempt_id": "att_2cf653d0edfa4d79b68bdd796545c92d",
-            "brief": {
-              "plan_id": "dbbb508ee1191d18",
-              "stage": "lessons"
-            },
-            "checkpoint": {},
-            "progress": {},
-            "lease": {
-              "owner": "worker-6efd260297d9",
-              "expires_at": "2026-11-06T15:39:08Z"
-            },
-            "artifact_ids": [],
-            "error": null,
-            "created_at": "2026-11-06T15:37:03Z",
-            "updated_at": "2026-11-06T15:37:08Z",
-            "cancel_requested_at": null
-          }
-        }
-      }
-    },
-    {
-      "method": "jobs.get",
-      "request": {
-        "job_id": "job_b26a4b9203f24d4a870e28959b5ccada"
-      },
-      "response": {
-        "ok": true,
-        "contract_version": 6,
-        "operation_id": "cb011-jobs-get-1793979433980767702",
-        "revision": 0,
-        "result": {
-          "job": {
-            "job_id": "job_b26a4b9203f24d4a870e28959b5ccada",
-            "kind": "plan",
-            "state": "interrupted_requires_retry",
-            "operation_id": "cb011-jobs-create-1793979423945652531",
-            "attempt_id": "att_2cf653d0edfa4d79b68bdd796545c92d",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
             "brief": {
               "plan_id": "dbbb508ee1191d18",
               "stage": "lessons"
@@ -648,8 +468,2831 @@
             "lease": null,
             "artifact_ids": [],
             "error": null,
-            "created_at": "2026-11-06T15:37:03Z",
-            "updated_at": "2026-11-06T15:37:13Z",
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979486022898957",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979491026349631",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979496030262947",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979501033755612",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979506036971336",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979511040677071",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979516044051363",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979521047953375",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979526051806721",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979531055309663",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979536058758139",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979541062282447",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979546065834987",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979551069620417",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979556074017693",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979561077339099",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979566081170291",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979571084819635",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979576088296560",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979581091977483",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979586096115950",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979591099521503",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979596103379420",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979601106876058",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979606110623142",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979611114458051",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979616118470816",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979621122042301",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979626125458074",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979631129049511",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979636132462114",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979641135886513",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979646140020550",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979651143422208",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979656147433885",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979661151024908",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979666154560686",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979671157881779",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979676161744169",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979681165267345",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979686168855802",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979691172241033",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979696175589116",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "queued",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "unassigned",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": null,
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:37:56Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979701179424185",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979706182738160",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979711186066935",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979716190530532",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979721194177124",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979726197554159",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979731200842394",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979736204835642",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979741208331703",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979746211838742",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979751215509078",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979756218915375",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979761222617886",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979766227209068",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979771230566847",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979776234145981",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979781237437564",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979786242024373",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979791245413398",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979796249193455",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979801252469132",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979806256288891",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979811260323492",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979816263894992",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979821267198719",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979826271056056",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979831274465010",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979836278519943",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979841281804016",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979846285219122",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979851288682560",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979856292448649",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979861295739955",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979866299157351",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979871302967218",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979876306485998",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979881309911152",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979886313902952",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
+            "cancel_requested_at": null
+          }
+        }
+      }
+    },
+    {
+      "method": "jobs.get",
+      "request": {
+        "job_id": "job_06388582367a40af8c69d01dd9c3964a"
+      },
+      "response": {
+        "ok": true,
+        "contract_version": 6,
+        "operation_id": "cb011-jobs-get-1793979891317397428",
+        "revision": 0,
+        "result": {
+          "job": {
+            "job_id": "job_06388582367a40af8c69d01dd9c3964a",
+            "kind": "plan",
+            "state": "running",
+            "operation_id": "cb011-jobs-create-1793979476009134761",
+            "attempt_id": "att_be18e1c2f1934dfeab43f3f4b6752b2c",
+            "brief": {
+              "plan_id": "dbbb508ee1191d18",
+              "stage": "lessons"
+            },
+            "checkpoint": {},
+            "progress": {},
+            "lease": {
+              "owner": "worker-6efd260297d9",
+              "expires_at": "2026-11-06T15:43:36Z"
+            },
+            "artifact_ids": [],
+            "error": null,
+            "created_at": "2026-11-06T15:37:56Z",
+            "updated_at": "2026-11-06T15:41:36Z",
             "cancel_requested_at": null
           }
         }
@@ -663,7 +3306,7 @@
       "response": {
         "ok": true,
         "contract_version": 6,
-        "operation_id": "cb011-parent-blueprint-read-1793979434010269634",
+        "operation_id": "cb011-parent-blueprint-read-1793979896320818555",
         "revision": 0,
         "result": {
           "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
@@ -681,16 +3324,180 @@
             "approved_at": null,
             "invalidated_reason": null
           },
-          "content_hash": "sha256:06d0c98a0f7a6f6f05bc74e42dd76ba657adf2fba839b000acfc749db759ee6f",
+          "content_hash": "sha256:57366df7c62c490c119691ce67a8a4c71b7baa605f34427572ea7bb6eecaa86f",
           "export": {
             "ready": false,
-            "blocked_reason": "no_generated_content"
+            "blocked_reason": "no_final_approval"
           },
           "tabs": {
-            "parent_guide": [],
-            "learner_pages": [],
-            "answers": [],
-            "narration": []
+            "parent_guide": [
+              {
+                "role": "parent_guide",
+                "title": "01 \u00b7 One whole, two equal parts",
+                "objective_id": "81c3865ea1928504",
+                "text": "# Parent guide \u2014 One whole, two equal parts\n\nObjective: Name the parts: half, quarter and eighth (ki",
+                "sha256": "sha256:6c6cf13e6e757a0b5649726686587d1a73ccb0ce1606707778b67048f16a7fa7",
+                "bytes": 4075,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "parent_guide",
+                "title": "02 \u00b7 Cutting halves ourselves",
+                "objective_id": "81c3865ea1928504",
+                "text": "# Parent guide \u2014 Cutting halves ourselves\n\nObjective: Name the parts: half, quarter and eighth (kitc",
+                "sha256": "sha256:ee266e4a0cfadf51f6235fe3f44cd83713fab1d6bcff585437d4b0a69235b8ee",
+                "bytes": 4190,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "parent_guide",
+                "title": "03 \u00b7 Quarters: halving a half",
+                "objective_id": "5dcbaba99dc508d3",
+                "text": "# Parent guide \u2014 Quarters: halving a half\n\nObjective: Explain that fair shares must be equal in size",
+                "sha256": "sha256:1fa9a54f6f65d02a43b85622fed60bc35421945458e11c50aed190af66a2ecb1",
+                "bytes": 4045,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "parent_guide",
+                "title": "04 \u00b7 Eighths and the measuring cups",
+                "objective_id": "81c3865ea1928504",
+                "text": "# Parent guide \u2014 Eighths and the measuring cups\n\nObjective: Name the parts: half, quarter and eighth",
+                "sha256": "sha256:284bfa8fd4e2b88eafea35ba98add5dfc394f003415a0f7ffccd1b080caf830a",
+                "bytes": 3204,
+                "source": "authored",
+                "truncated": true
+              }
+            ],
+            "learner_pages": [
+              {
+                "role": "learner_page",
+                "title": "01 \u00b7 One whole, two equal parts",
+                "objective_id": "81c3865ea1928504",
+                "text": "# One whole, two equal parts\n\n## Parent shows a whole and cuts it once\nParent puts one whole soft fo",
+                "sha256": "sha256:bb4de9b364d28d53f7a274493d1f80690446aab26d02a57df8227dba4c2abb92",
+                "bytes": 3183,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "learner_page",
+                "title": "02 \u00b7 Cutting halves ourselves",
+                "objective_id": "81c3865ea1928504",
+                "text": "# Cutting halves ourselves\n\n## Watch me cut and check\nParent sets the banana on the cutting board. P",
+                "sha256": "sha256:d7829d5aa619739770849910574994d9e8e6b1a27ce05c97b252320ef5600955",
+                "bytes": 3132,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "learner_page",
+                "title": "03 \u00b7 Quarters: halving a half",
+                "objective_id": "5dcbaba99dc508d3",
+                "text": "# Quarters: Halving a Half\n\n## Watch: halving a half into two equal quarters\nParent demonstrates wit",
+                "sha256": "sha256:3cec4b6cb93ecb721626e96d04f9a38c9dfa6db9bf0ea92009aa56194b011a18",
+                "bytes": 3345,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "learner_page",
+                "title": "04 \u00b7 Eighths and the measuring cups",
+                "objective_id": "81c3865ea1928504",
+                "text": "# Eighths and the measuring cups\n\n## The cup family\nAt the table, line up the four measuring cups: 1",
+                "sha256": "sha256:e69f6fd043089047ef0bf6fed71536bc74e7a919e255ec42728eec3b1857578d",
+                "bytes": 2477,
+                "source": "authored",
+                "truncated": true
+              }
+            ],
+            "answers": [
+              {
+                "role": "answer_guide",
+                "title": "01 \u00b7 One whole, two equal parts",
+                "objective_id": "81c3865ea1928504",
+                "text": "# Answer guide \u2014 One whole, two equal parts\n\nObjective: Name the parts: half, quarter and eighth (ki",
+                "sha256": "sha256:bdd18ebfc5fae2da43c5d97996ec76a212a94f37c540632cd1cffdecd45b8de8",
+                "bytes": 674,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "answer_guide",
+                "title": "02 \u00b7 Cutting halves ourselves",
+                "objective_id": "81c3865ea1928504",
+                "text": "# Answer guide \u2014 Cutting halves ourselves\n\nObjective: Name the parts: half, quarter and eighth (kitc",
+                "sha256": "sha256:2e364a783632fef8d6a9e44c1a5717bcb62cce910438808338119e348a30e373",
+                "bytes": 876,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "answer_guide",
+                "title": "03 \u00b7 Quarters: halving a half",
+                "objective_id": "5dcbaba99dc508d3",
+                "text": "# Answer guide \u2014 Quarters: halving a half\n\nObjective: Explain that fair shares must be equal in size",
+                "sha256": "sha256:75c86dae365fedc37c0876240a47ffcfb3b2871065cf28b0e8e95fcb0130e3f3",
+                "bytes": 1208,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "answer_guide",
+                "title": "04 \u00b7 Eighths and the measuring cups",
+                "objective_id": "81c3865ea1928504",
+                "text": "# Answer guide \u2014 Eighths and the measuring cups\n\nObjective: Name the parts: half, quarter and eighth",
+                "sha256": "sha256:374832750dd619b4a6e8f577c843c46bb30698978376650624ee11a6fe8f9d16",
+                "bytes": 990,
+                "source": "authored",
+                "truncated": true
+              }
+            ],
+            "narration": [
+              {
+                "role": "narration",
+                "title": "01 \u00b7 One whole, two equal parts",
+                "objective_id": "81c3865ea1928504",
+                "text": "Parent puts one whole soft food on the mat \u2014 a banana, a slice of bread, or a cooked carrot. Say: 'T",
+                "sha256": "sha256:352bd2c4a175e72db508910b99f8bacfc360a066f656c238ed458f586a2536c6",
+                "bytes": 1597,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "narration",
+                "title": "02 \u00b7 Cutting halves ourselves",
+                "objective_id": "81c3865ea1928504",
+                "text": "Parent sets the banana on the cutting board. Parent shows the grip: fingers curled around the handle",
+                "sha256": "sha256:ec3b3643fa16fb811bc7c31dcb5c5bb3ff4e8aa719fdc69678e7c3e1f4a3ce2e",
+                "bytes": 1652,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "narration",
+                "title": "03 \u00b7 Quarters: halving a half",
+                "objective_id": "5dcbaba99dc508d3",
+                "text": "Parent demonstrates with an apple or a slice of bread. Cut the whole food into two equal halves. Set",
+                "sha256": "sha256:782c38bdd242bf02b7464acbfc599d923f530b4962f41c4d8d8f652e70a2f535",
+                "bytes": 1710,
+                "source": "authored",
+                "truncated": true
+              },
+              {
+                "role": "narration",
+                "title": "04 \u00b7 Eighths and the measuring cups",
+                "objective_id": "81c3865ea1928504",
+                "text": "At the table, line up the four measuring cups: 1 cup, 1/2 cup, 1/4 cup and 1/8 cup. Point to each cu",
+                "sha256": "sha256:6356a2d5f60468b78b792ec48f87d64e47ed01919fd4f2132f7899796c5cf131",
+                "bytes": 1060,
+                "source": "authored",
+                "truncated": true
+              }
+            ]
           },
           "sources": []
         }
@@ -740,7 +3547,7 @@
       "created_at": "2026-11-06T15:34:15.571287+00:00"
     },
     "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
-    "revision": 2,
+    "revision": 0,
     "book": {
       "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
       "recipe": "parent",
@@ -757,25 +3564,189 @@
         "approved_at": null,
         "invalidated_reason": null
       },
-      "content_hash": "sha256:06d0c98a0f7a6f6f05bc74e42dd76ba657adf2fba839b000acfc749db759ee6f",
+      "content_hash": "sha256:57366df7c62c490c119691ce67a8a4c71b7baa605f34427572ea7bb6eecaa86f",
       "export": {
         "ready": false,
-        "blocked_reason": "no_generated_content"
+        "blocked_reason": "no_final_approval"
       },
       "tabs": {
-        "parent_guide": [],
-        "learner_pages": [],
-        "answers": [],
-        "narration": []
+        "parent_guide": [
+          {
+            "role": "parent_guide",
+            "title": "01 \u00b7 One whole, two equal parts",
+            "objective_id": "81c3865ea1928504",
+            "text": "# Parent guide \u2014 One whole, two equal parts\n\nObjective: Name the parts: half, quarter and eighth (ki",
+            "sha256": "sha256:6c6cf13e6e757a0b5649726686587d1a73ccb0ce1606707778b67048f16a7fa7",
+            "bytes": 4075,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "parent_guide",
+            "title": "02 \u00b7 Cutting halves ourselves",
+            "objective_id": "81c3865ea1928504",
+            "text": "# Parent guide \u2014 Cutting halves ourselves\n\nObjective: Name the parts: half, quarter and eighth (kitc",
+            "sha256": "sha256:ee266e4a0cfadf51f6235fe3f44cd83713fab1d6bcff585437d4b0a69235b8ee",
+            "bytes": 4190,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "parent_guide",
+            "title": "03 \u00b7 Quarters: halving a half",
+            "objective_id": "5dcbaba99dc508d3",
+            "text": "# Parent guide \u2014 Quarters: halving a half\n\nObjective: Explain that fair shares must be equal in size",
+            "sha256": "sha256:1fa9a54f6f65d02a43b85622fed60bc35421945458e11c50aed190af66a2ecb1",
+            "bytes": 4045,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "parent_guide",
+            "title": "04 \u00b7 Eighths and the measuring cups",
+            "objective_id": "81c3865ea1928504",
+            "text": "# Parent guide \u2014 Eighths and the measuring cups\n\nObjective: Name the parts: half, quarter and eighth",
+            "sha256": "sha256:284bfa8fd4e2b88eafea35ba98add5dfc394f003415a0f7ffccd1b080caf830a",
+            "bytes": 3204,
+            "source": "authored",
+            "truncated": true
+          }
+        ],
+        "learner_pages": [
+          {
+            "role": "learner_page",
+            "title": "01 \u00b7 One whole, two equal parts",
+            "objective_id": "81c3865ea1928504",
+            "text": "# One whole, two equal parts\n\n## Parent shows a whole and cuts it once\nParent puts one whole soft fo",
+            "sha256": "sha256:bb4de9b364d28d53f7a274493d1f80690446aab26d02a57df8227dba4c2abb92",
+            "bytes": 3183,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "learner_page",
+            "title": "02 \u00b7 Cutting halves ourselves",
+            "objective_id": "81c3865ea1928504",
+            "text": "# Cutting halves ourselves\n\n## Watch me cut and check\nParent sets the banana on the cutting board. P",
+            "sha256": "sha256:d7829d5aa619739770849910574994d9e8e6b1a27ce05c97b252320ef5600955",
+            "bytes": 3132,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "learner_page",
+            "title": "03 \u00b7 Quarters: halving a half",
+            "objective_id": "5dcbaba99dc508d3",
+            "text": "# Quarters: Halving a Half\n\n## Watch: halving a half into two equal quarters\nParent demonstrates wit",
+            "sha256": "sha256:3cec4b6cb93ecb721626e96d04f9a38c9dfa6db9bf0ea92009aa56194b011a18",
+            "bytes": 3345,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "learner_page",
+            "title": "04 \u00b7 Eighths and the measuring cups",
+            "objective_id": "81c3865ea1928504",
+            "text": "# Eighths and the measuring cups\n\n## The cup family\nAt the table, line up the four measuring cups: 1",
+            "sha256": "sha256:e69f6fd043089047ef0bf6fed71536bc74e7a919e255ec42728eec3b1857578d",
+            "bytes": 2477,
+            "source": "authored",
+            "truncated": true
+          }
+        ],
+        "answers": [
+          {
+            "role": "answer_guide",
+            "title": "01 \u00b7 One whole, two equal parts",
+            "objective_id": "81c3865ea1928504",
+            "text": "# Answer guide \u2014 One whole, two equal parts\n\nObjective: Name the parts: half, quarter and eighth (ki",
+            "sha256": "sha256:bdd18ebfc5fae2da43c5d97996ec76a212a94f37c540632cd1cffdecd45b8de8",
+            "bytes": 674,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "answer_guide",
+            "title": "02 \u00b7 Cutting halves ourselves",
+            "objective_id": "81c3865ea1928504",
+            "text": "# Answer guide \u2014 Cutting halves ourselves\n\nObjective: Name the parts: half, quarter and eighth (kitc",
+            "sha256": "sha256:2e364a783632fef8d6a9e44c1a5717bcb62cce910438808338119e348a30e373",
+            "bytes": 876,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "answer_guide",
+            "title": "03 \u00b7 Quarters: halving a half",
+            "objective_id": "5dcbaba99dc508d3",
+            "text": "# Answer guide \u2014 Quarters: halving a half\n\nObjective: Explain that fair shares must be equal in size",
+            "sha256": "sha256:75c86dae365fedc37c0876240a47ffcfb3b2871065cf28b0e8e95fcb0130e3f3",
+            "bytes": 1208,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "answer_guide",
+            "title": "04 \u00b7 Eighths and the measuring cups",
+            "objective_id": "81c3865ea1928504",
+            "text": "# Answer guide \u2014 Eighths and the measuring cups\n\nObjective: Name the parts: half, quarter and eighth",
+            "sha256": "sha256:374832750dd619b4a6e8f577c843c46bb30698978376650624ee11a6fe8f9d16",
+            "bytes": 990,
+            "source": "authored",
+            "truncated": true
+          }
+        ],
+        "narration": [
+          {
+            "role": "narration",
+            "title": "01 \u00b7 One whole, two equal parts",
+            "objective_id": "81c3865ea1928504",
+            "text": "Parent puts one whole soft food on the mat \u2014 a banana, a slice of bread, or a cooked carrot. Say: 'T",
+            "sha256": "sha256:352bd2c4a175e72db508910b99f8bacfc360a066f656c238ed458f586a2536c6",
+            "bytes": 1597,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "narration",
+            "title": "02 \u00b7 Cutting halves ourselves",
+            "objective_id": "81c3865ea1928504",
+            "text": "Parent sets the banana on the cutting board. Parent shows the grip: fingers curled around the handle",
+            "sha256": "sha256:ec3b3643fa16fb811bc7c31dcb5c5bb3ff4e8aa719fdc69678e7c3e1f4a3ce2e",
+            "bytes": 1652,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "narration",
+            "title": "03 \u00b7 Quarters: halving a half",
+            "objective_id": "5dcbaba99dc508d3",
+            "text": "Parent demonstrates with an apple or a slice of bread. Cut the whole food into two equal halves. Set",
+            "sha256": "sha256:782c38bdd242bf02b7464acbfc599d923f530b4962f41c4d8d8f652e70a2f535",
+            "bytes": 1710,
+            "source": "authored",
+            "truncated": true
+          },
+          {
+            "role": "narration",
+            "title": "04 \u00b7 Eighths and the measuring cups",
+            "objective_id": "81c3865ea1928504",
+            "text": "At the table, line up the four measuring cups: 1 cup, 1/2 cup, 1/4 cup and 1/8 cup. Point to each cu",
+            "sha256": "sha256:6356a2d5f60468b78b792ec48f87d64e47ed01919fd4f2132f7899796c5cf131",
+            "bytes": 1060,
+            "source": "authored",
+            "truncated": true
+          }
+        ]
       },
       "sources": []
     },
     "plan": {
       "plan_id": "dbbb508ee1191d18",
-      "version": 1,
-      "state": "draft",
+      "version": 2,
+      "state": "approved",
       "plan_hash": "sha256:397429323a2a5bb28ca0d8b407e4286d044d6c0c352fe57811bee13e610575eb"
     },
-    "job_id": "job_b26a4b9203f24d4a870e28959b5ccada"
+    "job_id": "job_06388582367a40af8c69d01dd9c3964a"
   }
 }

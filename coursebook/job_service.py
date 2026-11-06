@@ -674,7 +674,13 @@ def reconcile_startup(
                 cancelled += 1
                 continue
             held = _parse(row["lease_expires_at"])
-            stale = held is None or held <= moment or row["lease_owner"] != WORKER_ID
+            # A *live* lease is honoured whoever owns it. ``WORKER_ID`` is random per process, so
+            # treating another owner as stale let any second process that merely imported the
+            # plugin (``hooks.STARTUP_RECONCILIATION``) reclaim a running job mid-stage — the
+            # lesson stage died ``interrupted_requires_retry`` ~5s after it started. A process
+            # that really died stops renewing, and its lease expires within ``LEASE_SECONDS``,
+            # which is the only evidence of death this table actually has.
+            stale = held is None or held <= moment
             if stale:
                 jobs_contract.assert_transition(state, "interrupted_requires_retry")
                 connection.execute(

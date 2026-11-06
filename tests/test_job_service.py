@@ -152,6 +152,25 @@ class CancellationTest(JobServiceCase):
         self.assertEqual(result["cancelled"], 1)
         self.assertEqual(job_service._view(job_id)["state"], "cancelled")
 
+    def test_second_process_startup_honours_a_live_lease(self) -> None:
+        """A process that merely imports the plugin must not reclaim another process's job.
+
+        Regression: ``reconcile_startup`` compared ``lease_owner`` with this process's random
+        ``WORKER_ID``, so any second process (a pump script, another agent profile) marked a
+        healthy running job ``interrupted_requires_retry`` seconds after it started.
+        """
+        job_id = self.new_job()
+        job_service.claim(job_id, owner="live-worker", now=T0)
+        early = job_service.reconcile_startup(now=T0 + timedelta(seconds=5))
+        self.assertEqual(early["interrupted"], 0)
+        self.assertEqual(job_service._view(job_id)["state"], "running")
+        # The lease is the only evidence of death there is: once it lapses, recovery still works.
+        late = job_service.reconcile_startup(
+            now=T0 + timedelta(seconds=job_service.LEASE_SECONDS + 1)
+        )
+        self.assertEqual(late["interrupted"], 1)
+        self.assertEqual(job_service._view(job_id)["state"], "interrupted_requires_retry")
+
 
 class FailureAndRecoveryTest(JobServiceCase):
     def test_stage_failure_is_durable_and_retryable(self) -> None:

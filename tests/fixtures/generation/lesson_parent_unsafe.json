@@ -42,6 +42,16 @@
         "criterion": "names one of each",
         "weight": 1.0,
         "description": "Child names a warm and a cold object"
+      },
+      {
+        "criterion": "points before naming",
+        "weight": 1.0,
+        "description": "Child points at one warm object before saying its name"
+      },
+      {
+        "criterion": "cold example",
+        "weight": 1.0,
+        "description": "Child gives one cold example from the kitchen"
       }
     ],
     "reference_answer": "kettle warm, fridge cold",
