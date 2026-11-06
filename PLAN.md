@@ -1,4 +1,9 @@
-# Coursebook — v7 winning-entry plan
+# Coursebook — planning history (v7)
+
+> Superseded for implementation by `PREBUILD_SPEC.md` (v8), after the adversarial review in
+> `AUDIT.md`. This file preserves the product ideation and feature history. Where the documents
+> disagree on identity, storage, prompt trust, session control, schedule, or demo claims, v8
+> governs. No implementation has started.
 
 ## Verdict
 
