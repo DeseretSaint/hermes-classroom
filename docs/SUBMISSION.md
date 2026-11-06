@@ -25,24 +25,26 @@ invalidates the earlier evidence.
 | --- | --- | --- | --- | --- |
 | 1 | Contracts frozen | Atlas | `contracts/*.json`, `docs/REVIEW_CB001.md` | [x] |
 | 2 | Platform skeleton passes admission | Sable | `bash scripts/validate.sh` | [x] |
-| 3 | Backend kernel with migrations | Cinder | `db.ready:true`, `schema_version: 3` from `/health`; migrations `0001`-`0003`; 636 tests | [x] |
+| 3 | Backend kernel with migrations | Cinder | `db.ready:true`, `schema_version: 4` from `/health`; migrations `0001`-`0004`; 685 tests | [x] |
 | 4 | Packs import and export | Lattice | pack round-trip and export hash in the mounted trace; P17/P18/P20 PASS (`tests/adversarial/evidence/attack-packs.json`) | [x] |
-| 5 | Desktop shell with real views | Vellum | `node --check` passes and every view is authored, but `#/coursebook` renders the session home, so no view is verified on a live backend | [~] CB-QA-09 |
+| 5 | Desktop shell with real views | Vellum | `node --check` passes; with a reachable backend `#/coursebook` mounts the library, `New course`, Parent Studio and a course card (`docs/CB017-RELEASE-VERIFICATION.md` §2) | [~] chat composer only on the gateway-owning profile (P3-operational, not this plugin) |
 | 6 | Probes answer the three open questions | Sentinel | `PROBES.md`: 7 probes run, `pre_llm_call` replay FAIL, compression and Desktop render segments BLOCKED | [~] |
 | 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md` rows for every demo shot | [ ] |
-| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/DEMO.md`, `docs/PRIVACY_EGRESS.md`, `docs/ARCHITECTURE.md` | [x] at `97fff42`+docs commit; `docs/REVIEW_CB014.md` registry line is Sentinel's card |
-| 9 | License present | DeseretSaint | `LICENSE` at repository root | [ ] |
-| 10 | Public repository pushed | DeseretSaint | pushed commit, approval required | [ ] |
+| 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/DEMO.md`, `docs/PRIVACY_EGRESS.md`, `docs/ARCHITECTURE.md`, `docs/CB017-RELEASE-VERIFICATION.md` | [x] on the release commit; gates re-run in §2 |
+| 9 | License present | DeseretSaint | `LICENSE` at repository root | [ ] owner decision — no license chosen yet |
+| 10 | Public repository pushed | DeseretSaint | source backup is pushed to the private `DeseretSaint/hermes-classroom` remote; making it public is publication and stays closed | [~] 0.1.0 source pushed |
 | 11 | Catalog entry pins the release commit | Harbor | `catalog/coursebook.yaml`, validator output | [~] blocked on 5, 7 and 10 |
 | 12 | Catalog PR merged | DeseretSaint | PR URL against `hermes-agent` | [ ] |
 | 13 | Demo recorded and approved | Harbor, DeseretSaint | file under 90 seconds, approval | [ ] |
 | 14 | X post published | DeseretSaint | post URL, tags @NousResearch | [ ] |
 | 15 | Contest form submitted | DeseretSaint | confirmation | [ ] |
 
-Gate 5 stays `[~]` for one reason and it is not missing code: on the installed candidate the
-`/coursebook` route renders the session home instead of the page (CB-QA-09, retested on
-`f4a42f3`, `docs/REVIEW_CB014.md`). Until it mounts, the course library, create/import, Parent
-Studio and Activity cannot be checked as views, and gates 7 and 13 cannot start.
+Gate 5 stays `[~]` for one reason, and it is neither missing code nor a plugin defect: this host
+runs one gateway, profile `default` owns it, and `hermes gateway run --force` refuses a second, so a
+window on an isolated home has no gateway and no composer. Atlas reclassified CB-QA-09 as
+P3-operational on that evidence (`docs/REVIEW_CB017-FINAL.md` §3.1). The views themselves mount and
+were captured (`docs/CB017-RELEASE-VERIFICATION.md` §2). Gates 7 and 13 still cannot start until
+the operator unblocks the recording path.
 
 ## 2. Release verification
 
@@ -97,11 +99,13 @@ longer changes the verdict, while an uncommitted edit to a tracked file still fa
 1, 2, 4 and 5 (tests, `node --check`, doctor, mounted backend trace) run against the checkout as
 before.
 
-Expected at 0.1.0 on the CB-014 tree: **636 tests pass** (`Ran 636 tests ... OK`; 652 on master at
-`caa7cde`), `desktop/plugin.js` syntax OK, `hermes plugins validate` passes all **16** admission
-checks with one warning (private core imports, see section 3), doctor reports **1 tool and 3
-hooks**, the mounted backend trace passes **31/31** expectations, and `validate.sh` ends
-`Validation passed.` with exit 0.
+Expected at 0.1.0 on the CB-017 release commit: **685 tests pass** (`Ran 685 tests ... OK`; 674 on
+master, 685 = 674 + 11 from the two replan branches), `desktop/plugin.js` syntax OK,
+`hermes plugins validate` passes all **16** admission checks with one warning (private core imports,
+see section 3), doctor reports **1 tool and 3 hooks**, the mounted backend trace passes **31/31**
+expectations, and `validate.sh` ends `Validation passed.` with exit 0. `validate-plugin.sh --ref`
+on the same commit ends `Release gate passed: 3/3 checks`; the commit and verbatim output are in
+`docs/CB017-RELEASE-VERIFICATION.md` §1.
 
 Fresh install path, in a throwaway home:
 
@@ -127,8 +131,8 @@ The entry is judged by the catalog validator and by a human reviewer. The rules 
 | --- | --- | --- |
 | `name` | `[a-z0-9_-]{1,64}` | `coursebook` |
 | `repo` | `https://` URL | Set; repository not pushed yet |
-| `sha` | exactly 40 lowercase hex characters | `e1f1cab…` — the **skeleton** commit, a placeholder that must be re-pinned to the release commit |
-| `description` | non-empty; carries the disclosure lines | Rewritten for the 0.1.0 candidate (host seams, per-operation providers, local SQLite, no telemetry). It describes the candidate, not `e1f1cab`, so the pin and the text disagree until the re-pin |
+| `sha` | exactly 40 lowercase hex characters | Pinned to the CB-017 release commit; the value is in `catalog/coursebook.yaml` at branch head and in `docs/CB017-RELEASE-VERIFICATION.md` §1 |
+| `description` | non-empty; carries the disclosure lines | Rewritten for the 0.1.0 candidate (host seams, per-operation providers, local SQLite, no telemetry). It describes the pinned code, so text and pin agree |
 | `maintainer` | non-empty | `DeseretSaint` |
 | `tier` | `official`, `verified`, `community` | `community`; only Nous sets the other two |
 | `category` | one of the nine shelves | `desktop` |
@@ -151,7 +155,8 @@ Additional admission rules that apply to this plugin:
   `probes/scripts/` harnesses import `hermes_bootstrap` and `agent.plugin_llm` helpers. It is a
   warning, not a rejection, and it can break on a Hermes upgrade.
 - Metadata gates disclosure rather than behavior: the entry must not claim image or speech
-  generation (absent), reminders (absent), or a working Desktop page (CB-QA-09 open).
+  generation (absent), reminders (absent), or a working chat composer on an isolated home
+  (P3-operational, `docs/REVIEW_CB017-FINAL.md` §3.1).
 
 Validate the entry with the current catalog validator from a `hermes-agent` checkout:
 
@@ -178,9 +183,12 @@ OK: 1 file(s) valid
 
 ## 5. Demo gates
 
-Gate status: **NOT MET.** No shot can be recorded until CB-QA-09 is fixed and Sentinel passes the
-demo scenarios on the exact build being recorded, and no recording happens without DeseretSaint's
-approval.
+Gate status: **NOT MET.** The route mounts against a reachable backend; what remains is the host
+gateway binding (P3-operational, `docs/REVIEW_CB017-FINAL.md` §3.1), which is an operator decision,
+and Sentinel passing the demo scenarios on the exact build being recorded. Row 9 has no completed
+end-to-end artifact yet: replan → lessons → export is fixed and proven through lesson-job start; the
+export half is re-driven before the demo (`docs/REVIEW_CB017-FINAL.md` §3.2). No recording happens
+without DeseretSaint's approval.
 
 - Every shot in `docs/DEMO.md` has a passing Sentinel scenario on the release commit.
 - Two precomputed segments are captioned on screen: Parent Studio pages and cached lesson media.
@@ -201,16 +209,35 @@ approval.
 
 | Blocker | Why it blocks | Owner |
 | --- | --- | --- |
-| `#/coursebook` renders the session home (CB-QA-09) | The product's primary surface does not mount, so no UI view is verified, gates 5 and 7 stay open and the demo cannot be recorded honestly | Vellum (`t_bfe339b2`) |
+| No composer on an isolated home (CB-QA-09) — P3-operational, host gateway binding | One gateway per host: `hermes gateway run --force` is refused while profile `default` owns it. This is not a plugin defect: `desktop/plugin.js` mounts the library and Parent Studio whenever the window reaches a backend (`docs/REVIEW_CB017-FINAL.md` §3.1). The unblock is an operator decision on the recording path (record on the gateway-owning profile, or stop that gateway first) | DeseretSaint / Atlas |
+| Row 9 export half unproven | The lessons job the replan fix unblocks was still `running` at the gate's 1800 s budget, so the export and lesson-set re-approval steps were not driven (`docs/REVIEW_CB017-FINAL.md` §3.2) | Vellum (`t_1ad9e4a1`) |
 | `evidence.inspect` returns an open check's reference answer (CB-QA-10) | The answer key crosses the client boundary while the check is open; the UI does not render it, the RPC does | Cinder |
 | Auxiliary grader accepts a persuaded pass (CB-QA-11) | The open-response lane cannot distinguish an honest pass from an injected one, so the lane ships disabled | Cinder |
 | Demo gate not met | Sentinel's demo scenarios have not passed on the release commit, and recording needs operator approval | Sentinel, DeseretSaint |
 | License absent | Redistribution and catalog listing are unsafe without one | DeseretSaint |
-| Repository not pushed | No commit sha to pin, no README at a public URL | DeseretSaint |
-| Catalog pin is the skeleton commit | The entry's text describes 0.1.0; the sha still points at `e1f1cab`, so the entry must be re-pinned after the last code merge and the docs commit | Harbor, DeseretSaint |
+| Public listing not authorised | The private source backup is pushed; making the repository public, tagging and announcing are publication under the operator gate | DeseretSaint |
+| No release tag | Atlas's operator gate forbids publishing a release or tag until DeseretSaint signs off in chat | Atlas, DeseretSaint |
 
-Verified on this branch, so they are not blockers: 51/51 `cb.rpc` v6 methods mounted with no
-contract problems, schema v3 from migrations `0001`-`0003`, 636 tests and 31/31 mounted backend
-expectations under `scripts/validate.sh`, pack round-trip and export hash matching, and eight
-`parent.*` methods. Those paths are implemented and tested; they are unreachable from the UI while
-CB-QA-09 is open.
+Verified on this branch, so they are not blockers: 52/52 `cb.rpc` v7 methods mounted with no
+contract problems, schema v4 from migrations `0001`-`0004`, 685 tests and 31/31 mounted backend
+expectations under `scripts/validate.sh`, pack round-trip and export hash matching, eight
+`parent.*` methods, and the replan carry with the Parent Studio plan guard. Those paths are
+implemented and tested; the UI halves are unverified until the gateway condition in the first row
+is resolved for the recording.
+
+## 8. Review packet (as of 2026-11-06)
+
+| Item | Value |
+| --- | --- |
+| Repository | `https://github.com/DeseretSaint/hermes-classroom` (private; source backup only) |
+| Backup branch | `wt/cb-016-harbor` at `eb80a65`, pushed; contains every commit below |
+| Release commit (pinned) | `7f80f35b8dec6bb995469dfb915e870cb35fe6f3` — `validate-plugin.sh --ref` 3/3 on 793 files |
+| Parent gates commit | `e93b8c5` — `validate.sh` exit 0, 674 tests, 31/31 backend expectations |
+| Tag | none. Publication gate closed; a tag is forbidden until sign-off |
+| Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
+| Verification evidence | `docs/CB016-RELEASE-VERIFICATION.md`, `docs/cb016-verify/` |
+| Catalog draft | `catalog/coursebook.yaml` pinned to `7f80f35`, validator `OK: 1 file(s) valid`; not submitted |
+| Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and four partial (`[~]`: 5, 6, 10, 11) |
+
+The pinned commit and the branch head differ by one catalog-only commit (`eb80a65`), because the
+catalog cannot pin itself. The installed tree at `7f80f35` is the one the gates ran on.
