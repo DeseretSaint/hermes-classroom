@@ -287,6 +287,10 @@ function transportFailure(operationId, method, error) {
  * explicitly because a mutation requires them — nothing is generated behind the caller's back.
  */
 async function rpc(method, payload = {}, options = {}) {
+  // A cold mount (the pane renders before the health probe resolves) used to send
+  // contract_version 1 and take a VALIDATION_FAILED refusal from a v5 backend. Resolve the wire
+  // facts first; the probe is cached per page and its failure is already a handled envelope.
+  if (typeof ensureBackendWire === 'function') await ensureBackendWire()
   const operationId = options.operationId || newOperationId(method)
   const body = {
     contract: 'cb.rpc',
@@ -4924,7 +4928,10 @@ function LessonPaneBody({ binding, storedId }) {
     library.data && Array.isArray(library.data.items)
       ? library.data.items.find((item) => item.enrollment_id === binding.enrollment_id)
       : null
-  const objectiveId = row && row.evidence_summary ? row.evidence_summary.current_objective_id : null
+  // The chat is bound to ONE objective. Showing the enrollment's current objective instead would
+  // make a chat bound to section 3 display section 1 (and section 1's detached run) as its lesson.
+  const objectiveId =
+    binding.objective_id || (row && row.evidence_summary ? row.evidence_summary.current_objective_id : null)
   const page = useRpcQuery(
     'lesson.page',
     { enrollment_id: binding.enrollment_id, objective_id: objectiveId },
@@ -5369,6 +5376,9 @@ function CoursebookPane() {
             description: code ? `${code}: ${describeError(state.error)}` : describeError(state.error),
             action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
           })
+  } else if (state.binding && storedId && state.binding.stored_session_id && state.binding.stored_session_id !== storedId) {
+    // a binding for a chat that is no longer on screen is never rendered as this chat's lesson
+    body = jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this chat’s binding' }) })
   } else if (!state.binding) {
     body = jsx(sdk.PanelEmpty, {
       icon: 'book',
@@ -5382,6 +5392,8 @@ function CoursebookPane() {
 
   return jsxs('div', {
     className: 'flex h-full min-h-0 flex-col px-3 py-2',
+    'data-cb-stored-id': storedId || '',
+    'data-cb-binding-id': (state.binding && state.binding.binding_id) || '',
     children: [
       jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }),
       bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-tertiary)', children: bindNote }) : null,
@@ -5390,8 +5402,25 @@ function CoursebookPane() {
   })
 }
 
-/** `useValue` with a non-reactive fallback for hosts too old to export it. */
-const useHostValue = typeof sdk.useValue === 'function' ? sdk.useValue : (atom) => atom.get()
+/**
+ * Reactive read of a host atom. The host's own `useValue` did not re-render this pane when the
+ * focused chat changed (the pane stayed pinned to the binding of the chat it first mounted with,
+ * so a bound lesson could outlive its chat), so subscribe directly and keep the value in local
+ * state. Falls back to the host hook when the atom exposes no subscription.
+ */
+function useHostValue(atom) {
+  const read = useCallback(() => (atom && typeof atom.get === 'function' ? atom.get() : atom), [atom])
+  const [value, setValue] = useState(read)
+  useEffect(() => {
+    setValue(read())
+    if (!atom) return undefined
+    if (typeof atom.subscribe === 'function') return atom.subscribe((next) => setValue(next))
+    if (typeof atom.listen === 'function') return atom.listen((next) => setValue(next))
+    if (typeof sdk.useValue === 'function') return undefined
+    return undefined
+  }, [atom, read])
+  return value
+}
 
 /**
  * The focused chat's binding, read by its STORED id only.

@@ -1,0 +1,1181 @@
+{
+  "startedAt": "2026-11-06T14:21:19.875Z",
+  "steps": [
+    {
+      "label": "start",
+      "tag": "DIV",
+      "id": "",
+      "role": "textbox",
+      "name": "Message"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 1,
+      "tag": "BUTTON",
+      "id": "radix-_r_alm_",
+      "role": "",
+      "name": "Model · Nous Portal: deepseek/deepseek-v4.1-flash-1017"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 2,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Voice dictation"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 3,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Start voice conversation"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 4,
+      "tag": "BUTTON",
+      "id": "radix-_r_alu_",
+      "role": "",
+      "name": "Voice chat engine"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 5,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Open Coursebook"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 6,
+      "tag": "DIV",
+      "id": "",
+      "role": "tab",
+      "name": "Terminal"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 7,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Hide"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 8,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": ""
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 9,
+      "tag": "BUTTON",
+      "id": "radix-_r_5m_",
+      "role": "",
+      "name": "Registered gateways: 127.0.0.1:44219"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 10,
+      "tag": "BUTTON",
+      "id": "radix-_r_26_",
+      "role": "",
+      "name": "Backend ready"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 11,
+      "tag": "BUTTON",
+      "id": "radix-_r_65_",
+      "role": "",
+      "name": "Smart"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 12,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "client v0.23.0"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 13,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "backend v0.23.0"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 14,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Hide sidebar · 1 unread session"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 15,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Open settings"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 16,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Layout editor"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 17,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "HUD mode"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 18,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Swap sidebar sides"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 19,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Hide right sidebar"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 20,
+      "tag": "DIV",
+      "id": "",
+      "role": "tab",
+      "name": "Sessions"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 21,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Minimize"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 22,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "New session Ctrl N"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 23,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Capabilities"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 24,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Messaging"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 25,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Artifacts"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 26,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Scheduled jobs"
+    },
+    {
+      "label": "nav-coursebook",
+      "step": 27,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Coursebook"
+    },
+    {
+      "label": "nav-found",
+      "presses": 27
+    },
+    {
+      "label": "route-hash",
+      "hash": "#/coursebook"
+    },
+    {
+      "label": "route-open",
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Coursebook"
+    },
+    {
+      "label": "open-course",
+      "step": 1,
+      "tag": "INPUT",
+      "id": "",
+      "role": "",
+      "name": "Search sessions"
+    },
+    {
+      "label": "open-course",
+      "step": 2,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "PINNED"
+    },
+    {
+      "label": "open-course",
+      "step": 3,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Hermes Classroom Plugin Feasibility Plan"
+    },
+    {
+      "label": "open-course",
+      "step": 4,
+      "tag": "BUTTON",
+      "id": "radix-_r_4ro_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 5,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "SESSIONS"
+    },
+    {
+      "label": "open-course",
+      "step": 6,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Mark all as read"
+    },
+    {
+      "label": "open-course",
+      "step": 7,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "New session"
+    },
+    {
+      "label": "open-course",
+      "step": 8,
+      "tag": "BUTTON",
+      "id": "radix-_r_4s8_",
+      "role": "",
+      "name": "Filters"
+    },
+    {
+      "label": "open-course",
+      "step": 9,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Monitor Backlight Ring Flicker Investigation"
+    },
+    {
+      "label": "open-course",
+      "step": 10,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Monitor Backlight Ring Flicker Investigation"
+    },
+    {
+      "label": "open-course",
+      "step": 11,
+      "tag": "BUTTON",
+      "id": "radix-_r_5mr_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 12,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Coil Whine on OLED Monitor"
+    },
+    {
+      "label": "open-course",
+      "step": 13,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Coil Whine on OLED Monitor"
+    },
+    {
+      "label": "open-course",
+      "step": 14,
+      "tag": "BUTTON",
+      "id": "radix-_r_8lc_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 15,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Default model change not affecting old sessions"
+    },
+    {
+      "label": "open-course",
+      "step": 16,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Default model change not affecting old sessions"
+    },
+    {
+      "label": "open-course",
+      "step": 17,
+      "tag": "BUTTON",
+      "id": "radix-_r_8ls_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 18,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Every time I wake my computer from sleep, the screen only fl..."
+    },
+    {
+      "label": "open-course",
+      "step": 19,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Every time I wake my computer from sleep, the screen only fl..."
+    },
+    {
+      "label": "open-course",
+      "step": 20,
+      "tag": "BUTTON",
+      "id": "radix-_r_8mc_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 21,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Sync Obsidian Vaults to Desktop"
+    },
+    {
+      "label": "open-course",
+      "step": 22,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Sync Obsidian Vaults to Desktop"
+    },
+    {
+      "label": "open-course",
+      "step": 23,
+      "tag": "BUTTON",
+      "id": "radix-_r_8ms_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 24,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Hyprland Keybindings for Finance and Gmail"
+    },
+    {
+      "label": "open-course",
+      "step": 25,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Hyprland Keybindings for Finance and Gmail"
+    },
+    {
+      "label": "open-course",
+      "step": 26,
+      "tag": "BUTTON",
+      "id": "radix-_r_8nc_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 27,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Fixing F1 F2 Brightness Keys"
+    },
+    {
+      "label": "open-course",
+      "step": 28,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Fixing F1 F2 Brightness Keys"
+    },
+    {
+      "label": "open-course",
+      "step": 29,
+      "tag": "BUTTON",
+      "id": "radix-_r_8ns_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 30,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Fix Omarchy Rice Bar style selections"
+    },
+    {
+      "label": "open-course",
+      "step": 31,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Fix Omarchy Rice Bar style selections"
+    },
+    {
+      "label": "open-course",
+      "step": 32,
+      "tag": "BUTTON",
+      "id": "radix-_r_8oc_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 33,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Download and Launch Open Design"
+    },
+    {
+      "label": "open-course",
+      "step": 34,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Download and Launch Open Design"
+    },
+    {
+      "label": "open-course",
+      "step": 35,
+      "tag": "BUTTON",
+      "id": "radix-_r_8os_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 36,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Hermes remote gateway Sofia bot sync"
+    },
+    {
+      "label": "open-course",
+      "step": 37,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Hermes remote gateway Sofia bot sync"
+    },
+    {
+      "label": "open-course",
+      "step": 38,
+      "tag": "BUTTON",
+      "id": "radix-_r_8pc_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 39,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Keychron Fn Media Key Swap"
+    },
+    {
+      "label": "open-course",
+      "step": 40,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Keychron Fn Media Key Swap"
+    },
+    {
+      "label": "open-course",
+      "step": 41,
+      "tag": "BUTTON",
+      "id": "radix-_r_8ps_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 42,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Verifying PipeWire virtual microphone setup"
+    },
+    {
+      "label": "open-course",
+      "step": 43,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Verifying PipeWire virtual microphone setup"
+    },
+    {
+      "label": "open-course",
+      "step": 44,
+      "tag": "BUTTON",
+      "id": "radix-_r_8qc_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 45,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder FreeTube Random Pausing Investigation"
+    },
+    {
+      "label": "open-course",
+      "step": 46,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "FreeTube Random Pausing Investigation"
+    },
+    {
+      "label": "open-course",
+      "step": 47,
+      "tag": "BUTTON",
+      "id": "radix-_r_8qs_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 48,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Hyprland keybinding for GitHub"
+    },
+    {
+      "label": "open-course",
+      "step": 49,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Hyprland keybinding for GitHub"
+    },
+    {
+      "label": "open-course",
+      "step": 50,
+      "tag": "BUTTON",
+      "id": "radix-_r_8rc_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 51,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Debugging Hermes in Omalauncher Fork"
+    },
+    {
+      "label": "open-course",
+      "step": 52,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Debugging Hermes in Omalauncher Fork"
+    },
+    {
+      "label": "open-course",
+      "step": 53,
+      "tag": "BUTTON",
+      "id": "radix-_r_8rs_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 54,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Diagnosing Hermes SIGTRAP crash on Omarchy"
+    },
+    {
+      "label": "open-course",
+      "step": 55,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Diagnosing Hermes SIGTRAP crash on Omarchy"
+    },
+    {
+      "label": "open-course",
+      "step": 56,
+      "tag": "BUTTON",
+      "id": "radix-_r_8sc_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 57,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Omarchy Calendar Plugin Setup"
+    },
+    {
+      "label": "open-course",
+      "step": 58,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Omarchy Calendar Plugin Setup"
+    },
+    {
+      "label": "open-course",
+      "step": 59,
+      "tag": "BUTTON",
+      "id": "radix-_r_8ss_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 60,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Set Google Drive Keybinding in Hyprland"
+    },
+    {
+      "label": "open-course",
+      "step": 61,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Set Google Drive Keybinding in Hyprland"
+    },
+    {
+      "label": "open-course",
+      "step": 62,
+      "tag": "BUTTON",
+      "id": "radix-_r_atv_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 63,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Fixing Crunchyroll idle screensaver in Hyprland"
+    },
+    {
+      "label": "open-course",
+      "step": 64,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Fixing Crunchyroll idle screensaver in Hyprland"
+    },
+    {
+      "label": "open-course",
+      "step": 65,
+      "tag": "BUTTON",
+      "id": "radix-_r_auf_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 66,
+      "tag": "SPAN",
+      "id": "",
+      "role": "button",
+      "name": "Reorder Installing Hermes Desktop on Omarchy"
+    },
+    {
+      "label": "open-course",
+      "step": 67,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Installing Hermes Desktop on Omarchy"
+    },
+    {
+      "label": "open-course",
+      "step": 68,
+      "tag": "BUTTON",
+      "id": "radix-_r_auv_",
+      "role": "",
+      "name": "Session actions"
+    },
+    {
+      "label": "open-course",
+      "step": 69,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Load more"
+    },
+    {
+      "label": "open-course",
+      "step": 70,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "CRON JOBS"
+    },
+    {
+      "label": "open-course",
+      "step": 71,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "All profiles on this gateway"
+    },
+    {
+      "label": "open-course",
+      "step": 72,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "This device (local backend — installs Hermes if missing, otherwise opens a fresh session)"
+    },
+    {
+      "label": "open-course",
+      "step": 73,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "default"
+    },
+    {
+      "label": "open-course",
+      "step": 74,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "button",
+      "name": "Atlas"
+    },
+    {
+      "label": "open-course",
+      "step": 75,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "button",
+      "name": "cbqa"
+    },
+    {
+      "label": "open-course",
+      "step": 76,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "button",
+      "name": "Cinder"
+    },
+    {
+      "label": "open-course",
+      "step": 77,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "button",
+      "name": "Harbor"
+    },
+    {
+      "label": "open-course",
+      "step": 78,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "button",
+      "name": "Lattice"
+    },
+    {
+      "label": "open-course",
+      "step": 79,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "button",
+      "name": "Quill"
+    },
+    {
+      "label": "open-course",
+      "step": 80,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "button",
+      "name": "Sable"
+    },
+    {
+      "label": "open-course",
+      "step": 81,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "button",
+      "name": "Sentinel"
+    },
+    {
+      "label": "open-course",
+      "step": 82,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "button",
+      "name": "Vellum"
+    },
+    {
+      "label": "open-course",
+      "step": 83,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "New profile"
+    },
+    {
+      "label": "open-course",
+      "step": 84,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Import profile…"
+    },
+    {
+      "label": "open-course",
+      "step": 85,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Manage profiles…"
+    },
+    {
+      "label": "open-course",
+      "step": 86,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "New course"
+    },
+    {
+      "label": "open-course",
+      "step": 87,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Courses"
+    },
+    {
+      "label": "open-course",
+      "step": 88,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Library"
+    },
+    {
+      "label": "open-course",
+      "step": 89,
+      "tag": "INPUT",
+      "id": "",
+      "role": "",
+      "name": "Search courses"
+    },
+    {
+      "label": "open-course",
+      "step": 90,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "All"
+    },
+    {
+      "label": "open-course",
+      "step": 91,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "In progress"
+    },
+    {
+      "label": "open-course",
+      "step": 92,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Review due"
+    },
+    {
+      "label": "open-course",
+      "step": 93,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Archived"
+    },
+    {
+      "label": "open-course",
+      "step": 94,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Review"
+    },
+    {
+      "label": "open-course",
+      "step": 95,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Open"
+    },
+    {
+      "label": "course-found",
+      "presses": 95
+    },
+    {
+      "label": "course-open",
+      "tag": "BODY",
+      "name": "",
+      "id": "",
+      "role": ""
+    },
+    {
+      "label": "view-picker",
+      "step": 1,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "All courses"
+    },
+    {
+      "label": "view-picker",
+      "step": 2,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Start lesson"
+    },
+    {
+      "label": "view-picker",
+      "step": 3,
+      "tag": "BUTTON",
+      "id": "cb-view-picker",
+      "role": "combobox",
+      "name": "Course view"
+    },
+    {
+      "label": "view-picker-found",
+      "presses": 3
+    },
+    {
+      "label": "view-menu",
+      "options": [
+        "Overview",
+        "Textbook",
+        "Notebook",
+        "Quizzes",
+        "Plan",
+        "Evidence",
+        "Sources"
+      ]
+    },
+    {
+      "label": "textbook-open",
+      "tag": "BUTTON",
+      "id": "cb-view-picker",
+      "role": "combobox",
+      "name": "Course view"
+    },
+    {
+      "label": "open-section",
+      "step": 1,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Open section"
+    },
+    {
+      "label": "section-found",
+      "presses": 1
+    },
+    {
+      "label": "section-open",
+      "tag": "BODY",
+      "name": "",
+      "id": "",
+      "role": ""
+    },
+    {
+      "label": "answer-field",
+      "step": 1,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Continue here"
+    },
+    {
+      "label": "answer-field",
+      "step": 2,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Start a fresh run"
+    },
+    {
+      "label": "answer-field",
+      "step": 3,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "All sections"
+    },
+    {
+      "label": "answer-field",
+      "step": 4,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Save to notebook"
+    },
+    {
+      "label": "answer-field",
+      "step": 5,
+      "tag": "TEXTAREA",
+      "id": "cb-attempt-answer",
+      "role": "",
+      "name": "Type the answer you would give in the lesson."
+    },
+    {
+      "label": "answer-found",
+      "presses": 5
+    },
+    {
+      "label": "answer-typed",
+      "tag": "TEXTAREA",
+      "id": "cb-attempt-answer",
+      "role": "",
+      "name": "Type the answer you would give in the lesson.",
+      "typed": "The addressee is someone I respect but am not close to, and the setting is private, so polite teineigo fits; the same words to a close friend in public would switch to plain casual form."
+    },
+    {
+      "label": "submit",
+      "step": 1,
+      "tag": "BUTTON",
+      "id": "",
+      "role": "",
+      "name": "Submit answer"
+    },
+    {
+      "label": "submit-found",
+      "presses": 1
+    },
+    {
+      "label": "after-submit",
+      "tag": "BODY",
+      "name": "",
+      "id": "",
+      "role": "",
+      "verdicts": [
+        "Not yet",
+        "Needs review",
+        "Hinted"
+      ],
+      "keyboardFocus": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+      "stillOnSection": true
+    }
+  ],
+  "shots": [],
+  "typed": "The addressee is someone I respect but am not close to, and the setting is private, so polite teineigo fits; the same words to a close friend in public would switch to plain casual form.",
+  "submitDisabled": false,
+  "after": {
+    "verdicts": [
+      "Not yet",
+      "Needs review",
+      "Hinted"
+    ],
+    "keyboardFocus": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr",
+    "stillOnSection": true
+  },
+  "textOnlyAudit": {
+    "total": 119,
+    "unnamed": 1,
+    "unnamedSamples": [
+      {
+        "tag": "BUTTON",
+        "slot": "tooltip-trigger",
+        "cls": "inline-flex h-full items-center gap-1 rounded-none"
+      }
+    ]
+  }
+}

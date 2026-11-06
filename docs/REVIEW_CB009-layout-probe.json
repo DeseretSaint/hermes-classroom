@@ -1,0 +1,125 @@
+{
+  "wide": {
+    "viewport": {
+      "w": 944,
+      "h": 688
+    },
+    "docOverflowX": 0,
+    "bodyOverflowX": 0,
+    "paneRect": {
+      "x": 445,
+      "y": 34,
+      "w": 294,
+      "h": 496,
+      "onScreen": true
+    },
+    "paneText": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v2\ndiscrimination\n",
+    "answerRect": null,
+    "composerRect": {
+      "x": 262,
+      "y": 593,
+      "w": 158,
+      "h": 29,
+      "onScreen": true
+    },
+    "overflowing": []
+  },
+  "narrow": {
+    "viewport": {
+      "w": 460,
+      "h": 900
+    },
+    "docOverflowX": 0,
+    "bodyOverflowX": 0,
+    "paneRect": {
+      "x": 120,
+      "y": 34,
+      "w": 340,
+      "h": 666,
+      "onScreen": true
+    },
+    "paneText": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v2\ndiscrimination\n",
+    "answerRect": null,
+    "composerRect": {
+      "x": 25,
+      "y": 805,
+      "w": 70,
+      "h": 29,
+      "onScreen": true
+    },
+    "overflowing": []
+  },
+  "narrowPaneTabs": [
+    "Casual vs polite affection difference",
+    "Terminal"
+  ],
+  "text200": {
+    "viewport": {
+      "w": 944,
+      "h": 688
+    },
+    "docOverflowX": 0,
+    "bodyOverflowX": 0,
+    "paneRect": {
+      "x": 445,
+      "y": 34,
+      "w": 163,
+      "h": 460,
+      "onScreen": true
+    },
+    "paneText": "COURSEBOOK\nThis lesson is bound to this chat.\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nNeeds review\nCURRENT CHECK\nCheck v2\ndiscrimination\n",
+    "answerRect": null,
+    "composerRect": {
+      "x": 286,
+      "y": 498,
+      "w": 110,
+      "h": 59,
+      "onScreen": true
+    },
+    "overflowing": [
+      {
+        "tag": "BUTTON",
+        "cls": "group/section-label flex w-fit min-w-0 items-cente",
+        "sw": 48,
+        "cw": 21
+      },
+      {
+        "tag": "SPAN",
+        "cls": "flex min-w-0 items-center gap-2 pl-2 text-[0.64rem",
+        "sw": 32,
+        "cw": 16
+      },
+      {
+        "tag": "DIV",
+        "cls": "relative",
+        "sw": 249,
+        "cw": 165
+      },
+      {
+        "tag": "DIV",
+        "cls": "",
+        "sw": 249,
+        "cw": 165
+      },
+      {
+        "tag": "DIV",
+        "cls": "group/workspace flex select-none items-center gap-",
+        "sw": 249,
+        "cw": 165
+      },
+      {
+        "tag": "BUTTON",
+        "cls": "flex min-w-0 flex-1 items-center gap-2 rounded-sm ",
+        "sw": 233,
+        "cw": 85
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex min-w-0 items-center gap-0.5",
+        "sw": 192,
+        "cw": 189
+      }
+    ]
+  },
+  "capturedAt": "2026-11-06T14:15:11.942Z"
+}
