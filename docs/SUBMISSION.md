@@ -6,6 +6,14 @@ contest form. A demo over 90 seconds fails regardless of quality.
 
 Status key: `[x]` verified on this branch, `[ ]` open, `[~]` blocked on another owner.
 
+## 0. Hard operator gate
+
+**Do not submit to the plugin catalog or store, publish a release, create a public release tag,
+open a catalog pull request, or announce Coursebook as installable until DeseretSaint gives
+explicit final sign-off in chat.** GitHub commits and pushes to the private source repository are
+the authorized backup path; they are not publication. Release verification and evidence collection
+may continue, but every publication gate below stays closed until that sign-off.
+
 ## 1. Gates in order
 
 Each gate depends on the one above it. Do not start a later gate to save time; a failure there
