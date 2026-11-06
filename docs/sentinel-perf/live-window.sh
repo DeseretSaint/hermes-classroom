@@ -31,12 +31,23 @@ status() {
 case "${1:-}" in
   --stop) stop; exit 0 ;;
   --status) status; exit $? ;;
+  --restart) ;;
   "") ;;
-  *) echo "usage: $0 [--stop|--status]" >&2; exit 2 ;;
+  *) echo "usage: $0 [--restart|--stop|--status]" >&2; exit 2 ;;
 esac
 
 [[ -x "$ELECTRON" ]] || { echo "no electron binary at $ELECTRON" >&2; exit 1; }
 [[ -f "$USERDATA/connections.json" ]] || { echo "no $USERDATA/connections.json" >&2; exit 1; }
+
+# Reuse this state's existing window instead of flashing a new one on every
+# harness invocation; --restart is for an intentional plugin.js swap.
+if [[ "${1:-}" != "--restart" && -f "$PIDF" ]]; then
+  existing_pid="$(cat "$PIDF" 2>/dev/null || true)"
+  if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" 2>/dev/null && status >/dev/null 2>&1; then
+    echo "reusing window pid $existing_pid (CDP $PORT)"
+    exit 0
+  fi
+fi
 
 stop
 cd "$APP"
