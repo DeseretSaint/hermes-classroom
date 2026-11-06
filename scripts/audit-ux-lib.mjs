@@ -221,7 +221,16 @@ const MEASURE = `(() => {
         const need = large ? 3 : 4.5
         const cr = ratio(fg, bg)
         if (cr + 0.02 < need) {
-          contrast.push({ text: text.slice(0, 70), ratio: Math.round(cr * 100) / 100, need, size, fg: cs.color, bg: 'rgb(' + [bg.r, bg.g, bg.b].join(',') + ')' })
+          const parent = el.parentElement
+          contrast.push({
+            text: text.slice(0, 70), ratio: Math.round(cr * 100) / 100, need, size, fg: cs.color,
+            bg: 'rgb(' + [bg.r, bg.g, bg.b].join(',') + ')',
+            // Ownership trail: lets a reader tell plugin-authored copy from host-primitive paint.
+            tag: el.tagName,
+            cls: String(el.className || '').slice(0, 160),
+            slot: el.getAttribute('data-slot') || '',
+            parentCls: parent ? String(parent.className || '').slice(0, 160) : ''
+          })
         }
       }
     }
@@ -298,6 +307,12 @@ const MEASURE = `(() => {
     }
   }).filter((x) => x.transition > 0.15 || x.animation > 0.15).slice(0, 15)
 
+  const contrastBySize = {}
+  for (const c of contrast) {
+    const key = c.size + 'px'
+    contrastBySize[key] = (contrastBySize[key] || 0) + 1
+  }
+
   return {
     url: location.hash,
     viewport: { w: innerWidth, h: innerHeight },
@@ -310,6 +325,10 @@ const MEASURE = `(() => {
     textLength: (route.innerText || '').length,
     clipped: clipped.slice(0, 40),
     contrast: contrast.slice(0, 40),
+    // Full count (contrast[] is capped at 40 for report size) and the same rows uncapped.
+    contrastTotal: contrast.length,
+    contrastBySize,
+    contrastAll: contrast.slice(0, 300),
     unnamed: unnamed.slice(0, 30),
     colorOnly: colorOnly.slice(0, 20),
     smallTargets: smallTargets.slice(0, 20),

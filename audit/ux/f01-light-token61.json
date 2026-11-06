@@ -1,0 +1,633 @@
+{
+  "label": "negative-control-61",
+  "hostTokenSimulation": "61%",
+  "states": {
+    "lesson-ready": {
+      "mode": "light",
+      "contrastTotal": 7,
+      "contrastListed": 7,
+      "contrastBySize": {
+        "11px": 2,
+        "12px": 1,
+        "9.6px": 4
+      },
+      "contrast": [
+        {
+          "text": "Library",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent Studio",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "All courses",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Casual",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Needs review",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "recall",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Cold attempt",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        }
+      ],
+      "textLength": 778,
+      "snippet": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nRecall",
+      "at": "2026-11-06T20:07:01.679Z"
+    },
+    "no-courses": {
+      "mode": "light",
+      "contrastTotal": 5,
+      "contrastListed": 5,
+      "contrastBySize": {
+        "11px": 5
+      },
+      "contrast": [
+        {
+          "text": "Library",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent Studio",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "In progress",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Review due",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Archived",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        }
+      ],
+      "textLength": 572,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nBuild a course around what you w",
+      "at": "2026-11-06T20:07:09.795Z"
+    },
+    "no-search-results": {
+      "mode": "light",
+      "contrastTotal": 6,
+      "contrastListed": 6,
+      "contrastBySize": {
+        "11px": 5,
+        "12px": 1
+      },
+      "contrast": [
+        {
+          "text": "Library",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent Studio",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "In progress",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Review due",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Archived",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Your courses are still here; the search just excludes them right now.",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        }
+      ],
+      "textLength": 279,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYou",
+      "at": "2026-11-06T20:07:19.129Z"
+    },
+    "backend-off": {
+      "mode": "light",
+      "contrastTotal": 1,
+      "contrastListed": 1,
+      "contrastBySize": {
+        "14px": 1
+      },
+      "contrast": [
+        {
+          "text": "The Desktop half is enabled but its Python backend is not answering fo",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 14,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        }
+      ],
+      "textLength": 475,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nBackend off\nCoursebook needs its agent plugin\n\nThe Desktop half is enabled but its Python backend is not answ",
+      "at": "2026-11-06T20:07:28.745Z"
+    },
+    "degraded-db": {
+      "mode": "light",
+      "contrastTotal": 2,
+      "contrastListed": 2,
+      "contrastBySize": {
+        "10.4px": 1,
+        "14px": 1
+      },
+      "contrast": [
+        {
+          "text": "Database not migrated",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 10.4,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "The backend is connected and its contract is loaded, but this profile ",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 14,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        }
+      ],
+      "textLength": 516,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nDatabase not migrated\nThe course database is not migrated yet\n\nThe backend is connected and its contract is l",
+      "at": "2026-11-06T20:07:36.857Z"
+    },
+    "unsupported-backend": {
+      "mode": "light",
+      "contrastTotal": 5,
+      "contrastListed": 5,
+      "contrastBySize": {
+        "11px": 5
+      },
+      "contrast": [
+        {
+          "text": "Library",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent Studio",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "In progress",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Review due",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Archived",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        }
+      ],
+      "textLength": 156,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived",
+      "at": "2026-11-06T20:07:44.971Z"
+    },
+    "demo-fixture-mode": {
+      "mode": "light",
+      "contrastTotal": 60,
+      "contrastListed": 40,
+      "contrastBySize": {
+        "11px": 5,
+        "12px": 37,
+        "9.6px": 18
+      },
+      "contrast": [
+        {
+          "text": "Library",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent Studio",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "In progress",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Review due",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Archived",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 11,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Review",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Casual",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Review 1 objective(s)",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Start Name one warm and one cold thing in the kitchen",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Start Name one warm and one cold thing in the kitchen",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Start Name one warm and one cold thing in the kitchen",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Start Name the parts: half, quarter and eighth (kitchen table)",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Start Name halves of a real object (kitchen table)",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Start Name halves of a real object (kitchen table)",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Review and approve the plan",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Review and approve the plan",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Review and approve the plan",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        },
+        {
+          "text": "Start Name halves of a real object (kitchen table)",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Open",
+          "ratio": 4.39,
+          "need": 4.5,
+          "size": 12,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(254,254,254)"
+        },
+        {
+          "text": "Parent preparation",
+          "ratio": 4.28,
+          "need": 4.5,
+          "size": 9.6,
+          "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.61)",
+          "bg": "rgb(246,246,246)"
+        }
+      ],
+      "textLength": 2450,
+      "snippet": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection an",
+      "at": "2026-11-06T20:07:53.092Z"
+    }
+  },
+  "hostTokenApplied": "color-mix(in srgb, #1f2328 61%, transparent)",
+  "totalFailures": 86
+}
