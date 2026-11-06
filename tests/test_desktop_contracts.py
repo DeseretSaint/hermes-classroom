@@ -25,6 +25,19 @@ def _contract(name: str) -> dict:
     return json.loads((ROOT / "contracts" / name).read_text(encoding="utf-8"))
 
 
+def _latest_rpc() -> dict:
+    """The newest frozen cb.rpc document on disk (`rpc.v3.json` today)."""
+    versions = sorted((ROOT / "contracts").glob("rpc.v*.json"), key=lambda path: int(re.findall(r"v(\d+)", path.name)[0]))
+    return json.loads(versions[-1].read_text(encoding="utf-8"))
+
+
+#: Methods the Desktop gates on that the frozen contract does not define *yet*. Each one is filed
+#: with the contract owner (kanban t_5c626e59) and the UI renders an honest "not in this build"
+#: state instead of the control, so this list can only shrink. Keeping it here means a typo in a
+#: gated method name still fails, which is the point of the test.
+PENDING_CONTRACT_METHODS = {"check.get", "course.outline", "lesson.assist"}
+
+
 def _string_list(source: str, marker: str) -> list[str]:
     """The single-quoted string literals of the array literal that follows `marker`."""
     start = source.index(marker)
@@ -66,15 +79,18 @@ class DesktopContractMirrorTest(unittest.TestCase):
         self.assertNotRegex(source, r"'/coursebook[/:]")
 
     def test_every_gated_control_names_a_contract_method(self) -> None:
-        # A control gated on a method that the contract does not define could never light up.
-        rpc = _contract("rpc.v2.json")
+        # A control gated on a method that the contract does not define could never light up —
+        # except for the explicitly filed forward amendments, which render an honest gated state.
+        rpc = _latest_rpc()
         methods = set(rpc["$defs"]["method"]["enum"])
         source = _source()
         named = set(re.findall(r"supports\('([a-z_]+\.[a-z_]+)'\)", source))
         named |= set(re.findall(r"implemented\.has\('([a-z_]+\.[a-z_]+)'\)", source))
         named |= set(re.findall(r"backendSupports\('([a-z_]+\.[a-z_]+)'\)", source))
         self.assertTrue(named, "no gated controls found")
-        self.assertEqual(sorted(named - methods), [])
+        self.assertEqual(sorted(named - methods - PENDING_CONTRACT_METHODS), [])
+        # Every pending gate must still be used, so the allowlist cannot rot into dead weight.
+        self.assertEqual(sorted(PENDING_CONTRACT_METHODS - named), [])
 
 
 if __name__ == "__main__":
