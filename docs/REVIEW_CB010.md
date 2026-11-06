@@ -80,13 +80,31 @@ components, and `IMPORT_FLOW_WIRED` is now `true` (Vellum's flag for exactly thi
 ## Evidence
 
 `bash scripts/validate.sh` → **Validation passed** (360 unit tests, `node --check`, catalog
-admission, doctor, 9/9 mounted-backend expectations).
+admission, doctor, **20/20 mounted-backend expectations**, including the HTTP pack loop below).
 New tests: `tests/test_pack_flow.py` — **26 cases** covering preview shape/labels, import
 projection (plan hash equals `domain.plan_hash`), lesson page materialization, fresh/resume
 semantics, idempotent replay, no-residue refusals (hash tamper, traversal, active markup, newer
 minimum version), parent guard + conversion, export hash equality + private-field exclusion +
 reimport, export refusals, delete/tombstone with evidence retained, `library.list` frozen warning,
 interrupted-import recovery, staging reconciliation, check audit, and registry membership.
+
+The mounted-backend probe now drives the whole product loop through the real ASGI app (isolated
+`HERMES_HOME`), so the routes are proven, not just the handlers:
+
+```
+GET  /packs/intake                 can_grant true
+POST /packs/grant                  relative path → PACK_REJECTED (no guessed location)
+POST /packs/grant                  real archive → staged_id
+POST /rpc pack.preview             manifest + integrity + three separate trust labels
+POST /rpc pack.import mode=fresh   course crs_… enrollment enr_… (pack_id echoed)
+POST /rpc pack.export              content_hash == previewed hash · 5 files · 14548 B
+POST /rpc artifact.get             handle art_…_<expiry>
+GET  /artifacts/<handle>           application/zip · 14548 B · sha256:503f3316755…
+GET  /artifacts/<unknown>          404, no path, no traceback
+POST /rpc pack.import mode=resume  same enrollment_id as the first import
+POST /rpc pack.import mode=fresh   distinct course_id/enrollment_id, same pack_id
+POST /rpc pack.preview (tampered)  PACK_REJECTED · library total unchanged
+```
 
 `python3 scripts/pack-flow-trace.py` (real run, throwaway `HERMES_HOME`):
 
@@ -118,20 +136,40 @@ delete               frozen · scope counts {courses 2, enrollments 2, artifacts
   handler instead of naming `pack.preview`, which is implemented.
 * `scripts/probe-backend.py` — the "method not in the mounted contract" probe used
   `library.list`, which the kernel now implements; it uses a method absent from the contract.
-* `desktop/plugin.js` — appended inside Vellum's shell (their explicit hand-off), flag flipped.
+  CB-010 also appends the pack loop (intake → grant → preview → import → export → artifact
+  download → resume/fresh → tampered rejection); `record()` now records a binary response by
+  content type, bytes and sha256 instead of trying to JSON-decode a zip.
+* `dashboard/plugin_api.py` — three routes appended below the existing four:
+  `GET /packs/intake`, `POST /packs/grant`, `GET /artifacts/{handle}`. They are thin adapters
+  over `coursebook/pack_flow.py` (`grant_local_file`, `open_artifact`); no path is accepted from
+  the RPC contract, no path is returned, refusals come back as data (HTTP 200 `ok:false`) and a
+  bad handle as 404. The download response is `Cache-Control: no-store`,
+  `X-Content-Type-Options: nosniff`, and lets `FileResponse` own `Content-Length`.
+  **Owner: Sable.** This landed here because the acceptance criteria require an authenticated
+  download in this package; Sable's CB-016 card (t_0b7715dc) can keep or replace it — the handler
+  seam it calls is fixed and tested either way.
+* `tests/test_manifest.py` — the router-path assertion now lists the three new routes.
+* `desktop/plugin.js` — appended inside Vellum's shell (their explicit hand-off), flag flipped;
+  the export panel renders the `artifact.download.url` the backend names as a real download link
+  rather than describing a route that might not exist.
 
 ## Known limits / seams owned elsewhere
 
-1. **Host intake route.** `staged_id` can only come from a host file grant. `GET /packs/intake`
-   and `POST /packs/grant` must be added to `dashboard/plugin_api.py` (Sable) — spec below. Until
-   then the Import screen states this plainly and the picker is not shown.
-2. **Artifact download route.** `artifact.get` returns a session-bound, expiring handle and
-   `pack_flow.open_artifact(handle)` resolves it with hash/size verification; the HTTP route
-   `/api/plugins/coursebook/artifacts/<handle>` is Sable's (Cinder's handoff too). The Desktop
-   export panel shows the handle, hash and byte count and says the host route serves it; it does
-   not fake a download.
+1. **Host intake route — now implemented here.** `GET /packs/intake` and `POST /packs/grant` are
+   in `dashboard/plugin_api.py` (cross-owner edit above) and are exercised by the mounted-backend
+   probe. The Import screen is capability-probed, so a host that does not mount them still says so
+   instead of showing a picker that cannot deliver.
+2. **Artifact download route — now implemented here.** `artifact.get` mints the expiring,
+   session-bound handle; `GET /artifacts/{handle}` re-verifies expiry, byte count and sha256 via
+   `pack_flow.open_artifact()` before a byte leaves, and the probe hashes the received bytes
+   against the recorded artifact hash. The Desktop export panel links that exact URL.
 3. **No `pack.list`.** `library.list` lists enrollments, not installed manifests, so the UI can
    only re-list a pack's files from a preview reviewed in this session. A `pack.list` (or
-   `pack.inspect`) in a v3 amendment is the honest fix; flagged to Atlas and noted in the UI copy.
-4. **Live Desktop capture** is CB-020/Sable's installed-profile run. This packet ships the code,
-   the flag flip, and the RPC-level evidence above; no screenshot is claimed.
+   `pack.inspect`) in a v3 amendment is the honest fix; flagged to Atlas (t_15b5198e) and noted in
+   the UI copy.
+4. **Live Desktop capture** is CB-020's installed-profile run (t_fdf1950a). This packet ships the
+   code, the flag flip, the route proof and the RPC-level evidence above; no screenshot is claimed.
+5. **A staged grant is single-use.** Adoption consumes it, so a later resume/fresh reimport needs a
+   fresh grant of the same file (the UI re-runs the picker); the identity that matters —
+   `pack_id` + `pack_version` + `content_hash` — is unchanged, which is what keeps content stored
+   once while courses multiply.

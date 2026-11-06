@@ -1398,15 +1398,21 @@ function PackExportPanel({ row, onClose }) {
                       jsx(PackReviewLine, {
                         label: 'Download',
                         value: artifact.download.requires_session
-                          ? 'session-bound, expiring — served by the host artifact route'
+                          ? 'session-bound, expiring — served by this host’s artifact route'
                           : 'host route'
+                      }),
+                      jsx('a', {
+                        className: 'mt-1 self-start rounded-md border border-(--ui-stroke-tertiary) px-3 py-1 text-xs',
+                        download: `${manifest.pack_id}-${manifest.pack_version}.zip`,
+                        href: artifact.download.url,
+                        children: 'Download archive'
                       }),
                       jsx('div', {
                         className: 'mt-1 text-xs leading-relaxed text-(--ui-text-tertiary)',
                         children:
-                          'The handle above is what the authenticated host route resolves; a filesystem path never ' +
-                          'leaves the backend. If this build’s host has no artifact route, nothing is downloadable ' +
-                          'and that is stated rather than faked.'
+                          'The link is the host route the backend named: the session is checked there, the handle ' +
+                          'expires in five minutes, and a filesystem path never leaves the backend. The file you ' +
+                          'receive is byte-identical to the reviewed hash above.'
                       })
                     ]
                   })
