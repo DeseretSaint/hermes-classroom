@@ -162,12 +162,16 @@ Coursebook has not established that it improves learning. Parent observations ar
 ## Development
 
 ```
-bash scripts/test.sh       # 636 unit tests, then node --check desktop/plugin.js
-bash scripts/validate.sh   # tests, syntax, plugins validate + doctor, backend probe
+bash scripts/test.sh            # 636 unit tests, then node --check desktop/plugin.js
+bash scripts/validate.sh        # tests, syntax, doctor, backend probe (from the checkout)
+bash scripts/validate-plugin.sh # release gate: admission on a git archive export of HEAD
 ```
 
-Run `scripts/validate.sh` before any merge into master. It is the admission gate, and it passes
-on this tree: 636 tests OK, node check OK, 31/31 backend expectations.
+Run `scripts/validate.sh` before any merge into master. It is the pre-merge gate, and it passes
+on this tree: 636 tests OK, node check OK, 31/31 backend expectations. Its admission step points
+`hermes plugins validate` at the checkout root, which also scans the gitignored `.worktrees/` tree
+and can report `dangerous` for files that are in no version of the package; the admission verdict
+comes from `scripts/validate-plugin.sh`, which exports the commit first.
 
 `desktop/plugin.js` is a single ES module with no relative imports and no JSX, because the
 Desktop runtime loader refuses everything else. It is a single-writer file; see

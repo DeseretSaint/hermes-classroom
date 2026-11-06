@@ -131,6 +131,22 @@ gate failed), `2` bad usage.
 ## 6. Verify
 
 ```
+bash scripts/validate-plugin.sh
+```
+
+Observed: `Release gate passed: 3/3 checks on 444 files.` — the admission gate runs
+`hermes plugins validate`, `node --check desktop/plugin.js` and
+`python3 -m unittest tests.test_desktop_contracts` against a `git archive` export of `HEAD`, then
+removes the export.
+
+It exports first because the validator reads every directory it is given. Run from the checkout
+root, `hermes plugins validate .` walks `.worktrees/` (one worktree per kanban task, gitignored) and
+reports `dangerous` for fixtures and review notes that belong to other commits and to no version of
+this package. That is a false red, and it can hide a real one. The script refuses to run when
+tracked files differ from `HEAD`, because a release gate pins a commit; `--worktree` gates local
+edits instead, and `--ref <commit>` gates another commit.
+
+```
 bash scripts/test.sh
 ```
 
@@ -197,8 +213,11 @@ the Coursebook page (CB-QA-09). Nothing above depends on the route rendering.
 Because the package is linked, edits to `desktop/plugin.js` reload in the Desktop app. Python changes
 are picked up by the gateway, which needs a restart to re-import the backend.
 
-Run `bash scripts/validate.sh` before proposing a merge. It is the admission gate and covers tests,
-module syntax, catalog admission, runtime registration and the mounted backend trace.
+Run `bash scripts/validate.sh` before proposing a merge. It is the pre-merge gate and covers tests,
+module syntax, catalog admission, runtime registration and the mounted backend trace. Its admission
+step still points `hermes plugins validate` at the checkout root, so it can report `dangerous` for
+files in the gitignored `.worktrees/` tree; read the admission verdict from
+`bash scripts/validate-plugin.sh`, which validates an export of `HEAD` instead (see section 6).
 
 ## 9. Uninstall and revoke
 
@@ -253,6 +272,9 @@ app is the scoped, previewed data deletion (`enrollment.delete`).
 | `NOT_IMPLEMENTED` from an RPC call | A method declared in `cb.rpc` has no handler in this process. Not expected when all 51 are mounted | Check `/runtime` for the mounted list; a partial install or a stale gateway is the usual cause |
 | `db.ready: false` in the status tool | Either the store is unprovisioned (no `/health` call yet) or a migration did not complete | Call `health.get` once; if it stays false, check the gateway log for the migration error |
 | `hermes plugins validate` fails the capability probe | `jsonschema` is missing from the Hermes interpreter | `hermes plugins validate . --install-deps` |
+| `security scan — dangerous` naming a file you never wrote, e.g. `REVIEW_CB003.md:32` | The validator was pointed at the checkout root, so it read the gitignored `.worktrees/` tree of other kanban tasks | Run `bash scripts/validate-plugin.sh`, which exports the commit and validates the export |
+| `tracked files differ from HEAD; commit them, or run --worktree` | The release gate pins a commit; uncommitted edits are not in the export | Commit, or run `bash scripts/validate-plugin.sh --worktree` to gate the local edits |
+| `scratch dir … is inside the checkout` | `TMPDIR` points into the repository | Point `TMPDIR` outside the checkout, or unset it; the export must not be scanned by itself |
 | `hermes plugins doctor` reports a hook or tool mismatch | `plugin.yaml` declarations drifted from `register()` | Fix the declaration or the registration; admission compares the two |
 
 If the pane cannot reach the backend at all, it shows the error code with a Check again button.
