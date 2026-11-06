@@ -1,0 +1,2341 @@
+{
+  "lesson-ready": {
+    "title": "lesson ready — objective and start/resume",
+    "spec": "§13 lesson ready",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\n\nResume Explain why register changes with the relationship\n\nResume lesson\nOpen this section\nREVIEW\n\nNothing due. Th",
+        "textLength": 860,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register — an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "dark",
+        "at": "2026-11-06T18:53:17.361Z",
+        "shot": "docs/a11y-shots/lesson-ready-dark.png"
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\n\nResume Explain why register changes with the relationship\n\nResume lesson\nOpen this section\nREVIEW\n\nNothing due. Th",
+        "textLength": 860,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "One objective, its evidence and the next permitted action.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "All courses",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Casual",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Tell everyday affection from a direct romantic declaration",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Not started",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "discrimination",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Resume Explain why register changes with the relationship",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Nothing due. The review queue stays quiet until evidence is scheduled.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "No attempt has been recorded on this course yet.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "revision 0",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "4 objectives · 0 due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "japanese-affection-context-l0 v1.0.0",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Exporting the pack is a Library action; it never includes your answers",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register — an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "light",
+        "at": "2026-11-06T18:53:18.605Z",
+        "shot": "docs/a11y-shots/lesson-ready-light.png"
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\n\nResume Explain why register changes with the relationship\n\nResume lesson\nOpen this section\nREVIEW\n\nNothing due. Th",
+        "textLength": 860,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register — an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "forced",
+        "at": "2026-11-06T18:53:20.062Z",
+        "shot": "docs/a11y-shots/lesson-ready-forced.png"
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\n\nResume Explain why register changes with the relationship\n\nResume lesson\nOpen this section\nREVIEW\n\nNothing due. Th",
+        "textLength": 860,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register — an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "narrow",
+        "at": "2026-11-06T18:53:21.363Z",
+        "shot": "docs/a11y-shots/lesson-ready-narrow.png"
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\n\nResume Explain why register changes with the relationship\n\nResume lesson\nOpen this section\nREVIEW\n\nNothing due. Th",
+        "textLength": 860,
+        "clipped": [
+          {
+            "text": "Nothing due. The review queue stays quiet until evidence is scheduled.",
+            "ancestorClip": true,
+            "key": "Nothing due. The review queue stays quiet until evidence is |835",
+            "cls": "max-w-prose text-xs leading-relaxed text-(--ui-text-tertiary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "RECENT EVENT",
+            "ancestorClip": true,
+            "key": "RECENT EVENT|906",
+            "cls": "text-[0.6rem] font-medium uppercase tracking-wider text-muted-foregrou",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "No attempt has been recorded on this course yet.",
+            "ancestorClip": true,
+            "key": "No attempt has been recorded on this course yet.|935",
+            "cls": "max-w-prose text-xs leading-relaxed text-(--ui-text-tertiary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "THIS COURSE",
+            "ancestorClip": true,
+            "key": "THIS COURSE|1006",
+            "cls": "text-[0.6rem] font-medium uppercase tracking-wider text-muted-foregrou",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "Recipe",
+            "ancestorClip": true,
+            "key": "Recipe|1051",
+            "cls": "text-xs font-medium text-(--ui-text-secondary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "casual",
+            "ancestorClip": true,
+            "key": "casual|1051",
+            "cls": "shrink-0 text-right text-xs text-(--ui-text-secondary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "Enrollment",
+            "ancestorClip": true,
+            "key": "Enrollment|1116",
+            "cls": "text-xs font-medium text-(--ui-text-secondary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "revision 0",
+            "ancestorClip": true,
+            "key": "revision 0|1152",
+            "cls": "mt-0.5 text-xs text-(--ui-text-tertiary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "active",
+            "ancestorClip": true,
+            "key": "active|1116",
+            "cls": "shrink-0 text-right text-xs text-(--ui-text-secondary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "Evidence",
+            "ancestorClip": true,
+            "key": "Evidence|1217",
+            "cls": "text-xs font-medium text-(--ui-text-secondary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "4 objectives · 0 due",
+            "ancestorClip": true,
+            "key": "4 objectives · 0 due|1253",
+            "cls": "mt-0.5 text-xs text-(--ui-text-tertiary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "0 independent",
+            "ancestorClip": true,
+            "key": "0 independent|1217",
+            "cls": "shrink-0 text-right text-xs text-(--ui-text-secondary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "Provenance",
+            "ancestorClip": true,
+            "key": "Provenance|1319",
+            "cls": "text-xs font-medium text-(--ui-text-secondary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "japanese-affection-context-l0 v1.0.0",
+            "ancestorClip": true,
+            "key": "japanese-affection-context-l0 v1.0.0|1355",
+            "cls": "mt-0.5 text-xs text-(--ui-text-tertiary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "Local pack",
+            "ancestorClip": true,
+            "key": "Local pack|1319",
+            "cls": "shrink-0 text-right text-xs text-(--ui-text-secondary)",
+            "overflow": "auto/auto"
+          },
+          {
+            "text": "Exporting the pack is a Library action; it never includes your answers",
+            "ancestorClip": true,
+            "key": "Exporting the pack is a Library action; it never includes yo|1404",
+            "cls": "max-w-prose text-xs leading-relaxed text-(--ui-text-tertiary)",
+            "overflow": "auto/auto"
+          }
+        ],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register — an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "text200",
+        "at": "2026-11-06T18:53:23.077Z",
+        "shot": "docs/a11y-shots/lesson-ready-text200.png"
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 680,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\n\nResume Explain why register changes with the relationship\n\nResume lesson\nOpen this section\nREVIEW\n\nNothing due. Th",
+        "textLength": 860,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register — an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "split",
+        "at": "2026-11-06T18:53:27.211Z",
+        "shot": "docs/a11y-shots/lesson-ready-split.png"
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\n\nResume Explain why register changes with the relationship\n\nResume lesson\nOpen this section\nREVIEW\n\nNothing due. Th",
+        "textLength": 860,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register — an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "hidden",
+        "at": "2026-11-06T18:53:28.955Z",
+        "shot": "docs/a11y-shots/lesson-ready-hidden.png"
+      }
+    },
+    "keyboard": {
+      "stops": 45,
+      "routeStops": [
+        "BUTTON:New course",
+        "BUTTON:Courses",
+        "BUTTON:Library",
+        "BUTTON:Parent Studio",
+        "BUTTON:All courses",
+        "BUTTON:Resume lesson",
+        "BUTTON:Course view",
+        "BUTTON:Resume lesson",
+        "BUTTON:Open this section"
+      ],
+      "trap": null,
+      "escape": {
+        "before": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "New session Ctrl N",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 130,
+          "y": 82
+        },
+        "after": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "New session Ctrl N",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 130,
+          "y": 82
+        }
+      }
+    }
+  },
+  "no-courses": {
+    "title": "first run / no courses — working welcome, no fake progress",
+    "spec": "§13 first run; no courses",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nBuild a course around what you want to do.\n\nYour courses will appear here. Progress and personal answers stay on this profile.\n\nCreate a course\nImport a pack\nCreate or import\nStart from a goal you can describe, or from a prepared pack.\nPractice with evidence\nYour answers change the next step; nothing advances on its own.\nReuse and",
+        "textLength": 572,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Build a course around what you want to do."
+          }
+        ],
+        "animation": [],
+        "scenario": "no-courses",
+        "variant": "dark",
+        "at": "2026-11-06T18:53:52.142Z",
+        "shot": "docs/a11y-shots/no-courses-dark.png"
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nBuild a course around what you want to do.\n\nYour courses will appear here. Progress and personal answers stay on this profile.\n\nCreate a course\nImport a pack\nCreate or import\nStart from a goal you can describe, or from a prepared pack.\nPractice with evidence\nYour answers change the next step; nothing advances on its own.\nReuse and",
+        "textLength": 572,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "A governed learning workspace: one objective, real evidence, honest ne",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "In progress",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Review due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Archived",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Your courses will appear here. Progress and personal answers stay on t",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 14,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Start from a goal you can describe, or from a prepared pack.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Your answers change the next step; nothing advances on its own.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Export teaching material without exporting your learning history.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Build a course around what you want to do."
+          }
+        ],
+        "animation": [],
+        "scenario": "no-courses",
+        "variant": "light",
+        "at": "2026-11-06T18:53:53.387Z",
+        "shot": "docs/a11y-shots/no-courses-light.png"
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nBuild a course around what you want to do.\n\nYour courses will appear here. Progress and personal answers stay on this profile.\n\nCreate a course\nImport a pack\nCreate or import\nStart from a goal you can describe, or from a prepared pack.\nPractice with evidence\nYour answers change the next step; nothing advances on its own.\nReuse and",
+        "textLength": 572,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Build a course around what you want to do."
+          }
+        ],
+        "animation": [],
+        "scenario": "no-courses",
+        "variant": "forced",
+        "at": "2026-11-06T18:53:54.838Z",
+        "shot": "docs/a11y-shots/no-courses-forced.png"
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nBuild a course around what you want to do.\n\nYour courses will appear here. Progress and personal answers stay on this profile.\n\nCreate a course\nImport a pack\nCreate or import\nStart from a goal you can describe, or from a prepared pack.\nPractice with evidence\nYour answers change the next step; nothing advances on its own.\nReuse and",
+        "textLength": 572,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Build a course around what you want to do."
+          }
+        ],
+        "animation": [],
+        "scenario": "no-courses",
+        "variant": "narrow",
+        "at": "2026-11-06T18:53:56.150Z",
+        "shot": "docs/a11y-shots/no-courses-narrow.png"
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nBuild a course around what you want to do.\n\nYour courses will appear here. Progress and personal answers stay on this profile.\n\nCreate a course\nImport a pack\nCreate or import\nStart from a goal you can describe, or from a prepared pack.\nPractice with evidence\nYour answers change the next step; nothing advances on its own.\nReuse and",
+        "textLength": 572,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Build a course around what you want to do."
+          }
+        ],
+        "animation": [],
+        "scenario": "no-courses",
+        "variant": "text200",
+        "at": "2026-11-06T18:53:57.881Z",
+        "shot": "docs/a11y-shots/no-courses-text200.png"
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 680,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nBuild a course around what you want to do.\n\nYour courses will appear here. Progress and personal answers stay on this profile.\n\nCreate a course\nImport a pack\nCreate or import\nStart from a goal you can describe, or from a prepared pack.\nPractice with evidence\nYour answers change the next step; nothing advances on its own.\nReuse and",
+        "textLength": 572,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Build a course around what you want to do."
+          }
+        ],
+        "animation": [],
+        "scenario": "no-courses",
+        "variant": "split",
+        "at": "2026-11-06T18:54:02.013Z",
+        "shot": "docs/a11y-shots/no-courses-split.png"
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nBuild a course around what you want to do.\n\nYour courses will appear here. Progress and personal answers stay on this profile.\n\nCreate a course\nImport a pack\nCreate or import\nStart from a goal you can describe, or from a prepared pack.\nPractice with evidence\nYour answers change the next step; nothing advances on its own.\nReuse and",
+        "textLength": 572,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Build a course around what you want to do."
+          }
+        ],
+        "animation": [],
+        "scenario": "no-courses",
+        "variant": "hidden",
+        "at": "2026-11-06T18:54:03.733Z",
+        "shot": "docs/a11y-shots/no-courses-hidden.png"
+      }
+    },
+    "keyboard": {
+      "stops": 45,
+      "routeStops": [
+        "BUTTON:New course",
+        "BUTTON:Courses",
+        "BUTTON:Library",
+        "BUTTON:Parent Studio",
+        "INPUT:Search courses",
+        "BUTTON:All",
+        "BUTTON:In progress",
+        "BUTTON:Review due",
+        "BUTTON:Archived",
+        "BUTTON:Create a course",
+        "BUTTON:Import a pack"
+      ],
+      "trap": null,
+      "escape": {
+        "before": {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Sessions",
+          "inRoute": false,
+          "visible": true,
+          "outline": "1.33872px solid",
+          "ring": "shadow",
+          "x": 37,
+          "y": 48
+        },
+        "after": {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Sessions",
+          "inRoute": false,
+          "visible": true,
+          "outline": "1.33872px solid",
+          "ring": "shadow",
+          "x": 37,
+          "y": 48
+        }
+      }
+    }
+  },
+  "no-search-results": {
+    "title": "no search results — clear filter, preserve data",
+    "spec": "§13 no search results",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "dark",
+        "at": "2026-11-06T18:54:18.334Z",
+        "shot": "docs/a11y-shots/no-search-results-dark.png"
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "A governed learning workspace: one objective, real evidence, honest ne",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "In progress",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Review due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Archived",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Your courses are still here; the search just excludes them right now.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "light",
+        "at": "2026-11-06T18:54:19.587Z",
+        "shot": "docs/a11y-shots/no-search-results-light.png"
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "forced",
+        "at": "2026-11-06T18:54:21.019Z",
+        "shot": "docs/a11y-shots/no-search-results-forced.png"
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "narrow",
+        "at": "2026-11-06T18:54:22.334Z",
+        "shot": "docs/a11y-shots/no-search-results-narrow.png"
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "text200",
+        "at": "2026-11-06T18:54:24.063Z",
+        "shot": "docs/a11y-shots/no-search-results-text200.png"
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 680,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "split",
+        "at": "2026-11-06T18:54:28.222Z",
+        "shot": "docs/a11y-shots/no-search-results-split.png"
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "hidden",
+        "at": "2026-11-06T18:54:29.955Z",
+        "shot": "docs/a11y-shots/no-search-results-hidden.png"
+      }
+    },
+    "keyboard": {
+      "stops": 45,
+      "routeStops": [
+        "BUTTON:New course",
+        "BUTTON:Courses",
+        "BUTTON:Library",
+        "BUTTON:Parent Studio",
+        "INPUT:Search courses",
+        "BUTTON:Clear search",
+        "BUTTON:All",
+        "BUTTON:In progress",
+        "BUTTON:Review due",
+        "BUTTON:Archived",
+        "BUTTON:Clear search"
+      ],
+      "trap": null,
+      "escape": {
+        "before": {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Sessions",
+          "inRoute": false,
+          "visible": true,
+          "outline": "1.33872px solid",
+          "ring": "shadow",
+          "x": 37,
+          "y": 48
+        },
+        "after": {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Sessions",
+          "inRoute": false,
+          "visible": true,
+          "outline": "1.33872px solid",
+          "ring": "shadow",
+          "x": 37,
+          "y": 48
+        }
+      }
+    }
+  },
+  "backend-off": {
+    "title": "backend off — enable instructions / recovery",
+    "spec": "§13 backend off",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nBackend off\nCoursebook needs its agent plugin\n\nThe Desktop half is enabled but its Python backend is not answering for this profile. Enable Coursebook under Capabilities → Plugins, then restart the gateway. Desktop and backend halves are enabled separately.\n\nOpen Capabilities\nCheck again\nError invoking remote method 'hermes:api': Error: 503: {\"detail\":\"audit-injected backend down\"}",
+        "textLength": 475,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Coursebook needs its agent plugin"
+          }
+        ],
+        "animation": [],
+        "scenario": "backend-off",
+        "variant": "dark",
+        "at": "2026-11-06T18:54:44.894Z",
+        "shot": "docs/a11y-shots/backend-off-dark.png"
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nBackend off\nCoursebook needs its agent plugin\n\nThe Desktop half is enabled but its Python backend is not answering for this profile. Enable Coursebook under Capabilities → Plugins, then restart the gateway. Desktop and backend halves are enabled separately.\n\nOpen Capabilities\nCheck again\nError invoking remote method 'hermes:api': Error: 503: {\"detail\":\"audit-injected backend down\"}",
+        "textLength": 475,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "A governed learning workspace: one objective, real evidence, honest ne",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "The Desktop half is enabled but its Python backend is not answering fo",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 14,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Error invoking remote method 'hermes:api': Error: 503: {\"detail\":\"audi",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Coursebook needs its agent plugin"
+          }
+        ],
+        "animation": [],
+        "scenario": "backend-off",
+        "variant": "light",
+        "at": "2026-11-06T18:54:46.122Z",
+        "shot": "docs/a11y-shots/backend-off-light.png"
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nBackend off\nCoursebook needs its agent plugin\n\nThe Desktop half is enabled but its Python backend is not answering for this profile. Enable Coursebook under Capabilities → Plugins, then restart the gateway. Desktop and backend halves are enabled separately.\n\nOpen Capabilities\nCheck again\nError invoking remote method 'hermes:api': Error: 503: {\"detail\":\"audit-injected backend down\"}",
+        "textLength": 475,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Coursebook needs its agent plugin"
+          }
+        ],
+        "animation": [],
+        "scenario": "backend-off",
+        "variant": "forced",
+        "at": "2026-11-06T18:54:47.554Z",
+        "shot": "docs/a11y-shots/backend-off-forced.png"
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nBackend off\nCoursebook needs its agent plugin\n\nThe Desktop half is enabled but its Python backend is not answering for this profile. Enable Coursebook under Capabilities → Plugins, then restart the gateway. Desktop and backend halves are enabled separately.\n\nOpen Capabilities\nCheck again\nError invoking remote method 'hermes:api': Error: 503: {\"detail\":\"audit-injected backend down\"}",
+        "textLength": 475,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Coursebook needs its agent plugin"
+          }
+        ],
+        "animation": [],
+        "scenario": "backend-off",
+        "variant": "narrow",
+        "at": "2026-11-06T18:54:48.872Z",
+        "shot": "docs/a11y-shots/backend-off-narrow.png"
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nBackend off\nCoursebook needs its agent plugin\n\nThe Desktop half is enabled but its Python backend is not answering for this profile. Enable Coursebook under Capabilities → Plugins, then restart the gateway. Desktop and backend halves are enabled separately.\n\nOpen Capabilities\nCheck again\nError invoking remote method 'hermes:api': Error: 503: {\"detail\":\"audit-injected backend down\"}",
+        "textLength": 475,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Coursebook needs its agent plugin"
+          }
+        ],
+        "animation": [],
+        "scenario": "backend-off",
+        "variant": "text200",
+        "at": "2026-11-06T18:54:50.595Z",
+        "shot": "docs/a11y-shots/backend-off-text200.png"
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 680,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nBackend off\nCoursebook needs its agent plugin\n\nThe Desktop half is enabled but its Python backend is not answering for this profile. Enable Coursebook under Capabilities → Plugins, then restart the gateway. Desktop and backend halves are enabled separately.\n\nOpen Capabilities\nCheck again\nError invoking remote method 'hermes:api': Error: 503: {\"detail\":\"audit-injected backend down\"}",
+        "textLength": 475,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Coursebook needs its agent plugin"
+          }
+        ],
+        "animation": [],
+        "scenario": "backend-off",
+        "variant": "split",
+        "at": "2026-11-06T18:54:54.730Z",
+        "shot": "docs/a11y-shots/backend-off-split.png"
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nBackend off\nCoursebook needs its agent plugin\n\nThe Desktop half is enabled but its Python backend is not answering for this profile. Enable Coursebook under Capabilities → Plugins, then restart the gateway. Desktop and backend halves are enabled separately.\n\nOpen Capabilities\nCheck again\nError invoking remote method 'hermes:api': Error: 503: {\"detail\":\"audit-injected backend down\"}",
+        "textLength": 475,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Coursebook needs its agent plugin"
+          }
+        ],
+        "animation": [],
+        "scenario": "backend-off",
+        "variant": "hidden",
+        "at": "2026-11-06T18:54:56.459Z",
+        "shot": "docs/a11y-shots/backend-off-hidden.png"
+      }
+    },
+    "keyboard": {
+      "stops": 45,
+      "routeStops": [
+        "BUTTON:Open Capabilities",
+        "BUTTON:Check again"
+      ],
+      "trap": null,
+      "escape": {
+        "before": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "Show right sidebar",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 724,
+          "y": 17
+        },
+        "after": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "Show right sidebar",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 724,
+          "y": 17
+        }
+      }
+    }
+  },
+  "degraded-db": {
+    "title": "unsupported/immature backend — database not migrated",
+    "spec": "§13 unsupported backend (degraded branch)",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nDatabase not migrated\nThe course database is not migrated yet\n\nThe backend is connected and its contract is loaded, but this profile has no course tables, so there is nowhere to store a course and nothing honest to list. This page will not show an empty library as if you had no courses.\n\nCheck again\nOpen Capabilities\nBackend contract\nplugin 0.1.0\ncb.rpc v6\nDatabase\nNo course tables exist for this profile y",
+        "textLength": 516,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "The course database is not migrated yet"
+          }
+        ],
+        "animation": [],
+        "scenario": "degraded-db",
+        "variant": "dark",
+        "at": "2026-11-06T18:57:08.601Z",
+        "shot": "docs/a11y-shots/degraded-db-dark.png"
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nDatabase not migrated\nThe course database is not migrated yet\n\nThe backend is connected and its contract is loaded, but this profile has no course tables, so there is nowhere to store a course and nothing honest to list. This page will not show an empty library as if you had no courses.\n\nCheck again\nOpen Capabilities\nBackend contract\nplugin 0.1.0\ncb.rpc v6\nDatabase\nNo course tables exist for this profile y",
+        "textLength": 516,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "A governed learning workspace: one objective, real evidence, honest ne",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Database not migrated",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 10.4,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "The backend is connected and its contract is loaded, but this profile ",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 14,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "plugin 0.1.0",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "No course tables exist for this profile yet.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "The course database is not migrated yet"
+          }
+        ],
+        "animation": [],
+        "scenario": "degraded-db",
+        "variant": "light",
+        "at": "2026-11-06T18:57:09.837Z",
+        "shot": "docs/a11y-shots/degraded-db-light.png"
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nDatabase not migrated\nThe course database is not migrated yet\n\nThe backend is connected and its contract is loaded, but this profile has no course tables, so there is nowhere to store a course and nothing honest to list. This page will not show an empty library as if you had no courses.\n\nCheck again\nOpen Capabilities\nBackend contract\nplugin 0.1.0\ncb.rpc v6\nDatabase\nNo course tables exist for this profile y",
+        "textLength": 516,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "The course database is not migrated yet"
+          }
+        ],
+        "animation": [],
+        "scenario": "degraded-db",
+        "variant": "forced",
+        "at": "2026-11-06T18:57:11.271Z",
+        "shot": "docs/a11y-shots/degraded-db-forced.png"
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nDatabase not migrated\nThe course database is not migrated yet\n\nThe backend is connected and its contract is loaded, but this profile has no course tables, so there is nowhere to store a course and nothing honest to list. This page will not show an empty library as if you had no courses.\n\nCheck again\nOpen Capabilities\nBackend contract\nplugin 0.1.0\ncb.rpc v6\nDatabase\nNo course tables exist for this profile y",
+        "textLength": 516,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "The course database is not migrated yet"
+          }
+        ],
+        "animation": [],
+        "scenario": "degraded-db",
+        "variant": "narrow",
+        "at": "2026-11-06T18:57:12.584Z",
+        "shot": "docs/a11y-shots/degraded-db-narrow.png"
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nDatabase not migrated\nThe course database is not migrated yet\n\nThe backend is connected and its contract is loaded, but this profile has no course tables, so there is nowhere to store a course and nothing honest to list. This page will not show an empty library as if you had no courses.\n\nCheck again\nOpen Capabilities\nBackend contract\nplugin 0.1.0\ncb.rpc v6\nDatabase\nNo course tables exist for this profile y",
+        "textLength": 516,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "The course database is not migrated yet"
+          }
+        ],
+        "animation": [],
+        "scenario": "degraded-db",
+        "variant": "text200",
+        "at": "2026-11-06T18:57:14.312Z",
+        "shot": "docs/a11y-shots/degraded-db-text200.png"
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 680,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nDatabase not migrated\nThe course database is not migrated yet\n\nThe backend is connected and its contract is loaded, but this profile has no course tables, so there is nowhere to store a course and nothing honest to list. This page will not show an empty library as if you had no courses.\n\nCheck again\nOpen Capabilities\nBackend contract\nplugin 0.1.0\ncb.rpc v6\nDatabase\nNo course tables exist for this profile y",
+        "textLength": 516,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "The course database is not migrated yet"
+          }
+        ],
+        "animation": [],
+        "scenario": "degraded-db",
+        "variant": "split",
+        "at": "2026-11-06T18:57:18.449Z",
+        "shot": "docs/a11y-shots/degraded-db-split.png"
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nDatabase not migrated\nThe course database is not migrated yet\n\nThe backend is connected and its contract is loaded, but this profile has no course tables, so there is nowhere to store a course and nothing honest to list. This page will not show an empty library as if you had no courses.\n\nCheck again\nOpen Capabilities\nBackend contract\nplugin 0.1.0\ncb.rpc v6\nDatabase\nNo course tables exist for this profile y",
+        "textLength": 516,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "The course database is not migrated yet"
+          }
+        ],
+        "animation": [],
+        "scenario": "degraded-db",
+        "variant": "hidden",
+        "at": "2026-11-06T18:57:20.178Z",
+        "shot": "docs/a11y-shots/degraded-db-hidden.png"
+      }
+    },
+    "keyboard": {
+      "stops": 45,
+      "routeStops": [
+        "BUTTON:Check again",
+        "BUTTON:Open Capabilities"
+      ],
+      "trap": null,
+      "escape": {
+        "before": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "PINNED",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 54,
+          "y": 298
+        },
+        "after": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "PINNED",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 54,
+          "y": 298
+        }
+      }
+    }
+  },
+  "unsupported-backend": {
+    "title": "unsupported backend — scoped unavailable message, actions absent",
+    "spec": "§13 unsupported backend",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived",
+        "textLength": 156,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "unsupported-backend",
+        "variant": "dark",
+        "at": "2026-11-06T18:55:34.977Z",
+        "shot": "docs/a11y-shots/unsupported-backend-dark.png"
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived",
+        "textLength": 156,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "A governed learning workspace: one objective, real evidence, honest ne",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "In progress",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Review due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Archived",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "unsupported-backend",
+        "variant": "light",
+        "at": "2026-11-06T18:55:36.222Z",
+        "shot": "docs/a11y-shots/unsupported-backend-light.png"
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived",
+        "textLength": 156,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "unsupported-backend",
+        "variant": "forced",
+        "at": "2026-11-06T18:55:37.663Z",
+        "shot": "docs/a11y-shots/unsupported-backend-forced.png"
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived",
+        "textLength": 156,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "unsupported-backend",
+        "variant": "narrow",
+        "at": "2026-11-06T18:55:38.974Z",
+        "shot": "docs/a11y-shots/unsupported-backend-narrow.png"
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived",
+        "textLength": 156,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "unsupported-backend",
+        "variant": "text200",
+        "at": "2026-11-06T18:55:40.695Z",
+        "shot": "docs/a11y-shots/unsupported-backend-text200.png"
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 680,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived",
+        "textLength": 156,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "unsupported-backend",
+        "variant": "split",
+        "at": "2026-11-06T18:55:44.818Z",
+        "shot": "docs/a11y-shots/unsupported-backend-split.png"
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived",
+        "textLength": 156,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "unsupported-backend",
+        "variant": "hidden",
+        "at": "2026-11-06T18:55:46.546Z",
+        "shot": "docs/a11y-shots/unsupported-backend-hidden.png"
+      }
+    },
+    "keyboard": {
+      "stops": 45,
+      "routeStops": [
+        "BUTTON:Courses",
+        "BUTTON:Library",
+        "BUTTON:Parent Studio",
+        "INPUT:Search courses",
+        "BUTTON:All",
+        "BUTTON:In progress",
+        "BUTTON:Review due",
+        "BUTTON:Archived"
+      ],
+      "trap": null,
+      "escape": {
+        "before": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "Capabilities",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 130,
+          "y": 111
+        },
+        "after": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "Capabilities",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 130,
+          "y": 111
+        }
+      }
+    }
+  },
+  "demo-fixture-mode": {
+    "title": "demo/pack provenance — rows labelled with pack origin",
+    "spec": "§13 demo fixture mode",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+        "textLength": 371,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "dark",
+        "at": "2026-11-06T18:55:59.977Z",
+        "shot": "docs/a11y-shots/demo-fixture-mode-dark.png"
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+        "textLength": 371,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "A governed learning workspace: one objective, real evidence, honest ne",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "In progress",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Review due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Archived",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Casual",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Resume Explain why register changes with the relationship",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent · 4 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "From a local pack · v1.0.0",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "light",
+        "at": "2026-11-06T18:56:01.232Z",
+        "shot": "docs/a11y-shots/demo-fixture-mode-light.png"
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+        "textLength": 371,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "forced",
+        "at": "2026-11-06T18:56:02.680Z",
+        "shot": "docs/a11y-shots/demo-fixture-mode-forced.png"
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+        "textLength": 371,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "narrow",
+        "at": "2026-11-06T18:56:04.024Z",
+        "shot": "docs/a11y-shots/demo-fixture-mode-narrow.png"
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+        "textLength": 371,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "text200",
+        "at": "2026-11-06T18:56:05.758Z",
+        "shot": "docs/a11y-shots/demo-fixture-mode-text200.png"
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 680,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+        "textLength": 371,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "split",
+        "at": "2026-11-06T18:56:09.889Z",
+        "shot": "docs/a11y-shots/demo-fixture-mode-split.png"
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1279,
+          "h": 899
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1020,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+        "textLength": 371,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "hidden",
+        "at": "2026-11-06T18:56:11.610Z",
+        "shot": "docs/a11y-shots/demo-fixture-mode-hidden.png"
+      }
+    },
+    "keyboard": {
+      "stops": 45,
+      "routeStops": [
+        "BUTTON:New course",
+        "BUTTON:Courses",
+        "BUTTON:Library",
+        "BUTTON:Parent Studio",
+        "INPUT:Search courses",
+        "BUTTON:All",
+        "BUTTON:In progress",
+        "BUTTON:Review due",
+        "BUTTON:Archived",
+        "BUTTON:Open",
+        "BUTTON:Resume lesson",
+        "BUTTON:Actions for Japanese affection and register — an L0 demonstr"
+      ],
+      "trap": null,
+      "escape": {
+        "before": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "Show right sidebar",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 724,
+          "y": 17
+        },
+        "after": {
+          "tag": "BUTTON",
+          "role": "",
+          "name": "Show right sidebar",
+          "inRoute": false,
+          "visible": true,
+          "outline": "none",
+          "ring": "shadow",
+          "x": 724,
+          "y": 17
+        }
+      }
+    }
+  }
+}

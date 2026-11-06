@@ -1,0 +1,3851 @@
+{
+  "lesson-ready": {
+    "title": "lesson ready \u2014 objective and start/resume",
+    "spec": "\u00a713 lesson ready",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register \u2014 an L0 demonstration classroom \u00b7 1 due\nReview\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n2 independent \u00b7 1 due \u00b7 4 objectives\nFrom a local pack \u00b7 v1.0.0\nOpen\nJapanese caf\u00e9 basics\nParent preparation\nStart Name one warm and one cold thing i",
+        "textLength": 2450,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "lesson-ready",
+        "variant": "dark",
+        "at": "2026-11-06T19:24:55.310Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/lesson-ready-dark.png",
+        "shotBytes": 131159
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register \u2014 an L0 demonstration classroom \u00b7 1 due\nReview\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n2 independent \u00b7 1 due \u00b7 4 objectives\nFrom a local pack \u00b7 v1.0.0\nOpen\nJapanese caf\u00e9 basics\nParent preparation\nStart Name one warm and one cold thing i",
+        "textLength": 2450,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "A governed learning workspace: one objective, real evidence, honest ne",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "In progress",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Review due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Archived",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Review",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Casual",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Review 1 objective(s)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "2 independent \u00b7 1 due \u00b7 4 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "From a local pack \u00b7 v1.0.0",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name one warm and one cold thing in the kitchen",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 4 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name one warm and one cold thing in the kitchen",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 4 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name one warm and one cold thing in the kitchen",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 4 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name the parts: half, quarter and eighth (kitchen table)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 6 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name halves of a real object (kitchen table)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 5 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name halves of a real object (kitchen table)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 6 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Review and approve the plan",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "lesson-ready",
+        "variant": "light",
+        "at": "2026-11-06T19:24:56.714Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/lesson-ready-light.png",
+        "shotBytes": 128154
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nOverview\nCURRENT OBJECTIVE\nRecall the intimate declaration in a new context\nNeeds review\nrecall\n\nReview 1 objective(s)\n\nStart lesson\nOpen this section\nREVIEW\n\nNothing due. The review queue stays quiet until evidence is scheduled.\n\nRECENT E",
+        "textLength": 777,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "forced",
+        "at": "2026-11-06T19:24:58.238Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/lesson-ready-forced.png",
+        "shotBytes": 85514
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nIndependent evidence\ndiscrimination\nlast opened 52 min ago\nOpen section\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nlast opened ",
+        "textLength": 731,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "narrow",
+        "at": "2026-11-06T19:24:59.627Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/lesson-ready-narrow.png",
+        "shotBytes": 54431
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 21 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "text200",
+        "at": "2026-11-06T19:25:01.564Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/lesson-ready-text200.png",
+        "shotBytes": 124845
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 639,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 21 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "split",
+        "at": "2026-11-06T19:25:05.793Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/lesson-ready-split.png",
+        "shotBytes": 145973
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 21 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "lesson-ready",
+        "variant": "hidden",
+        "at": "2026-11-06T19:25:10.375Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/lesson-ready-hidden.png",
+        "shotBytes": 111836
+      }
+    }
+  },
+  "no-courses": {
+    "title": "first run / no courses \u2014 working welcome, no fake progress",
+    "spec": "\u00a713 first run; no courses",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register \u2014 an L0 demonstration classroom \u00b7 1 due\nReview\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n2 independent \u00b7 1 due \u00b7 4 objectives\nFrom a local pack \u00b7 v1.0.0\nOpen\nJapanese caf\u00e9 basics\nParent preparation\nStart Name one warm and one cold thing i",
+        "textLength": 2450,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-courses",
+        "variant": "dark",
+        "at": "2026-11-06T19:21:09.479Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-courses-dark.png",
+        "shotBytes": 131205
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nOverview\nCURRENT OBJECTIVE\nRecall the intimate declaration in a new context\nNeeds review\nrecall\n\nReview 1 objective(s)\n\nStart lesson\nOpen this section\nREVIEW\n\nNothing due. The review queue stays quiet until evidence is scheduled.\n\nRECENT E",
+        "textLength": 776,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "One objective, its evidence and the next permitted action.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "All courses",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Casual",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Recall the intimate declaration in a new context",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Needs review",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "recall",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Review 1 objective(s)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Nothing due. The review queue stays quiet until evidence is scheduled.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Cold attempt",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "revision 36",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "4 objectives \u00b7 1 due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "japanese-affection-context-l0 v1.0.0",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Exporting the pack is a Library action; it never includes your answers",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "no-courses",
+        "variant": "light",
+        "at": "2026-11-06T19:21:10.840Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-courses-light.png",
+        "shotBytes": 99102
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nIndependent evidence\ndiscrimination\nlast opened 49 min ago\nOpen section\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nlast opened ",
+        "textLength": 731,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "no-courses",
+        "variant": "forced",
+        "at": "2026-11-06T19:21:12.337Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-courses-forced.png",
+        "shotBytes": 84785
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nIndependent evidence\ndiscrimination\nlast opened 49 min ago\nOpen section\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nlast opened ",
+        "textLength": 731,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "no-courses",
+        "variant": "narrow",
+        "at": "2026-11-06T19:21:13.729Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-courses-narrow.png",
+        "shotBytes": 54306
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 17 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "no-courses",
+        "variant": "text200",
+        "at": "2026-11-06T19:21:15.689Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-courses-text200.png",
+        "shotBytes": 125104
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 639,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nIndependent evidence\ndiscrimination\nlast opened 49 min ago\nOpen section\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nlast opened ",
+        "textLength": 731,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "no-courses",
+        "variant": "split",
+        "at": "2026-11-06T19:21:19.971Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-courses-split.png",
+        "shotBytes": 139969
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "no-courses",
+        "variant": "hidden",
+        "at": "2026-11-06T19:21:24.528Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-courses-hidden.png",
+        "shotBytes": 134333
+      }
+    }
+  },
+  "no-search-results": {
+    "title": "no search results \u2014 clear filter, preserve data",
+    "spec": "\u00a713 no search results",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "dark",
+        "at": "2026-11-06T19:21:44.644Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-search-results-dark.png",
+        "shotBytes": 74132
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "A governed learning workspace: one objective, real evidence, honest ne",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "In progress",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Review due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Archived",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Your courses are still here; the search just excludes them right now.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "light",
+        "at": "2026-11-06T19:21:46.006Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-search-results-light.png",
+        "shotBytes": 72853
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "forced",
+        "at": "2026-11-06T19:21:47.525Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-search-results-forced.png",
+        "shotBytes": 62542
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "narrow",
+        "at": "2026-11-06T19:21:48.894Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-search-results-narrow.png",
+        "shotBytes": 26510
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "text200",
+        "at": "2026-11-06T19:21:50.767Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-search-results-text200.png",
+        "shotBytes": 94408
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 639,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "split",
+        "at": "2026-11-06T19:21:54.951Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-search-results-split.png",
+        "shotBytes": 111457
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+        "textLength": 279,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "no-search-results",
+        "variant": "hidden",
+        "at": "2026-11-06T19:21:59.399Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/no-search-results-hidden.png",
+        "shotBytes": 74174
+      }
+    }
+  },
+  "backend-off": {
+    "title": "backend off \u2014 enable instructions / recovery",
+    "spec": "\u00a713 backend off",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register \u2014 an L0 demonstration classroom \u00b7 1 due\nReview\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n2 independent \u00b7 1 due \u00b7 4 objectives\nFrom a local pack \u00b7 v1.0.0\nOpen\nJapanese caf\u00e9 basics\nParent preparation\nStart Name one warm and one cold thing i",
+        "textLength": 2450,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "backend-off",
+        "variant": "dark",
+        "at": "2026-11-06T19:22:18.459Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/backend-off-dark.png",
+        "shotBytes": 131515
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nOverview\nCURRENT OBJECTIVE\nRecall the intimate declaration in a new context\nNeeds review\nrecall\n\nReview 1 objective(s)\n\nStart lesson\nOpen this section\nREVIEW\n\nNothing due. The review queue stays quiet until evidence is scheduled.\n\nRECENT E",
+        "textLength": 777,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "One objective, its evidence and the next permitted action.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "All courses",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Casual",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Recall the intimate declaration in a new context",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Needs review",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "recall",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Review 1 objective(s)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Nothing due. The review queue stays quiet until evidence is scheduled.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Cold attempt",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "revision 36",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "4 objectives \u00b7 1 due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "japanese-affection-context-l0 v1.0.0",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Exporting the pack is a Library action; it never includes your answers",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "backend-off",
+        "variant": "light",
+        "at": "2026-11-06T19:22:20.093Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/backend-off-light.png",
+        "shotBytes": 99159
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nOverview\nCURRENT OBJECTIVE\nRecall the intimate declaration in a new context\nNeeds review\nrecall\n\nReview 1 objective(s)\n\nStart lesson\nOpen this section\nREVIEW\n\nNothing due. The review queue stays quiet until evidence is scheduled.\n\nRECENT E",
+        "textLength": 777,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "backend-off",
+        "variant": "forced",
+        "at": "2026-11-06T19:22:21.620Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/backend-off-forced.png",
+        "shotBytes": 85582
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nIndependent evidence\ndiscrimination\nlast opened 50 min ago\nOpen section\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nlast opened ",
+        "textLength": 731,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "backend-off",
+        "variant": "narrow",
+        "at": "2026-11-06T19:22:23.005Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/backend-off-narrow.png",
+        "shotBytes": 54431
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 18 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "backend-off",
+        "variant": "text200",
+        "at": "2026-11-06T19:22:24.709Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/backend-off-text200.png",
+        "shotBytes": 125311
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 639,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nIndependent evidence\ndiscrimination\nlast opened 50 min ago\nOpen section\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nlast opened ",
+        "textLength": 731,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "backend-off",
+        "variant": "split",
+        "at": "2026-11-06T19:22:29.084Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/backend-off-split.png",
+        "shotBytes": 140034
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "backend-off",
+        "variant": "hidden",
+        "at": "2026-11-06T19:22:33.612Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/backend-off-hidden.png",
+        "shotBytes": 134255
+      }
+    }
+  },
+  "degraded-db": {
+    "title": "unsupported/immature backend \u2014 database not migrated",
+    "spec": "\u00a713 unsupported backend (degraded branch)",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "degraded-db",
+        "variant": "dark",
+        "at": "2026-11-06T19:22:52.459Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/degraded-db-dark.png",
+        "shotBytes": 134162
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "One objective, its evidence and the next permitted action.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "All courses",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Casual",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Choose the polite expression for a first confession",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Independent evidence",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "comprehension",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Last opened 6 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "missing",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "All sections",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Save to notebook",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Save to notebook",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Check v2",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "comprehension",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "The question and any choices are shown above; this field records what ",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "This lesson\u2019s chat binding is detached, so Submit is disabled until it",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Edit answer",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Hints and shown answers are recorded against the next attempt.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Passed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Cold attempt",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "authoritative_documentation",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "authoritative_documentation",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "model_assessed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "model_assessed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "model_assessed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "model_assessed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "degraded-db",
+        "variant": "light",
+        "at": "2026-11-06T19:22:53.865Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/degraded-db-light.png",
+        "shotBytes": 131456
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "degraded-db",
+        "variant": "forced",
+        "at": "2026-11-06T19:22:55.469Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/degraded-db-forced.png",
+        "shotBytes": 109340
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "degraded-db",
+        "variant": "narrow",
+        "at": "2026-11-06T19:22:56.863Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/degraded-db-narrow.png",
+        "shotBytes": 67353
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "degraded-db",
+        "variant": "text200",
+        "at": "2026-11-06T19:22:58.780Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/degraded-db-text200.png",
+        "shotBytes": 126235
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 639,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "degraded-db",
+        "variant": "split",
+        "at": "2026-11-06T19:23:02.963Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/degraded-db-split.png",
+        "shotBytes": 164413
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "degraded-db",
+        "variant": "hidden",
+        "at": "2026-11-06T19:23:07.397Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/degraded-db-hidden.png",
+        "shotBytes": 134255
+      }
+    }
+  },
+  "unsupported-backend": {
+    "title": "unsupported backend \u2014 scoped unavailable message, actions absent",
+    "spec": "\u00a713 unsupported backend",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 19 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "unsupported-backend",
+        "variant": "dark",
+        "at": "2026-11-06T19:23:26.269Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/unsupported-backend-dark.png",
+        "shotBytes": 111953
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 19 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "One objective, its evidence and the next permitted action.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "All courses",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Casual",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Recall the intimate declaration in a new context",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Needs review",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "recall",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Last opened 19 min ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "missing",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "All sections",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Segments appear here after a teaching turn in the bound chat. Coursebo",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Check v2",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "recall",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "The question and any choices are shown above; this field records what ",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "This lesson\u2019s chat binding is detached, so Submit is disabled until it",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Edit answer",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Hints and shown answers are recorded against the next attempt.",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Not yet",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Cold attempt",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Passed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Cold attempt",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "authoritative_documentation",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "authoritative_documentation",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "model_assessed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "model_assessed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "model_assessed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "model_assessed",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "fetched 19 hr ago",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "unsupported-backend",
+        "variant": "light",
+        "at": "2026-11-06T19:23:27.614Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/unsupported-backend-light.png",
+        "shotBytes": 109173
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 19 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "unsupported-backend",
+        "variant": "forced",
+        "at": "2026-11-06T19:23:29.182Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/unsupported-backend-forced.png",
+        "shotBytes": 93803
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 19 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "unsupported-backend",
+        "variant": "narrow",
+        "at": "2026-11-06T19:23:30.563Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/unsupported-backend-narrow.png",
+        "shotBytes": 52313
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nTextbook\nRecall the intimate declaration in a new context\nNeeds review\nrecall\nLast opened 19 min ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh ",
+        "textLength": 8759,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "unsupported-backend",
+        "variant": "text200",
+        "at": "2026-11-06T19:23:32.544Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/unsupported-backend-text200.png",
+        "shotBytes": 125143
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 639,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 11323,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "unsupported-backend",
+        "variant": "split",
+        "at": "2026-11-06T19:23:36.835Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/unsupported-backend-split.png",
+        "shotBytes": 164454
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nChoose the polite expression for a first confession\nStart lesson\nView\nTextbook\nChoose the polite expression for a first confession\nIndependent evidence\ncomprehension\nLast opened 6 hr ago\nmissing\nThis section\u2019s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this sec",
+        "textLength": 13753,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "unsupported-backend",
+        "variant": "hidden",
+        "at": "2026-11-06T19:23:41.342Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/unsupported-backend-hidden.png",
+        "shotBytes": 134092
+      }
+    }
+  },
+  "demo-fixture-mode": {
+    "title": "demo/pack provenance \u2014 rows labelled with pack origin",
+    "spec": "\u00a713 demo fixture mode",
+    "variants": {
+      "dark": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register \u2014 an L0 demonstration classroom \u00b7 1 due\nReview\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n2 independent \u00b7 1 due \u00b7 4 objectives\nFrom a local pack \u00b7 v1.0.0\nOpen\nJapanese caf\u00e9 basics\nParent preparation\nStart Name one warm and one cold thing i",
+        "textLength": 2450,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "dark",
+        "at": "2026-11-06T19:24:00.115Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/demo-fixture-mode-dark.png",
+        "shotBytes": 131068
+      },
+      "light": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "light",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register \u2014 an L0 demonstration classroom \u00b7 1 due\nReview\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n2 independent \u00b7 1 due \u00b7 4 objectives\nFrom a local pack \u00b7 v1.0.0\nOpen\nJapanese caf\u00e9 basics\nParent preparation\nStart Name one warm and one cold thing i",
+        "textLength": 2450,
+        "clipped": [],
+        "contrast": [
+          {
+            "text": "A governed learning workspace: one objective, real evidence, honest ne",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Library",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent Studio",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "In progress",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Review due",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Archived",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 11,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Review",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Casual",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Review 1 objective(s)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "2 independent \u00b7 1 due \u00b7 4 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "From a local pack \u00b7 v1.0.0",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name one warm and one cold thing in the kitchen",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 4 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name one warm and one cold thing in the kitchen",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 4 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name one warm and one cold thing in the kitchen",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 4 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name the parts: half, quarter and eighth (kitchen table)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 6 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name halves of a real object (kitchen table)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 5 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Start Name halves of a real object (kitchen table)",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent \u00b7 6 objectives",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Parent preparation",
+            "ratio": 3.47,
+            "need": 4.5,
+            "size": 9.6,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(246,246,246)"
+          },
+          {
+            "text": "Review and approve the plan",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "0 independent",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          },
+          {
+            "text": "Open",
+            "ratio": 3.53,
+            "need": 4.5,
+            "size": 12,
+            "fg": "color(srgb 0.121569 0.137255 0.156863 / 0.54)",
+            "bg": "rgb(254,254,254)"
+          }
+        ],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "light",
+        "at": "2026-11-06T19:24:01.476Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/demo-fixture-mode-light.png",
+        "shotBytes": 128005
+      },
+      "forced": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register \u2014 an L0 demonstration classroom \u00b7 1 due\nReview\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n2 independent \u00b7 1 due \u00b7 4 objectives\nFrom a local pack \u00b7 v1.0.0\nOpen\nJapanese caf\u00e9 basics\nParent preparation\nStart Name one warm and one cold thing i",
+        "textLength": 2450,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "forced",
+        "at": "2026-11-06T19:24:03.006Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/demo-fixture-mode-forced.png",
+        "shotBytes": 108266
+      },
+      "narrow": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 460,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 461,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register \u2014 an L0 demonstration classroom \u00b7 1 due\nReview\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n2 independent \u00b7 1 due \u00b7 4 objectives\nFrom a local pack \u00b7 v1.0.0\nOpen\nJapanese caf\u00e9 basics\nParent preparation\nStart Name one warm and one cold thing i",
+        "textLength": 2450,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "narrow",
+        "at": "2026-11-06T19:24:04.411Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/demo-fixture-mode-narrow.png",
+        "shotBytes": 55424
+      },
+      "text200": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "32px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register \u2014 an L0 demonstration classroom \u00b7 1 due\nReview\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nReview 1 objective(s)\n2 independent \u00b7 1 due \u00b7 4 objectives\nFrom a local pack \u00b7 v1.0.0\nOpen\nJapanese caf\u00e9 basics\nParent preparation\nStart Name one warm and one cold thing i",
+        "textLength": 2450,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [],
+        "animation": [],
+        "scenario": "demo-fixture-mode",
+        "variant": "text200",
+        "at": "2026-11-06T19:24:06.363Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/demo-fixture-mode-text200.png",
+        "shotBytes": 124630
+      },
+      "split": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 639,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nNotebook\nAll tags\nRecently saved\nOldest first\nLesson 2 \u2014 choosing by addressee, relationship and setting\n\nThere is no single Japanese line that means \"I love you\". The same feeling is carried by\ndifferent lines depending on who is listenin",
+        "textLength": 18589,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "demo-fixture-mode",
+        "variant": "split",
+        "at": "2026-11-06T19:24:10.728Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/demo-fixture-mode-split.png",
+        "shotBytes": 160484
+      },
+      "hidden": {
+        "url": "#/coursebook",
+        "viewport": {
+          "w": 1281,
+          "h": 901
+        },
+        "rootFont": "16px",
+        "mode": "dark",
+        "theme": "nous",
+        "overflowX": 0,
+        "routeWidth": 1045,
+        "routeText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register \u2014 an L0 demonstration classroom\nCasual\nRecall the intimate declaration in a new context\nStart lesson\nView\nNotebook\nAll tags\nRecently saved\nOldest first\nLesson 2 \u2014 choosing by addressee, relationship and setting\n\nThere is no single Japanese line that means \"I love you\". The same feeling is carried by\ndifferent lines depending on who is listenin",
+        "textLength": 18589,
+        "clipped": [],
+        "contrast": [],
+        "unnamed": [],
+        "colorOnly": [],
+        "smallTargets": [],
+        "live": [],
+        "headings": [
+          {
+            "level": 2,
+            "text": "Japanese affection and register \u2014 an L0 demonstration classroom"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          },
+          {
+            "level": 1,
+            "text": "Lesson 2 \u2014 choosing by addressee, relationship and setting"
+          },
+          {
+            "level": 2,
+            "text": "The four lines in this lesson"
+          },
+          {
+            "level": 2,
+            "text": "What the sources support"
+          },
+          {
+            "level": 2,
+            "text": "Choosing in three steps"
+          },
+          {
+            "level": 2,
+            "text": "What this lesson does not do"
+          }
+        ],
+        "animation": [
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          },
+          {
+            "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+            "transition": 0.2,
+            "animation": 0
+          }
+        ],
+        "scenario": "demo-fixture-mode",
+        "variant": "hidden",
+        "at": "2026-11-06T19:24:15.386Z",
+        "port": "9351",
+        "routeVisible": true,
+        "hostOverlay": false,
+        "shot": "docs/a11y-shots/demo-fixture-mode-hidden.png",
+        "shotBytes": 144341
+      }
+    }
+  }
+}
