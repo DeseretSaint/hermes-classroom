@@ -606,6 +606,13 @@ function useRpcQuery(method, payload, key, enabled = true) {
   return { ...state, reload }
 }
 
+function EmptyState({ title, description, children }) {
+  return jsxs('div', {
+    className: 'flex flex-col items-center gap-3',
+    children: [jsx(sdk.EmptyState, { title, description }), children || null]
+  })
+}
+
 function openCapabilities() {
   if (!pluginContext) return
   const outcome = pluginContext.runAction('nav.capabilities')
@@ -1234,7 +1241,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
   if (intake.status === 'loading') {
     body = jsx('div', { className: 'py-8', children: jsx(sdk.Loader, { label: 'Asking the host how packs are granted' }) })
   } else if (intake.status === 'unsupported') {
-    body = jsx(sdk.EmptyState, {
+    body = jsx(EmptyState, {
       title: 'This backend build cannot receive a local pack',
       description:
         'A pack is untrusted data, so a filesystem path never travels over the wire. The host must mint a local ' +
@@ -1844,7 +1851,7 @@ function CoursesView({ implemented, onStartCreate, createOpen, onOpen }) {
           children: jsxs('div', {
             className: 'mx-auto flex w-full max-w-xl flex-col items-center gap-3',
             children: [
-              jsx(sdk.EmptyState, {
+              jsx(EmptyState, {
                 title: 'No courses match this filter',
                 description: 'Your courses are still here; this filter just excludes them right now.'
               }),
@@ -2191,7 +2198,7 @@ function LibraryView({ implemented, createOpen }) {
     listBody = jsxs('div', {
       className: 'flex flex-col gap-3 py-4',
       children: [
-        jsx(sdk.EmptyState, {
+        jsx(EmptyState, {
           title: 'Installed packs could not be read',
           description: `${error && error.code ? error.code + ': ' : ''}${describeError(error)}`
         }),
@@ -2199,7 +2206,7 @@ function LibraryView({ implemented, createOpen }) {
       ]
     })
   } else if (rows.length === 0) {
-    listBody = jsx(sdk.EmptyState, {
+    listBody = jsx(EmptyState, {
       title: view === 'bundled' ? 'No bundled pack is installed on this profile' : view === 'local' ? 'No local pack is installed' : 'No packs installed on this profile',
       description:
         'A pack appears here once it exists on this profile. Bundled packs ship with the Coursebook ' +
@@ -2301,7 +2308,7 @@ function LibraryView({ implemented, createOpen }) {
               })
             : jsx('div', {
                 className: 'hidden min-[47.5rem]:flex min-w-0 flex-1 items-start',
-                children: jsx(sdk.EmptyState, {
+                children: jsx(EmptyState, {
                   className: 'w-full',
                   title: 'Choose a pack to see what the backend recorded',
                   description: 'Preview shows the pack’s provenance, enrolment state and evidence summary — nothing inferred.'
@@ -3195,7 +3202,14 @@ function sectionRows({ row, review, notebooks, outline, page }) {
   const add = (entry) => {
     if (!entry || !entry.objective_id) return
     const existing = seen.get(entry.objective_id) || {}
-    seen.set(entry.objective_id, { ...existing, ...entry })
+    // A later source (a notebook save, a review row) can carry the id without the label. Merge
+    // field-by-field so a missing title never erases one an earlier source already named.
+    const merged = { ...existing }
+    Object.keys(entry).forEach((field) => {
+      const value = entry[field]
+      if (value !== null && value !== undefined) merged[field] = value
+    })
+    seen.set(entry.objective_id, merged)
   }
   if (outline && Array.isArray(outline.objectives)) {
     outline.objectives.forEach((objective) =>
@@ -3243,7 +3257,7 @@ function sectionRows({ row, review, notebooks, outline, page }) {
     .sort((left, right) => (left.ordinal || 0) - (right.ordinal || 0))
 }
 
-function SectionPage({ row, objectiveId, page, implemented, onBack, onStartFresh, onContinue, onChanged, review }) {
+function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const section = page && page.section
   const runtime = page && page.runtime
@@ -3303,7 +3317,19 @@ function SectionPage({ row, objectiveId, page, implemented, onBack, onStartFresh
 
   let body
   if (!page) {
-    body = jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this section' }) })
+    body =
+      pageStatus === 'error'
+        ? jsx(sdk.ErrorState, {
+            title: 'This section could not be read',
+            description: `${pageError && pageError.code ? pageError.code + ': ' : ''}${describeError(pageError)}`,
+            children: jsx(sdk.Button, {
+              variant: 'secondary',
+              size: 'sm',
+              onClick: onRetryPage,
+              children: 'Try again'
+            })
+          })
+        : jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this section' }) })
   } else {
     body = jsxs('div', {
       className: 'flex flex-col gap-4',
@@ -3429,7 +3455,7 @@ function SectionPage({ row, objectiveId, page, implemented, onBack, onStartFresh
                 )
               )
             })
-          : jsx(sdk.EmptyState, {
+          : jsx(EmptyState, {
               title: 'No teaching segments yet',
               description: 'Segments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.'
             }),
@@ -3667,23 +3693,25 @@ function OverviewView({ row, page, review, quizzes, implemented, onOpenSection, 
 }
 
 /** Textbook — a scannable section list, not one endless thread. */
-function TextbookView({ row, page, review, notebooks, outline, implemented, objectiveId, onOpenSection, onChanged }) {
+function TextbookView({ row, page, pageState, review, notebooks, outline, implemented, openSectionId, onOpenSection, onCloseSection, onChanged }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
-  const [openSection, setOpenSection] = useState(null)
   const rows = sectionRows({ row, review, notebooks, outline, page })
   const hasOutline = Boolean(outline && Array.isArray(outline.objectives))
-  const active = openSection || objectiveId
 
-  if (active && openSection) {
+  // Opening a section is owned by CourseDetail, so a route in from Overview, Notebook or Quizzes
+  // ("Continue from here") lands on the same durable page as a click in this list, and the
+  // `lesson.page` request that backs it is always aimed at the section being shown.
+  if (openSectionId) {
     return jsx(SectionPage, {
       row,
-      objectiveId: openSection,
-      page: page && page.section && page.section.objective_id === openSection ? page : null,
+      objectiveId: openSectionId,
+      page: page && page.section && page.section.objective_id === openSectionId ? page : null,
+      pageStatus: pageState.status,
+      pageError: pageState.error,
+      onRetryPage: pageState.reload,
       implemented,
       review,
-      onBack: () => setOpenSection(null),
-      onStartFresh: () => setOpenSection(null),
-      onContinue: () => setOpenSection(null),
+      onBack: onCloseSection,
       onChanged
     })
   }
@@ -3700,7 +3728,7 @@ function TextbookView({ row, page, review, notebooks, outline, implemented, obje
               'command is registered.'
           }),
       rows.length === 0
-        ? jsx(sdk.EmptyState, {
+        ? jsx(EmptyState, {
             title: 'No sections yet',
             description: 'A section appears once the course has an approved plan with objectives. Approve the plan first.'
           })
@@ -3742,7 +3770,7 @@ function TextbookView({ row, page, review, notebooks, outline, implemented, obje
                       jsx(sdk.Button, {
                         variant: 'secondary',
                         size: 'sm',
-                        onClick: () => setOpenSection(entry.objective_id),
+                        onClick: () => onOpenSection(entry.objective_id),
                         children: 'Open section'
                       })
                     ]
@@ -3809,7 +3837,12 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
       .map((value) => value.trim())
       .filter(Boolean)
       .slice(0, 20)
-    const response = await rpc('notebook.update', payload)
+    const response = await rpc('notebook.update', payload, {
+      // The entry carries its own revision fence (0 for a fresh save), so the edit is fenced on the
+      // row the user is editing rather than on the enrollment.
+      expectedRevision: typeof editing.revision === 'number' ? editing.revision : 0,
+      idempotencyKey: newOperationId('notebook-update')
+    })
     if (!response.ok) {
       setError(response.error)
       return
@@ -3916,7 +3949,7 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
         : null,
 
       filtered.length === 0
-        ? jsx(sdk.EmptyState, {
+        ? jsx(EmptyState, {
             title: entries.length === 0 ? 'Nothing saved yet' : 'No saved moment matches',
             description:
               entries.length === 0
@@ -4147,7 +4180,7 @@ function QuizzesView({ row, quizzes, implemented, onOpenSection, onChanged }) {
       error ? jsx(ErrorLine, { error }) : null,
 
       filtered.length === 0
-        ? jsx(sdk.EmptyState, {
+        ? jsx(EmptyState, {
             title: attempts.length === 0 ? 'No quiz attempts yet' : 'No attempt matches',
             description:
               attempts.length === 0
@@ -4363,7 +4396,7 @@ function PlanView({ row, review, notebooks, outline, page, implemented, onOpenSe
       }),
       challengeError ? jsx(ErrorLine, { error: { message: challengeError } }) : null,
       rows.length === 0
-        ? jsx(sdk.EmptyState, {
+        ? jsx(EmptyState, {
             title: 'No objectives to show',
             description: 'The plan is not approved, or this build cannot read the objective list.'
           })
@@ -4548,7 +4581,7 @@ function SourcesView({ page }) {
   const sources = (page && page.sources) || []
   if (!page) return jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this course’s sources' }) })
   if (sources.length === 0) {
-    return jsx(sdk.EmptyState, {
+    return jsx(EmptyState, {
       title: 'No sources recorded',
       description: 'The backend recorded no source rows for this course. Nothing is being presented as cited.'
     })
@@ -4596,6 +4629,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
   const [objectiveId, setObjectiveId] = useState(
     (row.evidence_summary && row.evidence_summary.current_objective_id) || null
   )
+  const [openSectionId, setOpenSectionId] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
 
@@ -4648,7 +4682,15 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
 
   const openSection = useCallback((nextObjectiveId) => {
     if (nextObjectiveId) setObjectiveId(nextObjectiveId)
+    setOpenSectionId(nextObjectiveId || null)
     setView('textbook')
+  }, [])
+
+  const closeSection = useCallback(() => setOpenSectionId(null), [])
+
+  const selectView = useCallback((nextView) => {
+    setView(nextView)
+    if (nextView === 'textbook') setOpenSectionId(null)
   }, [])
 
   const startLesson = useCallback(
@@ -4718,12 +4760,14 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
     body = jsx(TextbookView, {
       row,
       page: page.data,
+      pageState: page,
       review: review.data,
       notebooks: notebooks.data,
       outline: outline.data,
       implemented,
-      objectiveId,
+      openSectionId,
       onOpenSection: openSection,
+      onCloseSection: closeSection,
       onChanged: refresh
     })
   } else if (view === 'notebook') {
@@ -4807,7 +4851,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
       jsx('div', {
         className: 'hidden min-[47.5rem]:block',
         children: jsx(sdk.SegmentedControl, {
-          onChange: setView,
+          onChange: selectView,
           options: LEARNING_VIEWS,
           sizing: 'content',
           value: view
@@ -4823,7 +4867,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
           }),
           jsxs(sdk.Select, {
             value: view,
-            onValueChange: setView,
+            onValueChange: selectView,
             children: [
               jsx(
                 sdk.SelectTrigger,
