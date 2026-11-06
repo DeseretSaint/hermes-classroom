@@ -328,6 +328,45 @@ class ExportTest(PackFlowCase):
         self.assertEqual(reimported["pack_id"], manifest["pack_id"])
         self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM courses")), 2)
 
+    def test_repeat_export_of_unchanged_content_reuses_the_artifact(self) -> None:
+        """Clicking Export twice must return the first artifact, not an IntegrityError."""
+        imported = self.import_pack(self.grant()[0])["result"]
+        first = self.ok(
+            "pack.export",
+            {"enrollment_id": imported["enrollment_id"]},
+            idempotency_key="cb-export-repeat-first",
+        )["result"]
+        second = self.ok(
+            "pack.export",
+            {"enrollment_id": imported["enrollment_id"]},
+            idempotency_key="cb-export-repeat-second",
+        )["result"]
+        self.assertEqual(second["artifact_id"], first["artifact_id"])
+        self.assertEqual(second["content_hash"], first["content_hash"])
+        self.assertEqual(second["file_count"], first["file_count"])
+        self.assertEqual(second["bytes"], first["bytes"])
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM artifacts")), 1)
+        self.assertEqual(
+            int(self.scalar("SELECT ref_count FROM artifacts WHERE id = ?", (first["artifact_id"],))),
+            2,
+        )
+        # The reused row still resolves to real bytes.
+        path, mime, size = pack_flow.open_artifact(
+            self.ok("artifact.get", {"artifact_id": first["artifact_id"]})["result"]["download"]["handle"]
+        )
+        self.assertEqual(mime, "application/zip")
+        self.assertEqual(size, first["bytes"])
+        self.assertTrue(path.is_file())
+
+    def test_a_different_pack_content_exports_a_new_artifact(self) -> None:
+        japanese = self.import_pack(self.grant()[0])["result"]
+        parent = self.import_pack(self.grant(PARENT, "parent.zip")[0])["result"]
+        first = self.ok("pack.export", {"enrollment_id": japanese["enrollment_id"]})["result"]
+        second = self.ok("pack.export", {"enrollment_id": parent["enrollment_id"]})["result"]
+        self.assertNotEqual(second["artifact_id"], first["artifact_id"])
+        self.assertNotEqual(second["content_hash"], first["content_hash"])
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM artifacts")), 2)
+
     def test_export_refuses_a_hash_the_reviewer_did_not_see(self) -> None:
         imported = self.import_pack(self.grant()[0])["result"]
         error = self.err(

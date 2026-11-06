@@ -131,6 +131,24 @@ class DispatchTest(unittest.TestCase):
         finally:
             api.METHOD_HANDLERS.pop("notebook.list", None)
 
+    def test_deterministic_internal_failure_is_not_retryable(self) -> None:
+        """A constraint violation cannot succeed on retry; advertising retryable is a lie."""
+        import sqlite3
+
+        def violates(payload, envelope):
+            raise sqlite3.IntegrityError("UNIQUE constraint failed: artifacts.content_hash")
+
+        api.register_handler("notebook.list", violates)
+        try:
+            response = api.dispatch(request("notebook.list"))
+            self.assertFalse(response["ok"])
+            error = response["error"]
+            self.assertEqual(error["code"], "INTERNAL_ERROR")
+            self.assertEqual(error["category"], "internal")
+            self.assertFalse(error["retryable"])
+        finally:
+            api.METHOD_HANDLERS.pop("notebook.list", None)
+
     def test_unknown_handler_registration_is_refused(self) -> None:
         with self.assertRaises(contracts.ContractError):
             api.register_handler("coursebook.invented", lambda payload, envelope: (0, {}))
