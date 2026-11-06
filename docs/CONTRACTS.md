@@ -809,10 +809,22 @@ remains the plan's own timestamp; the two approvals never share a row.
 ### `parent.export`
 
 * **One pack builder, no new manifest vocabulary.** The export assembles a `cb.pack` v1 document from
-  `packs.export_allowlist()` and declares exactly the four roles the parent pack needs —
-  `parent_guide`, `learner_page`, `answer_guide`, `narration` — all of which already exist in
-  `cb.pack`'s role enum. No stored manifest is copied, so `packs.PRIVATE_FIELDS` (attempts, notebook
-  text, reflections, transcripts, provider settings, paths) cannot ride along even if a handler tries.
+  `packs.export_allowlist()` and declares the roles it actually carries: `parent_guide`,
+  `learner_page` and `answer_guide` as `text/markdown`, and `narration` only when a real audio
+  artifact exists (the role is audio-only in `packs._role_mime_mismatch`). A role enum is a list of
+  **permitted** role/MIME pairs, not a set every pack must carry. An authored course has a
+  narration *script*, which is text: it is served in the `narration` tab, written into the parent
+  guide, and covered by the approved `content_hash`; when audio is produced the script becomes
+  that artifact's `text_equivalent`. `docs/DECISION-AUTHORED-PACK-POLICY.md` §1 is the ruling. No
+  stored manifest is copied, so `packs.PRIVATE_FIELDS` (attempts, notebook text, reflections,
+  transcripts, provider settings, paths) cannot ride along even if a handler tries.
+* **The exported rubric is assessment criteria only.** `checks[].rubric` is composed from the
+  check's own criteria plus the plan objective's `evidence_criteria`, deduped. Supervision and
+  safety notes are instructions to the adult, not grading criteria: they appear in the parent guide
+  and never in a rubric. `reference_answer` is excluded from `checks[].accepted_alternatives`
+  (alternatives are alternatives to the reference answer); `packs.validate_minima` refuses a pack
+  where the two collide. Generated lessons carry at least three criteria per check
+  (`MIN_RUBRIC_CRITERIA`), because one-line rubrics are refused on import and export alike.
 * **Refusal is the feature.** `parent.export` runs only when the active final approval's
   `content_hash` equals the recomputed one; otherwise `POLICY_VIOLATION` with
   `reason: changes_need_review` (or `no_final_approval`, `plan_not_approved`). A stale studio cannot
