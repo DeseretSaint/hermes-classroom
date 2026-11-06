@@ -38,6 +38,27 @@ ATTEMPT_KINDS = ("attempt", "override")
 #: chat hook and ``lesson.assist`` both go through :func:`record_assist`, so they cannot drift.
 ASSIST_CLASSES: dict[str, str] = {"hint_request": "hinted", "answer_shown": "answer_shown"}
 
+#: The only stored-criterion keys this view may project. The stored entry also carries
+#: ``check_spec`` — stimulus, rubric and the reference answer — and the reference never leaves the
+#: backend (``coursebook.grading``), open check or not. A withheld criterion keeps its
+#: ``check_id``/``check_spec_withheld`` marker so the learner still sees that the item exists.
+PUBLIC_CRITERION_FIELDS = ("id", "description", "check_id", "check_spec_withheld")
+
+
+def _public_criteria(value: Any) -> list[dict[str, Any]]:
+    """Stored criteria reduced to the fields a learner may inspect; never a check spec."""
+    criteria = _json(value, [])
+    if not isinstance(criteria, list):
+        return []
+    projected: list[dict[str, Any]] = []
+    for entry in criteria:
+        if not isinstance(entry, dict):
+            continue
+        item = {key: entry[key] for key in PUBLIC_CRITERION_FIELDS if key in entry}
+        if item:
+            projected.append(item)
+    return projected
+
 
 def record_assist(connection, *, enrollment_id: str, objective_id: str, attempt_id: str | None,
                   kind: str, evidence_class: str) -> str:
@@ -177,7 +198,7 @@ def layer2(connection, enrollment_id: str, *, objective_id: str | None = None) -
             "L2_evidence_ids": [row["id"] for row in linked],
             "independent_at": linked[0]["created_at"] if linked else None,
             "attempt_classes": {row["evidence_class"]: int(row["n"]) for row in classes},
-            "criteria": _json(objective["evidence_criteria_json"], []),
+            "criteria": _public_criteria(objective["evidence_criteria_json"]),
         })
     return {"enrollment_id": enrollment_id, "objective_id": objective_id, "objectives": items}
 
