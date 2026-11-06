@@ -50,9 +50,9 @@ class DispatchTest(unittest.TestCase):
         self.assertEqual(response["result"]["db_schema_version"], contracts.contract("cb.db")["schema_version"])
 
     def test_unimplemented_method_is_refused_not_faked(self) -> None:
-        response = api.dispatch(request("course.create", {
-            "title": "Learn to braise", "recipe": "one_off", "goal": "Braise short ribs"
-        }))
+        # ``course.create`` is implemented by the kernel package; ``pack.preview`` is still
+        # Lattice's. This asserts the dispatch contract, not which package has landed.
+        response = api.dispatch(request("pack.preview", {"staged_id": "stg_not_implemented_01"}))
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "NOT_IMPLEMENTED")
         self.assertFalse(response["error"]["retryable"])

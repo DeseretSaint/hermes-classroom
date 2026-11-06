@@ -58,5 +58,30 @@ class JobStateTest(unittest.TestCase):
         self.assertIn("checkpoint", job_schema["properties"])
 
 
+class JobCommandTest(unittest.TestCase):
+    """The command layer may only offer cancellation where the contract allows it."""
+
+    def test_cancel_targets_are_contract_edges(self) -> None:
+        targets = {"queued": "cancelled", "running": "cancel_requested", "interrupted_requires_retry": "cancelled"}
+        for state, target in targets.items():
+            with self.subTest(state=state):
+                self.assertTrue(jobs.can_transition(state, target))
+        self.assertTrue(jobs.cancellable("queued"))
+        self.assertTrue(jobs.cancellable("running"))
+
+    def test_non_cancellable_states_are_refused_not_guessed(self) -> None:
+        for state in ("cancel_requested", "cancelling", "cancelled", "completed", "completed_late", "failed"):
+            with self.subTest(state=state):
+                self.assertFalse(jobs.cancellable(state))
+
+    def test_domain_refuses_cancel_with_the_contract_code(self) -> None:
+        from coursebook import api, domain
+
+        error = api.build_error("JOB_NOT_CANCELLABLE", "job is cancelling and cannot be cancelled.")
+        self.assertEqual(error["code"], "JOB_NOT_CANCELLABLE")
+        self.assertFalse(error["retryable"])
+        self.assertIn("jobs.cancel", domain.KERNEL_METHODS)
+
+
 if __name__ == "__main__":
     unittest.main()
