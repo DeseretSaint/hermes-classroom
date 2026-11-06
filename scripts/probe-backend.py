@@ -22,6 +22,11 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from coursebook import contracts  # noqa: E402 - path must be set first
+
+WIRE_VERSION = contracts.WIRE_CONTRACT_VERSION
 
 
 def load_router():
@@ -39,7 +44,7 @@ def load_router():
 def envelope(method: str, payload: dict, **overrides) -> dict:
     body = {
         "contract": "cb.rpc",
-        "contract_version": 1,
+        "contract_version": WIRE_VERSION,
         "method": method,
         "operation_id": f"probe-{method.replace('.', '-')}",
         "payload": payload,

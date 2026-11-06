@@ -1,0 +1,202 @@
+[
+  {
+    "step": "GET /health answers an ok envelope and states db readiness",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": true,
+      "contract_version": 2,
+      "operation_id": "health-get-endpoint",
+      "revision": 0,
+      "result": {
+        "plugin_version": "0.1.0",
+        "contract_version": 2,
+        "db": {
+          "ready": false,
+          "schema_version": null
+        },
+        "backend": "python"
+      }
+    }
+  },
+  {
+    "step": "GET /schema lists all six frozen contracts",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": true,
+      "contract_version": 2,
+      "operation_id": "schema-get-endpoint",
+      "revision": 0,
+      "result": {
+        "contracts": [
+          {
+            "id": "cb.db",
+            "version": 2,
+            "file": "db.v2.json",
+            "sha256": "sha256:873fd56c4ea0a7229721ce9eb6065dd2a9370cc5563099852c88858e0413c0d7"
+          },
+          {
+            "id": "cb.errors",
+            "version": 2,
+            "file": "errors.v2.json",
+            "sha256": "sha256:27b666a42654d2207f1dd2475c0941d5543c27527b5aa03a2c30491582d39fb6"
+          },
+          {
+            "id": "cb.jobs",
+            "version": 2,
+            "file": "jobs.v2.json",
+            "sha256": "sha256:69b551e4672ec6f675be752b51d5cde905605772d17c73ec727fa04eb5461496"
+          },
+          {
+            "id": "cb.pack",
+            "version": 1,
+            "file": "pack-manifest.v1.json",
+            "sha256": "sha256:2a8ed8677195573e12b753e1b63ae1a35f1f53dedbbd56bf4bf6d36b905a5fc5"
+          },
+          {
+            "id": "cb.rpc",
+            "version": 2,
+            "file": "rpc.v2.json",
+            "sha256": "sha256:4afc3c5fe0248c32733884dc68295f4a3aff916df7782f437945a8862e4352f4"
+          },
+          {
+            "id": "cb.vocabulary",
+            "version": 1,
+            "file": "vocabulary.v1.json",
+            "sha256": "sha256:a7b3bdb4c06a8b24619e17516e96d1216b95d9d322bb65f7c912b4a78dc77967"
+          }
+        ],
+        "db_schema_version": 2
+      }
+    }
+  },
+  {
+    "step": "GET /runtime exposes the backend method registry (Desktop reads this)",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "backend_package": "coursebook_plugin_backend",
+      "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0d39cbe6",
+      "wire_contract": "cb.rpc",
+      "wire_version": 2,
+      "contract_methods": 34,
+      "implemented_methods": [
+        "binding.get",
+        "health.get",
+        "schema.get"
+      ],
+      "contract_problems": [],
+      "db_path": "/home/deseretsaint/.hermes/profiles/sable/cache/scratch/coursebook-probe-home-_mnmrq32/plugin-data/coursebook/data.db"
+    }
+  },
+  {
+    "step": "POST /rpc health.get",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": true,
+      "contract_version": 2,
+      "operation_id": "probe-health-get",
+      "revision": 0,
+      "result": {
+        "plugin_version": "0.1.0",
+        "contract_version": 2,
+        "db": {
+          "ready": false,
+          "schema_version": null
+        },
+        "backend": "python"
+      }
+    }
+  },
+  {
+    "step": "POST /rpc malformed envelope is a VALIDATION_FAILED envelope (HTTP 200)",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": false,
+      "contract_version": 2,
+      "operation_id": "unknown-operation",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "category": "validation",
+        "message": "RPC request violates cb.rpc at <root>: 'contract' is a required property",
+        "retryable": false,
+        "details": {
+          "path": "<root>"
+        }
+      }
+    }
+  },
+  {
+    "step": "POST /rpc binding.get without an identifier is VALIDATION_FAILED",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": false,
+      "contract_version": 2,
+      "operation_id": "probe-binding-get",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "category": "validation",
+        "message": "binding.get request payload invalid at <payload>: {} should be non-empty",
+        "retryable": false,
+        "details": {
+          "path": "<payload>"
+        }
+      }
+    }
+  },
+  {
+    "step": "POST /rpc binding.get with both identifiers is VALIDATION_FAILED",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": false,
+      "contract_version": 2,
+      "operation_id": "probe-binding-get",
+      "error": {
+        "code": "VALIDATION_FAILED",
+        "category": "validation",
+        "message": "binding.get takes exactly one of session_id (stored session id) or enrollment_id.",
+        "retryable": false,
+        "details": {
+          "field": "session_id"
+        }
+      }
+    }
+  },
+  {
+    "step": "POST /rpc binding.get on an unmigrated database refuses instead of claiming 'unbound'",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": false,
+      "contract_version": 2,
+      "operation_id": "probe-binding-get",
+      "error": {
+        "code": "NOT_IMPLEMENTED",
+        "category": "internal",
+        "message": "binding.get needs the kernel schema; this build ships no migrations, so no session binding can exist.",
+        "retryable": false
+      }
+    }
+  },
+  {
+    "step": "POST /rpc for a method not in the mounted contract is refused, never faked",
+    "ok": true,
+    "status": 200,
+    "body": {
+      "ok": false,
+      "contract_version": 2,
+      "operation_id": "probe-library-list",
+      "error": {
+        "code": "NOT_IMPLEMENTED",
+        "category": "internal",
+        "message": "library.list is frozen in cb.rpc but has no handler in this build.",
+        "retryable": false
+      }
+    }
+  }
+]
