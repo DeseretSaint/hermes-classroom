@@ -32,6 +32,7 @@ The LLM seam is the host-owned plugin route (``ctx.llm``), not a raw provider ke
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -1145,6 +1146,86 @@ def _scope_expectation(scope: str | None) -> dict[str, Any] | None:
     return {**expectation, "scope": key}
 
 
+#: The typed Parent Studio brief fields that reach the plan model. Internal routing keys and the
+#: two consent flags do not: ``egress_acknowledged`` is a precondition of the command, and
+#: ``redaction_requested`` is an export instruction the planner cannot act on.
+_PARENT_BRIEF_MODEL_KEYS: tuple[str, ...] = (
+    "title",
+    "goal",
+    "starting_point",
+    "age_band",
+    "reading_level",
+    "duration_minutes",
+    "setting",
+    "materials",
+    "exclusions",
+    "supervision",
+    "desired_pages",
+    "desired_visuals",
+    "narration",
+    "locale",
+)
+
+#: The highest school year a brief may name for an age band. Coarse on purpose: the rule only
+#: refuses an explicit contradiction ("grade 9" for a 6-8 year old), never infers a level from a
+#: phrase it does not understand.
+_AGE_BAND_MAX_GRADE: dict[str, int] = {"3-5": 0, "6-8": 3, "9-11": 6, "12-14": 9, "15-18": 13}
+
+_NAMED_GRADE = re.compile(r"\b(?:grade|year)\s*(\d{1,2})\b", re.IGNORECASE)
+
+
+def parent_brief_view(brief: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Project the stored job brief onto the typed brief object the model and document carry.
+
+    The brief already lives in ``jobs.brief_json``, the row the executor consumes; this is a
+    projection of that row, never a second store. Values are copied verbatim, so the planner sees
+    exactly what the parent typed.
+    """
+    if not isinstance(brief, dict):
+        return None
+    view = {key: brief[key] for key in _PARENT_BRIEF_MODEL_KEYS if key in brief}
+    return view or None
+
+
+def desired_pages(parent_brief: dict[str, Any] | None) -> int | None:
+    """The brief's page budget, or ``None`` when the brief did not declare one."""
+    if not parent_brief:
+        return None
+    value = parent_brief.get("desired_pages")
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        return None
+    return min(value, 40)
+
+
+def named_grade(reading_level: Any) -> int | None:
+    """The explicit school year/grade a reading level names, if it names one at all."""
+    if not isinstance(reading_level, str):
+        return None
+    match = _NAMED_GRADE.search(reading_level)
+    return int(match.group(1)) if match else None
+
+
+def parent_plan_schema(parent_brief: dict[str, Any] | None) -> dict[str, Any]:
+    """``PLAN_SCHEMA`` bounded by the brief's page budget.
+
+    One objective authors one section authors one learner page, so the budget caps both. Lower
+    bounds are relaxed only for a parent brief that asks for fewer pages than the default
+    four-objective course: a parent who asks for two pages gets a two-page plan, not a four-page
+    one that ignores the answer.
+    """
+    schema = copy.deepcopy(PLAN_SCHEMA)
+    pages = desired_pages(parent_brief)
+    if pages is None:
+        return schema
+    cap = max(1, min(pages, 8))
+    schema["properties"]["objectives"]["minItems"] = 1
+    schema["properties"]["objectives"]["maxItems"] = cap
+    schema["properties"]["sections"]["minItems"] = 1
+    schema["properties"]["sections"]["maxItems"] = cap
+    schema["properties"]["check_plan"]["maxItems"] = min(16, cap * 4)
+    return schema
+
+
 def _policy_dials(
     dials: dict[str, Any], *, level: str | None = None, subject_domain: str | None = None
 ) -> dict[str, Any]:
@@ -1223,6 +1304,7 @@ def lesson_capability_plan(
     plan: dict[str, Any] | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    parent_brief: dict[str, Any] | None = None,
 ) -> capability_policy.LessonCapabilityPlan:
     """Compute the one capability decision this section is authored under.
 
@@ -1253,7 +1335,25 @@ def lesson_capability_plan(
         locale=locale,
         level=str(resolved_level) if resolved_level else None,
         subject_domain=resolved_domain,
+        media_preferences=_media_preferences(parent_brief),
     )
+
+
+def _media_preferences(parent_brief: dict[str, Any] | None) -> dict[str, str] | None:
+    """The parent's two media answers, or ``None`` when there is no parent brief.
+
+    This is the bridge from the typed brief to the capability declaration: the policy may only
+    narrow with it, so a parent's "none" withholds a medium and a parent's "diagrams"/"script" is a
+    permission the authored intent still has to earn.
+    """
+    if not isinstance(parent_brief, dict):
+        return None
+    preferences = {
+        key: str(parent_brief[key])
+        for key in ("desired_visuals", "narration")
+        if isinstance(parent_brief.get(key), str)
+    }
+    return preferences or None
 
 
 def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan) -> list[str]:
@@ -1302,6 +1402,7 @@ def _plan_instructions(
     subject_domain: str | None = None,
     scope: str | None = None,
     capability: capability_policy.LessonCapabilityPlan | None = None,
+    parent_brief: dict[str, Any] | None = None,
 ) -> str:
     expectation = _scope_expectation(scope)
     low, high = expectation["objectives"] if expectation else (4, 8)
@@ -1336,6 +1437,19 @@ def _plan_instructions(
             f"within {expectation['max_weeks']} week(s); a plan that needs longer does not fit "
             "this scope."
         )
+    pages = desired_pages(parent_brief) if recipe == "parent" else None
+    if pages is not None:
+        cap = max(1, min(pages, 8))
+        lines[3] = (
+            f"Produce 1 to {cap} objectives, each with a stable ordinal, an evidence target and "
+            "1-3 observable evidence criteria. The parent asked for "
+            f"{pages} page{'s' if pages != 1 else ''}: one objective authors one section authors "
+            "one learner page, so this plan may not exceed that page budget."
+        )
+        lines[4] = (
+            f"Produce exactly one section per objective, 1 to {cap} sections in total; each "
+            "section names exactly one objective it serves plus its lesson intent."
+        )
     if recipe == "one_off":
         lines.append("No quiz and no homework: checks are verification checklists, spaced_review false.")
     if recipe == "committed":
@@ -1343,8 +1457,64 @@ def _plan_instructions(
     if recipe == "casual":
         lines.append("Checks are optional self-checks; state that in evidence_note.")
     if recipe == "parent":
-        lines.append("delivery is parent_led; include the parent block with age band, reading level, "
-                     "supervision notes, hazards and setting materials.")
+        lines.append(
+            "delivery is parent_led; include the parent block with age band, reading level, "
+            "supervision notes, hazards and setting materials."
+        )
+        lines.append(
+            "This is parent-led material, never a child-facing chat: there is no child persona, "
+            "no child-facing page and no grading of the child. Every check is a parent "
+            "observation of something the child did, never a quiz."
+        )
+        if parent_brief:
+            lines.append(
+                "Honour the parent brief in the input exactly (parent_brief): the goal, starting "
+                "point, age band, reading level, session length, setting, materials, exclusions "
+                "and supervision are the parent's answers, not suggestions. Reading level must "
+                "stay age-appropriate for the declared age band."
+            )
+            visuals = parent_brief.get("desired_visuals")
+            if visuals == "none":
+                lines.append(
+                    "The parent asked for no visuals: do not plan image media for any section."
+                )
+            elif visuals in ("diagrams", "illustrations"):
+                lines.append(
+                    f"The parent asked for {visuals}: where a section's lesson intent genuinely "
+                    "names a construct that media has to carry, the authored intent may name it. "
+                    "This is a permission, not a request to decorate; never plan media a lesson "
+                    "does not need."
+                )
+            narration = parent_brief.get("narration")
+            if narration == "none":
+                lines.append(
+                    "The parent asked for no narration: do not plan an audio or read-aloud script."
+                )
+            elif narration == "script":
+                lines.append(
+                    "The parent is willing to read a narration script aloud: a section whose "
+                    "intent names a spoken or listening construct may carry one. Never add a "
+                    "script a lesson does not need."
+                )
+            supervision = str(parent_brief.get("supervision") or "").strip()
+            if supervision:
+                lines.append(
+                    "Supervision the parent declared (repeat it as a hazard or supervision note, "
+                    "never contradict it): " + supervision[:600]
+                )
+            materials = parent_brief.get("materials") or []
+            if materials:
+                lines.append(
+                    "Materials the parent has: "
+                    + ", ".join(str(item) for item in materials[:20])
+                    + ". Do not require a material the brief did not list."
+                )
+            exclusions = parent_brief.get("exclusions") or []
+            if exclusions:
+                lines.append(
+                    "Exclusions the parent named (state them in the plan's exclusions): "
+                    + "; ".join(str(item) for item in exclusions[:20])
+                )
     angle, angle_reason = capability_policy.recipe_check_angle(recipe)
     if angle is not None:
         lines.append(
@@ -1616,6 +1786,62 @@ def _scaffold_note(policy: dict[str, bool], locale: str | None) -> str:
     )
 
 
+def _enforce_parent_brief_bounds(
+    plan: dict[str, Any],
+    *,
+    parent: dict[str, Any],
+    parent_brief: dict[str, Any],
+    objectives: Sequence[dict[str, Any]],
+    sections: Sequence[dict[str, Any]],
+    reasons: list[str],
+) -> None:
+    """The plan has to stay inside the parent's typed answers (``docs/PARENT-STUDIO.md``)."""
+    pages = desired_pages(parent_brief)
+    if pages is not None:
+        # One objective authors one section authors one learner page. A plan over the budget is a
+        # plan that ignored the answer, not a longer version of this course.
+        if len(sections) > pages:
+            reasons.append(
+                f"the parent asked for at most {pages} page(s); the plan authors {len(sections)} sections"
+            )
+        if len(objectives) > pages:
+            reasons.append(
+                f"the parent asked for at most {pages} page(s); the plan declares {len(objectives)} objectives"
+            )
+    # Age-appropriate reading level: an explicit school year may not exceed the age band's ceiling.
+    # A phrase the rule does not understand is left alone rather than guessed at.
+    age_band = str(parent_brief.get("age_band") or "").strip()
+    declared_band = next((band for band in _AGE_BAND_MAX_GRADE if band in age_band), None)
+    planned_band = parent.get("age_band")
+    if declared_band and isinstance(planned_band, str) and planned_band != declared_band:
+        reasons.append(
+            f"the plan's parent block declares age band {planned_band!r} but the parent's brief "
+            f"declares {declared_band!r}"
+        )
+    ceiling = _AGE_BAND_MAX_GRADE.get(declared_band or "")
+    for holder, label in ((parent_brief, "the brief"), (parent, "the plan's parent block")):
+        grade = named_grade(holder.get("reading_level"))
+        if ceiling is not None and grade is not None and grade > ceiling:
+            reasons.append(
+                f"{label} names grade/year {grade} for age band {age_band}; "
+                "that reading level is not age-appropriate"
+            )
+    # The declared session length is the parent's maximum, never a target to exceed.
+    minutes = parent_brief.get("duration_minutes")
+    estimate = plan.get("time_estimate") or {}
+    per_session = estimate.get("minutes_per_session")
+    if (
+        isinstance(minutes, int)
+        and not isinstance(minutes, bool)
+        and isinstance(per_session, int)
+        and per_session > minutes
+    ):
+        reasons.append(
+            f"the plan's {per_session}-minute session exceeds the {minutes}-minute session "
+            "the parent declared"
+        )
+
+
 def enforce_plan_rules(
     plan: dict[str, Any],
     *,
@@ -1624,8 +1850,15 @@ def enforce_plan_rules(
     locale: str | None,
     ledger: Sequence[SourceRecord],
     scope: str | None = None,
+    parent_brief: dict[str, Any] | None = None,
 ) -> None:
-    """Deterministic plan rules. Runs *before* the validator and never replaces it."""
+    """Deterministic plan rules. Runs *before* the validator and never replaces it.
+
+    ``parent_brief`` is the typed brief the plan was authored for. When present the plan has to
+    stay inside the parent's answers: parent-led delivery, an observation (never a quiz) for every
+    objective, supervision and hazards, an age-appropriate reading level, a session length no
+    longer than the declared one, and no more pages/objectives than the parent asked for.
+    """
     reasons: list[str] = []
     if recipe not in RECIPES:
         raise GenerationRejected(f"unknown recipe {recipe!r}")
@@ -1741,6 +1974,30 @@ def enforce_plan_rules(
                 reasons.append("parent plans must name hazards or explicitly state none apply")
         if any(item.get("kind") == "quiz" for item in check_plan):
             reasons.append("parent-mode checks are observations, not graded quizzes")
+        # Observation-only and never independent: a parent watching a child is reported evidence,
+        # not an independent measurement (AUDIT R10/R12). The recipe already fixes the check
+        # angle; this refuses a plan that declares another kind or a self-certified independent
+        # check anyway.
+        for item in check_plan:
+            if item.get("kind") != "observation":
+                reasons.append(
+                    f"parent plan check for objective {item.get('objective_ref')} is "
+                    f"{item.get('kind')!r}; parent checks are observations only"
+                )
+            if item.get("independent_evidence"):
+                reasons.append(
+                    f"parent plan check for objective {item.get('objective_ref')} claims "
+                    "independent evidence; parent observation is reported evidence"
+                )
+        if parent_brief:
+            _enforce_parent_brief_bounds(
+                plan,
+                parent=parent if isinstance(parent, dict) else {},
+                parent_brief=parent_brief,
+                objectives=objectives,
+                sections=sections,
+                reasons=reasons,
+            )
 
     # Mandated scaffolds for the locale/level (VAULT_LEARNING §2, task-mandated modality).
     policy = _scaffold_policy(recipe, dials, locale)
@@ -2186,6 +2443,7 @@ def build_plan_request(
     level: str | None = None,
     subject_domain: str | None = None,
     scope: str | None = None,
+    parent_brief: dict[str, Any] | None = None,
 ) -> LLMRequest:
     # ``dials`` stays the closed four-dial object the contract spells; the declared plan-brief
     # inputs travel beside it. A legacy caller that still carries level/domains inside its dials
@@ -2203,6 +2461,7 @@ def build_plan_request(
         level=declared_level,
         subject_domain=declared_domain,
     )
+    pages = desired_pages(parent_brief) if recipe == "parent" else None
     payload = {
         "goal": goal,
         "recipe": recipe,
@@ -2225,6 +2484,15 @@ def build_plan_request(
             "support": "unverified when no supplied source grounds the objective",
         },
     }
+    if parent_brief:
+        # The typed brief, verbatim, under one named object. A parent plan is bounded by the
+        # page budget the parent typed: objectives and sections both cap at it.
+        payload["parent_brief"] = parent_brief
+        if pages is not None:
+            cap = max(1, min(pages, 8))
+            payload["rules"]["objective_count"] = [1, cap]
+            payload["rules"]["section_count"] = [1, cap]
+            payload["rules"]["page_budget"] = pages
     if feedback:
         payload["revision_instructions"] = feedback
     return LLMRequest(
@@ -2240,9 +2508,10 @@ def build_plan_request(
             subject_domain=declared_domain,
             scope=scope,
             capability=capability,
+            parent_brief=parent_brief,
         ),
         input_text=_bounded_input(payload),
-        schema=PLAN_SCHEMA,
+        schema=parent_plan_schema(parent_brief) if pages is not None else PLAN_SCHEMA,
         schema_name="coursebook_plan_v1",
         max_tokens=4000,
         timeout_s=_timeout_for("coursebook.plan.generate", timeout_s),
@@ -2261,6 +2530,7 @@ def build_plan_validation_request(
     level: str | None = None,
     subject_domain: str | None = None,
     scope: str | None = None,
+    parent_brief: dict[str, Any] | None = None,
 ) -> LLMRequest:
     payload = {
         "artifact_kind": "plan",
@@ -2276,6 +2546,9 @@ def build_plan_validation_request(
         "plan": plan,
         "learner_facing": False,
     }
+    if parent_brief:
+        # The independent pass judges the plan against what the parent actually asked for.
+        payload["parent_brief"] = parent_brief
     return LLMRequest(
         purpose="coursebook.plan.validate",
         prompt_version=VALIDATION_PROMPT_VERSION,
@@ -2765,12 +3038,15 @@ def _request_fingerprint(
     level: str | None = None,
     subject_domain: str | None = None,
     scope: str | None = None,
+    parent_brief: dict[str, Any] | None = None,
 ) -> str:
     """Cache key for one plan request. Every declared input is part of it.
 
     A level or subject domain that changed the policy must not reuse a plan authored under a
     different decision, so the v10 plan-brief inputs are in the key. Their absence hashes as
-    ``null``, which is what a pre-v10 brief means.
+    ``null``, which is what a pre-v10 brief means. The typed parent brief is hashed whole: a
+    parent who changes the age band, page budget, materials or supervision has asked for a
+    different plan and must not be handed the previous one from the reuse cache.
     """
     return sha256_of_text(
         canonical_json(
@@ -2783,6 +3059,7 @@ def _request_fingerprint(
                 "level": level,
                 "subject_domain": subject_domain,
                 "scope": scope,
+                "parent_brief": parent_brief,
                 "plan_prompt": PLAN_PROMPT_VERSION,
                 "validation_prompt": VALIDATION_PROMPT_VERSION,
             }
@@ -3273,6 +3550,10 @@ def run_plan_job(
     # authored under no cap at all while the document claimed one.
     scope_expectation = _scope_expectation(scope)
     policy_dials = _policy_dials(dials, level=level, subject_domain=subject_domain)
+    # The typed Parent Studio brief, projected from the job row the executor already holds. It is
+    # passed to the model, to the deterministic rules and into the plan document; it is not a
+    # second brief store.
+    parent_brief = parent_brief_view(brief) if recipe == "parent" else None
     job_id = str(job.get("job_id") or "") or None
     usage = _Usage(budget or default_cost_budget())
 
@@ -3285,6 +3566,7 @@ def run_plan_job(
         level=level,
         subject_domain=subject_domain,
         scope=scope,
+        parent_brief=parent_brief,
     )
     course_id = _course_id(connection, brief, goal=goal, recipe=recipe, locale=locale, now=now)
 
@@ -3343,9 +3625,12 @@ def run_plan_job(
                 level=level,
                 subject_domain=subject_domain,
                 scope=scope,
+                parent_brief=parent_brief,
             )
             response = _call_llm(llm, plan_request, usage)
-            candidate = _parse_structured(response, PLAN_SCHEMA, what="plan", max_bytes=MAX_PLAN_BYTES)
+            candidate = _parse_structured(
+                response, plan_request.schema, what="plan", max_bytes=MAX_PLAN_BYTES
+            )
 
             try:
                 enforce_plan_rules(
@@ -3355,6 +3640,7 @@ def run_plan_job(
                     locale=locale,
                     ledger=research_run.sources,
                     scope=scope,
+                    parent_brief=parent_brief,
                 )
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
@@ -3374,6 +3660,7 @@ def run_plan_job(
                 level=level,
                 subject_domain=subject_domain,
                 scope=scope,
+                parent_brief=parent_brief,
             )
             assert_separate_pass(plan_request, validation_request)
             validation_response = _call_llm(llm, validation_request, usage)
@@ -3573,6 +3860,10 @@ def run_plan_job(
                             "level": level,
                             "subject_domain": subject_domain,
                             "scope": scope,
+                            # The typed parent brief the plan was authored for, stored beside the
+                            # plan so the lesson stage reads the same age band, page budget and
+                            # media preferences the planner saw. Absent for non-parent recipes.
+                            "parent_brief": parent_brief,
                             "pipeline_version": PIPELINE_VERSION,
                         }
                     ),
@@ -3778,6 +4069,10 @@ def run_lesson_job(
     subject_domain = _plan_input(document["document"], "subject_domain")
     dials = _policy_dials(stored_dials, level=level, subject_domain=subject_domain)
     locale = document["document"].get("locale")
+    # The typed brief the plan was authored for; a plan authored before this field is absent.
+    lesson_parent_brief = document["document"].get("parent_brief")
+    if not isinstance(lesson_parent_brief, dict):
+        lesson_parent_brief = None
     digest = str(document["plan_hash"])
     research_doc = document["research"]
     sources = [
@@ -3863,6 +4158,7 @@ def run_lesson_job(
                     usage=usage,
                     job_id=job_id,
                     now=now,
+                    parent_brief=lesson_parent_brief,
                 )
             )
     except BaseException as exc:
@@ -3908,6 +4204,7 @@ def _author_section(
     stored_dials: dict[str, Any] | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    parent_brief: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     objective_ordinal = int((section.get("objective_refs") or [1])[0])
     objective = _objective_for(connection, plan_id, objective_ordinal)
@@ -3924,6 +4221,7 @@ def _author_section(
         plan=plan,
         level=level,
         subject_domain=subject_domain,
+        parent_brief=parent_brief,
     )
     rubric_profile = rubrics.resolve_profile(capability.rubric_profile, capability.evidence_target)
     lesson: dict[str, Any] | None = None

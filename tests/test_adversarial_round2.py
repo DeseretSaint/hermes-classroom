@@ -146,8 +146,8 @@ class PlanGateTest(unittest.TestCase):
                 ).fetchone()
             finally:
                 connection.close()
-            # … but the kernel row it wrote is a normal, approvable draft, and the rejection
-            # lives only in the generation document.
+            # … and the kernel row it wrote stays a plain draft; the rejection lives in the
+            # generation document.
             self.assertEqual(row["state"], "draft")
             self.assertEqual(document["generation_state"], "needs_review")
             self.assertIsNotNone(document["validation_id"])

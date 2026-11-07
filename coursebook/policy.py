@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Mapping
 
 # ── Mirrored enums (drift is caught by tests, not by a circular import) ──────
 
@@ -676,8 +676,15 @@ def plan_lesson_capability(
     locale: str | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    media_preferences: Mapping[str, str] | None = None,
 ) -> LessonCapabilityPlan:
     """Map one lesson's declared facts to an immutable capability plan.
+
+    ``media_preferences`` carries the Parent Studio typed-brief answer for visuals/narration
+    (``desired_visuals`` in none/diagrams/illustrations, ``narration`` in none/script). It can only
+    *narrow* the decision: a parent who asked for no visuals or no narration withholds that media
+    even when the intent names a construct. A parent who asked for diagrams or a script never
+    forces media — the authored intent still has to name the construct the media carries.
 
     Raises :class:`CapabilityPolicyError` for an unknown recipe or evidence target. It never
     raises for an ordinary lesson: the fallback is no media, never invented media.
@@ -717,6 +724,17 @@ def plan_lesson_capability(
         check_angle=check_angle,
         text=text,
     )
+
+    # Parent brief preferences narrow the permitted media, never widen it. The brief is an answer
+    # the parent typed, so it is honoured where it withholds a medium; it is not a request to
+    # decorate a lesson, so a "diagrams"/"script" answer leaves the decision exactly as authored.
+    preferences = media_preferences or {}
+    if preferences.get("desired_visuals") == "none" and image != "none":
+        image, image_role = "none", None
+        image_reason += "; the parent brief asked for no visuals, which withholds image media"
+    if preferences.get("narration") == "none" and audio != "none":
+        audio, audio_role = "none", None
+        audio_reason += "; the parent brief asked for no narration, which withholds audio media"
 
     reasons = (angle_reason, image_reason, audio_reason, profile_reason)
     return LessonCapabilityPlan(
