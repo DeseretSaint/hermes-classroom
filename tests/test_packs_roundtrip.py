@@ -140,6 +140,91 @@ class RoundtripTests(unittest.TestCase):
         self.assertEqual(adopted_files[visual], files[visual])
         self.assertTrue(adopted_files[visual].startswith(b"\x89PNG\r\n\x1a\n"))
 
+    def test_imported_japanese_pack_exposes_the_narration_audio_and_its_text_equivalent(self) -> None:
+        """The one audio asset survives export/reimport with its MIME, rights and text equivalent.
+
+        This is the probe H-72 owes the demo: the bundled pack really carries playable MP3 bytes, the
+        imported manifest still declares them as ``role: narration``/``audio/mpeg``, the per-artifact
+        licence still covers the file, and the text equivalent still carries the Japanese line, its
+        romaji and its English meaning. It proves the bytes exist and are declared; it does not prove
+        a listening check, a pronunciation score or a native-speaker review, none of which the pack
+        implements.
+        """
+        manifest, files = archive.read_directory(JAPANESE)
+        _, _, _, adopted_manifest, adopted_files = self.export_and_reimport(manifest, files)
+        narration = next(entry for entry in adopted_manifest["files"] if entry["role"] == "narration")
+        path = narration["path"]
+        self.assertEqual(narration["mime"], "audio/mpeg")
+        self.assertEqual(narration["bytes"], len(adopted_files[path]))
+        self.assertEqual(narration["sha256"], packs.file_sha256(adopted_files[path]))
+        self.assertEqual(adopted_files[path], files[path])
+
+        # Real MPEG audio, not a silent or placeholder stub: frames parse and the clip has duration.
+        seconds, frames = mp3_duration_seconds(adopted_files[path])
+        self.assertGreaterEqual(frames, 20)
+        self.assertGreater(seconds, 1.5)
+        self.assertLess(seconds, 6.0)
+
+        # Accessibility and rights travel with the asset through the roundtrip.
+        text = narration["text_equivalent"]
+        self.assertIn("好きです", text)  # the Japanese line
+        self.assertIn("suki desu", text)  # its romaji
+        self.assertIn("I like you", text)  # its English meaning
+        self.assertIn("not a native-speaker", text.lower())
+        licensed = {item["path"]: item for item in adopted_manifest["license"]["per_artifact"]}
+        self.assertIn(path, licensed)
+        self.assertEqual(licensed[path]["license_id"], "Apache-2.0")
+        self.assertIn("Kokoro-82M", licensed[path]["attribution"])
+        self.assertIn("no human speaker", licensed[path]["attribution"].lower())
+        self.assertIn(path, adopted_files)
+        self.assertTrue(adopted_files[path].startswith(b"ID3") or adopted_files[path][0] == 0xFF)
+
+
+#: MPEG Layer III tables, enough to time the pack's clip without an audio library. The demo asset is
+#: 24 kHz mono MPEG-2 Layer III; MPEG-1 is accepted too so a future re-encode cannot silently pass a
+#: stub. ``0`` marks a reserved/free entry, which is treated as "not a frame header".
+_MP3_BITRATES_V1_L3 = (0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0)
+_MP3_BITRATES_V2_L3 = (0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0)
+_MP3_RATES = {3: (44100, 48000, 32000), 2: (22050, 24000, 16000), 0: (11025, 12000, 8000)}
+
+
+def mp3_duration_seconds(data: bytes) -> tuple[float, int]:
+    """Return ``(duration_seconds, frame_count)`` read from MPEG Layer III frame headers."""
+    offset = 0
+    if data[:3] == b"ID3" and len(data) >= 10:
+        size = ((data[6] & 0x7F) << 21) | ((data[7] & 0x7F) << 14) | ((data[8] & 0x7F) << 7) | (data[9] & 0x7F)
+        offset = 10 + size
+    seconds = 0.0
+    frames = 0
+    while offset + 4 <= len(data):
+        first, second, third = data[offset], data[offset + 1], data[offset + 2]
+        if first != 0xFF or (second & 0xE0) != 0xE0:
+            offset += 1
+            continue
+        version = (second >> 3) & 0x03  # 3 MPEG-1, 2 MPEG-2, 0 MPEG-2.5, 1 reserved
+        layer = (second >> 1) & 0x03  # 1 Layer III
+        bitrate_index = (third >> 4) & 0x0F
+        rate_index = (third >> 2) & 0x03
+        padding = (third >> 1) & 0x01
+        if version == 1 or layer != 1 or rate_index == 3 or bitrate_index in (0, 15):
+            offset += 1
+            continue
+        sample_rate = _MP3_RATES[version][rate_index]
+        table = _MP3_BITRATES_V1_L3 if version == 3 else _MP3_BITRATES_V2_L3
+        bitrate_kbps = table[bitrate_index]
+        if version == 3:
+            frame_bytes = (144000 * bitrate_kbps) // sample_rate + padding
+            samples = 1152
+        else:
+            frame_bytes = (72000 * bitrate_kbps) // sample_rate + padding
+            samples = 576
+        if frame_bytes <= 4 or offset + frame_bytes > len(data):
+            break
+        seconds += samples / sample_rate
+        frames += 1
+        offset += frame_bytes
+    return seconds, frames
+
 
 if __name__ == "__main__":
     unittest.main()

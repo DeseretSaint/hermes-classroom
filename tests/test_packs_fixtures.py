@@ -156,6 +156,36 @@ class JapanesePackTests(unittest.TestCase):
         self.assertEqual(self.manifest["license"]["redistribution"], "local_only")
         self.assertIn("operator has not chosen", self.manifest["license"]["note"])
 
+    def test_narration_asset_is_declared_licensed_and_not_a_stub(self) -> None:
+        narration = next(entry for entry in self.manifest["files"] if entry["role"] == "narration")
+        self.assertEqual(narration["mime"], "audio/mpeg")
+        self.assertGreater(narration["bytes"], 4096)
+        data = self.files[narration["path"]]
+        self.assertEqual(len(data), narration["bytes"])
+        self.assertEqual(packs.file_sha256(data), narration["sha256"])
+        # Not an all-zero placeholder: encoded speech carries many distinct byte values.
+        self.assertGreater(len(set(data[256:])), 100)
+        rights = {item["path"]: item for item in self.manifest["license"]["per_artifact"]}
+        self.assertIn(narration["path"], rights)
+        self.assertEqual(rights[narration["path"]]["license_id"], "Apache-2.0")
+        self.assertIn("Kokoro-82M", rights[narration["path"]]["attribution"])
+        # L0 scaffold: the text equivalent carries script, romaji and English.
+        self.assertIn("好きです", narration["text_equivalent"])
+        self.assertIn("suki desu", narration["text_equivalent"])
+        self.assertIn("I like you", narration["text_equivalent"])
+
+    def test_audio_note_claims_only_what_the_pack_implements(self) -> None:
+        notes = " ".join(self.manifest["safety_notes"])
+        self.assertNotIn("No audio is bundled", notes)  # stale claim, no longer true
+        self.assertIn("synthetic", notes)
+        self.assertIn("no listening evidence is claimed", notes)
+        for claim in ("pronunciation score is claimed", "native-speaker reviewed", "voice is certified"):
+            self.assertNotIn(claim, notes)
+        # No check scores listening: every evidence target stays production/recognition based.
+        for objective in self.manifest["objectives"]:
+            for check in objective["checks"]:
+                self.assertNotIn(check["evidence_target"], {"listening", "pronunciation"})
+
 
 class ParentPackTests(unittest.TestCase):
     @classmethod

@@ -162,3 +162,17 @@ none is claimed.
 3. Re-confirm the 73-82 s row's audio asset or cut the "spoken" claim.
 4. Only then update the gate to MET; recording and publishing still need DeseretSaint's approval.
 
+
+## H-72 addendum — the 73-82 s audio row (2026-11-07)
+
+Item 3 of "What remains" is done, and the two `73-82s … no audio asset` rows above are historical:
+they describe the pack as it stood before H-72. The bundled Japanese pack now declares
+`content/narration-polite-confession.mp3` as a `role: narration`, `audio/mpeg` file with a
+Japanese/romaji/English text equivalent and an Apache-2.0 per-artifact licence, and
+`bundled/packs/build_demo_packs.py` regenerates the manifest and `content_hash` from the real bytes.
+
+The "spoken" claim was cut rather than kept. Import materializes a pack's *section text* into lesson
+segments and creates no artifact or media segment for a `visual`/`narration` file, so this build has
+no route that plays pack-bundled audio inside a lesson. The demo row in `docs/DEMO.md` is now the
+still-and-text shot; it claims no audible playback and no listening evidence.
+`docs/REVIEW_H72.md` records the tool, the voice, the licence and the exact commands.

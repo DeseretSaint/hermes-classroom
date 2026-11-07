@@ -29,8 +29,10 @@ there is no durable stored session id, so no active chat binding can be created,
 disabled (the section states "This section's chat binding is detached"), and the notebook has no
 teaching segments to save ("Segments appear here after a teaching turn in the bound chat"). Therefore
 the 8-25 s graded attempt, the 25-34 s evidence transition, the 34-40 s notebook save and the 40-47 s
-bound restart/resume cannot be driven on this rig, and the 73-82 s narration line still has no asset
-because the named Japanese pack declares "No audio is bundled". Separately, the Library empty state
+bound restart/resume cannot be driven on this rig, and the 73-82 s row is scripted as the text-and-still
+shot this build can produce: the named Japanese pack now bundles one synthetic narration clip (H-72),
+but this build's lesson surface does not play pack-bundled audio, so no shot claims audible playback.
+Separately, the Library empty state
 still says this build has no pack import (`desktop/plugin.js:2271`) while import works (D2).
 
 Gate status: NOT MET on `5b0f124`. D1's product half is fixed, but U01-U04 and the four learning shots
@@ -74,16 +76,20 @@ Times are targets. Total must stay under 90 seconds.
 | 40-47s | Pane after restart | Restart the gateway or the app, return, show the identical pending objective and check | "Restart. Same objective, same pending check." | Live, with a labeled cut if the restart is slow | Resume |
 | 47-62s | Parent Studio review, export preview | Review already-generated pages, approve, show the parent guide and learner page | "The parent reviews what was generated, then approves it. Nothing is produced for a child before that approval." | Generation precomputed and disclosed; approval and export live | Parent Studio |
 | 62-73s | Export preview | Export the pack; show the file list, rights and the no-upload statement | "The pack carries teaching material, not the learner's history, and it uploads nothing." | Live | Pack export |
-| 73-82s | Lesson media | Show the sourced visual and audio, then the text alternative and the next review date | "A sourced visual, spoken, with the text right here. The next review is scheduled." | Media precomputed and disclosed; navigation live | Media, scheduling |
+| 73-82s | Lesson media | Show the sourced visual, then its text alternative and the next review date | "A sourced visual, with the text right here. The next review is scheduled." | Media precomputed and disclosed; navigation live | Media and scheduling: the still, its text alternative and the schedule. No audible-playback claim. |
 | 82-86s | Closing card | Static end card | "A chat answers. Coursebook makes the next step depend on what you did." | Static | None |
 
 The route and the pane surface mount on `5b0f124` (U01, U03), so no row is excluded for an unmounted
 surface. The rows that cannot be captured today are 8-25 s, 25-34 s, 34-40 s and 40-47 s: the chat on
 the isolated rig cannot answer (`Backend: inference unavailable`, `Waking up default…`), so there is no
 first turn, no stored session id, no active binding, a disabled Submit and no teaching segment to save.
-The 73-82 s row has a visual and a text alternative but no audio in the named pack. Those rows stay in
-the script as targets, not as shots that can be captured today. A partial cut that drops them is a
-different video with different claims, not this script.
+The 73-82 s row has a visual and a text alternative, and the named pack now bundles one synthetic
+narration clip as a declared, licensed file (H-72, 2026-11-07) — but import materializes a pack's
+section text only, so this build's lesson surface does not play pack-bundled audio. The row is
+therefore scripted as the still-and-text shot it can actually produce, and it claims no audible
+playback. Widening it back to "spoken" needs a media seam from pack files to a lesson artifact first.
+Those rows stay in the script as targets, not as shots that can be captured today. A partial cut that
+drops them is a different video with different claims, not this script.
 
 ## Precomputed and live split
 
@@ -93,7 +99,7 @@ Two things are generated before recording, because doing them live would waste t
    backend path. The recording shows the review and approval, and the narration states that
    generation happened beforehand. On-screen caption for the duration of the shot: "pages
    generated earlier in this build".
-2. The lesson visual and audio for the media shot. They are cached artifacts of the same build.
+2. The lesson visual for the media shot. It is a cached artifact of the same build.
    The shot is presented as reopening a lesson, never as generating on camera. On-screen caption:
    "cached artifact from this build".
 
@@ -157,7 +163,7 @@ number is in `audit/visual/m4-visual/audit.json`; the report is `docs/M4-VISUAL-
 | 40-47 s restart, identical pending objective | None | Resume depends on a binding that no isolated rig here can create. |
 | 47-62 s Parent Studio review and approve | Not measured in the product line | The 0.1.0 rows in this file are the only record. |
 | 62-73 s export file list and rights | Not measured in the product line | Same. |
-| 73-82 s media, text alternative | Textbook light/dark, 460 px, 200 % and text-only frames with the real generated PNG and the real MP3, each with caption and text equivalent (`audit/visual/m4-visual/`) | A **still** proves the image renders, the transcript is present and no audio autoplays. It cannot prove audible playback, and it cannot be narrated as "spoken". The named Japanese pack still declares "No audio is bundled", so the shot as scripted still needs a generated narration artifact — provider spend this card did not authorise. |
+| 73-82 s media, text alternative | Textbook light/dark, 460 px, 200 % and text-only frames with the real generated PNG and the real MP3, each with caption and text equivalent (`audit/visual/m4-visual/`) | A **still** proves the image renders, the transcript is present and no audio autoplays. It cannot prove audible playback, so it cannot be narrated as "spoken". Since H-72 (2026-11-07) the named pack *does* bundle one narration clip — `content/narration-polite-confession.mp3`, synthetic (Kokoro-82M voice jf_alpha, Apache-2.0), with a Japanese/romaji/English text equivalent and a per-artifact licence — but import materializes section text only, so the lesson surface has no route that plays it. The shot is the still-and-text row; the MP3 is visible in the pack preview and the export file list, not heard in the lesson. These M4-V stills predate the pack change and do not show the audio file. |
 | 82-86 s closing card | None | Static end card; nothing to measure. |
 
 The visual build does not unblock recording. The preconditions in this file are unchanged: Sentinel
