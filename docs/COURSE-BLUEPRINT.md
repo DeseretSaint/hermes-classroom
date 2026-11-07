@@ -1,6 +1,9 @@
 # CourseBlueprint: one-off, short and full courses
 
 Status: design only, 2026-11-07. Owner: atlas. Branch: `wt/harness-blueprint-design`.
+Amended by H-20 on `wt/harness-prereq-edges`: section 9 points at section 14, and section 13's
+objective-level-edge bullet is closed. Section 14 freezes the prerequisite contract and records why
+no edge, migration or contract version ships before the blueprint implementation.
 Base: local `master` at `13480c4` (H-12 merged). Baseline suite on this tree: 1064 tests, 1
 pre-existing failure in `tests/test_adversarial_round2.py`, a stale H-10 audit assertion that
 still expects the pre-H-12 approval behavior. This card changes no code and adds no failure. H-01's
@@ -394,6 +397,10 @@ default a learner can still open a later unit; the library shows the unmet prere
 warning, not a lock. A strict mode that refuses access until prerequisite objectives reach
 independent evidence is a policy choice for a later card, not part of this design.
 
+Section 14 freezes the exact edge rules, the gating semantics, the learner-visible copy and the
+acceptance tests for this. It also records why the edge is not added to the v1 plan schema, and
+why that implementation belongs to the blueprint card rather than to H-20.
+
 ## 10. Migration of existing plans
 
 Existing courses keep working unchanged.
@@ -486,7 +493,9 @@ This design does not include, and the implementing card must not smuggle in:
 - cost ceilings and their recovery (H-17 owns it);
 - locale scaffolds, RTL and non-Japanese fixtures (H-18 owns it);
 - per-unit approval commands;
-- objective-level prerequisite edges (unit edges are the v1 structure; H-20 may extend);
+- objective-level prerequisite edges. Unit edges are the v1 structure and H-20 ruled against
+  extending the flat plan schema (section 14.1); an objective edge without a unit has no sequence
+  to project and would be a decorative field;
 - dynamic re-planning from an attempt, a learner model, style inference or any claim of adaptive
   teaching;
 - units for pack-backed courses, which keep the manifest's flat structure;
@@ -497,3 +506,111 @@ This design does not include, and the implementing card must not smuggle in:
 
 The design is a contract for implementation. It is not evidence that Coursebook can yet author a
 full course.
+
+## 14. Prerequisite edges: the frozen contract (H-20, 2026-11-07)
+
+Status: **decided and frozen here, not implemented in this tree.** Owner: atlas. Branch
+`wt/harness-prereq-edges`. Base: `master` at `903a606` plus this document at `f465a4d`.
+
+### 14.1 The decision
+
+Sequencing is in scope for this product. It is unit-level, structural and non-blocking, exactly as
+section 9 states: `prereq_unit_ordinals` decides authoring order, the default presentation order and
+which unit is offered next; a learner may still start a later unit after being told which
+prerequisites are unmet.
+
+H-20 does **not** add a `prerequisites` field to `PLAN_SCHEMA`, and does **not** land a contract
+version or a schema migration for one. Three facts, each checked on this tree, force that:
+
+1. The v1 plan has no units. `PLAN_SCHEMA` is a flat list with `enforce_plan_rules` requiring one
+   section per objective in ordinal order (`coursebook/generation.py:624-665`, `:1280-1321`). An
+   edge there would reorder nothing, gate nothing and project nothing: the same ordinal order
+   already is the only order the outline can show. That is the decorative field the card forbids.
+2. Every surface that could carry a prerequisite fact is contract-versioned and closed.
+   `outline_objective` and the `lesson.begin` response are `additionalProperties: false`
+   (`contracts/rpc.v9.json`), and `WIRE_CONTRACT_VERSION` is `9`
+   (`coursebook/contracts.py:42`). H-01 has already taken v10 on `wt/harness-contract-v10`
+   (`cb.rpc` v10, `cb.db` v6, `migrations/0006_courses_plan_brief_inputs.sql`), and section 7 above
+   already reserves v11's content (`plan_brief.unit_ordinal`, `stage = unit_sections`). A third new
+   wire version minted here would fork the contract that H-01 and H-13 are landing.
+3. The last applied migration on this base is `0005_pronunciation_attempts.sql`; 0006 is H-01's and
+   0007 is this design's `plan_units`. There is no free number that does not collide.
+
+So the edge model is in scope, and its implementation is the blueprint card of section 12, which
+owns v11, `cb.db` v7, `PLAN_SCHEMA` v2 and the unit stages. That card is `t_2a2fc90c` (cinder),
+gated on H-01 (`cb.rpc` v10) and H-13 (scope threading). H-20's deliverable is the frozen contract
+those rules must satisfy, so the implementing card cannot invent a weaker one.
+
+### 14.2 Frozen edge rules
+
+These are the rules the implementing card must enforce and test. They are normative.
+
+| rule | requirement |
+|---|---|
+| R1 bound | `prereq_unit_ordinals` is an array of 0 to 11 integers, each 1 to the plan's unit count; no duplicates; no self reference; unit 1 has none |
+| R2 acyclicity | every ref is a strictly lower ordinal, so a cycle is unrepresentable at the writer. A reader still refuses a document that carries one (imported, hand-edited or a future forward-ref extension) with reason `prerequisite_cycle` and the cycle listed, because unrepresentability is a property of the writer, not of the reader |
+| R3 in-plan | every ref names a unit that exists in this plan version. `plan.replan` refuses when a removed unit leaves a surviving edge pointing at its ordinal |
+| R4 legacy invariance | a plan with no `plan_units` rows is one implicit unit with no edges; `parent_authoring.plan_hash` stays byte-identical for every stored pre-0007 plan, so every `result_json.plan_content_hash` written under H-12 still binds. This is the migration bug that would invalidate approvals, and it needs its own test |
+| R5 gating is disclosure | the gate lives on `lesson.begin` and `check.open`, the two commands that start learner work. Per objective it computes `prerequisite_state`: `no_edges` (legacy or flat plan, response unchanged), `satisfied`, or `unmet` |
+| R5a satisfied means | every objective of every prerequisite unit is in `independent_evidence`, `delayed_evidence` or `overridden`. `overridden` satisfies access only and stays labelled *not independently demonstrated*. It is never inferred from criteria, timing, attempt count, model opinion or a score |
+| R6 no silent skip | with `unmet`, the command refuses with `PREREQUISITE_UNMET` and the unmet list, and writes no `lesson_runs` or `checks` row, unless the request carries `acknowledge_prerequisites: true`. With the flag it proceeds and echoes `prerequisite_state: unmet_acknowledged` plus the same list. The acknowledgment is a learner decision recorded in the response; it is never evidence and never moves an objective |
+| R7 no mastery claim | no score, probability, readiness number or learner vector is stored or returned. The only prerequisite fact exposed is the objective-state list, the same seven labels the kernel already has |
+| R8 strict mode reserved | `prerequisite_policy: warn \| require` is the flag name a later card uses for a hard lock. It is not in v11 and must not ship under another name |
+| R9 presentation projection | `course.outline` gains an additive `units` array: `ordinal`, `title`, `goal`, `prereq_unit_ordinals`, `prerequisite_state`, `unmet[]`, `objectives[]` (existing `outline_objective` objects). A legacy plan projects one unit titled with the plan title, matching section 10. `independent` remains the objective's own state; no derived boolean is added that a client could read as ready or mastered |
+
+### 14.3 What the learner sees
+
+The refusal is not the message. The message is the point:
+
+> Unit 3 assumes you can *<unit 2 goal>*. 2 of 4 objectives there have not been shown
+> independently yet: *<titles>*. You can start now; the course will not count the prerequisite as
+> met.
+
+Two actions, **Start anyway** and **Go to unit 2**. The initial view offers the prerequisite unit.
+A parent-led course shows the same facts with the prerequisite route as the default action. No
+surface may render a lock icon, a percentage, a "mastery" bar or the word *ready*; the honest
+label for an overridden prerequisite is *not independently demonstrated*.
+
+### 14.4 Acceptance tests the implementing card must carry
+
+Every test is named so it can be found, and every one is a refusal or a projection fact, not a
+prose check.
+
+1. `test_prerequisite_cycle_refused` — unit 2 to 3 to 2 refused with `prerequisite_cycle`.
+2. `test_prerequisite_forward_ref_refused`.
+3. `test_prerequisite_self_ref_refused`.
+4. `test_prerequisite_duplicate_ref_refused`.
+5. `test_prerequisite_missing_unit_refused`, plus the replan variant: dropping a depended-on unit
+   refuses the replan.
+6. `test_lesson_begin_refuses_unmet_prerequisite` — assert **no** `lesson_runs` row was created and
+   the error carries the unmet list.
+7. `test_lesson_begin_acknowledged_prerequisite_proceeds` — run created, `unmet_acknowledged`
+   echoed, no attempt or evidence row written.
+8. `test_check_open_refuses_unmet_prerequisite` — no check row created.
+9. `test_legacy_plan_hash_unchanged_after_0007` — byte-identical kernel hash for every
+   pre-migration plan.
+10. `test_legacy_outline_projects_one_unit`.
+11. `test_algebra_before_calculus` — a `full` course of two units, unit 2 requires unit 1; asserts
+    the edge order, the gating copy and that an algebra objective in `needs_review` leaves the
+    calculus unit `unmet`.
+12. `test_safety_before_power_tool` — parent-led, unit 1 hazard and lockout procedure, unit 2 the
+    power tool; asserts the gate and that a quiz-only pass in unit 1 does **not** satisfy the edge
+    (only independent evidence does), which is the case the design exists for.
+13. `test_projection_has_no_mastery_field` — the outline unit object's key set equals R9 exactly.
+
+### 14.5 What H-20 refuses to do
+
+- Add `prerequisites` to `OBJECTIVE_SCHEMA` or `SECTION_SCHEMA`, or delete
+  `additionalProperties: false` to make room for one.
+- Add a migration, a contract file or a version bump ahead of the blueprint card.
+- Call a flat ordinal list sequencing, or claim that the seven objective-state labels plus a review
+  ladder are adaptive teaching. They are not; section 9 is the whole of the honest claim.
+- Edit core Hermes, or reach a prerequisite decision through any seam other than the plugin's own
+  contract.
+
+The v1 stance is unchanged and correct: `tests/test_adversarial_round2.py::PedagogyTest`
+`test_schema_cannot_express_a_prerequisite` keeps passing because the v1 plan genuinely cannot
+express an edge. Its companion `test_adaptation_is_a_state_transition_only` is currently a
+tautology (it compares the seven-state set with itself, `tests/test_adversarial_round2.py:303-308`)
+and therefore pins nothing beyond the two `_objective_state_after` assertions that follow it; the
+implementing card must replace it with the R5/R7 assertions above rather than treat it as coverage.

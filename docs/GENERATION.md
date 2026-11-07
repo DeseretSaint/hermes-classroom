@@ -130,6 +130,18 @@ call and can never look validated:
 The plan is persisted as `plans.state = 'draft'`. `approved_at` stays `NULL`; approval is
 `plan.approve`, i.e. the learner's or parent's command.
 
+**Prerequisites are not a v1 plan rule, by decision.** `OBJECTIVE_SCHEMA` and `SECTION_SCHEMA`
+carry no prerequisite field and must not gain one: the v1 plan is a flat list whose one section per
+objective is already rendered in ordinal order, so an edge there would gate nothing and reorder
+nothing while every read surface that could show it stays closed (`outline_objective` and the
+`lesson.begin` response are `additionalProperties: false`; the wire contract is v9 on this base,
+v10 belongs to the plan-brief inputs and v11 is reserved for the unit stages). Sequencing is
+unit-level, structural and non-blocking, and it ships with the blueprint implementation —
+`docs/COURSE-BLUEPRINT.md` §14 freezes the edge rules, the disclosure gate and the acceptance
+tests. Until then `enforce_plan_rules` stays silent on ordering, and
+`tests/test_adversarial_round2.py::PedagogyTest.test_schema_cannot_express_a_prerequisite` correctly
+keeps passing because v1 genuinely cannot express an edge.
+
 After two failed attempts (rule violation or validator reject) the artifact is still persisted, but
 `generation_state`/lesson `state` is `needs_review`, `validation_id` is `NULL` when no validator ever
 ran, and the reasons are stored. Nothing is quietly discarded and nothing is quietly approved.
@@ -334,3 +346,7 @@ timeout that keeps its authored sections and is resumed without re-authoring the
 
 A live smoke test is intentionally **not** included: no test in this repo makes a network call, and
 no fixture claims to be real provider output.
+
+Prerequisite validation, gating and migration tests are named in `docs/COURSE-BLUEPRINT.md` §14.4
+and cannot exist before the unit model does, because a prerequisite is a property of a unit. No
+test in this file asserts an ordering rule that the plan schema cannot express.
