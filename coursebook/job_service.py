@@ -19,6 +19,8 @@ Frozen rules enforced here:
 
 from __future__ import annotations
 
+import contextvars
+import logging
 import os
 import threading
 import uuid
@@ -32,6 +34,8 @@ from . import db
 from . import jobs as jobs_contract
 from .api import RpcError
 from .research import ResearchCancelled
+
+logger = logging.getLogger("coursebook.job_service")
 
 #: Lease length. Short enough that a killed process is detected within one poll interval, long
 #: enough that a slow provider call does not lose its fence between heartbeats.
@@ -504,17 +508,41 @@ def _run_with_heartbeat(
     crash-recovery pass) was entitled to reclaim it — the lesson stage died
     ``interrupted_requires_retry`` seconds after it began. The lease now expires only when the
     worker process is actually gone, which is the only thing a lease can prove.
+
+    H-66: the heartbeat thread must run under the **caller's context**. A bare ``Thread`` starts
+    with an empty ``contextvars.Context``; a gateway carries the active profile as a context-local
+    override, so every ``renew`` there resolved a *different* database (where the job does not
+    exist). The ``NOT_FOUND`` was swallowed by the generic ``except`` and the lease silently
+    lapsed while the stage was blocked. The beat now runs in ``copy_context()`` and a run of
+    failures is logged instead of disappearing.
     """
     interval = heartbeat_seconds if heartbeat_seconds is not None else max(1.0, LEASE_SECONDS / 3.0)
     stop = threading.Event()
+    context = contextvars.copy_context()
+    failures = 0
 
     def beat() -> None:
+        nonlocal failures
         while not stop.wait(interval):
             try:
-                renew(lease)
+                context.run(renew, lease)
+                failures = 0
             except JobLeaseLost:
-                return  # the fence is gone; the stage's own fenced writes will report it
-            except Exception:  # noqa: BLE001 - a transient miss must not kill the stage
+                logger.warning(
+                    "coursebook: heartbeat for %s lost its lease; the stage's writes will be fenced",
+                    lease.job_id,
+                )
+                return
+            except Exception as exc:  # noqa: BLE001 - a transient miss must not kill the stage
+                failures += 1
+                if failures == 1 or failures % 5 == 0:
+                    logger.warning(
+                        "coursebook: heartbeat for %s failed %d time(s): %s: %s",
+                        lease.job_id,
+                        failures,
+                        type(exc).__name__,
+                        exc,
+                    )
                 continue
 
     thread = threading.Thread(target=beat, name=f"job-heartbeat-{lease.job_id}", daemon=True)
@@ -568,8 +596,25 @@ def execute(
                 begin_cancelling(lease)
                 finish(lease, state="cancelled", now=now)
                 return _view(job_id)
+            except JobLeaseLost:
+                # Another attempt owns the row now; this worker must not write anything else.
+                return _view(job_id)
             except Exception as exc:  # noqa: BLE001 - a stage failure is durable, not a crash
-                fail(lease, _stage_error(exc), checkpoint=_stage_checkpoint(exc))
+                recovery = _stage_checkpoint(exc)
+                if is_cancel_requested(job_id):
+                    # The stage ended because its bounded call hit a deadline; the user had
+                    # already asked to stop. The honest outcome is ``cancelled`` with the
+                    # recovery record, not a host failure the reader would retry (H-66).
+                    begin_cancelling(lease)
+                    finish(
+                        lease,
+                        state="cancelled",
+                        checkpoint=recovery,
+                        message=f"cancelled during {stage.name}: {type(exc).__name__}",
+                        now=now,
+                    )
+                    return _view(job_id)
+                fail(lease, _stage_error(exc), checkpoint=recovery)
                 return _view(job_id)
             with db.transaction() as connection:
                 _record_usage(connection, job_id, result.usage, now, "job")
@@ -583,6 +628,19 @@ def execute(
                 artifact_ids=result.artifacts,
                 now=now,
             )
+            if is_cancel_requested(job_id):
+                # A cancellation that arrived while the stage ran stops here: the finished
+                # stage's work and checkpoint are durable, but the job does not go on to
+                # another provider call and does not report itself completed.
+                begin_cancelling(lease)
+                finish(
+                    lease,
+                    state="cancelled",
+                    checkpoint=result.checkpoint,
+                    message=f"cancelled after {stage.name} reached its boundary",
+                    now=now,
+                )
+                return _view(job_id)
             done_after = index
         state = finish(lease, artifact_ids=())
         return _view(job_id)
@@ -594,7 +652,7 @@ def execute(
 #: ``HOST_UNAVAILABLE`` means "the Hermes host (gateway, auxiliary model, media provider) is
 #: unavailable"; ``GRADER_UNAVAILABLE`` is about grading an answer, and reporting a provider
 #: deadline as a grader failure sends the reader to the wrong subsystem (CB-011-D1).
-_PROVIDER_ERRORS = frozenset({"ProviderTimeout", "ProviderFailure"})
+_PROVIDER_ERRORS = frozenset({"ProviderTimeout", "ProviderFailure", "ResearchTimeout", "MediaTimeout"})
 
 #: Exceptions that are a declared policy ceiling, not a bug or a host outage. A cost ceiling is a
 #: deterministic stop, so the same request will fail the same way until the operator raises it —
@@ -750,6 +808,66 @@ def _default_store() -> Any:
     from .artifacts import ArtifactStore
 
     return ArtifactStore()
+
+
+def reconcile_expired(*, now: datetime | None = None) -> dict[str, int]:
+    """Move **expired-lease** live rows to a terminal/honest state; safe to call repeatedly.
+
+    This is the live-process twin of :func:`reconcile_startup` and exists because that pass runs
+    once per process (H-66): a job whose worker stopped beating — a crashed pump thread, a stage
+    stranded in a foreign call, a lost profile context — sat ``running`` with a past lease until
+    the next restart. The rule here is intentionally narrower than startup recovery:
+
+    * a **live** lease is honoured, whoever owns it: a worker is still renewing it;
+    * ``running`` with an expired/absent lease becomes ``interrupted_requires_retry`` (brief and
+      checkpoint survive, nothing is retried automatically);
+    * ``cancel_requested``/``cancelling`` with an expired/absent lease becomes ``cancelled``: no
+      worker can still reach a boundary, so the intent is final.
+
+    No artifact reconciliation here: this runs every few seconds, and only the startup pass may
+    sweep files.
+    """
+    moment = _now(now)
+    stamp = _iso(moment)
+    with db.read() as connection:
+        candidates = connection.execute(
+            "SELECT id, state, lease_expires_at FROM jobs WHERE state IN"
+            " ('running','cancel_requested','cancelling')"
+        ).fetchall()
+    stale = [
+        row
+        for row in candidates
+        if (held := _parse(row["lease_expires_at"])) is None or held <= moment
+    ]
+    if not stale:
+        return {"interrupted": 0, "cancelled": 0}
+    interrupted = cancelled = 0
+    with db.transaction() as connection:
+        for row in stale:
+            # Re-read under the write lock: a beat may have renewed it since the read pass.
+            current = connection.execute(
+                "SELECT state, lease_expires_at FROM jobs WHERE id = ?", (row["id"],)
+            ).fetchone()
+            if current is None:
+                continue
+            state = str(current["state"])
+            if state not in ("running", "cancel_requested", "cancelling"):
+                continue
+            held = _parse(current["lease_expires_at"])
+            if held is not None and held > moment:
+                continue  # a live worker is still beating; leaving it alone is the whole point
+            target = "interrupted_requires_retry" if state == "running" else "cancelled"
+            jobs_contract.assert_transition(state, target)
+            connection.execute(
+                "UPDATE jobs SET state = ?, lease_owner = NULL, lease_expires_at = NULL,"
+                " updated_at = ? WHERE id = ?",
+                (target, stamp, row["id"]),
+            )
+            if target == "cancelled":
+                cancelled += 1
+            else:
+                interrupted += 1
+    return {"interrupted": interrupted, "cancelled": cancelled}
 
 
 def reconcile_startup(

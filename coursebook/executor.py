@@ -24,6 +24,7 @@ stage outside its fenced writes, and the generation pipeline owns its own short 
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import logging
 import os
 import threading
@@ -57,9 +58,14 @@ MAX_JOBS_PER_TICK = 5
 #: large enough that an idle profile does no meaningful work.
 TICK_SECONDS = 5.0
 
+#: Seconds between live lease-reconciliation passes. The reaper is a separate thread so a pump
+#: blocked inside one job cannot stop the database from being made honest (H-66).
+REAPER_SECONDS = 5.0
+
 _STOP = threading.Event()
 _TICK_TASK: Any = None
 _TICK_THREAD: Any = None
+_REAPER_THREAD: Any = None
 
 
 def _resolve_search(explicit: Any) -> Any:
@@ -367,7 +373,6 @@ def stop() -> None:
 
 async def _tick_loop(interval: float) -> None:
     wait = max(float(interval), 0.05)
-    _STOP.clear()
     while not _STOP.is_set():
         try:
             # Job execution is blocking (SQLite + provider calls): never on the event loop.
@@ -381,6 +386,45 @@ async def _tick_loop(interval: float) -> None:
             step = min(1.0, wait - waited)
             await asyncio.sleep(step)
             waited += step
+
+
+def _reaper_loop(interval: float) -> None:
+    """Reconcile expired leases on a fixed cadence, independent of the pump (H-66)."""
+    wait = max(float(interval), 0.5)
+    while not _STOP.is_set():
+        try:
+            result = job_service.reconcile_expired()
+            if result.get("interrupted") or result.get("cancelled"):
+                logger.warning(
+                    "coursebook job reaper: running->interrupted=%s cancel->cancelled=%s",
+                    result.get("interrupted"),
+                    result.get("cancelled"),
+                )
+        except Exception:  # noqa: BLE001 - one bad pass must not kill the reaper
+            logger.exception("coursebook job reaper failed")
+        _STOP.wait(wait)
+
+
+def _start_reaper(interval: float | None = None) -> Any:
+    """Start the lease reaper once per process. Runs under the caller's context.
+
+    The pump thread is deliberately *not* responsible for this: a pump stuck inside one job is
+    exactly the case where the database must still be reconciled by another thread.
+    """
+    global _REAPER_THREAD
+    if _REAPER_THREAD is not None and _REAPER_THREAD.is_alive():
+        return _REAPER_THREAD
+    delay = REAPER_SECONDS if interval is None else float(interval)
+    context = contextvars.copy_context()  # keep the profile-local home override
+    _REAPER_THREAD = threading.Thread(
+        target=context.run,
+        args=(_reaper_loop, delay),
+        name="coursebook-job-reaper",
+        daemon=True,
+    )
+    _REAPER_THREAD.start()
+    logger.info("coursebook job reaper started: interval=%.1fs", delay)
+    return _REAPER_THREAD
 
 
 def start_tick(ctx: Any, *, interval: float | None = None) -> Any:
@@ -415,12 +459,15 @@ def start_tick(ctx: Any, *, interval: float | None = None) -> Any:
         except ValueError:
             configured = TICK_SECONDS
     _STOP.clear()
+    _start_reaper()
     unload = getattr(ctx, "on_unload", None)
     try:
         asyncio.get_running_loop()
     except RuntimeError:
-        # No loop at registration time: own one so the tick is not silently absent.
+        # No loop at registration time: own one so the tick is not silently absent. Run it
+        # under the caller's context so a profile-local home override reaches the pump.
         coro = _tick_loop(configured)
+        tick_context = contextvars.copy_context()
 
         def run() -> None:
             try:
@@ -428,7 +475,9 @@ def start_tick(ctx: Any, *, interval: float | None = None) -> Any:
             except Exception:  # noqa: BLE001 - a dead tick must not take the process down
                 logger.exception("coursebook job tick thread stopped")
 
-        _TICK_THREAD = threading.Thread(target=run, name="coursebook-job-tick", daemon=True)
+        _TICK_THREAD = threading.Thread(
+            target=tick_context.run, args=(run,), name="coursebook-job-tick", daemon=True
+        )
         _TICK_THREAD.start()
         if callable(unload):
             unload(stop)

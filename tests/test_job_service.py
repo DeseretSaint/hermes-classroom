@@ -133,14 +133,22 @@ class CancellationTest(JobServiceCase):
         # The completed stage's real usage is kept: you cannot un-spend a call that happened.
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM usage_events"), 1)
 
-    def test_stage_that_finishes_during_cancel_becomes_completed_late(self) -> None:
+    def test_stage_that_finishes_during_cancel_becomes_cancelled_at_the_boundary(self) -> None:
+        """H-66: a cancel that arrives while a stage runs stops at that stage's boundary.
+
+        The completed stage's usage and checkpoint are durable (you cannot un-spend or un-write
+        work that happened), but the job reports ``cancelled``: the user asked it to stop, so it
+        must not claim a clean completion. ``completed_late`` remains the contract outcome for a
+        cancel that races the final ``finish`` call itself.
+        """
         job_id = self.new_job()
         stage = CountingStage("pay", cancel=True)
         view = job_service.execute(job_id, [job_service.Stage("pay", stage)])
-        self.assertEqual(view["state"], "completed_late")
+        self.assertEqual(view["state"], "cancelled")
         self.assertEqual(stage.runs, 1)
+        self.assertEqual(view["checkpoint"].get("pay"), True, "finished work must stay checkpointed")
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM usage_events"), 1)
-        # A completed_late job is terminal and cannot be cancelled again.
+        # A cancelled job is terminal and cannot be cancelled again.
         error = self.err("jobs.cancel", {"job_id": job_id})
         self.assertEqual(error["code"], "JOB_NOT_CANCELLABLE")
 

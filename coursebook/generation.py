@@ -54,6 +54,7 @@ from jsonschema import Draft202012Validator
 from . import research as research_mod
 from . import sources as source_ledger
 from . import artifacts
+from . import deadline as deadline_mod
 from . import lesson_document
 from . import localization
 from . import policy as capability_policy
@@ -64,6 +65,7 @@ from . import validators
 from .packs import MIN_RUBRIC_CRITERIA
 from .research import (
     ResearchBudget,
+    ResearchCancelled,
     ResearchRun,
     SearchSeam,
     SourceRecord,
@@ -825,6 +827,28 @@ def preflight_lesson_brief(connection: sqlite3.Connection, brief: dict[str, Any]
 
 
 
+def _job_cancel_probe(job_id: str | None) -> Any:
+    """A callable that answers whether this durable job was asked to stop (H-66).
+
+    Resolution is lazy so ``generation`` keeps no import-time dependency on ``job_service``, and
+    a process without a migrated store (a pure helper call) simply reports ``False``. The probe
+    is consulted at every provider-call and research-call boundary: cancellation is honoured at
+    the next boundary, never by killing an in-flight non-idempotent call.
+    """
+    if not job_id:
+        return None
+
+    def probe() -> bool:
+        try:
+            from . import job_service
+
+            return job_service.is_cancel_requested(str(job_id))
+        except Exception:  # noqa: BLE001 - an unreadable store fails the job later, not here
+            return False
+
+    return probe
+
+
 @dataclass
 class _Usage:
     budget: CostBudget
@@ -834,6 +858,10 @@ class _Usage:
     known_cost: float = 0.0
     unknown_cost: bool = False
     unknown_calls: int = 0
+    #: Job-scoped cancellation probe (H-66). Checked before every provider call so a cancelled
+    #: job stops at a *call* boundary instead of waiting out a multi-minute stage. ``None``
+    #: means the call is not attached to a durable job (tests, pure helpers).
+    cancel_probe: Any = None
 
     @property
     def estimated_spend_usd(self) -> float:
@@ -847,6 +875,11 @@ class _Usage:
         return float(self.known_cost) + float(self.unknown_calls) * DECLARED_CALL_COST_USD
 
     def before_call(self, request: LLMRequest) -> None:
+        if callable(self.cancel_probe) and self.cancel_probe():
+            # Cancellation is not a failure: ``job_service.execute`` maps this to ``cancelled``
+            # and keeps the checkpoint. Spending another provider call after the user asked to
+            # stop is the defect H-66 names.
+            raise ResearchCancelled(f"job cancelled before {request.purpose}")
         if len(self.calls) >= self.budget.max_calls:
             raise CostCeilingExceeded(
                 f"job already made {len(self.calls)} provider calls (ceiling {self.budget.max_calls})"
@@ -958,35 +991,93 @@ class PluginLLMAdapter:
             raise TypeError("host context has no ctx.llm; Coursebook will not call a raw provider")
         return cls(llm)
 
+    def _arguments(self, request: LLMRequest) -> dict[str, Any]:
+        return {
+            "instructions": request.instructions,
+            "input": [{"type": "text", "text": request.input_text}],
+            "json_schema": request.schema,
+            "schema_name": request.schema_name,
+            "system_prompt": request.system_prompt,
+            "temperature": request.temperature,
+            "max_tokens": request.max_tokens,
+            "timeout": request.timeout_s,
+            "purpose": request.purpose,
+        }
+
+    def _invoke(self, request: LLMRequest, overrides: dict[str, Any]) -> Any:
+        """Run one provider call under a **real** deadline (H-66).
+
+        Passing ``timeout=`` to the host is advisory: the host may ignore it, and a provider
+        call that blocks cannot be interrupted. Preferring the host's async sibling and running
+        it under :func:`asyncio.wait_for` makes the deadline executable and *cancels* the request
+        at the bound — no thread is left behind. Hosts that only expose the synchronous method
+        go through the capped worker pool instead, so a hung call costs at most one worker slot.
+        """
+        timeout_s = float(request.timeout_s)
+        async_sibling = getattr(self._llm, "acomplete_structured", None)
+        if callable(async_sibling) and not deadline_mod.has_running_loop():
+            arguments = {**self._arguments(request), **overrides}
+            try:
+                return deadline_mod.run_async_bounded(
+                    lambda: async_sibling(**arguments),
+                    timeout_s=timeout_s,
+                    label=request.purpose,
+                )
+            except deadline_mod.DeadlineExceeded as exc:
+                raise ProviderTimeout(
+                    f"{request.purpose} exceeded its {timeout_s:g}s deadline",
+                    purpose=request.purpose,
+                    deadline_s=timeout_s,
+                ) from exc
+            except Exception as exc:  # noqa: BLE001 - trust refusal vs a real provider bug
+                mapped = self._classify(request, overrides, exc)
+                if mapped is exc:
+                    raise
+                raise mapped from exc
+        try:
+            return deadline_mod.run_bounded(
+                lambda: self._llm.complete_structured(
+                    **self._arguments(request), **overrides
+                ),
+                timeout_s=timeout_s,
+                label=request.purpose,
+            )
+        except deadline_mod.DeadlineExceeded as exc:
+            raise ProviderTimeout(
+                f"{request.purpose} exceeded its {timeout_s:g}s deadline",
+                purpose=request.purpose,
+                deadline_s=timeout_s,
+            ) from exc
+        except deadline_mod.CallCapacityExhausted as exc:
+            raise ProviderFailure(
+                f"{request.purpose} unavailable: {exc}", purpose=request.purpose
+            ) from exc
+        except Exception as exc:  # noqa: BLE001
+            mapped = self._classify(request, overrides, exc)
+            if mapped is exc:
+                raise
+            raise mapped from exc
+
+    @staticmethod
+    def _classify(request: LLMRequest, overrides: dict[str, Any], exc: Exception) -> Exception:
+        """Map a host trust refusal to a readable rejection; leave other errors to ``_call_llm``."""
+        if overrides and "TrustError" in type(exc).__name__:
+            return GenerationRejected(
+                "cross-model validator refused by the host trust gate: "
+                f"{exc}. Enable `plugins.entries.coursebook.llm.allow_model_override` and "
+                "`allow_provider_override` (with `allowed_models` / `allowed_providers`), or "
+                "unset `validator_model` / `validator_provider` and accept a model-assessed "
+                "(non-independent) pass."
+            )
+        return exc
+
     def __call__(self, request: LLMRequest) -> LLMResponse:
         kwargs: dict[str, Any] = {}
         if self._provider:
             kwargs["provider"] = self._provider
         if self._model:
             kwargs["model"] = self._model
-        try:
-            result = self._llm.complete_structured(
-                instructions=request.instructions,
-                input=[{"type": "text", "text": request.input_text}],
-                json_schema=request.schema,
-                schema_name=request.schema_name,
-                system_prompt=request.system_prompt,
-                temperature=request.temperature,
-                max_tokens=request.max_tokens,
-                timeout=request.timeout_s,
-                purpose=request.purpose,
-                **kwargs,
-            )
-        except Exception as exc:  # noqa: BLE001 - classify the host's trust refusal, re-raise others
-            if kwargs and "TrustError" in type(exc).__name__:
-                raise GenerationRejected(
-                    "cross-model validator refused by the host trust gate: "
-                    f"{exc}. Enable `plugins.entries.coursebook.llm.allow_model_override` and "
-                    "`allow_provider_override` (with `allowed_models` / `allowed_providers`), or "
-                    "unset `validator_model` / `validator_provider` and accept a model-assessed "
-                    "(non-independent) pass."
-                ) from exc
-            raise
+        result = self._invoke(request, kwargs)
         usage = getattr(result, "usage", None)
         return LLMResponse(
             text=str(getattr(result, "text", "") or ""),
@@ -5662,7 +5753,7 @@ def run_plan_job(
     # second brief store.
     parent_brief = parent_brief_view(brief) if recipe == "parent" else None
     job_id = str(job.get("job_id") or "") or None
-    usage = _Usage(budget or default_cost_budget())
+    usage = _Usage(budget or default_cost_budget(), cancel_probe=_job_cancel_probe(job_id))
     # The validator is the configured second-model route when one exists. When it does not, the
     # call still happens with the author model, but the recorded identity makes that a
     # model-assessed pass, never an independent one.
@@ -5735,6 +5826,7 @@ def run_plan_job(
             search=search,
             budget=effective_research_budget,
             now=now,
+            cancel_probe=_job_cancel_probe(job_id),
         )
 
         plan: dict[str, Any] | None = None
@@ -6650,7 +6742,7 @@ def run_unit_sections_job(
         }
 
     resolved_budget = budget or unit_sections_cost_budget(brief_budget_usd=brief.get("budget_usd"))
-    usage = _Usage(resolved_budget)
+    usage = _Usage(resolved_budget, cancel_probe=_job_cancel_probe(job_id))
     # The validator is the configured second-model route when one exists. When it does not, the
     # call still happens with the author model, but the recorded identity makes that a
     # model-assessed pass, never an independent one.
@@ -7290,7 +7382,7 @@ def run_lesson_job(
     # validate per section) cannot be paid: that is the audit's P1-6 half-authored course.
     resolved_budget = budget or lesson_cost_budget(len(section_rows), brief_budget_usd=brief.get("budget_usd"))
     preflight = assert_cost_preflight(len(section_rows), budget=resolved_budget)
-    usage = _Usage(resolved_budget)
+    usage = _Usage(resolved_budget, cancel_probe=_job_cancel_probe(job_id))
 
     lesson_summaries: list[dict[str, Any]] = []
     try:

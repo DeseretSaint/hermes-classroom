@@ -45,6 +45,15 @@ summarises those records and does not re-verify them.
   Parent Studio withholds Generate lessons for a version it has proven cannot author. A lessons job
   that used to fail `INTERNAL_ERROR plan … has no authored document` now starts
   (`docs/REVIEW_CB017-FINAL.md` §3.2). No wire change; `cb.rpc` stays v7 (ruling R3).
+- H-66 (job liveness): a live `plan` job could sit `running` with an expired lease and no way to
+  cancel. Three foreign calls had no real deadline — the host `web_search`/`web_extract` seam, the
+  host model call, and the media tools — and the heartbeat renewed on a bare thread that lost the
+  gateway's context-local profile, so every renewal silently failed. Deadlines now raise typed
+  `ResearchTimeout`/`ProviderTimeout`/`MediaTimeout`; the heartbeat runs under the caller's context;
+  a live reaper moves expired leases to `interrupted_requires_retry` / `cancelled` without a
+  restart; and cancellation is checked at every provider and tool boundary. No contract or schema
+  change. Evidence: `docs/H66-EVIDENCE.md`, `docs/ARCHITECTURE.md` §8, `probes/h66-liveness.py`,
+  `tests/test_h66_liveness.py`.
 
 ### Known limitations at 0.1.0
 

@@ -217,3 +217,82 @@ Course creation, plan and lesson generation, grading, transitions, evidence, not
 queue, usage accounting, pack import/export and Parent Studio authoring are implemented and tested
 against the frozen contracts. They are unreachable from the UI while CB-QA-09 is open, which is a
 reachability gap, not missing code.
+
+## 8. Job liveness: deadlines, heartbeat, reconciliation (H-66)
+
+A live `plan` job was observed `running` for over nine minutes with an expired lease, empty
+progress, no heartbeat renewal and a `cancel_requested` that never reached a boundary. The cause was
+not one bug: the execution path had three foreign calls that could block forever and a heartbeat
+that silently renewed the wrong database.
+
+### 8.1 Every foreign call has an executable deadline
+
+A timeout passed to the host (`complete_structured(timeout=...)`, a tool argument) is advisory. The
+plugin now enforces its own wall clock in `coursebook/deadline.py`:
+
+| Seam | Bound | Typed failure |
+| --- | --- | --- |
+| `ctx.llm` provider call | `PROVIDER_TIMEOUT_SECONDS[purpose]` (env-overridable) | `ProviderTimeout` |
+| `ctx.dispatch_tool("web_search"/"web_extract")` | 45 s / 60 s (`COURSEBOOK_WEB_*_TIMEOUT_SECONDS`) | `ResearchTimeout` (a `ResearchUnavailable`) |
+| `ctx.dispatch_tool("image_generate"/"text_to_speech")` | 180 s (`COURSEBOOK_MEDIA_TOOL_TIMEOUT_SECONDS`) | `MediaTimeout`, degraded to text |
+
+Two mechanisms, chosen so the normal path leaks nothing:
+
+* **Coroutines are cancelled.** When the host exposes `acomplete_structured`, the adapter runs it
+  under `asyncio.wait_for` on the pump's worker thread. At the deadline the coroutine is cancelled;
+  no thread is parked.
+* **Synchronous calls use a capped pool.** `ctx.dispatch_tool` is synchronous and cannot be
+  interrupted from Python. Calls run on a small set of reused daemon workers
+  (`BoundedCallPool`, 4 by default). A timed-out call abandons its worker until it returns, and that
+  slot counts against the cap; when every slot is stuck the next call fails fast with a typed
+  unavailable error instead of opening more threads. Normal calls reuse one worker.
+
+A first research timeout ends that research pass (`run_research` breaks instead of spending the
+rest of the query budget on a stuck tool); the ledger records the failure and no source is invented.
+
+### 8.2 The heartbeat runs under the caller's context
+
+`job_service._run_with_heartbeat` renews the lease during a stage. The renewal thread is a bare
+`threading.Thread`, which starts with an empty `contextvars.Context`. A gateway carries the active
+profile as a *context-local* home override, so every `renew` there opened a different database,
+raised `NOT_FOUND` for the job, and was swallowed by the generic `except`: the lease lapsed while the
+stage was still running. The beat now runs inside `contextvars.copy_context()` and a run of failures
+is logged. The tick and reaper threads are started the same way.
+
+### 8.3 Cancellation stops at a boundary
+
+Cancellation is intent, not an interrupt: a non-idempotent provider call already in flight is never
+killed, it is reconciled by operation/artifact key. The cancel probe (`job_service.is_cancel_requested`)
+is therefore checked at every provider call (`_Usage.before_call`) and every research call, and the
+stage loop now checks again after a stage returns. A stage that ends after cancellation — including
+one that ends by hitting its deadline — is recorded `cancelled` with its usage and checkpoint, never
+`failed` (which would invite a retry that spends again) and never a long-lived `cancel_requested`.
+`completed_late` remains the contract outcome only for a cancel that races the final `finish` write.
+
+### 8.4 Reconciliation runs live
+
+`reconcile_startup` still runs once per process, but it was the only pass. `job_service.reconcile_expired`
+runs every 5 s on a separate `coursebook-job-reaper` thread (separate so a pump stuck inside one job
+cannot stop it):
+
+* a live lease is honoured, whoever owns it;
+* `running` + expired/absent lease → `interrupted_requires_retry`, lease cleared, brief and
+  checkpoint preserved;
+* `cancel_requested`/`cancelling` + expired/absent lease → `cancelled`.
+
+### 8.5 What is still true, and stated plainly
+
+* A synchronous host call that ignores its deadline is not killed; it holds one pool slot until it
+  returns. The bound is the pool cap, not the call.
+* The provider deadline bounds one call, so a multi-call stage (two attempts × generate + validate)
+  can take several deadlines. The job cap is `PROVIDER_TIMEOUT_SECONDS` × calls, not one number.
+* The reaper's evidence is the lease. A process that is alive but whose heartbeat fails is detected
+  only when the lease expires; the fix above makes that path log instead of vanish.
+* Media is optional: a media timeout degrades the item to text and does not fail the lesson.
+
+Evidence: `tests/test_h66_liveness.py` (17 tests: stalled host tool, stalled provider, async
+cancellation, pool reuse and capacity, heartbeat under a context-local home, cancel at a deadline,
+live reconciliation, reaper thread, end-to-end pump) and `probes/h66-liveness.py`, which reproduces
+the three stalls offline and reported `host_seam_stall=False provider_stall=False
+heartbeat_not_renewed=False` after the fix. The before/after transcript and the live incident row
+are in `docs/H66-EVIDENCE.md`.
