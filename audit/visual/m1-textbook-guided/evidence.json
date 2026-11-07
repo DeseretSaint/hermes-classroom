@@ -1,0 +1,308 @@
+{
+  "card": "M1-U1 Textbook and Guided renderers",
+  "captured_at": "2026-11-07T04:07:05.100Z",
+  "plugin_sha256": "6934b8330aecd6b51ed8de8646b664525626ea3302a7a0238bc7623e06522924",
+  "window": {
+    "cdp_port": "9351",
+    "target_url": "http://127.0.0.1:5174/#/coursebook",
+    "backend": "http://127.0.0.1:44301 (isolated, this checkout)"
+  },
+  "document": {
+    "lesson_view": "textbook",
+    "document_id": "doc_13e5daed6b40112a6778",
+    "switcher": "textbook-only",
+    "blocks": [
+      {
+        "id": "blk_530e0ef09d77da403784",
+        "role": "orient",
+        "headline": "Lesson",
+        "media": 0,
+        "sources": 0,
+        "hasCheck": false
+      },
+      {
+        "id": "blk_62dcfe3dab1bad6821c5",
+        "role": "practice",
+        "headline": "Check",
+        "media": 0,
+        "sources": 0,
+        "hasCheck": true
+      }
+    ],
+    "check_nodes": 1
+  },
+  "keyboard": {
+    "focusableCount": 13,
+    "firstTen": [
+      "New course",
+      "Courses",
+      "Library",
+      "Parent Studio",
+      "All courses",
+      "Start lesson",
+      "Textbook",
+      "Continue here",
+      "Start a fresh run",
+      "All sections"
+    ],
+    "hasSwitcher": false
+  },
+  "frames": [
+    {
+      "name": "01-textbook-dark",
+      "theme": "dark",
+      "width": 1280,
+      "textScale": 1,
+      "file": "01-textbook-dark.png",
+      "bytes": 174108,
+      "routeTextLength": 3816,
+      "lessonView": "textbook",
+      "documentId": "doc_13e5daed6b40112a6778",
+      "switcher": "textbook-only",
+      "step": null,
+      "blocks": [
+        {
+          "id": "blk_530e0ef09d77da403784",
+          "role": "orient",
+          "headline": "Lesson",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_62dcfe3dab1bad6821c5",
+          "role": "practice",
+          "headline": "Check",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        }
+      ],
+      "checkNodes": 1,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "themeClass": "dark",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    },
+    {
+      "name": "02-textbook-light",
+      "theme": "light",
+      "width": 1280,
+      "textScale": 1,
+      "file": "02-textbook-light.png",
+      "bytes": 175168,
+      "routeTextLength": 3816,
+      "lessonView": "textbook",
+      "documentId": "doc_13e5daed6b40112a6778",
+      "switcher": "textbook-only",
+      "step": null,
+      "blocks": [
+        {
+          "id": "blk_530e0ef09d77da403784",
+          "role": "orient",
+          "headline": "Lesson",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_62dcfe3dab1bad6821c5",
+          "role": "practice",
+          "headline": "Check",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        }
+      ],
+      "checkNodes": 1,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "themeClass": "light",
+      "bodyBackground": "color(srgb 0.28549 0.297098 0.31451)",
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    },
+    {
+      "name": "03-textbook-dark-200pct",
+      "theme": "dark",
+      "width": 1280,
+      "textScale": 2,
+      "file": "03-textbook-dark-200pct.png",
+      "bytes": 172094,
+      "routeTextLength": 3816,
+      "lessonView": "textbook",
+      "documentId": "doc_13e5daed6b40112a6778",
+      "switcher": "textbook-only",
+      "step": null,
+      "blocks": [
+        {
+          "id": "blk_530e0ef09d77da403784",
+          "role": "orient",
+          "headline": "Lesson",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_62dcfe3dab1bad6821c5",
+          "role": "practice",
+          "headline": "Check",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        }
+      ],
+      "checkNodes": 1,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "themeClass": "dark",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "rootFontSize": "32px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    },
+    {
+      "name": "04-textbook-dark-460px",
+      "theme": "dark",
+      "width": 460,
+      "textScale": 1,
+      "file": "04-textbook-dark-460px.png",
+      "bytes": 99063,
+      "routeTextLength": 3816,
+      "lessonView": "textbook",
+      "documentId": "doc_13e5daed6b40112a6778",
+      "switcher": "textbook-only",
+      "step": null,
+      "blocks": [
+        {
+          "id": "blk_530e0ef09d77da403784",
+          "role": "orient",
+          "headline": "Lesson",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_62dcfe3dab1bad6821c5",
+          "role": "practice",
+          "headline": "Check",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        }
+      ],
+      "checkNodes": 1,
+      "horizontalOverflow": false,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "themeClass": "dark",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 460,
+      "focused": "BODY"
+    },
+    {
+      "name": "05-textbook-light-460px",
+      "theme": "light",
+      "width": 460,
+      "textScale": 1,
+      "file": "05-textbook-light-460px.png",
+      "bytes": 103541,
+      "routeTextLength": 3816,
+      "lessonView": "textbook",
+      "documentId": "doc_13e5daed6b40112a6778",
+      "switcher": "textbook-only",
+      "step": null,
+      "blocks": [
+        {
+          "id": "blk_530e0ef09d77da403784",
+          "role": "orient",
+          "headline": "Lesson",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_62dcfe3dab1bad6821c5",
+          "role": "practice",
+          "headline": "Check",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        }
+      ],
+      "checkNodes": 1,
+      "horizontalOverflow": false,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "themeClass": "light",
+      "bodyBackground": "color(srgb 0.28549 0.297098 0.31451)",
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 460,
+      "focused": "BODY"
+    },
+    {
+      "name": "06-textbook-dark-460px-200pct",
+      "theme": "dark",
+      "width": 460,
+      "textScale": 2,
+      "file": "06-textbook-dark-460px-200pct.png",
+      "bytes": 85162,
+      "routeTextLength": 3816,
+      "lessonView": "textbook",
+      "documentId": "doc_13e5daed6b40112a6778",
+      "switcher": "textbook-only",
+      "step": null,
+      "blocks": [
+        {
+          "id": "blk_530e0ef09d77da403784",
+          "role": "orient",
+          "headline": "Lesson",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_62dcfe3dab1bad6821c5",
+          "role": "practice",
+          "headline": "Check",
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        }
+      ],
+      "checkNodes": 1,
+      "horizontalOverflow": false,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "themeClass": "dark",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "rootFontSize": "32px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 460,
+      "focused": "BODY"
+    }
+  ],
+  "limits": [
+    "The live backend reports state=textbook_only for every lesson.page it serves today: the lesson authoring prompt writes segments only, never authored `short`/`blocks`. views.guided is therefore false and the window honestly renders the Textbook-only state.",
+    "The Guided renderer and the Textbook/Guided switcher are exercised against contract v8 documents in tests/test_desktop_lesson_views.py (real React render of this plugin module), not against a live backend page."
+  ]
+}

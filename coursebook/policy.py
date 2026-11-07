@@ -115,6 +115,23 @@ RUBRIC_PROFILE_CRITERIA: dict[str, tuple[str, ...]] = {
 #: a deterministic schematic.
 SYMBOLIC_DOMAINS: frozenset[str] = frozenset({"mathematics", "grammar"})
 
+#: The lesson schema's media-role vocabulary, keyed by the policy's role. ``sourced_reference``
+#: is stored as ``sourced_technical`` because the artifact layer names the cited-reference role
+#: that way; a pronunciation reference is rendered as narration whose transcript is the
+#: authoritative text, never as a second source.
+IMAGE_SPEC_ROLE: dict[str, str] = {
+    "illustration": "illustration",
+    "schematic": "schematic",
+    "sourced_reference": "sourced_technical",
+}
+AUDIO_SPEC_ROLE: dict[str, str] = {
+    "narration": "narration",
+    "pronunciation_reference": "narration",
+}
+
+#: The media kinds a lesson spec may declare. Anything else is not a media item at all.
+SPEC_MEDIA_KINDS: tuple[str, ...] = ("visual", "audio")
+
 _DOMAIN_ALIASES: dict[str, str] = {
     "language": "language",
     "languages": "language",
@@ -659,18 +676,8 @@ def plan_lesson_capability(
     domain = _normalise_domain(subject_domain, locale)
     text = _normalise_intent(lesson_intent)
 
-    if recipe == "one_off":
-        check_angle: str = "verification"
-        angle_reason = "recipe one_off: the check is a verification checklist, not a quiz"
-    elif recipe == "parent":
-        check_angle = "observation"
-        angle_reason = "recipe parent: the check is parent observation, not a child quiz"
-    else:
-        check_angle = evidence_target
-        angle_reason = (
-            f"recipe {recipe!r}: the check keeps the objective's evidence target "
-            f"{evidence_target!r}"
-        )
+    forced_angle, angle_reason = recipe_check_angle(recipe)
+    check_angle: str = forced_angle if forced_angle is not None else evidence_target
 
     image, image_role, image_reason = _image_decision(
         domain=domain,
@@ -710,3 +717,92 @@ def plan_lesson_capability(
         subject_domain=domain,
         reasons=reasons,
     )
+
+
+# ── Projection onto the lesson schema's media vocabulary ────────────────────
+
+
+def recipe_check_angle(recipe: str) -> tuple[str | None, str]:
+    """The check angle a recipe forces, or ``None`` when the objective's target stands.
+
+    This is the single place the "one-off verifies, parent observes" rule lives so the plan
+    builder, the lesson builder and the prompt cannot disagree about it.
+    """
+    if recipe == "one_off":
+        return "verification", "recipe one_off: the check is a verification checklist, not a quiz"
+    if recipe == "parent":
+        return "observation", "recipe parent: the check is parent observation, not a child quiz"
+    if recipe not in RECIPES:
+        raise CapabilityPolicyError(f"unknown recipe {recipe!r}; expected one of {RECIPES}")
+    return None, f"recipe {recipe!r}: the check keeps the objective's evidence target"
+
+
+def permitted_image_roles(plan: LessonCapabilityPlan) -> tuple[str, ...]:
+    """The visual media roles a lesson spec may declare under ``plan``. Empty means no visual."""
+    if plan.image == "none" or plan.image_role is None:
+        return ()
+    return (IMAGE_SPEC_ROLE[plan.image_role],)
+
+
+def permitted_audio_roles(plan: LessonCapabilityPlan) -> tuple[str, ...]:
+    """The audio media roles a lesson spec may declare under ``plan``. Empty means no audio."""
+    if plan.audio == "none" or plan.audio_role is None:
+        return ()
+    return (AUDIO_SPEC_ROLE[plan.audio_role],)
+
+
+def _media_reason(plan: LessonCapabilityPlan, index: int) -> str:
+    """The plan reason that justifies (or refuses) the media kind at ``index``."""
+    # ``reasons`` is built as (angle, image, audio, profile); fall back to the joined trail when a
+    # caller hands in a hand-built plan rather than one from ``plan_lesson_capability``.
+    if len(plan.reasons) > index:
+        return plan.reasons[index]
+    return "; ".join(plan.reasons)
+
+
+def media_policy_problems(plan: LessonCapabilityPlan, media: object) -> list[str]:
+    """Every way ``media`` contradicts ``plan``. Empty means the specs are permitted.
+
+    This is the permission half of the policy: it decides whether a lesson may carry a given
+    kind/role at all. The content half (text equivalent, transcript, source and permission,
+    structured facts, illustration-never-technical) lives in ``artifacts.media_problems`` and is
+    applied alongside this function — a spec has to pass both.
+    """
+    problems: list[str] = []
+    items = list(media) if isinstance(media, (list, tuple)) else []
+    image_roles = permitted_image_roles(plan)
+    audio_roles = permitted_audio_roles(plan)
+    for index, item in enumerate(items, start=1):
+        if not isinstance(item, dict):
+            problems.append(f"media item {index} is not a declarative spec object")
+            continue
+        kind = str(item.get("kind") or "")
+        role = item.get("role")
+        if kind not in SPEC_MEDIA_KINDS:
+            problems.append(
+                f"media item {index}: unknown media kind {kind!r}; expected one of {SPEC_MEDIA_KINDS}"
+            )
+            continue
+        if kind == "visual":
+            if plan.image == "none":
+                problems.append(
+                    f"media item {index}: the capability policy sets image to 'none' "
+                    f"({_media_reason(plan, 1)}), so a visual spec is not permitted"
+                )
+            elif role not in image_roles:
+                problems.append(
+                    f"media item {index}: visual role {role!r} is not permitted; this lesson may "
+                    f"use {image_roles} (image level {plan.image!r})"
+                )
+            continue
+        if plan.audio == "none":
+            problems.append(
+                f"media item {index}: the capability policy sets audio to 'none' "
+                f"({_media_reason(plan, 2)}), so an audio spec is not permitted"
+            )
+        elif role not in audio_roles:
+            problems.append(
+                f"media item {index}: audio role {role!r} is not permitted; this lesson may use "
+                f"{audio_roles} (audio level {plan.audio!r})"
+            )
+    return problems

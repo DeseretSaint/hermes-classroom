@@ -66,14 +66,7 @@
     }
   },
   "sources": [],
-  "media": [
-    {
-      "kind": "visual",
-      "purpose": "Warm and cold picture cards",
-      "spec": "four cards, large print, no realistic flame imagery",
-      "text_equivalent": "Cards show kettle, fridge, toaster and ice cube with labels"
-    }
-  ],
+  "media": [],
   "parent_notes": "Let the child explore the kitchen freely while you set the table.",
   "supervision_notes": [
     "Adult nearby"

@@ -30,7 +30,7 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v2.json",
-    "cb.rpc": "rpc.v7.json",
+    "cb.rpc": "rpc.v8.json",
     "cb.db": "db.v4.json",
     "cb.jobs": "jobs.v2.json",
     "cb.pack": "pack-manifest.v1.json",
@@ -39,7 +39,7 @@ CONTRACT_FILES: dict[str, str] = {
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 7
+WIRE_CONTRACT_VERSION = 8
 
 
 class ContractError(Exception):

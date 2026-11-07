@@ -844,6 +844,31 @@ class LessonJobTest(GenerationTestBase):
             self.assertIn("accepted_alternatives", reference)
             self.assertTrue(json.loads(check["rubric_json"])["criteria"])
 
+    def test_lesson_records_the_capability_plan_it_was_authored_under(self) -> None:
+        plan_result = self.approved_plan()
+        llm = self.lesson_script(validation_from_fixture())
+        result = self.run_lessons(plan_result, llm)
+        generation_requests = [
+            request for request in llm.requests if request.purpose == "coursebook.lesson.generate"
+        ]
+        self.assertTrue(generation_requests)
+        for request in generation_requests:
+            self.assertEqual(request.prompt_version, "lesson-prompt.v4")
+            self.assertIn("Capability policy", request.instructions)
+            payload = json.loads(request.input_text)
+            self.assertIn("capability_policy", payload)
+            self.assertTrue(payload["capability_policy"]["reasons"])
+        for item in result["lessons"]:
+            recorded = json.loads(
+                self.rows("SELECT policy_json FROM gen_lessons WHERE id = ?", (item["lesson_id"],))[0][
+                    "policy_json"
+                ]
+            )
+            self.assertEqual(recorded["recipe"], "committed")
+            self.assertEqual(recorded["check_angle"], recorded["evidence_target"])
+            self.assertIn(recorded["rubric_profile"], set(gen.capability_policy.RUBRIC_PROFILES))
+            self.assertTrue(recorded["reasons"])
+
     def test_learner_page_never_contains_reference_answers_or_rubric(self) -> None:
         plan_result = self.approved_plan()
         result = self.run_lessons(plan_result, self.lesson_script(validation_from_fixture()))
@@ -882,7 +907,7 @@ class LessonJobTest(GenerationTestBase):
         text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
         self.assertIn("3-6", text)
         self.assertIn("distinct observable", text)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v3")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v4")
 
     def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
         plan_result = self.approved_plan()

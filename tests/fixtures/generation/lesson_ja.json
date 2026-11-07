@@ -79,14 +79,7 @@
   "sources": [
     "SRC_ALPHA"
   ],
-  "media": [
-    {
-      "kind": "visual",
-      "purpose": "Show the two phrases side by side in large type",
-      "spec": "two-line card, Japanese script above romaji, high contrast",
-      "text_equivalent": "Card shows お願いします (onegaishimasu) and ありがとうございます (arigatou gozaimasu)"
-    }
-  ],
+  "media": [],
   "parent_notes": null,
   "supervision_notes": []
 }
