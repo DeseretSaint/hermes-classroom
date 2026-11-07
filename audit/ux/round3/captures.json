@@ -1,0 +1,2221 @@
+{
+  "pluginSha": "d61bc03b804c0d996dd4fc84eab5478c87e9aa44131e37fa85829b265ca80790",
+  "repoPluginSha": "c01eebc942baaef738e1716093004d6332109203467368973d2a98a1d2a73008",
+  "startedAt": "2026-11-07T22:48:40.212Z",
+  "viewport": {
+    "live": "1049x1149 css (host zoom 0.896)",
+    "w900": "900x900 css",
+    "w460": "460x900 css"
+  },
+  "theme": "dark only (host theme toggle not reachable inside #/coursebook)",
+  "captures": [
+    {
+      "id": "01-field-desk",
+      "at": "2026-11-07T22:48:41.017Z",
+      "note": {
+        "surface": "Field Desk home"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H3:Greet café staff and open the interaction politely"
+      ],
+      "textHead": "Coursebook\nPick up where you left off, or open another course.\nNew course\nCourses\nLibrary\nParent Studio\nCONTINUE\nSection 1 of 4\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nSession length not recorded\nLast touched 57 min ago\nNEXT ·\nStart Greet café staff and open the interaction politely\nStart the lesson\nOpen the section\n4\nSECTIONS\n0\nWITH EVIDENCE\n0\nDUE NOW\nFIELD NOTES\nAll field notes\n\nSave an explanation, visual or quiz moment and it will appear here.\n\nGo to the current lesson\nYOUR PATH\n0 of 4 sections have evidence\n01\nGreet café staff and open the interaction politely\nNot started\n02\nOrder one drink using a polite request form\nNot started\n03\nDistinguish これ / それ / あれ when pointing at menu items\nNot started\n04\nUnderstand a staff follow-up question about drink size\nNot started\nShow sources\nSources for “Greet café staff and open the interaction politely”\nALL COURSES · 20\nSearch and manage courses\nFR\nFind relative minors on the circle of fifths\nReview and approve the plan\n0 of 1 with evidence\nOpen\nRF\nRoadside flat repair\nResume Replace the inner tube and inspect the tire for the cause of the flat\n0 of 1 with evidence\nOpen\nJA\nJapanese affection and register — an L0 demonstration classroom\nResume Explain why register changes with the relationship\n1 of 4 with evidence\nOpen\n+16 more courses on this profile",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "Start the lesson",
+        "Open the section",
+        "All field notes",
+        "Go to the current lesson",
+        "01 Greet café staff and open the interaction politely Not st",
+        "02 Order one drink using a polite request form Not started",
+        "03 Distinguish これ / それ / あれ when pointing at menu items Not ",
+        "04 Understand a staff follow-up question about drink size No",
+        "Show sources",
+        "Search and manage courses",
+        "Open",
+        "Open",
+        "Open"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/01-field-desk-live.png",
+        "w900": "audit/ux/round3/01-field-desk-w900.png",
+        "w460": "audit/ux/round3/01-field-desk-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nPick up where you left off, or open another course.\nNew course\nCourses\nLibrary\nParent Studio\nCONTINUE\nSection 1 of 4\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nSession length not recorded\nLast touched 57 min ago\nNEXT ·\nStart Greet café staff and open the interaction politely\nStart the lesson\nOpen the section\n4\nSECTIONS\n0\nWITH EVIDENCE\n0\nDUE NOW\nFIELD NOTES\nAll field notes\n\nSave an explanation, visual or quiz moment and it will appear here.\n\nGo to the c",
+          "textLength": 1350,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 3,
+              "text": "Greet café staff and open the interaction politely"
+            }
+          ],
+          "animation": []
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nPick up where you left off, or open another course.\nNew course\nCourses\nLibrary\nParent Studio\nCONTINUE\nSection 1 of 4\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nSession length not recorded\nLast touched 57 min ago\nNEXT ·\nStart Greet café staff and open the interaction politely\nStart the lesson\nOpen the section\n4\nSECTIONS\n0\nWITH EVIDENCE\n0\nDUE NOW\nFIELD NOTES\nAll field notes\n\nSave an explanation, visual or quiz moment and it will appear here.\n\nGo to the c",
+          "textLength": 1350,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 3,
+              "text": "Greet café staff and open the interaction politely"
+            }
+          ],
+          "animation": []
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "02-all-courses",
+      "at": "2026-11-07T22:48:45.222Z",
+      "note": {
+        "surface": "All courses"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H3:Order coffee in Japanese",
+        "H3:Find relative minors on the circle of fifths",
+        "H3:Roadside flat repair",
+        "H3:Japanese affection and register — an L0 demonstration classroom",
+        "H3:Japanese affection and register — an L0 demonstration classroom",
+        "H3:Japanese affection and register — an L0 demonstration classroom",
+        "H3:Kitchen fractions for a 9-year-old",
+        "H3:Kitchen fractions for a 9-year-old",
+        "H3:Kitchen fractions for a 9-year-old",
+        "H3:Kitchen fractions for a 9-year-old"
+      ],
+      "textHead": "Coursebook\nEvery course on this profile, with search and the next step the backend recorded.\nNew course\nCourses\nLibrary\nParent Studio\nBack to the Field Desk\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese affection and register — an L0 demonstration classroom · 3 due\nReview\nOC\nOrder coffee in Japanese\nA steady plan\nStart Greet café staff and open the interaction politely\n0 independent · 4 objectives\nOpen\nFR\nFind relative minors on the circle of fifths\nOne task I need to do now\nPlan update\nReview and approve the plan\n0 independent · 1 objective\nA newer plan draft is waiting for review.\nOpen\nRF\nRoadside flat repair\nOne task I need to do now\nPlan update\nResume Replace the inner tube and inspect the tire for the cause of the flat\n0 independent · 1 objective\nA newer plan draft is waiting for review.\nOpen\nResume lesson\nJA\nJapanese affection and register — an L0 demonstration classroom\nA little at a time\nSource stale\nResume Explain why register changes with the relationship\n1 independent · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen\nResume lesson\nJA\nJapanese affection and register — an L0 demonstration classroom\nA little at a time\nSource stale\nReview 1 objective(s)\n0 independent · 1 due · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen\nJA\nJapanese affection and register — an L0 demonstration classroom\nA little at a time\nSource stale\nReview 3 objective(s)\n0 independent · 3 due · 4 objectives\nA source behind this course changed. Existing evidence is kept; the source needs review.\nFrom a local pack · v1.0.0\nOpen\nKF\nKitchen fractions for a 9-year-old\nPreparing for my child\nStart Name the parts: half, quarter and eighth (kitchen table)\n0 independent · 6 objectives\nOpen\nKF\nKitchen fractions for a 9-year-old\nPreparing for",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "Back to the Field Desk",
+        "input[Search courses]= ph=Search courses",
+        "All",
+        "In progress",
+        "Review due",
+        "Archived",
+        "Review",
+        "Review",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "Resume lesson",
+        "",
+        "Open",
+        "Resume lesson",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        "",
+        "Open",
+        ""
+      ],
+      "shots": {
+        "live": "audit/ux/round3/02-all-courses-live.png",
+        "w900": "audit/ux/round3/02-all-courses-w900.png",
+        "w460": "audit/ux/round3/02-all-courses-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nEvery course on this profile, with search and the next step the backend recorded.\nNew course\nCourses\nLibrary\nParent Studio\nBack to the Field Desk\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese affection and register — an L0 demonstration classroom · 3 due\nReview\nOC\nOrder coffee in Japanese\nA steady plan\nStart Greet café staff and open the interaction politely\n0 independent · 4 objectives\nOpen\nFR\nFi",
+          "textLength": 3535,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 3,
+              "text": "Order coffee in Japanese"
+            },
+            {
+              "level": 3,
+              "text": "Find relative minors on the circle of fifths"
+            },
+            {
+              "level": 3,
+              "text": "Roadside flat repair"
+            },
+            {
+              "level": 3,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 3,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 3,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            }
+          ],
+          "animation": []
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nEvery course on this profile, with search and the next step the backend recorded.\nNew course\nCourses\nLibrary\nParent Studio\nBack to the Field Desk\nAll\nIn progress\nReview due\nArchived\nREVIEW DUE\nJapanese affection and register — an L0 demonstration classroom · 1 due\nReview\nJapanese affection and register — an L0 demonstration classroom · 3 due\nReview\nOC\nOrder coffee in Japanese\nA steady plan\nStart Greet café staff and open the interaction politely\n0 independent · 4 objectives\nOpen\nFR\nFi",
+          "textLength": 3535,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 3,
+              "text": "Order coffee in Japanese"
+            },
+            {
+              "level": 3,
+              "text": "Find relative minors on the circle of fifths"
+            },
+            {
+              "level": 3,
+              "text": "Roadside flat repair"
+            },
+            {
+              "level": 3,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 3,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 3,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            },
+            {
+              "level": 3,
+              "text": "Kitchen fractions for a 9-year-old"
+            }
+          ],
+          "animation": []
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "03-all-courses-empty-search",
+      "at": "2026-11-07T22:48:49.150Z",
+      "note": {
+        "surface": "All courses — no search results"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [],
+      "textHead": "Coursebook\nEvery course on this profile, with search and the next step the backend recorded.\nNew course\nCourses\nLibrary\nParent Studio\nBack to the Field Desk\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "Back to the Field Desk",
+        "Clear search"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/03-all-courses-empty-search-live.png",
+        "w900": "audit/ux/round3/03-all-courses-empty-search-w900.png",
+        "w460": "audit/ux/round3/03-all-courses-empty-search-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nEvery course on this profile, with search and the next step the backend recorded.\nNew course\nCourses\nLibrary\nParent Studio\nBack to the Field Desk\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+          "textLength": 268,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [],
+          "animation": []
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nEvery course on this profile, with search and the next step the backend recorded.\nNew course\nCourses\nLibrary\nParent Studio\nBack to the Field Desk\nNo courses match your search\nYour courses are still here; the search just excludes them right now.\nClear search",
+          "textLength": 268,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [],
+          "animation": []
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "04-library",
+      "at": "2026-11-07T22:49:05.109Z",
+      "note": {
+        "surface": "Library"
+      },
+      "view": "library",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [],
+      "textHead": "Coursebook\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nUse my college syllabus\nImport pack\nCourses\nLibrary\nParent Studio\nHave a college syllabus?\nStart a companion course from your own class. Your syllabus sets the scope; Coursebook authors its own lessons alongside it.\nUse my college syllabus\nImport a pack\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nAll\nBundled\nLocal\nWhat we check / what we do not check\nFR\nFind relative minors on the circle of fifths\nAuthored here\n1 objectives\nPreview\nJA\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\nv1.0.0\n4 objectives\nPreview\nJA\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\nv1.0.0\n4 objectives\nPreview\nJA\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\nv1.0.0\n4 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n0 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n0 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n0 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n0 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n0 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n0 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n6 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n6 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n0 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n0 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n6 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n6 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n0 objectives\nPreview\nKF\nKitchen fractions for a 9-year-old\nAuthored here\n5 objectives\nPreview\nOC\nOrder coffee",
+      "controls": [
+        "Use my college syllabus",
+        "Import pack",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "Use my college syllabus",
+        "Import a pack",
+        "All",
+        "Bundled",
+        "Local",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview",
+        "Preview"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/04-library-live.png",
+        "w900": "audit/ux/round3/04-library-w900.png",
+        "w460": "audit/ux/round3/04-library-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nUse my college syllabus\nImport pack\nCourses\nLibrary\nParent Studio\nHave a college syllabus?\nStart a companion course from your own class. Your syllabus sets the scope; Coursebook authors its own lessons alongside it.\nUse my college syllabus\nImport a pack\nCourses made by other people. You will see who made it, where it came from and what has been checked before you ad",
+          "textLength": 2106,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [],
+          "animation": []
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nUse my college syllabus\nImport pack\nCourses\nLibrary\nParent Studio\nHave a college syllabus?\nStart a companion course from your own class. Your syllabus sets the scope; Coursebook authors its own lessons alongside it.\nUse my college syllabus\nImport a pack\nCourses made by other people. You will see who made it, where it came from and what has been checked before you ad",
+          "textLength": 2106,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [],
+          "animation": []
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "05-library-import-pack",
+      "at": "2026-11-07T22:49:10.341Z",
+      "note": {
+        "surface": "Library — import pack"
+      },
+      "view": "library",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [],
+      "textHead": "Coursebook\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nImport a pack\nClose\nChoose a course pack\nA pack is a zip file someone else made: lessons, sources, and a manifest that lists every file with its hash. Choose the folder that holds the .zip the pack arrived in. Coursebook copies it into a staging area and checks every file before showing it to you — nothing is added until you review it and press Import.\nChoose folder…\nCancel",
+      "controls": [
+        "Close",
+        "Choose folder…",
+        "Cancel"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/05-library-import-pack-live.png",
+        "w900": "audit/ux/round3/05-library-import-pack-w900.png",
+        "w460": "audit/ux/round3/05-library-import-pack-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nImport a pack\nClose\nChoose a course pack\nA pack is a zip file someone else made: lessons, sources, and a manifest that lists every file with its hash. Choose the folder that holds the .zip the pack arrived in. Coursebook copies it into a staging area and checks every file before showing it to you — nothing is added until you review it and press Import.\nChoose folder",
+          "textLength": 508,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [],
+          "animation": []
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nImport a pack\nClose\nChoose a course pack\nA pack is a zip file someone else made: lessons, sources, and a manifest that lists every file with its hash. Choose the folder that holds the .zip the pack arrived in. Coursebook copies it into a staging area and checks every file before showing it to you — nothing is added until you review it and press Import.\nChoose folder",
+          "textLength": 508,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [],
+          "animation": []
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "06-library-syllabus-intake",
+      "at": "2026-11-07T22:49:21.459Z",
+      "note": {
+        "surface": "Library — college syllabus intake"
+      },
+      "view": "library",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [],
+      "textHead": "Coursebook\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nUse my college syllabus\nStart a companion course from your own class. Your syllabus sets the scope; Coursebook authors its own lessons alongside it.\nMarkdown, plain text, PDF or Word (.docx). Up to 8 MB; 200,000 characters of text.\nChoose a syllabus file\nCancel\nOr paste the syllabus text\n0 of 200,000 characters\nYour file stays on this profile. The parse and the alignment are sent to the model provider you have configured, and only after you acknowledge that.\nUse this text",
+      "controls": [
+        "Choose a syllabus file",
+        "Cancel",
+        "",
+        "",
+        "[disabled] Use this text"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/06-library-syllabus-intake-live.png",
+        "w900": "audit/ux/round3/06-library-syllabus-intake-w900.png",
+        "w460": "audit/ux/round3/06-library-syllabus-intake-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nUse my college syllabus\nStart a companion course from your own class. Your syllabus sets the scope; Coursebook authors its own lessons alongside it.\nMarkdown, plain text, PDF or Word (.docx). Up to 8 MB; 200,000 characters of text.\nChoose a syllabus file\nCancel\nOr paste the syllabus text\n0 of 200,000 characters\nYour file stays on this profile. The parse and the alig",
+          "textLength": 608,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [
+            {
+              "name": "Acknowledge that the extracted text goes",
+              "w": 16,
+              "h": 16
+            }
+          ],
+          "live": [],
+          "headings": [],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nCourses made by other people. You will see who made it, where it came from and what has been checked before you add one.\nUse my college syllabus\nStart a companion course from your own class. Your syllabus sets the scope; Coursebook authors its own lessons alongside it.\nMarkdown, plain text, PDF or Word (.docx). Up to 8 MB; 200,000 characters of text.\nChoose a syllabus file\nCancel\nOr paste the syllabus text\n0 of 200,000 characters\nYour file stays on this profile. The parse and the alig",
+          "textLength": 608,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [
+            {
+              "name": "Acknowledge that the extracted text goes",
+              "w": 16,
+              "h": 16
+            }
+          ],
+          "live": [],
+          "headings": [],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "07-parent-studio",
+      "at": "2026-11-07T22:49:30.100Z",
+      "note": {
+        "surface": "Parent Studio"
+      },
+      "view": "studio",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [],
+      "textHead": "Coursebook\nPlan lessons for your child here. You teach them; there is no child chat, and answers never reach the learner pages.\nNew lesson plan\nCourses\nLibrary\nParent Studio\nLesson plans you prepared for your child\n\nTwo plans can describe the same lesson and still be different plans: each brief you write is kept as its own plan, so you can keep one per child, compare two versions, or start again without losing the first.\n\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago\nOpen plan",
+      "controls": [
+        "New lesson plan",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan",
+        "Open plan"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/07-parent-studio-live.png",
+        "w900": "audit/ux/round3/07-parent-studio-w900.png",
+        "w460": "audit/ux/round3/07-parent-studio-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nPlan lessons for your child here. You teach them; there is no child chat, and answers never reach the learner pages.\nNew lesson plan\nCourses\nLibrary\nParent Studio\nLesson plans you prepared for your child\n\nTwo plans can describe the same lesson and still be different plans: each brief you write is kept as its own plan, so you can keep one per child, compare two versions, or start again without losing the first.\n\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago",
+          "textLength": 1615,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [],
+          "animation": []
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nPlan lessons for your child here. You teach them; there is no child chat, and answers never reach the learner pages.\nNew lesson plan\nCourses\nLibrary\nParent Studio\nLesson plans you prepared for your child\n\nTwo plans can describe the same lesson and still be different plans: each brief you write is kept as its own plan, so you can keep one per child, compare two versions, or start again without losing the first.\n\nKitchen fractions for a 9-year-old\nLesson plan for a child\nupdated 1 d ago",
+          "textLength": 1615,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [],
+          "animation": []
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "08-new-course-step1",
+      "at": "2026-11-07T22:49:36.513Z",
+      "note": {
+        "surface": "New course — step 1 scope (unselected)"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:What do you want to make?"
+      ],
+      "textHead": "Coursebook\nPick up where you left off, or open another course.\nSTEP 1 OF 3\nWhat do you want to make?\nCancel\n\nPick how much course you want. You can change this before anything is created.\n\n01\nA single lesson\nOne lesson with one check — best when you have a task in front of you today.\nCHOOSE\n02\nA short course (a few sessions)\nA few sessions that build on each other, each with its own check.\nCHOOSE\n03\nA full course (weeks or months)\nA longer course split into units; you review the plan before any lesson is written.\nCHOOSE\nChoose one option above to continue. Nothing is generated until you review the plan on the last step.\nContinue",
+      "controls": [
+        "Cancel",
+        "01 A single lesson One lesson with one check — best when you",
+        "02 A short course (a few sessions) A few sessions that build",
+        "03 A full course (weeks or months) A longer course split int",
+        "[disabled] Continue"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/08-new-course-step1-live.png",
+        "w900": "audit/ux/round3/08-new-course-step1-w900.png",
+        "w460": "audit/ux/round3/08-new-course-step1-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nPick up where you left off, or open another course.\nSTEP 1 OF 3\nWhat do you want to make?\nCancel\n\nPick how much course you want. You can change this before anything is created.\n\n01\nA single lesson\nOne lesson with one check — best when you have a task in front of you today.\nCHOOSE\n02\nA short course (a few sessions)\nA few sessions that build on each other, each with its own check.\nCHOOSE\n03\nA full course (weeks or months)\nA longer course split into units; you review the plan before any ",
+          "textLength": 636,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [
+            {
+              "role": null,
+              "live": "polite",
+              "text": "Choose one option above to continue. Nothing is generated un"
+            }
+          ],
+          "headings": [
+            {
+              "level": 2,
+              "text": "What do you want to make?"
+            }
+          ],
+          "animation": []
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nPick up where you left off, or open another course.\nSTEP 1 OF 3\nWhat do you want to make?\nCancel\n\nPick how much course you want. You can change this before anything is created.\n\n01\nA single lesson\nOne lesson with one check — best when you have a task in front of you today.\nCHOOSE\n02\nA short course (a few sessions)\nA few sessions that build on each other, each with its own check.\nCHOOSE\n03\nA full course (weeks or months)\nA longer course split into units; you review the plan before any ",
+          "textLength": 636,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [
+            {
+              "role": null,
+              "live": "polite",
+              "text": "Choose one option above to continue. Nothing is generated un"
+            }
+          ],
+          "headings": [
+            {
+              "level": 2,
+              "text": "What do you want to make?"
+            }
+          ],
+          "animation": []
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "09-new-course-step1-selected",
+      "at": "2026-11-07T22:49:41.397Z",
+      "note": {
+        "surface": "New course — step 1 selected"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:What do you want to make?"
+      ],
+      "textHead": "Coursebook\nPick up where you left off, or open another course.\nSTEP 1 OF 3\nWhat do you want to make?\nCancel\n\nPick how much course you want. You can change this before anything is created.\n\n01\nA single lesson\nOne lesson with one check — best when you have a task in front of you today.\nCHOOSE\n02\nA short course (a few sessions)\nA few sessions that build on each other, each with its own check.\nCHOOSE\n03\nA full course (weeks or months)\nA longer course split into units; you review the plan before any lesson is written.\nSELECTED\nA full course. Research and drafting may take several minutes and run longest; the plan carries its own estimate once it exists.\nContinue",
+      "controls": [
+        "Cancel",
+        "01 A single lesson One lesson with one check — best when you",
+        "02 A short course (a few sessions) A few sessions that build",
+        "03 A full course (weeks or months) A longer course split int",
+        "Continue"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/09-new-course-step1-selected-live.png",
+        "w900": "audit/ux/round3/09-new-course-step1-selected-w900.png",
+        "w460": "audit/ux/round3/09-new-course-step1-selected-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nPick up where you left off, or open another course.\nSTEP 1 OF 3\nWhat do you want to make?\nCancel\n\nPick how much course you want. You can change this before anything is created.\n\n01\nA single lesson\nOne lesson with one check — best when you have a task in front of you today.\nCHOOSE\n02\nA short course (a few sessions)\nA few sessions that build on each other, each with its own check.\nCHOOSE\n03\nA full course (weeks or months)\nA longer course split into units; you review the plan before any ",
+          "textLength": 665,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [
+            {
+              "role": null,
+              "live": "polite",
+              "text": "A full course. Research and drafting may take several minute"
+            }
+          ],
+          "headings": [
+            {
+              "level": 2,
+              "text": "What do you want to make?"
+            }
+          ],
+          "animation": []
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nPick up where you left off, or open another course.\nSTEP 1 OF 3\nWhat do you want to make?\nCancel\n\nPick how much course you want. You can change this before anything is created.\n\n01\nA single lesson\nOne lesson with one check — best when you have a task in front of you today.\nCHOOSE\n02\nA short course (a few sessions)\nA few sessions that build on each other, each with its own check.\nCHOOSE\n03\nA full course (weeks or months)\nA longer course split into units; you review the plan before any ",
+          "textLength": 665,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [
+            {
+              "role": null,
+              "live": "polite",
+              "text": "A full course. Research and drafting may take several minute"
+            }
+          ],
+          "headings": [
+            {
+              "level": 2,
+              "text": "What do you want to make?"
+            }
+          ],
+          "animation": []
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "10-new-course-step2",
+      "at": "2026-11-07T22:49:46.583Z",
+      "note": {
+        "surface": "New course — step 2 (what it covers)"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:What should it cover?"
+      ],
+      "textHead": "Coursebook\nPick up where you left off, or open another course.\nSTEP 2 OF 3\nWhat should it cover?\nCancel\nWhat do you want to be able to do?\nBe specific about the situation you want to handle. Examples: Replace the tube on my road bike · Hold a six-minute conversation in Spanish · Understand the first month of a statistics class.\nName this course\nThis is the name you will see in your course list.\nHow will you use it?\nOne task I need to do now\nA single thing to get right — a repair, a form, a procedure. You practise the task, not a quiz.\nA little at a time\nShort sessions you pick up when you have ten minutes, with no schedule to keep.\nA steady plan\nA sequence that builds on itself, with practice you come back to.\nAlongside something else\nA subject you keep returning to while you study or work on other things.\nPreparing lessons for a child is a different path: Parent Studio, not a learner course.\nHelp me tune it (optional)\nBack\nContinue",
+      "controls": [
+        "Cancel",
+        "",
+        "input[Bike tube replacement]= ph=Bike tube replacement",
+        "One task I need to do now A single thing to get right — a re",
+        "A little at a time Short sessions you pick up when you have ",
+        "A steady plan A sequence that builds on itself, with practic",
+        "Alongside something else A subject you keep returning to whi",
+        "input[e.g. complete beginner, or rusty]= ph=e.g. complete beginner, or rusty",
+        "input[e.g. bike repair, Spanish, statistics]= ph=e.g. bike repair, Spanish, statistics",
+        "input[e.g. es-ES for Spanish, ja-JP for Japanese]= ph=e.g. es-ES for Spanish, ja-JP for Japanese",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Back",
+        "Continue"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/10-new-course-step2-live.png",
+        "w900": "audit/ux/round3/10-new-course-step2-w900.png",
+        "w460": "audit/ux/round3/10-new-course-step2-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nPick up where you left off, or open another course.\nSTEP 2 OF 3\nWhat should it cover?\nCancel\nWhat do you want to be able to do?\nBe specific about the situation you want to handle. Examples: Replace the tube on my road bike · Hold a six-minute conversation in Spanish · Understand the first month of a statistics class.\nName this course\nThis is the name you will see in your course list.\nHow will you use it?\nOne task I need to do now\nA single thing to get right — a repair, a form, a proce",
+          "textLength": 946,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [
+            {
+              "name": "Light",
+              "w": 44,
+              "h": 19
+            },
+            {
+              "name": "Steady",
+              "w": 54,
+              "h": 19
+            },
+            {
+              "name": "Intense",
+              "w": 56,
+              "h": 19
+            },
+            {
+              "name": "Survey",
+              "w": 54,
+              "h": 19
+            },
+            {
+              "name": "Working",
+              "w": 60,
+              "h": 19
+            },
+            {
+              "name": "Deep",
+              "w": 46,
+              "h": 19
+            },
+            {
+              "name": "None",
+              "w": 46,
+              "h": 19
+            },
+            {
+              "name": "Self-check",
+              "w": 71,
+              "h": 19
+            },
+            {
+              "name": "Graded",
+              "w": 57,
+              "h": 19
+            },
+            {
+              "name": "Guided",
+              "w": 55,
+              "h": 19
+            },
+            {
+              "name": "Balanced",
+              "w": 66,
+              "h": 19
+            },
+            {
+              "name": "Independent",
+              "w": 81,
+              "h": 19
+            }
+          ],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "What should it cover?"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nPick up where you left off, or open another course.\nSTEP 2 OF 3\nWhat should it cover?\nCancel\nWhat do you want to be able to do?\nBe specific about the situation you want to handle. Examples: Replace the tube on my road bike · Hold a six-minute conversation in Spanish · Understand the first month of a statistics class.\nName this course\nThis is the name you will see in your course list.\nHow will you use it?\nOne task I need to do now\nA single thing to get right — a repair, a form, a proce",
+          "textLength": 946,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [
+            {
+              "name": "Light",
+              "w": 44,
+              "h": 19
+            },
+            {
+              "name": "Steady",
+              "w": 54,
+              "h": 19
+            },
+            {
+              "name": "Intense",
+              "w": 56,
+              "h": 19
+            },
+            {
+              "name": "Survey",
+              "w": 54,
+              "h": 19
+            },
+            {
+              "name": "Working",
+              "w": 60,
+              "h": 19
+            },
+            {
+              "name": "Deep",
+              "w": 46,
+              "h": 19
+            },
+            {
+              "name": "None",
+              "w": 46,
+              "h": 19
+            },
+            {
+              "name": "Self-check",
+              "w": 71,
+              "h": 19
+            },
+            {
+              "name": "Graded",
+              "w": 57,
+              "h": 19
+            },
+            {
+              "name": "Guided",
+              "w": 55,
+              "h": 19
+            },
+            {
+              "name": "Balanced",
+              "w": 66,
+              "h": 19
+            },
+            {
+              "name": "Independent",
+              "w": 81,
+              "h": 19
+            }
+          ],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "What should it cover?"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome w-full min-w-0 rounded-[2.5px] border t",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "11-plan-review",
+      "at": "2026-11-07T22:48:57.272Z",
+      "note": {
+        "surface": "Plan review / approval — pending plan draft"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:Find relative minors on the circle of fifths",
+        "H3:Find relative minors on the circle of fifths"
+      ],
+      "textHead": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nFR\nONE TASK I NEED TO DO NOW\nFind relative minors on the circle of fifths\nPlan update\nDerive the relative minor of a named major key using the circle of fifths\nExport course…\nStart lesson\nView\nOverview\nA newer plan draft is waiting for review.\nFIELD NOTES\nFind relative minors on the circle of fifths\n0 of 1 objective has independent evidence\nNext ·\nDerive the relative minor of a named major key using the circle of fifths\nNext\nCURRENT OBJECTIVE\nDerive the relative minor of a named major key using the circle of fifths\nNot started\nDo the steps\n\nReview and approve the plan\n\nStart lesson\nOpen this section\nREVIEW\n\nNothing due. The review queue stays quiet until evidence is scheduled.\n\nRECENT EVENT\n\nNo attempt has been recorded on this course yet.\n\nCourse details",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All courses",
+        "Export course…",
+        "Start lesson",
+        "Overview",
+        "Start lesson",
+        "Open this section"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/11-plan-review-live.png",
+        "w900": "audit/ux/round3/11-plan-review-w900.png",
+        "w460": "audit/ux/round3/11-plan-review-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nFR\nONE TASK I NEED TO DO NOW\nFind relative minors on the circle of fifths\nPlan update\nDerive the relative minor of a named major key using the circle of fifths\nExport course…\nStart lesson\nView\nOverview\nA newer plan draft is waiting for review.\nFIELD NOTES\nFind relative minors on the circle of fifths\n0 of 1 objective has independent evidence\nNext ·\nDerive the relative",
+          "textLength": 896,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Find relative minors on the circle of fifths"
+            },
+            {
+              "level": 3,
+              "text": "Find relative minors on the circle of fifths"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nFR\nONE TASK I NEED TO DO NOW\nFind relative minors on the circle of fifths\nPlan update\nDerive the relative minor of a named major key using the circle of fifths\nExport course…\nStart lesson\nView\nOverview\nA newer plan draft is waiting for review.\nFIELD NOTES\nFind relative minors on the circle of fifths\n0 of 1 objective has independent evidence\nNext ·\nDerive the relative",
+          "textLength": 896,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Find relative minors on the circle of fifths"
+            },
+            {
+              "level": 3,
+              "text": "Find relative minors on the circle of fifths"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "12-course-detail",
+      "at": "2026-11-07T22:49:54.787Z",
+      "note": {
+        "surface": "Course detail — overview"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:Order coffee in Japanese",
+        "H3:Order coffee in Japanese"
+      ],
+      "textHead": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nOverview\nFIELD NOTES\nOrder coffee in Japanese\n0 of 4 objectives have independent evidence\nNext ·\nGreet café staff and open the interaction politely\nNext\nCURRENT OBJECTIVE\nGreet café staff and open the interaction politely\nNot started\nSay or write it\n\nStart Greet café staff and open the interaction politely\n\nStart lesson\nOpen this section\nREVIEW\n\nNothing due. The review queue stays quiet until evidence is scheduled.\n\nRECENT EVENT\n\nNo attempt has been recorded on this course yet.\n\nCourse details",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All courses",
+        "Export course…",
+        "Start lesson",
+        "Overview",
+        "Start lesson",
+        "Open this section"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/12-course-detail-live.png",
+        "w900": "audit/ux/round3/12-course-detail-w900.png",
+        "w460": "audit/ux/round3/12-course-detail-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nOverview\nFIELD NOTES\nOrder coffee in Japanese\n0 of 4 objectives have independent evidence\nNext ·\nGreet café staff and open the interaction politely\nNext\nCURRENT OBJECTIVE\nGreet café staff and open the interaction politely\nNot started\nSay or wr",
+          "textLength": 755,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Order coffee in Japanese"
+            },
+            {
+              "level": 3,
+              "text": "Order coffee in Japanese"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nOverview\nFIELD NOTES\nOrder coffee in Japanese\n0 of 4 objectives have independent evidence\nNext ·\nGreet café staff and open the interaction politely\nNext\nCURRENT OBJECTIVE\nGreet café staff and open the interaction politely\nNot started\nSay or wr",
+          "textLength": 755,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Order coffee in Japanese"
+            },
+            {
+              "level": 3,
+              "text": "Order coffee in Japanese"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "14-tab-notebook",
+      "at": "2026-11-07T22:54:00.672Z",
+      "note": {
+        "surface": "Course view — Notebook (via View dropdown)"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:Order coffee in Japanese"
+      ],
+      "textHead": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nNotebook\nAll tags\nRecently saved\nOldest first\nNothing saved yet\nSave an explanation, visual or quiz moment and it will appear here.\nGo to the current lesson",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All courses",
+        "Export course…",
+        "Start lesson",
+        "Notebook",
+        "All tags",
+        "Recently saved",
+        "Oldest first",
+        "Go to the current lesson"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/14-tab-notebook-live.png",
+        "w900": "audit/ux/round3/14-tab-notebook-w900.png",
+        "w460": "audit/ux/round3/14-tab-notebook-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nNotebook\nAll tags\nRecently saved\nOldest first\nNothing saved yet\nSave an explanation, visual or quiz moment and it will appear here.\nGo to the current lesson",
+          "textLength": 413,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Order coffee in Japanese"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nNotebook\nAll tags\nRecently saved\nOldest first\nNothing saved yet\nSave an explanation, visual or quiz moment and it will appear here.\nGo to the current lesson",
+          "textLength": 413,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Order coffee in Japanese"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            },
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "15-tab-quizzes",
+      "at": "2026-11-07T22:54:05.555Z",
+      "note": {
+        "surface": "Course view — Quizzes (via View dropdown)"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:Order coffee in Japanese"
+      ],
+      "textHead": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nCould not be graded\nAll assistance\nFirst try\nHinted\nAnswer shown\nOverride\nNo quiz attempts yet\nAnswers you give in a lesson are recorded here with their original feedback.",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All courses",
+        "Export course…",
+        "Start lesson",
+        "Quizzes",
+        "All results",
+        "Passed",
+        "Partly there",
+        "Not yet",
+        "Could not be graded",
+        "All assistance",
+        "First try",
+        "Hinted",
+        "Answer shown",
+        "Override"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/15-tab-quizzes-live.png",
+        "w900": "audit/ux/round3/15-tab-quizzes-w900.png",
+        "w460": "audit/ux/round3/15-tab-quizzes-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nCould not be graded\nAll assistance\nFirst try\nHinted\nAnswer shown\nOverride\nNo quiz attempts yet\nAnswers you give in a lesson are recorded here with their original feedback.",
+          "textLength": 476,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Order coffee in Japanese"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nQuizzes\nAll results\nPassed\nPartly there\nNot yet\nCould not be graded\nAll assistance\nFirst try\nHinted\nAnswer shown\nOverride\nNo quiz attempts yet\nAnswers you give in a lesson are recorded here with their original feedback.",
+          "textLength": 476,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Order coffee in Japanese"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "16-tab-plan",
+      "at": "2026-11-07T22:54:10.439Z",
+      "note": {
+        "surface": "Course view — Plan (via View dropdown)"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:Order coffee in Japanese"
+      ],
+      "textHead": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nPlan\n\nResearch and drafting may take several minutes. A plan is written before any lesson exists.\n\nOpen the first section\n\nThe outline is approved. Lesson pages are written by the lessons job below; the section list is the approved outline, not generated content.\n\nEstimated sessions are planning aids, not promises. Only a cold independent result moves an objective to independent evidence.\n\nGreet café staff and open the interaction politely\nNot started\nSay or write it\nOpen section\nChallenge out\nOrder one drink using a polite request form\nNot started\nSay or write it\nOpen section\nChallenge out\nDistinguish これ / それ / あれ when pointing at menu items\nNot started\nTell the difference\nOpen section\nChallenge out\nUnderstand a staff follow-up question about drink size\nNot started\nExplain it\nOpen section\nChallenge out\n\nEvidence criteria, attempt counts and dial edits need the objective read/write commands that this build does not publish yet; nothing is invented to fill the gap.\n\nPlan approved · v1\nplan sha256:01b90d4059db…\nGenerate lessons\n\nApproving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All courses",
+        "Export course…",
+        "Start lesson",
+        "Plan",
+        "Open the first section",
+        "Open section",
+        "Challenge out",
+        "Open section",
+        "Challenge out",
+        "Open section",
+        "Challenge out",
+        "Open section",
+        "Challenge out",
+        "Generate lessons"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/16-tab-plan-live.png",
+        "w900": "audit/ux/round3/16-tab-plan-w900.png",
+        "w460": "audit/ux/round3/16-tab-plan-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nPlan\n\nResearch and drafting may take several minutes. A plan is written before any lesson exists.\n\nOpen the first section\n\nThe outline is approved. Lesson pages are written by the lessons job below; the section list is the approved outline, no",
+          "textLength": 1458,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Order coffee in Japanese"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nOC\nA STEADY PLAN\nOrder coffee in Japanese\nGreet café staff and open the interaction politely\nExport course…\nStart lesson\nView\nPlan\n\nResearch and drafting may take several minutes. A plan is written before any lesson exists.\n\nOpen the first section\n\nThe outline is approved. Lesson pages are written by the lessons job below; the section list is the approved outline, no",
+          "textLength": 1458,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Order coffee in Japanese"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "19-section-textbook",
+      "at": "2026-11-07T22:52:36.426Z",
+      "note": {
+        "surface": "Section page — Textbook only (Japanese affection demo; lesson predates the block document)"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:Japanese affection and register — an L0 demonstration classroom",
+        "H2:Tell everyday affection from a direct romantic declaration"
+      ],
+      "textHead": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJA\nA LITTLE AT A TIME\nJapanese affection and register — an L0 demonstration classroom\nSource stale\nTell everyday affection from a direct romantic declaration\nExport course…\nStart lesson\nView\nTextbook\n1 objective(s) are due for review.\nCOURSEBOOK\nTell everyday affection from a direct romantic declaration\nNeeds review · Last opened 21 hr ago\nLesson view\nTextbook only\nNo chat\n\nThis section has no teaching content yet.\n\nThis section has no lesson chat yet. Start a fresh run to open one; its first message binds the chat to this section.\nStart a fresh run\nAll sections\nThis section has no teaching content yet\nThis section has no teaching content yet.\nATTEMPTS ON THIS SECTION\n1 d ago\nNot yet\nFirst try, no hints\nIndependent evidence is worth more: it shows what you can do without help.\n1 d ago\nPassed\nFirst try, no hints\nIndependent evidence is worth more: it shows what you can do without help.\n1 d ago\nPassed\nFirst try, no hints\nIndependent evidence is worth more: it shows what you can do without help.\n1 d ago\nPassed\nFirst try, no hints\nIndependent evidence is worth more: it shows what you can do without help.\n1 d ago\nPassed\nHinted\nNEXT ACTION\nReview 3 objective(s)\nTHIS SECTION\nState\nneeds_review\nEvidence\nTell the difference\nAttempts\n23\nSOURCE CARDS\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nstale\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nWiktionary — 好き (suki)\nmodel_assessed\nWiktionary — 愛する (aisuru)\nmodel_assessed\nSAVED NOTES\nNothing saved from this section yet.",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All courses",
+        "Export course…",
+        "Start lesson",
+        "Textbook",
+        "Start a fresh run",
+        "All sections"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/19-section-textbook-live.png",
+        "w900": "audit/ux/round3/19-section-textbook-w900.png",
+        "w460": "audit/ux/round3/19-section-textbook-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJA\nA LITTLE AT A TIME\nJapanese affection and register — an L0 demonstration classroom\nSource stale\nTell everyday affection from a direct romantic declaration\nExport course…\nStart lesson\nView\nTextbook\n1 objective(s) are due for review.\nCOURSEBOOK\nTell everyday affection from a direct romantic declaration\nNeeds review · Last opened 21 hr ago\nLesson view\nTextbook only\nN",
+          "textLength": 1717,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 2,
+              "text": "Tell everyday affection from a direct romantic declaration"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJA\nA LITTLE AT A TIME\nJapanese affection and register — an L0 demonstration classroom\nSource stale\nTell everyday affection from a direct romantic declaration\nExport course…\nStart lesson\nView\nTextbook\n1 objective(s) are due for review.\nCOURSEBOOK\nTell everyday affection from a direct romantic declaration\nNeeds review · Last opened 21 hr ago\nLesson view\nTextbook only\nN",
+          "textLength": 1717,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 2,
+              "text": "Tell everyday affection from a direct romantic declaration"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    },
+    {
+      "id": "22-section-legacy",
+      "at": "2026-11-07T22:50:35.083Z",
+      "note": {
+        "surface": "Section page — same legacy lesson, second visit (identical render)"
+      },
+      "view": "courses",
+      "hash": "#/coursebook",
+      "scope": "dark",
+      "heading": [
+        "H2:Japanese affection and register — an L0 demonstration classroom",
+        "H2:Tell everyday affection from a direct romantic declaration"
+      ],
+      "textHead": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJA\nA LITTLE AT A TIME\nJapanese affection and register — an L0 demonstration classroom\nSource stale\nTell everyday affection from a direct romantic declaration\nExport course…\nStart lesson\nView\nTextbook\n1 objective(s) are due for review.\nCOURSEBOOK\nTell everyday affection from a direct romantic declaration\nNeeds review · Last opened 21 hr ago\nLesson view\nTextbook only\nNo chat\n\nThis section has no teaching content yet.\n\nThis section has no lesson chat yet. Start a fresh run to open one; its first message binds the chat to this section.\nStart a fresh run\nAll sections\nThis section has no teaching content yet\nThis section has no teaching content yet.\nATTEMPTS ON THIS SECTION\n1 d ago\nNot yet\nFirst try, no hints\nIndependent evidence is worth more: it shows what you can do without help.\n1 d ago\nPassed\nFirst try, no hints\nIndependent evidence is worth more: it shows what you can do without help.\n1 d ago\nPassed\nFirst try, no hints\nIndependent evidence is worth more: it shows what you can do without help.\n1 d ago\nPassed\nFirst try, no hints\nIndependent evidence is worth more: it shows what you can do without help.\n1 d ago\nPassed\nHinted\nNEXT ACTION\nReview 3 objective(s)\nTHIS SECTION\nState\nneeds_review\nEvidence\nTell the difference\nAttempts\n23\nSOURCE CARDS\nMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents\nstale\nHow to teach with Marugoto (teacher FAQ)\nauthoritative_documentation\nWiktionary — 好き (suki)\nmodel_assessed\nWiktionary — 愛する (aisuru)\nmodel_assessed\nSAVED NOTES\nNothing saved from this section yet.",
+      "controls": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All courses",
+        "Export course…",
+        "Start lesson",
+        "Textbook",
+        "Start a fresh run",
+        "All sections"
+      ],
+      "shots": {
+        "live": "audit/ux/round3/22-section-legacy-live.png",
+        "w900": "audit/ux/round3/22-section-legacy-w900.png",
+        "w460": "audit/ux/round3/22-section-legacy-w460.png"
+      },
+      "metrics": {
+        "live": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 1049,
+            "h": 1149
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 407,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJA\nA LITTLE AT A TIME\nJapanese affection and register — an L0 demonstration classroom\nSource stale\nTell everyday affection from a direct romantic declaration\nExport course…\nStart lesson\nView\nTextbook\n1 objective(s) are due for review.\nCOURSEBOOK\nTell everyday affection from a direct romantic declaration\nNeeds review · Last opened 21 hr ago\nLesson view\nTextbook only\nN",
+          "textLength": 1717,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 2,
+              "text": "Tell everyday affection from a direct romantic declaration"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        },
+        "w460": {
+          "url": "#/coursebook",
+          "viewport": {
+            "w": 624,
+            "h": 1222
+          },
+          "rootFont": "16px",
+          "mode": "dark",
+          "theme": "nous",
+          "overflowX": 0,
+          "routeWidth": 379,
+          "routeText": "Coursebook\nWhat you are learning, what has been checked, and what to do next.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJA\nA LITTLE AT A TIME\nJapanese affection and register — an L0 demonstration classroom\nSource stale\nTell everyday affection from a direct romantic declaration\nExport course…\nStart lesson\nView\nTextbook\n1 objective(s) are due for review.\nCOURSEBOOK\nTell everyday affection from a direct romantic declaration\nNeeds review · Last opened 21 hr ago\nLesson view\nTextbook only\nN",
+          "textLength": 1717,
+          "clipped": [],
+          "contrast": [],
+          "contrastTotal": 0,
+          "contrastBySize": {},
+          "contrastAll": [],
+          "unnamed": [],
+          "colorOnly": [],
+          "smallTargets": [],
+          "live": [],
+          "headings": [
+            {
+              "level": 2,
+              "text": "Japanese affection and register — an L0 demonstration classroom"
+            },
+            {
+              "level": 2,
+              "text": "Tell everyday affection from a direct romantic declaration"
+            }
+          ],
+          "animation": [
+            {
+              "cls": "desktop-input-chrome min-w-0 rounded-[2.5px] border text-xs ",
+              "transition": 0.2,
+              "animation": 0
+            }
+          ]
+        }
+      },
+      "viewport": {
+        "live": "1049x1149 css (host zoom 0.896)",
+        "w900": "900x900 css",
+        "w460": "460x900 css"
+      }
+    }
+  ],
+  "notes": {
+    "guided_field_quest": "Guided and Field Quest were reached live on the Order-coffee section at 15:44 MST and their DOM text was read (Guided: \"Step 1 of 5 ... Back / Continue\"; Field Quest: \"FIELD QUEST · 0 independent · 0 due · 5 missions, 1 checkpoint\"). On every later visit to the same section the Lesson-view switcher offered Textbook only, so no clean screenshot of those two views exists; this intermittent availability is recorded as finding F3.",
+    "theme": "Dark only. The host theme toggle lives outside #/coursebook and the card forbids leaving the route; data-cb-scope stayed \"dark\" for every capture."
+  }
+}
