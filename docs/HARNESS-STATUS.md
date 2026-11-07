@@ -108,8 +108,11 @@ records of their own commits and are **not** rewritten; the live docs are correc
 python3 -m unittest discover -s tests -t .     # Ran 1177 tests in 281.544s — OK
 python3 tests/adversarial/attack_state.py      # SUMMARY total=22 fail=0 pass=22 (S13 BLOCKED)
 node --check desktop/plugin.js                 # syntax OK (file unchanged by this branch)
-bash scripts/validate-plugin.sh                # release gate on a clean export of the commit
+bash scripts/validate-plugin.sh                # Release gate passed: 3/3 checks on d6e07cd (1252 files)
 ```
+
+The docs commit for this pass is `d6e07cd` on `wt/harness-docs`; the gate above was run on that
+commit, not on the working tree.
 
 The 1177-test run is the merged tree at this base. It contains no H-06/H-08/H-09 tests, because
 those modules live on their branches; the 1230-test count in the H-09 handoff is a count on
