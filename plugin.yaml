@@ -32,6 +32,9 @@ python_dependencies:
   # a missing import/model/ffmpeg is reported as practice-only/unavailable, never a score. No
   # provider key is read and `stt.provider` is never touched.
   - "faster-whisper>=1.0,<2"
+  # Student syllabus import: PDF text extraction only. Optional at runtime — when it is absent,
+  # `syllabus.intake.create` answers PARSER_UNAVAILABLE (a typed refusal) rather than guessing.
+  - "pypdf>=4.0,<6"
 
 # No requires_env in the skeleton: Coursebook stores no secrets. Every key below has a reader
 # wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field

@@ -1251,6 +1251,41 @@ it changes what v10's fields *mean* at runtime:
 gains exactly one deterministic consequence — a cap on `time_estimate.weeks` (`single` 1, `short`
 8, `full` 104) — and no second scope engine is claimed.
 
+## v11 delta (H-26) — the student syllabus import path
+
+`docs/STUDENT-MODE.md` freezes a second import path: a learner uploads the syllabus of a class they
+already take, and Coursebook builds a **companion course** aligned to it. It is never a `cb.pack`,
+never a catalog artifact, and never an enrollment claim. v11 is additive over v10; every v10 method,
+payload and enum value is preserved, the version echo moves to 11, and `cb.vocabulary` stays v1.
+
+| Surface | Added | Notes |
+|---|---|---|
+| `cb.rpc` v11 | `syllabus.intake.create`, `syllabus.get`, `syllabus.parse`, `syllabus.align`, `syllabus.alignment.get`, `syllabus.alignment.review`, `syllabus.delete` | Intake takes `content_base64` or `pasted_text` — **no path field and no URL field**. A parse/align job is `kind=import` with a closed `$defs/import_brief` and `stage` `syllabus_parse`/`syllabus_align`. |
+| `course.create.request` | optional `syllabus_id` + `syllabus_revision` (together or not at all) | Writes one `course_syllabi` row, leaves `courses.pack_id` NULL, and refuses `recipe != companion`. |
+| `$defs/plan_brief` | optional `syllabus_id`, `syllabus_revision`, `alignment_revision` | The plan job reads validated syllabus items as bounded untrusted scope text; the planner still authors every objective. |
+| `cb.db` v7 | eight tables via migration `0007_syllabus_intake_and_alignment.sql`: `syllabus_series`, `syllabi`, `syllabus_files`, `syllabus_blocks`, `syllabus_parse_runs`, `syllabus_items`, `course_syllabi`, `syllabus_alignments` | Additive only, no backfill: a pre-v7 course has no `course_syllabi` row and behaves exactly as before. |
+| `cb.errors` v3 | `SYLLABUS_REJECTED`, `SYLLABUS_NO_TEXT_LAYER`, `SYLLABUS_STALE`, `SYLLABUS_UNREVIEWED`, `SYLLABUS_IN_USE`, `PARSER_UNAVAILABLE`, `BLUEPRINT_UNAVAILABLE` | Every one is a typed refusal with no partial write. |
+
+**What the shipped stages do.** Intake sniffs magic bytes (`%PDF-`, `PK\x03\x04`) rather than trusting
+a filename or MIME, refuses encrypted/active-content PDFs, macro/external-relationship DOCX, non-UTF-8
+or NUL-bearing text, and enforces the 4 MiB / 8 MiB / 200,000-character caps before storing a byte.
+Extraction is deterministic and local: stdlib for text/Markdown/DOCX, optional `pypdf` for PDF, whose
+absence is `PARSER_UNAVAILABLE`. Every parsed scalar is an item with `extracted` / `unknown` /
+`ambiguous` state and a page/section/line anchor; an item's quote is verified verbatim against its
+block and a mismatch downgrades it to `unknown`. No model call is made by either stage in this build,
+so no syllabus text leaves the machine. Alignment is deterministic too: title-token overlap gives
+`aligned`/`partial`/`unmatched`, and an assessment whose syllabus week is earlier than the matching
+objective's plan section is a `conflict`. The model-assist lane in `docs/STUDENT-MODE.md` §4.3 is
+**not** implemented, and no row claims it was.
+
+**Full scope is refused, not truncated.** H-21 (CourseBlueprint v2) has not merged, so
+`PLAN_SCHEMA` is still 4–8 objectives and 2–8 sections. A companion course asking for `scope=full`
+gets `BLUEPRINT_UNAVAILABLE` from `course.create` and from the plan stage; `single`/`short` are the
+supported scopes.
+
+**Not in this delta.** No UI, no pack change, no second course/plan/lesson engine, no second
+enrollment authority, no export of syllabus text, no LMS client, no calendar, no gradebook.
+
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.

@@ -50,6 +50,9 @@ from .contracts import method_names
 # Importing the pronunciation module registers its two commands (it reads the live contract, so a
 # build without the v9 methods stays NOT_IMPLEMENTED instead of inventing a method).
 from . import pronunciation  # noqa: E402,F401  (registration side effect)
+# The student-syllabus commands are registered by their own module for the same reason: a build
+# whose contract lacks the v11 methods stays NOT_IMPLEMENTED instead of inventing a method.
+from . import syllabus  # noqa: E402,F401  (registration side effect)
 
 #: ``method -> handler(payload, envelope) -> (revision, result)``
 HANDLERS: dict[str, Callable[[dict[str, Any], dict[str, Any]], tuple[int, dict[str, Any]]]] = {}
@@ -351,6 +354,28 @@ def course_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
             " WHERE course_id = ? ORDER BY version DESC",
             (course["id"],),
         ).fetchall()
+        binding = _row(connection, "SELECT * FROM course_syllabi WHERE course_id = ?", (course["id"],))
+        syllabus = None
+        if binding is not None:
+            bound = _row(connection, "SELECT * FROM syllabi WHERE id = ?", (binding["syllabus_id"],))
+            counts: dict[str, int] = {}
+            if bound is not None:
+                for row in connection.execute(
+                    "SELECT state, COUNT(*) AS n FROM syllabus_alignments WHERE course_id = ?"
+                    " AND syllabus_revision = ? GROUP BY state",
+                    (course["id"], binding["syllabus_revision"]),
+                ):
+                    counts[str(row["state"])] = int(row["n"])
+            syllabus = {
+                "syllabus_id": binding["syllabus_id"],
+                "revision": int(binding["syllabus_revision"]),
+                "content_sha256": bound["content_sha256"] if bound is not None else None,
+                "alignment_revision": int(binding["alignment_revision"]),
+                "reviewed_revision": binding["reviewed_revision"],
+                "alignment_counts": counts,
+                "stale": bool(bound is None or bound["superseded_at"] is not None
+                              or int(binding["syllabus_revision"]) != int(bound["revision"] or 0)),
+            }
     result = {
         "course": {
             "course_id": course["id"],
@@ -376,6 +401,7 @@ def course_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
                 for plan in plans
             ],
             "active_plan_id": next((plan["id"] for plan in plans if plan["state"] == "approved"), None),
+            "syllabus": syllabus,
         },
         "revision": int(course["revision"]),
     }
@@ -539,10 +565,63 @@ def course_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
     now = _now()
     course_id = _new_id("crs")
     plan_id = _new_id("pln")
+    syllabus_id = payload.get("syllabus_id")
+    syllabus_revision = payload.get("syllabus_revision")
+    if (syllabus_id is None) != (syllabus_revision is None):
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "course.create takes syllabus_id and syllabus_revision together or not at all.",
+            field="syllabus_id" if syllabus_id is None else "syllabus_revision",
+        )
+    if syllabus_id is not None:
+        if payload["recipe"] != "companion":
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "a syllabus-backed course is a companion course; recipe must be 'companion'.",
+                field="recipe", recipe=payload["recipe"],
+            )
+        if payload.get("scope") == "full":
+            raise RpcError.of(
+                "BLUEPRINT_UNAVAILABLE",
+                "a full-semester companion course needs the unit-scoped CourseBlueprint, which has "
+                "not landed; the path refuses rather than truncating the syllabus.",
+                scope="full",
+            )
     with db.transaction() as connection:
         replay = _idempotent_lookup(connection, key, method, payload_hash)
         if replay is not None:
             return replay
+        if syllabus_id is not None:
+            bound = _row(
+                connection, "SELECT * FROM syllabi WHERE id = ? AND revision = ?",
+                (syllabus_id, int(syllabus_revision)),
+            )
+            if bound is None or bound["deleted_at"] is not None:
+                raise _not_found("syllabus", str(syllabus_id))
+            if bound["superseded_at"] is not None:
+                raise RpcError.of(
+                    "SYLLABUS_STALE",
+                    "that syllabus revision is superseded; re-align and review the current revision.",
+                    syllabus_id=syllabus_id, revision=int(syllabus_revision),
+                )
+            latest_run = _row(
+                connection,
+                "SELECT state FROM syllabus_parse_runs WHERE syllabus_id = ?"
+                " ORDER BY created_at DESC LIMIT 1",
+                (bound["id"],),
+            )
+            if latest_run is None:
+                raise RpcError.of(
+                    "SYLLABUS_UNREVIEWED",
+                    "the syllabus has not been parsed; run syllabus.parse first.",
+                    reason="not_parsed",
+                )
+            if str(latest_run["state"]) == "needs_review":
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this parse needs review (anchor verification failed); re-parse or upload a cleaner file.",
+                    reason="needs_review",
+                )
         connection.execute(
             "INSERT INTO courses (id, title, recipe, goal, locale, level, subject_domain, scope,"
             " dials_json, status, pack_id, revision, created_at, updated_at)"
@@ -560,6 +639,13 @@ def course_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
         connection.execute(
             "UPDATE plans SET plan_hash = ? WHERE id = ?", (_plan_hash(connection, plan), plan_id)
         )
+        if syllabus_id is not None:
+            connection.execute(
+                "INSERT INTO course_syllabi (course_id, syllabus_id, syllabus_revision,"
+                " alignment_revision, reviewed_revision, reviewed_at, created_at)"
+                " VALUES (?, ?, ?, 0, NULL, NULL, ?)",
+                (course_id, syllabus_id, int(syllabus_revision), now),
+            )
         result = {"course_id": course_id, "plan_id": plan_id, "revision": 0}
         _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result)
     return 0, result
@@ -601,6 +687,76 @@ def _table_exists(connection, name: str) -> bool:
     return connection.execute(
         "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)
     ).fetchone() is not None
+
+
+def _syllabus_approval_gate(connection, course_id: str) -> None:
+    """Additive ``plan.approve`` precondition for a companion course only.
+
+    A legacy course has no ``course_syllabi`` row and is unaffected. A companion course may only
+    be approved against the current syllabus revision, after an alignment review, with no pending
+    conflict/stale row, and with the content hash the alignment was built against still current.
+    """
+    binding = _row(connection, "SELECT * FROM course_syllabi WHERE course_id = ?", (course_id,))
+    if binding is None:
+        return
+    bound = _row(connection, "SELECT * FROM syllabi WHERE id = ?", (binding["syllabus_id"],))
+    if (bound is None or bound["deleted_at"] is not None or bound["superseded_at"] is not None
+            or int(bound["revision"]) != int(binding["syllabus_revision"])):
+        raise RpcError.of(
+            "SYLLABUS_STALE",
+            "the bound syllabus revision is stale; re-parse, re-align and review before approving.",
+            syllabus_id=binding["syllabus_id"],
+            syllabus_revision=int(binding["syllabus_revision"]),
+        )
+    current = _row(
+        connection,
+        "SELECT id FROM syllabi WHERE series_id = ? AND deleted_at IS NULL"
+        " ORDER BY revision DESC LIMIT 1",
+        (bound["series_id"],),
+    )
+    if current is None or current["id"] != bound["id"]:
+        raise RpcError.of(
+            "SYLLABUS_STALE", "a newer syllabus revision exists; re-align and review it first.",
+            syllabus_id=binding["syllabus_id"],
+        )
+    if binding["reviewed_revision"] is None or int(binding["reviewed_revision"]) != int(bound["revision"]):
+        raise RpcError.of(
+            "SYLLABUS_UNREVIEWED",
+            "the alignment for this syllabus revision has not been reviewed.",
+            syllabus_revision=int(bound["revision"]),
+        )
+    blocking = _row(
+        connection,
+        "SELECT COUNT(*) AS n FROM syllabus_alignments WHERE course_id = ? AND syllabus_revision = ?"
+        " AND stale = 0 AND state IN ('conflict', 'stale') AND review_state = 'pending'",
+        (course_id, int(bound["revision"])),
+    )
+    if blocking is not None and int(blocking["n"]) > 0:
+        raise RpcError.of(
+            "SYLLABUS_STALE",
+            "a syllabus conflict is unresolved; accept the divergence or replan before approving.",
+            conflicts=int(blocking["n"]),
+        )
+    hashes = set()
+    for row in connection.execute(
+        "SELECT evidence_json FROM syllabus_alignments WHERE course_id = ? AND syllabus_revision = ?",
+        (course_id, int(bound["revision"])),
+    ):
+        evidence = _json_load(row["evidence_json"], {})
+        if isinstance(evidence, dict) and evidence.get("syllabus_sha256"):
+            hashes.add(str(evidence["syllabus_sha256"]))
+    if not hashes:
+        raise RpcError.of(
+            "SYLLABUS_UNREVIEWED",
+            "this course has no alignment rows for its syllabus revision.",
+            syllabus_revision=int(bound["revision"]),
+        )
+    if hashes != {str(bound["content_sha256"])}:
+        raise RpcError.of(
+            "SYLLABUS_STALE",
+            "the syllabus content changed after the plan was aligned; re-align and review.",
+            syllabus_revision=int(bound["revision"]),
+        )
 
 
 def _plan_outline_ready(connection, plan_id: str) -> bool:
@@ -724,6 +880,7 @@ def plan_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 plan_id=str(plan["id"]),
             )
         validation_source = _plan_validation_source(connection, plan, actual_hash)
+        _syllabus_approval_gate(connection, enrollment["course_id"])
         if validation_source == PLAN_VALIDATION_MANUAL and not _plan_outline_ready(connection, plan["id"]):
             raise RpcError.of(
                 "VALIDATION_FAILED",

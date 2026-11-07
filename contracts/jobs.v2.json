@@ -25,7 +25,7 @@
     "completed_late"
   ],
   "resting_states": {
-    "failed": "Failed is retryable, not terminal: a retry re-enters `queued` with a NEW job-attempt id and the persisted resume checkpoint. It is excluded from terminal_states so `terminal` keeps its only meaning \u2014 nothing further will run."
+    "failed": "Failed is retryable, not terminal: a retry re-enters `queued` with a NEW job-attempt id and the persisted resume checkpoint. It is excluded from terminal_states so `terminal` keeps its only meaning — nothing further will run."
   },
   "transitions": {
     "queued": [
@@ -173,7 +173,7 @@
       "error": {
         "oneOf": [
           {
-            "$ref": "https://contracts.coursebook.hermes/errors/v2#/$defs/error"
+            "$ref": "https://contracts.coursebook.hermes/errors/v3#/$defs/error"
           },
           {
             "type": "null"
