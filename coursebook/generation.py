@@ -3864,7 +3864,7 @@ _GENERATION_DDL: tuple[str, ...] = (
     """,
     """
     CREATE TABLE IF NOT EXISTS gen_plan_sections (
-        id TEXT PRIMARY KEY,
+        id TEXT NOT NULL PRIMARY KEY,
         plan_id TEXT NOT NULL,
         ordinal INTEGER NOT NULL,
         plan_hash TEXT NOT NULL,
@@ -3874,6 +3874,8 @@ _GENERATION_DDL: tuple[str, ...] = (
         objective_refs_json TEXT NOT NULL DEFAULT '[]',
         context_needs_json TEXT NOT NULL DEFAULT '[]',
         source_ids_json TEXT NOT NULL DEFAULT '[]',
+        unit_id TEXT,
+        section_role TEXT NOT NULL DEFAULT 'owner',
         UNIQUE(plan_id, plan_hash, ordinal)
     )
     """,
@@ -3998,9 +4000,9 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
         }
         if "unit_id" not in objective_columns:
             connection.execute("ALTER TABLE objectives ADD COLUMN unit_id TEXT")
-        section_columns = {
-            str(row[1]) for row in connection.execute("PRAGMA table_info(gen_plan_sections)").fetchall()
-        }
+        # H-21: a section may belong to a plan unit and is either the unit's owner section or a
+        # review section. A table created before migration 0007 gains both columns in place;
+        # legacy rows keep NULL unit_id and the 'owner' role, which is the implicit single unit.
         if "unit_id" not in section_columns:
             connection.execute("ALTER TABLE gen_plan_sections ADD COLUMN unit_id TEXT")
         if "section_role" not in section_columns:
