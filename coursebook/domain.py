@@ -99,6 +99,7 @@ KERNEL_METHODS: tuple[str, ...] = (
     "course.outline",
     "check.get",
     "lesson.assist",
+    "observation.record",
     "source.revalidate",
     "pronunciation.attempt",
     "pronunciation.dispute",
@@ -3683,35 +3684,113 @@ def record_objective(plan_id: str, *, title: str, evidence_target: str, criteria
 #: independent evidence (``AUDIT.md`` R10/R12).
 _OBSERVATION_CLASSES = ("self_reported", "parent_reported")
 
+#: The kernel-side bound on ``evidence.note``. ``cb.rpc`` v14 declares the same 1000-character cap on
+#: the wire, but the bound is enforced here too: a handler is not the only caller of
+#: :func:`record_observation`, and the column itself has no CHECK to lean on. An over-long note is
+#: **refused**, never truncated — a silently shortened note would be prose the author did not write.
+OBSERVATION_NOTE_LIMIT = 1000
 
-def record_observation(enrollment_id: str, objective_id: str, *, evidence_class: str,
-                       kind: str = "observation", note: str | None = None) -> str:
-    """Record a self/parent-reported observation. Layer 1 only — never independent evidence."""
-    db.ensure_schema()
+
+def _record_observation(connection, enrollment_id: str, objective_id: str, *, evidence_class: str,
+                        kind: str = "observation", note: str | None = None) -> str:
+    """Validate and insert one layer-1 observation row on the caller's connection.
+
+    Shared by :func:`record_observation` (own transaction) and ``observation.record`` (one fenced
+    transaction that also remembers the idempotency key): two insertion paths would let one of them
+    drop the note again, or write a row the other's policy would refuse.
+    """
     if evidence_class not in _OBSERVATION_CLASSES:
         raise RpcError.of(
             "POLICY_VIOLATION",
             "only self_reported or parent_reported observations can be recorded here.",
             evidence_class=evidence_class,
         )
-    with db.transaction() as connection:
-        enrollment = _enrollment(connection, enrollment_id)
-        objective = _row(connection, "SELECT id, plan_id FROM objectives WHERE id = ?", (objective_id,))
-        if objective is None:
-            raise _not_found("objective", objective_id)
-        plan = _row(connection, "SELECT course_id FROM plans WHERE id = ?", (objective["plan_id"],))
-        if plan is None or plan["course_id"] != enrollment["course_id"]:
+    if note is not None:
+        if not isinstance(note, str):
             raise RpcError.of(
-                "VALIDATION_FAILED", "that objective does not belong to this enrollment's course.",
-                field="objective_id", reason="objective_not_in_enrollment_course",
+                "VALIDATION_FAILED", "a note must be text or null.", field="note", reason="note_not_text",
             )
-        evidence_id = _new_id("evd")
-        connection.execute(
-            "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
-            " VALUES (?, ?, ?, NULL, 1, ?, ?, ?)",
-            (evidence_id, enrollment["id"], objective["id"], kind, evidence_class, _now()),
+        if len(note) > OBSERVATION_NOTE_LIMIT:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                f"a note may not be longer than {OBSERVATION_NOTE_LIMIT} characters.",
+                field="note",
+                reason="note_too_long",
+                max_length=OBSERVATION_NOTE_LIMIT,
+                length=len(note),
+            )
+    enrollment = _enrollment(connection, enrollment_id)
+    objective = _row(connection, "SELECT id, plan_id FROM objectives WHERE id = ?", (objective_id,))
+    if objective is None:
+        raise _not_found("objective", objective_id)
+    plan = _row(connection, "SELECT course_id FROM plans WHERE id = ?", (objective["plan_id"],))
+    if plan is None or plan["course_id"] != enrollment["course_id"]:
+        raise RpcError.of(
+            "VALIDATION_FAILED", "that objective does not belong to this enrollment's course.",
+            field="objective_id", reason="objective_not_in_enrollment_course",
         )
+    evidence_id = _new_id("evd")
+    connection.execute(
+        "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class,"
+        " note, created_at) VALUES (?, ?, ?, NULL, 1, ?, ?, ?, ?)",
+        (evidence_id, enrollment["id"], objective["id"], kind, evidence_class, note, _now()),
+    )
     return evidence_id
+
+
+def record_observation(enrollment_id: str, objective_id: str, *, evidence_class: str,
+                       kind: str = "observation", note: str | None = None) -> str:
+    """Record a self/parent-reported observation. Layer 1 only — never independent evidence.
+
+    ``note`` is the author's prose about the observation and is stored verbatim in
+    ``evidence.note`` (``cb.db`` v9). It never changes the row's layer, class or ``attempt_id``.
+    """
+    db.ensure_schema()
+    with db.transaction() as connection:
+        return _record_observation(connection, enrollment_id, objective_id,
+                                   evidence_class=evidence_class, kind=kind, note=note)
+
+
+@_handler("observation.record")
+def observation_record(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Append one layer-1 observation: the one client-reachable way to write evidence.
+
+    The fence here is the **idempotency key**, not a revision. Recording an observation writes no
+    attempt, no transition, no objective state and no verdict, and bumps nothing, so
+    ``cb.rpc`` v14 declares no ``expected_revision`` for this method; the response ``revision`` is
+    the enrollment revision read inside this transaction and echoed unchanged. A client that sends
+    ``expected_revision`` anyway is describing a contract that does not exist, and this handler
+    neither requires it nor checks it.
+
+    There is no second insertion path: the row is written by ``_record_observation``, the same
+    function :func:`record_observation` calls.
+    """
+    db.ensure_schema()
+    method = "observation.record"
+    key = envelope.get("idempotency_key")
+    payload_hash = _payload_hash(method, payload)
+    enrollment_id = payload["enrollment_id"]
+    evidence_class = payload["evidence_class"]
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        evidence_id = _record_observation(
+            connection,
+            enrollment_id,
+            payload["objective_id"],
+            evidence_class=evidence_class,
+            note=payload.get("note"),
+        )
+        enrollment = _enrollment(connection, enrollment_id)
+        revision = int(enrollment["revision"])
+        result = {
+            "evidence_id": evidence_id,
+            "evidence_class": evidence_class,
+            "revision": revision,
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+    return revision, result
 
 
 # ── Parent Studio: authored courses (cb.rpc v6, CB-011) ─────────────────────
