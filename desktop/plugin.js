@@ -3417,7 +3417,10 @@ function MediaSegment({ segment }) {
   }, [segment.artifact_id])
 
   const caption = segment.text || preview.text_equivalent || ''
-  const label = preview.label || (preview.mime && preview.mime.startsWith('audio/') ? 'Narration' : 'Illustration')
+  const label =
+    preview.label ||
+    segment.label ||
+    (preview.mime && preview.mime.startsWith('audio/') ? 'Narration' : 'Illustration')
   return jsxs('figure', {
     className: 'my-2 flex max-w-3xl flex-col gap-1.5 border-l-2 border-(--ui-stroke-secondary) pl-3',
     'data-cb-media': segment.artifact_id || 'text-only',
@@ -3488,6 +3491,251 @@ function supportsArtifactGet() {
   return backendSupports('artifact.get')
 }
 
+/** The two presentation views this build implements (docs/VISUAL_MEDIA_PLAN.md §3.3, §5). */
+const LESSON_VIEWS = [
+  { id: 'textbook', label: 'Textbook' },
+  { id: 'guided', label: 'Guided' }
+]
+
+/** A role is where the block sits in the teaching sequence, never a skin or a difficulty claim. */
+const BLOCK_ROLE_COPY = {
+  orient: 'Orient',
+  explain: 'Explain',
+  example: 'Example',
+  practice: 'Practice',
+  recap: 'Recap'
+}
+
+/**
+ * Source chips for one block.
+ *
+ * A chip prints the course's own source title. An id the course did not return is printed as the
+ * id: the Desktop never turns an unknown id into a citation it cannot show.
+ */
+function BlockSourceChips({ ids, index }) {
+  if (!ids || ids.length === 0) return null
+  return jsx('div', {
+    className: 'flex flex-wrap items-center gap-1',
+    'data-cb-block-sources': String(ids.length),
+    children: ids.map((id) =>
+      jsx(
+        'span',
+        { className: 'inline-flex max-w-full min-w-0 items-center', children: jsx(sdk.Badge, {
+            size: 'xs',
+            variant: 'outline',
+            children: (index && index[id] && index[id].title) || `Source ${id}`
+          }) },
+        id
+      )
+    )
+  })
+}
+
+/**
+ * Media as a child of a block.
+ *
+ * One artifact, one text equivalent, one label. The preview, the audio player and the honest
+ * text fallback are `MediaSegment`'s own implementation: a block view re-frames the same node, it
+ * does not grow a second media renderer.
+ */
+function BlockMedia({ media, blockId, ordinal }) {
+  const segment = {
+    artifact_id: media.artifact_id,
+    text: media.text_equivalent || media.purpose,
+    label: media.label
+  }
+  return jsx(
+    'div',
+    {
+      className: 'flex flex-col gap-1',
+      'data-cb-block-media': media.artifact_id || 'text-only',
+      children: [
+        jsx(MediaSegment, { segment }),
+        media.degraded && media.reason
+          ? jsx(QuietNote, { children: `Media is degraded: ${media.reason}` })
+          : null
+      ]
+    },
+    `${blockId}-media-${ordinal}`
+  )
+}
+
+function BlockBody({ block, sources, checkSlot }) {
+  return jsxs('div', {
+    className: 'flex flex-col gap-2',
+    children: [
+      jsx('div', { className: 'max-w-prose', children: jsx(sdk.MessageTextContent, { text: block.deep }) }),
+      (block.media || []).map((media, index) =>
+        jsx(BlockMedia, { media, blockId: block.id, ordinal: index }, `${block.id}-media-${index}`)
+      ),
+      jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+      checkSlot
+        ? jsx('div', { className: 'flex flex-col gap-2 pt-1', 'data-cb-block-check': block.id, children: checkSlot })
+        : null
+    ]
+  })
+}
+
+/** Textbook: every block in authored order, the full `deep` prose, inline figures. */
+function TextbookBlock({ block, sources, checkSlot }) {
+  return jsxs('article', {
+    className: 'flex flex-col gap-2 border-b border-(--ui-stroke-tertiary) py-3 first:pt-0 last:border-b-0 last:pb-0',
+    'data-cb-block': block.id,
+    'data-cb-role': block.role,
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-baseline gap-2',
+        children: [
+          jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: BLOCK_ROLE_COPY[block.role] || block.role }),
+          jsx('h3', { className: 'min-w-0 text-base font-semibold leading-snug', children: block.headline })
+        ]
+      }),
+      BlockBody({ block, sources, checkSlot })
+    ]
+  })
+}
+
+/** Guided: one block at a time, the authored `short` prose, progress and a check on its block. */
+function GuidedBlock({ block, index, total, sources, checkSlot, onBack, onNext }) {
+  const last = index >= total - 1
+  return jsxs('section', {
+    className: 'flex flex-col gap-3',
+    'aria-labelledby': `cb-guided-headline-${block.id}`,
+    'data-cb-block': block.id,
+    'data-cb-role': block.role,
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-baseline justify-between gap-2',
+        children: [
+          jsxs('div', {
+            className: 'flex flex-wrap items-baseline gap-2',
+            children: [
+              jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: BLOCK_ROLE_COPY[block.role] || block.role }),
+              jsx('h3', {
+                className: 'min-w-0 text-base font-semibold leading-snug',
+                id: `cb-guided-headline-${block.id}`,
+                children: block.headline
+              })
+            ]
+          }),
+          jsx('span', {
+            className: 'text-xs text-(--ui-text-secondary)',
+            'aria-live': 'polite',
+            'data-cb-step': `${index + 1}/${total}`,
+            children: `Step ${index + 1} of ${total}`
+          })
+        ]
+      }),
+      jsx('div', {
+        className: 'max-w-prose',
+        children: jsx(sdk.MessageTextContent, { text: block.short || block.deep })
+      }),
+      (block.media || []).map((media, ordinal) =>
+        jsx(BlockMedia, { media, blockId: block.id, ordinal }, `${block.id}-media-${ordinal}`)
+      ),
+      jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+      checkSlot ? jsx('div', { className: 'flex flex-col gap-2', 'data-cb-block-check': block.id, children: checkSlot }) : null,
+      jsxs('div', {
+        className: 'flex flex-wrap items-center gap-2',
+        children: [
+          jsx(sdk.Button, {
+            variant: 'secondary',
+            size: 'sm',
+            disabled: index === 0,
+            onClick: onBack,
+            children: 'Back'
+          }),
+          jsx(sdk.Button, {
+            variant: 'default',
+            size: 'sm',
+            disabled: last,
+            onClick: onNext,
+            children: 'Continue'
+          }),
+          last
+            ? jsx('span', {
+                className: 'text-xs text-(--ui-text-secondary)',
+                children: 'End of the guided pass. The Textbook view keeps the full text.'
+              })
+            : null
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * The lesson document, rendered as one of its views.
+ *
+ * The document is server-owned; this component decides placement, never content. A view switch
+ * re-renders the same blocks, the same ids and the same single check.
+ */
+function LessonDocumentView({ document, view, sources, checkSlot }) {
+  const blocks = (document && document.blocks) || []
+  const [step, setStep] = useState(0)
+  if (blocks.length === 0) {
+    return jsx(EmptyState, {
+      title: 'This section has no teaching content yet',
+      description:
+        (document && document.view_note) ||
+        'Teaching content appears here after a lesson turn, and Coursebook does not write it for you.'
+    })
+  }
+  const checkId = document.check_id
+  const attached = checkId ? blocks.findIndex((block) => block.check_id === checkId) : -1
+  const unattached = attached < 0 && checkSlot
+    ? jsxs('div', {
+        className: 'flex flex-col gap-2',
+        children: [jsx(sdk.PanelSectionLabel, { children: 'CHECK' }), checkSlot]
+      })
+    : null
+
+  if (view === 'guided' && document.views && document.views.guided) {
+    const current = Math.min(step, blocks.length - 1)
+    const block = blocks[current]
+    return jsxs('div', {
+      className: 'flex flex-col gap-3',
+      'data-cb-lesson-view': 'guided',
+      'data-cb-document': document.document_id,
+      children: [
+        jsx(GuidedBlock, {
+          block,
+          index: current,
+          total: blocks.length,
+          sources,
+          checkSlot: block.check_id && block.check_id === checkId ? checkSlot : null,
+          onBack: () => setStep(Math.max(0, current - 1)),
+          onNext: () => setStep(Math.min(blocks.length - 1, current + 1))
+        }),
+        unattached
+      ]
+    })
+  }
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-3',
+    'data-cb-lesson-view': 'textbook',
+    'data-cb-document': document.document_id,
+    children: [
+      jsx('div', {
+        className: 'flex flex-col',
+        children: blocks.map((block) =>
+          jsx(
+            TextbookBlock,
+            {
+              block,
+              sources,
+              checkSlot: attached >= 0 && block.check_id === checkId ? checkSlot : null
+            },
+            block.id
+          )
+        )
+      }),
+      unattached
+    ]
+  })
+}
+
 function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const section = page && page.section
@@ -3496,12 +3744,43 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const [saveSeed, setSaveSeed] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  const [lessonView, setLessonView] = useState('textbook')
+  // The document is a v8 read projection. A backend that predates it answers with segments only,
+  // so the segment list below stays as the fallback rather than becoming dead code.
+  const document = page && page.document ? page.document : null
+  const sourceIndex = {}
+  for (const source of (page && page.sources) || []) {
+    if (source && source.source_id) sourceIndex[source.source_id] = source
+  }
+  // One view is on screen at a time, so a single check node serves the Textbook block, the Guided
+  // step and the legacy segment list. It is never rendered twice in one view.
+  useEffect(() => {
+    setLessonView('textbook')
+  }, [objectiveId])
   const check = useOpenCheck({
     enrollmentId: row.enrollment_id,
     objectiveId,
     revision: page ? page.revision : 0,
     enabled: Boolean(page) && supports('check.open') && Boolean(section)
   })
+  const checkNode =
+    check.status === 'error'
+      ? jsx(QuietNote, {
+          children: check.error
+            ? `${check.error.code}: ${describeError(check.error)}`
+            : 'The current check could not be opened.'
+        })
+      : jsx(AttemptControls, {
+          enrollmentId: row.enrollment_id,
+          objectiveId,
+          check: check.check,
+          revision: page ? page.revision : 0,
+          implemented,
+          bindingState: runtime ? runtime.binding_status : 'detached',
+          onCommitted: () => {
+            if (onChanged) onChanged()
+          }
+        })
 
   const begin = useCallback(
     async (mode) => {
@@ -3584,7 +3863,27 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                   : null,
                 runtime ? jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: runtime.session_state }) : null
               ]
-            })
+            }),
+            document
+              ? jsxs('div', {
+                  className: 'flex flex-wrap items-center gap-2 pt-1',
+                  'data-cb-view-switcher': document.views && document.views.guided ? 'available' : 'textbook-only',
+                  children: [
+                    jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: 'Lesson view' }),
+                    document.views && document.views.guided
+                      ? jsx(sdk.SegmentedControl, {
+                          onChange: setLessonView,
+                          options: LESSON_VIEWS,
+                          sizing: 'content',
+                          value: lessonView
+                        })
+                      : jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: 'Textbook only' })
+                  ]
+                })
+              : null,
+            document && !(document.views && document.views.guided) && document.view_note
+              ? jsx(QuietNote, { children: document.view_note })
+              : null
           ]
         }),
 
@@ -3629,8 +3928,19 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         }),
         notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
 
-        jsx(sdk.PanelSectionLabel, { children: 'TEACHING SEGMENTS' }),
-        page.segments && page.segments.length > 0
+        document
+          ? jsx(
+              LessonDocumentView,
+              {
+                document,
+                view: lessonView,
+                sources: sourceIndex,
+                checkSlot: checkNode
+              },
+              objectiveId
+            )
+          : jsx(sdk.PanelSectionLabel, { children: 'TEACHING SEGMENTS' }),
+        document ? null : page.segments && page.segments.length > 0
           ? jsx('div', {
               className: 'flex flex-col',
               children: page.segments.map((segment) =>
@@ -3693,24 +4003,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
               description: 'Segments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.'
             }),
 
-        jsx(sdk.PanelSectionLabel, { children: 'CURRENT CHECK' }),
-        check.status === 'error'
-          ? jsx(QuietNote, {
-              children: check.error
-                ? `${check.error.code}: ${describeError(check.error)}`
-                : 'The current check could not be opened.'
-            })
-          : jsx(AttemptControls, {
-              enrollmentId: row.enrollment_id,
-              objectiveId,
-              check: check.check,
-              revision: page.revision,
-              implemented,
-              bindingState: runtime ? runtime.binding_status : 'detached',
-              onCommitted: () => {
-                if (onChanged) onChanged()
-              }
-            }),
+        document ? null : jsx(sdk.PanelSectionLabel, { children: 'CURRENT CHECK' }),
+        document ? null : checkNode,
 
         page.attempts && page.attempts.length > 0
           ? jsxs('div', {
@@ -8079,6 +8373,11 @@ function CoursebookSettings() {
     ]
   })
 }
+
+// Named seam for tests/test_desktop_lesson_views.py. The block views and the section page are pure
+// components over a server-owned document, so a Node test can render them without a backend, a
+// chat or a window.
+export { LessonDocumentView, LESSON_VIEWS, SectionPage }
 
 export default {
   id: PLUGIN_ID,
