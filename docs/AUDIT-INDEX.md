@@ -348,7 +348,7 @@ verdict in the fifth column was re-run for this revision; rows that moved are li
 | P1-2 planner does not plan media; policy guesses from prose | P1 | **FIXED** | H-05 `t_7baa29e2` | content `986190f` merged at `a30487e` into `ce95836` — **yes** | done, merged |
 | P1-3 check `count` / `independent_evidence` are decorative | P1 | **FIXED — re-audit required** | H-21c `t_6576b611` | merge `2252231` (content `bcd545e`) — **yes**; `CHECK_PLAN_SCHEMA_V2` drops both fields | done, merged |
 | P1-4 authoring schemas are Japanese-shaped | P1 | **FIXED** | H-18 `t_8407ea22`; recovery H-18b (same defect as round-2 P2-7) | pre-recovery tip `2aca201` — **no**; recovery merge `580bbb6` — **yes**. `tests/test_locale_scaffolds.py` resolves at `1fc0542` | recovered, merged |
-| P1-5 assessment breadth is narrow | P1 | **OPEN — B-1 and B-3 merged; B-2 unmerged** | H-16 `t_3c5d969c`; B-1 `t_673155b0`; B-2 `t_74d99ca5`; B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `423908f` — **no** | all four done; three merged, B-2 not |
+| P1-5 assessment breadth is narrow | P1 | **FIXED — B-1, B-2 and B-3 all merged** (was `OPEN — B-1 and B-3 merged; B-2 unmerged` at `54dd2eb`) | H-16 `t_3c5d969c`; B-1 `t_673155b0`; B-2 `t_74d99ca5`; B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `b13890c` via `d20a7a6`, `a729e36` via `b7ff866`, `76a59ed` via `bbebd96` — **yes** | all four done and merged; B-2 closed at `bbebd96` (§14) |
 | P1-6 rubric registry is static | P1 | **FIXED (decision) — re-audit not applicable** | H-24 `t_29e6647c` | merge `4f42c3c` (content `491443a`), `docs/RUBRIC-EXTENSIBILITY.md` — **yes** | done, merged |
 | P2-1 test matrix proves policy, not generation | P2 | **FIXED — packet merged; its model half is a recorded transcript** | H-09 `t_ebc196db`; re-run H-40 | `111c7e9` — **no**; `9f2de53` via `be08495` — **yes**; `tests/test_harness_e2e.py` resolves at `54dd2eb` (26 tests in the H-49 run) | done, merged |
 | P2-2 depth/locale not tested through the product surface | P2 | **FIXED** | H-04 `t_161d467f` + H-13 `t_543c0767` | `cee1749` via `ce95836` — **yes**; `6779030` — **yes** | done, merged |
@@ -373,7 +373,7 @@ board keys are authoritative and are the only ids used here. Status is the merge
 | P0-2 fetched excerpt is raw prompt content; invented prose URLs pass | P0 | **FIXED** | H-14 `t_031e287f` | merge `a12176b` (content `0ba4dc6`) — **yes** | done, merged |
 | P1-3 "independent validation" is prompt separation; same model upgrades support | P1 | **FIXED — implementation merged; no independent probe of the verdict exists** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes** (through the merge); merge `b75d601` — **yes**; `docs/H15-VALIDATOR-INDEPENDENCE.md` resolves at `54dd2eb` | done, merged. H-30b (`f92d5f8` via `90e1f0d`) re-audited shape, grading and the approval gate; it ran **no** cross-model identity probe, so this row's re-audit is still missing |
 | P1-4 factual gate auto-waives when research is unavailable | P1 | **FIXED — implementation merged; no independent probe of the verdict exists** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes**; merge `b75d601` — **yes**; `outcome`/`facts_unverified` are in `validation_verdict()` at `54dd2eb` | done, merged. H-30b merged (`90e1f0d`) but its recorded research page was a recording, so the no-research waiver was not re-probed |
-| P1-5 assessment breadth: three input formats only | P1 | **OPEN — B-1 and B-3 merged; B-2 unmerged** | H-16 `t_3c5d969c` → B-1 `t_673155b0`, B-2 `t_74d99ca5`, B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `423908f` — **no** | three done and merged; B-2 open |
+| P1-5 assessment breadth: three input formats only | P1 | **FIXED — B-1, B-2 and B-3 all merged** (was `OPEN — B-1 and B-3 merged; B-2 unmerged` at `54dd2eb`) | H-16 `t_3c5d969c` → B-1 `t_673155b0`, B-2 `t_74d99ca5`, B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `b13890c` via `d20a7a6`, `a729e36` via `b7ff866`, `76a59ed` via `bbebd96` — **yes** | all done and merged; B-2 closed at `bbebd96` (§14) |
 | P1-6 flat `$0.75` ceiling, no cost-abort recovery | P1 | **FIXED** | H-17 `t_9a8543ae` (+ `t_d50cb007` v10 brief fix) | content `722f00f` merged at `4dd68cb` into `ce95836` — **yes**; `fbf96fe` — **yes** | done, merged |
 | P2-7 Japanese-only scaffold triple; no direction field | P2 | **FIXED** | H-18 `t_8407ea22`; recovery H-18b | pre-recovery tip `2aca201` — **no**; recovery merge `580bbb6` — **yes**; `tests/test_locale_scaffolds.py` resolves at `1fc0542` | recovered, merged |
 | P2-8 no prerequisite edges; adaptation is a state label | P2 | **FIXED — re-audited by H-30b** | H-20 `t_43ca17b8` (frozen contract) + H-21c `t_6576b611` (implementation) | contract `516d161` via `d079b4c` — **yes**; implementation merge `2252231` (content `bcd545e`) — **yes** | done, merged; H-30b `f92d5f8` via `90e1f0d` proves `course.outline` projects `prereq_unit_ordinals` and a `prerequisite_state` per unit in `short` and `full`. The state-label half of the finding (no dynamic re-plan) stays OPEN under D-04 |
@@ -540,7 +540,7 @@ recorded for it is wrong, which is corrected here rather than copied forward.
 | finding | summary | owning card | merged state at `54dd2eb` |
 |---|---|---|---|
 | B-1 | Generated lesson checks store no reference `kind`; grader falls to the unconfigured open lane | `t_673155b0` (title still says "H-20"; **B-1** is authoritative) | **merged** `4e709d3` (content `ce6c8c1`); `docs/GRADING-LANES.md`, `tests/test_grading_lanes.py` (15 tests) |
-| B-2 | `record_observation` has no RPC method, handler or UI; `self_reported`/`parent_reported` unreachable | `t_74d99ca5` (Atlas's earlier label was "H-21"; **B-2** is authoritative) | **OPEN, and the row's sha is wrong.** `423908f` is **not** an ancestor of `54dd2eb` and is not the commit that introduced the behaviour: `git log --reverse -S'_OBSERVATION_CLASSES' 54dd2eb -- coursebook/domain.py` returns `cde58c6` (CB-002, the authoritative kernel), so `_OBSERVATION_CLASSES = ("self_reported", "parent_reported")` and `def record_observation(...)` are library code that **predates** the B-2 branch. What B-2 actually asks for — an RPC method, handler and UI — is still absent at `54dd2eb`: `observation.record` appears nowhere in `contracts/rpc.v13.json` and `record_observation` is never dispatched from `coursebook/api.py`; `desktop/plugin.js` has zero `observation.record` hits. The branch's 9,248 added lines are largely a duplicate `contracts/db.v7.json`/`rpc.v12.json` and were never merged |
+| B-2 | `record_observation` has no RPC method, handler or UI; `self_reported`/`parent_reported` unreachable | `t_74d99ca5` (Atlas's earlier label was "H-21"; **B-2** is authoritative) | **FIXED at `bbebd96` (2026-11-07, H-58 `t_85135fc7`).** The H-50 status cell, quoted: "**OPEN, and the row's sha is wrong.** `423908f` is **not** an ancestor of `54dd2eb` … `observation.record` appears nowhere in `contracts/rpc.v13.json` … `desktop/plugin.js` has zero `observation.record` hits … were never merged". Those sentences are true of `54dd2eb` and stay as history; the full cell is still readable at `54dd2eb` and in §13. At `bbebd96` all three halves exist: `contracts/rpc.v14.json` declares `observation.record` among 64 methods (frozen by H-53 `b13890c`, merged `d20a7a6`); `coursebook/domain.py:3754` registers `@_handler("observation.record")` (H-54 `a729e36`, merged `b7ff866`) and `implemented_methods()` returns 64 of 64 with no gap; `desktop/plugin.js` mounts `ParentObservation` on a parent-recipe `SectionPage` (H-55 `76a59ed`, merged `bbebd96`) and carries six `observation.record` hits. `cb.db` v9's `0009_evidence_note.sql` (also `b13890c`) gives the record a `note` column, so a note round-trips instead of being dropped (`tests/test_kernel_transitions.py:361`). Commands and their output: §14 |
 | B-3 | `EVIDENCE_CLASS_COPY` covers 4 of 6 evidence classes | H-22 `t_966d50f4` (frozen disclosure copy + labels) | **merged** — `47e152c` via `1fc0542` (H-38 union). `EVIDENCE_CLASS_COPY` at `1fc0542` has all six keys: `cold`, `hinted`, `answer_shown`, `self_reported`, `parent_reported`, `override` |
 
 **H-23 `t_132531da` ("Generated checks are ungradable") is `done` as a duplicate with no product
@@ -896,7 +896,7 @@ listed did not change status. §11/§12 are untouched.
 | G-05 only the Japanese pack ran end to end | required, H-30b; H-40 merge is the first step | **done for three non-Japanese goals, on recorded transcripts** | `9f2de53` via `be08495`; H-49 `54dd2eb` | yes |
 | round-2 P1-3 / §6 D-05 re-audit marker | "independent re-audit is H-30b" (unmerged) | **H-30b merged; it did not cover validator identity** | `f92d5f8` via `90e1f0d` | yes |
 | round-2 P2-8 prerequisite edges | FIXED — re-audit required | **FIXED — re-audited by H-30b** | `f92d5f8` via `90e1f0d`; `2252231` | yes |
-| §7 B-2 row sha | done, unmerged: `423908f` | **OPEN, and the sha is wrong** — `_OBSERVATION_CLASSES` and `record_observation` were introduced by `cde58c6` (CB-002) and predate the branch; no `observation.record` RPC, handler or UI exists at `54dd2eb` | `cde58c6` for the constant; `423908f` is **not** an ancestor | constant yes; the B-2 branch **no** |
+| §7 B-2 row sha | done, unmerged: `423908f` | **FIXED at `bbebd96`** — cb.rpc v14 declares the method, H-54 dispatches it (`implemented_methods()` 64/64), cb.db v9 persists the note, H-55 mounts the control (was `OPEN, and the sha is wrong` — … `no observation.record RPC, handler or UI exists at 54dd2eb`) | `b13890c` via `d20a7a6`; `a729e36` via `b7ff866`; `76a59ed` via `bbebd96` | not at `54dd2eb` (the closure is later); all four are ancestors of `bbebd96` |
 | §8 H-30b card | no | **yes** — `90e1f0d` | `f92d5f8` | yes |
 | §8 H-39 card | no | **yes** — `7404e9c`, `4945061` via `be08495` | `4945061` | yes |
 | §8 H-40 card | no | **yes** — `be08495` | `9f2de53` | yes |
@@ -934,7 +934,9 @@ the same cells remain readable at `54dd2eb` and in §12.
   quoted in this bullet stays as the record of why it read PARTIAL; the H-50 status cell is quoted
   verbatim in the §6 row.
 - §7 B-2: `done, unmerged: wt/harness-observation-record @ 423908f — not an ancestor of 1fc0542`. The "not an ancestor" half is still true at `54dd2eb`; the implied "this is the fix"
-  reading was never true and is corrected above.
+  reading was never true and is corrected above. **Superseded at `bbebd96` (H-58):** B-2 is closed by
+  `b13890c`/`d20a7a6`, `a729e36`/`b7ff866` and `76a59ed`/`bbebd96`; the quoted cell stays as the record
+  of what the H-50 revision said about `54dd2eb`. See §14.
 - §3 H-40 heading: `### H-40 arbitrary-topic packet — branch-only @ 9f2de53`, whose command block
   asserted `git cat-file -e 1fc0542:audit/adversarial/harness-e2e/STATUS.md ; test $? -eq 1 # absent
   from master` and `git merge-base --is-ancestor 9f2de53 1fc0542 ; test $? -eq 1 # not merged`. Both
@@ -1014,7 +1016,8 @@ provider call and no harness run.
 - **B-2 — the row's sha is wrong and the behaviour it asks for is still missing.** Naming
   `cde58c6` (which introduced the constant long before B-2) would have been the easy fix and would
   have closed a finding that is not closed: there is no `observation.record` RPC method, no handler
-  dispatch and no UI at `54dd2eb`.
+  dispatch and no UI at `54dd2eb`. **Closed at `bbebd96` by H-58; see §14.** Every sentence of the
+  paragraph above is true of `54dd2eb` and is kept as history.
 - **§6 D-06 — README (resolved after this revision).** H-11 reconciled `PRIVACY_EGRESS.md`,
   `DEFECTS.md` and `SUBMISSION.md` and landed `docs/HARNESS-STATUS.md`; `README.md:99` and `:204`
   still called CB-QA-10 open at the H-50 base. Flipping the row to FIXED would have required editing
@@ -1037,3 +1040,87 @@ correction, rather than being silently deleted.
 claim are those naming an ancestor of `54dd2eb`, and every ledger row that names one also says
 whether an independent re-audit exists. The two rows that most invite overstatement — P0-7 and
 P2-3's media half — stay OPEN on purpose.
+
+## 14. Changes in the H-58 revision — B-2 closed at `bbebd96`
+
+Base: `master` = `bbebd96` (`bbebd96bd6873c2b22970fd240d0fe410c9ee6b8`), the merge that carried H-55
+(`76a59ed`, "parent-observation control calls observation.record") onto master. This revision moves
+**B-2** from OPEN to FIXED, and the two P1-5 rows whose status was defined by B-2 with it. Rows not
+listed did not change status. §11/§12/§13 are kept as the H-31b, H-41 and H-50 records; §9 of
+`docs/ASSESSMENT-BREADTH.md` (the H-53 authorization paragraph) is untouched.
+
+The B-2 closure is three work commits — `b13890c`, `a729e36`, `76a59ed` — carried by the merges
+`d20a7a6`, `b7ff866` and `bbebd96`, and each commit carries a different half of the defect:
+
+| row | previous status (H-50) | status now | commit that justifies it | ancestor of `bbebd96` |
+|---|---|---|---|---|
+| §7 B-2 (H-16 B-series) | `OPEN, and the row's sha is wrong` — no `observation.record` RPC method, handler or UI at `54dd2eb` | **FIXED** — declared in `cb.rpc` v14, dispatched by a registered handler, persisted with its note, and mounted in Desktop | `b13890c` (cb.rpc v14 + cb.db v9 + `0009_evidence_note.sql`) via merge `d20a7a6`; `a729e36` (handler) via merge `b7ff866`; `76a59ed` (Desktop) via merge `bbebd96` | yes |
+| §4 round-1 P1-5 | `OPEN — B-1 and B-3 merged; B-2 unmerged` | **FIXED — B-1, B-2 and B-3 all merged** | the same closure commits; B-1 `ce6c8c1` via `4e709d3`, B-3 `47e152c` via `1fc0542` | yes |
+| §5 round-2 P1-5 | `OPEN — B-1 and B-3 merged; B-2 unmerged` | **FIXED — B-1, B-2 and B-3 all merged** | the same closure commits | yes |
+
+### The verifying commands and what they printed
+
+Run for this card, in this worktree, at `bbebd96`:
+
+```text
+$ for sha in b13890c d20a7a6 a729e36 b7ff866 76a59ed; do
+    git merge-base --is-ancestor $sha HEAD && echo "$sha YES" || echo "$sha NO"; done
+b13890c YES
+d20a7a6 YES
+a729e36 YES
+b7ff866 YES
+76a59ed YES
+
+$ jq '.["$defs"].method.enum|length' contracts/rpc.v14.json
+64
+$ jq -r '.["$defs"].method.enum[]|select(.=="observation.record")' contracts/rpc.v14.json
+observation.record
+
+$ python3 ~/.hermes/profiles/quill/cache/scratch/probe_impl_methods.py
+implemented_methods count: 64 unique: 64
+contract method_names count: 64
+observation.record present: True
+missing handlers: []
+extra handlers: []
+
+$ grep -n '@_handler("observation.record")' coursebook/domain.py
+3754:@_handler("observation.record")
+$ grep -c 'observation.record' desktop/plugin.js
+6
+$ sha256sum desktop/plugin.js
+a850b2bf0aee89a9d6765bbdc4218e65ca900a523c8afc8a48c4b1f2c1f076f3  desktop/plugin.js
+$ grep -n 'function ParentObservation(' desktop/plugin.js
+6464:function ParentObservation({ enrollmentId, objectiveId, onRecorded }) {
+$ grep -c 'ParentObservation' tests/test_desktop_contracts.py
+11
+
+$ git log --oneline --diff-filter=A -- coursebook/migrations/0009_evidence_note.sql
+b13890c H-53: cb.rpc v14 + cb.db v9 — freeze observation.record (contract and migration only)
+$ grep -n 'def test_the_note_is_persisted_verbatim' tests/test_kernel_transitions.py
+361:    def test_the_note_is_persisted_verbatim(self) -> None:
+
+$ git show 54dd2eb:contracts/rpc.v13.json | jq '.["$defs"].method.enum|length'
+63
+$ git show 54dd2eb:desktop/plugin.js | grep -c 'observation.record'
+0
+```
+
+Two readings matter and neither is a formality. **`implemented_methods()` is not 64 after a bare
+`import coursebook.domain`:** the registry is populated by import side effects, and `pack_flow`
+registers its seven `pack.*` / `course.export*` handlers only when it is imported, so the naive
+probe returns 57. The probe above imports `coursebook.domain`, `coursebook.pack_flow`,
+`coursebook.pronunciation` and `coursebook.syllabus` first — the same set the suite's parity test
+relies on — and then the registry has 64 of 64 with no gap. **The B-2 row's open status was measured,
+not assumed:** at `54dd2eb` the same `grep -c 'observation.record' desktop/plugin.js` printed `0`, and
+the H-50 cell above records it.
+
+### What this revision is, and is not
+
+It is a status reconciliation, not a new audit. It re-ran `git merge-base --is-ancestor`, `jq` on the
+frozen contract enum, the handler registry, `git log --diff-filter=A` on the migration and file-level
+greps at `bbebd96`; the full suite was run, and it touched no product code, contract, schema,
+migration or test. B-2 is closed because all three surfaces exist on this tree and the note
+round-trips — not because the finding's prose was re-read and found agreeable. The one thing this
+revision does **not** claim is a live learner session: the evidence is the contract enum, the
+registry, the migration, the Desktop mount and the suite, and §10's construct gates in
+`docs/ASSESSMENT-BREADTH.md` still have to be met separately.
