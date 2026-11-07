@@ -1,0 +1,90 @@
+{
+  "finding": {
+    "symptom": "The All Courses card titled 'Order coffee in Japanese' showed 'Identify the correct replacement pad for the brake model'.",
+    "classification": "contaminated fixture data, not a cross-course association in library.list",
+    "evidence": {
+      "course_id": "baa1b6384fe6c5c4",
+      "course_title": "Order coffee in Japanese",
+      "course_goal": "Order coffee in Japanese",
+      "plan_id": "2f596f3bd49b6120",
+      "plan_title": "Replace a bicycle brake pad",
+      "objective_titles": [
+        "Identify the correct replacement pad for the brake model",
+        "Remove the worn pad without damaging the caliper",
+        "Seat and tighten the new pad to the manual's specification",
+        "Verify the brake by hand before riding"
+      ],
+      "why": "The plan document had been seeded from tests/fixtures/generation/plan_one_off.json (a bicycle brake plan) while the course brief used the Japanese goal. library.list correctly read the next objective of the selected course; the selected course itself was inconsistent."
+    }
+  },
+  "repair": {
+    "archived_enrollments": [
+      "baa1b6384fe6c5c4",
+      "crs_3ea89399cb7b4385a6baba8e02883150",
+      "crs_e58e8ef3fcb54777ac4d8c17636307e5",
+      "crs_60369f196bb44cf2abfadc54d8a2a477"
+    ],
+    "clean_course_id": "b7d782cd15954337",
+    "clean_plan_id": "adca4720c537d4af",
+    "clean_course_title": "Order coffee in Japanese",
+    "clean_plan_title": "Japanese café basics",
+    "clean_objectives": [
+      "Greet café staff and open the interaction politely",
+      "Order one drink using a polite request form",
+      "Distinguish これ / それ / あれ when pointing at menu items",
+      "Understand a staff follow-up question about drink size"
+    ],
+    "method": "re-authored through run_plan_job with tests.test_generation FakeLLM/FakeSearch and plan_ja, then enrollment.create and plan.approve (revision 0); no provider call and no spend",
+    "database": "/home/deseretsaint/.hermes/coursebook-test/home/plugin-data/coursebook/data.db",
+    "backup": "/home/deseretsaint/.hermes/cache/scratch/coursebook-repair/data.before.db"
+  },
+  "after": {
+    "library_total": 20,
+    "courses_total": 24,
+    "active_enrollments": 20,
+    "rows": [
+      {
+        "title": "Order coffee in Japanese",
+        "next_step": {
+          "kind": "start_lesson",
+          "label": "Start Greet café staff and open the interaction politely"
+        },
+        "evidence_summary": {
+          "independent": 0,
+          "review_due": 0,
+          "total_objectives": 4
+        }
+      },
+      {
+        "title": "Roadside flat repair",
+        "next_step": {
+          "kind": "resume_lesson",
+          "label": "Resume Replace the inner tube and inspect the tire for the cause of the flat"
+        },
+        "evidence_summary": {
+          "independent": 0,
+          "review_due": 0,
+          "total_objectives": 1
+        }
+      }
+    ]
+  },
+  "ui_verification": {
+    "route": "#/coursebook",
+    "desk": "ready",
+    "layout": "stacked",
+    "all_courses_count": 20,
+    "visible_cards": [
+      "Find relative minors on the circle of fifths",
+      "Roadside flat repair",
+      "Japanese affection and register — an L0 demonstration classroom"
+    ],
+    "brake_text_under_japanese_title": false,
+    "screenshot": "/home/deseretsaint/.hermes/cache/scratch/coursebook-repair/all-courses-clean.png",
+    "continue_screenshot": "/home/deseretsaint/.hermes/cache/scratch/coursebook-repair/library-clean.png"
+  },
+  "limits": [
+    "This repaired the disposable test home's fixture data. It did not add a semantic topic checker to the product; generated plans are still validated structurally, not for topical identity.",
+    "The contaminated rows were archived, not deleted; they remain recoverable under the Archived filter."
+  ]
+}
