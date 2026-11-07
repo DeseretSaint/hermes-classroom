@@ -68,14 +68,7 @@
     }
   },
   "sources": [],
-  "media": [
-    {
-      "kind": "visual",
-      "purpose": "Show where the pad fastener sits on this brake type",
-      "spec": "simple line diagram, no measurements presented as authoritative",
-      "text_equivalent": "Diagram labels the pad fastener on the caliper; the manual remains the authority"
-    }
-  ],
+  "media": [],
   "parent_notes": null,
   "supervision_notes": []
 }

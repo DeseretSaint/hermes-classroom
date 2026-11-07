@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author | `coursebook.plan.generate` | `plan-prompt.v1` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v3` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v4` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
@@ -155,11 +155,34 @@ The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and 
 enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
 page against the linked checks before serving.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v3`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v4`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
 synthesised to reach the floor: a pack is exportable only when the author actually declared them.
+
+**Capability policy reaches the model.** Before the lesson prompt is built, the pipeline computes
+one immutable plan from the recipe, the objective's evidence target, the authored section intent,
+the locale/level and an advisory subject domain (`coursebook/policy.py`). `lesson-prompt.v4`
+receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
+instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
+is told to emit no item of that kind at all. The same plan is stamped on the authored lesson under
+`policy`, stored in `gen_lessons.policy_json`, and handed to `enforce_lesson_rules`; a model cannot
+override it (the harness overwrites any echo before validation).
+
+**Two media gates.** Generated media must pass both `policy.media_policy_problems` (is this
+kind/role permitted by the plan?) and `artifacts.media_problems` (is the spec complete and honest:
+text equivalent, transcript/voice/language for narration, `source_ids` plus permission for a sourced
+technical reference, `facts.rows` for a schematic, and never a technical claim on an illustration).
+A failure is a `_RuleViolation` with an itemised reason: attempt 1 is retried with those reasons,
+attempt 2 parks the lesson `needs_review`. Media never becomes evidence because a validator did not
+complain; it is refused before the validator is called.
+
+**Rubric angle.** `enforce_lesson_rules` resolves the profile through
+`rubrics.resolve_profile(plan.rubric_profile, declared_target)`: the check's declared evidence
+target is authoritative, and an advisory construct that cannot score it falls back to that target's
+default profile. The profile's own criteria are then validated (3–6 distinct observable aspects, no
+mental-state claims, no restated aspect).
 
 **Nuance worth keeping.** A selection check's correct choice necessarily appears among the
 stimulus choices. The invariant is that the *key* is not announced — the reference answer must not
