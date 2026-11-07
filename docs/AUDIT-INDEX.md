@@ -13,6 +13,13 @@ resolve to a commit, and the finding's status names the card that owns the fix.
 Rule for citing this index: quote the commit hash and the file path, never a worktree path. If a
 file is not reachable with `git cat-file -e <hash>:<path>`, it is not evidence.
 
+**Staleness banner (H-11, 2026-11-07).** The finding ledgers in §4, §5 and §6 were read from the
+`coursebook` board at base `7af3bbd`. Several rows have since changed: H-02, H-04, H-05, H-07, H-12
+and H-13 are merged to `master`, and H-06/H-08/H-09/H-15/H-18/H-24 remain branch-only. The ledgers
+below are left as the record of that base. For current claim-by-claim state use
+`docs/HARNESS-STATUS.md`; do not read a row's `card state` column as live. A refreshed index exists
+on `wt/harness-audit-refresh` (`512c5f6`) and is not merged.
+
 ## 1. Report register
 
 Every file below is tracked on this branch and resolves to a commit.
@@ -202,12 +209,13 @@ here rather than left to prose.
 | D-03 the plan job drops contract inputs | OPEN | H-13 `t_543c0767` | `run_plan_job` reads goal/recipe/dials/locale only |
 | D-04 "adaptation" is a state transition | OPEN | H-03 `t_577ed286` + H-20 `t_43ca17b8` | do not market it as adaptive teaching |
 | D-05 validation independence is structural only | OPEN | H-15 `t_d519643b` | same as round-2 P1-3 |
-| D-06 stale CB-QA-10 claim survives in README | OPEN | H-11 `t_6f41e0b0` | truth pass; reconcile README/PRIVACY_EGRESS/ACCEPTANCE/REVIEW_CB014 |
+| D-06 stale CB-QA-10 claim survives in README | **FIXED** | H-11 `t_6f41e0b0` | re-derived: S07 probe PASS on `498b1da`, `evidence.py` projects `PUBLIC_CRITERION_FIELDS`; README, `PRIVACY_EGRESS.md` and `SUBMISSION.md` §7 corrected, historical reports untouched — `docs/HARNESS-STATUS.md` §4 |
 
-D-06 also covers the `REVIEW_CB014.md` row for CB-QA-10 ("OPEN"). That row is **not** rewritten
-here: the code may already project only `PUBLIC_CRITERION_FIELDS` (per
-`tests/test_review_evidence.py`), but this card did not re-derive that, so the public record stays
-as it is and H-11 owns the reconciliation.
+D-06 also covered the `REVIEW_CB014.md` row for CB-QA-10 ("OPEN"). That row is **not** rewritten,
+because it is the record of `f4a42f3`. The re-derivation happened on `master` at `498b1da` and is
+recorded in `docs/HARNESS-STATUS.md` §4: `python3 tests/adversarial/attack_state.py` →
+`scenario=S07 verdict=PASS … secret_present=False`, `SUMMARY total=22 fail=0 pass=22`.
+`ACCEPTANCE.md`'s table is likewise left as its own commit's record (`e5b9686`).
 
 ## 7. Provenance checks this index relies on
 
@@ -237,13 +245,41 @@ Rules enforced:
 - **A green suite is not a gate.** 1054 tests pass at `7af3bbd` with the empty-plan approvals
   asserted as success (D-02); the index therefore reports the count and the defect together.
 
-## 8. What this index does not claim
+## 8. Harness-slice evidence register (branch evidence, not merged)
 
-- It does not claim any finding is fixed except P2-10, and it does not claim H-12 or H-01 has
-  been merged.
+The harness slice produced evidence packets that do not live on `master`. They are registered here
+so a reader can reach them by commit, and so no one mistakes them for merged state. Status of the
+claims themselves: `docs/HARNESS-STATUS.md`.
+
+| card | branch | commit | evidence file | reproduction | merged? |
+|---|---|---|---|---|---|
+| H-06 procedure authoring | `wt/harness-procedure-author` | `00b502f` | `docs/M4-PROCEDURE-LAYOUT.md` (§authoring), `tests/test_procedure_authoring.py` | `git show 00b502f:tests/test_procedure_authoring.py` | no |
+| H-08 general authored export | `wt/harness-authored-export` | `c9c6cec` | `docs/PACK-AUTHORING.md` §5, `tests/test_course_export.py` | `git show c9c6cec:docs/PACK-AUTHORING.md` | no |
+| H-09 arbitrary-topic end-to-end proof | `wt/harness-e2e-proof` | `4dd0f18` content, `111c7e9` tip | `docs/HARNESS-E2E.md`, `audit/adversarial/harness-e2e/STATUS.md`, `evidence/*.json` | `PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py` on that branch | no |
+| H-15 validator independence | `wt/harness-validator-independence` | `833e335` | decision doc on the branch | `git log -1 833e335` | no |
+| H-18 locale scaffolds | `wt/harness-locale-scaffolds` | `2aca201` | scaffold schema + refreshed M4 frames | `git log -1 2aca201` | no |
+| H-24 rubric extensibility | `wt/harness-rubric-extensibility` | `491443a` | decision doc on the branch | `git log -1 491443a` | no |
+
+Rules that apply to this register:
+
+- A branch commit is not a merge. Verify with
+  `git merge-base --is-ancestor <commit> master; echo $?` — `1` means it is not on the merged tree.
+- H-09's model half is a **recorded transcript** (`labels.model` in each `evidence/*.json`), and its
+  research is a **recorded page** served through the real seam. 0 provider calls, $0 spend. It
+  proves the pipeline, not model or research quality.
+- No row here uses the prepared Japanese pack as evidence.
+
+## 9. What this index does not claim
+
+- It does not claim any finding is fixed except P2-10 and D-06, and it records H-12 as merged to
+  `master` only because `plan_approve` on this tree refuses empty plans and binds a durable
+  validation pass to the content hash (`coursebook/domain.py:678`); the ledger rows above still
+  describe `7af3bbd`.
 - It does not re-run, re-grade or extend either audit; probe results are attributed to the card
-  that produced them.
+  that produced them. The one re-derivation it does record is CB-QA-10 (S07) in
+  `docs/HARNESS-STATUS.md` §4, because four live documents carried a stale present-tense claim.
 - It does not claim the harness is installable, demo-ready, or proven on an arbitrary topic. H-09
-  (`t_ebc196db`) is the only card that can establish arbitrary-topic generation, and it is `todo`.
+  (`t_ebc196db`) is the only card that speaks to arbitrary-topic generation, its evidence is on
+  branch `wt/harness-e2e-proof` (`111c7e9`) with recorded transcripts, and it is not merged.
 - It does not use the prepared Japanese pack as evidence for anything.
 - It changes no product code, contract, schema, migration or test.

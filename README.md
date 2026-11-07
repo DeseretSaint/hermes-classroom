@@ -32,6 +32,24 @@ been re-run on the newer tree. The default-profile demo gate `t_6a32ffe9` must m
 `master` after the operator restarts that gateway; publication remains gated by
 `docs/SUBMISSION.md` §0.
 
+### Harness status (merged tree, measured 2026-11-07)
+
+The review `docs/ADVERSARIAL-HARNESS-REVIEW.md` asked whether a learner goal reaches a real
+generation pipeline. Five different things answer that question, and conflating them is how a
+fixture becomes a claim. Full detail, evidence paths and reproduction commands:
+`docs/HARNESS-STATUS.md`.
+
+| Claim | State on merged `master` (`498b1da`) | Evidence |
+| --- | --- | --- |
+| Harness code complete | **Partial.** Contract inputs, learner create → plan job → approval → lessons, fail-closed approval, plan-time media, bounded research are merged. Procedure authoring, general authored export, locale scaffolds, validator independence and rubric extensibility are only on branches | `docs/HARNESS-STATUS.md` §1; branch commits named there |
+| Authored course generated end to end | **Proven on a branch only.** Three non-Japanese goals pass the full product path on `wt/harness-e2e-proof` with a **recorded model transcript** (0 provider calls), not on `master` and not with a live model | `docs/HARNESS-E2E.md` at `111c7e9`, `audit/adversarial/harness-e2e/` |
+| Live UI proof of that loop | **None.** The create flow's Desktop half is proven by jsdom tests with a recording RPC stub; no mounted window has driven it against a live backend | `tests/test_desktop_create_flow.py` (its own docstring says so) |
+| Prepared-pack demo | **Fixture.** The Japanese L0 pack proves a governed loop over one prepared pack; no video exists and the demo gate is NOT MET | `docs/DEMO.md` |
+| Product 1.0 | **Not released.** No tag, no catalog PR, no license; `docs/SUBMISSION.md` §0 stays closed | `docs/SUBMISSION.md` |
+
+The prepared Japanese pack is a fixture in every claim in this repository. It is never evidence that
+an arbitrary goal produces a comparable course.
+
 ### Product line after 0.1.0
 
 This tree also carries the post-0.1.0 product line from `docs/VISUAL_MEDIA_PLAN.md`: M0 on `master`
@@ -50,13 +68,13 @@ describe this tree. The product-line rows are separate, and they use two weaker 
 
 | Product-line surface | State on this tree | Evidence |
 | --- | --- | --- |
-| Contracts `cb.rpc` v10 and `cb.db` v6 | Working: 54 declared methods and 54 handlers, parity asserted by the suite; schema 6 from migrations `0001`-`0006` | `contracts/rpc.v10.json`, `contracts/db.v6.json`; parity asserted by the suite (`1056 tests OK`) |
+| Contracts `cb.rpc` v10 and `cb.db` v6 | Working: 54 declared methods and 54 handlers, parity asserted by the suite; schema 6 from migrations `0001`-`0006` | `contracts/rpc.v10.json`, `contracts/db.v6.json`; parity asserted by the suite (`1177 tests OK` at `498b1da`) |
 | Textbook view | Working (live): a real document served over the real RPC; the frame set covers Textbook and Guided (13 frames) | `audit/visual/m1-guided-authoring/README.md` |
 | Guided view | Working (live) on a newly authored document (`state=complete`, `views.guided=true`). The older demo course still reports `textbook_only` because its stored page predates `lesson-prompt.v5`; it was not rewritten | `audit/visual/m1-guided-authoring/` |
 | Field Desk home (Continue, path, sources, all courses) | Working (live): the desk and its backend-off, empty and loading states were read from an isolated window | `audit/visual/m2-field-desk/README.md`, `live-evidence.json` |
 | Field Notes (save from a block, search, return to the exact block) | Working (live): 15 live frames including 460 px and exact-block return | `audit/visual/m2-field-notes/live-evidence.json` |
 | Field Quest | Rendered: 14 static frames and 56 render/parity tests, plus a live availability capture. No live Quest frame exists, because the stored lessons in every reachable home predate authored `short` | `audit/visual/m2-field-quest/README.md`, `live-availability.json` |
-| Procedure lens (typed header, numbered steps, hazard callout, schematic rows, source permission) | Rendered: 7 frames and 28 validator/render tests. No lesson prompt authors a `procedure` header yet, so this is proof against a contract-valid fixture | `docs/M4-PROCEDURE-LAYOUT.md`, `audit/visual/m4-procedure/` |
+| Procedure lens (typed header, numbered steps, hazard callout, schematic rows, source permission) | Rendered: 7 frames and 28 validator/render tests. No lesson prompt on this tree authors a `procedure` header, so this is proof against a contract-valid fixture. H-06 (`00b502f`, unmerged) adds the authoring path and proves it with a fake model | `docs/M4-PROCEDURE-LAYOUT.md`, `audit/visual/m4-procedure/`; `docs/HARNESS-STATUS.md` §2 |
 | Pronunciation Studio (listen, record, compare, dispute) | Rendered: 14 frames and 15 jsdom interaction tests. It is inert on every existing section because none has a narration media child; no live attempt was walked | `docs/M3-PRONUNCIATION-UI.md`, `tests/test_desktop_pronunciation.py`, `audit/visual/m3-pronunciation/` |
 | Media generation and preview | Working for the host adapter (one real PNG and one real MP3 through `docs/M0-MEDIA-PROBE.md`) and Rendered in the lesson (60 decoded images, 22 audio elements, 0 autoplay, text equivalent for each). The preview route is covered by tests, not driven live on this tree | `docs/M0-MEDIA-PROBE.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `audit/visual/m4-visual/audit.json` |
 | M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,102 text nodes (worst authored 6.61:1), 0 unnamed of 340 accessibility controls, no clipped text or horizontal overflow | `audit/visual/m4-visual/audit.json` (sha256 `ac3538bd…1bf70`), `docs/M4-VISUAL-MEDIA-AUDIT.md` |
@@ -90,13 +108,15 @@ there is no code path at all. Unless a row names a later commit, the row describ
 | Reminders | Absent: no RPC, no job runner, no storage |
 
 Every method declared by `cb.rpc` v7 has a handler in that build, and the same holds on this tree
-for v9's 54 methods, so there is no command that
+for v10's 54 methods, so there is no command that
 answers a plausible success for work it cannot do. A method outside the contract is refused with
 `VALIDATION_FAILED`; a handler that cannot answer returns a contract error rather than a
-fabricated result. Two backend defects are open and recorded in `docs/REVIEW_CB014.md`:
-`evidence.inspect` carries an open check's reference answer in the L2 projection (CB-QA-10), and
-the optional auxiliary grader cannot yet distinguish a persuaded pass from an honest one
-(CB-QA-11).
+fabricated result. One backend defect recorded in `docs/REVIEW_CB014.md` is still open:
+`evidence.inspect` carried an open check's reference answer in the L2 projection (CB-QA-10) **at
+that review's commit `f4a42f3`**; on this tree the S07 probe passes and only
+`PUBLIC_CRITERION_FIELDS` is projected (`docs/HARNESS-STATUS.md` §4), so the present-tense claim is
+retired here rather than repeated. The optional auxiliary grader cannot yet distinguish a persuaded
+pass from an honest one (CB-QA-11), and that lane ships disabled.
 
 ## Requirements
 
@@ -198,9 +218,11 @@ This candidate is not shippable as a Desktop product.
   pronunciation scoring and reminders remain absent.
 - The auxiliary open-response grader is disabled. Closed checks are graded against a stored
   reference; with the lane enabled, an answer that persuades an obedient grader is accepted
-  (CB-QA-11).
-- `evidence.inspect` returns an open check's reference in the L2 projection (CB-QA-10). The UI
-  does not render it; the RPC boundary does.
+  (CB-QA-11). S13 stays `BLOCKED` in the adversarial run for exactly that reason.
+- `evidence.inspect` returned an open check's reference in the L2 projection (CB-QA-10) at the
+  `f4a42f3` review commit. Re-derived on this tree, the S07 probe passes and the projection carries
+  only `PUBLIC_CRITERION_FIELDS` (`docs/HARNESS-STATUS.md` §4). The historical review is left as the
+  record of its own commit.
 
 The product line adds surfaces with limits of their own; these are not the 0.1.0 rows above.
 
@@ -212,9 +234,18 @@ The product line adds surfaces with limits of their own; these are not the 0.1.0
 - Field Quest has no live frame. Stored lessons predate authored `short`, so `views.field_quest` is
   false on every section a window reached; the lens is proven by render and parity tests
   (`audit/visual/m2-field-quest/README.md`).
-- The procedure lens has no authoring path. The validator, contract and renderer are proven against
-  a contract-valid fixture; the lesson prompt does not emit `procedure` yet
-  (`docs/M4-PROCEDURE-LAYOUT.md`).
+- The procedure lens has no authoring path **on this tree**. The validator, contract and renderer
+  are proven against a contract-valid fixture; H-06 (`00b502f`, branch `wt/harness-procedure-author`,
+  unmerged) adds the `procedure` schema, the `lesson-prompt.v7` request and a projection, proven
+  with a fake model in `tests/test_procedure_authoring.py` — not with a live course
+  (`docs/M4-PROCEDURE-LAYOUT.md`, `docs/HARNESS-STATUS.md` §2).
+- A learner-created course cannot export itself here: `pack.export` still refuses a course with no
+  `pack_id`. H-08 (`c9c6cec`, unmerged) adds `course.export.read`/`course.export` in cb.rpc v11; the
+  command, its four-step gate and its round-trip test are not on this tree.
+- `single` scope is contradictory: the code allows 4-5 objectives
+  (`coursebook/generation.py:147`) while `docs/COURSE-BLUEPRINT.md:42` says exactly 1. The H-09
+  `bicycle_single` run asserted the code's cell. Nobody has reconciled them
+  (`docs/HARNESS-STATUS.md` §2).
 - The Pronunciation Studio is inert until a section carries narration media, and no existing section
   does. With no recogniser configured it says "Practice only, not graded" and records nothing; a
   take is `model_assessed` evidence, never verified pronunciation or mastery
@@ -249,6 +280,8 @@ Coursebook has not established that it improves learning. Parent observations ar
 - `docs/DEMO.md`: the demo script and its precomputed/live split.
 - `docs/PRODUCT-LINE-RELEASE-NOTES.md`: phase-to-commit map for the post-0.1.0 product line and what
   is still gated.
+- `docs/HARNESS-STATUS.md`: what is build-complete, what is proven only on a branch with a recorded
+  transcript, what is fixture-only, and what is unproven.
 - `docs/VISUAL_MEDIA_PLAN.md`: the product-line direction that M0-M4 implement.
 - `docs/M0-MEDIA-PROBE.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/M4-PROCEDURE-LAYOUT.md`,
   `docs/M3-PRONUNCIATION-UI.md`: measured evidence for media, the visual/a11y gate, the procedure
@@ -274,7 +307,8 @@ bash scripts/validate-plugin.sh # release gate: admission on a git archive expor
 
 Run `scripts/validate.sh` before any merge into master. It is the pre-merge gate; it passed on the
 0.1.0 commit with 685 tests, node check OK and 31/31 backend expectations. On this tree the suite
-is 1039 tests (`python3 -m unittest discover -s tests -t .`, `OK`). Its admission step validates
+is 1177 tests (`python3 -m unittest discover -s tests -t .`, `OK`, 281.5 s at `498b1da`). Its
+admission step validates
 an export of the tracked tree (`scripts/lib/gate-export.sh`), not the checkout root, so the
 gitignored `.worktrees/` farm is never scanned and an uncommitted edit to a tracked file still fails
 that step. `scripts/validate-plugin.sh` is the release gate for one pinned commit.

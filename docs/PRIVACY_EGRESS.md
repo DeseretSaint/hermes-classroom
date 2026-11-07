@@ -152,9 +152,12 @@ data, or artifacts referenced by another course.
 
 ## Open defects that touch this document
 
-- **CB-QA-10** — `evidence.inspect` returns an open check's reference answer in the L2 projection.
-  The answer key crosses the local client boundary while the check is still open. It is not egress,
-  and the UI does not render it, but this document does not claim the field is hidden.
+- **CB-QA-10** — `evidence.inspect` returned an open check's reference answer in the L2 projection at
+  the review commit `f4a42f3`. **Fixed on this tree and re-derived:** the S07 probe passes
+  (`open_check_reference_leaks=[]`, `secret_present=False`) and `coursebook/evidence.py` projects
+  criteria through `PUBLIC_CRITERION_FIELDS` (`id`, `description`, `check_id`,
+  `check_spec_withheld`), so the answer key does not cross the client boundary while a check is open.
+  Evidence and command: `docs/HARNESS-STATUS.md` §4. The historical review is not rewritten.
 - **CB-QA-11** — if the auxiliary grader lane is enabled, learner text would be passed to the
   grader, and an answer carrying instructor-style injection is currently accepted. The lane is
   **disabled in this build**; enabling it requires the structural cross-check that defect records.

@@ -16,6 +16,13 @@ explicit final sign-off in chat.** GitHub commits and pushes to the private sour
 the authorized backup path; they are not publication. Release verification and evidence collection
 may continue, but every publication gate below stays closed until that sign-off.
 
+Status of this section after the harness slice (H-11, 2026-11-07): **unchanged and closed.** No gate
+below moved. The arbitrary-topic end-to-end evidence (`docs/HARNESS-E2E.md`, branch
+`wt/harness-e2e-proof` at `111c7e9`) is engineering evidence with recorded transcripts, not
+publication evidence: it is unmerged, it used no provider, and it does not satisfy gate 7 (demo
+scenarios on the release commit) or gate 13 (a recorded demo). No tag, catalog PR or announcement
+was made. Current claim-by-claim state: `docs/HARNESS-STATUS.md`.
+
 ## 1. Gates in order
 
 Each gate depends on the one above it. Do not start a later gate to save time; a failure there
@@ -210,7 +217,7 @@ holds the demo back. No recording happens without DeseretSaint's approval.
 | Blocker | Why it blocks | Owner |
 | --- | --- | --- |
 | No composer on an isolated home (CB-QA-09) — P3-operational, host gateway binding | One gateway per host: `hermes gateway run --force` is refused while profile `default` owns it. This is not a plugin defect: `desktop/plugin.js` mounts the library and Parent Studio whenever the window reaches a backend (`docs/REVIEW_CB017-FINAL.md` §3.1). The unblock is an operator decision on the recording path (record on the gateway-owning profile, or stop that gateway first) | DeseretSaint / Atlas |
-| `evidence.inspect` returns an open check's reference answer (CB-QA-10) | The answer key crosses the client boundary while the check is open; the UI does not render it, the RPC does | Cinder |
+| `evidence.inspect` returned an open check's reference answer (CB-QA-10, **fixed**) | The answer key crossed the client boundary while the check was open. Re-derived on `master` at `498b1da`: the S07 probe passes (`open_check_reference_leaks=[]`, `secret_present=False`) and `coursebook/evidence.py` projects only `PUBLIC_CRITERION_FIELDS` (`docs/HARNESS-STATUS.md` §4). The historical review at `f4a42f3` is unchanged | Cinder — no card claims this fix |
 | Auxiliary grader accepts a persuaded pass (CB-QA-11) | The open-response lane cannot distinguish an honest pass from an injected one, so the lane ships disabled | Cinder |
 | Demo gate not met | Sentinel's demo scenarios have not passed on the release commit, and recording needs operator approval | Sentinel, DeseretSaint |
 | License absent | Redistribution and catalog listing are unsafe without one | DeseretSaint |
