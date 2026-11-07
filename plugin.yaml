@@ -28,6 +28,10 @@ provides_hooks:
 # structured output locally, so a missing jsonschema must not silently accept invalid JSON.
 python_dependencies:
   - "jsonschema>=4.0,<5"
+  # Coursebook's own local recogniser for pronunciation practice (M3-B1). Optional at runtime:
+  # a missing import/model/ffmpeg is reported as practice-only/unavailable, never a score. No
+  # provider key is read and `stt.provider` is never touched.
+  - "faster-whisper>=1.0,<2"
 
 # No requires_env in the skeleton: Coursebook stores no secrets. Every key below has a reader
 # wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field

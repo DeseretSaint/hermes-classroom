@@ -11,9 +11,11 @@ anything. The Desktop page does not mount on this candidate (CB-QA-09, `docs/REV
 a shipped backend path is not reachable from the UI. That is a reachability problem, not a privacy
 one: nothing below becomes true only when the page renders.
 
-Coursebook holds no vendor credentials and makes no direct outbound HTTP request of its own. It
-declares no `requires_env`. Every provider call goes through a seam the Hermes profile already
-configures, so the user's provider choice, egress rules and SSRF checks apply.
+Coursebook holds no vendor credentials and reads no provider key. Its provider calls go through a
+seam the Hermes profile already configures, so the user's provider choice, egress rules and SSRF
+checks apply. The one direct outbound request is the **first-use download of its own local speech
+model weights** from Hugging Face (see the pronunciation row below); no audio is ever uploaded on
+that path.
 
 ## Egress inventory on this candidate
 
@@ -29,6 +31,7 @@ configures, so the user's provider choice, egress rules and SSRF checks apply.
 | Grading, open response (auxiliary lane) | no destination | Nothing. No auxiliary adapter is configured in this build (`configure_aux_grader` is never called), so an open response is not sent anywhere and the attempt is recorded as unable to grade rather than passed | Disabled |
 | Parent Studio planning | the same host plugin LLM route as plan generation, through a queued `plan` job | The parent brief: title, goal, age band, reading level, duration, setting, materials, exclusions, supervision notes, desired pages and visuals, narration script, locale. `parent.brief.create` refuses the brief unless `egress_acknowledged: true`, so no course is created from an unacknowledged paste | Implemented; unreachable from the Desktop behind CB-QA-09 |
 | Image and speech generation | the host `image_generate`/`text_to_speech` tools, using the image and TTS providers configured for the Hermes profile; the returned image URL is fetched directly from an allowlisted `*.fal.media`/`*.fal.run` host | The media prompt and text equivalent for an image; the narration transcript, language and voice for audio. The image download is the provider's own artifact URL, never a URL supplied by the model or a learner. A generated lesson's text equivalents, labels and source references are stored locally. | Implemented in the lesson path when the host binds `ctx.dispatch_tool`; a provider failure degrades to text |
+| Pronunciation attempt (`POST /pronunciation/attempt`) | **local only**, with one exception: the first use may download `faster-whisper` model weights from `huggingface.co` and cache them under `<plugin data>/stt-models` | The take is decoded with the host `ffmpeg` binary and scored on this machine by Coursebook's own `coursebook_local_whisper` model. **No audio is uploaded.** The first use fetches model weights only (no learner data) unless the model is already cached. The assessment (transcript, target, locale, provider, model, accuracies, words, verdict) is stored locally; the audio file is deleted after scoring | Implemented and backend-tested; the recording UI is M3-U1 |
 | Pack import | a local file the user chose; no upload | Nothing leaves the machine. The archive is read from disk and hashed; a URL is refused, a symlink is refused, and an archive whose bytes no longer match its manifest is rejected | Working |
 | Pack export, parent handout PDF | a local file and the local download route | Nothing is uploaded. The archive and the PDF are composed from stored rows, hashed, and served as an attachment from the local backend | Working |
 | Reminders | no destination | Nothing. No RPC, no job kind and no storage | Absent |
@@ -64,13 +67,15 @@ $HERMES_HOME/plugin-data/coursebook/data.db
 
 Not inside the plugin directory, because removing the plugin deletes that directory. The path is
 resolved per call so a profile switch cannot reuse another profile's handle. `health.get`
-provisions the store on first contact and applies migrations `0001`-`0003` (schema v3); the hooks
+provisions the store on first contact and applies migrations `0001`-`0005` (schema v5); the hooks
 and the tool never create it. `scripts/install-local.sh` also writes
 `<home>/coursebook-single-home.env`, which sets `HERMES_COURSEBOOK_SINGLE_HOME=1` so an isolated
 backend pins storage to that install's home instead of escaping to the default profile.
 
-The database holds courses, plans, objectives, checks, attempts, evidence, transitions, bindings,
-sources, artifacts, jobs, packs, notebook entries, idempotency keys and the local usage rows.
+The database holds courses, plans, objectives, checks, attempts, pronunciation attempts, evidence,
+transitions, bindings, sources, artifacts, jobs, packs, notebook entries, idempotency keys and the
+local usage rows. A pronunciation attempt stores the typed assessment and its dispute trail, never
+the audio take or a temporary path.
 
 Hermes itself keeps session transcripts, logs and usage records under `$HERMES_HOME`. Those are
 host behavior, not Coursebook behavior. Coursebook does not read them for policy decisions and
@@ -98,8 +103,13 @@ provider the Hermes profile is configured to use.
 - No telemetry and no usage reporting. Usage rows stay in local SQLite and are never sent to
   Coursebook or a third party: no analytics, no crash reporting, no health pings.
 - No credentials. Coursebook declares no `requires_env`, stores no key and does not fetch its own
-  files. It declares one configuration key, `status_include_contracts` (a boolean that adds the
-  contract inventory to the `coursebook_status` output).
+  files. Its only configuration key is `status_include_contracts` (a boolean that adds the
+  contract inventory to the `coursebook_status` output). The local speech model is a declared
+  Python dependency with a weight download, not a credential.
+- A pronunciation take is never retained by this slice: it is a private temporary file deleted
+  after scoring, it never becomes an artifact, and no raw audio is stored in the database, a pack,
+  an export, a notebook entry or telemetry. A missing local recogniser means "practice only, not
+  graded"; no score is fabricated.
 
 ## Parent and child boundary
 
@@ -118,9 +128,9 @@ plugin can grant itself, and Coursebook does not claim them.
 course evidence; deleting an imported pack marks its content frozen and retains evidence; deleting
 personal course data is an explicit destructive scope. `enrollment.delete` requires the
 `data_scope_hash` the caller previewed, and removes that enrollment's lesson segments, evidence,
-transitions, attempts, notebook entries, lesson runs, bindings, usage rows and enrollment row.
-Deletion never claims to erase Hermes' own transcripts, backups, provider-side data, or artifacts
-referenced by another course.
+transitions, attempts, pronunciation attempts, notebook entries, lesson runs, bindings, usage rows
+and enrollment row. Deletion never claims to erase Hermes' own transcripts, backups, provider-side
+data, or artifacts referenced by another course.
 
 ## Open defects that touch this document
 

@@ -1,0 +1,1489 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.coursebook.hermes/db/v5",
+  "title": "Coursebook database schema v5",
+  "description": "Authoritative record shapes for the Coursebook SQLite database, which is the single source of truth. v5 adds one table and no change to any v4 table, column, index or unique key: `pronunciation_attempts` stores one bounded pronunciation practice result with `evidence_class = 'model_assessed'`, the typed assessment JSON, and the learner's dispute trail. It is separate from `attempts` by design: a pronunciation result never closes a check, advances an objective, bumps an enrollment revision or writes a transition. No audio bytes, temporary path, provider key or model cache path is stored. The take is a private temporary file deleted after scoring, so no raw audio can reach a pack or export. There is no backfill.",
+  "x-contract-id": "cb.db",
+  "x-contract-version": 5,
+  "x-owner": "atlas",
+  "x-implementer": "cinder",
+  "x-status": "frozen",
+  "schema_version": 5,
+  "database": "sqlite",
+  "handle": "plugins.plugin_storage.plugin_db('coursebook')",
+  "migration_table": "schema_migrations",
+  "pragmas": {
+    "journal_mode": "WAL",
+    "foreign_keys": "ON",
+    "busy_timeout_ms_max": 5000,
+    "synchronous": "NORMAL"
+  },
+  "execution_policy": {
+    "connection_lifetime": "one short-lived connection per unit of work; always closed",
+    "mutations": "BEGIN IMMEDIATE with an expected-revision compare-and-swap",
+    "long_io": "provider calls, archive generation and artifact writes never run inside a transaction",
+    "artifact_writes": "staged write -> fsync -> atomic rename -> DB commit, with orphan reconciliation",
+    "migrations": "one transaction per migration; recorded in schema_migrations with a checksum"
+  },
+  "id_policy": "Coursebook mints random ids for courses, enrollments, lesson runs, checks, attempts and operations. Titles, paths and chat session ids are never primary keys.",
+  "tables": {
+    "schema_migrations": {
+      "columns": {
+        "version": {
+          "type": "INTEGER",
+          "pk": true,
+          "nullable": false
+        },
+        "checksum": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "applied_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      }
+    },
+    "courses": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "title": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "recipe": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "recipe"
+        },
+        "goal": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "locale": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "dials_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "status": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "draft",
+            "active",
+            "archived",
+            "deleted"
+          ]
+        },
+        "pack_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "packs.id"
+        },
+        "revision": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "0"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "updated_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "indexes": [
+        [
+          "status"
+        ],
+        [
+          "pack_id"
+        ]
+      ]
+    },
+    "plans": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "course_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "courses.id"
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false
+        },
+        "state": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "draft",
+            "approved",
+            "superseded"
+          ]
+        },
+        "plan_hash": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "schedule_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "approved_at": {
+          "type": "TEXT",
+          "nullable": true
+        }
+      },
+      "unique": [
+        [
+          "course_id",
+          "version"
+        ]
+      ],
+      "indexes": [
+        [
+          "course_id"
+        ]
+      ]
+    },
+    "objectives": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "plan_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "plans.id"
+        },
+        "ordinal": {
+          "type": "INTEGER",
+          "nullable": false
+        },
+        "title": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "evidence_target": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "evidence_target"
+        },
+        "evidence_criteria_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "[]"
+        },
+        "state": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "objective_state"
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "1"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "unique": [
+        [
+          "plan_id",
+          "ordinal"
+        ]
+      ],
+      "indexes": [
+        [
+          "plan_id"
+        ],
+        [
+          "state"
+        ]
+      ]
+    },
+    "enrollments": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "course_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "courses.id"
+        },
+        "learner_label": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "status": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "active",
+            "paused",
+            "completed",
+            "archived"
+          ]
+        },
+        "revision": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "0"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "updated_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "indexes": [
+        [
+          "course_id"
+        ],
+        [
+          "status"
+        ]
+      ]
+    },
+    "checks": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "objective_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "objectives.id"
+        },
+        "version": {
+          "type": "INTEGER",
+          "nullable": false
+        },
+        "evidence_target": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "evidence_target"
+        },
+        "stimulus_json": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "rubric_json": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "reference_json": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "locale": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "audit_state": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "pending",
+            "passed",
+            "failed"
+          ]
+        },
+        "state": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "open",
+            "closed",
+            "superseded"
+          ]
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "unique": [
+        [
+          "objective_id",
+          "version"
+        ]
+      ],
+      "indexes": [
+        [
+          "objective_id"
+        ],
+        [
+          "state"
+        ]
+      ]
+    },
+    "attempts": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "enrollment_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "enrollments.id"
+        },
+        "check_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "checks.id"
+        },
+        "check_version": {
+          "type": "INTEGER",
+          "nullable": false
+        },
+        "attempt_nonce": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "answer_kind": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "answer_kind"
+        },
+        "answer_json": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "answer_hash": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "verdict": {
+          "type": "TEXT",
+          "nullable": true,
+          "vocabulary": "verdict"
+        },
+        "evidence_class": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "evidence_class"
+        },
+        "criteria_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "[]"
+        },
+        "grading_provenance_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "state": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "pending",
+            "committed",
+            "failed"
+          ]
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "committed_at": {
+          "type": "TEXT",
+          "nullable": true
+        }
+      },
+      "unique": [
+        [
+          "enrollment_id",
+          "check_id",
+          "attempt_nonce"
+        ]
+      ],
+      "indexes": [
+        [
+          "enrollment_id"
+        ],
+        [
+          "check_id"
+        ],
+        [
+          "state"
+        ]
+      ]
+    },
+    "transitions": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "enrollment_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "enrollments.id"
+        },
+        "attempt_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "attempts.id"
+        },
+        "from_revision": {
+          "type": "INTEGER",
+          "nullable": false
+        },
+        "to_revision": {
+          "type": "INTEGER",
+          "nullable": false
+        },
+        "next_action": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "next_action"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "unique": [
+        [
+          "enrollment_id",
+          "to_revision"
+        ]
+      ],
+      "indexes": [
+        [
+          "enrollment_id"
+        ],
+        [
+          "attempt_id"
+        ]
+      ]
+    },
+    "evidence": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "enrollment_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "enrollments.id"
+        },
+        "objective_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "objectives.id"
+        },
+        "attempt_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "attempts.id"
+        },
+        "layer": {
+          "type": "INTEGER",
+          "nullable": false,
+          "enum": [
+            1,
+            2,
+            3
+          ]
+        },
+        "kind": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "evidence_class": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "evidence_class"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "indexes": [
+        [
+          "enrollment_id",
+          "objective_id"
+        ],
+        [
+          "attempt_id"
+        ],
+        [
+          "layer"
+        ]
+      ]
+    },
+    "bindings": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "enrollment_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "enrollments.id"
+        },
+        "profile": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "connection_id": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "runtime_session_id": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "stored_session_id": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "cwd_fingerprint": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "compression_tip": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "status": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "binding_status"
+        },
+        "revision": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "0"
+        },
+        "updated_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "lesson_run_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "lesson_runs.id"
+        },
+        "objective_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "objectives.id"
+        }
+      },
+      "indexes": [
+        [
+          "enrollment_id"
+        ],
+        [
+          "stored_session_id"
+        ],
+        [
+          "runtime_session_id"
+        ],
+        [
+          "status"
+        ]
+      ],
+      "notes": "Titles are display only. Resume resolves by the stored binding, never by recency. A binding with no lesson_run_id is a legacy/course-level chat and is not resumable for a section."
+    },
+    "sources": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "course_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "courses.id"
+        },
+        "url": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "title": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "source_type": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "published_at": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "fetched_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "content_hash": {
+          "type": "TEXT",
+          "nullable": true,
+          "description": "sha256:<64 hex> of the last adopted fetch, or null when no baseline exists yet. Compared by source.revalidate; never evidence."
+        },
+        "support_status": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "source_support_status"
+        },
+        "claim_count": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "0"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "indexes": [
+        [
+          "course_id"
+        ],
+        [
+          "support_status"
+        ]
+      ]
+    },
+    "artifacts": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "course_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "courses.id"
+        },
+        "kind": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "visual",
+            "audio",
+            "pdf",
+            "pack",
+            "export",
+            "other"
+          ]
+        },
+        "content_hash": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "path": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "bytes": {
+          "type": "INTEGER",
+          "nullable": false
+        },
+        "mime": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "provenance_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "ref_count": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "0"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "unique": [
+        [
+          "content_hash",
+          "kind"
+        ]
+      ],
+      "indexes": [
+        [
+          "course_id"
+        ],
+        [
+          "kind"
+        ]
+      ]
+    },
+    "jobs": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "kind": {
+          "type": "TEXT",
+          "nullable": false,
+          "vocabulary": "job_kind"
+        },
+        "state": {
+          "type": "TEXT",
+          "nullable": false,
+          "contract": "cb.jobs"
+        },
+        "operation_id": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "brief_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "checkpoint_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "attempt_id": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "lease_owner": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "lease_expires_at": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "progress_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "error_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "updated_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "indexes": [
+        [
+          "state"
+        ],
+        [
+          "kind"
+        ],
+        [
+          "operation_id"
+        ]
+      ]
+    },
+    "usage_events": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "operation_id": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "enrollment_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "enrollments.id"
+        },
+        "provider": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "model": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "tokens_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "duration_ms": {
+          "type": "INTEGER",
+          "nullable": true
+        },
+        "artifact_count": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "0"
+        },
+        "recorded_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "indexes": [
+        [
+          "enrollment_id"
+        ],
+        [
+          "operation_id"
+        ]
+      ],
+      "notes": "Usage is separate from lesson transitions. Unknown values stay null; they are never fabricated."
+    },
+    "notebook_entries": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "enrollment_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "enrollments.id"
+        },
+        "objective_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "objectives.id"
+        },
+        "lesson_run_id": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "kind": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "lesson_segment",
+            "artifact",
+            "source_passage",
+            "personal_note",
+            "quiz_moment"
+          ]
+        },
+        "excerpt": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "note": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "tags_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "[]"
+        },
+        "source_ref": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "updated_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "revision": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "0"
+        }
+      },
+      "indexes": [
+        [
+          "enrollment_id"
+        ],
+        [
+          "objective_id"
+        ]
+      ],
+      "notes": "Personal notes and raw excerpt text are excluded from community packs by schema, not by a redaction promise."
+    },
+    "idempotency_keys": {
+      "columns": {
+        "key": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "payload_hash": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "method": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "operation_id": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "response_json": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "indexes": [
+        [
+          "operation_id"
+        ]
+      ],
+      "notes": "Same key + same payload hash returns the persisted original response. Same key + different payload hash is IDEMPOTENCY_CONFLICT."
+    },
+    "packs": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "pack_id": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "version": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "manifest_hash": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "license_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "derived_from": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "source": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "bundled",
+            "local",
+            "community"
+          ]
+        },
+        "installed_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "state": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "installed",
+            "frozen",
+            "removed"
+          ],
+          "default": "installed"
+        },
+        "revision": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "0"
+        }
+      },
+      "unique": [
+        [
+          "pack_id",
+          "version"
+        ]
+      ],
+      "indexes": [
+        [
+          "pack_id"
+        ],
+        [
+          "state"
+        ]
+      ],
+      "notes": "Pack identity and enrollment identity are distinct. A local fork gets a new pack id/version and keeps derived_from."
+    },
+    "lesson_runs": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "enrollment_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "enrollments.id"
+        },
+        "objective_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "objectives.id"
+        },
+        "state": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "active",
+            "paused",
+            "completed",
+            "abandoned"
+          ]
+        },
+        "revision": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "0"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "updated_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "last_opened_at": {
+          "type": "TEXT",
+          "nullable": true
+        }
+      },
+      "indexes": [
+        [
+          "enrollment_id",
+          "objective_id"
+        ],
+        [
+          "state"
+        ]
+      ],
+      "notes": "One section can have many runs over time. At most one active/paused run per (enrollment, objective) is resumable; the kernel enforces that, never title or recency."
+    },
+    "lesson_segments": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "lesson_run_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "lesson_runs.id"
+        },
+        "ordinal": {
+          "type": "INTEGER",
+          "nullable": false
+        },
+        "kind": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "teaching",
+            "example",
+            "media",
+            "source_passage",
+            "check_prompt",
+            "feedback",
+            "summary"
+          ]
+        },
+        "text": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "artifact_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "artifacts.id"
+        },
+        "source_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "sources.id"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "unique": [
+        [
+          "lesson_run_id",
+          "ordinal"
+        ]
+      ],
+      "indexes": [
+        [
+          "lesson_run_id"
+        ]
+      ],
+      "notes": "Backend-owned durable teaching record rendered by lesson.page. Hermes chat transcripts remain host-owned and are never required to rebuild a lesson page."
+    },
+    "final_approvals": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "course_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "courses.id"
+        },
+        "plan_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "plans.id"
+        },
+        "plan_hash": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "content_hash": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "state": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "active",
+          "enum": [
+            "active",
+            "superseded"
+          ],
+          "description": "`active` binds exactly the plan_hash and content_hash on this row. Any edit that changes either hash transitions it to `superseded` with an invalidation_reason; there is at most one `active` row per course (a kernel invariant, not a partial index)."
+        },
+        "invalidation_reason": {
+          "type": "TEXT",
+          "nullable": true,
+          "enum": [
+            "plan_edited",
+            "content_changed",
+            "course_edited",
+            "replaced"
+          ],
+          "description": "Why the approval stopped binding: `plan_edited` (a draft plan edit or a replan superseded the approved plan), `content_changed` (the generated content set was regenerated), `course_edited` (a course-level field the approval covered changed) or `replaced` (a newer final approval was recorded). NULL while `active`."
+        },
+        "approved_at": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "superseded_at": {
+          "type": "TEXT",
+          "nullable": true
+        }
+      },
+      "unique": [
+        [
+          "course_id",
+          "plan_id",
+          "content_hash"
+        ]
+      ],
+      "indexes": [
+        [
+          "course_id"
+        ],
+        [
+          "state"
+        ]
+      ],
+      "notes": "Approving generated content is not approving a plan: plans.state stays the plan-level gate, and plan.approve is unchanged. An approval row is never deleted by an edit — it is superseded, so the studio can say what was approved and when it stopped applying. Export refuses any row that is not `active` with a content_hash equal to the current one (reason `changes_need_review`)."
+    },
+    "parent_reflections": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "course_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "courses.id"
+        },
+        "enrollment_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "enrollments.id"
+        },
+        "plan_id": {
+          "type": "TEXT",
+          "nullable": true,
+          "ref": "plans.id"
+        },
+        "difficulty": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "easy",
+            "about_right",
+            "too_hard"
+          ]
+        },
+        "revisit_note": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "apply_to_next_draft": {
+          "type": "INTEGER",
+          "nullable": false,
+          "default": "1"
+        },
+        "plan_hash": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "content_hash": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "indexes": [
+        [
+          "course_id"
+        ],
+        [
+          "created_at"
+        ]
+      ],
+      "notes": "Parent-reported, explicitly not evidence: no evidence_class, no verdict and no objective state column exists, so a reflection cannot be counted as learning. `reflection` is already in packs.PRIVATE_FIELDS, so neither this table nor a rendered reflection can enter an exported pack."
+    },
+    "pronunciation_attempts": {
+      "columns": {
+        "id": {
+          "type": "TEXT",
+          "pk": true,
+          "nullable": false
+        },
+        "enrollment_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "enrollments.id"
+        },
+        "objective_id": {
+          "type": "TEXT",
+          "nullable": false,
+          "ref": "objectives.id"
+        },
+        "attempt_nonce": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "target": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "locale": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "transcript": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "provider": {
+          "type": "TEXT",
+          "nullable": false
+        },
+        "model": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "language": {
+          "type": "TEXT",
+          "nullable": true
+        },
+        "unit": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "word",
+            "character"
+          ]
+        },
+        "word_accuracy": {
+          "type": "REAL",
+          "nullable": false
+        },
+        "phoneme_accuracy": {
+          "type": "REAL",
+          "nullable": true
+        },
+        "confidence": {
+          "type": "REAL",
+          "nullable": true
+        },
+        "verdict": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "meets_target",
+            "close",
+            "needs_practice"
+          ]
+        },
+        "evidence_class": {
+          "type": "TEXT",
+          "nullable": false,
+          "enum": [
+            "model_assessed"
+          ]
+        },
+        "assessment_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "{}"
+        },
+        "disputes_json": {
+          "type": "TEXT",
+          "nullable": false,
+          "default": "[]"
+        },
+        "created_at": {
+          "type": "TEXT",
+          "nullable": false
+        }
+      },
+      "unique": [
+        [
+          "enrollment_id",
+          "attempt_nonce"
+        ]
+      ],
+      "indexes": [
+        [
+          "enrollment_id"
+        ],
+        [
+          "objective_id"
+        ]
+      ]
+    }
+  },
+  "deletion_policy": "Deleting a chat preserves course evidence. Deleting an imported pack marks content frozen and retains evidence. Deleting personal course data is an explicit destructive scope. Deletion never claims to erase Hermes' own transcripts, backups, provider-side data, or artifacts referenced by another course.",
+  "x-supersedes": "https://contracts.coursebook.hermes/db/v4",
+  "migration_plan": [
+    {
+      "version": 2,
+      "from": 1,
+      "migration": "0002_lesson_runs_segments_and_revisions.sql",
+      "summary": "Create lesson_runs and lesson_segments; add bindings.lesson_run_id/objective_id, notebook_entries.revision, packs.state/revision.",
+      "impact": [
+        "Additive only: no v1 column is dropped or retyped.",
+        "Existing bindings stay valid with NULL lesson_run_id; they are treated as detached for section resume until rebound.",
+        "Existing notebook entries start at revision 0; the first notebook.update fences on 0.",
+        "Existing packs are backfilled to state='installed', revision=0.",
+        "Deleting/removing a pack sets packs.state='removed' or 'frozen'; it never cascades to evidence, attempts or notebook entries."
+      ]
+    },
+    {
+      "version": 3,
+      "from": 2,
+      "migration": "0003_parent_studio_approvals_and_reflections.sql",
+      "summary": "Create final_approvals and parent_reflections with their indexes.",
+      "impact": [
+        "Additive only: no v2 table, column, index or unique key is dropped or retyped.",
+        "Existing courses keep working with no approval row; a course with no row reports approval state `none` and export blocked by `no_final_approval`.",
+        "No backfill: a plan that was approved before this migration is not a content approval, and the migration does not invent one.",
+        "Deleting an enrollment never deletes a course-level final approval; the approval is about the course's approved content, not one learner's evidence."
+      ]
+    },
+    {
+      "version": 4,
+      "from": 3,
+      "migration": "0004_sources_content_hash.sql",
+      "summary": "Add nullable sources.content_hash as the revalidation baseline for every source, including pack-imported rows.",
+      "impact": [
+        "Additive only: no v3 table, column, index or unique key is dropped or retyped.",
+        "No backfill: existing sources have content_hash NULL until a research run or source.revalidate records a fetch; NULL means 'no baseline', not 'unchanged'.",
+        "The first successful source.revalidate of a source with no baseline records the hash and reports changed=false; only a later fetch whose hash differs marks the row stale.",
+        "Learner evidence, attempts and notebook entries are never rewritten by the migration or by revalidation."
+      ]
+    },
+    {
+      "version": 5,
+      "from": 4,
+      "migration": "0005_pronunciation_attempts.sql",
+      "summary": "Create pronunciation_attempts: one bounded pronunciation practice result with its typed assessment and dispute trail, separate from the text/selection attempts table.",
+      "impact": [
+        "Additive only: no v4 table, column, index or unique key is dropped or retyped.",
+        "No backfill: existing courses and text attempts are untouched, and no pronunciation row is invented.",
+        "A pronunciation attempt never closes a check, advances an objective, bumps an enrollment revision or writes a transition.",
+        "No audio bytes, temporary path, provider key or model cache path is stored; the take is deleted after scoring, so no pack or export can carry it."
+      ]
+    }
+  ]
+}

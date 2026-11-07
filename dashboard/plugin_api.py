@@ -36,6 +36,7 @@ import importlib.util
 import logging
 import re
 import sys
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -121,6 +122,46 @@ async def schema() -> dict[str, Any]:
 async def rpc(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     """Execute one contract command. Shape errors come back as a contract envelope."""
     return _api().dispatch(body)
+
+
+@router.post("/pronunciation/attempt")
+async def pronunciation_attempt(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """One bounded pronunciation take, scored by Coursebook's own local recogniser.
+
+    The body is the ``pronunciation.attempt`` request payload plus the envelope fields the caller
+    controls (``expected_revision``, ``idempotency_key``). The take arrives as an audio data URL;
+    a filesystem path is refused by the contract and never enters this process. The route is a thin
+    adapter over :func:`coursebook.api.dispatch`, so a refusal is the same contract envelope the
+    Desktop already renders — never a fabricated score.
+    """
+    api = _api()
+    payload = {
+        key: value
+        for key, value in body.items()
+        if key not in {"contract", "contract_version", "method", "operation_id",
+                       "expected_revision", "idempotency_key"}
+    }
+    envelope: dict[str, Any] = {
+        "contract": api.RPC_CONTRACT,
+        "contract_version": api.RPC_CONTRACT_VERSION,
+        "method": "pronunciation.attempt",
+        "operation_id": str(body.get("operation_id") or f"pronunciation-{uuid.uuid4().hex}"),
+        "payload": payload,
+    }
+    for name in ("expected_revision", "idempotency_key"):
+        if name in body:
+            envelope[name] = body[name]
+    return api.dispatch(envelope)
+
+
+@router.get("/pronunciation/status")
+async def pronunciation_status() -> dict[str, Any]:
+    """Whether this process could score a take right now. Never downloads a model.
+
+    ``available: false`` is the honest practice-only state the Desktop shows; it is not an error.
+    """
+    stt = _stt()
+    return {"ok": True, **stt.described()}
 
 
 @router.get("/packs/intake")
@@ -249,6 +290,11 @@ def _pack_flow() -> Any:
 def _media() -> Any:
     _load_backend()
     return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.media")
+
+
+def _stt() -> Any:
+    _load_backend()
+    return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.stt")
 
 
 def _bindings() -> Any:

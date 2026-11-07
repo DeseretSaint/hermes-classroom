@@ -1,7 +1,7 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v8** (M1-P4 additive amendment; v7 = CB-015 residual, v6 = CB-011, v5 = CB-026,
-v4 = CB-024, v3 = CB-022, v2 = CB-018).
+Status: **frozen at v9** (M3-B1 additive amendment; v8 = M1-P4, v7 = CB-015 residual, v6 = CB-011,
+v5 = CB-026, v4 = CB-024, v3 = CB-022, v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
 contract: **Atlas**. Implementers are the specialists named below.
 
@@ -16,15 +16,15 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v2.json` | 2 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v8.json` | 8 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v4.json` | 4 | Cinder | migrations, every command, evidence views |
+| `cb.rpc` | `contracts/rpc.v9.json` | 9 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.db` | `contracts/db.v5.json` | 5 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v2.json` | 2 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v7** files for `cb.rpc` (including `rpc.v6.json`), the v1 **to v3** files for `cb.db`,
-and the v1 files for `cb.errors` and `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v7.json` and `db.v3.json`.
+The v1 **to v8** files for `cb.rpc` (including `rpc.v6.json`), the v1 **to v4** files for `cb.db`
+(including `db.v3.json`), and the v1 files for `cb.errors` and `cb.jobs` remain on disk, unmodified,
+as immutable history: the superseded current files are `rpc.v8.json` and `db.v4.json`.
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 `tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so
@@ -39,7 +39,7 @@ version in the URI and the declared version agree for every file.
 `cb.rpc` is transport-neutral. The root schema validates a **request envelope**:
 
 ```json
-{ "contract": "cb.rpc", "contract_version": 8,
+{ "contract": "cb.rpc", "contract_version": 9,
   "method": "attempt.submit", "operation_id": "op-...", "idempotency_key": "...",
   "expected_revision": 12, "payload": { } }
 ```
@@ -1163,6 +1163,41 @@ and to one handler's choice of projection, **not** a contract change: the v8 met
 `$defs/lesson_document` shape are unchanged, `document_from_segments` remains the fallback for
 pack/composed sections and older rows, and no row is rewritten or backfilled. A page written before
 this change still reads `textbook_only`.
+
+## v9 delta (M3-B1) — bounded pronunciation practice, not a grade
+
+M3-S1 proved there is no documented plugin seam to the host's configured STT. The operator
+approved Coursebook's own local recogniser on 2026-11-06. v9 adds exactly two commands and one
+`cb.db` table; every v1-v8 method payload stays unchanged apart from the `contract_version` echo
+(8 → 9), and the method enum grows from 52 to 54.
+
+| Method | Input | Output | What it may never do |
+|---|---|---|---|
+| `pronunciation.attempt` | `enrollment_id`, `objective_id`, `attempt_nonce`, `target` (≤200 chars), `locale`, `audio_data_url` (≤5,000,000 chars; ≤3 MiB decoded), optional `prompt` | `status` (`assessed`/`empty`/`unavailable`), `recorded`, `attempt_id` or null, `revision`, typed `assessment`, bounded `reason` | close a check, advance an objective, bump an enrollment revision, write a transition, retain audio, or return a score when no real transcript exists |
+| `pronunciation.dispute` | `enrollment_id`, `attempt_id`, `note` (≤1,000 chars) | `dispute_id`, `state: open`, `revision` | rewrite the verdict, the transcript or `evidence_class`; move course state |
+
+`assessment` is `{transcript, target, locale, provider, model, language, unit, word_accuracy,
+phoneme_accuracy, confidence, words[], verdict, evidence_class}`. `provider` is always
+`coursebook_local_whisper`; `model` is the cached model name. `unit` is `word` for spaced languages
+and `character` for Japanese/Chinese/Thai, so the comparison does not pretend every script has word
+boundaries. `words[]` carries `expected`, `heard`, `match` and an optional per-word `confidence`.
+`verdict` is `meets_target | close | needs_practice | unavailable`; `phoneme_accuracy` is null in
+this slice. `evidence_class` is the const `model_assessed` for every assessment, including an
+unavailable one — `recorded: false` and a null `attempt_id` are what say no evidence was written.
+It is never "verified pronunciation" and never mastery.
+
+**Fail closed.** A missing `faster-whisper`/model/`ffmpeg`, a decode or inference failure, a
+silence/empty transcript, or an oversized/mismatched MIME produces `recorded: false`. MIME/size
+violations are `VALIDATION_FAILED` with a reason code before the recogniser is called; provider and
+empty-audio outcomes are a successful envelope with `verdict: unavailable` and no row. Same-key
+replay returns the stored result; a repeated `attempt_nonce` returns the original attempt id.
+
+**Storage.** `cb.db` v5 adds one table, `pronunciation_attempts` (`id`, `enrollment_id`,
+`objective_id`, `attempt_nonce`, `target`, `locale`, `transcript`, `provider`, `model`, `language`,
+`unit`, `word_accuracy`, `phoneme_accuracy`, `confidence`, `verdict`, `evidence_class`,
+`assessment_json`, `disputes_json`, `created_at`), unique on `(enrollment_id, attempt_nonce)`. It is
+separate from `attempts`; no v4 table changes and there is no backfill. It has no audio, path,
+provider-key or model-cache column.
 
 ## Changing a contract
 

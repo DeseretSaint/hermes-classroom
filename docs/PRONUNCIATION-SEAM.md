@@ -200,6 +200,9 @@ hijack). It reads no provider key and never uploads audio, which suits parent/ch
 is a ~100–200 MB dependency, a slower first run, and a second STT stack on the machine. It must be
 labelled as Coursebook's own recogniser, never as “the host's STT”.
 
+**Adopted 2026-11-06 — see §9.** The operator chose this fallback after the seam verdict; it is
+implemented in M3-B1 as `coursebook/stt.py` + `coursebook/pronunciation.py`.
+
 ---
 
 ## 4. Privacy and egress
@@ -300,3 +303,41 @@ credential read, no real recording used.
   labelled as Coursebook's own recogniser.
 - Until then, the pronunciation surface is practice playback only: reference audio, transcript,
   romaji/furigana scaffolds, and no score.
+
+---
+
+## 9. M3-B1 implementation — the local fallback, adopted
+
+The operator decision of 2026-11-06 approved the local recogniser and explicitly kept the host
+seam as the preferred future path. M3-B1 implements it **without touching the host**, without a
+provider key and without registering anything in the host's transcription registry. The M3-S1
+verdict above stays the record of why the host seam is not used.
+
+**What ships.**
+
+| Part | Decision |
+|---|---|
+| Recogniser | `coursebook/stt.py`, provider label `coursebook_local_whisper`. `faster-whisper>=1.0,<2` is declared in `plugin.yaml` `python_dependencies`; it is optional at runtime |
+| Model | Lazy load on the first take, CPU `int8`, default size `small` (override with `COURSEBOOK_WHISPER_MODEL`), cache under `<plugin data>/stt-models`. No `stt.provider` write, no provider key |
+| Decode | Host `ffmpeg` binary → 16 kHz mono signed 16-bit PCM → float32 `numpy` array → `WhisperModel.transcribe(..., initial_prompt=...)`. Live finding: the Python 3.14 `av` wheel raises `TypeError: open() got an unexpected keyword argument 'metadata_errors'` on MP3; we do **not** pin/downgrade `av` and do not use its decoder |
+| Bounds | ≤3 MiB decoded audio, ≤30 s decoded duration, ≤200-char target, ≤5,000,000-char data URL. MIME is sniffed from magic bytes against `audio/wav`, `audio/webm`, `audio/ogg`, `audio/mpeg`; the declared type must match |
+| Fail closed | Missing `faster-whisper`, model, `ffmpeg`, `numpy`, a decode/inference error, or a silence/empty transcript → `recorded: false`, `verdict: unavailable`, **no attempt row**. MIME/size violations are `VALIDATION_FAILED` before the recogniser runs |
+| Result | Typed assessment: `transcript`, `target`, `locale`, `provider`, `model`, `language`, `unit`, `word_accuracy`, `phoneme_accuracy` (null), `confidence`, `words[]`, `verdict`, `evidence_class: model_assessed`. `unit` is `character` for Japanese/Chinese/Thai, `word` otherwise |
+| Evidence | One `pronunciation_attempts` row (`cb.db` v5), evidence class `model_assessed`, **separate** from `attempts`. It never closes a check, advances an objective, bumps an enrollment revision or writes a transition |
+| Dispute | `pronunciation.dispute` appends to the row's `disputes_json`; the verdict and evidence class never change |
+| Audio | Private temp file (0600) under `<plugin data>/pronunciation-tmp`, deleted in a `finally` block. This slice retains no audio at all, so no take can reach a pack, export, notebook or telemetry |
+| Route | `POST /api/plugins/coursebook/pronunciation/attempt` (bounded data URL) and `GET /pronunciation/status` (honest availability probe). Recording UI remains M3-U1 |
+| Contract | `cb.rpc` v9 adds `pronunciation.attempt` and `pronunciation.dispute`; `cb.db` v5 adds the one table. No error code, job kind or vocabulary value is added |
+
+**Live evidence (manual, 2026-11-06).** With the cached `base` model, `ffmpeg` and the plugin
+runtime (`faster-whisper 1.2.1`, Python 3.14.9), a generated Japanese TTS clip produced
+`こんにちは。今日はいい天気ですね。`, provider `coursebook_local_whisper`, language `ja`,
+duration ≈3.96 s, mean word confidence 0.7526, 6 word timestamps, inference ≈0.86 s on CPU. The
+operator's independent run on the same path returned `こんにちは、今日はいい天気ですね。`
+(duration 3.17 s, confidence 0.83). Unit tests use a fake adapter and a fake `WhisperModel`, so
+the suite needs no model, network or ffmpeg; one regression test pins `initial_prompt` so the
+keyword cannot drift back to `prompt`.
+
+**Still true.** This is a practice measurement, not "verified pronunciation", not mastery and not
+a graded pass. The host `ctx.transcribe_audio` seam remains the preferred future path; nothing in
+this card reads or writes the host's configured STT.

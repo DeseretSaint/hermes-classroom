@@ -47,9 +47,16 @@ from . import (
 )
 from .api import RpcError
 from .contracts import method_names
+# Importing the pronunciation module registers its two commands (it reads the live contract, so a
+# build without the v9 methods stays NOT_IMPLEMENTED instead of inventing a method).
+from . import pronunciation  # noqa: E402,F401  (registration side effect)
 
 #: ``method -> handler(payload, envelope) -> (revision, result)``
 HANDLERS: dict[str, Callable[[dict[str, Any], dict[str, Any]], tuple[int, dict[str, Any]]]] = {}
+# The pronunciation commands are registered by their own module (so they can be imported without
+# the kernel) but are still kernel commands: expose them on the kernel registry the tests and
+# `ensure_registered` inspect.
+HANDLERS.update(pronunciation.HANDLERS)
 
 #: Methods this module owns. Registration is filtered by the live contract, never by this list.
 KERNEL_METHODS: tuple[str, ...] = (
@@ -89,6 +96,8 @@ KERNEL_METHODS: tuple[str, ...] = (
     "check.get",
     "lesson.assist",
     "source.revalidate",
+    "pronunciation.attempt",
+    "pronunciation.dispute",
 )
 
 MAX_PAGE = 500
@@ -2104,6 +2113,9 @@ def _enrollment_scope(connection, enrollment) -> dict[str, Any]:
         "attempts": int(connection.execute(
             "SELECT COUNT(*) AS n FROM attempts WHERE enrollment_id = ?", (enrollment_id,)
         ).fetchone()["n"]),
+        "pronunciation_attempts": int(connection.execute(
+            "SELECT COUNT(*) AS n FROM pronunciation_attempts WHERE enrollment_id = ?", (enrollment_id,)
+        ).fetchone()["n"]),
         "transitions": int(connection.execute(
             "SELECT COUNT(*) AS n FROM transitions WHERE enrollment_id = ?", (enrollment_id,)
         ).fetchone()["n"]),
@@ -2123,8 +2135,9 @@ def _enrollment_scope(connection, enrollment) -> dict[str, Any]:
     }
     scope_hash = _canonical_hash({"scope": "enrollment", "enrollment_id": enrollment_id, "counts": counts})
     summary = (
-        f"Deletes {counts['attempts']} attempt(s), {counts['transitions']} transition(s), "
-        f"{counts['notebook_entries']} notebook entr(ies) and {counts['lesson_runs']} lesson run(s). "
+        f"Deletes {counts['attempts']} attempt(s), {counts['pronunciation_attempts']} pronunciation "
+        f"attempt(s), {counts['transitions']} transition(s), {counts['notebook_entries']} notebook "
+        f"entr(ies) and {counts['lesson_runs']} lesson run(s). "
         "Keeps the course, plan and objectives, pack provenance, shared artifacts, Hermes transcripts "
         "and already exported files."
     )
@@ -2181,6 +2194,7 @@ def enrollment_delete(payload: dict[str, Any], envelope: dict[str, Any]) -> tupl
         connection.execute("DELETE FROM evidence WHERE enrollment_id = ?", (enrollment_id,))
         connection.execute("DELETE FROM transitions WHERE enrollment_id = ?", (enrollment_id,))
         connection.execute("DELETE FROM attempts WHERE enrollment_id = ?", (enrollment_id,))
+        connection.execute("DELETE FROM pronunciation_attempts WHERE enrollment_id = ?", (enrollment_id,))
         connection.execute("DELETE FROM notebook_entries WHERE enrollment_id = ?", (enrollment_id,))
         connection.execute("DELETE FROM lesson_runs WHERE enrollment_id = ?", (enrollment_id,))
         connection.execute("DELETE FROM bindings WHERE enrollment_id = ?", (enrollment_id,))
