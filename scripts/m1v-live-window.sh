@@ -25,6 +25,18 @@ if [[ "${1:-}" == "--stop" ]]; then
 fi
 
 [[ -x "$ELECTRON" ]] || { echo "no electron at $ELECTRON" >&2; exit 1; }
+# Never launch the operator's packaged app or default profile from a test rig.
+case "$(realpath -m "$ELECTRON")" in
+  */node_modules/electron/dist/electron) ;;
+  *) echo "refusing non-dev Electron for a test rig: $ELECTRON" >&2; exit 1 ;;
+esac
+case "$(realpath -m "$APP")" in
+  */apps/desktop) ;;
+  *) echo "refusing non-dev app path for a test rig: $APP" >&2; exit 1 ;;
+esac
+case "$(realpath -m "$RIG/userdata")" in
+  "$HOME/.config/Hermes"|"$HOME/.config/Hermes/"*) echo "refusing the operator's main profile: $RIG/userdata" >&2; exit 1 ;;
+esac
 # A copied userdata dir carries a SingletonLock naming the process it came from; a live PID there
 # makes Chromium refuse the launch with no useful message.
 rm -f "$RIG/userdata/SingletonLock" "$RIG/userdata/SingletonSocket" "$RIG/userdata/SingletonCookie"

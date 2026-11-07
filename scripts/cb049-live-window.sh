@@ -38,6 +38,18 @@ case "${1:-}" in
 esac
 
 [[ -x "$ELECTRON" ]] || { echo "no electron binary at $ELECTRON" >&2; exit 1; }
+# Never launch the operator's packaged app or default profile from a test rig.
+case "$(realpath -m "$ELECTRON")" in
+  */node_modules/electron/dist/electron) ;;
+  *) echo "refusing non-dev Electron for a test rig: $ELECTRON" >&2; exit 1 ;;
+esac
+case "$(realpath -m "$APP")" in
+  */apps/desktop) ;;
+  *) echo "refusing non-dev app path for a test rig: $APP" >&2; exit 1 ;;
+esac
+case "$(realpath -m "$USERDATA")" in
+  "$HOME/.config/Hermes"|"$HOME/.config/Hermes/"*) echo "refusing the operator's main profile: $USERDATA" >&2; exit 1 ;;
+esac
 [[ -f "$USERDATA/connections.json" ]] || { echo "no $USERDATA/connections.json (remote connection)" >&2; exit 1; }
 
 # Reuse this state's existing window instead of flashing a new one on every
