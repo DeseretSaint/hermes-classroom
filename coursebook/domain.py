@@ -674,6 +674,10 @@ def enrollment_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tupl
 #: ``generated_validated`` means a durable generation record binds this exact kernel content hash
 #: to a ``pass`` verdict; ``manual`` means an authored non-empty outline with no validation claim.
 PLAN_VALIDATION_GENERATED = "generated_validated"
+#: ``model_assessed_pass`` means a durable, passing generation record exists, but its validator was
+#: not an independent model. A human may approve it (plan approval is a human event, not a
+#: factual-verification claim); it is never recorded or described as independently validated.
+PLAN_VALIDATION_MODEL_ASSESSED = "model_assessed_pass"
 PLAN_VALIDATION_MANUAL = "manual"
 
 
@@ -775,6 +779,12 @@ def _plan_validation_source(connection, plan, actual_hash: str) -> str:
     content hash it validated. ``gen_plan_documents.plan_hash`` is the generation digest (a
     different function), so it is never compared to the kernel hash directly.
 
+    H-15 union: the refusal is for a *rejected* or unvalidated plan. A pass whose validator was
+    the author's own model is stored as ``needs_review`` / ``model_assessed``: the parent may
+    still approve it, because plan approval is the human review that state names, and the
+    ``facts unverified`` / ``model assessed`` warning travels with the document. It is not
+    described as independently validated either way.
+
     A plan with no generation document is manually authored: it may approve on a real outline,
     and it is never described as validated. An invalidation performed by an authoring command
     leaves ``manual_authoring = true`` on the generation record, which is the durable manual
@@ -794,14 +804,19 @@ def _plan_validation_source(connection, plan, actual_hash: str) -> str:
         result = {}
     if result.get("manual_authoring") is True:
         return PLAN_VALIDATION_MANUAL
-    if str(row["generation_state"]) != "draft" or str(result.get("validation_verdict") or "") != "pass":
+    state = str(row["generation_state"])
+    verdict = str(result.get("validation_verdict") or "")
+    validation_raw = result.get("validation")
+    validation: dict[str, Any] = validation_raw if isinstance(validation_raw, dict) else {}
+    outcome = str(validation.get("outcome") or result.get("outcome") or "")
+    if state not in ("draft", "needs_review") or verdict != "pass" or outcome == "rejected":
         raise RpcError.of(
             "VALIDATION_FAILED",
-            "the plan's independent validation did not pass; it cannot be approved.",
+            "the plan has no passing validation record; it cannot be approved.",
             reason="plan_not_validated",
             plan_id=str(plan["id"]),
-            generation_state=str(row["generation_state"]),
-            validation_verdict=result.get("validation_verdict"),
+            generation_state=state,
+            validation_verdict=verdict or None,
         )
     snapshot = result.get("plan_content_hash")
     if not isinstance(snapshot, str) or not snapshot:
@@ -821,16 +836,18 @@ def _plan_validation_source(connection, plan, actual_hash: str) -> str:
             validated_plan_hash=snapshot,
             current_plan_hash=actual_hash,
         )
-    return PLAN_VALIDATION_GENERATED
+    return PLAN_VALIDATION_MODEL_ASSESSED if (outcome == "model_assessed" or state == "needs_review") else PLAN_VALIDATION_GENERATED
 
 
 @_handler("plan.approve")
 def plan_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """Approve the exact plan content the caller saw, and only when it is approvable.
 
-    Fail closed: an empty plan is never approved; a generated plan needs a durable pass bound to
-    this exact content hash; a manually authored plan needs a real outline. A refusal writes no
-    transition, no revision and no approval timestamp.
+    Fail closed: an empty plan is never approved; a generated plan needs a durable passing
+    validation record bound to this exact content hash; a manually authored plan needs a real
+    outline. A model-assessed pass (the author's own model) is approvable as the human review its
+    ``needs_review`` state names, and is never described as independently validated. A refusal
+    writes no transition, no revision and no approval timestamp.
     """
     db.ensure_schema()
     expected = _require_revision(envelope)

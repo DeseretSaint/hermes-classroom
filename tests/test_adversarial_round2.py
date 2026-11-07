@@ -271,7 +271,11 @@ class ValidatorIndependenceTest(unittest.TestCase):
         finally:
             connection.close()
         self.assertEqual(result["validation_verdict"], "pass")
-        self.assertEqual(result["status"], "draft")
+        # H-15 union: a pass from the author's own model is a model assessment, not independent
+        # validation, so the plan is a reviewable draft and not an approvable validated one.
+        self.assertEqual(result["validation"]["outcome"], "model_assessed")
+        self.assertEqual(result["status"], "needs_review")
+        self.assertTrue(result["approval_provenance"]["needs_review"])
         self.assertEqual(stored["plan"]["objectives"][0]["title"],
                          "State that water boils at 50 °C at sea level")
         # Both calls were made by the same model, and assert_separate_pass cannot see a model:

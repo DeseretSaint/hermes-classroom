@@ -11,9 +11,11 @@ Research is a *bounded* job (``PREBUILD_SPEC.md`` §9, ``AUDIT.md`` H2/R7), not 
 * fetched text is kept as a bounded excerpt only. It is untrusted content: it never becomes
   policy, rubric or prompt-injection surface (``PREBUILD_SPEC.md`` §9).
 
-Provenance is not support. A fetched source starts at ``unverified`` and only a *separate*
-validation pass may move it to ``supported`` / ``partial`` / ``contradictory`` through
-:func:`apply_support_verdicts`. A model asserting its own citation support is not evidence.
+Provenance is not support. A fetched source starts at ``unverified`` and only an *independent*
+validation pass (a different model identity) may move it to ``supported`` / ``partial`` /
+``contradictory`` through :func:`apply_support_verdicts`, and only when the verdict quotes a span
+that appears verbatim in the fetched excerpt. A model asserting its own citation support is not
+evidence, and a same-model "validator" cannot move the ledger at all.
 
 The search/extract seam is injected. The production adapter is :class:`HermesToolSearch`, which
 uses the host's own ``web_search`` / ``web_extract`` tools through ``ctx.dispatch_tool`` so the
@@ -701,39 +703,56 @@ def claim_verdict_link_problem(
     """Why a validator verdict cannot upgrade support, or ``None`` when the link is explicit.
 
     The rule is deterministic: a non-``unverified`` verdict needs (a) a ``source_id`` present in
-    the ledger and (b) an ``excerpt`` that occurs verbatim (whitespace collapsed) in that
-    source's bounded excerpt. A source id alone is provenance, never support. The validator
-    cannot link a claim to text the ledger did not fetch.
+    the ledger and (b) a verbatim quote from that source's fetched excerpt — ``evidence_quote``
+    (the field the validation schema asks for) or its older alias ``excerpt`` — that occurs in
+    the stored text after whitespace collapsing. A source id alone is provenance, never support.
+    The validator cannot link a claim to text the ledger did not fetch.
     """
     status = verdict.get("support")
     if status not in UPGRADE_STATUSES:
         return "status does not upgrade support"
     if source is None:
         return "source id is absent from the ledger"
-    excerpt = verdict.get("excerpt")
-    if not isinstance(excerpt, str):
-        return "no verbatim excerpt was quoted"
-    needle = _normalize_quote(excerpt)
+    quote = verdict.get("evidence_quote")
+    if quote is None:
+        quote = verdict.get("excerpt")
+    if not isinstance(quote, str):
+        return "no verbatim evidence quote was provided"
+    needle = _normalize_quote(quote)
     if len(needle) < MIN_CLAIM_EXCERPT_CHARS:
-        return f"quoted excerpt is shorter than {MIN_CLAIM_EXCERPT_CHARS} characters"
+        return f"quoted evidence is shorter than {MIN_CLAIM_EXCERPT_CHARS} characters"
     if needle not in _normalize_quote(source.excerpt):
-        return "quoted excerpt does not occur in the fetched source text"
+        return "quoted evidence does not occur in the fetched source text"
     return None
 
 
 def apply_support_verdicts(
     sources: Iterable[SourceRecord],
     verdicts: Iterable[dict[str, Any]],
+    *,
+    independent: bool = False,
 ) -> list[SourceRecord]:
     """Move source support from ``unverified`` using *linked* validator claim verdicts only.
+
+    Two conditions are required, and neither is a model's opinion of itself:
+
+    * ``independent`` — the validator's model identity differs from the author's. A same-model
+      "validator" is a second prompt, not a second opinion, so it may not move the ledger at all.
+    * a **deterministic claim link** — the verdict carries an ``evidence_quote`` that, after
+      whitespace/case normalisation, appears verbatim in the fetched ``excerpt``. A fabricated
+      quote does not match, so the source stays ``unverified``.
 
     A source with no verdict stays ``unverified``; a ``contradictory`` verdict wins over
     ``supported`` because conflicting evidence is the fact worth surfacing. Provenance never
     upgrades support on its own: every non-``unverified`` verdict must name a ledger source and
-    quote text that occurs in that source's stored excerpt (see :func:`claim_verdict_link_problem`).
-    An accepted verdict appends its claim reference to ``source.claim_links``.
+    quote an ``evidence_quote`` of at least 12 characters that occurs verbatim in that source's
+    stored excerpt (see :func:`claim_verdict_link_problem`), and a same-model pass never upgrades
+    it either. An accepted verdict appends its claim reference to ``source.claim_links``.
     """
     by_id = {source.source_id: source for source in sources}
+    if not independent:
+        # Explicitly refused, never silently skipped: the ledger is the artifact a learner reads.
+        return list(by_id.values())
     rank = {"unverified": 0, "partial": 1, "supported": 2, "contradictory": 3}
     for verdict in verdicts or []:
         source_id = verdict.get("source_id")

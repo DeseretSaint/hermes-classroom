@@ -427,30 +427,43 @@ class ResearchTest(GenerationTestBase):
     def test_apply_support_verdicts_requires_a_linked_excerpt(self) -> None:
         run = research.run_research("greetings", recipe="committed", search=FakeSearch(), now=NOW)
         source = run.sources[0]
-        quote = "A polite greeting when entering a shop is こんにちは."
+        quote = "A polite greeting when entering a shop is こんにちは"
         # A source id alone is provenance, not support: the unlinked verdict does nothing.
-        research.apply_support_verdicts(run.sources, [{"source_id": source.source_id, "support": "supported"}])
+        research.apply_support_verdicts(
+            run.sources, [{"source_id": source.source_id, "support": "supported"}], independent=True
+        )
+        self.assertEqual(source.support_status, "unverified")
+        # A same-model pass cannot move the ledger even when it quotes the page verbatim (H-15).
+        research.apply_support_verdicts(
+            run.sources,
+            [{"source_id": source.source_id, "support": "supported", "evidence_quote": quote}],
+            independent=False,
+        )
         self.assertEqual(source.support_status, "unverified")
         # A quoted excerpt that does not occur in the fetched text is not a link either.
         research.apply_support_verdicts(
             run.sources,
-            [{"source_id": source.source_id, "support": "supported", "excerpt": "text the page never contained"}],
+            [{"source_id": source.source_id, "support": "supported", "evidence_quote": "text the page never contained"}],
+            independent=True,
         )
         self.assertEqual(source.support_status, "unverified")
         research.apply_support_verdicts(
             run.sources,
-            [{"item": "objective:1", "source_id": source.source_id, "support": "supported", "excerpt": quote}],
+            [{"item": "objective:1", "source_id": source.source_id, "support": "supported", "evidence_quote": quote}],
+            independent=True,
         )
         self.assertEqual(source.support_status, "supported")
         self.assertIn("objective:1", source.claim_links)
         research.apply_support_verdicts(
             run.sources,
-            [{"item": "objective:1", "source_id": source.source_id, "support": "contradictory", "excerpt": quote}],
+            [{"item": "objective:1", "source_id": source.source_id, "support": "contradictory", "evidence_quote": quote}],
+            independent=True,
         )
         self.assertEqual(source.support_status, "contradictory")
         untracked = research.apply_support_verdicts(
             run.sources,
-            [{"source_id": "not-a-source", "support": "supported", "excerpt": quote}],
+            [{"source_id": "not-a-source", "support": "supported", "evidence_quote": quote}],
+            independent=True,
         )
         self.assertEqual([item.support_status for item in untracked], ["contradictory"])
 
@@ -577,6 +590,7 @@ class ResearchTest(GenerationTestBase):
                     "item": "claim-1",
                 }
             ],
+            independent=True,
         )
         self.assertEqual(source.support_status, "supported")
 
@@ -797,7 +811,12 @@ class PlanJobTest(GenerationTestBase):
             None,
             now=NOW,
         )
-        self.assertEqual(result["status"], "draft")
+        # No search seam: facts cannot be verified, so a pass is a proposal for human review,
+        # never a factually validated draft.
+        self.assertEqual(result["status"], "needs_review")
+        self.assertTrue(any("facts unverified, no sources" in warning for warning in result["warnings"]))
+        self.assertEqual(result["validation"]["outcome"], "model_assessed")
+        self.assertTrue(result["validation"]["facts_unverified"])
         document = json.loads(self.rows("SELECT document_json FROM gen_plan_documents")[0]["document_json"])
         self.assertFalse(any(item["kind"] == "quiz" for item in document["plan"]["check_plan"]))
         self.assertFalse(document["plan"]["spaced_review"])
@@ -859,8 +878,13 @@ class PlanJobTest(GenerationTestBase):
             }
         ]
         conflict["claim_verdicts"] = [
-            {"item": "objective:1", "source_id": "SRC_ALPHA", "support": "contradictory", "reason": "conflict",
-             "excerpt": "A polite greeting when entering a shop is こんにちは."}
+            {
+                "item": "objective:1",
+                "source_id": "SRC_ALPHA",
+                "support": "contradictory",
+                "evidence_quote": "A polite greeting when entering a shop is こんにちは",
+                "reason": "conflict",
+            }
         ]
         llm = FakeLLM(
             {
@@ -1761,6 +1785,7 @@ class SourceTrustTest(GenerationTestBase):
             document = json.loads(canonical_json(base).replace("SRC_ALPHA", ids[0]))
             for entry in document["claim_verdicts"]:
                 entry.pop("excerpt", None)
+                entry.pop("evidence_quote", None)
             return response(document, model="fake-validator")
 
         llm = FakeLLM(

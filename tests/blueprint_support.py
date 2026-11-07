@@ -155,12 +155,12 @@ def unit_sections_document(
     return {"unit_ref": int(unit["ordinal"]), "sections": sections}
 
 
-def response(payload: dict) -> gen.LLMResponse:
+def response(payload: dict, *, model: str = "fake-model") -> gen.LLMResponse:
     return gen.LLMResponse(
         text=json.dumps(payload, ensure_ascii=False),
         parsed=payload,
         provider="fake",
-        model="fake-model",
+        model=model,
         input_tokens=120,
         output_tokens=240,
     )

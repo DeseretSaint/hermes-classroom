@@ -58,8 +58,8 @@
       "item": "objective:1",
       "source_id": "SRC_ALPHA",
       "support": "supported",
-      "reason": "the fetched page states the greeting and its polite register",
-      "excerpt": "A polite greeting when entering a shop is こんにちは."
+      "evidence_quote": "A polite greeting when entering a shop is こんにちは",
+      "reason": "the fetched page states the greeting and its polite register"
     }
   ]
 }

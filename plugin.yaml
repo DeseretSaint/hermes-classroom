@@ -46,3 +46,20 @@ config_schema:
     description: >-
       Include the frozen-contract inventory summary (contract count, implemented method count,
       error-code count) in the coursebook_status tool output. Read by coursebook.tools.
+  validator_model:
+    type: string
+    default: ""
+    description: >-
+      Host-configured second model used only for the independent validation pass (for example a
+      different model from the one that writes plans and lessons). Read by __init__.py and passed
+      to ctx.llm.complete_structured(model=...). Empty means no cross-model path exists: validation
+      still runs on the author model and is recorded as model_assessed, never as independent. The
+      host's per-plugin llm trust gate (allow_model_override / allowed_models) must also permit it.
+  validator_provider:
+    type: string
+    default: ""
+    description: >-
+      Provider for validator_model when the second model lives behind a different provider. Read by
+      __init__.py and passed to ctx.llm.complete_structured(provider=...). Empty keeps the host's
+      configured provider. Gated by the host's allow_provider_override / allowed_providers trust
+      settings; a denied override fails the job loudly rather than silently reusing the author model.
