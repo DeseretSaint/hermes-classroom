@@ -39,7 +39,11 @@ def _latest_rpc() -> dict:
 #: a runtime gate — `/runtime.implemented_methods` decides, and the honest "not in this build" state
 #: expires by itself when Cinder's handlers land. Keeping the (now empty) allowlist means a typo in
 #: a gated method name still fails here.
-PENDING_CONTRACT_METHODS: set[str] = set()
+#:
+#: `syllabus.import` is the one filed forward amendment (H-25 design, H-26 backend, H-27 UI). H-28
+#: renders the first-run "Use my college syllabus" path behind both `SYLLABUS_FLOW_WIRED` (false) and
+#: this runtime gate, so the button is absent today and needs no copy change when the command lands.
+PENDING_CONTRACT_METHODS: set[str] = {"syllabus.import"}
 
 #: The three v5 surfaces this workspace depends on; asserted present so a rename cannot silently
 #: turn a real control back into a permanently gated one.
@@ -352,7 +356,9 @@ process.stdout.write(
 
     def test_the_parent_observation_label_exists_and_no_parent_control_ticks(self) -> None:
         source = _source()
-        self.assertIn("parent_reported: 'Parent reported'", source)
+        # H-22 (a parent of H-28) froze the evidence-class labels to sentences: the parent's report is
+        # named and explicitly not graded by Coursebook. H-28 may not soften it back to a bare noun.
+        self.assertIn("parent_reported: 'Reported by the parent — not graded by Coursebook.'", source)
         # `observation.record` is H-21's control; this card must not grow a second observation path.
         self.assertNotIn("observation.record", source)
 

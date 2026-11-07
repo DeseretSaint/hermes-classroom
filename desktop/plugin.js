@@ -52,26 +52,33 @@ const AREAS = {
  * are checked copies rather than a second authority.
  */
 const RECIPES = ['one_off', 'casual', 'committed', 'companion', 'parent']
+/**
+ * Learner-facing names for the contract's recipe enum (H-28).
+ *
+ * The enum ids are frozen by the contract and checked in `tests/test_desktop_contracts.py`; these
+ * strings are the only place a person reads them. "Recipe" never reaches the screen: a learner is
+ * asked how they will use the course, and `one_off` says it is a task, not a quiz-shaped mini-course.
+ */
 const RECIPE_COPY = {
   one_off: {
-    title: 'One-off',
-    description: 'A single skill or question you want handled, then done.'
+    title: 'One task I need to do now',
+    description: 'A single thing to get right — a repair, a form, a procedure. You practise the task, not a quiz.'
   },
   casual: {
-    title: 'Casual',
-    description: 'Short sessions, low pressure, pick it up when you have ten minutes.'
+    title: 'A little at a time',
+    description: 'Short sessions you pick up when you have ten minutes, with no schedule to keep.'
   },
   committed: {
-    title: 'Committed',
-    description: 'A sequence that builds on itself with scheduled practice.'
+    title: 'A steady plan',
+    description: 'A sequence that builds on itself, with practice you come back to.'
   },
   companion: {
-    title: 'Companion',
-    description: 'A long-running subject you keep returning to alongside other work.'
+    title: 'Alongside something else',
+    description: 'A subject you keep returning to while you study or work on other things.'
   },
   parent: {
-    title: 'Parent preparation',
-    description: 'You are preparing material for a child. Authored in Parent Studio, not here.'
+    title: 'Preparing for my child',
+    description: 'You are preparing material for a child. That happens in Parent Studio, not here.'
   }
 }
 const DIALS = {
@@ -127,6 +134,12 @@ const DESTINATIONS = [
  */
 const IMPORT_FLOW_WIRED = true
 /** The create flow lives in this file, so it needs no separate flag. */
+/**
+ * The college-syllabus path is H-25 (design) / H-26 (backend) / H-27 (UI) and does not exist yet, so
+ * the first-run button for it is absent rather than dead. Flip this when `syllabus.import` is in the
+ * mounted contract; the button then appears without a copy change.
+ */
+const SYLLABUS_FLOW_WIRED = false
 
 /** Set once in register(); components read the scoped context from here. */
 let pluginContext = null
@@ -865,25 +878,22 @@ function DegradedBody({ result, reload }) {
   })
 }
 
-/** The three plain-sentence orientation lines from the spec. Flat: no cards inside cards. */
-function Orientation() {
-  const items = [
-    ['Create or import', 'Start from a goal you can describe, or from a prepared pack.'],
-    ['Practice with evidence', 'Your answers change the next step; nothing advances on its own.'],
-    ['Reuse and share', 'Export teaching material without exporting your learning history.']
-  ]
-  return jsx('div', {
-    className: 'mt-6 flex flex-col gap-3 border-t border-(--ui-stroke-tertiary) pt-4',
-    children: items.map(([title, description]) =>
-      jsxs('div', {
-        className: 'flex flex-col',
-        children: [
-          jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: title }),
-          jsx('div', { className: 'mt-0.5 max-w-prose text-xs text-(--ui-text-secondary)', children: description })
-        ]
-      })
-    )
-  })
+/**
+ * The one plain sentence under the welcome (H-28).
+ *
+ * Replaces the three "governed learning workspace / real evidence / nothing advances on its own"
+ * orientation lines. It says the same thing in a learner's words, and it stays true: progress is
+ * profile-local and an objective only advances on a check the learner can see.
+ */
+const FIRST_RUN_COPY = {
+  title: 'Learn something specific.',
+  promise: 'Coursebook researches what you want to do, builds the lessons, and checks your work.',
+  progress: 'Your progress stays on this profile. Nothing is marked complete without a check you can see.',
+  primary: 'Start with a goal',
+  secondary: 'Use a course someone already made',
+  secondaryHint:
+    'You will see who made it, where it came from and what is checked before anything is added.',
+  syllabus: 'Use my college syllabus'
 }
 
 function supportNote(implemented) {
@@ -899,36 +909,60 @@ function supportNote(implemented) {
   })
 }
 
-/** The honest welcome: real state, real actions, no marketing hero and no fake sample progress. */
+/**
+ * The honest welcome (H-28, UX-01). One promise, one primary action, one secondary path, one plain
+ * progress sentence. No "governed learning workspace", no marketing hero, no fake sample progress.
+ *
+ * "Use my college syllabus" is gated on `SYLLABUS_FLOW_WIRED` in the same way the import action is
+ * gated on `IMPORT_FLOW_WIRED`: H-25/H-26/H-27 own that path, so until it ships the button is absent
+ * rather than disabled-forever or faked.
+ */
 function FirstRun({ implemented, onCreate }) {
   const canCreate = Boolean(implemented && implemented.has('course.create')) && typeof onCreate === 'function'
   const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
+  const canSyllabus = Boolean(SYLLABUS_FLOW_WIRED && implemented && implemented.has('syllabus.import'))
   return jsxs('div', {
     className: 'mx-auto flex w-full max-w-2xl flex-col py-2',
     children: [
       jsx('h2', {
         className: 'text-lg font-semibold tracking-tight',
-        children: 'Build a course around what you want to do.'
+        children: FIRST_RUN_COPY.title
       }),
       jsx('p', {
         className: 'mt-2 max-w-prose text-sm leading-relaxed text-(--ui-text-secondary)',
-        children:
-          'Your courses will appear here. Progress and personal answers stay on this profile.'
+        children: FIRST_RUN_COPY.promise
       }),
-      canCreate || canImport
+      canCreate || canImport || canSyllabus
         ? jsxs('div', {
-            className: 'mt-4 flex flex-wrap items-center gap-2',
+            className: 'mt-4 flex flex-col gap-2',
             children: [
-              canCreate
-                ? jsx(sdk.Button, { variant: 'default', onClick: onCreate, children: 'Create a course' })
-                : null,
+              jsxs('div', {
+                className: 'flex flex-wrap items-center gap-2',
+                children: [
+                  canCreate
+                    ? jsx(sdk.Button, { variant: 'default', onClick: onCreate, children: FIRST_RUN_COPY.primary })
+                    : null,
+                  canImport
+                    ? jsx(sdk.Button, { variant: 'secondary', onClick: onImportPlaceholder, children: FIRST_RUN_COPY.secondary })
+                    : null,
+                  canSyllabus
+                    ? jsx(sdk.Button, { variant: 'secondary', onClick: onImportPlaceholder, children: FIRST_RUN_COPY.syllabus })
+                    : null
+                ]
+              }),
               canImport
-                ? jsx(sdk.Button, { variant: 'secondary', onClick: onImportPlaceholder, children: 'Import a pack' })
+                ? jsx('p', {
+                    className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                    children: FIRST_RUN_COPY.secondaryHint
+                  })
                 : null
             ]
           })
         : null,
-      Orientation(),
+      jsx('p', {
+        className: 'mt-6 max-w-prose border-t border-(--ui-stroke-tertiary) pt-4 text-xs leading-relaxed text-(--ui-text-secondary)',
+        children: FIRST_RUN_COPY.progress
+      }),
       supportNote(implemented)
     ]
   })
@@ -1145,6 +1179,11 @@ function PackPreview({ preview, existing }) {
             ]
           })
         : null,
+      jsx('p', {
+        className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+        'data-cb-breadth': 'pack-plan',
+        children: PLAN_BREADTH_DISCLOSURE
+      }),
       jsx(sdk.PanelSectionLabel, { children: `OUTCOMES (${objectives.length})` }),
       jsx('div', {
         className: 'flex flex-col',
@@ -1352,12 +1391,13 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
         jsxs('div', {
           className: 'flex flex-col gap-1',
           children: [
-            jsx('div', { className: 'text-sm font-medium', children: 'Choose a pack archive' }),
+            jsx('div', { className: 'text-sm font-medium', children: 'Choose a course pack' }),
             jsx('div', {
-              className: 'max-w-prose text-xs text-(--ui-text-secondary)',
+              className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
               children:
-                'Pick the folder that holds the .zip a pack arrived in. Coursebook reads it in a staging area, ' +
-                'checks every file and hash, and shows the review below before anything is adopted.'
+                'A pack is a zip file someone else made: lessons, sources, and a manifest that lists every file with its hash. ' +
+                'Choose the folder that holds the .zip the pack arrived in. Coursebook copies it into a staging area and checks ' +
+                'every file before showing it to you — nothing is added until you review it and press Import.'
             })
           ]
         }),
@@ -2502,9 +2542,17 @@ function FieldDeskHome({
   sourcesError,
   sources,
   onRetrySources,
-  implemented
+  implemented,
+  onEmptyChange
 }) {
   const root = 'flex flex-col gap-4'
+  // The welcome is on screen only when the desk really has no course: a load in flight or a failed
+  // read is not an empty profile. The route header reads this so its own "New course" button does
+  // not duplicate the welcome's primary action (UX-01).
+  const emptyFirstRun = !desk.row && libraryStatus !== 'loading' && libraryStatus !== 'error'
+  useEffect(() => {
+    if (onEmptyChange) onEmptyChange(emptyFirstRun)
+  }, [emptyFirstRun, onEmptyChange])
 
   if (libraryStatus === 'loading' && !desk.row) {
     return jsx('div', { 'data-cb-desk': 'loading', className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading your courses' }) })
@@ -2640,7 +2688,7 @@ function useSessionEstimate({ row, current, enabled }) {
  * recently written row), `course.outline` supplies the path, and the section's sources are read
  * only when the drawer opens. A failure in any of those is shown, never papered over.
  */
-function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, profile }) {
+function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, profile, onEmptyChange }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const payload = { filter: 'all', limit: 50, sort: 'recent' }
   const key = JSON.stringify(payload)
@@ -2727,11 +2775,22 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, profile }) {
     sourcesError: page.error,
     sources: page.data && page.data.sources,
     onRetrySources: page.reload,
-    implemented
+    implemented,
+    onEmptyChange
   })
 }
 
-function CoursesView({ implemented, onStartCreate, createOpen, onOpen, onShowDesk }) {
+/**
+ * Search and filter only exist when there is something to search (UX-01). With zero courses on the
+ * profile, a search box and four pills would be chrome that cannot do anything, so they are absent
+ * on first run and appear with the first course.
+ */
+function courseToolsVisible(data) {
+  if (!data) return true
+  return Number(data.total || 0) > 0
+}
+
+function CoursesView({ implemented, onStartCreate, createOpen, onOpen, onShowDesk, onEmptyChange }) {
   const [filter, setFilter] = useState('all')
   const [searchInput, setSearchInput] = useState('')
   const [query, setQuery] = useState('')
@@ -2838,6 +2897,14 @@ function CoursesView({ implemented, onStartCreate, createOpen, onOpen, onShowDes
   // search box must never be presented as first-run. `applied_filter` alone missed that case.
   const filteredEmpty =
     noCourses && (Boolean(query) || Boolean(data.applied_filter && data.applied_filter !== 'all'))
+
+  // The filter chips and search box are chrome for a list that exists; the welcome replaces them
+  // on first run. This is also what the route header reads to drop its duplicate New course button.
+  const emptyFirstRun = Boolean(data) && noCourses && !filteredEmpty
+  useEffect(() => {
+    if (onEmptyChange) onEmptyChange(emptyFirstRun)
+  }, [emptyFirstRun, onEmptyChange])
+  const showTools = courseToolsVisible(data)
 
   let body
   if (status === 'idle') {
@@ -2963,20 +3030,24 @@ function CoursesView({ implemented, onStartCreate, createOpen, onOpen, onShowDes
       jsxs('div', {
         className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
         children: [
-          jsx(sdk.SearchField, {
-            'aria-label': 'Search courses',
-            containerClassName: 'max-w-sm min-w-0 flex-1',
-            onChange: setSearchInput,
-            placeholder: 'Search courses',
-            value: searchInput
-          }),
-          jsx(sdk.SegmentedControl, {
-            onChange: setFilter,
-            options: FILTERS,
-            sizing: 'content',
-            value: filter,
-            disabled: toolsDisabled
-          })
+          showTools
+            ? jsx(sdk.SearchField, {
+                'aria-label': 'Search courses',
+                containerClassName: 'max-w-sm min-w-0 flex-1',
+                onChange: setSearchInput,
+                placeholder: 'Search courses',
+                value: searchInput
+              })
+            : null,
+          showTools
+            ? jsx(sdk.SegmentedControl, {
+                onChange: setFilter,
+                options: FILTERS,
+                sizing: 'content',
+                value: filter,
+                disabled: toolsDisabled
+              })
+            : null
         ]
       }),
       body,
@@ -3019,6 +3090,17 @@ function sourceLabel(source) {
   return source || 'Unknown source'
 }
 
+/** `enrollment_status` is a contract enum; a learner reads a sentence, not the raw value (H-28). */
+const ENROLLMENT_STATUS_COPY = {
+  active: 'Active',
+  archived: 'Archived',
+  completed: 'Completed'
+}
+
+function enrollmentStatusLabel(value) {
+  return ENROLLMENT_STATUS_COPY[value] || value || 'Unknown'
+}
+
 function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPack, onDeletePack, onBack, showBack }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const next = row.next_step || {}
@@ -3048,14 +3130,14 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
           })
         ]
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'WHAT THE BACKEND RECORDED' }),
+      jsx(sdk.PanelSectionLabel, { children: 'WHAT THE RECORD SHOWS' }),
       jsxs('div', {
         className: 'flex flex-col',
         children: [
           jsx(StatusRow, { label: 'Next step', value: next.label || '—' }),
           jsx(StatusRow, {
-            label: 'Enrollment',
-            value: row.enrollment_status,
+            label: 'Enrolment',
+            value: enrollmentStatusLabel(row.enrollment_status),
             detail: `revision ${row.revision}`
           }),
           jsx(StatusRow, {
@@ -3123,6 +3205,24 @@ function formatWhen(value) {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return String(value)
   return parsed.toLocaleString()
+}
+
+/**
+ * How a pack is explained before anything is added (UX-06).
+ *
+ * The absence of a marketplace and of a verified badge is true but it is not a welcome. It lives in
+ * an opened disclosure, under what is checked and what is not, so the trust labels keep their
+ * meaning and nobody reads a pack as endorsed.
+ */
+const LIBRARY_COPY = {
+  lead: 'Courses made by other people. You will see who made it, where it came from and what has been checked before you add one.',
+  whatWeCheck:
+    'What we check — that every file matches the hashes in the pack’s manifest, that its structure and teaching minima pass the automated checks, and whether a named reviewer and a model assessment are recorded. Those are separate labels on every pack and they are never merged into a score.',
+  whatWeDoNotCheck:
+    'What we do not check — whether the teaching is good for you, whether the author is trustworthy, and how this pack compares with any other. There is no marketplace ranking and no verified badge.',
+  emptyTitle: 'No packs on this profile yet',
+  emptyBody:
+    'A pack is a zip file someone else made: lessons, sources and a manifest that lists every file. Bundled packs ship with Coursebook; a pack from someone else is added from the Import flow, where you review it first.'
 }
 
 function LibraryView({ implemented, createOpen }) {
@@ -3234,11 +3334,18 @@ function LibraryView({ implemented, createOpen }) {
       ]
     })
   } else if (rows.length === 0) {
-    listBody = jsx(EmptyState, {
-      title: view === 'bundled' ? 'No bundled pack is installed on this profile' : view === 'local' ? 'No local pack is installed' : 'No packs installed on this profile',
-      description:
-        'A pack appears here once it exists on this profile. Bundled packs ship with the Coursebook ' +
-        'package; importing one needs the backend’s pack import command, which this build does not have.'
+    listBody = jsxs('div', {
+      className: 'flex flex-col gap-3',
+      children: [
+        jsx(EmptyState, {
+          title: view === 'bundled' ? 'No bundled pack on this profile' : view === 'local' ? 'No pack from someone else on this profile' : LIBRARY_COPY.emptyTitle,
+          description: LIBRARY_COPY.emptyBody
+        }),
+        jsx('p', {
+          className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+          children: LIBRARY_COPY.lead
+        })
+      ]
     })
   } else {
     listBody = jsxs('div', {
@@ -3300,21 +3407,35 @@ function LibraryView({ implemented, createOpen }) {
           })
         : null,
       jsxs('div', {
-        className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
+        className: 'mb-2 flex flex-col gap-2',
         children: [
-          jsx('div', {
-            className: 'max-w-prose text-xs text-(--ui-text-secondary)',
-            children: 'Packs installed on this profile, by where they came from. No marketplace ranking and no verified badge.'
+          jsxs('div', {
+            className: 'flex flex-wrap items-center justify-between gap-2',
+            children: [
+              jsx('div', {
+                className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                children: LIBRARY_COPY.lead
+              }),
+              jsx(sdk.SegmentedControl, {
+                onChange: setView,
+                options: [
+                  { id: 'all', label: 'All' },
+                  { id: 'bundled', label: 'Bundled' },
+                  { id: 'local', label: 'Local' }
+                ],
+                sizing: 'content',
+                value: view
+              })
+            ]
           }),
-          jsx(sdk.SegmentedControl, {
-            onChange: setView,
-            options: [
-              { id: 'all', label: 'All' },
-              { id: 'bundled', label: 'Bundled' },
-              { id: 'local', label: 'Local' }
-            ],
-            sizing: 'content',
-            value: view
+          jsxs('details', {
+            'data-cb-pack-trust': '',
+            className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+            children: [
+              jsx('summary', { className: 'cursor-pointer text-xs font-medium', children: 'What we check / what we do not check' }),
+              jsx('p', { className: 'mt-1', children: LIBRARY_COPY.whatWeCheck }),
+              jsx('p', { className: 'mt-1', children: LIBRARY_COPY.whatWeDoNotCheck })
+            ]
           })
         ]
       }),
@@ -3347,8 +3468,8 @@ function LibraryView({ implemented, createOpen }) {
                 className: 'hidden min-[47.5rem]:flex min-w-0 flex-1 items-start',
                 children: jsx(EmptyState, {
                   className: 'w-full',
-                  title: 'Choose a pack to see what the backend recorded',
-                  description: 'Preview shows the pack’s provenance, enrolment state and evidence summary — nothing inferred.'
+                  title: 'Choose a pack to see what we know about it',
+                  description: 'Preview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.'
                 })
               })
         ]
@@ -3407,11 +3528,28 @@ function LibraryView({ implemented, createOpen }) {
 // plan pipeline writes a draft plan, and `plan.approve` fences on the kernel digest. This block is
 // the one place the desktop builds those payloads.
 
-/** How much course a brief asks for. Contract enum: `single` | `short` | `full`. */
+/**
+ * How much course a brief asks for. Contract enum: `single` | `short` | `full`.
+ *
+ * H-28 (UX-02/UX-09) makes scope the first question and gives each answer one sentence saying what
+ * the learner receives. The ids stay exactly the contract's; only the words a person reads change.
+ */
 const COURSE_SCOPES = [
-  { id: 'single', label: 'One lesson' },
-  { id: 'short', label: 'Short course' },
-  { id: 'full', label: 'Full course' }
+  {
+    id: 'single',
+    label: 'A single lesson',
+    consequence: 'One lesson with one check — best when you have a task in front of you today.'
+  },
+  {
+    id: 'short',
+    label: 'A short course (a few sessions)',
+    consequence: 'A few sessions that build on each other, each with its own check.'
+  },
+  {
+    id: 'full',
+    label: 'A full course (weeks or months)',
+    consequence: 'A longer course split into units; you review the plan before any lesson is written.'
+  }
 ]
 
 /**
@@ -3426,6 +3564,32 @@ const SCOPE_TIME_COPY = {
 
 function planTimingCopy(scope) {
   return SCOPE_TIME_COPY[scope] || 'Research and drafting may take several minutes. A plan is written before any lesson exists.'
+}
+
+/**
+ * Topic-diverse examples (UX-02). The default form is a general harness, not a Japanese demo: a
+ * bike repair, a conversation and a statistics class, so a new learner sees themselves in it.
+ */
+const GOAL_PLACEHOLDER = 'Replace the tube on my road bike without pinching it.'
+const TITLE_PLACEHOLDER = 'Bike tube replacement'
+const GOAL_EXAMPLES = [
+  'Replace the tube on my road bike',
+  'Hold a six-minute conversation in Spanish',
+  'Understand the first month of a statistics class'
+]
+
+/** The create result speaks before the receipt does (UX-03). */
+const CREATE_RESULT_COPY = {
+  lead: 'Your plan is being researched; this may take several minutes and you can leave this page.',
+  body: 'When the plan arrives you can read it and approve it here. No lesson is written until you approve.',
+  details: 'Details and job state'
+}
+
+/** Dials are chosen as enum ids; the review panel shows the label the learner actually picked. */
+function dialLabel(dial, value) {
+  const options = (DIALS[dial] && DIALS[dial].options) || []
+  const found = options.find((option) => option.id === value)
+  return found ? found.label : value
 }
 
 /**
@@ -3520,13 +3684,23 @@ async function startLearnerPlan({ call, key, title, goal, recipe, dials, locale,
   }
 }
 
+/**
+ * The scope a learner picks proposes how the course is used, until they choose for themselves: one
+ * lesson is a task (`one_off`), a short course is casual, a full course is a steady plan. The recipe
+ * stays a real contract field; this only saves the learner from decoding an enum.
+ */
+const SCOPE_DEFAULT_RECIPE = { single: 'one_off', short: 'casual', full: 'committed' }
+
 /** A compact staged create flow; every step is editable before the one mutation. */
 function CreateCourseFlow({ onCancel, onCreated }) {
   const [step, setStep] = useState(1)
   const [goal, setGoal] = useState('')
   const [title, setTitle] = useState('')
   const [recipe, setRecipe] = useState('casual')
-  const [scope, setScope] = useState('short')
+  // No scope is preselected: the first screen asks for intent, so "Continue" is only enabled once
+  // the learner has said whether this is one lesson, a short course or a full course (UX-09).
+  const [scope, setScope] = useState('')
+  const [recipeTouched, setRecipeTouched] = useState(false)
   const [level, setLevel] = useState('')
   const [subjectDomain, setSubjectDomain] = useState('')
   const [locale, setLocale] = useState('')
@@ -3541,7 +3715,19 @@ function CreateCourseFlow({ onCancel, onCreated }) {
   const keyRef = useRef(null)
 
   const goalInvalid = step >= 1 && goal.trim().length === 0
-  const canAdvance = goal.trim().length > 0 && title.trim().length > 0
+  const canAdvance = step === 1 ? Boolean(scope) : goal.trim().length > 0 && title.trim().length > 0
+
+  const chooseScope = useCallback(
+    (id) => {
+      setScope(id)
+      if (!recipeTouched) setRecipe(SCOPE_DEFAULT_RECIPE[id] || 'casual')
+    },
+    [recipeTouched]
+  )
+  const chooseRecipe = useCallback((id) => {
+    setRecipeTouched(true)
+    setRecipe(id)
+  }, [])
 
   const submit = useCallback(async () => {
     if (submitting) return
@@ -3593,20 +3779,25 @@ function CreateCourseFlow({ onCancel, onCreated }) {
     return jsxs('div', {
       className: 'mx-auto flex w-full max-w-2xl flex-col gap-3 py-4',
       children: [
-        jsx('h2', { className: 'text-sm font-semibold', children: 'Course created — plan generation started' }),
-        jsx('div', {
-          className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-          children:
-            'Your course, its draft plan and your enrolment exist on this profile. One plan job was queued; ' +
-            'the agent runs it in the background, so leaving this page does not stop it.'
+        jsx('h2', { className: 'text-sm font-semibold', children: CREATE_RESULT_COPY.lead }),
+        jsx('p', {
+          className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+          children: CREATE_RESULT_COPY.body
         }),
-        jsxs('div', {
-          className: 'flex flex-col',
+        jsxs('details', {
+          'data-cb-create-receipt': '',
+          className: 'text-xs text-(--ui-text-secondary)',
           children: [
-            jsx(StatusRow, { label: 'Course', value: result.courseId }),
-            jsx(StatusRow, { label: 'Plan', value: `${result.planId} (draft)` }),
-            jsx(StatusRow, { label: 'Enrollment', value: result.enrollmentId }),
-            jsx(StatusRow, { label: 'Plan job', value: result.jobId })
+            jsx('summary', { className: 'cursor-pointer', children: CREATE_RESULT_COPY.details }),
+            jsxs('div', {
+              className: 'mt-1 flex flex-col',
+              children: [
+                jsx(StatusRow, { label: 'Course', value: result.courseId }),
+                jsx(StatusRow, { label: 'Plan', value: `${result.planId} (draft)` }),
+                jsx(StatusRow, { label: 'Enrolment', value: result.enrollmentId }),
+                jsx(StatusRow, { label: 'Plan job', value: `${result.jobId} · ${result.jobState}` })
+              ]
+            })
           ]
         }),
         jsx(LearnerPlanView, {
@@ -3644,7 +3835,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
     })
   }
 
-  const stepTitle = step === 1 ? 'What do you want to be able to do?' : step === 2 ? 'Shape the course' : 'Review and create'
+  const stepTitle = step === 1 ? 'What do you want to make?' : step === 2 ? 'What should it cover?' : 'Review and create'
 
   return jsxs('div', {
     className: 'mx-auto flex w-full max-w-2xl flex-col gap-4 py-2',
@@ -3665,62 +3856,39 @@ function CreateCourseFlow({ onCancel, onCreated }) {
       }),
       step === 1
         ? jsxs('div', {
-            className: 'flex flex-col gap-4',
+            className: 'flex flex-col gap-3',
             children: [
-              jsxs('div', {
-                className: 'flex flex-col gap-1.5',
-                children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-goal', children: 'Your goal' }),
-                  jsx(sdk.Textarea, {
-                    'aria-describedby': 'cb-goal-help',
-                    'aria-invalid': goalInvalid ? true : undefined,
-                    id: 'cb-goal',
-                    onChange: (event) => setGoal(event.target.value),
-                    placeholder: 'Explain the register difference between a friend and a manager.',
-                    rows: 4,
-                    value: goal
-                  }),
-                  jsx('div', {
-                    className: 'text-xs text-(--ui-text-secondary)',
-                    id: 'cb-goal-help',
-                    children: goal.trim().length === 0 ? 'Be specific about the situation you want to handle.' : `${goal.trim().length} characters`
-                  })
-                ]
+              jsx('p', {
+                className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                children: 'Pick how much course you want. You can change this before anything is created.'
               }),
-              jsxs('div', {
-                className: 'flex flex-col gap-1.5',
-                children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Course title' }),
-                  jsx(sdk.Input, {
-                    id: 'cb-title',
-                    onChange: (event) => setTitle(event.target.value),
-                    placeholder: 'Japanese register with friends and managers',
-                    value: title
-                  })
-                ]
-              }),
-              jsxs('div', {
+              jsx('div', {
                 className: 'flex flex-col',
-                children: [
-                  jsx('div', { className: 'mb-1 text-xs font-medium text-(--ui-text-secondary)', children: 'Recipe' }),
-                  RECIPES.filter((id) => id !== 'parent').map((id) =>
-                    jsx(sdk.ListRow, {
+                children: COURSE_SCOPES.map((option) =>
+                  jsx(
+                    sdk.ListRow,
+                    {
                       action: jsx(sdk.Button, {
-                        'aria-pressed': recipe === id,
-                        onClick: () => setRecipe(id),
+                        'aria-pressed': scope === option.id,
+                        onClick: () => chooseScope(option.id),
                         size: 'sm',
-                        variant: recipe === id ? 'secondary' : 'outline',
-                        children: recipe === id ? 'Selected' : 'Choose'
+                        variant: scope === option.id ? 'secondary' : 'outline',
+                        children: scope === option.id ? 'Selected' : 'Choose'
                       }),
-                      description: RECIPE_COPY[id].description,
-                      title: RECIPE_COPY[id].title
-                    }, id)
-                  ),
-                  jsx('div', {
-                    className: 'mt-1 text-xs text-(--ui-text-secondary)',
-                    children: 'Preparing lessons for a child goes to Parent Studio, not a learner course.'
-                  })
-                ]
+                      description: option.consequence,
+                      title: option.label
+                    },
+                    option.id
+                  )
+                )
+              }),
+              jsx('div', {
+                'aria-live': 'polite',
+                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                id: 'cb-scope-time',
+                children: scope
+                  ? planTimingCopy(scope)
+                  : 'Nothing is generated until you review the plan on the last step.'
               })
             ]
           })
@@ -3732,76 +3900,135 @@ function CreateCourseFlow({ onCancel, onCreated }) {
               jsxs('div', {
                 className: 'flex flex-col gap-1.5',
                 children: [
-                  jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: 'How much course' }),
-                  jsx(sdk.SegmentedControl, {
-                    onChange: setScope,
-                    options: COURSE_SCOPES,
-                    sizing: 'content',
-                    value: scope
+                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-goal', children: 'What do you want to be able to do?' }),
+                  jsx(sdk.Textarea, {
+                    'aria-describedby': 'cb-goal-help',
+                    'aria-invalid': goalInvalid ? true : undefined,
+                    id: 'cb-goal',
+                    onChange: (event) => setGoal(event.target.value),
+                    placeholder: GOAL_PLACEHOLDER,
+                    rows: 4,
+                    value: goal
                   }),
-                  jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', id: 'cb-scope-time', children: planTimingCopy(scope) })
+                  jsx('div', {
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    id: 'cb-goal-help',
+                    children:
+                      goal.trim().length === 0
+                        ? `Be specific about the situation you want to handle. Examples: ${GOAL_EXAMPLES.join(' · ')}.`
+                        : `${goal.trim().length} characters. Examples if you want a different shape: ${GOAL_EXAMPLES.join(' · ')}.`
+                  })
                 ]
               }),
-              ...Object.keys(DIALS).map((dial) =>
-                jsxs('div', {
-                  className: 'flex flex-col gap-1.5',
-                  children: [
-                    jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: DIALS[dial].label }),
-                    jsx(sdk.SegmentedControl, {
-                      onChange: (value) => setDials((current) => ({ ...current, [dial]: value })),
-                      options: DIALS[dial].options,
-                      sizing: 'content',
-                      value: dials[dial]
-                    })
-                  ]
-                }, dial)
-              ),
               jsxs('div', {
-                className: 'flex flex-col gap-3 border-t border-(--ui-stroke-tertiary) pt-3',
+                className: 'flex flex-col gap-1.5',
                 children: [
-                  jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: 'Optional context' }),
-                  jsxs('div', {
-                    className: 'flex flex-col gap-1.5',
-                    children: [
-                      jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-level', children: 'Your level' }),
-                      jsx(sdk.Input, {
-                        id: 'cb-level',
-                        maxLength: 35,
-                        onChange: (event) => setLevel(event.target.value),
-                        placeholder: 'L0',
-                        value: level
-                      })
-                    ]
-                  }),
-                  jsxs('div', {
-                    className: 'flex flex-col gap-1.5',
-                    children: [
-                      jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-subject', children: 'Subject domain' }),
-                      jsx(sdk.Input, {
-                        id: 'cb-subject',
-                        maxLength: 60,
-                        onChange: (event) => setSubjectDomain(event.target.value),
-                        placeholder: 'language',
-                        value: subjectDomain
-                      })
-                    ]
-                  }),
-                  jsxs('div', {
-                    className: 'flex flex-col gap-1.5',
-                    children: [
-                      jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-locale', children: 'Locale (language tag)' }),
-                      jsx(sdk.Input, {
-                        id: 'cb-locale',
-                        maxLength: 35,
-                        onChange: (event) => setLocale(event.target.value),
-                        placeholder: 'ja-JP',
-                        value: locale
-                      })
-                    ]
+                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Name this course' }),
+                  jsx(sdk.Input, {
+                    id: 'cb-title',
+                    onChange: (event) => setTitle(event.target.value),
+                    placeholder: TITLE_PLACEHOLDER,
+                    value: title
                   }),
                   jsx('div', {
                     className: 'text-xs text-(--ui-text-secondary)',
-                    children: 'These are advisory: the planner and the media policy read them, and they never become a grade.'
+                    children: 'This is the name you will see in your course list.'
+                  })
+                ]
+              }),
+              jsxs('div', {
+                className: 'flex flex-col',
+                children: [
+                  jsx('div', { className: 'mb-1 text-xs font-medium text-(--ui-text-secondary)', children: 'How will you use it?' }),
+                  RECIPES.filter((id) => id !== 'parent').map((id) =>
+                    jsx(sdk.ListRow, {
+                      action: jsx(sdk.Button, {
+                        'aria-pressed': recipe === id,
+                        onClick: () => chooseRecipe(id),
+                        size: 'sm',
+                        variant: recipe === id ? 'secondary' : 'outline',
+                        children: recipe === id ? 'Selected' : 'Choose'
+                      }),
+                      description: RECIPE_COPY[id].description,
+                      title: RECIPE_COPY[id].title
+                    }, id)
+                  ),
+                  jsx('div', {
+                    className: 'mt-1 text-xs leading-relaxed text-(--ui-text-secondary)',
+                    children: 'Preparing lessons for a child is a different path: Parent Studio, not a learner course.'
+                  })
+                ]
+              }),
+              jsxs('details', {
+                'data-cb-tune': '',
+                className: 'border-t border-(--ui-stroke-tertiary) pt-3 text-xs text-(--ui-text-secondary)',
+                children: [
+                  jsx('summary', { className: 'cursor-pointer text-xs font-medium', children: 'Help me tune it (optional)' }),
+                  jsxs('div', {
+                    className: 'mt-2 flex flex-col gap-3',
+                    children: [
+                      jsxs('div', {
+                        className: 'flex flex-col gap-1.5',
+                        children: [
+                          jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-level', children: 'Where you are starting from' }),
+                          jsx(sdk.Input, {
+                            id: 'cb-level',
+                            maxLength: 35,
+                            onChange: (event) => setLevel(event.target.value),
+                            placeholder: 'e.g. complete beginner, or rusty',
+                            value: level
+                          })
+                        ]
+                      }),
+                      jsxs('div', {
+                        className: 'flex flex-col gap-1.5',
+                        children: [
+                          jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-subject', children: 'Subject, in your own words' }),
+                          jsx(sdk.Input, {
+                            id: 'cb-subject',
+                            maxLength: 60,
+                            onChange: (event) => setSubjectDomain(event.target.value),
+                            placeholder: 'e.g. bike repair, Spanish, statistics',
+                            value: subjectDomain
+                          })
+                        ]
+                      }),
+                      jsxs('div', {
+                        className: 'flex flex-col gap-1.5',
+                        children: [
+                          jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-locale', children: 'Language or locale (language courses only)' }),
+                          jsx(sdk.Input, {
+                            id: 'cb-locale',
+                            maxLength: 35,
+                            onChange: (event) => setLocale(event.target.value),
+                            placeholder: 'e.g. es-ES for Spanish, ja-JP for Japanese',
+                            value: locale
+                          }),
+                          jsx('div', {
+                            className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                            children: 'This only sets language and formatting conventions. It never describes the subject.'
+                          })
+                        ]
+                      }),
+                      ...Object.keys(DIALS).map((dial) =>
+                        jsxs('div', {
+                          className: 'flex flex-col gap-1.5',
+                          children: [
+                            jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: DIALS[dial].label }),
+                            jsx(sdk.SegmentedControl, {
+                              onChange: (value) => setDials((current) => ({ ...current, [dial]: value })),
+                              options: DIALS[dial].options,
+                              sizing: 'content',
+                              value: dials[dial]
+                            })
+                          ]
+                        }, dial)
+                      ),
+                      jsx('div', {
+                        className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                        children: 'These shape the plan only. Nothing here becomes a grade.'
+                      })
+                    ]
                   })
                 ]
               })
@@ -3815,23 +4042,26 @@ function CreateCourseFlow({ onCancel, onCreated }) {
               jsxs('div', {
                 className: 'flex flex-col',
                 children: [
+                  jsx(StatusRow, {
+                    label: 'What you get',
+                    value: (COURSE_SCOPES.find((option) => option.id === scope) || {}).label || 'Not chosen'
+                  }),
                   jsx(StatusRow, { label: 'Goal', value: jsx('span', { className: 'max-w-[36ch] break-words', children: goal.trim() }) }),
-                  jsx(StatusRow, { label: 'Title', value: title.trim() }),
-                  jsx(StatusRow, { label: 'Recipe', value: RECIPE_COPY[recipe].title }),
-                  jsx(StatusRow, { label: 'Scope', value: (COURSE_SCOPES.find((option) => option.id === scope) || {}).label || scope }),
-                  jsx(StatusRow, { label: 'Pace', value: dials.pace }),
-                  jsx(StatusRow, { label: 'Depth', value: dials.depth }),
-                  jsx(StatusRow, { label: 'Assessment', value: dials.assessment }),
-                  jsx(StatusRow, { label: 'Autonomy', value: dials.autonomy }),
-                  level.trim() ? jsx(StatusRow, { label: 'Level', value: level.trim() }) : null,
-                  subjectDomain.trim() ? jsx(StatusRow, { label: 'Subject domain', value: subjectDomain.trim() }) : null,
-                  locale.trim() ? jsx(StatusRow, { label: 'Locale', value: locale.trim() }) : null
+                  jsx(StatusRow, { label: 'Name', value: title.trim() }),
+                  jsx(StatusRow, { label: 'How you will use it', value: RECIPE_COPY[recipe].title }),
+                  jsx(StatusRow, { label: 'Pace', value: dialLabel('pace', dials.pace) }),
+                  jsx(StatusRow, { label: 'Depth', value: dialLabel('depth', dials.depth) }),
+                  jsx(StatusRow, { label: 'Checks', value: dialLabel('assessment', dials.assessment) }),
+                  jsx(StatusRow, { label: 'Guidance', value: dialLabel('autonomy', dials.autonomy) }),
+                  level.trim() ? jsx(StatusRow, { label: 'Starting point', value: level.trim() }) : null,
+                  subjectDomain.trim() ? jsx(StatusRow, { label: 'Subject', value: subjectDomain.trim() }) : null,
+                  locale.trim() ? jsx(StatusRow, { label: 'Language / locale', value: locale.trim() }) : null
                 ]
               }),
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children:
-                  'Creating this course writes one course, one draft plan and one enrolment on this profile, then ' +
+                  'Creating this writes one course, one draft plan and one enrolment on this profile, then ' +
                   'queues one plan job. Research and drafting call the model; the plan arrives as a draft you review ' +
                   'before anything is approved.'
               }),
@@ -3910,8 +4140,8 @@ const EVIDENCE_CLASS_COPY = {
   cold: 'Cold attempt',
   hinted: 'Hinted',
   answer_shown: 'Answer shown',
-  self_reported: 'Self-reported',
-  parent_reported: 'Parent reported',
+  self_reported: 'Reported by you — not independently verified.',
+  parent_reported: 'Reported by the parent — not graded by Coursebook.',
   override: 'Override — not independent evidence'
 }
 
@@ -3973,6 +4203,21 @@ function checklistItems(stimulus) {
   return Array.isArray(stimulus.items) ? stimulus.items.filter((item) => item && item.id && item.label) : []
 }
 
+// Frozen learner-facing breadth copy (`docs/ASSESSMENT-BREADTH.md` §7). One static disclosure for
+// every plan and every check: this build grades written answers, choices and checklists only. The
+// strings are not keyed to a topic — a keyword classifier over the learner's goal would announce a
+// construct-specific limit the harness cannot actually detect.
+const PLAN_BREADTH_DISCLOSURE =
+  'What Coursebook can check — Written answers, choices, and checklists. This build cannot collect or grade a program, a recording, a photo, or a built object. Checks marked "practice only" never advance a section.'
+const CHECK_SURFACE_DISCLOSURE =
+  'Your answer is text, a choice, or a checklist. Nothing you type is executed.'
+const OPEN_LANE_NOT_GRADED_COPY =
+  'Saved, not graded. This build has no grading model for open answers, so no verdict was produced. Your answer is saved, no progress was changed, and Retry grading does not consume an attempt.'
+// The backend writes this into `attempts.grading_provenance_json.failure` when it fails closed
+// because `grading.grade_open` had no aux grader. That record is the only honest signal that a
+// `needs_retry` came from the unconfigured open lane rather than a closed-lane grader fault.
+const OPEN_LANE_UNCONFIGURED_PATTERN = /open-response aux grader is not configured/i
+
 const VERDICT_COPY = {
   pass: 'Passed',
   partial: 'Partly there',
@@ -4023,6 +4268,13 @@ function EvidenceClassText({ value }) {
       jsx('span', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: notice })
     ]
   })
+}
+
+/** True only when the backend's own attempt record says the open lane had no grader. */
+function openLaneWasUnconfigured(provenance) {
+  if (!provenance || typeof provenance !== 'object') return false
+  const failure = provenance.failure
+  return typeof failure === 'string' && OPEN_LANE_UNCONFIGURED_PATTERN.test(failure)
 }
 
 function Hairline() {
@@ -4274,6 +4526,7 @@ function AttemptControls({
   const [resultCheck, setResultCheck] = useState(null)
   const [error, setError] = useState(null)
   const [overrideOpen, setOverrideOpen] = useState(false)
+  const [openLaneUnconfigured, setOpenLaneUnconfigured] = useState(false)
   const nonceRef = useRef(null)
   const answerRef = useRef(null)
   const resultRef = useRef(null)
@@ -4306,9 +4559,30 @@ function AttemptControls({
     setResult(null)
     setResultCheck(null)
     setError(null)
+    setOpenLaneUnconfigured(false)
     nonceRef.current = null
   }, [check && check.check_id, result])
   const displayCheck = resultCheck || check
+
+  // §7.3 copy is keyed to the lane, not to the topic. `attempt.submit` returns the verdict but not
+  // the reference kind, so read the attempt's own grading provenance once: only when the backend
+  // recorded that the open-response grader was unconfigured does the "Saved, not graded" copy
+  // replace the generic retry copy. If that read is unavailable or silent, nothing changes.
+  const resolveNeedsRetryLane = useCallback(
+    async (attemptId) => {
+      if (!attemptId || !(implemented && implemented.has('quiz.history'))) return
+      try {
+        const response = await rpc('quiz.history', { enrollment_id: enrollmentId, objective_id: objectiveId })
+        if (!response.ok) return
+        const rows = (response.result && response.result.attempts) || []
+        const row = rows.find((item) => item.attempt_id === attemptId)
+        if (row && openLaneWasUnconfigured(row.grading_provenance)) setOpenLaneUnconfigured(true)
+      } catch (err) {
+        // A read-only lane probe must never replace the verdict the learner just received.
+      }
+    },
+    [enrollmentId, objectiveId, implemented]
+  )
 
   const submit = useCallback(async () => {
     if (!check) return
@@ -4349,9 +4623,11 @@ function AttemptControls({
     const graded = response.result
     setResult(graded)
     setResultCheck(check)
+    setOpenLaneUnconfigured(false)
     setPhase(graded.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
+    if (graded.verdict === 'needs_retry') void resolveNeedsRetryLane(graded.attempt_id)
     if (onCommitted) onCommitted(graded)
-  }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted])
+  }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
 
   const retryGrading = useCallback(async () => {
     if (!check || !nonceRef.current) return
@@ -4378,9 +4654,11 @@ function AttemptControls({
     }
     setResult(response.result)
     setResultCheck(check)
+    setOpenLaneUnconfigured(false)
     setPhase(response.result.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
+    if (response.result.verdict === 'needs_retry') void resolveNeedsRetryLane(response.result.attempt_id)
     if (onCommitted) onCommitted(response.result)
-  }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted])
+  }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
 
   const moveOn = useCallback(async () => {
     if (!check) return
@@ -4656,13 +4934,21 @@ function AttemptControls({
             ref: resultRef,
             tabIndex: -1,
             children: [
-              jsx('div', {
-                className: 'text-sm font-medium',
-                children: 'I couldn’t grade this attempt.'
-              }),
-              jsx(QuietNote, {
-                children: 'Your answer is saved; no progress was changed. Retrying does not create a second attempt.'
-              }),
+              openLaneUnconfigured
+                ? jsx('p', {
+                    className: 'max-w-prose text-sm leading-relaxed',
+                    'data-cb-breadth': 'open-lane',
+                    children: OPEN_LANE_NOT_GRADED_COPY
+                  })
+                : jsx('div', {
+                    className: 'text-sm font-medium',
+                    children: 'I couldn’t grade this attempt.'
+                  }),
+              openLaneUnconfigured
+                ? null
+                : jsx(QuietNote, {
+                    children: 'Your answer is saved; no progress was changed. Retrying does not create a second attempt.'
+                  }),
               error ? jsx(ErrorLine, { error }) : null,
               jsxs('div', {
                 className: 'flex flex-wrap items-center gap-2',
@@ -4725,6 +5011,12 @@ function AttemptControls({
         children: supports('lesson.assist')
           ? 'Hints and shown answers are recorded against the next attempt.'
           : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
+      }),
+
+      jsx('p', {
+        className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+        'data-cb-breadth': 'check',
+        children: CHECK_SURFACE_DISCLOSURE
       }),
 
       jsx(FocusReturningDialog, {
@@ -7703,15 +7995,22 @@ function OverviewView({ row, page, review, quizzes, implemented, onOpenSection, 
         className: 'flex flex-col',
         children: [
           jsx(sdk.PanelSectionLabel, { children: 'THIS COURSE' }),
-          jsx(StatusRow, { label: 'Recipe', value: row.recipe }),
-          jsx(StatusRow, { label: 'Enrollment', value: row.enrollment_status, detail: `revision ${row.revision}` }),
+          jsx(StatusRow, {
+            label: 'How you will use it',
+            value: (RECIPE_COPY[row.recipe] || {}).title || 'Not recorded'
+          }),
+          jsx(StatusRow, {
+            label: 'Enrolment',
+            value: enrollmentStatusLabel(row.enrollment_status),
+            detail: `revision ${row.revision}`
+          }),
           jsx(StatusRow, {
             label: 'Evidence',
             value: `${Number((row.evidence_summary || {}).independent || 0)} independent`,
             detail: `${Number((row.evidence_summary || {}).total_objectives || 0)} objectives · ${Number((row.evidence_summary || {}).review_due || 0)} due`
           }),
           jsx(StatusRow, {
-            label: 'Provenance',
+            label: 'Where it came from',
             value: sourceLabel(row.provenance && row.provenance.source),
             detail: row.provenance && row.provenance.pack_id ? `${row.provenance.pack_id}${row.provenance.pack_version ? ` v${row.provenance.pack_version}` : ''}` : 'authored on this profile'
           }),
@@ -9298,7 +9597,9 @@ const EVIDENCE_TARGET_OPTIONS = [
   { id: 'recall', label: 'Recall' },
   { id: 'comprehension', label: 'Comprehension' },
   { id: 'production', label: 'Production' },
-  { id: 'discrimination', label: 'Discrimination' },
+  // `discrimination` is the rubric's name for telling two things apart; the parent reads the plain
+  // phrase and the enum id still travels unchanged (H-28, UX-04 vocabulary).
+  { id: 'discrimination', label: 'Tell the difference' },
   { id: 'procedure', label: 'Procedure' },
   { id: 'transfer', label: 'Transfer' }
 ]
@@ -9625,7 +9926,7 @@ function StudioJobLine({ jobId, onSettled, onRunAgain }) {
   })
 }
 
-/** The studio list: authored parent courses only. Imported packs stay in Library. */
+/** The studio list: lesson plans the parent prepared. Imported packs stay in Library. */
 function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
   const supported = Boolean(implemented && implemented.has('library.list'))
   const query = useRpcQuery(
@@ -9656,26 +9957,34 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
   }
   if (rows.length === 0) {
     return jsx(EmptyState, {
-      title: 'No parent lesson packs yet',
+      title: 'No lesson plans yet',
       description:
-        'A brief describes the child’s age and reading level, the setting and materials, what to leave out, and what you want to teach. Coursebook drafts a plan for you to review before anything is generated.',
-      children: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'Write a lesson brief' })
+        'A lesson plan starts from a short brief: the child’s age and reading level, where you will teach, what you have, ' +
+        'what to leave out, and what you want them to be able to do. Coursebook drafts a plan for you to review before any ' +
+        'lesson page is written.',
+      children: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'New lesson plan' })
     })
   }
 
   return jsxs('div', {
     className: 'flex flex-col',
     children: [
-      jsx('div', { className: 'pb-1 text-xs text-(--ui-text-secondary)', children: `${rows.length} authored course${rows.length === 1 ? '' : 's'}` }),
+      jsx('div', { className: 'pb-1 text-xs text-(--ui-text-secondary)', children: 'Lesson plans you prepared for your child' }),
+      jsx('p', {
+        className: 'max-w-prose pb-2 text-xs leading-relaxed text-(--ui-text-secondary)',
+        children:
+          'Two plans can describe the same lesson and still be different plans: each brief you write is kept as its own plan, ' +
+          'so you can keep one per child, compare two versions, or start again without losing the first.'
+      }),
       ...rows.map((row) =>
         jsx(
           sdk.ListRow,
           {
-            action: jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: () => onOpen(row), children: 'Open studio' }),
+            action: jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: () => onOpen(row), children: 'Open plan' }),
             description: jsxs('span', {
               className: 'flex flex-wrap items-center gap-2',
               children: [
-                jsx('span', { children: 'Parent preparation' }),
+                jsx('span', { children: 'Lesson plan for a child' }),
                 jsx('span', { children: `updated ${whenLabel(row.updated_at)}` })
               ]
             }),
@@ -10520,6 +10829,11 @@ function StudioPlanView({
           jsxs('div', {
             className: 'flex min-w-0 flex-1 flex-col gap-2',
             children: [
+              jsx('p', {
+                className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                'data-cb-breadth': 'plan',
+                children: PLAN_BREADTH_DISCLOSURE
+              }),
               jsx(sdk.PanelSectionLabel, { children: `OUTLINE AND ACTIVITIES (${objectives.length})` }),
               ...displayObjectives.map((objective, index) => {
                 const draft = drafts[objective.objective_id] || {}
@@ -11588,6 +11902,9 @@ function CoursebookPage() {
   const [coursesMode, setCoursesMode] = useState('desk')
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
+  // Set by the mounted course surface when the welcome (first run) is what is on screen. The header
+  // then drops its duplicate "New course" button: one screen, one primary action (UX-01).
+  const [coursesEmpty, setCoursesEmpty] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
   const [studioCourse, setStudioCourse] = useState(null)
   const [studioSeed, setStudioSeed] = useState(null)
@@ -11730,6 +12047,7 @@ function CoursebookPage() {
     body = jsx(CoursesView, {
       createOpen: creating,
       implemented,
+      onEmptyChange: setCoursesEmpty,
       onStartCreate: () => setCreating(true),
       onOpen: (row) => setOpenCourse({ row, objectiveId: null }),
       onShowDesk: () => setCoursesMode('desk')
@@ -11738,6 +12056,7 @@ function CoursebookPage() {
     body = jsx(FieldDesk, {
       implemented,
       profile: currentScope().profile,
+      onEmptyChange: setCoursesEmpty,
       onOpen: (row, objectiveId, blockId, view) =>
         setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null }),
       onShowAll: () => setCoursesMode('list'),
@@ -11772,14 +12091,14 @@ function CoursebookPage() {
                     children:
                       destination === 'studio' && !studioSeed
                         ? studioCourse
-                          ? 'One authored course: brief, plan, pages, export and reflection.'
-                          : 'Parent-led lesson packs: write the brief, review it, then teach it.'
+                          ? 'One lesson plan: the brief, the plan, the pages and what you record afterwards.'
+                          : 'Plan lessons for your child here. You teach them; there is no child chat, and answers never reach the learner pages.'
                         : destination === 'library' && !creating
-                          ? 'Packs you can teach from, with the provenance the backend recorded.'
+                          ? LIBRARY_COPY.lead
                           : openCourse
-                            ? 'One objective, its evidence and the next permitted action.'
+                            ? 'One objective, what has been checked and the next permitted action.'
                             : coursesMode === 'list'
-                              ? 'Every course on this profile, with search and the backend’s own next step.'
+                              ? 'Every course on this profile, with search and the next step the backend recorded.'
                               : 'One next move: the section to continue, the path and its sources.'
                   })
                 ]
@@ -11789,14 +12108,14 @@ function CoursebookPage() {
                 children: [
                   online ? null : jsx(sdk.Badge, { variant: 'warn', children: 'Offline' }),
                   statusCopy ? jsx(sdk.Badge, { variant: health.status === 'unavailable' ? 'warn' : 'muted', children: statusCopy }) : null,
-                  health.status === 'ready' && online && !creating && !importing && destination === 'courses' && canCreate
+                  health.status === 'ready' && online && !creating && !importing && destination === 'courses' && canCreate && !coursesEmpty
                     ? jsx(sdk.Button, { onClick: () => setCreating(true), size: 'sm', variant: 'default', children: 'New course' })
                     : null,
                   health.status === 'ready' && !creating && !importing && destination === 'library' && canImport
                     ? jsx(sdk.Button, { onClick: onImportPlaceholder, size: 'sm', variant: 'default', children: 'Import pack' })
                     : null,
                   health.status === 'ready' && online && !studioSeed && destination === 'studio' && !studioCourse && canAuthor
-                    ? jsx(sdk.Button, { onClick: () => setStudioSeed({ initial: null, note: null }), size: 'sm', variant: 'default', children: 'New lesson brief' })
+                    ? jsx(sdk.Button, { onClick: () => setStudioSeed({ initial: null, note: null }), size: 'sm', variant: 'default', children: 'New lesson plan' })
                     : null
                 ]
               })
@@ -12109,7 +12428,21 @@ export {
   CB_TOKENS,
   CB_TOKEN_NAMES,
   COURSE_SCOPES,
+  CREATE_RESULT_COPY,
+  CreateCourseFlow,
+  FIRST_RUN_COPY,
+  FirstRun,
+  GOAL_EXAMPLES,
+  GOAL_PLACEHOLDER,
+  LIBRARY_COPY,
+  SYLLABUS_FLOW_WIRED,
+  TITLE_PLACEHOLDER,
   EvidenceClassText,
+  EVIDENCE_TARGET_OPTIONS,
+  RECIPE_COPY,
+  courseToolsVisible,
+  dialLabel,
+  enrollmentStatusLabel,
   FieldRail,
   FieldDeskHome,
   FieldNotesStrip,
