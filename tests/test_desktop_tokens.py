@@ -30,7 +30,7 @@ from tests.test_desktop_lesson_views import (
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_JS = ROOT / "desktop" / "plugin.js"
-CONTRACT = ROOT / "contracts" / "cb.tokens.v1.json"
+CONTRACT = ROOT / "contracts" / "cb.tokens.v2.json"
 
 HARNESS = """
 // Globals must be set BEFORE the plugin module (and its SDK stub) evaluate.
@@ -274,8 +274,8 @@ class RouteShellRenderTest(unittest.TestCase):
     def test_layout_stacks_below_the_breakpoint_and_never_guesses_wide(self) -> None:
         payload = self.render(1280, "light")
         self.assertEqual(payload["layout_wide"], "wide")
-        self.assertEqual(payload["layout_narrow"], "stacked")
-        self.assertEqual(payload["layout_unknown"], "stacked")
+        self.assertEqual(payload["layout_narrow"], "narrow")
+        self.assertEqual(payload["layout_unknown"], "phone")
         self.assertEqual(payload["motion_reduced"], "reduced")
         self.assertEqual(payload["motion_full"], "full")
 
@@ -283,7 +283,7 @@ class RouteShellRenderTest(unittest.TestCase):
         html = self.render(1280, "light")["html"]["shell"]
         self.assertIn('data-cb-workspace-shell="wide"', html)
         self.assertIn('data-cb-rail-slot="side"', html)
-        self.assertIn("grid-template-columns:minmax(0, 1fr) 19rem", html)
+        self.assertIn("grid-template-columns:minmax(0, 1fr) 20rem", html)
         self.assertIn("var(--cb-rule)", html)
         self.assertIn('data-cb-field-rail', html)
         self.assertIn("Ask a question in the polite register", html)
@@ -305,7 +305,7 @@ class RouteShellRenderTest(unittest.TestCase):
     def test_dark_mode_paints_the_dark_table_on_the_same_root(self) -> None:
         html = self.render(1280, "dark")["html"]["section"]
         self.assertIn('data-cb-scope="dark"', html)
-        self.assertIn("--cb-paper:#141312", html)
+        self.assertIn("--cb-paper:#131210", html)
 
     def test_media_frame_carries_caption_provenance_and_text_equivalent(self) -> None:
         html = self.render(1280, "light")["html"]["media"]

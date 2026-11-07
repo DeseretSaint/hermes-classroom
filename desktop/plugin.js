@@ -1013,49 +1013,102 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
   const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
   const canSyllabus = typeof onSyllabus === 'function' && Boolean(implemented && implemented.has('syllabus.intake.create'))
   return jsxs('div', {
-    className: 'mx-auto flex w-full max-w-2xl flex-col py-2',
+    'data-cb-first-run': '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.85rem',
+      width: '100%',
+      maxWidth: '44rem',
+      margin: '0 auto',
+      padding: '1.25rem 1.25rem 1.35rem',
+      background: 'var(--cb-lamp-soft)',
+      borderTop: '3px solid var(--cb-lamp)',
+      boxSizing: 'border-box'
+    },
     children: [
-      jsx('h2', {
-        className: 'text-lg font-semibold tracking-tight',
-        children: FIRST_RUN_COPY.title
+      jsx(DeskLabel, { children: 'New course' }),
+      jsxs('div', {
+        style: { display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' },
+        children: [
+          jsx(SurveyMark, { courseId: 'first-run', size: 64 }),
+          jsx('h2', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: 'clamp(1.75rem, 1.35rem + 1.6vw, 2.75rem)',
+              fontWeight: 600,
+              lineHeight: 1.04,
+              letterSpacing: '-0.015em',
+              color: 'var(--cb-ink)',
+              maxWidth: '20ch'
+            },
+            children: FIRST_RUN_COPY.title
+          })
+        ]
       }),
       jsx('p', {
-        className: 'mt-2 max-w-prose text-sm leading-relaxed text-(--ui-text-secondary)',
+        style: { margin: 0, maxWidth: '52ch', fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
         children: FIRST_RUN_COPY.promise
       }),
-      canCreate || canImport || canSyllabus
+      canCreate
+        ? jsx(sdk.Button, {
+            variant: 'default',
+            onClick: onCreate,
+            style: {
+              alignSelf: 'flex-start',
+              background: 'var(--cb-lamp)',
+              color: 'var(--cb-on-lamp)',
+              border: '1px solid var(--cb-on-lamp)',
+              borderRadius: '2px',
+              minHeight: '36px'
+            },
+            children: FIRST_RUN_COPY.primary
+          })
+        : null,
+      canImport || canSyllabus
         ? jsxs('div', {
-            className: 'mt-4 flex flex-col gap-2',
+            style: { display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--cb-rule)' },
             children: [
-              jsxs('div', {
-                className: 'flex flex-wrap items-center gap-2',
-                children: [
-                  canCreate
-                    ? jsx(sdk.Button, { variant: 'default', onClick: onCreate, children: FIRST_RUN_COPY.primary })
-                    : null,
-                  canImport
-                    ? jsx(sdk.Button, { variant: 'secondary', onClick: onImportPlaceholder, children: FIRST_RUN_COPY.secondary })
-                    : null,
-                  canSyllabus
-                    ? jsx(sdk.Button, {
-                        variant: canCreate ? 'secondary' : 'default',
-                        onClick: onSyllabus,
-                        children: FIRST_RUN_COPY.syllabus
-                      })
-                    : null
-                ]
-              }),
               canImport
-                ? jsx('p', {
-                    className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
-                    children: FIRST_RUN_COPY.secondaryHint
+                ? jsxs('div', {
+                    style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', padding: '0.6rem 0' },
+                    children: [
+                      jsx(sdk.Button, {
+                        variant: 'secondary',
+                        className: 'self-start',
+                        onClick: onImportPlaceholder,
+                        children: FIRST_RUN_COPY.secondary
+                      }),
+                      jsx('p', { style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' }, children: FIRST_RUN_COPY.secondaryHint })
+                    ]
+                  })
+                : null,
+              canSyllabus
+                ? jsx('div', {
+                    style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', padding: '0.6rem 0', borderTop: '1px solid var(--cb-rule)' },
+                    children: jsx(sdk.Button, {
+                      variant: 'text',
+                      className: 'justify-start',
+                      onClick: onSyllabus,
+                      children: FIRST_RUN_COPY.syllabus
+                    })
                   })
                 : null
             ]
           })
         : null,
       jsx('p', {
-        className: 'mt-6 max-w-prose border-t border-(--ui-stroke-tertiary) pt-4 text-xs leading-relaxed text-(--ui-text-secondary)',
+        style: {
+          margin: 0,
+          paddingTop: '0.6rem',
+          borderTop: '1px solid var(--cb-rule)',
+          maxWidth: '56ch',
+          fontFamily: CB_SANS,
+          fontSize: '0.75rem',
+          lineHeight: 1.5,
+          color: 'var(--cb-ink-soft)'
+        },
         children: FIRST_RUN_COPY.progress
       }),
       supportNote(implemented)
@@ -1923,7 +1976,12 @@ function CourseRow({ row, implemented, onResume, onArchive, onDelete, onOpen }) 
     title: jsxs('span', {
       className: 'flex min-w-0 flex-wrap items-center gap-2',
       children: [
-        jsx('span', { className: 'min-w-0 break-words', children: row.title }),
+        jsx(CourseStamp, { title: row.title, courseId: row.course_id }),
+        jsx('span', {
+          className: 'min-w-0 break-words',
+          style: { fontFamily: CB_SERIF, fontSize: '1.0625rem', fontWeight: 600 },
+          children: row.title
+        }),
         jsx(sdk.Badge, { variant: 'muted', size: 'xs', children: RECIPE_COPY[row.recipe] ? RECIPE_COPY[row.recipe].title : row.recipe }),
         warning ? jsx(WarningBadge, { warning: row.warning }) : null
       ]
@@ -1940,25 +1998,22 @@ function CourseRow({ row, implemented, onResume, onArchive, onDelete, onOpen }) 
               className: 'mt-1 max-w-prose text-xs text-(--ui-text-secondary)',
               children: warning.detail
             })
-          : null,
-        row.provenance && row.provenance.pack_id
-          ? jsx('div', {
-              className: 'mt-1 text-xs text-(--ui-text-secondary)',
-              children: `From ${row.provenance.source === 'bundled' ? 'a bundled pack' : row.provenance.source === 'community' ? 'a community pack' : 'a local pack'}${
-                row.provenance.pack_version ? ` · v${row.provenance.pack_version}` : ''
-              }`
-            })
           : null
       ]
     }),
     action: jsxs('div', {
       className: 'flex items-center gap-1',
       children: [
-        onOpen
-          ? jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: () => onOpen(row), children: 'Open' })
-          : null,
         canResume
           ? jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: () => onResume(row), children: 'Resume lesson' })
+          : null,
+        onOpen
+          ? jsx(sdk.Button, {
+              variant: 'text',
+              size: 'sm',
+              onClick: () => onOpen(row),
+              children: 'Open'
+            })
           : null,
         jsx(CourseMenu, { row, supports, onArchive, onDelete })
       ]
@@ -2098,9 +2153,10 @@ function buildDeskModel({ library, outline, estimate }) {
 function DeskLabel({ children }) {
   return jsx('div', {
     style: {
-      fontSize: '0.65rem',
+      fontFamily: CB_SANS,
+      fontSize: '0.6875rem',
       fontWeight: 600,
-      letterSpacing: '0.1em',
+      letterSpacing: '0.14em',
       textTransform: 'uppercase',
       color: 'var(--cb-ink-soft)'
     },
@@ -2108,7 +2164,7 @@ function DeskLabel({ children }) {
   })
 }
 
-/** Deterministic initial stamp: a course cover, not a metric and not a saved note. */
+/** Deterministic initial stamp: kept as plain text for hosts that render no SVG. */
 function courseStampText(title) {
   const words = String(title || 'Coursebook')
     .trim()
@@ -2119,27 +2175,14 @@ function courseStampText(title) {
   return `${words[0][0]}${words[1][0]}`.toUpperCase()
 }
 
-function CourseStamp({ title, large }) {
-  const size = large ? '3.25rem' : '2rem'
+/** The course cover: the Atlas Lamp seal, deterministic per course, with the title adjacent. */
+function CourseStamp({ title, large, courseId, identity }) {
   return jsx('div', {
     'data-cb-course-stamp': '',
     title: title || 'Course',
     'aria-hidden': 'true',
-    style: {
-      flex: '0 0 auto',
-      width: size,
-      height: large ? '4.1rem' : '2.4rem',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      border: '1px solid var(--cb-rule)',
-      borderLeft: '3px solid var(--cb-accent)',
-      background: 'var(--cb-paper)',
-      color: 'var(--cb-ink)',
-      fontSize: large ? '1rem' : '0.7rem',
-      letterSpacing: '0.06em'
-    },
-    children: courseStampText(title)
+    style: { flex: '0 0 auto', display: 'flex', alignItems: 'center' },
+    children: jsx(SurveyMark, { courseId: courseId || title || 'Coursebook', identity, size: large ? 64 : 28 })
   })
 }
 
@@ -2236,10 +2279,11 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
       flexDirection: 'column',
       gap: '0.65rem',
       padding: compact ? '0.9rem 0.95rem' : '1.1rem 1.2rem 1.15rem',
-      background: 'var(--cb-paper-raised)',
-      border: '1px solid var(--cb-rule)',
-      borderTop: '3px solid var(--cb-accent)',
-      maxWidth: '100%'
+      background: 'var(--cb-lamp-soft)',
+      border: 'none',
+      borderTop: '3px solid var(--cb-lamp)',
+      maxWidth: '100%',
+      boxSizing: 'border-box'
     },
     children: [
       jsxs('div', {
@@ -2248,15 +2292,17 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
           jsxs('div', {
             style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0, flex: '1 1 16rem' },
             children: [
-              jsx(DeskLabel, { children: 'Continue' }),
+              jsx(DeskLabel, { children: desk.primaryKind === 'resolve_review_due' ? 'Review due' : desk.primaryKind === 'start_lesson' ? 'Start here' : 'Continue' }),
               courseTitle
                 ? jsx('div', {
                     'data-cb-desk-course': '',
                     style: {
-                      fontSize: '0.8rem',
+                      fontFamily: CB_SANS,
+                      fontSize: '0.75rem',
                       fontWeight: 600,
+                      letterSpacing: '0.02em',
                       lineHeight: 1.4,
-                      color: 'var(--cb-ink)',
+                      color: 'var(--cb-ink-soft)',
                       overflowWrap: 'break-word'
                     },
                     children: courseTitle
@@ -2266,10 +2312,13 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
                 'data-cb-continue-section': '',
                 style: {
                   margin: 0,
-                  fontSize: compact ? '1.35rem' : 'clamp(1.25rem, 1rem + 1vw, 1.95rem)',
-                  lineHeight: 1.18,
-                  letterSpacing: '-0.01em',
+                  fontFamily: CB_SERIF,
+                  fontSize: compact ? '1.35rem' : 'clamp(1.5rem, 1.2rem + 1.4vw, 2.2rem)',
+                  fontWeight: 600,
+                  lineHeight: 1.12,
+                  letterSpacing: '-0.015em',
                   color: 'var(--cb-ink)',
+                  maxWidth: '20ch',
                   overflowWrap: 'break-word'
                 },
                 children: title
@@ -2298,7 +2347,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
               jsx(DeskStats, { desk })
             ]
           }),
-          compact ? null : jsx(CourseStamp, { title: courseTitle || title, large: true })
+          compact ? null : jsx(CourseStamp, { title: courseTitle || title, large: true, courseId: desk.row ? desk.row.course_id : null })
         ]
       }),
       jsxs('p', {
@@ -2316,12 +2365,20 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
             variant: 'default',
             disabled: Boolean(busy) || !current,
             onClick: onPrimary,
+            style: {
+              background: busy || !current ? 'var(--cb-paper)' : 'var(--cb-lamp)',
+              color: busy || !current ? 'var(--cb-ink-soft)' : 'var(--cb-on-lamp)',
+              border: `1px solid ${busy || !current ? 'var(--cb-rule)' : 'var(--cb-on-lamp)'}`,
+              borderRadius: '2px',
+              minHeight: '36px'
+            },
             children: busy ? 'Opening' : desk.primaryLabel
           }),
           jsx(sdk.Button, {
             variant: 'secondary',
             disabled: !current,
             onClick: () => onOpenSection(current ? current.objective_id : null),
+            style: { border: '1px solid var(--cb-ink)', borderRadius: '2px', minHeight: '36px' },
             children: 'Open the section'
           })
         ]
@@ -2341,27 +2398,34 @@ function PathPreview({ desk, onOpenSection }) {
     'data-cb-path': '',
     style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '100%' },
     children: [
-      jsxs('div', {
-        style: {
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          gap: '0.25rem 0.75rem'
-        },
-        children: [
-          jsx(DeskLabel, { children: 'Path' }),
-          jsx('span', {
-            'data-cb-path-summary': '',
-            style: { fontSize: '0.76rem', color: 'var(--cb-ink-soft)' },
-            children: objectives.length
-              ? `Course evidence · ${desk.settled} of ${desk.total} sections have evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
-              : 'No path read yet'
-          })
-        ]
+      jsx(PlateHead, {
+        label: 'The route',
+        title: desk.row && desk.row.title ? desk.row.title : 'Your path',
+        caption: jsx('span', {
+          'data-cb-path-summary': '',
+          style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+          children: objectives.length
+            ? `Course evidence · ${desk.settled} of ${desk.total} sections have evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
+            : 'No path read yet'
+        })
+      }),
+      jsx(EvidenceTally, {
+        objectives: desk.objectives,
+        caption: objectives.length
+          ? `${desk.settled} of ${desk.total} sections with evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
+          : 'No evidence recorded yet'
       }),
       jsx('ol', {
-        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' },
+        'aria-label': 'Course route',
+        style: {
+          listStyle: 'none',
+          margin: 0,
+          padding: '0 0 0 0.75rem',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          borderLeft: '1px solid var(--cb-rule)'
+        },
         children: objectives.map((objective) => {
           const tone = DESK_STATE_TONE[objective.state] || 'quiet'
           const isCurrent = Boolean(desk.current && desk.current.objective_id === objective.objective_id)
@@ -2571,26 +2635,30 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.4rem',
-                    padding: '0.6rem 0.65rem',
-                    border: '1px solid var(--cb-rule)',
-                    background: 'var(--cb-paper-raised)',
+                    padding: '0.6rem 0.65rem 0.6rem 0',
+                    borderTop: '1px solid var(--cb-rule)',
+                    background: 'transparent',
                     minWidth: 0
                   },
                   children: [
                     jsxs('div', {
-                      style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.4rem' },
+                      style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' },
                       children: [
-                        jsx('div', {
-                          style: {
-                            minWidth: 0,
-                            fontSize: '0.82rem',
-                            lineHeight: 1.3,
-                            fontWeight: 600,
-                            overflowWrap: 'anywhere'
-                          },
-                          children: row.title
-                        }),
-                        jsx(CourseStamp, { title: row.title })
+                        jsxs('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '0.5rem', minWidth: 0 } , children: [
+                          jsx(CourseStamp, { title: row.title, courseId: row.course_id }),
+                          jsx('div', {
+                            style: {
+                              minWidth: 0,
+                              fontFamily: CB_SERIF,
+                              fontSize: '1rem',
+                              fontWeight: 600,
+                              lineHeight: 1.3,
+                              color: 'var(--cb-ink)',
+                              overflowWrap: 'anywhere'
+                            },
+                            children: row.title
+                          })
+                        ] })
                       ]
                     }),
                     jsx('div', {
@@ -3757,6 +3825,11 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
   return jsxs('div', {
     className: 'flex flex-col',
     children: [
+      jsx(PlateHead, {
+        label: 'Library',
+        title: 'Packs on this profile',
+        caption: jsx('span', { children: LIBRARY_COPY.lead })
+      }),
       // Two import paths, side by side and named plainly. A syllabus is not a pack, so it is
       // never nested behind the pack flow.
       jsx(SyllabusEntry, { onStartSyllabus, onStartImport }),
@@ -3768,7 +3841,7 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
             children: [
               jsx('div', {
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
-                children: LIBRARY_COPY.lead
+                children: stale ? 'Reconnecting. Showing the last packs that were read.' : ''
               }),
               jsx(sdk.SegmentedControl, {
                 onChange: setView,
@@ -7790,7 +7863,7 @@ function sectionRows({ row, review, notebooks, outline, page }) {
 }
 
 /**
- * ── Ink & Field Notes: the scoped Coursebook token layer ────────────────────────────────────
+ * ── Atlas Lamp: the scoped Coursebook token layer ───────────────────────────────────────────
  *
  * The Desktop SDK has no per-route theme seam: `THEMES_AREA` registers an app-wide theme, and a
  * runtime plugin may import only `@hermes/plugin-sdk`, `react` and `react/jsx-runtime`, so a
@@ -7800,12 +7873,17 @@ function sectionRows({ row, review, notebooks, outline, page }) {
  * untouched, and the host's own `--ui-*` tokens still supply anything outside this layer.
  *
  * The table is one embedded JSON literal so `tests/test_desktop_tokens.py` can read the shipped
- * module, compare it byte-for-byte with `contracts/cb.tokens.v1.json`, and compute WCAG contrast
+ * module, compare it byte-for-byte with `contracts/cb.tokens.v2.json`, and compute WCAG contrast
  * on the values that actually ship. `CB_TOKENS_JSON` is the ONLY colour literal in this file: the
  * test refuses any hex outside it.
+ *
+ * Colour has three jobs and never four (docs/COURSEBOOK-VISUAL-IDENTITY-V2.md §2.3): identity
+ * (`lamp`, `plum`), mode (`accent` Textbook, `field` Guided, `ochre` Field Quest) and state
+ * (evidence/due/attention/not started). `lamp` is a fill and never text on `paper`; `coral` is
+ * attention only and never a mode hue.
  */
 const CB_TOKENS_JSON =
-  '{"light":{"paper":"#f7f3ea","paper-raised":"#fffdf7","ink":"#191713","ink-soft":"#5a5347","rule":"#d9d1c2","accent":"#2f4a8a","accent-soft":"#e4e9f4","field":"#3f5c33","ochre":"#7a4e0d","coral":"#9e2f1d"},"dark":{"paper":"#141312","paper-raised":"#1e1c19","ink":"#f2ece0","ink-soft":"#b5aa97","rule":"#3b372f","accent":"#9db5ee","accent-soft":"#232b3c","field":"#9cba87","ochre":"#d7a94e","coral":"#e38a76"}}'
+  '{"light":{"paper":"#f7f1e4","paper-raised":"#fffcf3","ink":"#1a1713","ink-soft":"#5c5347","rule":"#d7cbb4","accent":"#2c4a8c","accent-soft":"#e2e8f7","field":"#2f6047","ochre":"#7b4b0a","coral":"#9c2e1c","lamp":"#e8a93a","lamp-soft":"#fbebcb","on-lamp":"#1a1713","plum":"#6a3e74","plum-soft":"#f0e6f3"},"dark":{"paper":"#131210","paper-raised":"#1d1b16","ink":"#f5efe1","ink-soft":"#b9ae9a","rule":"#3d382d","accent":"#a8c0f2","accent-soft":"#222a3b","field":"#9fc69a","ochre":"#e0b25c","coral":"#ea9480","lamp":"#efc06b","lamp-soft":"#33290f","on-lamp":"#131210","plum":"#cda0d8","plum-soft":"#2e2434"}}'
 
 const CB_TOKENS = JSON.parse(CB_TOKENS_JSON)
 const CB_TOKEN_NAMES = Object.freeze([
@@ -7818,14 +7896,25 @@ const CB_TOKEN_NAMES = Object.freeze([
   'accent-soft',
   'field',
   'ochre',
-  'coral'
+  'coral',
+  'lamp',
+  'lamp-soft',
+  'on-lamp',
+  'plum',
+  'plum-soft'
 ])
 
-/** The rail collapses before the reading measure does. 1024px is the app's own rail breakpoint. */
-const CB_WIDE_BREAKPOINT = 1024
+/** The host cannot ship a font file, so the voices are OS-resident stacks only. */
+const CB_SERIF = 'ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif'
+const CB_SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif'
+
+/** Four named ranges, measured from the route, never from a media query. */
+const CB_WIDE_BREAKPOINT = 1050
+const CB_MID_BREAKPOINT = 900
+const CB_NARROW_BREAKPOINT = 460
 /** A comfortable reading measure (62-72 characters) for the lesson column. */
-const CB_MEASURE = '68ch'
-const CB_RAIL_WIDTH = '19rem'
+const CB_MEASURE = '66ch'
+const CB_RAIL_WIDTH = '20rem'
 
 /** Painted light/dark, from the SDK's own theme context. Never inferred from a colour value. */
 function cbModeFromTheme(theme) {
@@ -7956,9 +8045,378 @@ function useCbViewportWidth() {
   return containerWidth || read()
 }
 
-/** Pure so the layout decision is testable without a window: wide only when the width is known. */
+/** Pure so the layout decision is testable without a window: the route decides, not the app. */
 function cbLayoutFor(width) {
-  return typeof width === 'number' && width >= CB_WIDE_BREAKPOINT ? 'wide' : 'stacked'
+  if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0) return 'phone'
+  if (width >= CB_WIDE_BREAKPOINT) return 'wide'
+  if (width >= CB_MID_BREAKPOINT) return 'mid'
+  if (width >= CB_NARROW_BREAKPOINT) return 'narrow'
+  return 'phone'
+}
+
+/** The rail sits beside the reading column only at `wide`; every other range stacks it after. */
+function cbIsWide(layout) {
+  return layout === 'wide'
+}
+
+/* ── Atlas Lamp primitives ─────────────────────────────────────────────────────────────────
+ * The recurring motifs of the identity, built from tokens only: the course seal, the plate head,
+ * the route spine, the evidence tally and the hero field. No primitive names a colour directly,
+ * so the scoped layer is still the only place a palette value exists.
+ */
+
+/** Deterministic character sum, so one course keeps one seal station across sessions. */
+function cbSealStation(courseId) {
+  const text = String(courseId || '')
+  let sum = 0
+  for (let index = 0; index < text.length; index += 1) sum += text.charCodeAt(index)
+  return sum % 4
+}
+
+/**
+ * The course seal: a surveyed square, an identity arc, meridians and one station mark. It is
+ * decorative (`aria-hidden`); the course title is always adjacent as text.
+ */
+function SurveyMark({ courseId, identity, size }) {
+  const station = cbSealStation(courseId)
+  const hue = identity === 'plum' ? 'var(--cb-plum)' : 'var(--cb-accent)'
+  const points = [
+    [26, 26],
+    [70, 26],
+    [26, 70],
+    [70, 70]
+  ]
+  const [cx, cy] = points[station]
+  const ticks = [
+    ['M4 18 H4 V4 H18', 'tl'],
+    ['M78 4 H92 V18', 'tr'],
+    ['M92 78 V92 H78', 'br'],
+    ['M18 92 H4 V78', 'bl']
+  ]
+  const tick = station <= 1 ? ticks[3] : ticks[0]
+  return jsxs('svg', {
+    'data-cb-seal': String(station),
+    'data-cb-seal-identity': identity === 'plum' ? 'plum' : 'accent',
+    viewBox: '0 0 96 96',
+    width: size || 96,
+    height: size || 96,
+    'aria-hidden': 'true',
+    focusable: 'false',
+    style: { display: 'block', flex: '0 0 auto' },
+    children: [
+      jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1.6, key: 'frame' }),
+      jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: hue, strokeWidth: 7, key: 'arc' }),
+      jsx('path', { d: 'M4 36.5 H92', stroke: 'var(--cb-rule)', strokeWidth: 1, key: 'meridian-h' }),
+      jsx('path', { d: 'M59.5 4 V92', stroke: 'var(--cb-rule)', strokeWidth: 1, key: 'meridian-v' }),
+      jsx('circle', { cx, cy, r: 13, fill: 'none', stroke: hue, strokeWidth: 1.6, key: 'ring' }),
+      jsx('circle', { cx, cy, r: 7, fill: hue, key: 'station' }),
+      jsx('path', { d: tick[0], fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1, key: 'tick' })
+    ]
+  })
+}
+
+/** One plate head: a display title, an optional label and one honest caption. */
+function PlateHead({ id, label, title, caption, actions, level }) {
+  const heading = level === 3 ? 'h3' : 'h2'
+  return jsxs('div', {
+    'data-cb-plate-head': '',
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      gap: '0.5rem 1rem',
+      paddingBottom: '0.5rem',
+      borderBottom: '1px solid var(--cb-rule)'
+    },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+        children: [
+          label
+            ? jsx('div', {
+                style: {
+                  fontFamily: CB_SANS,
+                  fontSize: '0.6875rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--cb-ink-soft)'
+                },
+                children: label
+              })
+            : null,
+          jsx(heading, {
+            id,
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: '1.375rem',
+              fontWeight: 600,
+              lineHeight: 1.2,
+              letterSpacing: '-0.01em',
+              color: 'var(--cb-ink)',
+              maxWidth: '34ch'
+            },
+            children: title
+          }),
+          caption
+            ? jsx('p', {
+                style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                children: caption
+              })
+            : null
+        ]
+      }),
+      actions ? jsx('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }, children: actions }) : null
+    ]
+  })
+}
+
+/** Five states, five shapes: the spine is never the only carrier of the state word. */
+function cbSpineTone(state) {
+  if (state === 'independent_evidence' || state === 'delayed_evidence') return 'done'
+  if (state === 'review_due' || state === 'overridden') return 'due'
+  if (state === 'needs_review') return 'attention'
+  if (state === 'introduced') return 'active'
+  return 'quiet'
+}
+
+function cbSpineNodeStyle(tone, isCurrent, phone) {
+  const size = phone ? '1.5rem' : '1.75rem'
+  const base = {
+    flex: `0 0 ${size}`,
+    width: size,
+    height: size,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: CB_SANS,
+    fontVariantNumeric: 'tabular-nums',
+    fontSize: phone ? '0.625rem' : '0.7rem',
+    fontWeight: 600,
+    lineHeight: 1,
+    boxSizing: 'border-box'
+  }
+  if (tone === 'done') return { ...base, background: 'var(--cb-field)', color: 'var(--cb-paper)', border: 'none' }
+  if (tone === 'due') return { ...base, background: 'var(--cb-paper)', color: 'var(--cb-ochre)', border: '2px solid var(--cb-ochre)' }
+  if (tone === 'attention') return { ...base, background: 'var(--cb-paper)', color: 'var(--cb-coral)', border: '2px solid var(--cb-coral)' }
+  if (tone === 'active') return { ...base, background: 'var(--cb-accent-soft)', color: 'var(--cb-accent)', border: '2px solid var(--cb-accent)' }
+  return { ...base, background: 'var(--cb-paper)', color: 'var(--cb-ink-soft)', border: '1.5px solid var(--cb-rule)' }
+}
+
+/** The route: a surveyed spine with numbered nodes and a state word beside every node. */
+function RouteSpine({ objectives, currentId, onSelect, phone, ariaLabel }) {
+  const rows = objectives || []
+  const nodeSize = phone ? '1.5rem' : '1.75rem'
+  const left = phone ? '0.6875rem' : '0.8125rem'
+  return jsx('ol', {
+    'aria-label': ariaLabel || 'Course route',
+    style: {
+      listStyle: 'none',
+      margin: 0,
+      padding: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative'
+    },
+    children: rows.map((objective) => {
+      const tone = cbSpineTone(objective.state)
+      const isCurrent = Boolean(currentId && objective.objective_id === currentId)
+      const word = DESK_STATE_WORD[objective.state] || 'Not started'
+      return jsx(
+        'li',
+        {
+          key: objective.objective_id,
+          style: { position: 'relative', display: 'flex', flexDirection: 'column' },
+          children: jsx(sdk.Button, {
+            variant: 'text',
+            className: 'w-full justify-start',
+            'aria-current': isCurrent ? 'step' : undefined,
+            onClick: onSelect ? () => onSelect(objective.objective_id) : undefined,
+            children: jsxs('span', {
+              'data-cb-path-item': objective.objective_id,
+              'data-cb-path-state': objective.state,
+              'data-cb-path-current': isCurrent ? 'true' : 'false',
+              style: {
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                width: '100%',
+                padding: isCurrent ? '0.55rem 0.4rem 0.55rem 0.1rem' : '0.45rem 0.1rem',
+                margin: isCurrent ? '0 -0.4rem 0 -0.4rem' : 0,
+                boxSizing: 'border-box',
+                textAlign: 'left',
+                color: 'var(--cb-ink)',
+                fontFamily: CB_SANS,
+                fontSize: '0.875rem',
+                borderTop: '1px solid var(--cb-rule)',
+                background: isCurrent ? 'var(--cb-accent-soft)' : 'transparent',
+                borderLeft: isCurrent ? '2px solid var(--cb-accent)' : '2px solid transparent'
+              },
+              children: [
+                jsx('span', {
+                  'aria-hidden': 'true',
+                  style: {
+                    position: 'absolute',
+                    left: left,
+                    top: 0,
+                    bottom: 0,
+                    width: '1px',
+                    background: 'var(--cb-rule)'
+                  },
+                  key: 'line'
+                }),
+                jsx('span', {
+                  style: cbSpineNodeStyle(tone, isCurrent, phone),
+                  children: String(objective.ordinal).padStart(2, '0')
+                }),
+                jsx('span', {
+                  style: {
+                    flex: '1 1 8rem',
+                    minWidth: 0,
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'normal',
+                    fontFamily: CB_SERIF,
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    lineHeight: 1.3
+                  },
+                  children: objective.title
+                }),
+                jsx('span', {
+                  style: {
+                    flex: '0 0 auto',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    fontFamily: CB_SANS,
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    color: deskToneColor(tone),
+                    border: `1px solid ${deskToneColor(tone)}`,
+                    borderRadius: '999px',
+                    padding: '0.1rem 0.5rem',
+                    whiteSpace: 'nowrap'
+                  },
+                  children: word
+                })
+              ]
+            })
+          })
+        },
+        objective.objective_id
+      )
+    })
+  })
+}
+
+/** The honest record: one tick per objective, never a bar, a ring or a percentage. */
+function EvidenceTally({ objectives, caption, phone }) {
+  const rows = (objectives || []).slice(0, 12)
+  return jsxs('div', {
+    'data-cb-tally': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem' },
+    children: [
+      rows.length
+        ? jsx('div', {
+            'aria-hidden': 'true',
+            style: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
+            children: rows.map((objective, index) => {
+              const tone = cbSpineTone(objective.state)
+              const paint =
+                tone === 'done'
+                  ? 'var(--cb-field)'
+                  : tone === 'due'
+                    ? 'var(--cb-ochre)'
+                    : tone === 'attention'
+                      ? 'var(--cb-coral)'
+                      : tone === 'active'
+                        ? 'var(--cb-accent)'
+                        : 'var(--cb-rule)'
+              return jsx('span', {
+                style: { width: phone ? '18px' : '22px', height: '6px', borderRadius: 0, background: paint },
+                key: `${objective.objective_id}-${index}`
+              })
+            })
+          })
+        : null,
+      jsx('p', {
+        'data-cb-tally-caption': '',
+        style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+        children: caption
+      })
+    ]
+  })
+}
+
+/** The lit page: one flat field of light behind the thing that matters now. */
+function HeroField({ identity, children, phone }) {
+  const parent = identity === 'plum'
+  return jsx('section', {
+    'data-cb-hero': parent ? 'plum' : 'lamp',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.65rem',
+      padding: phone ? '0.9rem 0.95rem' : '1.1rem 1.2rem 1.15rem',
+      background: parent ? 'var(--cb-plum-soft)' : 'var(--cb-lamp-soft)',
+      borderTop: `3px solid ${parent ? 'var(--cb-plum)' : 'var(--cb-lamp)'}`,
+      maxWidth: '100%',
+      boxSizing: 'border-box'
+    },
+    children
+  })
+}
+
+/** The blank plate: a dashed rectangle and a seal ghost, never an illustration. */
+function BlankPlate({ title, caption, action, tertiary }) {
+  return jsxs('div', {
+    'data-cb-blank-plate': '',
+    style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.85rem', padding: '1.5rem 1rem', textAlign: 'center' },
+    children: [
+      jsx('div', {
+        'aria-hidden': 'true',
+        style: {
+          width: '100%',
+          maxWidth: '240px',
+          height: '120px',
+          border: '1px dashed var(--cb-rule)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        },
+        children: jsx('svg', {
+          viewBox: '0 0 96 96',
+          width: 40,
+          height: 40,
+          'aria-hidden': 'true',
+          children: [
+            jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-rule)', strokeWidth: 1.6, key: 'f' }),
+            jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: 'var(--cb-rule)', strokeWidth: 7, key: 'a' })
+          ]
+        })
+      }),
+      jsx('h3', {
+        style: { margin: 0, fontFamily: CB_SERIF, fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)', maxWidth: '28ch' },
+        children: title
+      }),
+      caption
+        ? jsx('p', { style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '48ch' }, children: caption })
+        : null,
+      action || null,
+      tertiary || null
+    ]
+  })
+}
+
+/** A mode hue is a 3px dot plus the mode word, never a coloured block. */
+function ModeDot({ mode }) {
+  const paint = mode === 'guided' ? 'var(--cb-field)' : mode === 'field_quest' ? 'var(--cb-ochre)' : 'var(--cb-accent)'
+  return jsx('span', {
+    'aria-hidden': 'true',
+    style: { display: 'inline-block', width: '3px', height: '3px', minWidth: '3px', borderRadius: '50%', background: paint, verticalAlign: 'middle' }
+  })
 }
 
 function CbRailSection({ label, children }) {
@@ -8055,9 +8513,9 @@ function FieldRail({ next, facts, sources, notes }) {
 function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, children }) {
   const width = useCbViewportWidth()
   const layout = cbLayoutFor(width)
-  const wide = layout === 'wide'
+  const wide = cbIsWide(layout)
   return jsxs('div', {
-    'data-cb-workspace-shell': layout,
+    'data-cb-workspace-shell': wide ? 'wide' : 'stacked',
     style: { display: 'flex', flexDirection: 'column', gap: '0.85rem', minHeight: 0 },
     children: [
       jsxs('header', {
@@ -8078,9 +8536,10 @@ function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, childre
               eyebrow
                 ? jsx('div', {
                     style: {
-                      fontSize: '0.65rem',
+                      fontFamily: CB_SANS,
+                      fontSize: '0.6875rem',
                       fontWeight: 600,
-                      letterSpacing: '0.1em',
+                      letterSpacing: '0.14em',
                       textTransform: 'uppercase',
                       color: 'var(--cb-ink-soft)'
                     },
@@ -8091,15 +8550,17 @@ function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, childre
                 'data-cb-workspace-title': '',
                 style: {
                   margin: 0,
+                  fontFamily: CB_SERIF,
                   fontSize: 'clamp(1.45rem, 1.1rem + 1.2vw, 2rem)',
+                  fontWeight: 600,
                   lineHeight: 1.15,
-                  letterSpacing: '-0.01em',
+                  letterSpacing: '-0.015em',
                   color: 'var(--cb-ink)'
                 },
                 children: title
               }),
               subtitle
-                ? jsx('div', { style: { fontSize: '0.85rem', color: 'var(--cb-ink-soft)' }, children: subtitle })
+                ? jsx('div', { style: { fontFamily: CB_SANS, fontSize: '0.875rem', color: 'var(--cb-ink-soft)' }, children: subtitle })
                 : null
             ]
           }),
@@ -13324,14 +13785,22 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
   }
 
   return jsxs('div', {
-    className: 'flex flex-col',
+    'data-cb-studio-landing': '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      padding: '1rem 1rem 1.1rem',
+      background: 'var(--cb-plum-soft)',
+      borderTop: '3px solid var(--cb-plum)',
+      boxSizing: 'border-box'
+    },
     children: [
-      jsx('div', { className: 'pb-1 text-xs text-(--ui-text-secondary)', children: 'Lesson plans you prepared for your child' }),
-      jsx('p', {
-        className: 'max-w-prose pb-2 text-xs leading-relaxed text-(--ui-text-secondary)',
-        children:
-          'Two plans can describe the same lesson and still be different plans: each brief you write is kept as its own plan, ' +
-          'so you can keep one per child, compare two versions, or start again without losing the first.'
+      jsx(PlateHead, {
+        label: 'Parent Studio',
+        title: 'Plans for your child',
+        caption: 'Each brief you write is kept as its own plan, so you can compare versions without losing the first.',
+        actions: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'New lesson plan' })
       }),
       ...rows.map((row) =>
         jsx(
@@ -15400,6 +15869,11 @@ function CoursebookPage() {
   const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
   const canSyllabus = Boolean(implemented && implemented.has('syllabus.intake.create'))
   const canAuthor = Boolean(implemented && implemented.has('parent.brief.create'))
+  // `4vw` measures the window, not the route: with a chat and the explorer open the route is
+  // ~400px wide but the window is ~1050, so the old padding took 84px of a 407px column. The
+  // route's own measured width picks a gutter that leaves the reading/work column room.
+  const measuredRoute = useCbViewportWidth()
+  const routePad = measuredRoute > 0 && measuredRoute < 760 ? '0.7rem' : 'clamp(1.25rem, 4vw, 4rem)'
 
   let body
   if (health.status === 'loading' && !health.result) {
