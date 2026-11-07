@@ -1,3 +1,5 @@
+# python3 -m unittest tests.test_harness_e2e -v
+# H-46b packet on base cd818fa (wt/h46-truncation) + H-45 merge, 2026-11-07T08:29:36-07:00
 test_approval_is_fail_closed_and_happens_after_validation (tests.test_harness_e2e.HarnessEndToEndTest.test_approval_is_fail_closed_and_happens_after_validation) ... ok
 test_every_scenario_passes_its_own_assertions (tests.test_harness_e2e.HarnessEndToEndTest.test_every_scenario_passes_its_own_assertions) ... ok
 test_every_scenario_was_generated_from_a_non_japanese_goal (tests.test_harness_e2e.HarnessEndToEndTest.test_every_scenario_was_generated_from_a_non_japanese_goal) ... ok
@@ -10,8 +12,26 @@ test_the_run_is_labelled_as_a_recorded_transcript (tests.test_harness_e2e.Harnes
 test_the_served_lesson_never_announces_the_answer_key (tests.test_harness_e2e.HarnessEndToEndTest.test_the_served_lesson_never_announces_the_answer_key) ... ok
 test_the_three_scopes_are_the_ones_the_card_named (tests.test_harness_e2e.HarnessEndToEndTest.test_the_three_scopes_are_the_ones_the_card_named) ... ok
 test_units_are_user_enqueued_not_executor_chained (tests.test_harness_e2e.HarnessEndToEndTest.test_units_are_user_enqueued_not_executor_chained) ... ok
+test_a_changed_evidence_file_reads_stale (tests.test_harness_e2e.PacketManifestTest.test_a_changed_evidence_file_reads_stale) ... ok
+test_a_changed_transcript_reads_stale (tests.test_harness_e2e.PacketManifestTest.test_a_changed_transcript_reads_stale) ... ok
+test_fresh_evidence_reproduces_the_committed_bytes (tests.test_harness_e2e.PacketManifestTest.test_fresh_evidence_reproduces_the_committed_bytes) ... ok
+test_the_committed_packet_verifies_clean (tests.test_harness_e2e.PacketManifestTest.test_the_committed_packet_verifies_clean) ... ok
+test_the_manifest_covers_every_evidence_file_and_input (tests.test_harness_e2e.PacketManifestTest.test_the_manifest_covers_every_evidence_file_and_input) ... ok
+test_a_padded_single_plan_fails_the_assertion (tests.test_harness_e2e.ScopeBoundsContractTest.test_a_padded_single_plan_fails_the_assertion)
+The other historical defect: one-off padded to four objectives (D1's shape). ... ok
+test_an_out_of_band_full_plan_fails_the_assertion (tests.test_harness_e2e.ScopeBoundsContractTest.test_an_out_of_band_full_plan_fails_the_assertion)
+The historical D6 shape defect: a six-objective plan labelled `full`. ... ok
+test_the_contract_schema_and_expectations_agree (tests.test_harness_e2e.ScopeBoundsContractTest.test_the_contract_schema_and_expectations_agree) ... ok
+test_the_declared_ceiling_passes_and_one_past_it_does_not (tests.test_harness_e2e.ScopeBoundsContractTest.test_the_declared_ceiling_passes_and_one_past_it_does_not) ... ok
+test_the_three_committed_plans_match_the_declared_bounds (tests.test_harness_e2e.ScopeBoundsContractTest.test_the_three_committed_plans_match_the_declared_bounds) ... ok
+test_a_multi_sentence_body_keeps_its_first_complete_sentence (tests.test_harness_e2e.ShortCompletenessTest.test_a_multi_sentence_body_keeps_its_first_complete_sentence) ... ok
+test_every_authored_short_is_a_complete_sentence (tests.test_harness_e2e.ShortCompletenessTest.test_every_authored_short_is_a_complete_sentence) ... ok
+test_every_lesson_carries_an_authored_short (tests.test_harness_e2e.ShortCompletenessTest.test_every_lesson_carries_an_authored_short) ... ok
+test_the_fallback_synthesiser_is_still_gate_clean (tests.test_harness_e2e.ShortCompletenessTest.test_the_fallback_synthesiser_is_still_gate_clean)
+``_shorten`` remains a fallback; any text it compresses must still be admissible. ... ok
+test_the_recorded_d8_clip_is_no_longer_synthesised (tests.test_harness_e2e.ShortCompletenessTest.test_the_recorded_d8_clip_is_no_longer_synthesised) ... ok
 
 ----------------------------------------------------------------------
-Ran 11 tests in 3.994s
+Ran 26 tests in 5.163s
 
 OK

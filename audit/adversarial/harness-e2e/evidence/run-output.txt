@@ -1,4 +1,4 @@
-H-40 arbitrary-topic evidence packet — base c588e4a (blueprint v2)
+H-40 arbitrary-topic evidence packet — H-46b re-run on cd818fa (blueprint v2)
 model: RECORDED TRANSCRIPT (recorded-transcript-h40) / validator RECORDED (recorded-validator-h40)
 provider calls: 0, provider spend: $0.00, network: none
 
@@ -16,13 +16,15 @@ bicycle_single: PASS  scope=single units=1 objectives=1 checks=1 lessons=1 valid
   PASS  outline_projects_prerequisite_state
   PASS  units_user_enqueued_not_chained
   PASS  no_answer_key_in_served_lesson
+  PASS  scope_matches_documented_bounds
+  PASS  scope_contract_is_coherent
   PASS  exactly_one_unit
   PASS  exactly_one_objective
   PASS  exactly_one_check
   PASS  the_check_is_verification
   PASS  no_quiz_lane_present
   PASS  verification_is_graded_as_self_reported
-  grading[correct]: {"attempt_id": "att_65146774170542e2b25c9c82bb9f4320", "verdict": "pass", "evidence_class": "self_reported", "criteria": [{"id": "item_1", "observed": "Deflated the tyre and released the brake", "met": true}, {"id": "item_2", "observed": "Refitted the wheel without forcing the bead", "met": true}, {"id": "item_3", "observed": "Checked the brakes by hand before riding", "met": true}], "next_action": "review_objective", "revision": 2}
+  grading[correct]: {"attempt_id": "att_00000000000000000000000000000027", "verdict": "pass", "evidence_class": "self_reported", "criteria": [{"id": "item_1", "observed": "Deflated the tyre and released the brake", "met": true}, {"id": "item_2", "observed": "Refitted the wheel without forcing the bead", "met": true}, {"id": "item_3", "observed": "Checked the brakes by hand before riding", "met": true}], "next_action": "review_objective", "revision": 2}
 
 music_short: PASS  scope=short units=2 objectives=4 checks=4 lessons=4 validation=independently_validated
   PASS  no_japanese_content_in_plan
@@ -38,13 +40,15 @@ music_short: PASS  scope=short units=2 objectives=4 checks=4 lessons=4 validatio
   PASS  outline_projects_prerequisite_state
   PASS  units_user_enqueued_not_chained
   PASS  no_answer_key_in_served_lesson
+  PASS  scope_matches_documented_bounds
+  PASS  scope_contract_is_coherent
   PASS  two_units
   PASS  four_objectives
   PASS  every_check_is_an_exact_lane_quiz
   PASS  correct_answer_passes
   PASS  wrong_answer_is_not_yet
-  grading[correct]: {"attempt_id": "att_916897dd67464878bbd53ef7efc0b264", "verdict": "pass", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "matches an accepted answer", "met": true}], "next_action": "complete_objective", "revision": 2}
-  grading[wrong]: {"attempt_id": "att_06aee1fdc7d04ce48a4ec857c8bf25c2", "verdict": "not_yet", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "does not match an accepted answer", "met": false}], "next_action": "retry_attempt", "revision": 3}
+  grading[correct]: {"attempt_id": "att_00000000000000000000000000000044", "verdict": "pass", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "matches an accepted answer", "met": true}], "next_action": "complete_objective", "revision": 2}
+  grading[wrong]: {"attempt_id": "att_0000000000000000000000000000004a", "verdict": "not_yet", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "does not match an accepted answer", "met": false}], "next_action": "retry_attempt", "revision": 3}
 
 soldering_full: PASS  scope=full units=6 objectives=12 checks=12 lessons=12 validation=independently_validated
   PASS  no_japanese_content_in_plan
@@ -60,6 +64,8 @@ soldering_full: PASS  scope=full units=6 objectives=12 checks=12 lessons=12 vali
   PASS  outline_projects_prerequisite_state
   PASS  units_user_enqueued_not_chained
   PASS  no_answer_key_in_served_lesson
+  PASS  scope_matches_documented_bounds
+  PASS  scope_contract_is_coherent
   PASS  multi_unit_course
   PASS  prerequisite_edges_declared
   PASS  graded_checks_present
@@ -68,10 +74,11 @@ soldering_full: PASS  scope=full units=6 objectives=12 checks=12 lessons=12 vali
   PASS  plan_ceiling_probe_ran
   PASS  plan_at_declared_bound_accepted
   PASS  plan_over_declared_bound_rejected
-  grading[correct]: {"attempt_id": "att_b565248c46e4499aae50a0b81fcb86ab", "verdict": "pass", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "matches an accepted answer", "met": true}], "next_action": "complete_objective", "revision": 2}
-  grading[wrong]: {"attempt_id": "att_96bd4239eca94e108a03d353a6a9e94b", "verdict": "not_yet", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "does not match an accepted answer", "met": false}], "next_action": "retry_attempt", "revision": 3}
+  grading[correct]: {"attempt_id": "att_0000000000000000000000000000009c", "verdict": "pass", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "matches an accepted answer", "met": true}], "next_action": "complete_objective", "revision": 2}
+  grading[wrong]: {"attempt_id": "att_000000000000000000000000000000a2", "verdict": "not_yet", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "does not match an accepted answer", "met": false}], "next_action": "retry_attempt", "revision": 3}
   ceiling at bound {'units': 12, 'objectives': 40}: {"label": "at_bound", "units": 12, "objectives": 40, "status": "draft", "validation_verdict": "pass", "plan_units": 12, "plan_objectives": 40, "validation": {"outcome": "independently_validated", "verdict": "pass", "independence": "independent", "independent": true, "generator": {"provider": "recorded", "model": "recorded-transcript-h40", "known": true}, "validator": {"provider": "recorded", "model": "recorded-validator-h40", "known": true}, "facts_unverified": false, "research_status": "ok", "waived_unknown": [], "warning": null, "cost_usd": 0.0, "cost": {"calls": 1, "cost_usd": 0.0, "unknown_cost": false}}, "warnings": [], "accepted": true}
   ceiling over bound: {"label": "over_bound", "units": 12, "objectives": 41, "raised": "GenerationRejected", "message": "plan violates its schema at check_plan: [{'objective_ref': 1, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 2, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 3, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 4, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 5, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 6, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 7, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 8, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 9, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 10, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 11, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 12, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 13, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 14, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 15, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 16, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 17, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 18, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 19, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 20, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 21, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 22, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 23, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 24, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 25, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 26, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 27, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 28, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 29, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 30, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 31, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 32, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 33, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 34, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 35, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 36, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 37, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 38, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 39, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 40, 'kind': 'quiz', 'evidence_target': 'comprehension'}, {'objective_ref': 41, 'kind': 'quiz', 'evidence_target': 'comprehension'}] is too long", "rejected": true}
 
-partial_unit_batch (H-30b D1): unit state=needs_review persisted_sections=1 lesson_refusal=GenerationRejected page_state=not_started check_id=None
+partial_unit_batch (H-42 transactional unit stage; H-30b D1): unit state=refused unit_refusal=GenerationRejected persisted_sections=0 lesson_refusal=GenerationRejected page_state=not_started check_id=None
 overall: PASS  (3/3 scenarios)
+packet: 8 evidence file(s) content-addressed in manifest.json; 3 transcript input(s)

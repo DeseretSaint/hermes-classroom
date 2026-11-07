@@ -7,15 +7,18 @@
       ],
       "check_prompt": "Why add fresh solder before desoldering?",
       "criterion": "Fresh solder and alternating heat keep the part and the pads alive.",
+      "criterion_short": "Fresh solder and alternating heat keep the pads alive.",
       "example_steps": [
         "Add fresh solder",
         "Alternate the heat",
         "Pull gently"
       ],
       "explanation": "Old solder has lost its flux, so adding fresh solder is what makes removal quick.",
+      "explanation_short": "Old solder has lost its flux.",
       "intent": "Teach desoldering a part.",
       "items": null,
       "practice": "Add fresh solder to each joint, alternate heat between the leads, and pull gently once both are molten.",
+      "practice_short": "Add fresh solder to each joint and alternate heat between the leads.",
       "reference_answer": "to restore the flux"
     },
     "Form a lead so the part seats flush": {
@@ -24,15 +27,18 @@
       ],
       "check_prompt": "Which side of the board should the bent lead sit on?",
       "criterion": "The body sits flat with the lead bent between the body and the pad.",
+      "criterion_short": "The body sits flat with the lead bent.",
       "example_steps": [
         "Measure the board",
         "Bend with pliers",
         "Drop the part"
       ],
       "explanation": "A part that stands off the board strains its joints every time the board flexes.",
+      "explanation_short": "A part that stands off the board strains its joints.",
       "intent": "Teach lead forming.",
       "items": null,
       "practice": "Bend the lead with pliers at the board thickness and let the part drop flush without pushing it.",
+      "practice_short": "Bend the lead with pliers at the board thickness.",
       "reference_answer": "the solder side"
     },
     "Heat the pad and lead together before feeding solder": {
@@ -41,15 +47,18 @@
       ],
       "check_prompt": "Where does the solder go?",
       "criterion": "The joint reaches temperature first; solder follows the heat.",
+      "criterion_short": "The joint reaches temperature first.",
       "example_steps": [
         "Touch pad and lead",
         "Wait for heat",
         "Feed into the joint"
       ],
       "explanation": "Solder fed onto the tip makes a cold joint that looks finished and fails later.",
+      "explanation_short": "Solder fed onto the tip makes a cold joint.",
       "intent": "Teach the heat order.",
       "items": null,
       "practice": "Touch the tip to the pad and the lead at once, count two seconds, then feed solder into the joint, not the tip.",
+      "practice_short": "Touch the tip to the pad and the lead at once.",
       "reference_answer": "into the heated joint"
     },
     "Insert a part in the right orientation": {
@@ -58,15 +67,18 @@
       ],
       "check_prompt": "Which feature decides the part's orientation?",
       "criterion": "The part's marking and the board's marking face the same way.",
+      "criterion_short": "Both markings face the same way.",
       "example_steps": [
         "Read the part",
         "Read the board",
         "Align them"
       ],
       "explanation": "Orientation errors survive soldering and only show up when the circuit does not work.",
+      "explanation_short": "Orientation errors survive soldering.",
       "intent": "Teach polarity against the board marking.",
       "items": null,
       "practice": "Find the marking on the part and match it to the board's own marking before you bend anything.",
+      "practice_short": "Find the marking on the part and match it to the board's own marking.",
       "reference_answer": "the stripe on the part"
     },
     "Inspect a finished joint against the fillet criterion": {
@@ -76,15 +88,18 @@
       ],
       "check_prompt": "Which joint needs rework?",
       "criterion": "A sound joint is shiny, concave and covers the pad without a ball.",
+      "criterion_short": "A sound joint is shiny, concave and covers the pad.",
       "example_steps": [
         "Pick a joint",
         "Compare to the criterion",
         "Mark rework"
       ],
       "explanation": "Applying one criterion to many joints is the skill; the criterion itself does not change.",
+      "explanation_short": "Applying one criterion to many joints is the skill.",
       "intent": "Apply the criterion to a real joint.",
       "items": null,
       "practice": "Judge each joint on the board against the fillet criterion and mark the ones that need rework.",
+      "practice_short": "Judge each joint on the board against the fillet criterion.",
       "reference_answer": "the balled joint"
     },
     "Inspect a pad for lift before inserting a part": {
@@ -94,15 +109,18 @@
       ],
       "check_prompt": "What does a lifted pad do under light pressure?",
       "criterion": "A sound pad sits flat on the board; a lifted pad shows a shadow line and gives under light pressure.",
+      "criterion_short": "A sound pad sits flat on the board.",
       "example_steps": [
         "Light the pad edge",
         "Press gently",
         "Compare to a sound pad"
       ],
       "explanation": "A lifted pad turns a one-minute joint into a board repair, so it is checked before heat.",
+      "explanation_short": "A lifted pad turns a one-minute joint into a board repair.",
       "intent": "Teach pad inspection.",
       "items": null,
       "practice": "Look at the pad edge against the board and press gently with a toothpick before you insert anything.",
+      "practice_short": "Look at the pad edge against the board.",
       "reference_answer": "it moves"
     },
     "Name the three burn and fume hazards at the bench": {
@@ -112,15 +130,18 @@
       ],
       "check_prompt": "Which hazard do solder fumes mainly create?",
       "criterion": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
+      "criterion_short": "The three hazards are the hot iron, the solder fumes and flying clippings.",
       "example_steps": [
         "Point at the iron",
         "Point at the fume path",
         "Name the eye risk"
       ],
       "explanation": "Naming the hazard is what makes the bench rules stick when you are concentrating on the joint.",
+      "explanation_short": "Naming the hazard is what makes the bench rules stick.",
       "intent": "Name the hazards before touching the iron.",
       "items": null,
       "practice": "Point at the iron, the fume path and your eyes, and name the hazard each one creates.",
+      "practice_short": "Point at the iron, the fume path and your eyes.",
       "reference_answer": "respiratory irritation"
     },
     "Prove continuity with a meter after rework": {
@@ -129,15 +150,18 @@
       ],
       "check_prompt": "Which meter setting proves the repair conducts?",
       "criterion": "Continuity between the intended points proves the repair conducts.",
+      "criterion_short": "Continuity proves the repair conducts.",
       "example_steps": [
         "Set continuity",
         "Probe both ends",
         "Confirm the beep"
       ],
       "explanation": "A joint can look right and still be open; the meter is the check the eye cannot make.",
+      "explanation_short": "A joint can look right and still be open.",
       "intent": "Teach the final electrical check.",
       "items": null,
       "practice": "Set the meter to continuity, probe the two ends of the repaired path, and confirm the beep before power.",
+      "practice_short": "Set the meter to continuity and probe the two ends.",
       "reference_answer": "the continuity setting"
     },
     "Read a resistor value from its colour bands": {
@@ -147,15 +171,18 @@
       ],
       "check_prompt": "What is brown-black-red-gold?",
       "criterion": "Brown, black, red, gold is ten times one hundred, so one thousand ohms at five percent.",
+      "criterion_short": "Brown, black, red, gold is ten times one hundred.",
       "example_steps": [
         "Read band one",
         "Read band two",
         "Apply the multiplier"
       ],
       "explanation": "The code is positional, so reading order matters more than colour memory.",
+      "explanation_short": "The code is positional.",
       "intent": "Teach the four-band code.",
       "items": null,
       "practice": "Read the bands left to right, then multiply by the third band before you trust the value.",
+      "practice_short": "Read the bands left to right.",
       "reference_answer": "1k ohm at 5 percent"
     },
     "Recognise a cold joint from its surface": {
@@ -165,15 +192,18 @@
       ],
       "check_prompt": "What does a cold joint look like?",
       "criterion": "A cold joint has a grainy, matte surface; a sound fillet is bright and concave.",
+      "criterion_short": "A cold joint has a grainy, matte surface.",
       "example_steps": [
         "Look at the surface",
         "Compare to a fillet",
         "Name the cold one"
       ],
       "explanation": "Surface is the cheapest inspection you have, and it is read before power is applied.",
+      "explanation_short": "Surface is the cheapest inspection you have.",
       "intent": "Teach visual discrimination.",
       "items": null,
       "practice": "Compare a grainy joint with a bright fillet and say which one moved while it cooled.",
+      "practice_short": "Compare a grainy joint with a bright fillet.",
       "reference_answer": "dull and lumpy"
     },
     "Set an iron to the temperature a leaded joint needs": {
@@ -183,15 +213,18 @@
       ],
       "check_prompt": "What temperature range suits leaded solder?",
       "criterion": "Leaded solder wants a moderate setting; hotter burns the flux before the joint forms.",
+      "criterion_short": "Leaded solder wants a moderate setting.",
       "example_steps": [
         "Set the dial",
         "Wait for the display",
         "Tin the tip"
       ],
       "explanation": "Temperature is a time control: too cold means a longer touch and a colder joint.",
+      "explanation_short": "Temperature is a time control.",
       "intent": "Teach the temperature setting for leaded solder.",
       "items": null,
       "practice": "Set the station, wait for the display to settle, and tin the tip before the first joint.",
+      "practice_short": "Set the station and wait for the display to settle.",
       "reference_answer": "320 to 350 degrees Celsius"
     },
     "Wick a solder bridge without lifting the pad": {
@@ -201,15 +234,18 @@
       ],
       "check_prompt": "When do you lift the wick?",
       "criterion": "Heat through the wick and stop as soon as the bridge disappears.",
+      "criterion_short": "Heat through the wick and stop.",
       "example_steps": [
         "Add flux",
         "Lay the wick",
         "Heat until the bridge flows"
       ],
       "explanation": "Pulling the wick while the solder is solid is how pads lift.",
+      "explanation_short": "Pulling the wick while the solder is solid lifts pads.",
       "intent": "Teach bridge removal.",
       "items": null,
       "practice": "Add flux, lay the wick over the bridge, and heat the wick until the solder flows into it before lifting.",
+      "practice_short": "Add flux and lay the wick over the bridge.",
       "reference_answer": "after the solder flows into it"
     }
   },

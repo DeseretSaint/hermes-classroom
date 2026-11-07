@@ -1,0 +1,94 @@
+{
+  "evidence": {
+    "bicycle_single.json": {
+      "bytes": 24646,
+      "sha256": "666326df17752329d406395eb2b87696822e52a0fd7a82ef84421da4d5587dd1"
+    },
+    "focused-tests.txt": {
+      "bytes": 4555,
+      "sha256": "3241bae9706f0954d97f0b8581ca134bb6c1d1747b5ef525c575d01ee7f621cc"
+    },
+    "full-suite.txt": {
+      "bytes": 8331,
+      "sha256": "0d13301851caa24a304d8fcad939ce312d3f7709518c82930a1df30a40e6691b"
+    },
+    "music_short.json": {
+      "bytes": 44141,
+      "sha256": "0de2a3c53ea6e76b8b69bf1789676915b312cf350766702e1078b0da462d34e0"
+    },
+    "partial_unit_batch.json": {
+      "bytes": 888,
+      "sha256": "f828f19d8570c2337cf7fd935951ba3bea9a786c861c67207cb07a1e593b98ff"
+    },
+    "run-output.txt": {
+      "bytes": 8698,
+      "sha256": "7e47d683ddaf5427d4ab69b21eb6a06aad9812610fca8727a3bed14c2d00d498"
+    },
+    "soldering_full.json": {
+      "bytes": 106778,
+      "sha256": "f65e748b04f6c715af579381e0d3b1f7eca5e31a19e5f98065f4aef3e591ff7f"
+    },
+    "summary.json": {
+      "bytes": 84,
+      "sha256": "ea566e9a1f0d195fdfef9f054894820aa640d955d8f46305839003730c687a87"
+    }
+  },
+  "harness": {
+    "path": "harness_e2e.py",
+    "sha256": "354be9ca5f31bf42aa6e40100692ca6edd6ca640e47d21547f6ad5afe9e63daf"
+  },
+  "inputs": {
+    "bicycle_single": {
+      "brief": {
+        "goal": "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today.",
+        "level": "beginner",
+        "locale": "en-US",
+        "recipe": "one_off",
+        "scope": "single",
+        "subject_domain": "repair",
+        "title": "Replace a bicycle inner tube"
+      },
+      "brief_sha256": "127b3a4f25e31ed79868de8f91d1b438664c34d0a3ea79d91b22da617338c61f",
+      "model_transcript_id": "recorded-transcript-h40",
+      "scope": "single",
+      "transcript": "transcripts/bicycle_single.json",
+      "transcript_sha256": "9be57663269cf5ae3cbdedf638cb6273dff7e40d998cc51eb6a814834031e938",
+      "validator_transcript_id": "recorded-validator-h40"
+    },
+    "music_short": {
+      "brief": {
+        "goal": "Understand intervals, triads and the circle of fifths well enough to analyse a pop song.",
+        "level": "beginner",
+        "locale": "en-US",
+        "recipe": "committed",
+        "scope": "short",
+        "subject_domain": "general",
+        "title": "Intervals, triads and the circle of fifths"
+      },
+      "brief_sha256": "07c96e060abb622fe440887a82f146ed64e59516ee5aea934e015b424f4db8bf",
+      "model_transcript_id": "recorded-transcript-h40",
+      "scope": "short",
+      "transcript": "transcripts/music_short.json",
+      "transcript_sha256": "542687d37f2501ef96b1cfcd35174d396f85e052cea44e8ac930188ba004d1e5",
+      "validator_transcript_id": "recorded-validator-h40"
+    },
+    "soldering_full": {
+      "brief": {
+        "goal": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering.",
+        "level": "beginner",
+        "locale": "en-US",
+        "recipe": "committed",
+        "scope": "full",
+        "subject_domain": "technical_procedure",
+        "title": "Through-hole soldering for a first repair"
+      },
+      "brief_sha256": "4cc638a28988148b76df962f636c71fbdd13a553f752aa6a427668b1cbc8d093",
+      "model_transcript_id": "recorded-transcript-h40",
+      "scope": "full",
+      "transcript": "transcripts/soldering_full.json",
+      "transcript_sha256": "7151d880e981d6ae2c8eef50e91ef7e17f9fa4ba2fdc7af10ba690817bf4a816",
+      "validator_transcript_id": "recorded-validator-h40"
+    }
+  },
+  "packet": "h40-arbitrary-topic-e2e"
+}
