@@ -529,6 +529,22 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertEqual(html.count("data-cb-all-courses-row"), 3)
         self.assertIn("+2 more courses on this profile", html)
 
+    def test_the_wide_desk_is_a_two_column_reading_surface(self) -> None:
+        html = self.render()
+        self.assertIn("minmax(0, 1.2fr)", html)
+        self.assertIn("minmax(19rem, 0.8fr)", html)
+        self.assertIn('data-cb-desk-stats', html)
+        self.assertIn('data-cb-desk-stat="sections"', html)
+        self.assertIn('data-cb-course-stamp', html)
+        # The next move and the path come before the secondary course shelf in reading order.
+        self.assertLess(html.index('data-cb-continue'), html.index('data-cb-all-courses'))
+
+    def test_resume_without_a_binding_opens_the_section_instead_of_a_blank_chat(self) -> None:
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        self.assertIn("reason: 'no-binding'", source)
+        self.assertIn("else if (outcome.reason === 'no-binding') openSection(target)", source)
+        self.assertNotIn("if (mode === 'resume') {\n      armPendingBind", source)
+
     # -- the module's shape -----------------------------------------------------------------
     def test_path_titles_wrap_without_colliding_with_the_state_label(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
