@@ -125,6 +125,21 @@ with a seeded objective, but the empty-path approvals are asserted as success. A
 run therefore cannot be used as evidence that validation gates approval. H-12 must change those
 tests to seed a real manual objective or assert the refusal, and report the new count.
 
+### D-02b (P0, API) — two plan digests, one approval
+
+`run_plan_job` stores `generation.plan_hash(document)` in `plans.plan_hash` and
+`gen_plan_documents.plan_hash`; `course.outline` returns that generation digest as
+`plan.plan_hash`. `plan.approve` recomputes `parent_authoring.plan_hash(connection, plan)` — the
+kernel digest — and requires that value. The Parent Studio path works around this by reading
+`parent.blueprint.read.plan.plan_hash`; the learner `CreateCourseFlow` path has no documented
+equivalent. A caller that follows `course.outline` gets `VALIDATION_FAILED: the approved hash does
+not match the current plan content` even on a valid generated plan; a caller that uses the kernel
+hash can approve a rejected plan because validation is not checked.
+
+H-12 adds a durable validation binding and a learner-safe approval-hash projection; H-02 must use
+it. This is not a reason to compare the two digests directly — both are real and serve different
+consumers.
+
 ### D-03 (P1) — the plan job drops the inputs the contract collects
 
 `run_plan_job` reads `goal`, `recipe`, `dials`, `locale` only. Even after H-01 adds `level`,
