@@ -19,7 +19,7 @@ Two facts explain most of the gap:
    surfaces in the product.
 2. The generation schema already contains declarative media specs, and `coursebook/artifacts.py`
    already owns a content-addressed store, MIME policy, cache keys, provenance and honest text
-   fallback. But the lesson prompt explicitly says "never generate an image", no production
+   fallback. But the lesson prompt said "never generate an image", no production
    caller reaches the media job path, and the Desktop renderer only shows a `View media` toast
    for a `segment.artifact_id`; it never displays an image or plays audio.
 
