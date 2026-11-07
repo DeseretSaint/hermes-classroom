@@ -112,7 +112,8 @@ bash scripts/validate-plugin.sh                # Release gate passed: 3/3 checks
 ```
 
 The docs commit for this pass is `d6e07cd` on `wt/harness-docs`; the gate above was run on that
-commit, not on the working tree.
+commit, not on the working tree. Each later docs-only commit on this branch was re-gated the same
+way, with the same 3/3 and the same file count.
 
 The 1177-test run is the merged tree at this base. It contains no H-06/H-08/H-09 tests, because
 those modules live on their branches; the 1230-test count in the H-09 handoff is a count on
