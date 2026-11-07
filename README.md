@@ -3,8 +3,8 @@
 Coursebook is a Hermes Desktop learning workspace for adults and parents. It is designed to turn
 a goal or a reusable course pack into a governed, resumable sequence of lessons: one objective at
 a time, typed checks, bounded grading, transactional transitions, inspectable evidence, and
-sourced visuals and audio. Parent mode prepares lesson packs that a parent teaches; children do
-not chat with Coursebook.
+generated lesson media with text equivalents and honest degraded states. Parent mode prepares lesson
+packs that a parent teaches; children do not chat with Coursebook.
 
 Coursebook is not a prompt. A chat prompt can answer a question; it cannot make the answer
 change what happens next. In Coursebook the model teaches, while the plugin owns the objective,
@@ -35,7 +35,7 @@ there is no code path at all.
 | --- | --- |
 | One installable package (agent half plus Desktop half) | Working: `scripts/install-local.sh` installs both halves; `hermes plugins validate` and `hermes plugins doctor` pass |
 | `coursebook_status` agent tool (read-only health) | Working: the single registered tool |
-| Backend routes `/health`, `/schema`, `/rpc`, `/runtime`, `/packs/*`, `/artifacts/<handle>` | Working: 31/31 backend expectations pass in `scripts/probe-backend.py` |
+| Backend routes `/health`, `/schema`, `/rpc`, `/runtime`, `/packs/*`, `/artifacts/<handle>`, `/media/<artifact_id>` | Implemented: the first six were re-driven by `scripts/probe-backend.py` (31/31); the media preview is covered by `tests/test_manifest.py` and `tests/test_media_generation.py` |
 | Frozen contracts: `cb.rpc` v7, `cb.db` v4, `cb.jobs` v2, `cb.errors` v2, `cb.pack` v1, `cb.projection` v1, `cb.vocabulary` v1 | Working: 52 declared methods, 52 handlers, no contract problems from `/runtime` |
 | Profile-scoped SQLite schema and migrations `0001`-`0004` | Working: `health.get` answers `db.ready: true`, `schema_version: 4` on a fresh home |
 | Desktop route `#/coursebook`, sidebar entry, pane, command palette, settings page | Working with a reachable backend: mounts the library, `New course`, Parent Studio and a course card (`docs/CB017-RELEASE-VERIFICATION.md` §2). A window with no gateway renders no route page for any hash — host shell degradation, reclassified P3-operational by Atlas (`docs/REVIEW_CB017-FINAL.md` §3.1) |
@@ -151,7 +151,8 @@ This candidate is not shippable as a Desktop product.
 - Row 9 is closed on this tree (replan → lessons → export, §"Status"); the demo still cannot be
   recorded on this host for the gateway reason above, and that is a process blocker, not a product
   one.
-- Image and speech generation, and reminders, are absent. Research runs only inside plan jobs.
+- Image and speech generation now use the host's configured providers through the plugin seam;
+  pronunciation scoring and reminders remain absent.
 - The auxiliary open-response grader is disabled. Closed checks are graded against a stored
   reference; with the lane enabled, an answer that persuades an obedient grader is accepted
   (CB-QA-11).
