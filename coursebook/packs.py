@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from . import segments
+from . import rubrics
 from .contracts import ContractError, contract, validate
 
 CONTRACT_ID = "cb.pack"
@@ -367,8 +368,13 @@ def _minima_problems(manifest: Mapping[str, Any]) -> list[str]:
                     f"{oid!r} is declared {objective['evidence_target']!r}"
                 )
             rubric = check.get("rubric") or []
-            if len(rubric) < MIN_RUBRIC_CRITERIA:
-                problems.append(f"check {cid!r} has {len(rubric)} rubric criteria; minimum is {MIN_RUBRIC_CRITERIA}")
+            # The construct profile is derived from the check's declared evidence target: a pack
+            # manifest carries no authored construct, so the target is the authority. The
+            # registry's rules (minimum, ceiling, distinctness, observability, no mental states)
+            # apply to every pack rubric, not only to generated ones.
+            profile = rubrics.default_profile_for(str(check["evidence_target"]))
+            for problem in rubrics.validate_rubric(profile, rubric, str(check["evidence_target"])):
+                problems.append(f"check {cid!r}: {problem}")
             alternatives = [str(item) for item in check.get("accepted_alternatives") or []]
             if len(set(alternatives)) != len(alternatives):
                 problems.append(f"check {cid!r} repeats an accepted alternative")
