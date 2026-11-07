@@ -3400,15 +3400,143 @@ function LibraryView({ implemented, createOpen }) {
   })
 }
 
+// ── learner create → plan job → plan review ────────────────────────────────
+//
+// H-02: `course.create` + `enrollment.create` used to be the whole learner flow, and the screen
+// told the learner that generation was not wired. It is wired: the executor pumps `plan` jobs, the
+// plan pipeline writes a draft plan, and `plan.approve` fences on the kernel digest. This block is
+// the one place the desktop builds those payloads.
+
+/** How much course a brief asks for. Contract enum: `single` | `short` | `full`. */
+const COURSE_SCOPES = [
+  { id: 'single', label: 'One lesson' },
+  { id: 'short', label: 'Short course' },
+  { id: 'full', label: 'Full course' }
+]
+
+/**
+ * Honest time expectation per scope. No invented minutes: a plan has no `time_estimate` until it
+ * exists, and no read in this contract serves one, so this says what is true before the run starts.
+ */
+const SCOPE_TIME_COPY = {
+  single: 'One lesson. Research and drafting may take several minutes; there is no progress percentage until the plan exists.',
+  short: 'A short course of a few sessions. Research and drafting may take several minutes.',
+  full: 'A full course. Research and drafting may take several minutes and run longest; the plan carries its own estimate once it exists.'
+}
+
+function planTimingCopy(scope) {
+  return SCOPE_TIME_COPY[scope] || 'Research and drafting may take several minutes. A plan is written before any lesson exists.'
+}
+
+/**
+ * The exact `jobs.create` brief for a learner plan job (cb.rpc v10 `plan_brief`).
+ *
+ * Every declared input travels: ids and stage so a retry can resume, goal/recipe/dials/locale and
+ * the v10 capability inputs (level, subject_domain, scope) so the policy and the planner read the
+ * same decision the course row stores. Absent inputs are omitted, never sent as empty strings.
+ */
+function planJobBrief(input) {
+  const brief = {
+    stage: 'plan',
+    course_id: input.courseId,
+    enrollment_id: input.enrollmentId,
+    goal: input.goal,
+    recipe: input.recipe,
+    dials: input.dials || {}
+  }
+  if (input.locale) brief.locale = input.locale
+  if (input.level) brief.level = input.level
+  if (input.subjectDomain) brief.subject_domain = input.subjectDomain
+  if (input.scope) brief.scope = input.scope
+  return brief
+}
+
+/** The `course.create` payload for the same decision. Only contract fields, nothing extra. */
+function courseCreatePayload(input) {
+  const payload = { title: input.title, recipe: input.recipe, goal: input.goal, dials: input.dials || {} }
+  if (input.locale) payload.locale = input.locale
+  if (input.level) payload.level = input.level
+  if (input.subjectDomain) payload.subject_domain = input.subjectDomain
+  if (input.scope) payload.scope = input.scope
+  return payload
+}
+
+/**
+ * One learner create: course → enrolment → one plan job, keyed so a retry replays.
+ *
+ * `call` is the rpc transport (`rpc` in the app), injected so a test can prove the exact sequence
+ * and the idempotency keys rather than reading the source. A jobs.create failure keeps the ids it
+ * already has: the course and its draft plan are real and the same key retries the same job, so the
+ * draft is recoverable instead of abandoned.
+ */
+async function startLearnerPlan({ call, key, title, goal, recipe, dials, locale, level, subjectDomain, scope }) {
+  const decision = { title, goal, recipe, dials, locale, level, subjectDomain, scope }
+  const course = await call('course.create', courseCreatePayload(decision), {
+    idempotencyKey: key,
+    expectedRevision: null
+  })
+  if (!course || !course.ok) return { ok: false, stage: 'course.create', error: (course && course.error) || null }
+
+  const courseId = course.result.course_id
+  const planId = course.result.plan_id
+  const enrollment = await call(
+    'enrollment.create',
+    { course_id: courseId, learner_label: title },
+    { idempotencyKey: `${key}-enroll`, expectedRevision: null }
+  )
+  if (!enrollment || !enrollment.ok) {
+    return {
+      ok: false,
+      stage: 'enrollment.create',
+      error: (enrollment && enrollment.error) || null,
+      courseId,
+      planId
+    }
+  }
+  const enrollmentId = enrollment.result.enrollment_id
+
+  const job = await call(
+    'jobs.create',
+    { kind: 'plan', brief: planJobBrief({ courseId, enrollmentId, ...decision }) },
+    { idempotencyKey: `${key}-plan` }
+  )
+  if (!job || !job.ok) {
+    return {
+      ok: false,
+      stage: 'jobs.create',
+      error: (job && job.error) || null,
+      courseId,
+      planId,
+      enrollmentId
+    }
+  }
+  return {
+    ok: true,
+    courseId,
+    planId,
+    enrollmentId,
+    jobId: job.result.job_id,
+    jobState: job.result.state
+  }
+}
+
 /** A compact staged create flow; every step is editable before the one mutation. */
 function CreateCourseFlow({ onCancel, onCreated }) {
   const [step, setStep] = useState(1)
   const [goal, setGoal] = useState('')
   const [title, setTitle] = useState('')
   const [recipe, setRecipe] = useState('casual')
+  const [scope, setScope] = useState('short')
+  const [level, setLevel] = useState('')
+  const [subjectDomain, setSubjectDomain] = useState('')
+  const [locale, setLocale] = useState('')
   const [dials, setDials] = useState({ pace: 'light', depth: 'survey', assessment: 'self_check', autonomy: 'guided' })
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
+  // The course/enrolment can already exist when the plan job fails. Those ids stay on screen so the
+  // same key can retry the same job; the draft is never lost to a redraw.
+  const [recoverable, setRecoverable] = useState(null)
+  const [revision, setRevision] = useState(0)
   const [error, setError] = useState(null)
   const keyRef = useRef(null)
 
@@ -3420,38 +3548,36 @@ function CreateCourseFlow({ onCancel, onCreated }) {
     if (!keyRef.current) keyRef.current = `cb-course-create-${newOperationId('create')}`
     setSubmitting(true)
     setError(null)
-    const response = await rpc(
-      'course.create',
-      {
-        title: title.trim(),
-        recipe,
-        goal: goal.trim(),
-        dials
-      },
-      { idempotencyKey: keyRef.current, expectedRevision: null }
-    )
-    if (!response.ok) {
-      setSubmitting(false)
-      setError(response.error)
-      return
-    }
-    const enrollment = await rpc(
-      'enrollment.create',
-      { course_id: response.result.course_id, learner_label: title.trim() },
-      { idempotencyKey: `${keyRef.current}-enroll`, expectedRevision: null }
-    )
-    setSubmitting(false)
-    if (!enrollment.ok) {
-      setError(enrollment.error)
-      return
-    }
-    setResult({
-      courseId: response.result.course_id,
-      planId: response.result.plan_id,
-      enrollmentId: enrollment.result.enrollment_id
+    const outcome = await startLearnerPlan({
+      call: rpc,
+      key: keyRef.current,
+      title: title.trim(),
+      goal: goal.trim(),
+      recipe,
+      dials,
+      locale: locale.trim() || null,
+      level: level.trim() || null,
+      subjectDomain: subjectDomain.trim() || null,
+      scope
     })
-    onCreated()
-  }, [dials, goal, onCreated, recipe, submitting, title])
+    setSubmitting(false)
+    if (!outcome.ok) {
+      if (outcome.courseId) setRecoverable(outcome)
+      setError({
+        code: outcome.stage,
+        message:
+          describeError(outcome.error) +
+          (outcome.stage === 'jobs.create'
+            ? ' The course and its draft plan are saved. Retrying starts the same job, not a second one.'
+            : '')
+      })
+      return
+    }
+    setRecoverable(null)
+    setRevision(0)
+    setResult(outcome)
+    onCreated(outcome)
+  }, [dials, goal, level, locale, onCreated, recipe, scope, subjectDomain, submitting, title])
 
   const onKeyDown = useCallback(
     (event) => {
@@ -3467,22 +3593,31 @@ function CreateCourseFlow({ onCancel, onCreated }) {
     return jsxs('div', {
       className: 'mx-auto flex w-full max-w-2xl flex-col gap-3 py-4',
       children: [
-        jsx('h2', { className: 'text-sm font-semibold', children: 'Course created' }),
-        jsxs('div', {
+        jsx('h2', { className: 'text-sm font-semibold', children: 'Course created — plan generation started' }),
+        jsx('div', {
           className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-          children: [
-            'Your course and its enrolment exist on this profile. The plan is a draft: objective ' +
-              'generation is not wired in this build, so no lesson can start yet. Nothing was generated ' +
-              'and no model was called.'
-          ]
+          children:
+            'Your course, its draft plan and your enrolment exist on this profile. One plan job was queued; ' +
+            'the agent runs it in the background, so leaving this page does not stop it.'
         }),
         jsxs('div', {
           className: 'flex flex-col',
           children: [
             jsx(StatusRow, { label: 'Course', value: result.courseId }),
             jsx(StatusRow, { label: 'Plan', value: `${result.planId} (draft)` }),
-            jsx(StatusRow, { label: 'Enrollment', value: result.enrollmentId })
+            jsx(StatusRow, { label: 'Enrollment', value: result.enrollmentId }),
+            jsx(StatusRow, { label: 'Plan job', value: result.jobId })
           ]
+        }),
+        jsx(LearnerPlanView, {
+          course: { course_id: result.courseId, enrollment_id: result.enrollmentId },
+          revision,
+          onRevision: setRevision,
+          onOpenSection: null,
+          onStartLesson: null,
+          onChanged: null,
+          jobHint: result.jobId,
+          scopeHint: scope
         }),
         jsxs('div', {
           className: 'flex flex-wrap items-center gap-2 pt-1',
@@ -3491,9 +3626,13 @@ function CreateCourseFlow({ onCancel, onCreated }) {
             jsx(sdk.Button, {
               onClick: () => {
                 setResult(null)
+                setRecoverable(null)
                 setStep(1)
                 setGoal('')
                 setTitle('')
+                setLevel('')
+                setSubjectDomain('')
+                setLocale('')
                 keyRef.current = null
               },
               variant: 'secondary',
@@ -3587,22 +3726,86 @@ function CreateCourseFlow({ onCancel, onCreated }) {
           })
         : null,
       step === 2
-        ? jsx('div', {
+        ? jsxs('div', {
             className: 'flex flex-col gap-4',
-            children: Object.keys(DIALS).map((dial) =>
+            children: [
               jsxs('div', {
                 className: 'flex flex-col gap-1.5',
                 children: [
-                  jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: DIALS[dial].label }),
+                  jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: 'How much course' }),
                   jsx(sdk.SegmentedControl, {
-                    onChange: (value) => setDials((current) => ({ ...current, [dial]: value })),
-                    options: DIALS[dial].options,
+                    onChange: setScope,
+                    options: COURSE_SCOPES,
                     sizing: 'content',
-                    value: dials[dial]
+                    value: scope
+                  }),
+                  jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', id: 'cb-scope-time', children: planTimingCopy(scope) })
+                ]
+              }),
+              ...Object.keys(DIALS).map((dial) =>
+                jsxs('div', {
+                  className: 'flex flex-col gap-1.5',
+                  children: [
+                    jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: DIALS[dial].label }),
+                    jsx(sdk.SegmentedControl, {
+                      onChange: (value) => setDials((current) => ({ ...current, [dial]: value })),
+                      options: DIALS[dial].options,
+                      sizing: 'content',
+                      value: dials[dial]
+                    })
+                  ]
+                }, dial)
+              ),
+              jsxs('div', {
+                className: 'flex flex-col gap-3 border-t border-(--ui-stroke-tertiary) pt-3',
+                children: [
+                  jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: 'Optional context' }),
+                  jsxs('div', {
+                    className: 'flex flex-col gap-1.5',
+                    children: [
+                      jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-level', children: 'Your level' }),
+                      jsx(sdk.Input, {
+                        id: 'cb-level',
+                        maxLength: 35,
+                        onChange: (event) => setLevel(event.target.value),
+                        placeholder: 'L0',
+                        value: level
+                      })
+                    ]
+                  }),
+                  jsxs('div', {
+                    className: 'flex flex-col gap-1.5',
+                    children: [
+                      jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-subject', children: 'Subject domain' }),
+                      jsx(sdk.Input, {
+                        id: 'cb-subject',
+                        maxLength: 60,
+                        onChange: (event) => setSubjectDomain(event.target.value),
+                        placeholder: 'language',
+                        value: subjectDomain
+                      })
+                    ]
+                  }),
+                  jsxs('div', {
+                    className: 'flex flex-col gap-1.5',
+                    children: [
+                      jsx('label', { className: 'text-xs text-(--ui-text-secondary)', htmlFor: 'cb-locale', children: 'Locale (language tag)' }),
+                      jsx(sdk.Input, {
+                        id: 'cb-locale',
+                        maxLength: 35,
+                        onChange: (event) => setLocale(event.target.value),
+                        placeholder: 'ja-JP',
+                        value: locale
+                      })
+                    ]
+                  }),
+                  jsx('div', {
+                    className: 'text-xs text-(--ui-text-secondary)',
+                    children: 'These are advisory: the planner and the media policy read them, and they never become a grade.'
                   })
                 ]
-              }, dial)
-            )
+              })
+            ]
           })
         : null,
       step === 3
@@ -3615,19 +3818,35 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                   jsx(StatusRow, { label: 'Goal', value: jsx('span', { className: 'max-w-[36ch] break-words', children: goal.trim() }) }),
                   jsx(StatusRow, { label: 'Title', value: title.trim() }),
                   jsx(StatusRow, { label: 'Recipe', value: RECIPE_COPY[recipe].title }),
+                  jsx(StatusRow, { label: 'Scope', value: (COURSE_SCOPES.find((option) => option.id === scope) || {}).label || scope }),
                   jsx(StatusRow, { label: 'Pace', value: dials.pace }),
                   jsx(StatusRow, { label: 'Depth', value: dials.depth }),
                   jsx(StatusRow, { label: 'Assessment', value: dials.assessment }),
-                  jsx(StatusRow, { label: 'Autonomy', value: dials.autonomy })
+                  jsx(StatusRow, { label: 'Autonomy', value: dials.autonomy }),
+                  level.trim() ? jsx(StatusRow, { label: 'Level', value: level.trim() }) : null,
+                  subjectDomain.trim() ? jsx(StatusRow, { label: 'Subject domain', value: subjectDomain.trim() }) : null,
+                  locale.trim() ? jsx(StatusRow, { label: 'Locale', value: locale.trim() }) : null
                 ]
               }),
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children:
-                  'Creating this course writes one course and one draft plan on this profile, then an ' +
-                  'enrolment for you. It makes no model call and fetches nothing from the network. ' +
-                  'Nothing is generated until you approve a plan, and plan generation is not part of this build.'
+                  'Creating this course writes one course, one draft plan and one enrolment on this profile, then ' +
+                  'queues one plan job. Research and drafting call the model; the plan arrives as a draft you review ' +
+                  'before anything is approved.'
               }),
+              jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: planTimingCopy(scope) }),
+              recoverable
+                ? jsxs('div', {
+                    className: 'flex flex-col',
+                    children: [
+                      jsx(StatusRow, { label: 'Course saved', value: recoverable.courseId }),
+                      recoverable.enrollmentId
+                        ? jsx(StatusRow, { label: 'Enrollment saved', value: recoverable.enrollmentId })
+                        : null
+                    ]
+                  })
+                : null,
               error ? jsx(ErrorLine, { error }) : null
             ]
           })
@@ -3651,7 +3870,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                 onClick: submit,
                 size: 'sm',
                 variant: 'default',
-                children: submitting ? 'Creating course' : 'Create course'
+                children: submitting ? 'Creating course' : recoverable ? 'Retry the plan job' : 'Create course'
               })
         ]
       })
@@ -8230,6 +8449,9 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
   const [targetBlockId, setTargetBlockId] = useState(focusBlockId || null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  // `plan.approve` fences on the enrolment revision, so the page tracks the revision the last
+  // mutation returned instead of trusting the row it was opened with.
+  const [revision, setRevision] = useState(Number(row.revision || 0))
 
   const outline = useRpcQuery(
     'course.outline',
@@ -8299,8 +8521,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
   const viewLabel = (LEARNING_VIEWS.find((option) => option.id === view) || { label: view }).label
 
   const startLesson = useCallback(
-    async (mode) => {
-      const target = objectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id)
+    async (mode, explicitObjectiveId) => {
+      const target = explicitObjectiveId || objectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id)
       if (!target) {
         setNotice('This course has no current objective yet; approve the plan first.')
         return
@@ -8376,14 +8598,13 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       onChanged: refresh
     })
   } else if (view === 'plan') {
-    body = jsx(PlanView, {
-      row,
-      review: review.data,
-      notebooks: notebooks.data,
-      outline: outline.data,
-      page: page.data,
+    body = jsx(LearnerPlanView, {
+      course: { course_id: row.course_id, enrollment_id: row.enrollment_id },
+      revision,
+      onRevision: setRevision,
       implemented,
       onOpenSection: openSection,
+      onStartLesson: (objectiveId) => startLesson('fresh', objectiveId),
       onChanged: refresh
     })
   } else if (view === 'evidence') {
@@ -9648,8 +9869,17 @@ function StudioPlanView({
   planJobId,
   onJobSettled,
   onChanged,
-  supported
+  supported,
+  surface,
+  outlineHidden
 }) {
+  // `surface: 'learner'` is the same outline/plan review for a learner course: identical reads,
+  // identical approve and lessons actions, minus the parent-only authoring controls (edit plan,
+  // start a new version). It is one component so the two doors can never drift.
+  const learner = surface === 'learner'
+  // A learner's approved-plan tab shows its own objective state list, so this panel keeps the
+  // actions and the job line and drops the duplicated outline.
+  const hideOutline = Boolean(outlineHidden)
   const plan = outline.data && outline.data.plan
   const objectives = (outline.data && outline.data.objectives) || []
   // `course.outline.plan.plan_hash` echoes the digest generation stored with the plan document,
@@ -9835,10 +10065,12 @@ function StudioPlanView({
     if (!plan) return
     setBusy(true)
     setError(null)
+    // Keyed by the plan version: a double click or a retried click replays the same job instead of
+    // enqueueing a second lessons run (and a second spend) for the same approved outline.
     const response = await rpc(
       'jobs.create',
-      { kind: 'plan', brief: { stage: 'lessons', plan_id: plan.plan_id } },
-      { idempotencyKey: newOperationId('lessons') }
+      { kind: 'plan', brief: { stage: 'lessons', plan_id: plan.plan_id, enrollment_id: course.enrollment_id } },
+      { idempotencyKey: `cb-lessons-${plan.plan_id}` }
     )
     setBusy(false)
     if (!response.ok) {
@@ -9912,10 +10144,12 @@ function StudioPlanView({
   }
   if (!plan || objectives.length === 0) {
     return jsx(EmptyState, {
-      title: 'No plan yet',
+      title: planJobId ? 'The plan is being written' : 'No plan yet',
       description: planJobId
-        ? 'This screen fills itself when the plan is written; nothing is shown from a template.'
-        : 'No plan job is attached to this course, so there is nothing to review. Start a new brief.',
+        ? 'Research and drafting run in the background; this screen fills itself when the plan is written. Nothing is shown from a template, and there is no progress percentage to show.'
+        : learner
+          ? 'This course has no plan job attached. Start a new course to generate one; nothing is invented to fill the gap.'
+          : 'No plan job is attached to this course, so there is nothing to review. Start a new brief.',
       children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled, onRunAgain: onChanged }) : null
     })
   }
@@ -9941,7 +10175,7 @@ function StudioPlanView({
           jsxs('div', {
             className: 'flex flex-wrap items-center gap-2',
             children: [
-              isDraft && !editing
+              isDraft && !editing && !learner
                 ? jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: startEditing, children: 'Edit plan' })
                 : null,
               editing
@@ -9966,7 +10200,7 @@ function StudioPlanView({
                     children: contentReady ? 'Generate missing lessons' : 'Generate lessons'
                   })
                 : null,
-              !isDraft && !editing
+              !isDraft && !editing && !learner
                 ? jsx(sdk.Button, {
                     size: 'sm',
                     variant: 'secondary',
@@ -10006,7 +10240,9 @@ function StudioPlanView({
           })
         : null,
 
-      jsxs('div', {
+      hideOutline
+        ? null
+        : jsxs('div', {
         className: 'flex flex-col gap-4 min-[60rem]:flex-row min-[60rem]:items-start',
         children: [
           jsxs('div', {
@@ -10243,6 +10479,150 @@ function StudioPlanView({
             ]
           })
         ]
+      })
+    ]
+  })
+}
+
+/**
+ * The learner's plan surface.
+ *
+ * Parent Studio and a learner course review the same outline through `StudioPlanView`; this
+ * wrapper adds what a learner needs around it: the plan job found by enrolment (leaving and
+ * reopening reattaches by id, not by memory), the honest time expectation for the chosen scope,
+ * and — once the pages exist — a link into the first lesson. It never invents content or a
+ * percentage: a failed job keeps its typed reason and the draft stays recoverable.
+ */
+function LearnerPlanView({
+  course,
+  revision,
+  onRevision,
+  implemented,
+  onOpenSection,
+  onStartLesson,
+  onChanged,
+  jobHint,
+  scopeHint
+}) {
+  const supports = (method) => (implemented ? implemented.has(method) : backendSupports(method))
+  const outline = useRpcQuery(
+    'course.outline',
+    { enrollment_id: course.enrollment_id },
+    `learner-plan-outline-${course.enrollment_id}`,
+    supports('course.outline')
+  )
+  const book = useRpcQuery(
+    'parent.blueprint.read',
+    { course_id: course.course_id },
+    `learner-plan-book-${course.course_id}`,
+    supports('parent.blueprint.read')
+  )
+  // The job is discovered from the enrolment it names, so a reload or a route change reattaches to
+  // the same run instead of starting another one.
+  const jobs = useRpcQuery(
+    'jobs.list',
+    { enrollment_id: course.enrollment_id, kind: ['plan'], limit: 20 },
+    `learner-plan-jobs-${course.enrollment_id}`,
+    supports('jobs.list')
+  )
+  const [retryJobId, setRetryJobId] = useState(null)
+
+  const plan = outline.data && outline.data.plan
+  const objectives = (outline.data && outline.data.objectives) || []
+  const jobRows = (jobs.data && jobs.data.jobs) || []
+  const planJob = jobRows.find((job) => ((job.brief || {}).stage || 'plan') === 'plan') || null
+  const lessonsJob = jobRows.find((job) => (job.brief || {}).stage === 'lessons') || null
+  const scope = (planJob && planJob.brief && planJob.brief.scope) || scopeHint || null
+  const jobId = retryJobId || jobHint || (planJob && planJob.job_id) || null
+  // A plan that is already readable does not need its finished job line repeated on every visit.
+  const showJob = Boolean(jobId && (objectives.length === 0 || !planJob || !JOB_TERMINAL_STATES.has(planJob.state)))
+
+  const reloadAll = useCallback(() => {
+    outline.reload()
+    book.reload()
+    jobs.reload()
+    if (onChanged) onChanged()
+  }, [outline, book, jobs, onChanged])
+
+  if (outline.status === 'error' && !outline.data) {
+    return jsx(sdk.ErrorState, {
+      title: 'The plan could not be read',
+      description: `${outline.error && outline.error.code ? outline.error.code + ': ' : ''}${describeError(outline.error)}`,
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: outline.reload, children: 'Try again' })
+    })
+  }
+
+  const lessonsFailed = Boolean(
+    lessonsJob && ['failed', 'cancelled', 'interrupted_requires_retry'].includes(lessonsJob.state)
+  )
+  const lessonsReady = Boolean(
+    lessonsJob &&
+      !lessonsFailed &&
+      JOB_TERMINAL_STATES.has(lessonsJob.state) &&
+      Number((lessonsJob.checkpoint || {}).lessons || 0) > 0
+  )
+  const approved = Boolean(plan && plan.state === 'approved')
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-4',
+    'data-cb-learner-plan': (plan && plan.state) || 'none',
+    'data-cb-learner-plan-job': jobId || 'none',
+    children: [
+      jsx('p', { className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)', children: planTimingCopy(scope) }),
+      approved && objectives.length > 0
+        ? jsxs('div', {
+            className: 'flex flex-wrap items-center gap-2',
+            children: [
+              lessonsReady && onStartLesson
+                ? jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'default',
+                    onClick: () => onStartLesson(objectives[0].objective_id),
+                    children: 'Start the first lesson'
+                  })
+                : null,
+              onOpenSection
+                ? jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'secondary',
+                    onClick: () => onOpenSection(objectives[0].objective_id),
+                    children: 'Open the first section'
+                  })
+                : null
+            ]
+          })
+        : null,
+      approved && !lessonsReady && !lessonsFailed
+        ? jsx(QuietNote, {
+            children:
+              'The outline is approved. Lesson pages are written by the lessons job below; the section list is the approved outline, not generated content.'
+          })
+        : null,
+      approved && objectives.length > 0 && onOpenSection
+        ? jsx(PlanView, {
+            row: { course_id: course.course_id, enrollment_id: course.enrollment_id, revision },
+            review: null,
+            notebooks: null,
+            outline: outline.data,
+            page: null,
+            implemented,
+            onOpenSection,
+            onChanged: reloadAll
+          })
+        : null,
+      jsx(StudioPlanView, {
+        course,
+        revision,
+        onRevision,
+        outline,
+        book,
+        brief: null,
+        planJobId: showJob ? jobId : null,
+        onJobSettled: reloadAll,
+        onChanged: reloadAll,
+        supported: supports,
+        surface: 'learner',
+        outlineHidden: approved
       })
     ]
   })
@@ -11455,11 +11835,13 @@ export {
   BackendUnavailable,
   CB_TOKENS,
   CB_TOKEN_NAMES,
+  COURSE_SCOPES,
   FieldRail,
   FieldDeskHome,
   FieldNotesStrip,
   FieldQuestView,
   LESSON_VIEWS,
+  LearnerPlanView,
   LessonDocumentView,
   MediaFrame,
   NotebookView,
@@ -11481,6 +11863,10 @@ export {
   pronPercent,
   pronunciationAvailabilityCopy,
   questMissions,
+  planJobBrief,
+  planTimingCopy,
+  startLearnerPlan,
+  courseCreatePayload,
   questProgressLabel,
   readNotebookRef,
   stripExcerpt
