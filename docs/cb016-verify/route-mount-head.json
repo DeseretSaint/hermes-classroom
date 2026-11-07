@@ -1,0 +1,13 @@
+{
+  "capturedAt": "2026-11-06T23:25:11.087Z",
+  "hash": "#/coursebook",
+  "destination": "courses",
+  "sidebarCoursebookItem": true,
+  "courseCards": 0,
+  "hasNewCourse": true,
+  "hasParentStudio": true,
+  "panePresent": true,
+  "backendStatus": "Backend\noffline",
+  "title": "Hermes",
+  "text": "SESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nArtifacts\nScheduled jobs\nCoursebook\nNo sessions yet\nNew project\nCoursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson\nCOURSEBOOK\nNo durable chat yet\nA new chat gets its stored session id after its first turn. Coursebook binds a lesson to that stored id — never to the live runtime id and never to \"the most recent chat\".\nOpen Coursebook\nDESERETSAINT\n.agents\n.android\n.claude\n.claude.json.lock\n.codex\n.config\n.copilot\n.cua-driver\n.gemini\n.grok\n.hermes\n.local\n.npm\n.openviking\n.oracle_jre_usage\n.pi\n.pki\n.ssh\n.steam\nandroid-sdk\n"
+}

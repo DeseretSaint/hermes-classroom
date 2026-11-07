@@ -98,7 +98,7 @@ This build reports three states, and the Desktop half renders exactly those:
   (Capabilities → Plugins) and offers *Check again*; it never shows an empty course list as if the
   user had none.
 
-Every method declared by `cb.rpc` v6 has a handler in this build — 51 declared, 51 implemented, no
+Every method declared by `cb.rpc` v7 has a handler in this build — 52 declared, 52 implemented, no
 contract problems from `/runtime`. A method that is not in the contract is refused by contract
 validation with `VALIDATION_FAILED` before any handler runs, and the error lists the declared
 methods. `NOT_IMPLEMENTED` is the defensive answer for a declared method that has lost its handler
@@ -107,7 +107,7 @@ work the backend cannot do.
 
 ## 6. Stored lesson text: the one-time repair and its marker
 
-`cb.rpc` v6 caps one lesson segment at 8,000 characters (`lesson.page` →
+`cb.rpc` caps one lesson segment at 8,000 characters (`lesson.page` →
 `segments.items.text.maxLength`) and one page at 500 segments, while the pack manifest allows a
 section file of up to 32 MB (`max_single_file_bytes: 33554432`). Those numbers were never
 reconciled until D1 (`e3d6770`): the writer stored a whole section file as *one* teaching row, so an
