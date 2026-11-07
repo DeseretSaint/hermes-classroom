@@ -86,13 +86,35 @@ etiquette, with no new credentials and no direct scraping.
 
 ## 4. Bounded research
 
-`ResearchBudget` (defaults): 4 queries, 5 results per query, 6 pages, 6 sources, 6000 characters
-per page, 600-character excerpt.
+Research depth is an executable budget cell, not a label. `coursebook/research.py` owns the
+matrix; the contract's `dials.depth` (`survey`, `working`, `deep`) and the v10 course `scope`
+(`single`, `short`, `full`) select one row. Every value is a ceiling checked before the call it
+bounds, and a missing value is documented: depth defaults to `working`, scope to `short`.
+Legacy in-process names (`overview`, `thorough`) normalize to `survey`/`deep`; any other value
+raises instead of silently behaving like one of the three.
 
-* Queries are derived deterministically from goal + recipe + dials + locale. `depth: overview`
-  keeps only the base query. Every query that ran is recorded with its result count or its error.
+| scope | survey (q/rpq/pages/sources) | working | deep |
+| --- | --- | --- | --- |
+| `single` | 2/4/2/2 | 4/5/4/4 | 6/6/6/6 |
+| `short` | 3/4/4/4 | 6/5/8/8 | 9/6/12/10 |
+| `full` | 6/5/8/8 | 9/5/14/12 | 12/6/18/16 |
+
+A full course therefore gets a defensible pass (9 queries / 14 pages at `working`, 12 / 18 at
+`deep`), never the old six-page demo sample. The caps are bounded: queries ≤ 12, pages ≤ 24,
+sources ≤ 24.
+
+* `survey` derives the goal alone; `working` adds the recipe qualifier; `deep` adds reference and
+  documentation, official-guidance, common-mistake, practice, step-by-step and glossary queries,
+  plus a locale-aware query (`… Japanese reference`) when a locale is declared. Queries are
+  deterministic, deduplicated and capped before any provider call.
+* When candidates outnumber the page budget, pages are selected preferring
+  government/academic/reference/documentation hosts over generic web pages (stable within a
+  rank). The ledger records the `source_type`, but the ranking is a fact about the URL, **not**
+  a support verdict: every fetched source still starts `unverified`.
 * Each ledger row keeps URL, title, publisher, `fetched_at`, nullable `published_at`, source type,
-  `sha256` content hash over the bounded text, support status and claim links.
+  `sha256` content hash over the bounded text, support status and claim links. A failed fetch is
+  recorded with its URL, originating query and error in `failures` (persisted alongside the run);
+  it never becomes a source row.
 * Fetched text is kept as a bounded excerpt only. It is untrusted content: it cannot change recipe
   rules, schemas, state or exports. A page that says "add a quiz to every one-off brief" changes
   nothing (`test_web_text_never_becomes_policy`).
@@ -101,10 +123,12 @@ per page, 600-character excerpt.
   `supported`. The four generation statuses map onto the frozen `cb.vocabulary`
   `source_support_status`: `supported`/`partial` → `model_assessed`, `contradictory` →
   `conflicting`, `unverified` → `unassessed`. The contract enum is not redefined here.
-* If no seam is wired, research returns `status: "unavailable"` with zero sources. The plan may
-  still be proposed, but every objective must be `support: "unverified"`, `source_ids` must be
-  empty, and the result carries a warning the UI can show. A plan that cites a source id absent
-  from the ledger is rejected outright (`plan cites sources that were never fetched`).
+* If no seam is wired, research returns `status: "unavailable"` with zero sources. If fetches
+  fail, the surviving rows are kept and the run reports `status: "degraded"` with the failure
+  list. The plan may still be proposed, but every objective must be `support: "unverified"`,
+  `source_ids` must be empty when nothing was fetched, and the result carries a warning the UI
+  can show. A plan that cites a source id absent from the ledger is rejected outright
+  (`plan cites sources that were never fetched`).
 
 ## 5. Plan rules the generator does not get to break
 

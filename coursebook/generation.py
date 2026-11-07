@@ -59,6 +59,7 @@ from .research import (
     SearchSeam,
     SourceRecord,
     apply_support_verdicts,
+    budget_for,
     canonical_json,
     run_research,
     sha256_of_text,
@@ -2171,6 +2172,7 @@ _GENERATION_DDL: tuple[str, ...] = (
         status TEXT NOT NULL,
         queries_json TEXT NOT NULL DEFAULT '[]',
         sources_json TEXT NOT NULL DEFAULT '[]',
+        failures_json TEXT NOT NULL DEFAULT '[]',
         reason TEXT,
         created_at TEXT NOT NULL
     )
@@ -2198,6 +2200,15 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
         for column in ("level", "subject_domain", "scope"):
             if column not in course_columns:
                 connection.execute(f"ALTER TABLE courses ADD COLUMN {column} TEXT")
+        # H-04: a failed fetch keeps its URL, query and error in the research ledger. The table
+        # predates that column, so add it in place instead of dropping the recorded run.
+        run_columns = {
+            str(row[1]) for row in connection.execute("PRAGMA table_info(gen_research_runs)").fetchall()
+        }
+        if "failures_json" not in run_columns:
+            connection.execute(
+                "ALTER TABLE gen_research_runs ADD COLUMN failures_json TEXT NOT NULL DEFAULT '[]'"
+            )
 
 
 # ── Persistence helpers ─────────────────────────────────────────────────────
@@ -2669,8 +2680,8 @@ def _persist_research(
         # becoming the new truth.
         source_ledger.apply_run(connection, course_id, run)
         connection.execute(
-            "INSERT INTO gen_research_runs (id, course_id, job_id, status, queries_json, sources_json, reason, "
-            "created_at) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO gen_research_runs (id, course_id, job_id, status, queries_json, sources_json, "
+            "failures_json, reason, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
             (
                 run_id,
                 course_id,
@@ -2678,6 +2689,7 @@ def _persist_research(
                 run.status,
                 _json(run.queries),
                 _json([source.to_dict() for source in run.sources]),
+                _json(run.failures),
                 run.reason,
                 created_at,
             ),
@@ -2878,13 +2890,23 @@ def run_plan_job(
         return result
 
     try:
+        # The depth dial and declared scope choose the executable research cell (H-04). A caller
+        # may still pass an explicit budget (tests, the research worker); otherwise the cell is
+        # derived here so a full course never inherits the demo-sized sample pass.
+        effective_research_budget = research_budget
+        if effective_research_budget is None:
+            try:
+                effective_research_budget = budget_for(dials.get("depth"), scope)
+            except ValueError as exc:
+                raise GenerationRejected(str(exc)) from exc
         research_run = run_research(
             goal,
             recipe=recipe,
             dials=dials,
             locale=locale,
+            scope=scope,
             search=search,
-            budget=research_budget or ResearchBudget(),
+            budget=effective_research_budget,
             now=now,
         )
 
@@ -3140,11 +3162,18 @@ def run_plan_job(
 
 def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, Any]) -> list[str]:
     warnings: list[str] = []
-    if research_run.status != "ok":
+    if research_run.status == "unavailable":
         warnings.append(
-            "research "
-            + research_run.status
-            + ": claims are labelled unverified and no citation is presented as fetched support"
+            "research unavailable: claims are labelled unverified and no citation is presented as "
+            "fetched support"
+        )
+    elif research_run.status == "degraded":
+        # Partial failure is not silence: say which half is missing and keep citations bounded to
+        # the rows that were actually fetched. Support still belongs to independent validation.
+        warnings.append(
+            f"research degraded: {len(research_run.failures)} fetch(es) failed; only the "
+            f"{len(research_run.sources)} fetched source(s) are cited and their support comes from "
+            "independent validation, not from the fetch"
         )
     if recipe == "casual":
         warnings.append("casual course: checks are optional self-checks, not independent evidence")

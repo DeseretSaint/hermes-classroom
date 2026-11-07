@@ -110,9 +110,14 @@ def memory_connection() -> sqlite3.Connection:
 
 
 class PlanGateTest(unittest.TestCase):
-    """Finding H10-1: a validator-rejected plan is stored as an approvable draft."""
+    """H10-1 (closed by H-12): a validator-rejected plan is never approvable.
 
-    def test_rejected_plan_rows_are_draft_and_the_domain_approves_them(self) -> None:
+    The generation pipeline stores the rejection honestly in the generation document; the kernel
+    row stays ``draft`` so it can be regenerated or manually replaced, and ``plan.approve``
+    refuses it because the latest validation did not pass.
+    """
+
+    def test_rejected_plan_rows_stay_draft_and_the_domain_refuses_them(self) -> None:
         home = tempfile.mkdtemp(prefix="cb-h10-")
         old = os.environ.get("HERMES_HOME")
         os.environ["HERMES_HOME"] = home
@@ -141,15 +146,15 @@ class PlanGateTest(unittest.TestCase):
                 ).fetchone()
             finally:
                 connection.close()
-            # … but the kernel row it wrote is a normal, approvable draft, and the rejection
-            # lives only in the generation document.
+            # … but the kernel row it wrote is a normal, still-unapproved draft, and the rejection
+            # lives in the generation document.
             self.assertEqual(row["state"], "draft")
             self.assertEqual(document["generation_state"], "needs_review")
             self.assertIsNotNone(document["validation_id"])
 
-            # The generation job already created the course row; enroll in it, then approve the
-            # rejected plan through the real handler. plan.approve only checks the hash and that
-            # state != 'approved'; it never consults the validation record.
+            # The generation job already created the course row; enroll in it, then try to
+            # approve the rejected plan through the real handler. H-12 makes this fail closed:
+            # plan.approve consults the latest validation record.
             enrollment = api.dispatch({
                 "contract": api.RPC_CONTRACT, "contract_version": api.RPC_CONTRACT_VERSION,
                 "method": "enrollment.create", "operation_id": "op-h10-enroll",
@@ -165,11 +170,12 @@ class PlanGateTest(unittest.TestCase):
                 "payload": {"enrollment_id": enrollment["result"]["enrollment_id"],
                             "plan_id": result["plan_id"], "plan_hash": current_hash},
             })
-            self.assertTrue(approval["ok"], approval)
+            self.assertFalse(approval["ok"], approval)
+            self.assertEqual(approval["error"]["details"]["reason"], "plan_not_validated")
             with db.read() as readable:
                 approved = readable.execute("SELECT state FROM plans WHERE id = ?",
                                             (result["plan_id"],)).fetchone()["state"]
-            self.assertEqual(approved, "approved")
+            self.assertEqual(approved, "draft")
         finally:
             if old is None:
                 os.environ.pop("HERMES_HOME", None)

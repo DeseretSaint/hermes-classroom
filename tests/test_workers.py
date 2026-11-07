@@ -78,6 +78,15 @@ class ResearchJobTest(KernelCase):
         self.assertLessEqual(len(seam.searches), 1, "the executable budget caps live searches")
         self.assertLessEqual(len(seam.fetches), 1)
 
+    def test_declared_depth_selects_the_budget_cell(self) -> None:
+        deep = workers.ResearchRequest(goal="g", dials={"depth": "deep"})
+        survey = workers.ResearchRequest(goal="g", dials={"depth": "survey"})
+        self.assertGreater(deep.effective_budget.max_queries, survey.effective_budget.max_queries)
+        self.assertEqual(deep.as_brief()["budget"]["max_queries"], 9)
+        self.assertEqual(survey.as_brief()["budget"]["max_queries"], 3)
+        with self.assertRaises(ValueError):
+            workers.ResearchRequest(goal="g", dials={"depth": "standard"}).effective_budget
+
     def test_cancel_before_start_spends_nothing(self) -> None:
         job_id = self.ok("jobs.create", {"kind": "research", "brief": {}})["result"]["job_id"]
         job_service.request_cancel(job_id)

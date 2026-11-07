@@ -34,6 +34,12 @@ from urllib.parse import urlparse
 __all__ = [
     "SUPPORT_STATUSES",
     "CONTRACT_SUPPORT_STATUS",
+    "DEPTH_VALUES",
+    "DEPTH_ALIASES",
+    "SCOPES",
+    "DEFAULT_DEPTH",
+    "DEFAULT_SCOPE",
+    "SOURCE_TYPE_RANK",
     "ResearchBudget",
     "ResearchUnavailable",
     "ResearchBudgetExceeded",
@@ -42,6 +48,9 @@ __all__ = [
     "SearchSeam",
     "HermesToolSearch",
     "NullSearch",
+    "budget_for",
+    "normalize_depth",
+    "normalize_scope",
     "derive_queries",
     "run_research",
     "apply_support_verdicts",
@@ -49,6 +58,57 @@ __all__ = [
     "canonical_json",
     "sha256_of_text",
 ]
+
+#: The depth values the contract actually sends (``course.create`` dials.depth in cb.rpc v9/v10).
+#: Research had historically branched on ``overview``/``thorough``, which no product payload can
+#: produce, so the dial was a no-op. These three names are now the only canonical values.
+DEPTH_VALUES: tuple[str, ...] = ("survey", "working", "deep")
+
+#: Older in-process names. They normalize **loudly** to a contract value instead of acting as a
+#: fourth behaviour: ``overview`` is ``survey``, ``thorough`` is ``deep``.
+DEPTH_ALIASES: dict[str, str] = {"overview": "survey", "thorough": "deep"}
+
+#: Course scope from cb.rpc v10 (``single`` one objective, ``short`` 3–6, ``full`` multi-unit).
+SCOPES: tuple[str, ...] = ("single", "short", "full")
+
+#: Defaults when a brief does not declare the value. The product's default create flow is a
+#: short course at working depth; this is documented rather than a silent dial-like fallback.
+DEFAULT_DEPTH = "working"
+DEFAULT_SCOPE = "short"
+
+#: One row per (scope, depth): ``(max_queries, max_results_per_query, max_pages, max_sources)``.
+#: Every value is a ceiling checked before the call it bounds; the derived query set may be
+#: smaller. A full course never receives the old six-page demo pass: at ``working`` it gets at
+#: least 9 queries / 14 pages, and at ``deep`` 12 / 18 — bounded, never an open crawl.
+_BUDGET_MATRIX: dict[str, dict[str, tuple[int, int, int, int]]] = {
+    "single": {
+        "survey": (2, 4, 2, 2),
+        "working": (4, 5, 4, 4),
+        "deep": (6, 6, 6, 6),
+    },
+    "short": {
+        "survey": (3, 4, 4, 4),
+        "working": (6, 5, 8, 8),
+        "deep": (9, 6, 12, 10),
+    },
+    "full": {
+        "survey": (6, 5, 8, 8),
+        "working": (9, 5, 14, 12),
+        "deep": (12, 6, 18, 16),
+    },
+}
+
+#: Selection preference when candidates outnumber the page budget. Lower is fetched first.
+#: This ranks *who publishes the URL* (a fact); it is not a support verdict. Every fetched row
+#: still starts ``unverified`` and only an independent validator may move it.
+SOURCE_TYPE_RANK: dict[str, int] = {
+    "government": 0,
+    "academic": 1,
+    "reference": 2,
+    "documentation": 3,
+    "organization": 4,
+    "web_page": 5,
+}
 
 #: Generation-layer support statuses (this card's vocabulary for the source ledger).
 SUPPORT_STATUSES: tuple[str, ...] = ("supported", "partial", "contradictory", "unverified")
@@ -94,12 +154,16 @@ class ResearchCancelled(RuntimeError):
 
 @dataclass(frozen=True)
 class ResearchBudget:
-    """Executable ceilings. Every field is checked before the call it bounds."""
+    """Executable ceilings. Every field is checked before the call it bounds.
 
-    max_queries: int = 4
+    The default is the ``short``/``working`` cell of :data:`_BUDGET_MATRIX`. Product jobs do not
+    rely on it: :func:`budget_for` derives the cell from the declared depth and scope.
+    """
+
+    max_queries: int = 6
     max_results_per_query: int = 5
-    max_pages: int = 6
-    max_sources: int = 6
+    max_pages: int = 8
+    max_sources: int = 8
     max_page_chars: int = 6000
     max_excerpt_chars: int = _MAX_EXCERPT
 
@@ -114,6 +178,51 @@ class ResearchBudget:
             raise ValueError("max_results_per_query must be between 1 and 20")
         if not 500 <= self.max_page_chars <= 40000:
             raise ValueError("max_page_chars must be between 500 and 40000")
+
+
+def normalize_depth(value: Any) -> str:
+    """Map a depth input onto a contract value, or fail loudly.
+
+    ``None``/blank means "the brief did not say", which is the documented ``working`` default.
+    A legacy alias normalizes to its contract value. Anything else is an error: a fourth value
+    must never quietly behave like one of the three (that is the defect this closes).
+    """
+    if value is None:
+        return DEFAULT_DEPTH
+    text = str(value).strip().lower()
+    if not text:
+        return DEFAULT_DEPTH
+    text = DEPTH_ALIASES.get(text, text)
+    if text not in DEPTH_VALUES:
+        raise ValueError(
+            f"unknown research depth {value!r}; expected one of {', '.join(DEPTH_VALUES)}"
+        )
+    return text
+
+
+def normalize_scope(value: Any) -> str:
+    """Map a scope input onto ``single``/``short``/``full``; blank means ``short``."""
+    if value is None:
+        return DEFAULT_SCOPE
+    text = str(value).strip().lower()
+    if not text:
+        return DEFAULT_SCOPE
+    if text not in SCOPES:
+        raise ValueError(f"unknown course scope {value!r}; expected one of {', '.join(SCOPES)}")
+    return text
+
+
+def budget_for(depth: Any = None, scope: Any = None) -> ResearchBudget:
+    """The documented ``(scope, depth)`` budget cell, with per-field validation."""
+    depth_value = normalize_depth(depth)
+    scope_value = normalize_scope(scope)
+    queries, results, pages, sources = _BUDGET_MATRIX[scope_value][depth_value]
+    return ResearchBudget(
+        max_queries=queries,
+        max_results_per_query=results,
+        max_pages=pages,
+        max_sources=sources,
+    )
 
 
 @dataclass
@@ -144,12 +253,18 @@ class SourceRecord:
 
 @dataclass
 class ResearchRun:
-    """Outcome of a bounded research pass. ``status`` is never silently ``ok``."""
+    """Outcome of a bounded research pass. ``status`` is never silently ``ok``.
+
+    ``failures`` is the per-URL half of the ledger: a fetch that failed is recorded with its URL,
+    the query that found it and the error, so a partial pass is auditable instead of reduced to
+    one reason string. No failure entry is ever promoted into a source.
+    """
 
     status: str  # "ok" | "degraded" | "unavailable"
     queries: list[dict[str, Any]]
     sources: list[SourceRecord]
     reason: str | None = None
+    failures: list[dict[str, str]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -157,6 +272,7 @@ class ResearchRun:
             "queries": [dict(q) for q in self.queries],
             "sources": [s.to_dict() for s in self.sources],
             "reason": self.reason,
+            "failures": [dict(item) for item in self.failures],
         }
 
 
@@ -281,17 +397,23 @@ def derive_queries(
 ) -> list[str]:
     """Derive a small, deterministic query set. Never random, never unbounded.
 
-    The first query is always the goal itself; later variants add the one qualifier that recipe
-    or locale actually needs. ``dials["depth"] == "overview"`` keeps only the base query, which
-    is the cheapest honest option.
+    Depth now means what the contract says it means:
+
+    * ``survey`` — the goal itself only;
+    * ``working`` — the goal plus the one recipe qualifier the brief actually needs;
+    * ``deep`` — those plus reference/documentation, official-guidance, common-mistake and
+      practice queries, and a locale-aware query when a locale is declared.
+
+    ``overview``/``thorough`` are documented aliases for ``survey``/``deep``; any other value
+    raises. The caller's ``max_queries`` (the budget cell) is the hard ceiling.
     """
     dials = dict(dials or {})
     base = _bound(" ".join(str(goal).split()), _MAX_QUERY)
     if not base:
         raise ValueError("cannot derive research queries from an empty goal")
-    depth = str(dials.get("depth") or "standard").lower()
+    depth = normalize_depth(dials.get("depth"))
     queries = [base]
-    if depth != "overview":
+    if depth != "survey":
         if recipe == "one_off":
             queries.append(f"{base} official instructions safety")
         elif recipe == "committed":
@@ -302,10 +424,15 @@ def derive_queries(
             queries.append(f"{base} lesson plan for children")
         else:
             queries.append(f"{base} beginner guide")
-        if depth == "thorough":
-            queries.append(f"{base} reference documentation")
-            if locale:
-                queries.append(f"{base} {_language_name(locale)}")
+    if depth == "deep":
+        queries.append(f"{base} reference documentation")
+        queries.append(f"{base} official guidance")
+        if locale:
+            queries.append(f"{base} {_language_name(locale)} reference")
+        queries.append(f"{base} common mistakes")
+        queries.append(f"{base} examples and practice")
+        queries.append(f"{base} step by step")
+        queries.append(f"{base} glossary")
     unique: list[str] = []
     seen: set[str] = set()
     for query in queries:
@@ -328,12 +455,16 @@ def run_research(
     recipe: str = "casual",
     dials: dict[str, Any] | None = None,
     locale: str | None = None,
+    scope: str | None = None,
     search: SearchSeam | None = None,
     budget: ResearchBudget | None = None,
     now: datetime | None = None,
     mint_id: Any = None,
 ) -> ResearchRun:
     """Run one bounded research pass and return the ledger rows it produced.
+
+    The depth dial and course scope choose an executable budget cell via :func:`budget_for`.
+    An explicit ``budget`` still wins (tests and the research worker pass one).
 
     Failure policy, in order of honesty:
 
@@ -344,7 +475,8 @@ def run_research(
 
     No branch invents a URL, a title or a fetch date.
     """
-    budget = budget or ResearchBudget()
+    dials = dict(dials or {})
+    budget = budget or budget_for(dials.get("depth"), scope)
     now = now or datetime.now(timezone.utc)
     mint_id = mint_id or _mint_id
     fetched_at = _iso(now)
@@ -357,15 +489,12 @@ def run_research(
             reason="no search/extract seam is wired; plan claims will be marked unverified",
         )
 
-    try:
-        queries = derive_queries(goal, recipe=recipe, dials=dials, locale=locale, max_queries=budget.max_queries)
-    except ValueError as exc:
-        return ResearchRun(status="unavailable", queries=[], sources=[], reason=_bound(str(exc), _MAX_REASON))
+    queries = derive_queries(goal, recipe=recipe, dials=dials, locale=locale, max_queries=budget.max_queries)
 
     records: list[dict[str, Any]] = []
     candidates: list[dict[str, Any]] = []
     seen_urls: set[str] = set()
-    for query in queries:
+    for query_index, query in enumerate(queries):
         entry: dict[str, Any] = {"query": query, "result_count": 0, "error": None}
         try:
             results = search.search(query, budget.max_results_per_query)
@@ -381,19 +510,37 @@ def run_research(
             continue
         entry["result_count"] = len(results or [])
         records.append(entry)
-        for row in results or []:
+        # Collect *all* candidates, not just the first page's worth: selection below ranks them
+        # by what kind of publisher the URL names, so an official page found by the last query
+        # can still be fetched. The search calls themselves stay bounded by the budget.
+        for position, row in enumerate(results or []):
             url = str((row or {}).get("url") or "").strip()
             if not _is_http_url(url) or url in seen_urls:
                 continue
             seen_urls.add(url)
-            candidates.append({"url": url, "title": (row or {}).get("title") or "", "query": query})
-            if len(candidates) >= budget.max_pages:
-                break
-        if len(candidates) >= budget.max_pages:
-            break
+            candidates.append(
+                {
+                    "url": url,
+                    "title": (row or {}).get("title") or "",
+                    "query": query,
+                    "query_index": query_index,
+                    "position": position,
+                }
+            )
+
+    # Selection preference: government/academic/reference/documentation pages before generic web
+    # pages, stable within a rank by query order. This is a fact about the URL, not a claim that
+    # the page is correct — support status stays ``unverified`` for every row.
+    candidates.sort(
+        key=lambda item: (
+            SOURCE_TYPE_RANK.get(_classify_source(item["url"]), len(SOURCE_TYPE_RANK)),
+            item["query_index"],
+            item["position"],
+        )
+    )
 
     sources: list[SourceRecord] = []
-    failures: list[str] = []
+    failures: list[dict[str, str]] = []
     for candidate in candidates[: budget.max_pages]:
         if len(sources) >= budget.max_sources:
             break
@@ -402,14 +549,24 @@ def run_research(
         except ResearchCancelled:
             raise
         except ResearchUnavailable as exc:
-            failures.append(f"{candidate['url']}: {exc}")
+            failures.append(
+                {"url": candidate["url"], "query": str(candidate.get("query") or ""), "error": _bound(str(exc), _MAX_REASON)}
+            )
             continue
         except Exception as exc:  # noqa: BLE001
-            failures.append(f"{candidate['url']}: {type(exc).__name__}")
+            failures.append(
+                {
+                    "url": candidate["url"],
+                    "query": str(candidate.get("query") or ""),
+                    "error": _bound(f"{type(exc).__name__}: {exc}", _MAX_REASON),
+                }
+            )
             continue
         content = str(page.get("content") or "")
         if not content.strip():
-            failures.append(f"{candidate['url']}: empty extract")
+            failures.append(
+                {"url": candidate["url"], "query": str(candidate.get("query") or ""), "error": "empty extract"}
+            )
             continue
         truncated = len(content) > budget.max_page_chars
         bounded = content[: budget.max_page_chars]
@@ -433,18 +590,32 @@ def run_research(
         )
 
     if not sources:
-        reason = "no source could be fetched" + (f": {failures[0]}" if failures else "")
+        reason = "no source could be fetched"
+        if failures:
+            reason += f"; {len(failures)} fetch failure(s), first: {failures[0]['url']}: {failures[0]['error']}"
+        else:
+            search_errors = [entry["error"] for entry in records if entry.get("error")]
+            if search_errors:
+                reason += f"; search failed: {search_errors[0]}"
         return ResearchRun(
             status="unavailable",
             queries=records,
             sources=[],
             reason=_bound(reason, _MAX_REASON),
+            failures=failures,
+        )
+    reason = None
+    if failures:
+        reason = _bound(
+            f"{len(failures)} fetch failure(s); first: {failures[0]['url']}: {failures[0]['error']}",
+            _MAX_REASON,
         )
     return ResearchRun(
         status="degraded" if failures else "ok",
         queries=records,
         sources=sources,
-        reason=_bound(failures[0], _MAX_REASON) if failures else None,
+        reason=reason,
+        failures=failures,
     )
 
 
@@ -536,13 +707,29 @@ def _publisher_of(url: str) -> str:
 
 
 def _classify_source(url: str) -> str:
-    host = urlparse(url).netloc.lower()
-    if host.endswith(".gov") or ".gov." in host or host.endswith(".mil"):
+    """Classify *who publishes this URL* from the host/path alone.
+
+    The type is a fallible URL fact recorded in the ledger, not a judgement of authority or
+    correctness. It drives which candidates are fetched first when the page budget binds.
+    """
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+    path = parsed.path.lower()
+    if host.endswith(".gov") or ".gov." in host or host.endswith(".mil") or host.endswith(".int"):
         return "government"
     if host.endswith(".edu") or ".edu." in host or ".ac." in host:
         return "academic"
-    if "wikipedia.org" in host or "britannica.com" in host:
-        return "encyclopedia"
+    if any(
+        name in host
+        for name in ("wikipedia.org", "britannica.com", "dictionary.com", "merriam-webster.com")
+    ):
+        return "reference"
+    if (
+        host.startswith(("docs.", "developer.", "support."))
+        or host in ("w3.org", "www.w3.org", "rfc-editor.org", "www.rfc-editor.org", "ietf.org", "www.ietf.org")
+        or path.startswith(("/docs/", "/documentation/", "/reference/"))
+    ):
+        return "documentation"
     if host.endswith(".org") or ".org." in host:
         return "organization"
     return "web_page"
