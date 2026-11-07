@@ -272,7 +272,7 @@ class JobViewRecoveryTest(KernelCase):
     """``jobs.get`` is the view an operator decides from: it must carry the typed checkpoint."""
 
     def _job(self) -> str:
-        created = self.ok("jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": "plan-x"}})
+        created = self.ok("jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": "plan-x-01"}})
         return created["result"]["job_id"]
 
     def test_jobs_create_refuses_a_lessons_job_that_cannot_pay_its_minimum(self) -> None:
@@ -317,7 +317,7 @@ class JobViewRecoveryTest(KernelCase):
         usage.record(request, gen.LLMResponse(text="{}", cost_usd=0.32), 1)
         error = gen.CostCeilingExceeded("spend 0.4000 USD exceeded the 0.4000 USD ceiling")
         error.attach_checkpoint(
-            plan_id="plan-x",
+            plan_id="plan-x-01",
             sections_completed=["sec_1", "sec_2"],
             sections_total=4,
             usage=usage,
@@ -339,7 +339,7 @@ class JobViewRecoveryTest(KernelCase):
         self.assertEqual(checkpoint["sections_completed"], ["sec_1", "sec_2"])
         self.assertEqual(checkpoint["sections_completed_count"], 2)
         self.assertEqual(checkpoint["sections_total"], 4)
-        self.assertEqual(checkpoint["resume"]["brief"], {"stage": "lessons", "plan_id": "plan-x"})
+        self.assertEqual(checkpoint["resume"]["brief"], {"stage": "lessons", "plan_id": "plan-x-01"})
         self.assertEqual(checkpoint["raise_budget"]["brief_field"], "brief.budget_usd")
 
 
