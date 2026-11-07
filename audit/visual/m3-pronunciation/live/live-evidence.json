@@ -1,0 +1,23 @@
+{
+  "facts": {
+    "hash": "#/coursebook",
+    "route": true,
+    "destination": "courses",
+    "desk": true,
+    "coursebookNav": true,
+    "studioSeats": 0,
+    "document": null,
+    "width": 1070,
+    "scrollWidth": 1070
+  },
+  "narrow": {
+    "width": 513,
+    "scrollWidth": 513,
+    "overflow": false
+  },
+  "consoleErrors": [],
+  "notProven": [
+    "A live Record -> Stop -> Compare walk: no section in this isolated home carries a narration media child, so no block seats the studio. Both the target phrase and the reference audio come from that authored narration, and generating one is provider TTS spend this card does not authorise.",
+    "Live availability: this window talks to the older isolated backend (wire v7) which has no pronunciation route, so the studio status probe is not demonstrated live here. The renderer states are proven by the component-driven frames and by tests/test_desktop_pronunciation.py."
+  ]
+}

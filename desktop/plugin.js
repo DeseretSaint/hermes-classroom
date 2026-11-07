@@ -4870,40 +4870,7 @@ function MediaFrame({ artifactId, kind, label, caption, provenance, textEquivale
 }
 
 function MediaSegment({ segment }) {
-  const [preview, setPreview] = useState({ state: 'loading' })
-  useEffect(() => {
-    let live = true
-    if (!segment.artifact_id) {
-      setPreview({ state: 'text', message: 'No generated artifact is attached; the text equivalent is shown.' })
-      return () => {
-        live = false
-      }
-    }
-    setPreview({ state: 'loading' })
-    rest(`/media/${encodeURIComponent(segment.artifact_id)}`)
-      .then((response) => {
-        if (!live) return
-        if (!response || response.ok !== true || typeof response.data_url !== 'string') {
-          setPreview({
-            state: 'text',
-            message: (response && response.message) || 'This media could not be previewed; the text equivalent remains.'
-          })
-          return
-        }
-        setPreview({ state: 'ready', ...response })
-      })
-      .catch((error) => {
-        if (live) {
-          setPreview({
-            state: 'text',
-            message: `This media could not be previewed (${describeError(error)}); the text equivalent remains.`
-          })
-        }
-      })
-    return () => {
-      live = false
-    }
-  }, [segment.artifact_id])
+  const preview = useArtifactPreview(segment.artifact_id)
 
   const caption = segment.text || preview.text_equivalent || ''
   const label =
@@ -4983,6 +4950,659 @@ function MediaSegment({ segment }) {
 
 function supportsArtifactGet() {
   return backendSupports('artifact.get')
+}
+
+/**
+ * One artifact preview through the plugin's own media route.
+ *
+ * The route is the only door this module has to media bytes, and it answers with a data URL for
+ * renderable types only. `MediaSegment` and the pronunciation reference share this loader, so the
+ * practice loop cannot grow a second audio source beside the lesson's own narration.
+ */
+function useArtifactPreview(artifactId) {
+  const [preview, setPreview] = useState({ state: 'loading' })
+  useEffect(() => {
+    let live = true
+    if (!artifactId) {
+      setPreview({ state: 'text', message: 'No generated artifact is attached; the text equivalent is shown.' })
+      return () => {
+        live = false
+      }
+    }
+    setPreview({ state: 'loading' })
+    rest(`/media/${encodeURIComponent(artifactId)}`)
+      .then((response) => {
+        if (!live) return
+        if (!response || response.ok !== true || typeof response.data_url !== 'string') {
+          setPreview({
+            state: 'text',
+            message: (response && response.message) || 'This media could not be previewed; the text equivalent remains.'
+          })
+          return
+        }
+        setPreview({ state: 'ready', ...response })
+      })
+      .catch((error) => {
+        if (live) {
+          setPreview({
+            state: 'text',
+            message: `This media could not be previewed (${describeError(error)}); the text equivalent remains.`
+          })
+        }
+      })
+    return () => {
+      live = false
+    }
+  }, [artifactId])
+  return preview
+}
+
+/* ── Pronunciation Studio ────────────────────────────────────────────────────────────────────
+ * docs/VISUAL_MEDIA_PLAN.md §7. The model phrase is the lesson's own narration artifact and its
+ * authored transcript; the learner plays it, records one explicit take, and the backend compares
+ * the transcript with its own recogniser.
+ *
+ * The honesty rules this component is built around, and why each exists:
+ *   - the reference is loaded through the one media route and never autoplays — a lesson's audio
+ *     is never a surprise, and there is no second audio source in this module;
+ *   - capture starts only on an explicit Record press and stops on Stop/unmount; nothing listens
+ *     in the background and no take is captured while the reader is doing something else;
+ *   - the number on screen is the recogniser's own `confidence` and the deterministic word
+ *     comparison the backend already returned. This component computes no score, so a fabricated
+ *     percentage is not expressible here;
+ *   - the result is labelled `model_assessed` and described as a practice measurement, never as
+ *     "verified pronunciation", mastery or a graded pass;
+ *   - without a recogniser the surface says "Practice only, not graded" and does not offer a
+ *     Record control that would imply a grade;
+ *   - the take is deleted from memory after comparison. Coursebook retains no audio at all.
+ */
+const PRONUNCIATION_VERDICT_COPY = {
+  meets_target: 'Meets the target phrase',
+  close: 'Close — another pass would help',
+  needs_practice: 'Needs practice',
+  unavailable: 'Not assessed'
+}
+
+const PRONUNCIATION_REASON_COPY = {
+  empty_transcript: 'The recogniser did not catch any speech. Try again a little closer to the microphone.',
+  transcription_failed: 'The recogniser could not transcribe this take. Nothing was recorded as evidence.',
+  stt_dependency_missing: 'the local recogniser is not installed',
+  ffmpeg_missing: 'the audio decoder is not installed',
+  model_unavailable: 'the local model is not available',
+  stt_cache_unavailable: 'the local model cache is unavailable',
+  numpy_missing: 'the numeric runtime is not installed',
+  decode_failed: 'the take could not be decoded',
+  decode_empty: 'the take decoded to silence',
+  audio_too_long: 'the take is longer than the 30 second limit'
+}
+
+/** An honest percentage: only a real 0..1 number becomes a percent, otherwise nothing prints. */
+function pronPercent(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) return null
+  return `${Math.round(value * 100)}%`
+}
+
+function pronUnitLabel(unit) {
+  return unit === 'character' ? 'characters' : 'words'
+}
+
+/** The backend's own per-unit comparison, printed as it was returned. */
+function PronunciationWords({ words, unit }) {
+  const list = Array.isArray(words) ? words : []
+  if (list.length === 0) return null
+  return jsx('ol', {
+    'data-cb-pronunciation-words': String(list.length),
+    'aria-label': `Comparison by ${pronUnitLabel(unit)}`,
+    style: { display: 'flex', flexWrap: 'wrap', gap: '0.35rem', listStyle: 'none', margin: 0, padding: 0 },
+    children: list.map((word, index) =>
+      jsxs(
+        'li',
+        {
+          'data-cb-pronunciation-word': word.match ? 'match' : 'miss',
+          style: {
+            display: 'inline-flex',
+            alignItems: 'baseline',
+            gap: '0.3rem',
+            border: `1px solid ${word.match ? 'var(--cb-rule)' : 'var(--cb-ink-soft)'}`,
+            borderRadius: '0.25rem',
+            padding: '0.05rem 0.35rem',
+            fontSize: '0.85rem'
+          },
+          children: [
+            jsx('span', { children: word.expected || '—' }),
+            word.match
+              ? null
+              : jsx('span', {
+                  style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' },
+                  children: word.heard ? `heard “${word.heard}”` : 'not heard'
+                }),
+            word.match && pronPercent(word.confidence)
+              ? jsx('span', {
+                  'data-cb-word-confidence': pronPercent(word.confidence),
+                  style: { fontSize: '0.65rem', color: 'var(--cb-ink-soft)' },
+                  children: pronPercent(word.confidence)
+                })
+              : null
+          ]
+        },
+        `${word.expected || 'unit'}-${index}`
+      )
+    )
+  })
+}
+
+/** One honest status line: what would assess a take right now, and where it runs. */
+function pronunciationAvailabilityCopy(status) {
+  if (!status || status.state === 'loading') return { tone: 'loading', text: 'Checking for a recogniser on this machine.' }
+  if (status.state === 'error') {
+    return {
+      tone: 'unavailable',
+      text: `Practice only, not graded. The recogniser status could not be read (${status.message}).`
+    }
+  }
+  const provider = status.provider || 'unknown provider'
+  if (status.available === true) {
+    return {
+      tone: 'available',
+      text:
+        `Assessed on this machine by Coursebook’s own recogniser (provider ${provider}` +
+        `${status.model ? `, model ${status.model}` : ''}). Nothing is uploaded, and the take is ` +
+        'deleted after comparison.'
+    }
+  }
+  const reason = PRONUNCIATION_REASON_COPY[status.reason] || status.reason || 'no recogniser is configured'
+  return { tone: 'unavailable', text: `Practice only, not graded. Recording stays off because ${reason}.` }
+}
+
+function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, block, media, implemented, onSaved }) {
+  const target = String((media && media.text_equivalent) || '').trim()
+  const preview = useArtifactPreview(media && media.artifact_id)
+  const motion = useCbMotion()
+  const [status, setStatus] = useState({ state: 'loading' })
+  const [phase, setPhase] = useState('idle')
+  const [seconds, setSeconds] = useState(0)
+  const [error, setError] = useState(null)
+  const [result, setResult] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const audioRef = useRef(null)
+  const recorderRef = useRef(null)
+  const streamRef = useRef(null)
+  const chunksRef = useRef([])
+  const tickRef = useRef(null)
+  const nonceRef = useRef(null)
+
+  useEffect(() => {
+    let live = true
+    rest('/pronunciation/status')
+      .then((response) => {
+        if (live) setStatus({ state: 'ready', ...(response || {}) })
+      })
+      .catch((failure) => {
+        if (live) setStatus({ state: 'error', message: describeError(failure) })
+      })
+    return () => {
+      live = false
+    }
+  }, [])
+
+  const releaseCapture = useCallback(() => {
+    const stream = streamRef.current
+    streamRef.current = null
+    if (stream && typeof stream.getTracks === 'function') {
+      stream.getTracks().forEach((track) => {
+        try {
+          track.stop()
+        } catch (failure) {
+          // A track that is already closed needs no second stop.
+        }
+      })
+    }
+    if (tickRef.current) {
+      clearInterval(tickRef.current)
+      tickRef.current = null
+    }
+  }, [])
+
+  // A take never outlives the surface: leaving the section closes the microphone.
+  useEffect(() => releaseCapture, [releaseCapture])
+
+  const assess = useCallback(
+    async (blob) => {
+      setPhase('comparing')
+      setError(null)
+      setResult(null)
+      setSaved(false)
+      let dataUrl
+      try {
+        dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(String(reader.result || ''))
+          reader.onerror = () => reject(reader.error || new Error('the take could not be read'))
+          reader.readAsDataURL(blob)
+        })
+      } catch (readFailure) {
+        setPhase('error')
+        setError({ code: 'TAKE_UNREADABLE', message: describeError(readFailure) })
+        return
+      }
+      let response
+      try {
+        response = await rest('/pronunciation/attempt', {
+          method: 'POST',
+          timeoutMs: 180000,
+          body: {
+            enrollment_id: enrollmentId,
+            objective_id: objectiveId,
+            attempt_nonce: nonceRef.current || newOperationId('take'),
+            target,
+            locale,
+            audio_data_url: dataUrl,
+            expected_revision: Number(revision) || 0,
+            idempotency_key: `cb-pronunciation-${nonceRef.current || newOperationId('take')}`
+          }
+        })
+      } catch (transportFailure) {
+        setPhase('error')
+        setError({ code: 'HOST_UNAVAILABLE', message: describeError(transportFailure) })
+        return
+      }
+      if (!response || response.ok !== true) {
+        setPhase('error')
+        setError(
+          (response && response.error) || {
+            code: 'INTERNAL_ERROR',
+            message: 'The backend answered with something that is not a contract envelope.'
+          }
+        )
+        return
+      }
+      setResult(response.result || null)
+      setPhase('done')
+    },
+    [enrollmentId, objectiveId, revision, target, locale]
+  )
+
+  const start = useCallback(async () => {
+    setError(null)
+    setResult(null)
+    setSaved(false)
+    nonceRef.current = newOperationId('take')
+    const devices = typeof navigator !== 'undefined' ? navigator.mediaDevices : null
+    if (!devices || typeof devices.getUserMedia !== 'function' || typeof MediaRecorder === 'undefined') {
+      setPhase('error')
+      setError({ code: 'MIC_UNAVAILABLE', message: 'This window has no microphone capture, so no take can be recorded.' })
+      return
+    }
+    let stream
+    try {
+      stream = await devices.getUserMedia({ audio: true })
+    } catch (permissionFailure) {
+      setPhase('error')
+      setError({ code: 'MIC_BLOCKED', message: `The microphone was not opened: ${describeError(permissionFailure)}` })
+      return
+    }
+    streamRef.current = stream
+    chunksRef.current = []
+    const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'].find(
+      (candidate) => typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported(candidate)
+    )
+    let recorder
+    try {
+      recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined)
+    } catch (recorderFailure) {
+      releaseCapture()
+      setPhase('error')
+      setError({ code: 'MIC_UNAVAILABLE', message: `The recorder could not start: ${describeError(recorderFailure)}` })
+      return
+    }
+    recorderRef.current = recorder
+    recorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) chunksRef.current.push(event.data)
+    }
+    recorder.onstop = () => {
+      const chunks = chunksRef.current
+      chunksRef.current = []
+      const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' })
+      releaseCapture()
+      if (blob.size === 0) {
+        setPhase('error')
+        setError({ code: 'EMPTY_TAKE', message: 'The recorder produced no audio. Try again.' })
+        return
+      }
+      assess(blob)
+    }
+    recorder.start()
+    setSeconds(0)
+    setPhase('recording')
+    const startedAt = Date.now()
+    tickRef.current = setInterval(() => {
+      const elapsed = Math.round((Date.now() - startedAt) / 1000)
+      setSeconds(elapsed)
+      // The backend refuses a take longer than 30 s; the bound is enforced here too so the
+      // learner is never asked to upload something the contract will reject.
+      if (elapsed >= 30 && recorder.state === 'recording') {
+        try {
+          recorder.stop()
+        } catch (stopFailure) {
+          // onstop already ran or will run; nothing else to do.
+        }
+      }
+    }, 250)
+  }, [assess, releaseCapture])
+
+  const stop = useCallback(() => {
+    const recorder = recorderRef.current
+    if (recorder && recorder.state === 'recording') {
+      try {
+        recorder.stop()
+      } catch (stopFailure) {
+        // A recorder that already stopped is not an error the learner needs to see.
+      }
+    }
+    releaseCapture()
+  }, [releaseCapture])
+
+  /** Discard the take and the result. No audio was ever stored, so this only clears this surface. */
+  const forget = useCallback(() => {
+    nonceRef.current = null
+    setResult(null)
+    setError(null)
+    setSaved(false)
+    setSeconds(0)
+    setPhase('idle')
+  }, [])
+
+  const saveResult = useCallback(async () => {
+    if (!result || !result.assessment) return
+    const assessment = result.assessment
+    const matched = (assessment.words || []).filter((word) => word.match).length
+    const total = (assessment.words || []).length
+    setSaving(true)
+    const response = await rpc('notebook.save', {
+      enrollment_id: enrollmentId,
+      objective_id: objectiveId,
+      lesson_run_id: null,
+      kind: 'personal_note',
+      excerpt: `${assessment.target} — heard ${assessment.transcript || 'nothing'}`,
+      note:
+        `Pronunciation practice (${assessment.provider}). ${matched} of ${total} ` +
+        `${pronUnitLabel(assessment.unit)} matched; ${PRONUNCIATION_VERDICT_COPY[assessment.verdict] || assessment.verdict}. ` +
+        'model_assessed — a practice measurement, not a graded score.',
+      tags: ['pronunciation_practice'],
+      source_ref: notebookSourceRef({
+        block_id: block && block.id,
+        artifact_id: media && media.artifact_id,
+        source_ids: (block && block.source_ids) || []
+      })
+    })
+    setSaving(false)
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    setSaved(true)
+    if (onSaved) onSaved()
+  }, [result, enrollmentId, objectiveId, block, media, onSaved])
+
+  const availability = pronunciationAvailabilityCopy(status)
+  const canRecord = status.state === 'ready' && status.available === true && phase !== 'comparing'
+  const assessment = result && result.assessment ? result.assessment : null
+  const matchedCount = assessment ? (assessment.words || []).filter((word) => word.match).length : 0
+  const totalCount = assessment ? (assessment.words || []).length : 0
+
+  const listen = () => {
+    const audio = audioRef.current
+    if (!audio || typeof audio.play !== 'function') return
+    try {
+      const started = audio.play()
+      if (started && typeof started.catch === 'function') started.catch(() => {})
+    } catch (playFailure) {
+      // The native controls remain the fallback; a refused play() is not a lost lesson.
+    }
+  }
+
+  return jsxs('section', {
+    'data-cb-pronunciation': (block && block.id) || 'block',
+    'data-cb-pronunciation-phase': phase,
+    'data-cb-pronunciation-availability': availability.tone,
+    'data-cb-pronunciation-motion': motion,
+    'aria-label': `Pronunciation practice: ${target}`,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+      margin: '0.5rem 0 0.25rem',
+      padding: '0.6rem 0.75rem',
+      borderLeft: '2px solid var(--cb-rule)',
+      background: 'var(--cb-paper-raised)',
+      maxWidth: '48rem'
+    },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.4rem' },
+        children: [
+          jsx('h4', {
+            style: { margin: 0, fontSize: '0.9rem', fontWeight: 600 },
+            children: 'Pronunciation practice'
+          }),
+          jsx('span', {
+            'data-cb-pronunciation-target': target,
+            lang: locale,
+            style: { fontSize: '0.95rem' },
+            children: target
+          })
+        ]
+      }),
+
+      // The reference: the lesson's own narration artifact, through the same media route. Native
+      // controls mean Play is the explicit action; nothing here autoplays.
+      preview.state === 'ready' && preview.mime && String(preview.mime).startsWith('audio/')
+        ? jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },
+            children: [
+              jsx('audio', {
+                ref: audioRef,
+                'aria-label': `Reference recording of ${target}`,
+                'data-cb-pronunciation-reference': preview.mime,
+                controls: true,
+                preload: 'metadata',
+                src: preview.data_url,
+                style: { width: '100%', maxWidth: '22rem' }
+              }),
+              jsx(sdk.Button, {
+                variant: 'secondary',
+                size: 'sm',
+                onClick: listen,
+                children: 'Listen'
+              })
+            ]
+          })
+        : jsx('p', {
+            'data-cb-pronunciation-reference': preview.state === 'loading' ? 'loading' : 'none',
+            style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children:
+              preview.state === 'loading'
+                ? 'Loading the reference recording.'
+                : 'No reference recording is attached to this block; the transcript above is the model.'
+          }),
+
+      jsx('p', {
+        'data-cb-pronunciation-disclosure': availability.tone,
+        'aria-live': 'polite',
+        style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        children: availability.text
+      }),
+
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },
+        children: [
+          phase === 'recording'
+            ? jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: stop, children: 'Stop' })
+            : jsx(sdk.Button, {
+                variant: 'default',
+                size: 'sm',
+                disabled: !canRecord,
+                onClick: start,
+                'aria-describedby': 'cb-pronunciation-availability',
+                children: phase === 'done' || phase === 'error' ? 'Record again' : 'Record'
+              }),
+          phase === 'recording'
+            ? jsx('span', {
+                'data-cb-pronunciation-timer': String(seconds),
+                role: 'status',
+                'aria-live': 'polite',
+                style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                children: `Recording — ${seconds} s of 30 s. Stop when you are done.`
+              })
+            : null,
+          phase === 'comparing'
+            ? jsx('span', {
+                role: 'status',
+                style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                children: 'Comparing your take with the target…'
+              })
+            : null,
+          phase === 'recording' || phase === 'comparing' || phase === 'done' || phase === 'error'
+            ? jsx(sdk.Button, {
+                variant: 'text',
+                size: 'sm',
+                disabled: phase === 'comparing',
+                onClick: forget,
+                children: phase === 'comparing' ? 'Delete take' : 'Delete take and result'
+              })
+            : null
+        ]
+      }),
+
+      error
+        ? jsxs('div', {
+            'data-cb-pronunciation-error': error.code || 'ERROR',
+            role: 'status',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+            children: [
+              jsx('span', { style: { fontSize: '0.8rem', fontWeight: 600 }, children: `${error.code}: ${describeError(error)}` }),
+              jsx('span', { style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' }, children: 'No evidence was recorded.' })
+            ]
+          })
+        : null,
+
+      result && result.status === 'assessed' && assessment
+        ? jsxs('div', {
+            'data-cb-pronunciation-result': 'assessed',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
+            children: [
+              jsxs('div', {
+                style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
+                children: [
+                  jsx(sdk.Badge, {
+                    size: 'xs',
+                    variant: 'outline',
+                    children: `model_assessed`
+                  }),
+                  jsx('span', {
+                    'data-cb-pronunciation-verdict': assessment.verdict,
+                    style: { fontSize: '0.85rem', fontWeight: 600 },
+                    children: PRONUNCIATION_VERDICT_COPY[assessment.verdict] || assessment.verdict
+                  }),
+                  pronPercent(assessment.confidence)
+                    ? jsx('span', {
+                        'data-cb-pronunciation-confidence': pronPercent(assessment.confidence),
+                        style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                        children: `Recogniser confidence ${pronPercent(assessment.confidence)}`
+                      })
+                    : null,
+                  totalCount > 0
+                    ? jsx('span', {
+                        'data-cb-pronunciation-matched': `${matchedCount}/${totalCount}`,
+                        style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                        children: `${matchedCount} of ${totalCount} ${pronUnitLabel(assessment.unit)} matched`
+                      })
+                    : null
+                ]
+              }),
+              jsx('p', {
+                style: { margin: 0, fontSize: '0.85rem', lineHeight: 1.5 },
+                children: `Heard: ${assessment.transcript || 'nothing'}`
+              }),
+              jsx(PronunciationWords, { words: assessment.words, unit: assessment.unit }),
+              jsx('p', {
+                'data-cb-pronunciation-provenance': assessment.provider,
+                style: { margin: 0, fontSize: '0.7rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                children:
+                  `Practice measurement by ${assessment.provider}` +
+                  `${assessment.model ? ` (${assessment.model})` : ''} — not verified pronunciation and not a graded score.` +
+                  `${result.attempt_id ? ` Attempt ${result.attempt_id}.` : ''}`
+              }),
+              jsxs('div', {
+                style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },
+                children: [
+                  implemented && implemented.has('notebook.save')
+                    ? jsx(sdk.Button, {
+                        variant: 'secondary',
+                        size: 'sm',
+                        disabled: saving || saved,
+                        onClick: saveResult,
+                        children: saved ? 'Saved to notebook' : saving ? 'Saving' : 'Save result to notebook'
+                      })
+                    : null,
+                  saved
+                    ? jsx('span', {
+                        role: 'status',
+                        style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' },
+                        children: 'The result is in the notebook; the audio was never stored.'
+                      })
+                    : null
+                ]
+              })
+            ]
+          })
+        : null,
+
+      result && result.status !== 'assessed'
+        ? jsxs('div', {
+            'data-cb-pronunciation-result': result.status || 'unavailable',
+            role: 'status',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+            children: [
+              jsx('span', { style: { fontSize: '0.85rem', fontWeight: 600 }, children: 'Practice only, not graded' }),
+              jsx('span', {
+                style: { fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                children:
+                  PRONUNCIATION_REASON_COPY[result.reason] ||
+                  result.reason ||
+                  'This take was not assessed. Nothing was recorded as evidence.'
+              })
+            ]
+          })
+        : null
+    ]
+  })
+}
+
+/**
+ * The studio's seat in a block.
+ *
+ * Only a block that carries a narration audio child has an authored model phrase: its transcript is
+ * the authoritative target and its artifact is the reference. A block with no narration gets no
+ * studio — this never invents a phrase to pronounce.
+ */
+function PronunciationSeat({ block, pronunciation }) {
+  if (!pronunciation) return null
+  const media = (block.media || []).find(
+    (item) => item && item.kind === 'audio' && String(item.text_equivalent || '').trim()
+  )
+  if (!media) return null
+  return jsx(PronunciationStudio, {
+    enrollmentId: pronunciation.enrollmentId,
+    objectiveId: pronunciation.objectiveId,
+    revision: pronunciation.revision,
+    locale: pronunciation.locale,
+    block,
+    media,
+    implemented: pronunciation.implemented,
+    onSaved: pronunciation.onSaved
+  })
 }
 
 /** The three presentation views this build implements (docs/VISUAL_MEDIA_PLAN.md §3.3, §5). */
@@ -5139,7 +5759,7 @@ function blockSaveExcerpt(block, checkLabels, media) {
   return withoutCheckLabels(block.deep, checkLabels) || block.short || block.headline || ''
 }
 
-function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock }) {
+function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation }) {
   const body = withoutCheckLabels(block.deep, checkLabels)
   return jsxs('div', {
     className: 'flex flex-col gap-2',
@@ -5150,6 +5770,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock }) {
       (block.media || []).map((media, index) =>
         jsx(BlockMedia, { media, blockId: block.id, ordinal: index }, `${block.id}-media-${index}`)
       ),
+      jsx(PronunciationSeat, { block, pronunciation }),
       jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
       jsx(BlockSaveActions, { block, checkLabels, onSaveBlock }),
       checkSlot
@@ -5160,7 +5781,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock }) {
 }
 
 /** Textbook: every block in authored order, the full `deep` prose, inline figures. */
-function TextbookBlock({ block, sources, checkSlot, checkLabels, onSaveBlock }) {
+function TextbookBlock({ block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation }) {
   return jsxs('article', {
     className: 'flex flex-col gap-2 border-b border-(--ui-stroke-tertiary) py-3 first:pt-0 last:border-b-0 last:pb-0',
     'data-cb-block': block.id,
@@ -5174,13 +5795,13 @@ function TextbookBlock({ block, sources, checkSlot, checkLabels, onSaveBlock }) 
           jsx('h3', { className: 'min-w-0 text-base font-semibold leading-snug', children: block.headline })
         ]
       }),
-      BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock })
+      BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation })
     ]
   })
 }
 
 /** Guided: one block at a time, the authored `short` prose, progress and a check on its block. */
-function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onBack, onNext, onSaveBlock }) {
+function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onBack, onNext, onSaveBlock, pronunciation }) {
   const last = index >= total - 1
   const body = withoutCheckLabels(block.short || block.deep, checkLabels)
   return jsxs('section', {
@@ -5221,6 +5842,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
       (block.media || []).map((media, ordinal) =>
         jsx(BlockMedia, { media, blockId: block.id, ordinal }, `${block.id}-media-${ordinal}`)
       ),
+      jsx(PronunciationSeat, { block, pronunciation }),
       jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
       jsx(BlockSaveActions, { block, checkLabels, onSaveBlock }),
       checkSlot ? jsx('div', { className: 'flex flex-col gap-2', 'data-cb-block-check': block.id, children: checkSlot }) : null,
@@ -5287,7 +5909,7 @@ function questProgressLabel(summary) {
 }
 
 /** One mission: the block's short prose, its media, its sources and — on a checkpoint — its check. */
-function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbook, onSaveBlock }) {
+function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbook, onSaveBlock, pronunciation }) {
   const block = mission.block
   const body = withoutCheckLabels(block.short || block.deep, checkLabels)
   const stateWord = mission.checkpoint ? 'Checkpoint' : 'Mission'
@@ -5370,6 +5992,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
       ),
       jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
       jsx(BlockSaveActions, { block, checkLabels, onSaveBlock, className: 'flex flex-wrap items-center gap-1 self-start' }),
+      jsx(PronunciationSeat, { block, pronunciation }),
       mission.checkpoint
         ? jsxs('div', {
             'data-cb-mission-gate': block.check_id || 'unattached',
@@ -5411,7 +6034,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
  * every block, check and source id is the document's, and nothing is locked. There is no XP, no
  * streak, no badge that stands in for evidence and no second grading path.
  */
-function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, unattached, onOpenBlock, onSaveBlock }) {
+function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, unattached, onOpenBlock, onSaveBlock, pronunciation }) {
   const missions = questMissions(document)
   const motion = useCbMotion()
   const progressLabel = questProgressLabel(progress)
@@ -5459,6 +6082,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
               checkLabels,
               checkSlot: mission.checkpoint ? checkSlot : null,
               onSaveBlock,
+              pronunciation,
               onReadInTextbook: (blockId) => onOpenBlock && onOpenBlock(blockId)
             },
             mission.block.id
@@ -5476,7 +6100,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
  * The document is server-owned; this component decides placement, never content. A view switch
  * re-renders the same blocks, the same ids and the same single check.
  */
-function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock, onSaveBlock }) {
+function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock, onSaveBlock, pronunciation }) {
   const blocks = (document && document.blocks) || []
   const labels = Array.isArray(checkLabels) ? checkLabels : []
   const [step, setStep] = useState(0)
@@ -5522,7 +6146,8 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
       progress,
       unattached,
       onOpenBlock,
-      onSaveBlock
+      onSaveBlock,
+      pronunciation
     })
   }
 
@@ -5544,7 +6169,8 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
           checkSlot: block.check_id && block.check_id === checkId ? checkSlot : null,
           onBack: () => setStep(Math.max(0, current - 1)),
           onNext: () => setStep(Math.min(blocks.length - 1, current + 1)),
-          onSaveBlock
+          onSaveBlock,
+          pronunciation
         }),
         unattached
       ]
@@ -5567,7 +6193,8 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
               sources,
               checkLabels: labels,
               checkSlot: attached >= 0 && block.check_id === checkId ? checkSlot : null,
-              onSaveBlock
+              onSaveBlock,
+              pronunciation
             },
             block.id
           )
@@ -5722,6 +6349,28 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
     setLessonView(targetView || 'textbook')
   }, [])
 
+  /**
+   * The practice loop travels as one bundle.
+   *
+   * It exists only when the backend registers `pronunciation.attempt` and the enrollment row carries
+   * a locale: without either, the studio would have to invent a language hint or a score. The
+   * studio itself is seated per block, and only a block with an authored narration transcript gets
+   * one (see `PronunciationSeat`).
+   */
+  const pronunciation =
+    document && row.locale && supports('pronunciation.attempt')
+      ? {
+          enrollmentId: row.enrollment_id,
+          objectiveId,
+          revision: page ? page.revision : 0,
+          locale: row.locale,
+          implemented,
+          onSaved: () => {
+            if (onChanged) onChanged()
+          }
+        }
+      : null
+
   let body
   if (!page) {
     body =
@@ -5798,7 +6447,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 progress: row.evidence_summary || null,
                 focusBlockId,
                 onOpenBlock: openBlock,
-                onSaveBlock: supports('notebook.save') ? saveBlock : null
+                onSaveBlock: supports('notebook.save') ? saveBlock : null,
+                pronunciation
               },
               objectiveId
             )
@@ -10337,6 +10987,8 @@ export {
   LessonDocumentView,
   MediaFrame,
   NotebookView,
+  PronunciationSeat,
+  PronunciationStudio,
   QuestMission,
   SectionPage,
   WorkspaceShell,
@@ -10350,6 +11002,8 @@ export {
   lessonViewOptions,
   mainlineObjective,
   notebookSourceRef,
+  pronPercent,
+  pronunciationAvailabilityCopy,
   questMissions,
   questProgressLabel,
   readNotebookRef,
