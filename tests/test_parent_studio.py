@@ -21,6 +21,7 @@ from tests.test_generation import (
     FakeLLM,
     FakeSearch,
     lesson_from_request,
+    plan_fixture,
     plan_from_fixture,
     response,
     validation_from_fixture,
@@ -32,14 +33,14 @@ PARENT_BRIEF = {
     "title": "Japanese café basics",
     "goal": "Order coffee in Japanese politely",
     "starting_point": None,
-    "age_band": "8-10",
+    "age_band": "6-8",
     "reading_level": "early reader",
     "duration_minutes": 20,
     "setting": "home",
     "materials": ["menu card"],
     "exclusions": [],
     "supervision": "An adult is nearby.",
-    "desired_pages": 2,
+    "desired_pages": 4,
     "desired_visuals": "none",
     "narration": "script",
     "locale": "ja-JP",
@@ -1303,6 +1304,168 @@ class ParentPipelineExportTest(KernelCase):
         lesson_job = self.ok("jobs.get", {"job_id": lesson_job_id})["result"]["job"]
         self.assertEqual(lesson_job["state"], "completed", lesson_job.get("error"))
         self.assertEqual(lesson_job["checkpoint"]["lessons"], 4)
+
+
+NON_DEFAULT_BRIEF = {
+    "title": "Garden measuring with a grown-up",
+    "goal": "Measure two plants with a ruler and say which is taller",
+    "starting_point": "Counts to 20 and can hold a ruler still",
+    "age_band": "6-8",
+    "reading_level": "early reader, large print",
+    "duration_minutes": 25,
+    "setting": "outdoors",
+    "materials": ["ruler", "chalk", "watering can"],
+    "exclusions": ["no plant pulling"],
+    "supervision": "An adult holds the watering can and any cutting tool.",
+    "desired_pages": 4,
+    "desired_visuals": "diagrams",
+    "narration": "none",
+    "locale": "ja-JP",
+    "egress_acknowledged": True,
+    "redaction_requested": False,
+}
+
+
+class ParentBriefPlanFidelityTest(KernelCase):
+    """H-07: the typed brief is what the plan is authored from, not decoration in the job row."""
+
+    def pump(self, llm: FakeLLM) -> None:
+        executor.pump_once(llm=llm, search=FakeSearch(), now=NOW)
+
+    def plan_payload(self, llm: FakeLLM) -> tuple[dict, generation.LLMRequest]:
+        request = next(
+            item for item in llm.requests if item.purpose == "coursebook.plan.generate"
+        )
+        return json.loads(request.input_text), request
+
+    def test_a_non_default_brief_produces_a_plan_input_containing_every_field(self) -> None:
+        created = self.ok(
+            "parent.brief.create", {"brief": NON_DEFAULT_BRIEF}, idempotency_key="key-brief-fidelity"
+        )["result"]
+        llm = FakeLLM(
+            {
+                "coursebook.plan.generate": plan_from_fixture("plan_parent"),
+                "coursebook.plan.validate": validation_from_fixture(),
+            }
+        )
+        self.pump(llm)
+
+        plan_ref = self.ok("parent.brief.get", {"course_id": created["course_id"]})["result"]["plan_job"]
+        job = self.ok("jobs.get", {"job_id": plan_ref["job_id"]})["result"]["job"]
+        self.assertEqual(job["state"], "completed", job.get("error"))
+
+        payload, request = self.plan_payload(llm)
+        self.assertIn("parent_brief", payload)
+        brief = payload["parent_brief"]
+        for key in (
+            "age_band", "reading_level", "starting_point", "duration_minutes", "setting",
+            "materials", "exclusions", "supervision", "desired_pages", "desired_visuals",
+            "narration",
+        ):
+            self.assertIn(key, brief, f"{key} never reached the plan input")
+            self.assertEqual(brief[key], NON_DEFAULT_BRIEF[key])
+        # The page budget is declared to the model as a rule, not just as data.
+        self.assertEqual(payload["rules"]["page_budget"], 4)
+        self.assertEqual(payload["rules"]["section_count"], [1, 4])
+        self.assertIn("page budget", request.instructions)
+        self.assertIn(NON_DEFAULT_BRIEF["supervision"], request.instructions)
+
+        # The brief is durable beside the plan, so the lesson stage reads the same answers, and
+        # the two consent flags (contract preconditions, not content) are not copied into it.
+        with db.read() as connection:
+            row = connection.execute(
+                "SELECT document_json FROM gen_plan_documents ORDER BY created_at DESC LIMIT 1"
+            ).fetchone()
+        document = json.loads(row["document_json"])
+        self.assertEqual(document["parent_brief"], brief)
+        self.assertNotIn("egress_acknowledged", document["parent_brief"])
+        self.assertNotIn("redaction_requested", document["parent_brief"])
+
+    def test_desired_pages_bounds_the_plan(self) -> None:
+        brief = dict(NON_DEFAULT_BRIEF, desired_pages=2)
+        plan = plan_fixture("plan_parent")
+        self.assertEqual(len(plan["sections"]), 4)
+        with self.assertRaises(generation._RuleViolation) as caught:
+            generation.enforce_plan_rules(
+                plan, recipe="parent", dials={}, locale=None, ledger=[], parent_brief=brief
+            )
+        reasons = " ".join(caught.exception.reasons)
+        self.assertIn("at most 2 page(s)", reasons)
+        self.assertIn("4 sections", reasons)
+
+        # A plan at the budget passes the same rule.
+        small = plan_fixture("plan_parent")
+        small["objectives"] = small["objectives"][:2]
+        small["sections"] = small["sections"][:2]
+        small["check_plan"] = [item for item in small["check_plan"] if item["objective_ref"] <= 2]
+        generation.enforce_plan_rules(
+            small, recipe="parent", dials={}, locale=None, ledger=[], parent_brief=brief
+        )
+
+        # The request offers the model the same bound (schema and rules agree).
+        research_run = generation.ResearchRun(status="ok", queries=[], sources=[], reason=None)
+        request = generation.build_plan_request(
+            goal=str(brief["goal"]), recipe="parent", dials={}, locale=None,
+            research_run=research_run, parent_brief=brief,
+        )
+        self.assertEqual(request.schema["properties"]["objectives"]["maxItems"], 2)
+        self.assertEqual(request.schema["properties"]["sections"]["maxItems"], 2)
+
+    def test_parent_recipe_remains_observation_only(self) -> None:
+        plan = plan_fixture("plan_parent")
+        plan["check_plan"][0]["kind"] = "quiz"
+        with self.assertRaises(generation._RuleViolation) as caught:
+            generation.enforce_plan_rules(
+                plan, recipe="parent", dials={}, locale=None, ledger=[], parent_brief=NON_DEFAULT_BRIEF
+            )
+        reasons = " ".join(caught.exception.reasons)
+        self.assertIn("parent checks are observations only", reasons)
+
+        plan = plan_fixture("plan_parent")
+        plan["check_plan"][1]["independent_evidence"] = True
+        with self.assertRaises(generation._RuleViolation) as caught:
+            generation.enforce_plan_rules(
+                plan, recipe="parent", dials={}, locale=None, ledger=[], parent_brief=NON_DEFAULT_BRIEF
+            )
+        self.assertIn("reported evidence", " ".join(caught.exception.reasons))
+
+    def test_no_child_chat_and_no_answer_key_in_the_plan_contract(self) -> None:
+        research_run = generation.ResearchRun(status="ok", queries=[], sources=[], reason=None)
+        request = generation.build_plan_request(
+            goal=NON_DEFAULT_BRIEF["goal"], recipe="parent", dials={}, locale=None,
+            research_run=research_run, parent_brief=NON_DEFAULT_BRIEF,
+        )
+        self.assertIn("never a child-facing chat", request.instructions)
+        payload = json.loads(request.input_text)
+        # Nothing in the plan contract can carry a reference answer or rubric.
+        self.assertNotIn("reference", request.schema.get("properties", {}))
+        for forbidden in ("accepted_answers", "reference_answer", "rubric"):
+            self.assertNotIn(forbidden, payload)
+        # And the model is never told a child will operate the material alone.
+        self.assertIn("parent_led", request.instructions)
+
+    def test_parent_media_answers_narrow_the_capability_declaration(self) -> None:
+        # The parent declined a medium the intent would otherwise have earned.
+        section = {"lesson_intent": "The parent says the phrase aloud while the child looks at the diagram.",
+                   "evidence_target": "production"}
+        declined = generation.lesson_capability_plan(
+            recipe="parent", section=section, objective={"evidence_target": "production"},
+            locale="ja-JP", dials={}, plan={"subject_domain": "language"},
+            parent_brief=dict(NON_DEFAULT_BRIEF, desired_visuals="none", narration="none"),
+        )
+        self.assertEqual((declined.image, declined.audio), ("none", "none"))
+
+        # The parent permitting media does not force it: an intent with no visual/oral construct
+        # still gets none.
+        permitted = generation.lesson_capability_plan(
+            recipe="parent",
+            section={"lesson_intent": "The parent names one thing and the child points to it.",
+                     "evidence_target": "recall"},
+            objective={"evidence_target": "recall"}, locale="ja-JP", dials={},
+            plan={"subject_domain": "language"},
+            parent_brief=dict(NON_DEFAULT_BRIEF, desired_visuals="illustrations", narration="script"),
+        )
+        self.assertEqual((permitted.image, permitted.audio), ("none", "none"))
 
 
 def _has_path_key(value) -> bool:
