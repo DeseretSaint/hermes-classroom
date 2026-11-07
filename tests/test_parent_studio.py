@@ -927,6 +927,344 @@ class ParentPipelineExportTest(KernelCase):
             self.assertNotIn(check["reference_answer"], check.get("accepted_alternatives") or [])
 
 
+    def test_a_replanned_plan_carries_its_outline_through_edit_to_lessons_and_export(self) -> None:
+        """The dead end from CB-015 row 9: replan → edit → approve → lessons → approve → export.
+
+        ``plan.replan`` cannot author prose, so it must carry the approved outline onto the new
+        version. Without the carry ``run_lesson_job`` fails ``has no authored document`` and the
+        course can never reach export again (``parent.export`` stays ``no_generated_content``).
+        """
+        created = self.ok(
+            "parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key="key-brief-replan"
+        )["result"]
+        course_id = created["course_id"]
+        enrollment_id = created["enrollment_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.plan.generate": plan_from_fixture("plan_parent"),
+                    "coursebook.plan.validate": validation_from_fixture(),
+                }
+            )
+        )
+        plan_ref = self.ok("parent.brief.get", {"course_id": course_id})["result"]["plan_job"]
+        first_job = self.ok("jobs.get", {"job_id": plan_ref["job_id"]})["result"]["job"]
+        self.assertEqual(first_job["state"], "completed")
+        first_plan_id = first_job["checkpoint"]["plan_id"]
+        revision = self.approve(enrollment_id, first_plan_id, 0)
+
+        # 1. A content-preserving replan: keep every objective, retitle one.
+        objectives = self.rows(
+            "SELECT id, ordinal FROM objectives WHERE plan_id = ? ORDER BY ordinal", (first_plan_id,)
+        )
+        changes = [
+            (
+                {"objective_id": row["id"], "change": "retitle", "title": "Renamed opening"}
+                if row["ordinal"] == 1
+                else {"objective_id": row["id"], "change": "keep"}
+            )
+            for row in objectives
+        ]
+        replanned = self.ok(
+            "plan.replan",
+            {"enrollment_id": enrollment_id, "objective_changes": changes},
+            expected_revision=revision,
+            idempotency_key="key-replan-1",
+        )["result"]
+        self.assertEqual(replanned["plan_version"], 2)
+        revision = replanned["revision"]
+        new_plan_id = str(
+            self.scalar(
+                "SELECT id FROM plans WHERE course_id = ? AND state = 'draft' ORDER BY version DESC LIMIT 1",
+                (course_id,),
+            )
+        )
+        # The carry is real: the new version has a document and one section per objective.
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM gen_plan_documents WHERE plan_id = ?", (new_plan_id,)), 1
+        )
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM gen_plan_sections WHERE plan_id = ?", (new_plan_id,)), 4
+        )
+        self.assertNotEqual(new_plan_id, str(first_plan_id))
+
+        # 2. Edit the new draft through the Parent Studio command, then approve it.
+        new_objective = self.rows(
+            "SELECT id FROM objectives WHERE plan_id = ? ORDER BY ordinal LIMIT 1", (new_plan_id,)
+        )[0]["id"]
+        edited = self.ok(
+            "parent.plan.edit",
+            {
+                "enrollment_id": enrollment_id,
+                "plan_id": new_plan_id,
+                "expected_plan_hash": domain.plan_hash(new_plan_id),
+                "objective_edits": [{"objective_id": new_objective, "title": "Edited after replan"}],
+            },
+            expected_revision=revision,
+            idempotency_key="key-replan-edit-1",
+        )["result"]
+        revision = self.approve(enrollment_id, new_plan_id, edited["revision"])
+
+        # 3. Lessons for the replanned version: one per section, no provider re-authoring of a plan.
+        lesson_job_id = self.ok(
+            "jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": new_plan_id}}
+        )["result"]["job_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.lesson.generate": parent_lesson_response(),
+                    "coursebook.lesson.validate": validation_from_fixture(),
+                }
+            )
+        )
+        lesson_job = self.ok("jobs.get", {"job_id": lesson_job_id})["result"]["job"]
+        self.assertEqual(lesson_job["state"], "completed", lesson_job.get("error"))
+        self.assertEqual(lesson_job["checkpoint"]["lessons"], 4)
+        self.assertEqual(
+            [row["state"] for row in self.rows("SELECT state FROM gen_lessons ORDER BY created_at")],
+            ["validated"] * 4,
+        )
+        # The lessons read the edited objective title, not the pre-replan document snapshot.
+        self.assertEqual(
+            self.scalar(
+                "SELECT title FROM objectives WHERE plan_id = ? ORDER BY ordinal LIMIT 1",
+                (new_plan_id,),
+            ),
+            "Edited after replan",
+        )
+
+        # 4. Re-approve the lesson set and export.
+        blueprint = self.ok("parent.blueprint.read", {"course_id": course_id})["result"]
+        self.assertEqual(blueprint["plan"]["plan_id"], new_plan_id)
+        self.assertEqual(len(blueprint["tabs"]["learner_pages"]), 4)
+        approval = self.ok(
+            "parent.final.approve",
+            {
+                "enrollment_id": enrollment_id,
+                "plan_id": new_plan_id,
+                "plan_hash": blueprint["plan"]["plan_hash"],
+                "content_hash": blueprint["content_hash"],
+            },
+            expected_revision=revision,
+            idempotency_key="key-final-replan",
+        )["result"]
+        self.assertEqual(approval["state"], "active")
+        exported = self.ok(
+            "parent.export", {"enrollment_id": enrollment_id}, idempotency_key="key-export-replan"
+        )["result"]
+        self.assertEqual(exported["content_hash"], approval["content_hash"])
+        self.assertEqual(
+            {item["role"] for item in exported["files"]},
+            {"parent_guide", "learner_page", "answer_guide"},
+        )
+
+    def test_a_structural_add_is_not_silently_carried(self) -> None:
+        """An objective the old outline never covered must be re-authored, never half-exported."""
+        created = self.ok(
+            "parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key="key-brief-add"
+        )["result"]
+        course_id = created["course_id"]
+        enrollment_id = created["enrollment_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.plan.generate": plan_from_fixture("plan_parent"),
+                    "coursebook.plan.validate": validation_from_fixture(),
+                }
+            )
+        )
+        plan_ref = self.ok("parent.brief.get", {"course_id": course_id})["result"]["plan_job"]
+        first_job = self.ok("jobs.get", {"job_id": plan_ref["job_id"]})["result"]["job"]
+        first_plan_id = first_job["checkpoint"]["plan_id"]
+        revision = self.approve(enrollment_id, first_plan_id, 0)
+        objectives = self.rows(
+            "SELECT id FROM objectives WHERE plan_id = ? ORDER BY ordinal", (first_plan_id,)
+        )
+        changes = [{"objective_id": row["id"], "change": "keep"} for row in objectives]
+        changes.append({"objective_id": objectives[0]["id"], "change": "add", "title": "Brand new"})
+        replanned = self.ok(
+            "plan.replan",
+            {"enrollment_id": enrollment_id, "objective_changes": changes},
+            expected_revision=revision,
+            idempotency_key="key-replan-add",
+        )["result"]
+        new_plan_id = str(
+            self.scalar(
+                "SELECT id FROM plans WHERE course_id = ? AND state = 'draft' ORDER BY version DESC LIMIT 1",
+                (course_id,),
+            )
+        )
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM gen_plan_documents WHERE plan_id = ?", (new_plan_id,)), 0,
+            "an added objective has no authored section; nothing faithful can be carried",
+        )
+        self.approve(enrollment_id, new_plan_id, replanned["revision"])
+        lesson_job_id = self.ok(
+            "jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": new_plan_id}}
+        )["result"]["job_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.lesson.generate": parent_lesson_response(),
+                    "coursebook.lesson.validate": validation_from_fixture(),
+                }
+            )
+        )
+        lesson_job = self.ok("jobs.get", {"job_id": lesson_job_id})["result"]["job"]
+        self.assertEqual(lesson_job["state"], "failed")
+        self.assertIn("authored document", lesson_job["error"]["message"])
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM gen_lessons"), 0)
+
+
+    def test_a_removal_renumbers_the_carried_sections(self) -> None:
+        """Dropping one objective keeps the outline for the survivors, renumbered one per section."""
+        created = self.ok(
+            "parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key="key-brief-remove"
+        )["result"]
+        course_id = created["course_id"]
+        enrollment_id = created["enrollment_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.plan.generate": plan_from_fixture("plan_parent"),
+                    "coursebook.plan.validate": validation_from_fixture(),
+                }
+            )
+        )
+        plan_ref = self.ok("parent.brief.get", {"course_id": course_id})["result"]["plan_job"]
+        first_job = self.ok("jobs.get", {"job_id": plan_ref["job_id"]})["result"]["job"]
+        first_plan_id = first_job["checkpoint"]["plan_id"]
+        revision = self.approve(enrollment_id, first_plan_id, 0)
+        objectives = self.rows(
+            "SELECT id, ordinal FROM objectives WHERE plan_id = ? ORDER BY ordinal", (first_plan_id,)
+        )
+        changes = [
+            (
+                {"objective_id": row["id"], "change": "remove"}
+                if row["ordinal"] == len(objectives)
+                else {"objective_id": row["id"], "change": "keep"}
+            )
+            for row in objectives
+        ]
+        replanned = self.ok(
+            "plan.replan",
+            {"enrollment_id": enrollment_id, "objective_changes": changes},
+            expected_revision=revision,
+            idempotency_key="key-replan-remove",
+        )["result"]
+        new_plan_id = str(
+            self.scalar(
+                "SELECT id FROM plans WHERE course_id = ? AND state = 'draft' ORDER BY version DESC LIMIT 1",
+                (course_id,),
+            )
+        )
+        sections = self.rows(
+            "SELECT ordinal, objective_refs_json FROM gen_plan_sections WHERE plan_id = ? ORDER BY ordinal",
+            (new_plan_id,),
+        )
+        self.assertEqual([row["ordinal"] for row in sections], [1, 2, 3])
+        self.assertEqual([json.loads(row["objective_refs_json"]) for row in sections], [[1], [2], [3]])
+        self.approve(enrollment_id, new_plan_id, replanned["revision"])
+        lesson_job_id = self.ok(
+            "jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": new_plan_id}}
+        )["result"]["job_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.lesson.generate": parent_lesson_response(),
+                    "coursebook.lesson.validate": validation_from_fixture(),
+                }
+            )
+        )
+        lesson_job = self.ok("jobs.get", {"job_id": lesson_job_id})["result"]["job"]
+        self.assertEqual(lesson_job["state"], "completed", lesson_job.get("error"))
+        self.assertEqual(lesson_job["checkpoint"]["lessons"], 3)
+
+
+    def test_a_version_that_never_authored_its_own_document_carries_from_the_last_authored_one(self) -> None:
+        """The live rig's shape: v3 was replanned before the fix, so only v1 has a document.
+
+        A later replan of v3 must walk back to v1's outline, not refuse because the source version
+        has no document of its own.
+        """
+        created = self.ok(
+            "parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key="key-brief-chain"
+        )["result"]
+        course_id = created["course_id"]
+        enrollment_id = created["enrollment_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.plan.generate": plan_from_fixture("plan_parent"),
+                    "coursebook.plan.validate": validation_from_fixture(),
+                }
+            )
+        )
+        plan_ref = self.ok("parent.brief.get", {"course_id": course_id})["result"]["plan_job"]
+        plan_job = self.ok("jobs.get", {"job_id": plan_ref["job_id"]})["result"]["job"]
+        first_plan_id = plan_job["checkpoint"]["plan_id"]
+        revision = self.approve(enrollment_id, first_plan_id, 0)
+        objectives = self.rows(
+            "SELECT id FROM objectives WHERE plan_id = ? ORDER BY ordinal", (first_plan_id,)
+        )
+        changes = [{"objective_id": row["id"], "change": "keep"} for row in objectives]
+        first_replan = self.ok(
+            "plan.replan",
+            {"enrollment_id": enrollment_id, "objective_changes": changes},
+            expected_revision=revision,
+            idempotency_key="key-chain-1",
+        )["result"]
+        middle_plan_id = str(
+            self.scalar(
+                "SELECT id FROM plans WHERE course_id = ? AND state = 'draft' ORDER BY version DESC LIMIT 1",
+                (course_id,),
+            )
+        )
+        # Simulate a version created before this fix: approved, but with no authored outline.
+        with db.transaction() as connection:
+            connection.execute("DELETE FROM gen_plan_sections WHERE plan_id = ?", (middle_plan_id,))
+            connection.execute("DELETE FROM gen_plan_documents WHERE plan_id = ?", (middle_plan_id,))
+        middle_revision = self.approve(enrollment_id, middle_plan_id, first_replan["revision"])
+        middle_objectives = self.rows(
+            "SELECT id FROM objectives WHERE plan_id = ? ORDER BY ordinal", (middle_plan_id,)
+        )
+        second_replan = self.ok(
+            "plan.replan",
+            {"enrollment_id": enrollment_id,
+             "objective_changes": [{"objective_id": row["id"], "change": "keep"} for row in middle_objectives]},
+            expected_revision=middle_revision,
+            idempotency_key="key-chain-2",
+        )["result"]
+        last_plan_id = str(
+            self.scalar(
+                "SELECT id FROM plans WHERE course_id = ? AND state = 'draft' ORDER BY version DESC LIMIT 1",
+                (course_id,),
+            )
+        )
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM gen_plan_documents WHERE plan_id = ?", (last_plan_id,)), 1,
+            "the carry must fall back to the last version that actually has a document",
+        )
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM gen_plan_sections WHERE plan_id = ?", (last_plan_id,)), 4
+        )
+        self.approve(enrollment_id, last_plan_id, second_replan["revision"])
+        lesson_job_id = self.ok(
+            "jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": last_plan_id}}
+        )["result"]["job_id"]
+        self.pump(
+            FakeLLM(
+                {
+                    "coursebook.lesson.generate": parent_lesson_response(),
+                    "coursebook.lesson.validate": validation_from_fixture(),
+                }
+            )
+        )
+        lesson_job = self.ok("jobs.get", {"job_id": lesson_job_id})["result"]["job"]
+        self.assertEqual(lesson_job["state"], "completed", lesson_job.get("error"))
+        self.assertEqual(lesson_job["checkpoint"]["lessons"], 4)
+
+
 def _has_path_key(value) -> bool:
     """True when a response object names a local path anywhere (v6 forbids every such field)."""
     if isinstance(value, dict):

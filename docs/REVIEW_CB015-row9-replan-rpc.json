@@ -1,0 +1,2033 @@
+{
+  "wire_version": 7,
+  "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_9bdcc54f",
+  "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+  "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+  "original_plan": {
+    "plan_id": "pln_17693ea32b5b428e853a2a0c5366aa99",
+    "version": 5,
+    "state": "approved",
+    "plan_hash": "sha256:d98b544fdcf696a4ac4b45d45bf34e93a179c44f686cf92f0b50a48b744072e3"
+  },
+  "replanned_plan_id": "pln_0cc6c88f502046cb80041be6393f8fd7",
+  "lesson_job_id": "job_878796eb19a94773b51572b5b0d4dae6",
+  "lesson_job": {
+    "id": "job_878796eb19a94773b51572b5b0d4dae6",
+    "state": "completed",
+    "checkpoint": {
+      "last_stage": "lessons",
+      "lessons": 4,
+      "plan_hash": "sha256:44220c0dca68ced719c9a0b679d1b4ee3ede22ad5edb7179ceac0161a84da766",
+      "plan_id": "pln_0cc6c88f502046cb80041be6393f8fd7"
+    }
+  },
+  "before": {
+    "plan": {
+      "plan_id": "pln_17693ea32b5b428e853a2a0c5366aa99",
+      "version": 5,
+      "state": "approved",
+      "plan_hash": "sha256:d98b544fdcf696a4ac4b45d45bf34e93a179c44f686cf92f0b50a48b744072e3"
+    },
+    "approval": {
+      "state": "superseded",
+      "plan_hash": "sha256:aff7b511f92c95587758fdae59c4a015a39fd6571b0ad441181ca43ca21dc94e",
+      "content_hash": "sha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934",
+      "approved_at": "2026-11-06T16:39:12.697843+00:00",
+      "invalidated_reason": "course_edited"
+    },
+    "export": {
+      "ready": false,
+      "blocked_reason": "no_generated_content"
+    }
+  },
+  "after_lessons": {
+    "plan": {
+      "plan_id": "pln_0cc6c88f502046cb80041be6393f8fd7",
+      "version": 7,
+      "state": "approved",
+      "plan_hash": "sha256:06e4a666257d61dbff174f74516edd37493c93a094200e416fb365a88d4fdc7d"
+    },
+    "approval": {
+      "state": "superseded",
+      "plan_hash": "sha256:aff7b511f92c95587758fdae59c4a015a39fd6571b0ad441181ca43ca21dc94e",
+      "content_hash": "sha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934",
+      "approved_at": "2026-11-06T16:39:12.697843+00:00",
+      "invalidated_reason": "course_edited"
+    },
+    "export": {
+      "ready": false,
+      "blocked_reason": "no_final_approval"
+    },
+    "tabs": {
+      "parent_guide": 4,
+      "learner_pages": 4,
+      "answers": 4,
+      "narration": 4
+    }
+  },
+  "final_approval": {
+    "approval_id": "apr_42deefcb25b64ceabed002abdd557d9b",
+    "state": "active",
+    "plan_hash": "sha256:06e4a666257d61dbff174f74516edd37493c93a094200e416fb365a88d4fdc7d",
+    "content_hash": "sha256:e47a8a2c18bfeed285065e033895e01edc2e6d4e0e52bab43c40f77527fc2895",
+    "approved_at": "2026-11-06T23:00:47.713738+00:00",
+    "revision": 12
+  },
+  "export": {
+    "content_hash": "sha256:e47a8a2c18bfeed285065e033895e01edc2e6d4e0e52bab43c40f77527fc2895",
+    "files": [
+      {
+        "role": "answer_guide",
+        "name": "answer-guide/01-warm-things-at-home.md",
+        "bytes": 730,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "answer_guide",
+        "name": "answer-guide/02-cold-things-at-home.md",
+        "bytes": 1431,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "answer_guide",
+        "name": "answer-guide/03-why-the-kettle-is-a-grown-up-job.md",
+        "bytes": 1325,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "answer_guide",
+        "name": "answer-guide/04-explain-one-example.md",
+        "bytes": 1408,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "learner_page",
+        "name": "lessons/01-warm-things-at-home.md",
+        "bytes": 1705,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "learner_page",
+        "name": "lessons/02-cold-things-at-home.md",
+        "bytes": 2298,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "learner_page",
+        "name": "lessons/03-why-the-kettle-is-a-grown-up-job.md",
+        "bytes": 2461,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "learner_page",
+        "name": "lessons/04-explain-one-example.md",
+        "bytes": 3072,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "parent_guide",
+        "name": "parent-guide/01-warm-things-at-home.md",
+        "bytes": 2472,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "parent_guide",
+        "name": "parent-guide/02-cold-things-at-home.md",
+        "bytes": 2870,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "parent_guide",
+        "name": "parent-guide/03-why-the-kettle-is-a-grown-up-job.md",
+        "bytes": 2849,
+        "mime": "text/markdown"
+      },
+      {
+        "role": "parent_guide",
+        "name": "parent-guide/04-explain-one-example.md",
+        "bytes": 3986,
+        "mime": "text/markdown"
+      }
+    ],
+    "artifacts": [
+      {
+        "artifact_id": "art_6b904a9d9f01485f9036db96cbce1f54",
+        "kind": "pack",
+        "bytes": 16283
+      },
+      {
+        "artifact_id": "art_bd0e56e90f1045a9b36c04bb99c8dcaf",
+        "kind": "pdf",
+        "bytes": 10752
+      },
+      {
+        "artifact_id": "art_1cd79abd51254e09b7979e132c138980",
+        "kind": "export",
+        "bytes": 16283
+      }
+    ]
+  },
+  "calls": [
+    {
+      "method": "parent.brief.get",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+        "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+        "brief": {
+          "title": "Japanese café basics",
+          "goal": "Order coffee in Japanese politely",
+          "starting_point": null,
+          "age_band": "8-10",
+          "reading_level": "early reader",
+          "duration_minutes": 20,
+          "setting": "home",
+          "materials": [
+            "menu card"
+          ],
+          "exclusions": [],
+          "supervision": "An adult is nearby.",
+          "desired_pages": 2,
+          "desired_visuals": "none",
+          "narration": "script",
+          "locale": "ja-JP",
+          "egress_acknowledged": true,
+          "redaction_requested": false
+        },
+        "plan_job": {
+          "job_id": "job_819ad878ef6747f8939f4598c0abef4f",
+          "kind": "plan",
+          "state": "completed",
+          "submitted_at": "2026-11-06T22:34:05Z"
+        },
+        "created_at": "2026-11-06T16:39:03.089248+00:00"
+      },
+      "error": null
+    },
+    {
+      "method": "parent.blueprint.read",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+        "recipe": "parent",
+        "plan": {
+          "plan_id": "pln_17693ea32b5b428e853a2a0c5366aa99",
+          "version": 5,
+          "state": "approved",
+          "plan_hash": "sha256:d98b544fdcf696a4ac4b45d45bf34e93a179c44f686cf92f0b50a48b744072e3"
+        },
+        "approval": {
+          "state": "superseded",
+          "plan_hash": "sha256:aff7b511f92c95587758fdae59c4a015a39fd6571b0ad441181ca43ca21dc94e",
+          "content_hash": "sha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934",
+          "approved_at": "2026-11-06T16:39:12.697843+00:00",
+          "invalidated_reason": "course_edited"
+        },
+        "content_hash": "sha256:8960ea61629bf8ea87ff91853a9b94379bf928c615d7ccfa996f52235b938f33",
+        "export": {
+          "ready": false,
+          "blocked_reason": "no_generated_content"
+        },
+        "tabs": {
+          "parent_guide": [],
+          "learner_pages": [],
+          "answers": [],
+          "narration": []
+        },
+        "sources": [
+          {
+            "source_id": "40671cc1667ed1b2",
+            "title": "Polite greetings in Japanese",
+            "url": "https://example.org/greetings",
+            "support_status": "model_assessed",
+            "fetched_at": "2026-11-06T12:00:00Z"
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "method": "course.outline",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+        "plan": {
+          "plan_id": "pln_17693ea32b5b428e853a2a0c5366aa99",
+          "version": 5,
+          "state": "approved",
+          "plan_hash": "sha256:d98b544fdcf696a4ac4b45d45bf34e93a179c44f686cf92f0b50a48b744072e3"
+        },
+        "objectives": [
+          {
+            "objective_id": "obj_2e296ab605f4434e80809c27ed3b0cad",
+            "ordinal": 1,
+            "title": "Name one warm and one cold thing in the kitchen (revised) (revisited) — edited after replan",
+            "evidence_target": "recall",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          },
+          {
+            "objective_id": "obj_1acf187c542d4874a36300d323467112",
+            "ordinal": 2,
+            "title": "Sort picture cards into warm and cold",
+            "evidence_target": "discrimination",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          },
+          {
+            "objective_id": "obj_ca9ea611376b476c851243c8baef79ab",
+            "ordinal": 3,
+            "title": "Say why the kettle is a grown-up job",
+            "evidence_target": "comprehension",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          },
+          {
+            "objective_id": "obj_d3c449f4bb854144be9f3f036a44808f",
+            "ordinal": 4,
+            "title": "Explain one example in their own words",
+            "evidence_target": "production",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          }
+        ],
+        "total": 4,
+        "truncated": false
+      },
+      "error": null
+    },
+    {
+      "method": "library.list",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "items": [
+          {
+            "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+            "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+            "title": "Japanese café basics, revised",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen (revised) (revisited) — edited after replan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "obj_2e296ab605f4434e80809c27ed3b0cad"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T22:49:09.034878+00:00",
+            "revision": 8
+          },
+          {
+            "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb",
+            "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+            "title": "Japanese café basics",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "659f64346eec5e0d"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:42:10.516443+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_176897ff32584282955b085634837b2b",
+            "course_id": "crs_e58e8ef3fcb54777ac4d8c17636307e5",
+            "title": "Japanese café basics",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "3e76000b29ae121f"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:41:50.536648+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+            "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name the parts: half, quarter and eighth (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "81c3865ea1928504"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:38:28.425696+00:00",
+            "revision": 3
+          },
+          {
+            "enrollment_id": "enr_f7979943032a4e4c8ea244910780e966",
+            "course_id": "crs_66dfba72ef9e4182b05bc250b7d5f097",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 5,
+              "current_objective_id": "04b1feaec24e256b"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:27:09.299041+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_784e5e696f674e77be99b80d061dd32f",
+            "course_id": "crs_1f27d4072f774876adc62c369502593f",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "35add4bc254a5d4e"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:18:55.458728+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_6810b5a559f94c628caaa7e2f31b556d",
+            "course_id": "crs_d45c75b0d6a540e8bc5d890812866305",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:09:17.908595+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_35245a0815e647048882369b6252afd8",
+            "course_id": "crs_5b00a07f93ee44f880f57d3cb51d777e",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:04:11.418029+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_3ef0ef2f18e4450e925382eb2ad5d5df",
+            "course_id": "crs_0425a98fcbb546f8b4b2e0b014bf1a6f",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:58:24.932524+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_a18e081a3379458cb8dc58e8bc0b510c",
+            "course_id": "crs_ef4b1721bb574db2ab0a1113484f744a",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "0281a4687d05e389"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:53:19.398013+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_6fd46e75b5f245e4b4a0c1f7453194a5",
+            "course_id": "crs_88e1ec88b4944a50a1b180cd33f3936c",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:49:53.301413+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_36daa3bf81e24bfca20e464c8d961f88",
+            "course_id": "crs_ffa47ef1ca2c48bd98881fc0d280aa4d",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:47:28.324648+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_460d2db6585f41aa9b04fb4fe8e0799c",
+            "course_id": "crs_7df0a98d00d34ff488b3dde2d599c3db",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:29:58.302444+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_0d6e90f945734098a2245276d79c28d5",
+            "course_id": "crs_2eab8b4076624f2daa945ffec14901a8",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:29:22.784574+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_a7463e5310774324a934032d802460e5",
+            "course_id": "crs_1e75a5483bee4d90a8ab0ce32caf35a0",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:26:44.549306+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_403017b82b3940a5b1c276bef9d98079",
+            "course_id": "crs_2fcca2cd77fd499cb5a38606f82cf083",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:25:11.084538+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_5927318c52ae4055b340dfc9f9e04eed",
+            "course_id": "crs_058ea2a0d3744d1c9596607d3b71c06e",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "bb10a864fc34c668"
+            },
+            "warning": "plan_update",
+            "updated_at": "2026-11-06T15:23:50.548924+00:00",
+            "revision": 0
+          }
+        ],
+        "next_cursor": null,
+        "total": 17,
+        "empty_reason": null,
+        "applied_filter": "all"
+      },
+      "error": null
+    },
+    {
+      "method": "plan.replan",
+      "expected_revision": 8,
+      "idempotency_key": "row9-replan-1794005392752762603",
+      "ok": true,
+      "result": {
+        "plan_version": 6,
+        "revision": 9
+      },
+      "error": null
+    },
+    {
+      "method": "course.outline",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+        "plan": {
+          "plan_id": "pln_0cc6c88f502046cb80041be6393f8fd7",
+          "version": 6,
+          "state": "draft",
+          "plan_hash": "sha256:43e6e92b2b824a449338712061cb4ab2edbae4a69c92a4f73f02a5e938c0ef46"
+        },
+        "objectives": [
+          {
+            "objective_id": "obj_28ab185a0fe346ae94beb92e79f8a062",
+            "ordinal": 1,
+            "title": "Name one warm and one cold thing in the kitchen (revised) (revisited) — edited after replan (revisited)",
+            "evidence_target": "recall",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          },
+          {
+            "objective_id": "obj_1d0eb16af9c54d4496c1f606d6701588",
+            "ordinal": 2,
+            "title": "Sort picture cards into warm and cold",
+            "evidence_target": "discrimination",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          },
+          {
+            "objective_id": "obj_6b5faf58c78446fb99420e772186983f",
+            "ordinal": 3,
+            "title": "Say why the kettle is a grown-up job",
+            "evidence_target": "comprehension",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          },
+          {
+            "objective_id": "obj_ac2b1c2510144083b80575ba34477bc2",
+            "ordinal": 4,
+            "title": "Explain one example in their own words",
+            "evidence_target": "production",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          }
+        ],
+        "total": 4,
+        "truncated": false
+      },
+      "error": null
+    },
+    {
+      "method": "parent.blueprint.read",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+        "recipe": "parent",
+        "plan": {
+          "plan_id": "pln_0cc6c88f502046cb80041be6393f8fd7",
+          "version": 6,
+          "state": "draft",
+          "plan_hash": "sha256:43e6e92b2b824a449338712061cb4ab2edbae4a69c92a4f73f02a5e938c0ef46"
+        },
+        "approval": {
+          "state": "superseded",
+          "plan_hash": "sha256:aff7b511f92c95587758fdae59c4a015a39fd6571b0ad441181ca43ca21dc94e",
+          "content_hash": "sha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934",
+          "approved_at": "2026-11-06T16:39:12.697843+00:00",
+          "invalidated_reason": "course_edited"
+        },
+        "content_hash": "sha256:19e35c2dcb65dd01be0aa0225225c8a14f63034b4e725a408b090a281273b44f",
+        "export": {
+          "ready": false,
+          "blocked_reason": "plan_not_approved"
+        },
+        "tabs": {
+          "parent_guide": [],
+          "learner_pages": [],
+          "answers": [],
+          "narration": []
+        },
+        "sources": [
+          {
+            "source_id": "40671cc1667ed1b2",
+            "title": "Polite greetings in Japanese",
+            "url": "https://example.org/greetings",
+            "support_status": "model_assessed",
+            "fetched_at": "2026-11-06T12:00:00Z"
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "method": "course.outline",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+        "plan": {
+          "plan_id": "pln_0cc6c88f502046cb80041be6393f8fd7",
+          "version": 6,
+          "state": "draft",
+          "plan_hash": "sha256:43e6e92b2b824a449338712061cb4ab2edbae4a69c92a4f73f02a5e938c0ef46"
+        },
+        "objectives": [
+          {
+            "objective_id": "obj_28ab185a0fe346ae94beb92e79f8a062",
+            "ordinal": 1,
+            "title": "Name one warm and one cold thing in the kitchen (revised) (revisited) — edited after replan (revisited)",
+            "evidence_target": "recall",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          },
+          {
+            "objective_id": "obj_1d0eb16af9c54d4496c1f606d6701588",
+            "ordinal": 2,
+            "title": "Sort picture cards into warm and cold",
+            "evidence_target": "discrimination",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          },
+          {
+            "objective_id": "obj_6b5faf58c78446fb99420e772186983f",
+            "ordinal": 3,
+            "title": "Say why the kettle is a grown-up job",
+            "evidence_target": "comprehension",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          },
+          {
+            "objective_id": "obj_ac2b1c2510144083b80575ba34477bc2",
+            "ordinal": 4,
+            "title": "Explain one example in their own words",
+            "evidence_target": "production",
+            "state": "not_started",
+            "check_state": "none",
+            "attempt_count": 0,
+            "independent": false,
+            "last_opened_at": null
+          }
+        ],
+        "total": 4,
+        "truncated": false
+      },
+      "error": null
+    },
+    {
+      "method": "parent.plan.edit",
+      "expected_revision": 9,
+      "idempotency_key": "row9-edit-1794005392787337134",
+      "ok": true,
+      "result": {
+        "plan_id": "pln_0cc6c88f502046cb80041be6393f8fd7",
+        "plan_version": 7,
+        "plan_hash": "sha256:06e4a666257d61dbff174f74516edd37493c93a094200e416fb365a88d4fdc7d",
+        "objective_ids": [
+          "obj_28ab185a0fe346ae94beb92e79f8a062",
+          "obj_1d0eb16af9c54d4496c1f606d6701588",
+          "obj_6b5faf58c78446fb99420e772186983f",
+          "obj_ac2b1c2510144083b80575ba34477bc2"
+        ],
+        "changes_need_review": true,
+        "revision": 10
+      },
+      "error": null
+    },
+    {
+      "method": "plan.approve",
+      "expected_revision": 10,
+      "idempotency_key": "row9-approve-1794005392811259975",
+      "ok": true,
+      "result": {
+        "plan_hash": "sha256:06e4a666257d61dbff174f74516edd37493c93a094200e416fb365a88d4fdc7d",
+        "revision": 11
+      },
+      "error": null
+    },
+    {
+      "method": "jobs.create",
+      "expected_revision": null,
+      "idempotency_key": "row9-lessons-1794005392839621933",
+      "ok": true,
+      "result": {
+        "job_id": "job_878796eb19a94773b51572b5b0d4dae6",
+        "state": "queued"
+      },
+      "error": null
+    },
+    {
+      "method": "parent.blueprint.read",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+        "recipe": "parent",
+        "plan": {
+          "plan_id": "pln_0cc6c88f502046cb80041be6393f8fd7",
+          "version": 7,
+          "state": "approved",
+          "plan_hash": "sha256:06e4a666257d61dbff174f74516edd37493c93a094200e416fb365a88d4fdc7d"
+        },
+        "approval": {
+          "state": "superseded",
+          "plan_hash": "sha256:aff7b511f92c95587758fdae59c4a015a39fd6571b0ad441181ca43ca21dc94e",
+          "content_hash": "sha256:5d62fb2c8ba3c5d12cc71d8c73a2e71673dac2d7d1c41c9d8221d767bcdd3934",
+          "approved_at": "2026-11-06T16:39:12.697843+00:00",
+          "invalidated_reason": "course_edited"
+        },
+        "content_hash": "sha256:e47a8a2c18bfeed285065e033895e01edc2e6d4e0e52bab43c40f77527fc2895",
+        "export": {
+          "ready": false,
+          "blocked_reason": "no_final_approval"
+        },
+        "tabs": {
+          "parent_guide": [
+            {
+              "role": "parent_guide",
+              "title": "01 · Warm things at home",
+              "objective_id": "obj_28ab185a0fe346ae94beb92e79f8a062",
+              "text": "# Parent guide — Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen (re",
+              "sha256": "sha256:2da6875151515a059f53564c18dc6585dcb68857587f2fd60696c0030c10e3c2",
+              "bytes": 2472,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "parent_guide",
+              "title": "02 · Cold things at home",
+              "objective_id": "obj_1d0eb16af9c54d4496c1f606d6701588",
+              "text": "# Parent guide — Cold things at home\n\nObjective: Sort picture cards into warm and cold\nEvidence targ",
+              "sha256": "sha256:92132312acd44a29f7ee4fdf3f89bdf33be326b909e99ff471fd0153c666fbc1",
+              "bytes": 2870,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "parent_guide",
+              "title": "03 · Why the kettle is a grown-up job",
+              "objective_id": "obj_6b5faf58c78446fb99420e772186983f",
+              "text": "# Parent guide — Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\nE",
+              "sha256": "sha256:8b6a1f12fa794921f63be071633a61339f85efb0adc148a87c7abd0cb93170a1",
+              "bytes": 2849,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "parent_guide",
+              "title": "04 · Explain one example",
+              "objective_id": "obj_ac2b1c2510144083b80575ba34477bc2",
+              "text": "# Parent guide — Explain one example\n\nObjective: Explain one example in their own words\nEvidence tar",
+              "sha256": "sha256:4c5d93bac5bcea0cbe18b78f98316f684d263ca80b75b6480a8b347840136037",
+              "bytes": 3986,
+              "source": "authored",
+              "truncated": true
+            }
+          ],
+          "learner_pages": [
+            {
+              "role": "learner_page",
+              "title": "01 · Warm things at home",
+              "objective_id": "obj_28ab185a0fe346ae94beb92e79f8a062",
+              "text": "# おうちのあたたかいもの\n\n## おうちの人がお手本を見せます\nおうちの人が、あたたかいものを指さして、その名前をゆっくり言います。子どもは、よく聞いて、同じように言ってみます。つぎに、つめたいもの",
+              "sha256": "sha256:5d71399aa641161bdc7866737e0736bc2175939cbab31dc3baf9fcb4c488b5a7",
+              "bytes": 1705,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "learner_page",
+              "title": "02 · Cold things at home",
+              "objective_id": "obj_1d0eb16af9c54d4496c1f606d6701588",
+              "text": "# おうちの つめたい もの\n\n## おうちの つめたい もの\nおうちの ひとが キッチン で つめたい もの を 見つけます。「れいぞうこ」「こおり」「つめたい みず」などです。見つけたら、ゆっくり",
+              "sha256": "sha256:bc359ebd684d1f60c528212d9afab1d4a748d3a83ff92dd04af50723d6b1fbe6",
+              "bytes": 2298,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "learner_page",
+              "title": "03 · Why the kettle is a grown-up job",
+              "objective_id": "obj_6b5faf58c78446fb99420e772186983f",
+              "text": "# なぜ やかんは おとなの しごと？\n\n## おとなの やりかたを 見よう\nおうちの ひとが、コンセントを ぬいた やかんを 指さして 言います。『これは おゆを わかす どうぐ。おゆは あつく な",
+              "sha256": "sha256:5d9775bd2e0079cdfc05ef996c19b61903911ad4925cf17cbc97c05b689c15fb",
+              "bytes": 2461,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "learner_page",
+              "title": "04 · Explain one example",
+              "objective_id": "obj_ac2b1c2510144083b80575ba34477bc2",
+              "text": "# 一つの れいを 説明しよう\n\n## おうちの人の お手本を見よう\nおうちの人が キッチンで 一つ えらんで、一文で 話します。れい：「アイスは つめたいです。手で さわると つめたくて、しばらく ",
+              "sha256": "sha256:805f9956df294c9c789ce334614f55f623a0a58b86fbee8415fdd28c611f123e",
+              "bytes": 3072,
+              "source": "authored",
+              "truncated": true
+            }
+          ],
+          "answers": [
+            {
+              "role": "answer_guide",
+              "title": "01 · Warm things at home",
+              "objective_id": "obj_28ab185a0fe346ae94beb92e79f8a062",
+              "text": "# Answer guide — Warm things at home\n\nObjective: Name one warm and one cold thing in the kitchen (re",
+              "sha256": "sha256:a4ec1bf06da6b2d02036087a61098ca8358b40531b792d07e61493f0b54ff6ae",
+              "bytes": 730,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "answer_guide",
+              "title": "02 · Cold things at home",
+              "objective_id": "obj_1d0eb16af9c54d4496c1f606d6701588",
+              "text": "# Answer guide — Cold things at home\n\nObjective: Sort picture cards into warm and cold\n\n## Reference",
+              "sha256": "sha256:38bdfb8bc00d0bdc3c6f973877549cb97deef8d91b2eac707ed8cfe42c91769a",
+              "bytes": 1431,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "answer_guide",
+              "title": "03 · Why the kettle is a grown-up job",
+              "objective_id": "obj_6b5faf58c78446fb99420e772186983f",
+              "text": "# Answer guide — Why the kettle is a grown-up job\n\nObjective: Say why the kettle is a grown-up job\n\n",
+              "sha256": "sha256:66b3dcc2141af8bc66d01545a4424d533e842e477c5676abceba3c0747ebb9a2",
+              "bytes": 1325,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "answer_guide",
+              "title": "04 · Explain one example",
+              "objective_id": "obj_ac2b1c2510144083b80575ba34477bc2",
+              "text": "# Answer guide — Explain one example\n\nObjective: Explain one example in their own words\n\n## Referenc",
+              "sha256": "sha256:ade3020bcce3443d698c0f665454273c339d1116caa9be974a763b0fbd988206",
+              "bytes": 1408,
+              "source": "authored",
+              "truncated": true
+            }
+          ],
+          "narration": [
+            {
+              "role": "narration",
+              "title": "01 · Warm things at home",
+              "objective_id": "obj_28ab185a0fe346ae94beb92e79f8a062",
+              "text": "おうちの人が、あたたかいものを指さして、その名前をゆっくり言います。子どもは、よく聞いて、同じように言ってみます。つぎに、つめたいものでも同じことをします。\nおうちの人がものを見せて「これは？」と聞き",
+              "sha256": "sha256:1975140bbd85af3ff6680c734a2078f636491c7c00d3f952270a388c4e07cef5",
+              "bytes": 624,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "narration",
+              "title": "02 · Cold things at home",
+              "objective_id": "obj_1d0eb16af9c54d4496c1f606d6701588",
+              "text": "おうちの ひとが キッチン で つめたい もの を 見つけます。「れいぞうこ」「こおり」「つめたい みず」などです。見つけたら、ゆっくり「つめたい」と いいます。子どもは まねして いいます。\nものを",
+              "sha256": "sha256:bd581124ddfcb48f4659ac25ef7bcf394104b9715facbbedaa305077796498b2",
+              "bytes": 979,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "narration",
+              "title": "03 · Why the kettle is a grown-up job",
+              "objective_id": "obj_6b5faf58c78446fb99420e772186983f",
+              "text": "おうちの ひとが、コンセントを ぬいた やかんを 指さして 言います。『これは おゆを わかす どうぐ。おゆは あつく なる から、おとなが つかう。』 お子さんは、やかんに さわらず、見て 聞きます",
+              "sha256": "sha256:06ddd1471515709685721a32ca06b4745300f2af08ed4198c73ffda24becc856",
+              "bytes": 1108,
+              "source": "authored",
+              "truncated": true
+            },
+            {
+              "role": "narration",
+              "title": "04 · Explain one example",
+              "objective_id": "obj_ac2b1c2510144083b80575ba34477bc2",
+              "text": "おうちの人が キッチンで 一つ えらんで、一文で 話します。れい：「アイスは つめたいです。手で さわると つめたくて、しばらく おくと とけるからです。」 このように、① 何を えらんだか、② あた",
+              "sha256": "sha256:22ab6011acdc8af2b2e08678330a433f4ff41fb559f57d3677b5579c0af55eb3",
+              "bytes": 1420,
+              "source": "authored",
+              "truncated": true
+            }
+          ]
+        },
+        "sources": [
+          {
+            "source_id": "40671cc1667ed1b2",
+            "title": "Polite greetings in Japanese",
+            "url": "https://example.org/greetings",
+            "support_status": "model_assessed",
+            "fetched_at": "2026-11-06T12:00:00Z"
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "method": "library.list",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "items": [
+          {
+            "enrollment_id": "enr_e88941f95fd54ff3998e93fd8ec5b4ea",
+            "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+            "title": "Japanese café basics, revised",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen (revised) (revisited) — edited after replan (revisited) — edited after replan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "obj_28ab185a0fe346ae94beb92e79f8a062"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T22:49:52.814690+00:00",
+            "revision": 11
+          },
+          {
+            "enrollment_id": "enr_af2b9cf4832243b1a42542fcad397dfb",
+            "course_id": "crs_60369f196bb44cf2abfadc54d8a2a477",
+            "title": "Japanese café basics",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "659f64346eec5e0d"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:42:10.516443+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_176897ff32584282955b085634837b2b",
+            "course_id": "crs_e58e8ef3fcb54777ac4d8c17636307e5",
+            "title": "Japanese café basics",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "ja-JP",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name one warm and one cold thing in the kitchen"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 4,
+              "current_objective_id": "3e76000b29ae121f"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:41:50.536648+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_505fbf46859d45ebb29e55989c94372d",
+            "course_id": "crs_22040027e21240ceab7ca4ffbd15dc26",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name the parts: half, quarter and eighth (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "81c3865ea1928504"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:38:28.425696+00:00",
+            "revision": 3
+          },
+          {
+            "enrollment_id": "enr_f7979943032a4e4c8ea244910780e966",
+            "course_id": "crs_66dfba72ef9e4182b05bc250b7d5f097",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 5,
+              "current_objective_id": "04b1feaec24e256b"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:27:09.299041+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_784e5e696f674e77be99b80d061dd32f",
+            "course_id": "crs_1f27d4072f774876adc62c369502593f",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "35add4bc254a5d4e"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:18:55.458728+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_6810b5a559f94c628caaa7e2f31b556d",
+            "course_id": "crs_d45c75b0d6a540e8bc5d890812866305",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:09:17.908595+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_35245a0815e647048882369b6252afd8",
+            "course_id": "crs_5b00a07f93ee44f880f57d3cb51d777e",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T16:04:11.418029+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_3ef0ef2f18e4450e925382eb2ad5d5df",
+            "course_id": "crs_0425a98fcbb546f8b4b2e0b014bf1a6f",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:58:24.932524+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_a18e081a3379458cb8dc58e8bc0b510c",
+            "course_id": "crs_ef4b1721bb574db2ab0a1113484f744a",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "start_lesson",
+              "label": "Start Name halves of a real object (kitchen table)"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "0281a4687d05e389"
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:53:19.398013+00:00",
+            "revision": 2
+          },
+          {
+            "enrollment_id": "enr_6fd46e75b5f245e4b4a0c1f7453194a5",
+            "course_id": "crs_88e1ec88b4944a50a1b180cd33f3936c",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:49:53.301413+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_36daa3bf81e24bfca20e464c8d961f88",
+            "course_id": "crs_ffa47ef1ca2c48bd98881fc0d280aa4d",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:47:28.324648+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_460d2db6585f41aa9b04fb4fe8e0799c",
+            "course_id": "crs_7df0a98d00d34ff488b3dde2d599c3db",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:29:58.302444+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_0d6e90f945734098a2245276d79c28d5",
+            "course_id": "crs_2eab8b4076624f2daa945ffec14901a8",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:29:22.784574+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_a7463e5310774324a934032d802460e5",
+            "course_id": "crs_1e75a5483bee4d90a8ab0ce32caf35a0",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:26:44.549306+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_403017b82b3940a5b1c276bef9d98079",
+            "course_id": "crs_2fcca2cd77fd499cb5a38606f82cf083",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 0,
+              "current_objective_id": null
+            },
+            "warning": null,
+            "updated_at": "2026-11-06T15:25:11.084538+00:00",
+            "revision": 0
+          },
+          {
+            "enrollment_id": "enr_5927318c52ae4055b340dfc9f9e04eed",
+            "course_id": "crs_058ea2a0d3744d1c9596607d3b71c06e",
+            "title": "Kitchen fractions for a 9-year-old",
+            "subtitle": null,
+            "recipe": "parent",
+            "level_label": null,
+            "locale": "en",
+            "learner_label": null,
+            "enrollment_status": "active",
+            "course_status": "draft",
+            "provenance": {
+              "source": "authored",
+              "pack_id": null,
+              "pack_version": null
+            },
+            "next_step": {
+              "kind": "review_plan",
+              "label": "Review and approve the plan"
+            },
+            "evidence_summary": {
+              "independent": 0,
+              "review_due": 0,
+              "total_objectives": 6,
+              "current_objective_id": "bb10a864fc34c668"
+            },
+            "warning": "plan_update",
+            "updated_at": "2026-11-06T15:23:50.548924+00:00",
+            "revision": 0
+          }
+        ],
+        "next_cursor": null,
+        "total": 17,
+        "empty_reason": null,
+        "applied_filter": "all"
+      },
+      "error": null
+    },
+    {
+      "method": "parent.final.approve",
+      "expected_revision": 11,
+      "idempotency_key": "row9-final-1794006047710863736",
+      "ok": true,
+      "result": {
+        "approval_id": "apr_42deefcb25b64ceabed002abdd557d9b",
+        "state": "active",
+        "plan_hash": "sha256:06e4a666257d61dbff174f74516edd37493c93a094200e416fb365a88d4fdc7d",
+        "content_hash": "sha256:e47a8a2c18bfeed285065e033895e01edc2e6d4e0e52bab43c40f77527fc2895",
+        "approved_at": "2026-11-06T23:00:47.713738+00:00",
+        "revision": 12
+      },
+      "error": null
+    },
+    {
+      "method": "parent.export",
+      "expected_revision": null,
+      "idempotency_key": "row9-export-1794006047739992147",
+      "ok": true,
+      "result": {
+        "export_id": "exp_073c20f71e6141c4bf5142800b64fe48",
+        "pack": {
+          "pack_id": "parent-crs-3ea89399cb7b4385a6baba8e02883150",
+          "pack_version": "1.0.0",
+          "manifest_hash": "sha256:6b796cb291296b007160e5ccaf79a6b3fe2e8d89b04b24d6c7fc3d23138c09ff"
+        },
+        "files": [
+          {
+            "role": "answer_guide",
+            "name": "answer-guide/01-warm-things-at-home.md",
+            "sha256": "sha256:a4ec1bf06da6b2d02036087a61098ca8358b40531b792d07e61493f0b54ff6ae",
+            "bytes": 730,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "answer_guide",
+            "name": "answer-guide/02-cold-things-at-home.md",
+            "sha256": "sha256:38bdfb8bc00d0bdc3c6f973877549cb97deef8d91b2eac707ed8cfe42c91769a",
+            "bytes": 1431,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "answer_guide",
+            "name": "answer-guide/03-why-the-kettle-is-a-grown-up-job.md",
+            "sha256": "sha256:66b3dcc2141af8bc66d01545a4424d533e842e477c5676abceba3c0747ebb9a2",
+            "bytes": 1325,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "answer_guide",
+            "name": "answer-guide/04-explain-one-example.md",
+            "sha256": "sha256:ade3020bcce3443d698c0f665454273c339d1116caa9be974a763b0fbd988206",
+            "bytes": 1408,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "learner_page",
+            "name": "lessons/01-warm-things-at-home.md",
+            "sha256": "sha256:5d71399aa641161bdc7866737e0736bc2175939cbab31dc3baf9fcb4c488b5a7",
+            "bytes": 1705,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "learner_page",
+            "name": "lessons/02-cold-things-at-home.md",
+            "sha256": "sha256:bc359ebd684d1f60c528212d9afab1d4a748d3a83ff92dd04af50723d6b1fbe6",
+            "bytes": 2298,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "learner_page",
+            "name": "lessons/03-why-the-kettle-is-a-grown-up-job.md",
+            "sha256": "sha256:5d9775bd2e0079cdfc05ef996c19b61903911ad4925cf17cbc97c05b689c15fb",
+            "bytes": 2461,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "learner_page",
+            "name": "lessons/04-explain-one-example.md",
+            "sha256": "sha256:805f9956df294c9c789ce334614f55f623a0a58b86fbee8415fdd28c611f123e",
+            "bytes": 3072,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "parent_guide",
+            "name": "parent-guide/01-warm-things-at-home.md",
+            "sha256": "sha256:2da6875151515a059f53564c18dc6585dcb68857587f2fd60696c0030c10e3c2",
+            "bytes": 2472,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "parent_guide",
+            "name": "parent-guide/02-cold-things-at-home.md",
+            "sha256": "sha256:92132312acd44a29f7ee4fdf3f89bdf33be326b909e99ff471fd0153c666fbc1",
+            "bytes": 2870,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "parent_guide",
+            "name": "parent-guide/03-why-the-kettle-is-a-grown-up-job.md",
+            "sha256": "sha256:8b6a1f12fa794921f63be071633a61339f85efb0adc148a87c7abd0cb93170a1",
+            "bytes": 2849,
+            "mime": "text/markdown"
+          },
+          {
+            "role": "parent_guide",
+            "name": "parent-guide/04-explain-one-example.md",
+            "sha256": "sha256:4c5d93bac5bcea0cbe18b78f98316f684d263ca80b75b6480a8b347840136037",
+            "bytes": 3986,
+            "mime": "text/markdown"
+          }
+        ],
+        "artifacts": [
+          {
+            "artifact_id": "art_6b904a9d9f01485f9036db96cbce1f54",
+            "kind": "pack",
+            "mime": "application/zip",
+            "bytes": 16283,
+            "content_hash": "sha256:b6a96c0888090f60f19079c09100f5c4e31bdd081d938b21f0062673a4b1e9c2"
+          },
+          {
+            "artifact_id": "art_bd0e56e90f1045a9b36c04bb99c8dcaf",
+            "kind": "pdf",
+            "mime": "application/pdf",
+            "bytes": 10752,
+            "content_hash": "sha256:cbaee1e2821ef7c2871f8b89ea0ba4adb8c59ee4a017a177228bd2c2d7595339"
+          },
+          {
+            "artifact_id": "art_1cd79abd51254e09b7979e132c138980",
+            "kind": "export",
+            "mime": "application/zip",
+            "bytes": 16283,
+            "content_hash": "sha256:b6a96c0888090f60f19079c09100f5c4e31bdd081d938b21f0062673a4b1e9c2"
+          }
+        ],
+        "content_hash": "sha256:e47a8a2c18bfeed285065e033895e01edc2e6d4e0e52bab43c40f77527fc2895",
+        "exported_at": "2026-11-06T23:00:47.748435+00:00"
+      },
+      "error": null
+    },
+    {
+      "method": "artifact.get",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "artifact_id": "art_6b904a9d9f01485f9036db96cbce1f54",
+        "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+        "kind": "pack",
+        "mime": "application/zip",
+        "bytes": 16283,
+        "content_hash": "sha256:b6a96c0888090f60f19079c09100f5c4e31bdd081d938b21f0062673a4b1e9c2",
+        "provenance": {
+          "generator": "coursebook.parent_export",
+          "model": null,
+          "prompt_hash": null,
+          "source_ids": [],
+          "notes": "authored parent pack for course crs_3ea89399cb7b4385a6baba8e02883150; manifest sha256:6b796cb291296b007160e5ccaf79a6b3fe2e8d89b04b24d6c7fc3d23138c09ff"
+        },
+        "download": {
+          "handle": "art_6b904a9d9f01485f9036db96cbce1f54_1794006347",
+          "url": "/api/plugins/coursebook/artifacts/art_6b904a9d9f01485f9036db96cbce1f54_1794006347",
+          "method": "GET",
+          "expires_at": "2026-11-06T23:05:47.773550+00:00",
+          "requires_session": true,
+          "single_use": false
+        }
+      },
+      "error": null
+    },
+    {
+      "method": "artifact.get",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "artifact_id": "art_bd0e56e90f1045a9b36c04bb99c8dcaf",
+        "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+        "kind": "pdf",
+        "mime": "application/pdf",
+        "bytes": 10752,
+        "content_hash": "sha256:cbaee1e2821ef7c2871f8b89ea0ba4adb8c59ee4a017a177228bd2c2d7595339",
+        "provenance": {
+          "generator": "coursebook.parent_export",
+          "model": null,
+          "prompt_hash": null,
+          "source_ids": [],
+          "notes": "selectable-text low-ink handout for course crs_3ea89399cb7b4385a6baba8e02883150; manifest sha256:6b796cb291296b007160e5ccaf79a6b3fe2e8d89b04b24d6c7fc3d23138c09ff"
+        },
+        "download": {
+          "handle": "art_bd0e56e90f1045a9b36c04bb99c8dcaf_1794006347",
+          "url": "/api/plugins/coursebook/artifacts/art_bd0e56e90f1045a9b36c04bb99c8dcaf_1794006347",
+          "method": "GET",
+          "expires_at": "2026-11-06T23:05:47.776480+00:00",
+          "requires_session": true,
+          "single_use": false
+        }
+      },
+      "error": null
+    },
+    {
+      "method": "artifact.get",
+      "expected_revision": null,
+      "idempotency_key": null,
+      "ok": true,
+      "result": {
+        "artifact_id": "art_1cd79abd51254e09b7979e132c138980",
+        "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+        "kind": "export",
+        "mime": "application/zip",
+        "bytes": 16283,
+        "content_hash": "sha256:b6a96c0888090f60f19079c09100f5c4e31bdd081d938b21f0062673a4b1e9c2",
+        "provenance": {
+          "generator": "coursebook.parent_export",
+          "model": null,
+          "prompt_hash": null,
+          "source_ids": [],
+          "notes": "parent.export of course crs_3ea89399cb7b4385a6baba8e02883150 from enrollment enr_e88941f95fd54ff3998e93fd8ec5b4ea; content_hash sha256:e47a8a2c18bfeed285065e033895e01edc2e6d4e0e52bab43c40f77527fc2895"
+        },
+        "download": {
+          "handle": "art_1cd79abd51254e09b7979e132c138980_1794006347",
+          "url": "/api/plugins/coursebook/artifacts/art_1cd79abd51254e09b7979e132c138980_1794006347",
+          "method": "GET",
+          "expires_at": "2026-11-06T23:05:47.779228+00:00",
+          "requires_session": true,
+          "single_use": false
+        }
+      },
+      "error": null
+    }
+  ],
+  "job_poll_count": 219
+}

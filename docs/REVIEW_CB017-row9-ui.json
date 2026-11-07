@@ -1,0 +1,184 @@
+{
+  "at": "2026-11-06T23:58:23.786Z",
+  "title": "Japanese café basics, revised",
+  "lessonsJob": "job_2390ab7ac33d4bff9e62d8eae5649ee7",
+  "branch": "wt/cb-017-atlas",
+  "verdicts": {
+    "gateBlockedBeforeApproval": {
+      "changesNeedReview": true,
+      "lessonSetApproval": "Changes need review",
+      "blockedCopy": "You edited the plan after approving the lesson set.",
+      "exportDisabled": true,
+      "approvedHash": "sha256:22dae2d0604ea1dd1cf499ee9194b048d6dc9c749d90151c35d838a667688e5a",
+      "currentHash": "sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5"
+    },
+    "afterLessonSetApproval": {
+      "lessonSetApproval": "Lesson set approved",
+      "approvedHash": "sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5",
+      "exportDisabled": false
+    },
+    "afterExport": {
+      "exportedFiles": true,
+      "fileLines": "Export exp_2e068c56b9a04ced96b872aaccb98ad0 · just now · content hash sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5\nanswer_guide · answer-guide/01-warm-things-at-home.md\n964 B · text/markdown\nanswer_guide · answer-guide/02-cold-things-at-home.md\n855 B · text/markdown\nanswer_guide · answer-guide/03-why-the-kettle-is-a-grown-up-job.md\n1.2 KB · text/markdown\nanswer_guide · answer-guide/04-explain-one-example.md\n1.2 KB · text/markdown\nlearner_page · lessons/01-warm-things-at-home.md\n2.9 KB · text/markdown\nlearner_page · lessons/02-cold-things-at-home.md\n3.2 KB · text/mark"
+    }
+  },
+  "ok": true,
+  "steps": [
+    {
+      "step": "studio-opened",
+      "at": "2026-11-06T23:58:08.223Z",
+      "hash": "#/coursebook",
+      "destination": "studio",
+      "hasExportGate": false,
+      "lessonSetApproval": null,
+      "planLine": null,
+      "changesNeedReview": true,
+      "blockedCopy": "You edited the plan after approving the lesson set.",
+      "exportDisabled": null,
+      "exportPresent": false,
+      "approveLessonSetPresent": false,
+      "approvedLessonCopy": null,
+      "approvedHash": null,
+      "currentHash": null,
+      "exportedFiles": false,
+      "exportSentence": null,
+      "fileLines": null,
+      "slice": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v10\nChanges need review\nYou are the operator · revision 17\nChanges need review\nYou edited the plan after approving the lesson set.\nThe generated lesson set has not been approved. Approval is a separate step from approving the plan.\nStudio view\nBrief\nYou are the operator of this course. Coursebook drafted material for you to teach; the child never chats with it. A brief is immutable once stored — changing the teaching comes from editing the plan, and copying this brief makes a new course.\nTHE BRIEF\nGoal\nOrder coffee in Japanese politely\nStarting point\n—\nAge band\n8-10\nReading level\nearly reader\nSetting\nHome\nDuration\n20 minutes\nMaterials\nmenu card\nExclusions\nNone listed\nSupervision\nAn adult is nearby.\nPages / visuals / narration\n2 pages · none · script\nProvider disclosure acknowledged\nyes\nRedaction requested\nno\nPLAN JOB\nJob\njob_819ad878ef6747f8939f4598c0abef4f\nSubmitted\n1 hr ago\nFinished — plan authored (draft)\nDuplicate brief",
+      "lessonsJob": "job_2390ab7ac33d4bff9e62d8eae5649ee7"
+    },
+    {
+      "step": "export-gate-blocked",
+      "at": "2026-11-06T23:58:11.194Z",
+      "hash": "#/coursebook",
+      "destination": "studio",
+      "hasExportGate": true,
+      "lessonSetApproval": "Changes need review",
+      "planLine": "approved · v10",
+      "changesNeedReview": true,
+      "blockedCopy": "You edited the plan after approving the lesson set.",
+      "exportDisabled": true,
+      "exportPresent": true,
+      "approveLessonSetPresent": true,
+      "approvedLessonCopy": null,
+      "approvedHash": "sha256:22dae2d0604ea1dd1cf499ee9194b048d6dc9c749d90151c35d838a667688e5a",
+      "currentHash": "sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5",
+      "exportedFiles": false,
+      "exportSentence": null,
+      "fileLines": null,
+      "slice": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v10\nChanges need review\nYou are the operator · revision 17\nChanges need review\nYou edited the plan after approving the lesson set.\nThe generated lesson set has not been approved. Approval is a separate step from approving the plan.\nStudio view\nExport\nEXPORT GATE\nPlan\napproved · v10\nLesson set approval\nChanges need review\nApproved content hash\nsha256:22dae2d0604ea1dd1cf499ee9194b048d6dc9c749d90151c35d838a667688e5a\nCurrent content hash\nsha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5\nFINAL APPROVAL\nApproving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it.\nApprove this lesson set\nThe generated lesson set has not been approved. Approval is a separate step from approving the plan.\nFORMATS\nPack archive (parent guide, learner pages, answer guide).\nPrintable PDF: selectable text, low-ink layout, no color-only answers.\nExport the approved files"
+    },
+    {
+      "step": "lesson-set-approved",
+      "at": "2026-11-06T23:58:15.745Z",
+      "hash": "#/coursebook",
+      "destination": "studio",
+      "hasExportGate": true,
+      "lessonSetApproval": "Lesson set approved",
+      "planLine": "approved · v10",
+      "changesNeedReview": false,
+      "blockedCopy": null,
+      "exportDisabled": false,
+      "exportPresent": true,
+      "approveLessonSetPresent": false,
+      "approvedHash": "sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5",
+      "currentHash": "sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5",
+      "exportedFiles": false,
+      "exportSentence": null,
+      "fileLines": null,
+      "slice": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v10\nLesson set approved\nExport ready\nYou are the operator · revision 18\nStudio view\nExport\nEXPORT GATE\nPlan\napproved · v10\nLesson set approval\nLesson set approved\nApproved content hash\nsha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5\nCurrent content hash\nsha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5\nFINAL APPROVAL\nApproving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it.\nLesson set approved on just now for content hash sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5.\nExport is available: the approved lesson set matches the pages shown.\nFORMATS\nPack archive (parent guide, learner pages, answer guide).\nPrintable PDF: selectable text, low-ink layout, no color-only answers.\nExport the approved files",
+      "approveSet": "clicked"
+    },
+    {
+      "step": "exported",
+      "at": "2026-11-06T23:58:22.795Z",
+      "hash": "#/coursebook",
+      "destination": "studio",
+      "hasExportGate": true,
+      "lessonSetApproval": "Lesson set approved",
+      "planLine": "approved · v10",
+      "changesNeedReview": false,
+      "blockedCopy": null,
+      "exportDisabled": false,
+      "exportPresent": true,
+      "approveLessonSetPresent": false,
+      "approvedHash": "sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5",
+      "currentHash": "sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5",
+      "exportedFiles": true,
+      "fileLines": "Export exp_2e068c56b9a04ced96b872aaccb98ad0 · just now · content hash sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5\nanswer_guide · answer-guide/01-warm-things-at-home.md\n964 B · text/markdown\nanswer_guide · answer-guide/02-cold-things-at-home.md\n855 B · text/markdown\nanswer_guide · answer-guide/03-why-the-kettle-is-a-grown-up-job.md\n1.2 KB · text/markdown\nanswer_guide · answer-guide/04-explain-one-example.md\n1.2 KB · text/markdown\nlearner_page · lessons/01-warm-things-at-home.md\n2.9 KB · text/markdown\nlearner_page · lessons/02-cold-things-at-home.md\n3.2 KB · text/mark",
+      "slice": "Coursebook\nOne authored course: brief, plan, pages, export and reflection.\nCourses\nLibrary\nParent Studio\nAll parent courses\nJapanese café basics, revised\nParent preparation\nPlan approved · v10\nLesson set approved\nExport ready\nYou are the operator · revision 18\nStudio view\nExport\nEXPORT GATE\nPlan\napproved · v10\nLesson set approval\nLesson set approved\nApproved content hash\nsha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5\nCurrent content hash\nsha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5\nFINAL APPROVAL\nApproving the plan approved the outline and its activities. This gate is separate: it approves the generated lesson set by its content hash, and any later edit to the plan, the pages or the course title clears it.\nLesson set approved on just now for content hash sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5.\nExport is available: the approved lesson set matches the pages shown.\nFORMATS\nPack archive (parent guide, learner pages, answer guide).\nPrintable PDF: selectable text, low-ink layout, no color-only answers.\nExport the approved files\nEXPORTED FILES\nExport exp_2e068c56b9a04ced96b872aaccb98ad0 · just now · content hash sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5\nanswer_guide · answer-guide/01-warm-things-at-home.md\n964 B · text/markdown\nanswer_guide · answer-guide/02-cold-things-at-home.md\n855 B · text/markdown\nanswer_guide · answer-guide/03-why-the-kettle-is-a-grown-up-job.md\n1.2 KB · text/markdown\nanswer_guide · answer-guide/04-explain-one-example.md\n1.2 KB · text/markdown\nl",
+      "exportClick": "clicked"
+    }
+  ],
+  "corroboration": {
+    "backend": {
+      "url": "http://127.0.0.1:44251",
+      "wire_version": 7,
+      "course_id": "crs_3ea89399cb7b4385a6baba8e02883150",
+      "approval": {
+        "state": "active",
+        "plan_hash": "sha256:da10f8c53d77b1419867854a2c21c763a1d3bcee4853a03a3467d6f46efb8c08",
+        "content_hash": "sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5",
+        "approved_at": "2026-11-06T23:58:11.244958+00:00",
+        "invalidated_reason": null
+      },
+      "export": {
+        "ready": true,
+        "blocked_reason": null
+      },
+      "plan": {
+        "plan_id": "pln_d25b00bbebd442089f31e00c97e3f353",
+        "version": 10,
+        "state": "approved",
+        "plan_hash": "sha256:da10f8c53d77b1419867854a2c21c763a1d3bcee4853a03a3467d6f46efb8c08"
+      }
+    },
+    "lessons_job": {
+      "job_id": "job_2390ab7ac33d4bff9e62d8eae5649ee7",
+      "state": "completed",
+      "progress": {
+        "stage": "lessons",
+        "steps_done": 1,
+        "steps_total": 1,
+        "message": "4 lessons authored"
+      },
+      "checkpoint": {
+        "last_stage": "lessons",
+        "lessons": 4,
+        "plan_hash": "sha256:44220c0dca68ced719c9a0b679d1b4ee3ede22ad5edb7179ceac0161a84da766",
+        "plan_id": "pln_d25b00bbebd442089f31e00c97e3f353"
+      },
+      "created_at": "2026-11-06T23:45:24Z",
+      "updated_at": "2026-11-06T23:54:11Z",
+      "error": null
+    },
+    "export_files": {
+      "parent-crs-3ea89399cb7b4385a6baba8e02883150-1.0.0-9fb8dda5e750c34c.pdf": {
+        "bytes": 11776,
+        "sha256": "638080b93bca1bc5f1c0474ee13024c0c64b3233c4e4bf764e890942eca707ae"
+      },
+      "parent-crs-3ea89399cb7b4385a6baba8e02883150-1.0.0-9fb8dda5e750c34c.zip": {
+        "bytes": 17843,
+        "sha256": "90cf9d20eca250030551960db231e21577a8386423b0eb1465a17d0ce6c4bbaf"
+      }
+    },
+    "shots": {
+      "row9r-06-export-gate-blocked.png": {
+        "sha256": "e674b02f36a521cea95d3e40d56ef7460309a47d543cc24bb7a6a9cea7bf2e6c",
+        "bytes": 199335
+      },
+      "row9r-07-lesson-set-approved.png": {
+        "sha256": "ce933e643b7c0f5803692e4e31bccde50dceda8c178f29edbe96bec60ed8689a",
+        "bytes": 193049
+      },
+      "row9r-08-exported-files.png": {
+        "sha256": "3fe3e227f142b2b58e5b83a4027b3283623dd5d3764b7aa7b50a8fb2f3bdb117",
+        "bytes": 215056
+      },
+      "row9r-09-exported-files-detail.png": {
+        "sha256": "e8e1194b3605088e7d9bc5b62905b443fe92b2210ea4b824107e85ad60def592",
+        "bytes": 236786
+      }
+    }
+  },
+  "export_sentence": "Export exp_2e068c56b9a04ced96b872aaccb98ad0 · just now · content hash sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5"
+}

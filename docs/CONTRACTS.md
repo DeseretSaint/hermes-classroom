@@ -891,6 +891,32 @@ Cinder (sibling card, `t_a356c8a8`). The contract fixes the seam it needs:
 * The executor registers one resolver per kind it serves, drives `run_pending` from a bounded tick,
   and keeps the existing lease/checkpoint/cancel semantics. `parent.brief.create` only *queues*.
 
+### `plan.replan` carries the authored outline (behaviour note, no wire change)
+
+`plan.replan` creates a new plan version and copies its objectives, but the generation staging rows
+(`gen_plan_documents` + `gen_plan_sections`) are written only by the `plan` job. A replanned version
+therefore had no authored document: `jobs.create` with `brief.stage = lessons` for it failed
+`plan ... has no authored document`, and `parent.export` stayed `no_generated_content` forever.
+`parent.plan.edit` cannot rescue it (approved plans are not editable) and re-running the `plan` job
+with the stored brief returns the reuse-cache document instead of writing anything.
+
+The kernel now carries the outline inside the `plan.replan` transaction when — and only when — it
+still maps one section per objective:
+
+* every target objective has a source section, and every copied section names exactly one objective;
+  `keep`, `retitle` and `defer` land 1:1, and a `remove` drops that objective's section and renumbers
+  the survivors;
+* an `add` introduces an objective the source outline never covered, so no carry happens. That
+  version needs the plan job to author a new outline; the lessons job refuses it explicitly instead
+  of authoring a partial set that would export with an objective missing.
+
+The document bytes, research, validation id and generation digest are copied verbatim; copied
+sections get new ids, so `gen_lessons` re-authors under its `(section_id, plan_hash, version)` key.
+Lesson prompts and exports read objective titles from `objectives`, so retitles take effect without
+rewriting the document snapshot. Request/response shapes, error codes and file formats are unchanged
+— this is a behaviour note for a frozen v6 method, not a version bump. `require_revision`,
+idempotency replay and `plan.approve`'s hash fence are untouched.
+
 ### Handlers Cinder must register (after this freeze)
 
 **Registration status: landed in CB-014.** All eight `parent.*` methods are registered — seven in
