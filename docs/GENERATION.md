@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author | `coursebook.plan.generate` | `plan-prompt.v1` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v3` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v4` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
@@ -155,11 +155,34 @@ The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and 
 enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
 page against the linked checks before serving.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v3`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v4`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
 synthesised to reach the floor: a pack is exportable only when the author actually declared them.
+
+**Capability policy reaches the model.** Before the lesson prompt is built, the pipeline computes
+one immutable plan from the recipe, the objective's evidence target, the authored section intent,
+the locale/level and an advisory subject domain (`coursebook/policy.py`). `lesson-prompt.v4`
+receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
+instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
+is told to emit no item of that kind at all. The same plan is stamped on the authored lesson under
+`policy`, stored in `gen_lessons.policy_json`, and handed to `enforce_lesson_rules`; a model cannot
+override it (the harness overwrites any echo before validation).
+
+**Two media gates.** Generated media must pass both `policy.media_policy_problems` (is this
+kind/role permitted by the plan?) and `artifacts.media_problems` (is the spec complete and honest:
+text equivalent, transcript/voice/language for narration, `source_ids` plus permission for a sourced
+technical reference, `facts.rows` for a schematic, and never a technical claim on an illustration).
+A failure is a `_RuleViolation` with an itemised reason: attempt 1 is retried with those reasons,
+attempt 2 parks the lesson `needs_review`. Media never becomes evidence because a validator did not
+complain; it is refused before the validator is called.
+
+**Rubric angle.** `enforce_lesson_rules` resolves the profile through
+`rubrics.resolve_profile(plan.rubric_profile, declared_target)`: the check's declared evidence
+target is authoritative, and an advisory construct that cannot score it falls back to that target's
+default profile. The profile's own criteria are then validated (3–6 distinct observable aspects, no
+mental-state claims, no restated aspect).
 
 **Nuance worth keeping.** A selection check's correct choice necessarily appears among the
 stimulus choices. The invariant is that the *key* is not announced — the reference answer must not
@@ -184,6 +207,49 @@ On rejection the author is called **once more** with the validator's itemised re
 `gen_lessons.rejection_reasons_json` holds the reasons, and `learner_page()` refuses with
 `LessonNotAvailable`. There is no path that enables a learner-facing check without a passing
 independent validation.
+
+## 8. The lesson document: one validated document, many views
+
+`docs/VISUAL_MEDIA_PLAN.md` §5 replaces the linear segment contract with a block document. The
+backend owns the document; a view is a lens over it. `coursebook/lesson_document.py` builds it as a
+**pure read projection**: it never writes a row, never calls a provider and never mints content.
+
+Two stored shapes project into the same `$defs/lesson_document`:
+
+* `generation.learner_page()` projects the stored `gen_lessons.page_json` (`segments`,
+  `worked_example`, `learner_explanation`, `media`, `sources`) and attaches the linked check id.
+  The row is not rewritten: an older page keeps its v7 bytes and gains `document` at read.
+* `lesson.page` projects the durable `lesson_segments` rows plus the course artifact index. Teaching
+  prose maps positionally to `orient`/`explain`/`recap`, a `check_prompt` segment becomes the
+  `practice` block, and a `media` segment becomes a media child of the preceding block.
+
+Rules the projection cannot bend:
+
+* `short` is authored, never synthesised from `deep`. A projected v7 page therefore has
+  `short = null` everywhere, reports `state = "textbook_only"` and `views.guided = false`, and
+  carries a human `view_note`: the Desktop disables the view and explains why instead of showing an
+  empty Guided pane. Only `document_from_blocks()` (the authored v8 path) reaches `complete`.
+* One check attaches to exactly one block: the first `practice` block, else the page's terminal
+  block. Two blocks claiming a check, or a check no block carries, is a `LessonDocumentError`, not
+  a rendering decision.
+* Media is a child of a block. Narration placement follows the practice block; a visual follows
+  the example, then the explanation, then the first block. The child keeps the authored kind, role,
+  purpose, text equivalent and label; provenance stays on `artifact.get`. A legacy media segment
+  whose artifact row is unknown is preserved as block text rather than labelled with a guessed
+  kind.
+* Source ids recorded on a segment travel with that block. A v7 page recorded provenance only at
+  document level, so its ids survive in `document.source_ids` and no block-level citation is
+  invented.
+* `validate_document()` re-checks the allowlist, the role vocabulary, duplicate ids, empty blocks,
+  the single-check rule, the view/state consistency and the content hash. `document_id` and
+  `content_hash` are derived from the canonical document, so a re-read is byte-identical and a
+  review can name the exact document it read.
+* `generation._narrative_text()` now includes the document, so `assert_no_answer_leak` and
+  `learner_page()` refuse a page or projection that announces a reference answer, accepted answer
+  or rubric text.
+
+`lesson.begin`, attempts, grading and evidence are untouched. The document is a projection of the
+teaching record, not a second grading authority.
 
 ## 9. Provider deadlines and job budgets
 

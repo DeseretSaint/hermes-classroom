@@ -38,6 +38,7 @@ from . import (
     grading,
     job_service,
     jobs as jobs_contract,
+    lesson_document,
     parent_authoring as authoring,
     review,
     sources as source_ledger,
@@ -1798,6 +1799,19 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             " ORDER BY a.created_at DESC, a.rowid DESC LIMIT 200",
             (enrollment["id"], objective["id"]),
         ).fetchall()
+        # v8 read projection. The blocks are derived from the same durable rows the page already
+        # returned: no column, no rewrite, and an older section gains a document on read instead
+        # of needing a migration. The check attaches to one block, never to a view.
+        active_check = next((row for row in checks if row["state"] == "open"), checks[0] if checks else None)
+        document = lesson_document.document_from_segments(
+            [dict(row) for row in segments],
+            section_title=objective["title"],
+            objective_id=objective["id"],
+            check_id=active_check["id"] if active_check is not None else None,
+            artifacts={
+                row["id"]: {"kind": row["kind"], "mime": row["mime"]} for row in artifacts
+            },
+        )
     result = {
         "enrollment_id": enrollment["id"],
         "course": {"course_id": course["id"], "title": course["title"]},
@@ -1828,6 +1842,7 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             }
             for row in segments
         ],
+        "document": document,
         "sources": [
             {
                 "source_id": row["id"],
