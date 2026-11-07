@@ -1979,7 +1979,6 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
     lines = [
         "Capability policy (decided before authoring; you may not override it):",
         f"- check angle: {capability.check_angle}.",
-        f"- rubric profile: {capability.rubric_profile}.",
     ]
     image_reason = capability.reasons[1] if len(capability.reasons) > 1 else ""
     audio_reason = capability.reasons[2] if len(capability.reasons) > 2 else ""

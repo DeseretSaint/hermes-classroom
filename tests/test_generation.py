@@ -16,7 +16,9 @@ from pathlib import Path
 from unittest import mock
 
 from coursebook import generation as gen
+from coursebook import policy as capability_policy
 from coursebook import research
+from coursebook import rubrics
 from coursebook.research import canonical_json
 
 FIXTURES = Path(__file__).parent / "fixtures" / "generation"
@@ -237,6 +239,45 @@ def lesson_from_request(name: str = "lesson_ja"):
         return response(lesson, model="fake-author")
 
     return build
+
+
+class LessonPromptRubricProfileTest(unittest.TestCase):
+    """H24-1: the lesson prompt states one rubric identity, and it is the effective one."""
+
+    def test_prompt_states_only_the_effective_profile_when_the_advisory_one_differs(self) -> None:
+        lesson_intent = "Recall the three safety labels for the pressure vessel."
+        capability = capability_policy.plan_lesson_capability(
+            recipe="one_off",
+            evidence_target="recall",
+            lesson_intent=lesson_intent,
+            subject_domain="technical_procedure",
+        )
+        effective = rubrics.resolve_profile(
+            capability.rubric_profile, capability.evidence_target
+        )
+        # The drift only exists when the advisory construct cannot score the declared target.
+        self.assertEqual(capability.rubric_profile, "procedural")
+        self.assertEqual(effective, "recall_accuracy")
+
+        request = gen.build_lesson_request(
+            plan={},
+            section={"lesson_intent": lesson_intent, "source_ids": []},
+            objective={"evidence_target": "recall"},
+            recipe="one_off",
+            dials={"subject_domain": "technical_procedure"},
+            locale=None,
+            sources=[],
+            rubric_profile=effective,
+            capability=capability,
+        )
+
+        statements = [
+            line for line in request.instructions.splitlines()
+            if "rubric profile" in line.lower()
+        ]
+        self.assertEqual(len(statements), 1, statements)
+        self.assertIn(f"Rubric profile: {effective}", statements[0])
+        self.assertNotIn(capability.rubric_profile, statements[0])
 
 
 class GenerationTestBase(unittest.TestCase):
