@@ -36,6 +36,7 @@ import os
 import re
 import sqlite3
 import uuid
+import warnings
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -374,6 +375,11 @@ def validate_and_audit(staged: archive.StagedPack) -> dict[str, Any]:
     problems = packs.audit_bundle(staged.directory)
     if problems:
         raise PackRejected("pack content audit failed: " + "; ".join(problems))
+    # Authoring bound: not a refusal. A lesson section above the contract-derived 4,000,000
+    # characters would never render; warn with the file and its measured length so the failure is
+    # legible, then let ``segments.audit_objective_texts`` below make the actual refusal.
+    for message in packs.audit_warnings(staged.directory, manifest=manifest):
+        warnings.warn(message, packs.PackAuthoringWarning, stacklevel=2)
     # A lesson page returns segments of at most 8,000 characters (cb.rpc v6). Long section files
     # are split at import; a lesson that could never fit the page's segment budget is refused here,
     # before the first database write, naming the file and its length (D1).
@@ -1083,6 +1089,9 @@ def parent_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
 
     root = export_root()
     root.mkdir(parents=True, exist_ok=True)
+    # Authoring bound, before the bytes are archived: an over-long lesson section warns here and
+    # is still exported; import owns the refusal.
+    packs.warn_authoring_bound(manifest, files)
     digest = str(manifest["content_hash"]).split(":", 1)[1]
     destination = root / f"{manifest['pack_id']}-{manifest['pack_version']}-{digest[:16]}.zip"
     temporary = destination.with_name(destination.stem + ".partial.zip")
