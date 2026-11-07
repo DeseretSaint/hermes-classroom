@@ -1,6 +1,6 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v10** (H-01 additive amendment; v9 = M3-B1, v8 = M1-P4, v7 = CB-015 residual,
+Status: **frozen at v11** (H-21 slice A additive amendment; v10 = H-01, v9 = M3-B1, v8 = M1-P4, v7 = CB-015 residual,
 v6 = CB-011, v5 = CB-026, v4 = CB-024, v3 = CB-022, v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
 contract: **Atlas**. Implementers are the specialists named below.
@@ -15,17 +15,18 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | Contract id | File | Ver | Implementer | Consumers |
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
-| `cb.errors` | `contracts/errors.v2.json` | 2 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v10.json` | 10 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v6.json` | 6 | Cinder | migrations, every command, evidence views |
-| `cb.jobs` | `contracts/jobs.v2.json` | 2 | Cinder | job service, Activity view |
+| `cb.errors` | `contracts/errors.v3.json` | 3 | Atlas | RPC envelope, job errors, HTTP mapping |
+| `cb.rpc` | `contracts/rpc.v11.json` | 11 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.db` | `contracts/db.v7.json` | 7 | Cinder | migrations, every command, evidence views |
+| `cb.jobs` | `contracts/jobs.v3.json` | 3 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v9** files for `cb.rpc` (including `rpc.v6.json` and `rpc.v9.json`), the v1 **to v5**
-files for `cb.db` (including `db.v3.json` and `db.v5.json`), and the v1 files for `cb.errors` and
-`cb.jobs` remain on disk, unmodified, as immutable history: the superseded current files are
-`rpc.v9.json` and `db.v5.json`.
+The v1 **to v10** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json` and `rpc.v10.json`), the
+v1 **to v6** files for `cb.db` (including `db.v3.json`, `db.v5.json` and `db.v6.json`), and the v1
+**to v2** files for `cb.errors` and the v1 and v2 files for `cb.jobs` remain on disk, unmodified,
+as immutable history: the superseded current files are `rpc.v10.json`, `db.v6.json`,
+`errors.v2.json` and `jobs.v2.json`.
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 `tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so
@@ -1298,6 +1299,38 @@ it changes what v10's fields *mean* at runtime:
 gains exactly one deterministic consequence — a cap on `time_estimate.weeks` (`single` 1, `short`
 8, `full` 104) — and no second scope engine is claimed.
 
+## v11 delta (H-21)
+
+`cb.rpc` v11 and `cb.db` v7 freeze the unit contract of `docs/COURSE-BLUEPRINT.md` §4 and §14
+(R1-R9 normative). This slice lands the **contract and the migration only**; PLAN_SCHEMA v2, the
+unit-scoped stages, prerequisite gating handlers and any UI are later slices and are not claimed
+here.
+
+* `plan_brief` gains `unit_ordinal` (integer 1-12) and `stage` accepts `unit_sections` beside
+  `plan` and `lessons`. The brief stays closed: `additionalProperties: false`, no
+  `prerequisite_policy` under any name (R8 reserves that for a later card).
+* `outline_plan` gains an optional `units` array; `$defs/outline_unit` has exactly R9's key set:
+  `ordinal`, `title`, `goal`, `prereq_unit_ordinals`, `prerequisite_state`, `unmet`,
+  `objectives` (each an existing `outline_objective`). `outline_objective` gains optional `unit`.
+  A legacy plan projects one unit titled with the plan title; `independent` remains the
+  objective's own state and no derived readiness/mastery field exists (R7, R9).
+* `lesson.begin` and `check.open` accept `acknowledge_prerequisites` (boolean, default false) and
+  may return `$defs/prerequisite_state` (`no_edges | satisfied | unmet | unmet_acknowledged`)
+  with the unmet objective list. `no_edges` leaves the legacy response unchanged (R5).
+* `cb.errors` v3 adds one typed refusal, `PREREQUISITE_UNMET` (state, HTTP 409, not retryable):
+  the command wrote no `lesson_runs` or `checks` row and repeating with the acknowledgment flag
+  is the learner's decision, never evidence (R6).
+* `cb.jobs` v3 is a reference-only refresh: every state, transition and note is unchanged from v2;
+  it exists so `cb.rpc` v11 and the job error envelope resolve against the current `cb.errors` v3.
+* `cb.db` v7 adds `plan_units` (id, plan_id, ordinal, title, goal,
+  prereq_unit_ordinals_json, target_lessons, created_at; unique `(plan_id, ordinal)`),
+  `objectives.unit_id`, `gen_plan_sections.unit_id` and `gen_plan_sections.section_role`
+  (`owner`/`review`, default `owner`) through `0007_plan_units.sql`. Additive only, no backfill.
+* **R4 legacy hash invariance:** `parent_authoring.plan_hash` adds `units` only when a
+  `plan_units` row exists and an objective's `unit` only when `unit_id` is non-NULL. Every stored
+  pre-0007 plan therefore hashes byte-identically and every H-12 `plan_content_hash` keeps
+  binding. `tests/test_plan_units.py::LegacyPlanHashInvarianceTest` pins the fixture hash.
+
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
@@ -1324,6 +1357,7 @@ gains exactly one deterministic consequence — a cap on `time_estimate.weeks` (
 | v9 | 2026-11-06 | M3-B1 additive amendment. 54 RPC methods (+`pronunciation.attempt`, `pronunciation.dispute`) and cb.db **v5** `pronunciation_attempts` via migration 0005. A pronunciation result is `model_assessed`, never a grade: it cannot close a check, advance an objective or write a transition, and no audio is stored. No new error code, job kind or vocabulary value. `rpc.v8.json` is pinned by sha256. |
 | v10 | 2026-11-07 | H-01 additive amendment. `course.create` gains optional `level`, `subject_domain` and `scope`; `jobs.create` gains one closed `$defs/plan_brief` for `kind = "plan"` so unknown fields are refused instead of silently ignored. cb.db **v6** adds nullable `courses.level`/`subject_domain`/`scope` via migration 0006, with no backfill. 54 RPC methods unchanged; no error code, job kind, vocabulary value or dial changes. `rpc.v9.json` and `db.v5.json` are pinned by sha256. |
 | v10 (H-17) | 2026-11-07 | Additive inside v10: `$defs/plan_brief` names the optional `budget_usd` (positive number ≤1000), the per-job cost-ceiling override the `CostCeilingExceeded` recovery checkpoint's `raise_budget` action passes. The H-17 behaviour note was written as "no wire change", but a closed brief refuses an unnamed property, so the field had to be declared for the documented override to be reachable. Every earlier v10 payload still validates; no method, table, migration, error code, job kind or vocabulary value changes, and `additionalProperties: false` stays. |
+| v11 | 2026-11-07 | H-21 slice A additive amendment (contract and migration only). `plan_brief.unit_ordinal` (1-12) and `stage = unit_sections`; optional `units` projection on `outline_plan` with `$defs/outline_unit` (R9 key set) and optional `unit` on `outline_objective`; `acknowledge_prerequisites` and `$defs/prerequisite_state` on `lesson.begin`/`check.open`; `PREREQUISITE_UNMET` in cb.errors **v3**. cb.db **v7** adds `plan_units`, `objectives.unit_id`, `gen_plan_sections.unit_id` and `section_role` via migration 0007, additive with no backfill. 54 RPC methods unchanged. R4: `parent_authoring.plan_hash` is byte-identical for every stored pre-0007 plan (pinned by `test_legacy_plan_hash_unchanged_after_0007`). `rpc.v10.json`, `db.v6.json` and `errors.v2.json` are pinned by sha256. Handlers for gating, unit stages and PLAN_SCHEMA v2 are explicitly out of this slice. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
