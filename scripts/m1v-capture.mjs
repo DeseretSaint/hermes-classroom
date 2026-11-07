@@ -172,11 +172,61 @@ async function snapshot() {
       horizontalOverflow: root.scrollWidth > window.innerWidth + 1,
       scrollWidth: root.scrollWidth,
       innerWidth: window.innerWidth,
+      // The host paints appearance as dataset.hermesMode plus inline --theme-* seeds and only
+      // toggles the "dark" class (apps/desktop/src/themes/context.tsx applyTheme). A ".light"
+      // class is not something the app reads, so theme claims come from these, never className.
+      hermesMode: root.dataset.hermesMode || null,
+      hermesTheme: root.dataset.hermesTheme || null,
+      colorScheme: getComputedStyle(root).colorScheme,
       themeClass: root.className,
+      backgroundSeed: getComputedStyle(root).getPropertyValue('--theme-background-seed').trim() || null,
       bodyBackground: getComputedStyle(document.body).backgroundColor,
+      bodyLuminance: (() => {
+        // Chromium serializes a themed body as color(srgb r g b); plain surfaces as rgb().
+        const raw = getComputedStyle(document.body).backgroundColor
+        const inner = raw.slice(raw.indexOf('(') + 1, raw.lastIndexOf(')'))
+        const channels = inner
+          .split(',')
+          .flatMap((part) => part.trim().split(' '))
+          .map(Number)
+          .filter((value) => Number.isFinite(value))
+          .slice(0, 3)
+        if (channels.length !== 3) return null
+        // color(srgb ...) already reports 0..1 channels; rgb() reports 0..255.
+        const unit = raw.startsWith('color(') ? channels : channels.map((value) => value / 255)
+        const lin = (value) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+        return Math.round((0.2126 * lin(unit[0]) + 0.7152 * lin(unit[1]) + 0.0722 * lin(unit[2])) * 1000) / 1000
+      })(),
       rootFontSize: getComputedStyle(root).fontSize
     }
   })()`)
+}
+
+// Switch light/dark through the product's own appearance path: the appearance.toggleMode keybind
+// (Shift+X) calls setMode(), which persists modePref and repaints via applyTheme(). The previous
+// version toggled a ".light" class the host never reads, so the dark inline palette survived and
+// four frames were labelled light while showing #4A4D52 surfaces.
+async function ensureMode(mode) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const current = await evaluate(`(() => ({ mode: document.documentElement.dataset.hermesMode || null }))()`)
+    if (current.mode === mode) return current.mode
+    // The keybind is refused inside an editable target; blur first, like a user clicking out.
+    await evaluate(`(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); return true })()`)
+    for (const type of ['keyDown', 'keyUp']) {
+      await send('Input.dispatchKeyEvent', {
+        type,
+        key: 'X',
+        code: 'KeyX',
+        windowsVirtualKeyCode: 88,
+        nativeVirtualKeyCode: 88,
+        modifiers: 8
+      })
+    }
+    await sleep(900)
+  }
+  const settled = await evaluate(`(() => document.documentElement.dataset.hermesMode || null)()`)
+  if (settled !== mode) throw new Error(`could not switch appearance to ${mode}; dataset.hermesMode is ${settled}`)
+  return settled
 }
 
 async function capture(name, { theme, width, textScale, view }) {
@@ -187,10 +237,9 @@ async function capture(name, { theme, width, textScale, view }) {
   await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 })
   await sleep(150)
   await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false })
+  await ensureMode(theme)
   await evaluate(`(() => {
     const root = document.documentElement
-    root.classList.remove('dark', 'light')
-    root.classList.add(${JSON.stringify(theme)})
     root.style.fontSize = ${JSON.stringify(textScale === 2 ? '200%' : '')}
     window.scrollTo(0, 0)
     const view = document.querySelector('[data-cb-lesson-view]')
@@ -198,8 +247,13 @@ async function capture(name, { theme, width, textScale, view }) {
   })()`)
   await sleep(600)
   const state = await snapshot()
+  // Evidence gate: the pixels must match the claimed mode, measured on the document the host
+  // actually painted, not on a class name.
   if (state.routeTextLength === 0) throw new Error(`refusing to write ${name}: the route root is empty`)
   if (state.lessonView !== view) throw new Error(`refusing to write ${name}: wanted ${view}, DOM says ${state.lessonView}`)
+  if (state.hermesMode !== theme) throw new Error(`refusing to write ${name}: claimed ${theme}, dataset.hermesMode is ${state.hermesMode}`)
+  if (theme === 'light' && !(state.bodyLuminance >= 0.8)) throw new Error(`refusing to write ${name}: light frame body luminance is ${state.bodyLuminance} (${state.bodyBackground})`)
+  if (theme === 'dark' && !(state.bodyLuminance <= 0.2)) throw new Error(`refusing to write ${name}: dark frame body luminance is ${state.bodyLuminance} (${state.bodyBackground})`)
   const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
   const file = `${outDir}/${name}.png`
   writeFileSync(file, Buffer.from(shot.data, 'base64'))
@@ -347,8 +401,10 @@ const keyboard = await evaluate(`(() => {
   }
 })()`)
 
-// Restore the window to its own theme so the rig is left usable.
-await evaluate(`(() => { const root = document.documentElement; root.classList.remove('light'); root.classList.add('dark'); root.style.fontSize = '' })()`)
+// Restore the window to the appearance it booted with, through the same app path, and clear the
+// emulated text scale so the rig is left usable.
+await evaluate(`(() => { document.documentElement.style.fontSize = '' })()`)
+const restoredMode = initial.hermesMode ? await ensureMode(initial.hermesMode) : null
 
 const evidence = {
   card: 't_0a030589 — live Guided frame',
@@ -374,6 +430,13 @@ const evidence = {
     check_nodes: guidedFinal.checkNodes
   },
   switcher_transitions: switcherTransitions,
+  appearance: {
+    path: 'appearance.toggleMode keybind (Shift+X) -> setMode -> modePref.assign -> applyTheme; no classList writes',
+    initial_mode: initial.hermesMode,
+    restored_mode: restoredMode,
+    light_gate: 'dataset.hermesMode === "light" AND computed body relative luminance >= 0.8 before a light file is written',
+    dark_gate: 'dataset.hermesMode === "dark" AND computed body relative luminance <= 0.2 before a dark file is written'
+  },
   frames,
   guided_steps: steps,
   keyboard,

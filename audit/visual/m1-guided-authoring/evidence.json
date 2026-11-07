@@ -1,15 +1,15 @@
 {
   "card": "t_0a030589 — live Guided frame",
-  "captured_at": "2026-11-07T04:33:47.499Z",
+  "captured_at": "2026-11-07T04:43:49.000Z",
   "plugin_sha256": "6934b8330aecd6b51ed8de8646b664525626ea3302a7a0238bc7623e06522924",
   "window": {
     "cdp_port": "9361",
     "target_url": "http://127.0.0.1:5174/#/coursebook",
-    "backend": "http://127.0.0.1:44331 (isolated, plugin_root=wt/m1-guided-authoring)",
+    "backend": "http://127.0.0.1:44331 (isolated, checkout under test)",
     "course_opened": "Order coffee in Japanese"
   },
   "document": {
-    "lesson_view_at_entry": "guided",
+    "lesson_view_at_entry": "textbook",
     "document_id": "doc_cb0c0af423236b90835b",
     "document_state": null,
     "switcher": "available",
@@ -79,21 +79,6 @@
   },
   "switcher_transitions": [
     {
-      "from": "guided",
-      "to": "textbook",
-      "pressed": [
-        [
-          "Textbook",
-          "true"
-        ],
-        [
-          "Guided",
-          "false"
-        ]
-      ],
-      "at": "2026-11-07T04:33:26.570Z"
-    },
-    {
       "from": "textbook",
       "to": "guided",
       "pressed": [
@@ -106,7 +91,7 @@
           "true"
         ]
       ],
-      "at": "2026-11-07T04:33:30.001Z"
+      "at": "2026-11-07T04:43:28.289Z"
     },
     {
       "from": "guided",
@@ -121,7 +106,7 @@
           "false"
         ]
       ],
-      "at": "2026-11-07T04:33:36.469Z"
+      "at": "2026-11-07T04:43:34.153Z"
     },
     {
       "from": "textbook",
@@ -136,9 +121,16 @@
           "true"
         ]
       ],
-      "at": "2026-11-07T04:33:39.667Z"
+      "at": "2026-11-07T04:43:39.328Z"
     }
   ],
+  "appearance": {
+    "path": "appearance.toggleMode keybind (Shift+X) -> setMode -> modePref.assign -> applyTheme; no classList writes",
+    "initial_mode": "dark",
+    "restored_mode": "dark",
+    "light_gate": "dataset.hermesMode === \"light\" AND computed body relative luminance >= 0.8 before a light file is written",
+    "dark_gate": "dataset.hermesMode === \"dark\" AND computed body relative luminance <= 0.2 before a dark file is written"
+  },
   "frames": [
     {
       "name": "01-textbook-dark",
@@ -147,7 +139,7 @@
       "textScale": 1,
       "view": "textbook",
       "file": "01-textbook-dark.png",
-      "bytes": 132262,
+      "bytes": 132469,
       "routeTextLength": 1620,
       "lessonView": "textbook",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -219,13 +211,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 1280,
       "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
       "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
       "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
       "rootFontSize": "16px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 1280,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "02-textbook-light",
@@ -234,7 +231,7 @@
       "textScale": 1,
       "view": "textbook",
       "file": "02-textbook-light.png",
-      "bytes": 130759,
+      "bytes": 126160,
       "routeTextLength": 1620,
       "lessonView": "textbook",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -306,13 +303,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 1280,
       "innerWidth": 1280,
-      "themeClass": "light",
-      "bodyBackground": "color(srgb 0.28549 0.297098 0.31451)",
+      "hermesMode": "light",
+      "hermesTheme": "nous",
+      "colorScheme": "light",
+      "themeClass": "",
+      "backgroundSeed": "#ffffff",
+      "bodyBackground": "color(srgb 0.996235 0.996235 0.996235)",
+      "bodyLuminance": 0.991,
       "rootFontSize": "16px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 1280,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "03-textbook-dark-200pct",
@@ -321,7 +323,7 @@
       "textScale": 2,
       "view": "textbook",
       "file": "03-textbook-dark-200pct.png",
-      "bytes": 186548,
+      "bytes": 183133,
       "routeTextLength": 1620,
       "lessonView": "textbook",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -393,13 +395,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 1280,
       "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
       "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
       "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
       "rootFontSize": "32px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 1280,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "04-guided-dark",
@@ -408,7 +415,7 @@
       "textScale": 1,
       "view": "guided",
       "file": "04-guided-dark.png",
-      "bytes": 98303,
+      "bytes": 98312,
       "routeTextLength": 617,
       "lessonView": "guided",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -444,13 +451,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 1280,
       "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
       "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
       "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
       "rootFontSize": "16px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 1280,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "05-guided-light",
@@ -459,7 +471,7 @@
       "textScale": 1,
       "view": "guided",
       "file": "05-guided-light.png",
-      "bytes": 83588,
+      "bytes": 78840,
       "routeTextLength": 617,
       "lessonView": "guided",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -495,13 +507,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 1280,
       "innerWidth": 1280,
-      "themeClass": "light",
-      "bodyBackground": "color(srgb 0.28549 0.297098 0.31451)",
+      "hermesMode": "light",
+      "hermesTheme": "nous",
+      "colorScheme": "light",
+      "themeClass": "",
+      "backgroundSeed": "#ffffff",
+      "bodyBackground": "color(srgb 0.996235 0.996235 0.996235)",
+      "bodyLuminance": 0.991,
       "rootFontSize": "16px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 1280,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "06-guided-dark-200pct",
@@ -510,7 +527,7 @@
       "textScale": 2,
       "view": "guided",
       "file": "06-guided-dark-200pct.png",
-      "bytes": 155743,
+      "bytes": 153125,
       "routeTextLength": 617,
       "lessonView": "guided",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -546,13 +563,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 1280,
       "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
       "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
       "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
       "rootFontSize": "32px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 1280,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "07-textbook-dark-460px",
@@ -633,13 +655,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 460,
       "innerWidth": 460,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
       "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
       "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
       "rootFontSize": "16px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 460,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "08-textbook-light-460px",
@@ -648,7 +675,7 @@
       "textScale": 1,
       "view": "textbook",
       "file": "08-textbook-light-460px.png",
-      "bytes": 55732,
+      "bytes": 54123,
       "routeTextLength": 1620,
       "lessonView": "textbook",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -720,13 +747,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 460,
       "innerWidth": 460,
-      "themeClass": "light",
-      "bodyBackground": "color(srgb 0.28549 0.297098 0.31451)",
+      "hermesMode": "light",
+      "hermesTheme": "nous",
+      "colorScheme": "light",
+      "themeClass": "",
+      "backgroundSeed": "#ffffff",
+      "bodyBackground": "color(srgb 0.996235 0.996235 0.996235)",
+      "bodyLuminance": 0.991,
       "rootFontSize": "16px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 460,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "09-textbook-dark-460px-200pct",
@@ -735,7 +767,7 @@
       "textScale": 2,
       "view": "textbook",
       "file": "09-textbook-dark-460px-200pct.png",
-      "bytes": 67981,
+      "bytes": 63874,
       "routeTextLength": 1620,
       "lessonView": "textbook",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -807,13 +839,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 460,
       "innerWidth": 460,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
       "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
       "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
       "rootFontSize": "32px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 460,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "10-guided-dark-460px",
@@ -822,7 +859,7 @@
       "textScale": 1,
       "view": "guided",
       "file": "10-guided-dark-460px.png",
-      "bytes": 53621,
+      "bytes": 53636,
       "routeTextLength": 617,
       "lessonView": "guided",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -858,13 +895,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 460,
       "innerWidth": 460,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
       "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
       "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
       "rootFontSize": "16px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 460,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "11-guided-light-460px",
@@ -873,7 +915,7 @@
       "textScale": 1,
       "view": "guided",
       "file": "11-guided-light-460px.png",
-      "bytes": 52623,
+      "bytes": 49372,
       "routeTextLength": 617,
       "lessonView": "guided",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -909,13 +951,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 460,
       "innerWidth": 460,
-      "themeClass": "light",
-      "bodyBackground": "color(srgb 0.28549 0.297098 0.31451)",
+      "hermesMode": "light",
+      "hermesTheme": "nous",
+      "colorScheme": "light",
+      "themeClass": "",
+      "backgroundSeed": "#ffffff",
+      "bodyBackground": "color(srgb 0.996235 0.996235 0.996235)",
+      "bodyLuminance": 0.991,
       "rootFontSize": "16px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 460,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "12-guided-dark-460px-200pct",
@@ -924,7 +971,7 @@
       "textScale": 2,
       "view": "guided",
       "file": "12-guided-dark-460px-200pct.png",
-      "bytes": 65846,
+      "bytes": 64117,
       "routeTextLength": 617,
       "lessonView": "guided",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -960,13 +1007,18 @@
       "horizontalOverflow": false,
       "scrollWidth": 460,
       "innerWidth": 460,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
       "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
       "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
       "rootFontSize": "32px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 460,
-      "focused": "BUTTON"
+      "focused": "BODY"
     },
     {
       "name": "13-guided-practice-check-dark",
@@ -975,7 +1027,7 @@
       "textScale": 1,
       "view": "guided",
       "file": "13-guided-practice-check-dark.png",
-      "bytes": 115845,
+      "bytes": 107314,
       "routeTextLength": 895,
       "lessonView": "guided",
       "documentId": "doc_cb0c0af423236b90835b",
@@ -1005,19 +1057,24 @@
         }
       ],
       "checkNodes": 1,
-      "routeWidth": 940,
-      "viewWidth": 830,
+      "routeWidth": 912,
+      "viewWidth": 810,
       "paneVisible": true,
       "horizontalOverflow": false,
       "scrollWidth": 1280,
       "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
       "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
       "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
       "rootFontSize": "16px",
       "mediaNodes": 0,
       "mediaStates": [],
       "viewportWidth": 1280,
-      "focused": "BUTTON"
+      "focused": "BODY"
     }
   ],
   "guided_steps": [

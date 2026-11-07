@@ -80,10 +80,28 @@ against the same isolated backend, so the *renderer* half is now a real capture 
 | `13-guided-practice-check-dark` | Guided step 3 of 5: the practice block carrying the authored `Check v1` |
 
 `evidence.json` holds the measured DOM per frame (lesson view, document id, route/view width,
-`horizontalOverflow`, theme class and computed body background, per-frame block roles and text
-lengths), the observed switcher transitions (`guided → textbook → guided`, pressed states), the
-five-step walk with each step's heading and body, and the keyboard probe (14 focusable controls in
-DOM order; focusing the Guided segment lands on `Guided`).
+`horizontalOverflow`, `hermesMode`/`hermesTheme`, `--theme-background-seed`, computed body
+background and its relative luminance, per-frame block roles and text lengths), the observed
+switcher transitions (`textbook → guided → textbook → guided`, pressed states), the five-step walk
+with each step's heading and body, and the keyboard probe (14 focusable controls in DOM order;
+focusing the Guided segment lands on `Guided`).
+
+### Light frames are the product's light mode (review round 1 correction)
+
+The first commit labelled four frames `light` by adding a `light` class to `<html>`. The host does
+not read that class: `applyTheme()` (`apps/desktop/src/themes/context.tsx`) publishes
+`documentElement.dataset.hermesMode`, writes the palette as inline `--theme-*` seeds and only
+toggles the `dark` class. Dropping `dark` therefore left the **dark inline palette** in place and
+the four frames painted `#4A4D52` surfaces with light text while claiming light mode.
+
+The capture now switches mode the way a user does: the `appearance.toggleMode` keybind
+(`Shift+X`) calls `setMode()` → `modePref.assign()` → `applyTheme()`. Before each file is written it
+asserts `dataset.hermesMode` equals the frame's claimed mode **and** gates on measured body
+luminance (light ≥ 0.8, dark ≤ 0.2); a frame that fails either check is never written. Retaken
+values: light frames `hermesMode=light`, seed `#ffffff`, body `color(srgb 0.996 0.996 0.996)`,
+luminance `0.991`, dominant pixel `#FBFBFC`/`#FCFCFD`; dark frames `hermesMode=dark`, seed
+`#0d1117`, luminance `0.005`, dominant pixel `#0D1015`. The window is restored to the appearance it
+booted with (`dark`) through the same path after the run.
 
 ### The pane-registration blocker was a navigation race, not a missing pane
 
