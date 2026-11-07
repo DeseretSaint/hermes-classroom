@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contracts.coursebook.hermes/pack-manifest/v1",
   "title": "Coursebook pack manifest v1",
-  "description": "A pack is versioned declarative JSON plus bounded declared media. It contains no executable code, no arbitrary tool calls, no provider settings, no credentials, no local paths, no transcripts, no learning history and no secrets. Pack identity is pack_id + immutable semantic version + the exact manifest/content hash. Validation is allowlist-first: unknown fields are rejected, not stored.",
+  "description": "A pack is versioned declarative JSON plus bounded declared media. It contains no executable code, no arbitrary tool calls, no provider settings, no credentials, no local paths, no transcripts, no learning history and no secrets. Pack identity is pack_id + immutable semantic version + the exact manifest/content hash. Validation is allowlist-first: unknown fields are rejected, not stored. Authoring bound (not a schema field): one lesson section is bounded at 4,000,000 characters, the product of cb.rpc lesson.page's 8,000-character segment cap and its 500-segment page budget. That number is derived from cb.rpc at read time, never a second constant, and a section above it can never render; import refuses such a pack before writing. max_single_file_bytes is a separate decompression/security bound and is not a readability promise.",
   "x-contract-id": "cb.pack",
   "x-contract-version": 1,
   "x-owner": "atlas",
