@@ -2689,9 +2689,17 @@
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
+        "domain_provenance": {
+          "declared_locale": "en-US",
+          "declared_subject_domain": "technical_procedure",
+          "resolved_domain": "technical_procedure",
+          "source": "declared",
+          "target_language": null
+        },
         "job_id": "job_00000000000000000000000000000007",
         "job_kind": "plan",
         "level": "beginner",
+        "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 12,
         "plan_content_hash": "sha256:846c65eca040806b2453887a14beaf0edacb68790ce39f0c7390ae243ef1d88c",
@@ -2715,6 +2723,7 @@
         "sources": 1,
         "status": "draft",
         "subject_domain": "technical_procedure",
+        "target_language": null,
         "units": 6,
         "usage": {
           "budget": {

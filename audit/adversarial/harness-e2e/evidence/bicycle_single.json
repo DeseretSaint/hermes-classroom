@@ -613,9 +613,17 @@
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
+        "domain_provenance": {
+          "declared_locale": "en-US",
+          "declared_subject_domain": "repair",
+          "resolved_domain": "technical_procedure",
+          "source": "declared",
+          "target_language": null
+        },
         "job_id": "job_00000000000000000000000000000007",
         "job_kind": "plan",
         "level": "beginner",
+        "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 1,
         "plan_content_hash": "sha256:1606503724aa443c22bb0f78b9a3051796a8695412336b2a89acbfb50f929bcd",
@@ -639,6 +647,7 @@
         "sources": 1,
         "status": "draft",
         "subject_domain": "repair",
+        "target_language": null,
         "units": 1,
         "usage": {
           "budget": {

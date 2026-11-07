@@ -1135,9 +1135,17 @@
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
+        "domain_provenance": {
+          "declared_locale": "en-US",
+          "declared_subject_domain": "general",
+          "resolved_domain": "general",
+          "source": "declared",
+          "target_language": null
+        },
         "job_id": "job_00000000000000000000000000000007",
         "job_kind": "plan",
         "level": "beginner",
+        "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 4,
         "plan_content_hash": "sha256:90cc73027653b12b67f9aefe3c5d2f229e5281dac626462cedaa57ae70277fec",
@@ -1161,6 +1169,7 @@
         "sources": 1,
         "status": "draft",
         "subject_domain": "general",
+        "target_language": null,
         "units": 2,
         "usage": {
           "budget": {

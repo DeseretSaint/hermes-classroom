@@ -326,3 +326,29 @@ now serves authored shorts and treats `_shorten` as a fallback only. Nothing in 
 evidence packet depends on a mechanically cut short except `worked_example.short`, whose first
 sentence is complete by construction.
 
+## H-49 — packet re-run on the merged tree (base `90e1f0d` + H-44/H-45/H-46/H-46b/H-47)
+
+The isolated H-46b packet was byte-reproducible on its own line but **not** on the merged tree: H-44
+adds `domain_provenance`, `locale` and `target_language` to the plan-stage record, so the three
+scenario evidence files no longer matched `manifest.json` (3 failures in
+`PacketManifestTest.test_fresh_evidence_reproduces_the_committed_bytes`). This is the manifest doing
+its job, not a harness defect.
+
+Regenerated on the merged tree and re-pinned. The complete evidence diff is 24 added lines: the
+provenance block (`source: declared`, `resolved_domain`, `declared_subject_domain`,
+`declared_locale`, `target_language`) plus `locale`/`target_language` on each plan record. No
+verdict, lesson text, check or grading row changed.
+
+```text
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py
+  overall: PASS (3/3 scenarios)
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py --verify
+  packet: FRESH — every evidence file and harness input matches manifest.json
+PYTHONPATH=. python3 -m unittest tests.test_harness_e2e -v
+  Ran 26 tests ... OK        (evidence/focused-tests.txt)
+PYTHONPATH=. python3 -m unittest discover -s tests -t .
+  Ran 1524 tests in 145.706s ... OK   (evidence/full-suite.txt)
+```
+
+The P3 gate false positive above (preposition stranding on `to`) is unchanged and still open — it is
+H-46's signal, not this packet's.
