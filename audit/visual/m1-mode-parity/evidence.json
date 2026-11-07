@@ -1,0 +1,107 @@
+{
+  "attempt_state": {
+    "check_id": "chk_2e02c1a79d864be9b187c5efc438100f",
+    "check_version": 1,
+    "state": "closed",
+    "attempt_count_before": 1,
+    "attempt_count_after": 1,
+    "revision_before": 3,
+    "revision_after": 3,
+    "lesson_page_attempts_before": 1,
+    "lesson_page_attempts_after": 1,
+    "view_switch": [
+      "textbook",
+      "guided"
+    ]
+  },
+  "parity": {
+    "objective_id": "obj_0dc667c80a6148f6a318c359192f055a",
+    "check_id": "chk_a21c39778c8e4588877d85220af17ff7",
+    "lesson_page_document_id": "doc_6fb38202ff07343d8bcc",
+    "lesson_page_state": "textbook_only",
+    "authored_document_id": "doc_2ffa3f4cae40e2fe6697",
+    "authored_state": "complete",
+    "block_ids": [
+      "blk_practice0001",
+      "blk_orient000001",
+      "blk_explain00001",
+      "blk_recap0000001"
+    ],
+    "role_order": [
+      "practice",
+      "orient",
+      "explain",
+      "recap"
+    ],
+    "source_ids": [
+      "src_heat0001"
+    ],
+    "textbook": {
+      "view": "textbook",
+      "document_id": "doc_2ffa3f4cae40e2fe6697",
+      "block_ids": [
+        "blk_practice0001",
+        "blk_orient000001",
+        "blk_explain00001",
+        "blk_recap0000001"
+      ],
+      "check_surfaces": 1,
+      "check_attached_to": "blk_practice0001",
+      "source_title_occurrences": 2
+    },
+    "guided": {
+      "view": "guided",
+      "document_id": "doc_2ffa3f4cae40e2fe6697",
+      "block_ids": [
+        "blk_practice0001"
+      ],
+      "check_surfaces": 1,
+      "check_attached_to": "blk_practice0001",
+      "step": "Step 1 of 4",
+      "source_title_occurrences": 1
+    },
+    "not_measured": [
+      "A live Guided page: no writer authors block short, so lesson.page is always textbook_only (t_7890cf1f).",
+      "Live rig frames: no isolated backend was mounted on this branch."
+    ]
+  },
+  "duplicate_checklist": {
+    "fixture": "teaching segment + check_prompt segment + check surface",
+    "view": "textbook",
+    "label_counts": {
+      "Check the heat": 3,
+      "Check sharp objects": 3,
+      "Check small parts": 3,
+      "Check allergies": 3
+    },
+    "expected": {
+      "Check the heat": 1,
+      "Check sharp objects": 1,
+      "Check small parts": 1,
+      "Check allergies": 1
+    },
+    "verdict": "FAIL"
+  },
+  "structured_items_seam": {
+    "stored_keys": [
+      "prompt",
+      "format",
+      "items"
+    ],
+    "served_keys": [
+      "choices",
+      "format",
+      "learner_instructions",
+      "prompt"
+    ],
+    "items_served": null,
+    "expected_served_keys": [
+      "choices",
+      "format",
+      "items",
+      "learner_instructions",
+      "prompt"
+    ],
+    "verdict": "FAIL: contract v8 check_stimulus has no items[] and _stimulus_view drops it"
+  }
+}
