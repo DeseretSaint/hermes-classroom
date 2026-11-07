@@ -233,6 +233,50 @@ H-numbers, and they were renamed from two accidental duplicate H-20/H-21 labels 
 B-1 owner is `t_673155b0`. The board currently has two H-20/H-21 labels from Atlas's earlier
 seeding; `B-1` and `B-2` are the authoritative names for those two cards now.
 
+### Current wave — verified status at `master` = `f17ec54` (H-31 refresh)
+
+Card state is the Kanban board; "merged" means the branch tip is an ancestor of `master` at
+`f17ec54` (`git merge-base --is-ancestor <tip> f17ec54`). A `done` card with an unmerged branch is
+not merged evidence — see `docs/AUDIT-INDEX.md` §0.
+
+| key | id | card | owner | parents | branch | card state | merged |
+|---|---|---|---|---|---|---|---|
+| B-1 | `t_673155b0` | Grading lane gap — generated checks store no reference kind (H-16 B-1) | cinder | H-16 | — (scratch) | running | — |
+| B-2 | `t_74d99ca5` | Observation evidence is unreachable — expose self/parent report (H-16 B-2) | cinder | H-16 | `wt/harness-observation-record` @ `423908f` | running | no |
+| H-21 | `t_2a2fc90c` | Implement the CourseBlueprint v2 — plan_units, unit stages, structure | cinder | H-13, H-01 | `wt/t_2a2fc90c` @ `5ba4e4c` | ready | no |
+| H-22 | `t_966d50f4` | Frozen breadth disclosure copy and evidence-class labels (H-16 B-3) | vellum | H-16 | `wt/harness-breadth-copy` @ `002a82b` | running | no |
+| H-23 | `t_132531da` | Generated checks are ungradable — **closed duplicate of B-1, no code** | cinder | H-16 | — | done (duplicate) | — |
+| H-24 | `t_29e6647c` | Rubric registry extensibility — decide the gate for new construct profiles | atlas | H-16 | `wt/harness-rubric-extensibility` (no commits) | running | no |
+| H-25 | `t_5535fc66` | Student syllabus import and alignment — design | atlas | H-03, H-02 | `wt/harness-student-mode-design` | ready | no |
+| H-26 | `t_da9e472c` | Student syllabus import — backend parse/map/companion course | cinder | H-25 | `wt/harness-student-import` | todo | — |
+| H-27 | `t_71ea55ee` | Student syllabus import — learner intake/anchors/alignment UI | vellum | H-25, H-26 | `wt/harness-student-ui` | todo | — |
+| H-28 | `t_271e19e7` | UX humanification — first run, create, import | vellum | H-02, H-22, H-21 | `wt/harness-ux-first-run` | todo | — |
+| H-29 | `t_70686b14` | UX humanification — lesson index, results, progress | vellum | H-28 | `wt/harness-ux-learning` | todo | — |
+| H-30 | `t_178dc615` | Independent generic-harness acceptance audit | sentinel | H-09 | `wt/harness-generic-audit` | todo | — |
+| H-31 | `t_1c9d0ba6` | Refresh the audit index after merges and reviews | quill | H-12, H-14, H-02, H-03 | `wt/harness-audit-refresh` | running | no |
+| H-32 | `t_69873d4c` | Conflict repair — rebase H-07 parent brief onto H-13/H-14 | cinder | H-07, H-13, H-14 | `wt/harness-parent-brief-rebase` | ready | no |
+
+Merge status of the earlier cards, for the same reason (a done card is not a merge):
+
+| key | id | card state | land commit | merged at `f17ec54` |
+|---|---|---|---|---|
+| H-12 | `t_dba06898` | done | merge `13480c4` (content `4b5f3b1`); round-2 assertion `903a606` | **yes** |
+| H-14 | `t_031e287f` | done | merge `a12176b` (content `0ba4dc6`) | **yes** |
+| H-01 | `t_f4f5b26a` | done | merge `b1f2978` (content `8cbaab3`) | **yes** |
+| H-02 | `t_867d3b52` | done | merge `1bbd502` (content `5b74233`) | **yes** |
+| H-03 | `t_577ed286` | done | merge `54087de` (content `f465a4d`, design doc) | **yes** |
+| H-13 | `t_543c0767` | done | merge `6779030` (content `ee976ea`) | **yes** |
+| H-04 | `t_161d467f` | done | `cee1749` | no |
+| H-05 | `t_7baa29e2` | done | `986190f` | no |
+| H-07 | `t_2f3cc647` | done | `8a6bedb` | no |
+| H-15 | `t_d519643b` | done | `833e335` | no |
+| H-16 | `t_3c5d969c` | done | `dd43d82` | no |
+| H-17 | `t_9a8543ae` | done | `722f00f` | no |
+| H-19 | `t_ec1d2c15` | done | `99da48a` | no |
+| H-20 | `t_43ca17b8` | done | `516d161` | no |
+| H-06, H-08, H-18 | — | running | — | — |
+| H-09, H-11 | — | todo | — | — |
+
 ### What these cards must prove
 
 - **H-24** is a decision, not a runtime rubric generator. It must either show the six profiles
