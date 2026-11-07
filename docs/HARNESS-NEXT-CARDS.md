@@ -201,6 +201,9 @@ avoid those collisions:
 H-10's report is an audit artifact, not a fix. It explicitly says it changes no product policy. The
 round-1 review was committed after H-10's snapshot (`2e3508f`), so H-19 must record "untracked at
 audit time; committed in `2e3508f`" rather than repeating a present-tense defect.
+`docs/AUDIT-INDEX.md` (H-19) is the register: every report's commit hash, the probe commands and
+their results, the evidence class (live / fixture / prepared-pack), and the owning board card for
+every finding above.
 
 
 ## Execution rules

@@ -55,6 +55,7 @@
       "ordinal": 1,
       "title": "Warm things at home",
       "lesson_intent": "Parent names warm objects the child can see, one at a time, and the child says each word back.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         1
       ],
@@ -68,6 +69,7 @@
       "ordinal": 2,
       "title": "Cold things at home",
       "lesson_intent": "Parent names cold objects, then sorts four picture cards into warm and cold together.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         2
       ],
@@ -81,6 +83,7 @@
       "ordinal": 3,
       "title": "Why the kettle is a grown-up job",
       "lesson_intent": "Parent explains the kettle rule and the child says the safety reason back.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         3
       ],
@@ -93,6 +96,7 @@
       "ordinal": 4,
       "title": "Explain one example",
       "lesson_intent": "Parent asks the child to explain one warm or cold example in their own words.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         4
       ],

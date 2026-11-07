@@ -1,8 +1,11 @@
 # Lesson capability policy
 
 **Status:** M1-P1 implemented the pure policy on `wt/m1-capability-policy`; M1-P3 binds it into
-generation (`lesson-prompt.v6`) and validation on `wt/m1-policy-integration`. Authority:
+generation (`lesson-prompt.v6`) and validation on `wt/m1-policy-integration`. H-05 moved the
+media decision to plan time: every plan section carries a typed `media_need`, the planner writes it
+before any lesson is authored, and the policy validates it (`plan-prompt.v3`). Authority:
 `coursebook/policy.py`.
+
 Plan: `docs/VISUAL_MEDIA_PLAN.md` §4 (capability policy and rubric angles) and §8 (technical
 visuals), `docs/VISUAL_MEDIA_PLAN.md` §5.2 (generation policy), §5.3 (rubrics).
 
@@ -63,6 +66,49 @@ Hard boundaries that the plan object enforces in `__post_init__`:
 - `image == "required"` is incompatible with `image_role == "illustration"`. An AI illustration is
   context only and can never be required evidence, a measurement, a sequence or a safety authority.
 - A plan without reasons is refused. Every decision must be explainable by a construct.
+
+## 2.1 The plan declares the need (H-05)
+
+Guessing a construct from `lesson_intent` was the remaining hole: a hand-authored matrix row named
+"torque sequence" or "say it aloud", but a *generated* plan was under no obligation to write those
+words, so a course could carry no media and no rule could call it a defect.
+
+Every generated plan section now carries a typed declaration:
+
+```json
+"media_need": {
+  "construct": "torque sequence and labelled bolt specifications",
+  "image": {"level": "required", "role": "schematic"},
+  "audio": {"level": "none", "role": "none"}
+}
+```
+
+- `construct`, `image` and `audio` are required; `construct` is bounded at 160 characters. `role`
+  uses the literal `"none"` so the model never emits a null union.
+- The default is `construct: ""` with both levels `none`. A declaration that names a construct but
+  no media, or media but no construct, is refused — a construct exists only for media the lesson
+  needs.
+- The planner names a construct only when the lesson genuinely needs the media. The plan prompt
+  says so explicitly and forbids decorative media (`plan-prompt.v3`).
+- `enforce_plan_rules` refuses a section with no declaration and runs the capability policy on
+  every declared section, so an impossible role (`required` illustration, illustration on a
+  symbolic lesson, audio outside a language lesson, narration with no listening construct) fails
+  the **plan** before any lesson is authored.
+- `plan_lesson_capability(media_need=...)` validates the declaration and adopts its levels. It does
+  not re-guess from the intent prose: with a declaration, the prose is a description. The result
+  records `declared: true` and the construct, and the lesson prompt receives exactly the resulting
+  permissions as before.
+- A legacy section with no declaration (a hand-built dict or a `gen_plan_sections` row from before
+  H-05) still takes the construct-detector path. The generated-plan path never does.
+
+**Persistence.** `gen_plan_sections.media_need_json` is an additive column (migrated in place when
+absent), written by the plan job and copied by a replan carry. The lesson job projects it into the
+section dict, so the policy, prompt and validator read the same declaration.
+
+**Validator.** `policy.missing_required_media(plan, media)` rejects an authored lesson that omits a
+required visual or audio item. `media_policy_problems` still rejects any item when the declared
+level is `none` or the role differs, so a no-need section cannot produce decorative media. Both
+checks are deterministic and run before the independent validator.
 
 ## 3. Decision order
 
@@ -147,8 +193,9 @@ lesson_capability_plan(recipe=..., section=..., objective=..., locale=..., dials
                                      locale, dials.level, subject_domain)
 ```
 
-The subject domain is advisory and read from the section, then the plan, then the dials. Nothing
-else is inferred: the construct must be named by the authored intent.
+The subject domain is advisory and read from the section, then the plan, then the dials. For a
+generated plan the construct comes from that section's `media_need` declaration (§2.1); only a
+legacy section without one falls back to the authored intent's construct detectors.
 
 **Prompt.** `lesson-prompt.v6` receives only the resulting permissions and angles. For a lesson
 whose policy says image `none`, the instruction is literally "emit no visual media item" plus the
@@ -188,9 +235,10 @@ mastery claim.
 - No `cb.rpc`/`cb.db` contract revision. `policy_json` is an additive internal column on the
   generation-owned `gen_lessons` table, migrated in place when absent.
 - No UI change: the Desktop renders whatever the learner page already carries.
-- Required-media *presence* is not enforced here. P3 refuses forbidden and dishonest media; making
-  a required schematic/narration appear is the media job's production path, and a missing item
-  degrades to the text equivalent rather than being fabricated.
+- Required-media *presence* is enforced for a generated plan: `missing_required_media` rejects an
+  authored lesson that omits a declared required item. Production of the media file itself stays
+  outside every transaction and remains optional — a failed media job degrades to the text
+  equivalent, never to a fabricated item or a fabricated pass.
 - A schema-valid pack that declares its own media is still governed by the pack contract and
   `artifacts.media_problems`; the capability plan applies to **generated** lessons.
 
@@ -209,3 +257,6 @@ bash scripts/validate-plugin.sh
 `tests/test_policy_integration.py` covers the six matrix lessons for both prompt and validator:
 the decision is named, forbidden media is never offered, permitted media passes both gates, and
 policy-inappropriate media is rejected deterministically.
+`tests/test_media_plan.py` drives a **generated** plan (fake model, real plan job) across the same
+six lessons and asserts the plan prompt, the stored `media_need`, the policy decision, the lesson
+prompt and the validator agree.
