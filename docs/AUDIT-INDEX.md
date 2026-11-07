@@ -7,6 +7,11 @@ re-landed, see §0); refreshed again by H-41 (`t_ef2600f8`) on `wt/audit-index-h
 `master` at `1fc0542` (`1fc054292eac1d8565aafebb3c9a71e004cd672c`), the H-38 UX union, whose
 `desktop/plugin.js` sha256 is `c206e1c9091400af11594a440a105cda8a6794fe3563ad15a23a10e522232463`.
 
+Refreshed again by H-50 (`t_37df1fb9`) on `wt/h50-audit-refresh`, based on `master` at `54dd2eb`
+(`54dd2eb48f5f3410cb9f591f4a2d9a283e20672c`). Every live status cell and every ancestor verdict
+below was re-run against `54dd2eb` for that card. `1fc0542` stays the stated base of the §11/§12
+history, which is not rewritten.
+
 All earlier revisions are on `master`: `99da48a` through the integration merge `ce95836`,
 `512c5f6` through merge `fdecc9e`, `a671511`/`385ebac` through the H-37/H-38 sequence. A reader does
 not need a branch to see this file any more; they need the commit above. `docs/AUDIT-INDEX.md` at
@@ -26,14 +31,14 @@ Four things are routinely confused. They are not the same:
 
 - **A card being `done` is not a merge.** `done` means the assigned worker finished and reported.
   The branch may still be unmerged. Every ledger row below names a commit *and* says whether that
-  commit is an ancestor of `master` at `1fc0542`.
+  commit is an ancestor of `master` at `54dd2eb`.
 - **A merge is not an independent re-audit.** A merged fix proves the code landed; it does not
   prove the defect is gone. Where a merged implementation has not been re-probed against the
   commit that carries it, the row says **re-audit required** and names the audit card
   (H-30b `t_9b6742f3` for the harness findings; H-36 `t_48645f63` is an integration repair, not
   an audit).
 - **A branch tip is not merged evidence.** A finding flips to FIXED only when its fix is an
-  ancestor of `master` (`git merge-base --is-ancestor <commit> 1fc0542` exits 0) and the merged
+  ancestor of `master` (`git merge-base --is-ancestor <commit> 54dd2eb` exits 0) and the merged
   tree passed the frozen gate. A branch-only fix stays OPEN, marked "done, unmerged".
 - **A content commit is not a merge commit.** Cite both where they differ: merge `2252231`
   carries content `bcd545e`. A squash, a test commit or a rebase is not a merge, and a card body
@@ -64,6 +69,15 @@ Correction notes for this revision:
 - H-31b's branch tip `2bfeb1c` is **not** an ancestor of `1fc0542`. The same change exists on master
   as `a671511` and the follow-up `385ebac`; the tree at `385ebac` matches `1fc0542`. Citing
   `2bfeb1c` as merged evidence would fail `git merge-base --is-ancestor` and is not done here.
+- **The H-50 base is `54dd2eb`, not `1fc0542`.** Five lines this index called branch-only or
+  unmerged became ancestors: H-40 `9f2de53`, H-30b `f92d5f8`, the H-11 docs line `b2233ac` (landed
+  again as `097c32c`), H-39 `7404e9c`/`4945061`, and the H-42/H-43/H-44/H-45/H-46/H-46b line ending
+  at `74978ca`. Every row they own was re-verified against `54dd2eb` and is listed in §13. Four rows
+  stay open or partial with a stated reason: P0-7 (the packet's model half is a recorded transcript,
+  so no live provider authoring is proven), P2-3/G-04's media half (no media scenario exists),
+  §6 D-06 (H-11 reconciled the live docs but `README.md` is still stale) and B-2 (the sha in the row
+  is wrong and the `observation.record` RPC half still does not exist). D-04 is deliberately
+  untouched.
 
 ## 1. Report register
 
@@ -71,37 +85,42 @@ Every file below is tracked; the verification column names the commit that conta
 whose only commit is on an unmerged branch is marked **branch-only** and is not evidence about
 merged behaviour.
 
-| report | what it is | introduced in | content sha256 at `1fc0542` | verification |
+| report | what it is | introduced in | content sha256 at `54dd2eb` | verification |
 |---|---|---|---|---|
 | `docs/ADVERSARIAL-HARNESS-REVIEW.md` | audit round 1 — harness capability verdict (NO-GO as a general harness) | `2e3508f` | `405e552459f0ca8c993c9c2bde78cbc7fd7ba0988d9bdb621c5f31970e76b7bd` | `git cat-file -e 2e3508f:docs/ADVERSARIAL-HARNESS-REVIEW.md` |
-| `docs/ADVERSARIAL-AUDIT-ROUND2.md` | audit round 2 — 14 deterministic probes, 10 findings | master via merge `7af3bbd` (audit commit `9357c00`; probe assertion `903a606`) | `646242073fd0d60f7f70f86e439aae2bc29482afa5d8afe7f9f0d8161e3a8d96` | `git cat-file -e 1fc0542:docs/ADVERSARIAL-AUDIT-ROUND2.md` |
-| `docs/ADVERSARIAL-UX-REVIEW.md` | adversarial UX review — learner and Parent Studio surfaces (GO for a UX pass, not a rewrite) | `2e57efa` | `840d000ecd6bb2d1892af34f9142126864bb0f5cc9c1d37eb43f7f74e4128c94` | `git cat-file -e 1fc0542:docs/ADVERSARIAL-UX-REVIEW.md` |
-| `docs/GENERIC-HARNESS-REVIEW.md` | generic-harness review — can Coursebook teach an arbitrary topic (partially generic), evidence G-01…G-07 | `2e57efa`; amended `31b3132`, `6d062e1`, `db5662c` | `a8d119aa28763013d90d10f1c11c01f096d9412def17b8b5970e9eaa67e53da4` | `git cat-file -e 1fc0542:docs/GENERIC-HARNESS-REVIEW.md` |
-| `docs/GENERIC-ACCEPTANCE-AUDIT.md` | H-30 independent acceptance audit of H-09 (three shapes, checks, routing); base product tree `498b1da` | `ddc71fc`; merged at `090e755` | `19cbe115688e37a5814ee33c5699e1d984965e013f8c6818e6292cec738ecd89` | `git cat-file -e 1fc0542:docs/GENERIC-ACCEPTANCE-AUDIT.md`; `git merge-base --is-ancestor 090e755 1fc0542` |
-| `docs/ASSESSMENT-BREADTH.md` | H-16 assessment construct breadth decision and its B-1/B-2/B-3 defect register | `dd43d82`; merged at `fa316c5` | `38021edef4d6cafdf9c45eaff0bcfbe17c8e2960150fba70093d99590f9e2c7e` | `git cat-file -e 1fc0542:docs/ASSESSMENT-BREADTH.md` |
-| `docs/COURSE-BLUEPRINT.md` | H-03 scope-aware blueprint design (single/short/full) plus §14, the frozen H-20 prerequisite contract; design authority for H-21 | master via merge `54087de` (content `f465a4d`); §14 added by `516d161` via `d079b4c` | `cf371b0e52ba3606667041889a05885abe07e146a757c774c529f1fd238911e0` | `git cat-file -e 1fc0542:docs/COURSE-BLUEPRINT.md` |
-| `docs/PLAN-CEILING.md` | H-21c measured `full` plan ceiling; the probe behind the 40-objective cap | `bcd545e`; merged at `2252231` | `9dc0792ad9eec2e7bafb8a5b974c94ac0dc74532ba4788c417c717f2436efad9` | `git cat-file -e 1fc0542:docs/PLAN-CEILING.md` |
-| `docs/GRADING-LANES.md` | H-20 decision + implementation record: every stored check declares its lane (implements B-1) | `ce6c8c1`; merged at `3368c96`, which enters `master` through `4e709d3` | `d4cb723096a513925cf8e7d30ad02b9b9bb4bee24570342e612a23b61a869916` | `git cat-file -e 1fc0542:docs/GRADING-LANES.md`; `git merge-base --is-ancestor 4e709d3 1fc0542` |
-| `docs/CHECKLIST-CONFIRMATION.md` | H-33 frozen decision: a verification tick-list is graded `self_reported` | `da53ec1`; merged at `3d46988`, which enters `master` through `4e709d3` | `f559b2f18423f17fac3ae183bb6b9f8b76dec5371b8270498ca00940dd6c7f15` | `git cat-file -e 1fc0542:docs/CHECKLIST-CONFIRMATION.md` |
-| `docs/RUBRIC-EXTENSIBILITY.md` | H-24 frozen decision: the gate for a new construct profile (decision only, no runtime generator) | `491443a`; merged at `4f42c3c` | `7c73550ca4bbd9ef7cb55dbc9595c36e6926abcc108b236998da70bbc8c9d153` | `git cat-file -e 1fc0542:docs/RUBRIC-EXTENSIBILITY.md` |
-| `docs/STUDENT-MODE.md` | H-25 student-mode design: a companion course aligned to an uploaded syllabus; design only | `3705a7a`; merged at `e978441` | `df4dcdeca230d064e0b7cfc19b785f44ede1c40d862d2c16f4b934408b77deef` | `git cat-file -e 1fc0542:docs/STUDENT-MODE.md` |
-| `docs/HARNESS-NEXT-CARDS.md` | board card index / DAG, card-to-finding mapping, current-wave status | `2e3508f`; amended `a8d93b8`, `b4da6d9`, `31b3132`, `f17ec54`, `512c5f6`, `a671511`, `385ebac`, and later cards | `82af6664ba19738d40fa79a3f2da27685c67afea19c5e89d9677f9c41d6838c3` (at `1fc0542`; this card does not edit it. The pin moved from `f990cad` because later cards edited the file, not because the earlier hash was wrong) | `git cat-file -e 1fc0542:docs/HARNESS-NEXT-CARDS.md` |
-| `docs/H15-VALIDATOR-INDEPENDENCE.md` | H-36 integration record: H-15's validator identity, `outcome` and no-research waiver landed on cb.rpc v13 | `b75d601` (content on `wt/harness-validator-integration`) | `763c49ed5f50711066b5114c89690e23971a5e49e7f0878144aec833c8fb670a` | `git cat-file -e 1fc0542:docs/H15-VALIDATOR-INDEPENDENCE.md` |
-| `docs/H35B-LIVE-CHECKLIST-EVIDENCE.md` | H-35b live installed-Desktop DOM capture of a checklist confirmation on a fresh rig (CDP `127.0.0.1:9351`, backend `44277`) | `7a6b4b0` | `9cbd4d4d2a8e345f6702bf166e399bc695419397d736bf9bea8d835f72ad096c` | `git cat-file -e 1fc0542:docs/H35B-LIVE-CHECKLIST-EVIDENCE.md` |
+| `docs/ADVERSARIAL-AUDIT-ROUND2.md` | audit round 2 — 14 deterministic probes, 10 findings | master via merge `7af3bbd` (audit commit `9357c00`; probe assertion `903a606`) | `646242073fd0d60f7f70f86e439aae2bc29482afa5d8afe7f9f0d8161e3a8d96` | `git cat-file -e 54dd2eb:docs/ADVERSARIAL-AUDIT-ROUND2.md` |
+| `docs/ADVERSARIAL-UX-REVIEW.md` | adversarial UX review — learner and Parent Studio surfaces (GO for a UX pass, not a rewrite) | `2e57efa` | `840d000ecd6bb2d1892af34f9142126864bb0f5cc9c1d37eb43f7f74e4128c94` | `git cat-file -e 54dd2eb:docs/ADVERSARIAL-UX-REVIEW.md` |
+| `docs/GENERIC-HARNESS-REVIEW.md` | generic-harness review — can Coursebook teach an arbitrary topic (partially generic), evidence G-01…G-07 | `2e57efa`; amended `31b3132`, `6d062e1`, `db5662c` | `a8d119aa28763013d90d10f1c11c01f096d9412def17b8b5970e9eaa67e53da4` | `git cat-file -e 54dd2eb:docs/GENERIC-HARNESS-REVIEW.md` |
+| `docs/GENERIC-ACCEPTANCE-AUDIT.md` | H-30 independent acceptance audit of H-09 (three shapes, checks, routing); base product tree `498b1da` | `ddc71fc`; merged at `090e755` | `19cbe115688e37a5814ee33c5699e1d984965e013f8c6818e6292cec738ecd89` | `git cat-file -e 54dd2eb:docs/GENERIC-ACCEPTANCE-AUDIT.md`; `git merge-base --is-ancestor 090e755 54dd2eb` |
+| `docs/GENERIC-ACCEPTANCE-AUDIT-2.md` | H-30b independent re-audit of the generic harness after blueprint v2 (`single`/`short`/`full`) | `f92d5f8`; merged at `90e1f0d` | `b9b53721887af49579336bff43b1eb8834768f4a871f79dbbfd42f464dd2f275` | `git cat-file -e 54dd2eb:docs/GENERIC-ACCEPTANCE-AUDIT-2.md` |
+| `docs/ASSESSMENT-BREADTH.md` | H-16 assessment construct breadth decision and its B-1/B-2/B-3 defect register | `dd43d82`; merged at `fa316c5` | `38021edef4d6cafdf9c45eaff0bcfbe17c8e2960150fba70093d99590f9e2c7e` | `git cat-file -e 54dd2eb:docs/ASSESSMENT-BREADTH.md` |
+| `docs/COURSE-BLUEPRINT.md` | H-03 scope-aware blueprint design (single/short/full) plus §14, the frozen H-20 prerequisite contract; design authority for H-21 | master via merge `54087de` (content `f465a4d`); §14 added by `516d161` via `d079b4c` | `e3db7ac502ce65f70d53eb03ccbcf913197e54751df5b2a94adefeb669b345dd` | `git cat-file -e 54dd2eb:docs/COURSE-BLUEPRINT.md` |
+| `docs/PLAN-CEILING.md` | H-21c measured `full` plan ceiling; the probe behind the 40-objective cap | `bcd545e`; merged at `2252231` | `9dc0792ad9eec2e7bafb8a5b974c94ac0dc74532ba4788c417c717f2436efad9` | `git cat-file -e 54dd2eb:docs/PLAN-CEILING.md` |
+| `docs/GRADING-LANES.md` | H-20 decision + implementation record: every stored check declares its lane (implements B-1) | `ce6c8c1`; merged at `3368c96`, which enters `master` through `4e709d3` | `d4cb723096a513925cf8e7d30ad02b9b9bb4bee24570342e612a23b61a869916` | `git cat-file -e 54dd2eb:docs/GRADING-LANES.md`; `git merge-base --is-ancestor 4e709d3 54dd2eb` |
+| `docs/CHECKLIST-CONFIRMATION.md` | H-33 frozen decision: a verification tick-list is graded `self_reported` | `da53ec1`; merged at `3d46988`, which enters `master` through `4e709d3` | `f559b2f18423f17fac3ae183bb6b9f8b76dec5371b8270498ca00940dd6c7f15` | `git cat-file -e 54dd2eb:docs/CHECKLIST-CONFIRMATION.md` |
+| `docs/RUBRIC-EXTENSIBILITY.md` | H-24 frozen decision: the gate for a new construct profile (decision only, no runtime generator) | `491443a`; merged at `4f42c3c` | `7c73550ca4bbd9ef7cb55dbc9595c36e6926abcc108b236998da70bbc8c9d153` | `git cat-file -e 54dd2eb:docs/RUBRIC-EXTENSIBILITY.md` |
+| `docs/STUDENT-MODE.md` | H-25 student-mode design: a companion course aligned to an uploaded syllabus; design only | `3705a7a`; merged at `e978441` | `df4dcdeca230d064e0b7cfc19b785f44ede1c40d862d2c16f4b934408b77deef` | `git cat-file -e 54dd2eb:docs/STUDENT-MODE.md` |
+| `docs/HARNESS-NEXT-CARDS.md` | board card index / DAG, card-to-finding mapping, current-wave status | `2e3508f`; amended `a8d93b8`, `b4da6d9`, `31b3132`, `f17ec54`, `512c5f6`, `a671511`, `385ebac`, and later cards | `82af6664ba19738d40fa79a3f2da27685c67afea19c5e89d9677f9c41d6838c3` (at `1fc0542`; this card does not edit it. The pin moved from `f990cad` because later cards edited the file, not because the earlier hash was wrong) | `git cat-file -e 54dd2eb:docs/HARNESS-NEXT-CARDS.md` |
+| `docs/HARNESS-STATUS.md` | H-11 status truth pass: build-complete vs proven vs fixture-only, plus the CB-QA-10 reconciliation | doc branch `b2233ac`; landed at `097c32c` (H-47) | `a959a83530a38318b9f2e27c25d9026d13b4877f8f909526f73ea0cc453a6b99` | `git cat-file -e 54dd2eb:docs/HARNESS-STATUS.md` |
+| `docs/HARNESS-E2E.md` | H-40 packet method and its honest gaps, as landed | `9f2de53`; merged at `be08495` | `27ec514a003b261b5580782c50198782f2d45081d2678fd58c95dc512cae64d0` | `git cat-file -e 54dd2eb:docs/HARNESS-E2E.md` |
+| `docs/H15-VALIDATOR-INDEPENDENCE.md` | H-36 integration record: H-15's validator identity, `outcome` and no-research waiver landed on cb.rpc v13 | `b75d601` (content on `wt/harness-validator-integration`) | `763c49ed5f50711066b5114c89690e23971a5e49e7f0878144aec833c8fb670a` | `git cat-file -e 54dd2eb:docs/H15-VALIDATOR-INDEPENDENCE.md` |
+| `docs/H35B-LIVE-CHECKLIST-EVIDENCE.md` | H-35b live installed-Desktop DOM capture of a checklist confirmation on a fresh rig (CDP `127.0.0.1:9351`, backend `44277`) | `7a6b4b0` | `9cbd4d4d2a8e345f6702bf166e399bc695419397d736bf9bea8d835f72ad096c` | `git cat-file -e 54dd2eb:docs/H35B-LIVE-CHECKLIST-EVIDENCE.md` |
 | `docs/REVIEW_CB014.md` | pre-harness adversarial security/state/a11y release review (cb.rpc v6) | `270edae` | `4a3b00205761eae6e298cc34c3197c868518a0e6ff98ea922ab4c02449c2a91b` | `git cat-file -e 270edae:docs/REVIEW_CB014.md` (amended in `8e11bd2`) |
-| `docs/REVIEW_CB014-telemetry.md` | CB-014 tool-telemetry scope note | `51406ee` | `3f77fb9ccca8bf87daa904c1f6a9a13d00c3024f5ca970f5b4b16ffde8efbdb9` | `git cat-file -e 1fc0542:docs/REVIEW_CB014-telemetry.md` |
-| `docs/ACCEPTANCE.md` | adversarial acceptance matrix with explicit verified/seam/blocked/pending vocabulary | `b9da9f3` | `869918a97cb8e64f2c1daaaac9599904644049f138ceb6dd386ce1bb9a889d06` | `git cat-file -e 1fc0542:docs/ACCEPTANCE.md` |
+| `docs/REVIEW_CB014-telemetry.md` | CB-014 tool-telemetry scope note | `51406ee` | `3f77fb9ccca8bf87daa904c1f6a9a13d00c3024f5ca970f5b4b16ffde8efbdb9` | `git cat-file -e 54dd2eb:docs/REVIEW_CB014-telemetry.md` |
+| `docs/ACCEPTANCE.md` | adversarial acceptance matrix with explicit verified/seam/blocked/pending vocabulary | `b9da9f3` | `869918a97cb8e64f2c1daaaac9599904644049f138ceb6dd386ce1bb9a889d06` | `git cat-file -e 54dd2eb:docs/ACCEPTANCE.md` |
 | `docs/CB016-RELEASE-VERIFICATION.md` | clean-export install and route-mount record | `7f80f35` | `291b21564292301f07ed0c947a36657079f9762da9e9592a4a999b0ad497a266` | `git cat-file -e 7f80f35:docs/CB016-RELEASE-VERIFICATION.md` |
 | `docs/CB017-RELEASE-VERIFICATION.md` | release record re-derived on merged master and re-pinned | `638eb6b` | `55f9b3f07b49dd39dc817181cbddab818fda4ef9335203420b279eb545c79a3f` | `git cat-file -e 638eb6b:docs/CB017-RELEASE-VERIFICATION.md` (amended in `6eb93c2`) |
-| `docs/M4-VISUAL-MEDIA-AUDIT.md` | M4-QA visual/accessibility/media truth gate (62 painted frames) | `2b37b5b` | `6f4a109f1fc0f6aae5fe5ecea0ae5c58d6fab5438af629fb32c3591bad606689` | `git cat-file -e 2b37b5b:docs/M4-VISUAL-MEDIA-AUDIT.md` (amended in `27a2e40`) |
-| `docs/DEMO.md` | honest demo status; states the prepared pack proves one pack only | `5ad682e` | `27651b66410b54a6381430ae9945196ff78199f74cd0b75c188280b376d084ba` | `git cat-file -e 1fc0542:docs/DEMO.md` |
+| `docs/M4-VISUAL-MEDIA-AUDIT.md` | M4-QA visual/accessibility/media truth gate (62 painted frames) | `2b37b5b` | `fd4328e2775d0d71fd9b53116ee8dc037e9403fadd150d949014b810c3c5286b` | `git cat-file -e 2b37b5b:docs/M4-VISUAL-MEDIA-AUDIT.md` (amended in `27a2e40`) |
+| `docs/DEMO.md` | honest demo status; states the prepared pack proves one pack only | `5ad682e` | `c9f94a892e222c3a28100c26c04bafb345e156a9851f6d96eb2db49bd23770a8` | `git cat-file -e 54dd2eb:docs/DEMO.md` |
 
-Every `content sha256 at 1fc0542` value above was computed with
-`git show 1fc0542:<path> | sha256sum` for this revision. A hash that does not reproduce at the named
-commit is a stale row, not a rounding error. Nineteen of the twenty pins reproduced unchanged from
-the H-31b revision even though master moved `f990cad` → `1fc0542`; only `HARNESS-NEXT-CARDS.md`
-moved, and only because other cards edited it. That is why the H-31b hashes were trustworthy and
-the **statuses** were not: content pins and merge claims are different questions.
+Every `content sha256 at 54dd2eb` value above was computed with
+`git show 54dd2eb:<path> | sha256sum` for this revision. A hash that does not reproduce at the named
+commit is a stale row, not a rounding error. Of the twenty-two rows the H-41 revision pinned,
+nineteen reproduced unchanged even though master moved `1fc0542` → `54dd2eb`; three moved, each
+because a merged card edited that file (`COURSE-BLUEPRINT.md` by H-43, `M4-VISUAL-MEDIA-AUDIT.md`
+by H-39, `DEMO.md` by H-11). Three further rows are new (the H-30b, H-11 and H-40 reports). That is
+why the H-41 pins were trustworthy and many of its **statuses** were not: content pins and merge
+claims are different questions.
 
 `REVIEW_CB014.md` and `ACCEPTANCE.md` are included because the harness audits inherit their
 defect ids (CB-QA-09…13) and their evidence vocabulary. They are **pre-harness** records at
@@ -264,14 +283,14 @@ H-41 ran all ten and no product gate. It re-ran one module to settle a documenta
 `test_evidence_inspect_never_carries_the_reference_answer`. That is a documentation-claim probe, not
 a re-audit of any finding.
 
-### H-40 arbitrary-topic packet — branch-only @ `9f2de53`
+### H-40 arbitrary-topic packet — merged @ `9f2de53` via `be08495`
 
 ```
 git cat-file -e 9f2de53:audit/adversarial/harness-e2e/STATUS.md        # exit 0
 git cat-file -e 9f2de53:tests/test_harness_e2e.py                      # exit 0
-git cat-file -e 1fc0542:audit/adversarial/harness-e2e/STATUS.md ; test $? -eq 1   # absent from master
-git cat-file -e 1fc0542:tests/test_harness_e2e.py ; test $? -eq 1                # absent from master
-git merge-base --is-ancestor 9f2de53 1fc0542 ; test $? -eq 1                     # not merged
+git merge-base --is-ancestor 9f2de53 54dd2eb                           # exit 0 — merged
+git cat-file -e 54dd2eb:audit/adversarial/harness-e2e/STATUS.md        # exit 0
+git cat-file -e 54dd2eb:tests/test_harness_e2e.py                      # exit 0
 ```
 
 `9f2de53` is based on `c588e4a` and records **3/3 scenarios PASS** (`bicycle_single`,
@@ -279,8 +298,22 @@ git merge-base --is-ancestor 9f2de53 1fc0542 ; test $? -eq 1                    
 seam, and `labels.provider_calls = 0`, `provider_spend_usd = 0.0`. Its own STATUS.md names six
 honest gaps: no live provider, no live web research, course export out of scope, no language-goal
 audio path, only plan acceptance proven at the 40-objective bound, and no Desktop renderer run. Its
-focused suite is 11 tests and its full suite is 1422 tests on the branch. **None of that is evidence
-about `1fc0542`** until the supervisor merges it.
+focused suite is 11 tests and its full suite is 1422 tests **on its own branch**.
+
+**What changed at the H-50 base.** The H-41 revision titled this subsection "branch-only @
+`9f2de53`" and closed it "None of that is evidence about `1fc0542` until the supervisor merges
+it". `9f2de53` is now an ancestor of `54dd2eb` through the merge `be08495`, so the packet, its
+`docs/HARNESS-E2E.md` method note and `tests/test_harness_e2e.py` all resolve on master. The
+11/1422 branch counts are **not** the current ones, because four later cards changed the tool and
+then re-derived the evidence: H-45 `5d251cb` content-addressed the packet (`manifest.json` plus
+`harness_e2e.py --verify`), H-46 `cd818fa` made the lesson validator reject truncated authored
+text, which rejected the recorded shorts, H-46b `74978ca` re-authored them, and H-49 `54dd2eb`
+regenerated the evidence on the merged tree after H-44 added `domain_provenance` to the plan
+record. The current run is recorded with its commands in
+`audit/adversarial/harness-e2e/STATUS.md` §H-49 — manifest **FRESH**, 3/3 scenarios PASS, 24 added
+evidence lines, and no verdict, lesson, check or grading row changed. This index cross-references
+that section rather than copying its counts; the packet a reader should quote is `9f2de53`'s tree
+**as re-derived at `54dd2eb`**.
 
 ### Pre-harness release gate — `docs/REVIEW_CB014.md` @ `f4a42f3`, `docs/ACCEPTANCE.md` @ `e5b9686`
 
@@ -296,13 +329,13 @@ These prove the kernel at cb.rpc v6, not the harness loop.
 
 ## 4. Finding ledger — round 1
 
-Status is the state of the **merged** evidence at `master` = `1fc0542` (2026-11-07). A `done` card
+Status is the state of the **merged** evidence at `master` = `54dd2eb` (2026-11-07). A `done` card
 means its worker finished; it does **not** mean the branch merged. "FIXED" requires the named merge
-commit to be an ancestor of `1fc0542`. "FIXED — re-audit required" means the implementation is
-merged but no independent probe has run against the merged line yet. The ancestor verdict in the
-fifth column was re-run for this revision; rows that moved are listed in §12.
+commit to be an ancestor of `54dd2eb`. "FIXED — re-audit required" means the implementation is
+merged but no independent probe has run against that behaviour on the merged line yet. The ancestor
+verdict in the fifth column was re-run for this revision; rows that moved are listed in §13.
 
-| finding | severity | status | owning card | evidence commit — ancestor of `1fc0542`? | card state |
+| finding | severity | status | owning card | evidence commit — ancestor of `54dd2eb`? | card state |
 |---|---|---|---|---|---|
 | P0-1 learner create flow never starts generation | P0 | **FIXED** | H-02 `t_867d3b52` | merge `1bbd502` (content `5b74233`) — **yes** | done, merged |
 | P0-2 plan schema caps at 8 sections / forces 4 objectives; no `scope` | P0 | **FIXED — implementation merged; re-audit required** | H-03 `t_577ed286` (design) + H-21a/b/c (`t_27867486`, `t_fb8b9622`, `t_6576b611`) | design merge `54087de` (content `f465a4d`) — **yes**; implementation merge `2252231` (content `bcd545e`; slices `8eb83d8`, `7f46e17`) — **yes** | done, merged |
@@ -310,16 +343,16 @@ fifth column was re-run for this revision; rows that moved are listed in §12.
 | P0-4 deep research is a no-op; demo-sized budget | P0 | **FIXED** | H-04 `t_161d467f` | content `cee1749`, merged at `341cc18` into `ce95836` — **yes** | done, merged |
 | P0-5 a normal course cannot export itself | P0 | **FIXED** | H-08 `t_901c8310`; recovery H-08b `t_092cc689` | pre-recovery tip `c9c6cec` — **no** (branch history, superseded); recovery merge `18638be` — **yes**. On `1fc0542` `contracts/rpc.v13.json` carries 11 `course.export` hits and `tests/test_course_export.py` resolves | recovered, merged |
 | P0-6 a technical procedure lesson cannot carry the procedure lens | P0 | **FIXED** | H-06 `t_7a320d2f`; recovery H-06b `t_6cd9e57c` | original tip `00b502f` — **yes** (landed through the H-06b line); recovery merge `acb20f7` — **yes**. `lesson_procedure_problems` resolves in `coursebook/generation.py` at `1fc0542` | recovered, merged |
-| P0-7 no live arbitrary-topic generation | P0 | **OPEN — packet re-run on v2; merge pending supervisor** | H-09 `t_ebc196db`; re-run H-40 | H-09 `111c7e9` — **no**; H-40 `9f2de53` on `wt/h09-e2e-rerun` (base `c588e4a`) — **no**. The packet reports 3/3 PASS with recorded transcripts and 0 provider calls | done; neither branch merged |
+| P0-7 no live arbitrary-topic generation | P0 | **OPEN — packet merged, but no live provider call exists** | H-09 `t_ebc196db`; re-run H-40 | H-09 `111c7e9` — **no** (deliberately unmerged, superseded by H-40); H-40 `9f2de53` via merge `be08495` — **yes**; re-derived by H-49 at `54dd2eb`. The packet reports 3/3 PASS with **recorded** transcripts and `provider_calls = 0` | H-09 done, branch abandoned; H-40 merged |
 | P1-1 parent brief stored but mostly ignored by the planner | P1 | **FIXED** | H-07 `t_2f3cc647` (+ H-32b regression) | content `8a6bedb` merged at `afac32c` into `ce95836` — **yes**; conflict regression `8d018e4` via `c7461fc` — **yes** | done, merged |
 | P1-2 planner does not plan media; policy guesses from prose | P1 | **FIXED** | H-05 `t_7baa29e2` | content `986190f` merged at `a30487e` into `ce95836` — **yes** | done, merged |
 | P1-3 check `count` / `independent_evidence` are decorative | P1 | **FIXED — re-audit required** | H-21c `t_6576b611` | merge `2252231` (content `bcd545e`) — **yes**; `CHECK_PLAN_SCHEMA_V2` drops both fields | done, merged |
 | P1-4 authoring schemas are Japanese-shaped | P1 | **FIXED** | H-18 `t_8407ea22`; recovery H-18b (same defect as round-2 P2-7) | pre-recovery tip `2aca201` — **no**; recovery merge `580bbb6` — **yes**. `tests/test_locale_scaffolds.py` resolves at `1fc0542` | recovered, merged |
 | P1-5 assessment breadth is narrow | P1 | **OPEN — B-1 and B-3 merged; B-2 unmerged** | H-16 `t_3c5d969c`; B-1 `t_673155b0`; B-2 `t_74d99ca5`; B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `423908f` — **no** | all four done; three merged, B-2 not |
 | P1-6 rubric registry is static | P1 | **FIXED (decision) — re-audit not applicable** | H-24 `t_29e6647c` | merge `4f42c3c` (content `491443a`), `docs/RUBRIC-EXTENSIBILITY.md` — **yes** | done, merged |
-| P2-1 test matrix proves policy, not generation | P2 | **OPEN — blocked on the H-40 packet merging** | H-09 `t_ebc196db`; re-run H-40 | `111c7e9` — **no**; `9f2de53` — **no** | done, unmerged |
+| P2-1 test matrix proves policy, not generation | P2 | **FIXED — packet merged; its model half is a recorded transcript** | H-09 `t_ebc196db`; re-run H-40 | `111c7e9` — **no**; `9f2de53` via `be08495` — **yes**; `tests/test_harness_e2e.py` resolves at `54dd2eb` (26 tests in the H-49 run) | done, merged |
 | P2-2 depth/locale not tested through the product surface | P2 | **FIXED** | H-04 `t_161d467f` + H-13 `t_543c0767` | `cee1749` via `ce95836` — **yes**; `6779030` — **yes** | done, merged |
-| P2-3 procedure/media evidence is static or fixture | P2 | **OPEN — blocked on the H-40 packet merging** | H-09 `t_ebc196db`; re-run H-40 | `111c7e9` — **no**; `9f2de53` — **no** | done, unmerged |
+| P2-3 procedure/media evidence is static or fixture | P2 | **PARTIAL — procedure lane now runs through the merged pipeline; media lane still unproven** | H-09 `t_ebc196db`; re-run H-40 | `111c7e9` — **no**; `9f2de53` via `be08495` — **yes**; `soldering_full` exercises the procedure lens end to end on recorded transcripts. No scenario exercises image or speech media, so the media half of this finding is not closed | done, merged (packet) |
 
 **P1-3 and P1-6 were UNMAPPED two revisions ago; both now name a merged owner.** P1-3 is closed by
 `CHECK_PLAN_SCHEMA_V2` in `bcd545e`, which removes `count` and `independent_evidence` from the v2
@@ -332,18 +365,18 @@ remains UNMAPPED.**
 
 The report proposed its own `H-11`…`H-18` labels. Those labels **collide** with the board keys; the
 board keys are authoritative and are the only ids used here. Status is the merged state at
-`1fc0542`; the fifth column is the ancestor verdict re-checked for this revision.
+`54dd2eb`; the fifth column is the ancestor verdict re-checked for this revision.
 
-| finding | severity | status | owning card | evidence commit — ancestor of `1fc0542`? | card state |
+| finding | severity | status | owning card | evidence commit — ancestor of `54dd2eb`? | card state |
 |---|---|---|---|---|---|
 | P0-1 validator-rejected plan is stored as an approvable `draft` | P0 | **FIXED** | H-12 `t_dba06898` | merge `13480c4` (content `4b5f3b1`) — **yes**; round-2 probe `903a606` — **yes** | done, merged |
 | P0-2 fetched excerpt is raw prompt content; invented prose URLs pass | P0 | **FIXED** | H-14 `t_031e287f` | merge `a12176b` (content `0ba4dc6`) — **yes** | done, merged |
-| P1-3 "independent validation" is prompt separation; same model upgrades support | P1 | **FIXED — implementation merged; re-audit required** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes** (through the merge); merge `b75d601` — **yes**; `docs/H15-VALIDATOR-INDEPENDENCE.md` resolves at `1fc0542` | done, merged; independent re-audit is H-30b |
-| P1-4 factual gate auto-waives when research is unavailable | P1 | **FIXED — implementation merged; re-audit required** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes**; merge `b75d601` — **yes**; `outcome`/`facts_unverified` are in `validation_verdict()` at `1fc0542` | done, merged; independent re-audit is H-30b |
+| P1-3 "independent validation" is prompt separation; same model upgrades support | P1 | **FIXED — implementation merged; no independent probe of the verdict exists** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes** (through the merge); merge `b75d601` — **yes**; `docs/H15-VALIDATOR-INDEPENDENCE.md` resolves at `54dd2eb` | done, merged. H-30b (`f92d5f8` via `90e1f0d`) re-audited shape, grading and the approval gate; it ran **no** cross-model identity probe, so this row's re-audit is still missing |
+| P1-4 factual gate auto-waives when research is unavailable | P1 | **FIXED — implementation merged; no independent probe of the verdict exists** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes**; merge `b75d601` — **yes**; `outcome`/`facts_unverified` are in `validation_verdict()` at `54dd2eb` | done, merged. H-30b merged (`90e1f0d`) but its recorded research page was a recording, so the no-research waiver was not re-probed |
 | P1-5 assessment breadth: three input formats only | P1 | **OPEN — B-1 and B-3 merged; B-2 unmerged** | H-16 `t_3c5d969c` → B-1 `t_673155b0`, B-2 `t_74d99ca5`, B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `423908f` — **no** | three done and merged; B-2 open |
 | P1-6 flat `$0.75` ceiling, no cost-abort recovery | P1 | **FIXED** | H-17 `t_9a8543ae` (+ `t_d50cb007` v10 brief fix) | content `722f00f` merged at `4dd68cb` into `ce95836` — **yes**; `fbf96fe` — **yes** | done, merged |
 | P2-7 Japanese-only scaffold triple; no direction field | P2 | **FIXED** | H-18 `t_8407ea22`; recovery H-18b | pre-recovery tip `2aca201` — **no**; recovery merge `580bbb6` — **yes**; `tests/test_locale_scaffolds.py` resolves at `1fc0542` | recovered, merged |
-| P2-8 no prerequisite edges; adaptation is a state label | P2 | **FIXED — re-audit required** | H-20 `t_43ca17b8` (frozen contract) + H-21c `t_6576b611` (implementation) | contract `516d161` via `d079b4c` — **yes**; implementation merge `2252231` (content `bcd545e`) — **yes** | done, merged |
+| P2-8 no prerequisite edges; adaptation is a state label | P2 | **FIXED — re-audited by H-30b** | H-20 `t_43ca17b8` (frozen contract) + H-21c `t_6576b611` (implementation) | contract `516d161` via `d079b4c` — **yes**; implementation merge `2252231` (content `bcd545e`) — **yes** | done, merged; H-30b `f92d5f8` via `90e1f0d` proves `course.outline` projects `prereq_unit_ordinals` and a `prerequisite_state` per unit in `short` and `full`. The state-label half of the finding (no dynamic re-plan) stays OPEN under D-04 |
 | P2-9 green policy matrix supplies contract-rejected dials | P2 | **FIXED** | H-01 `t_f4f5b26a` + H-13 `t_543c0767` | merges `b1f2978` (content `8cbaab3`) and `6779030` (content `ee976ea`) — **yes** | done, merged |
 | P2-10 round-1 review uncommitted at audit time | P2 | **FIXED** | H-19 `t_ec1d2c15` | `2e3508f` on master — **yes**; index `99da48a` merged via `ce95836` — **yes** | done, merged |
 
@@ -369,8 +402,10 @@ ancestor of `1fc0542`, so the H-15 code is **on master**; `docs/H15-VALIDATOR-IN
 Two limits survive the merge, and neither is papered over:
 
 - **Integration is not re-audit.** H-36 united H-15 with H-21c/H-35; it did not independently
-  probe the result. No row here calls validator independence "independently proven" on `1fc0542`.
-  The re-audit card is H-30b, and its tip `f92d5f8` is **not** an ancestor of `1fc0542`.
+  probe the result. No row here calls validator independence "independently proven" on `54dd2eb`.
+  H-30b's tip `f92d5f8` **is** an ancestor now (merge `90e1f0d`), but its re-audit measured the
+  three shapes, the grading lanes and the approval gate; it did not re-probe cross-model identity,
+  so the independence claim still has no independent audit.
 - **Merged code is not a passed claim about a live model.** `validation_independence()` reads the
   identities the provider *reported*; a missing model on either side is `unidentified`, never
   `independent`. The recorded-transcript packet does not prove a live model behaves this way.
@@ -402,15 +437,15 @@ not a separate audit, but they do carry reproducibility weight, so their status 
 rather than left to prose. Historical D-01…D-06 text is **not** rewritten by this card; only the
 status column moves.
 
-| id | status | owning card | evidence commit — ancestor of `1fc0542`? | note |
+| id | status | owning card | evidence commit — ancestor of `54dd2eb`? | note |
 |---|---|---|---|---|
 | D-01 plan approval is advisory, not fail-closed | **FIXED** | H-12 `t_dba06898` | merge `13480c4` (content `4b5f3b1`) — **yes** | same defect as round-2 P0-1 |
 | D-02 the green suite encodes the defect | **FIXED** | H-12 | tests changed in `4b5f3b1` — **yes**; audit assertion `903a606` — **yes** | empty-plan approvals now assert refusal |
 | D-02b two plan digests, one approval | **FIXED** | H-12 + H-02 | `13480c4` (durable binding) — **yes** + `1bbd502` (learner path reads kernel digest via `parent.blueprint.read`) — **yes** | the fix is a projection, not a digest comparison |
 | D-03 the plan job drops contract inputs | **FIXED** | H-13 `t_543c0767` | merge `6779030` (content `ee976ea`) — **yes** | level/subject_domain/scope reach prompt, research and fingerprint |
 | D-04 "adaptation" is a state transition | **OPEN — narrowed** | H-03 (design, merged `54087de`), H-20 (contract `516d161`, merged `d079b4c`), H-21c (`bcd545e`, merged `2252231`) | all three — **yes** | prerequisite sequencing now exists; there is still **no** dynamic re-plan, no choice among remediation/examples/next objective and no attempt-driven content change. Do not market it as adaptive teaching. Re-audit required (H-30b, unmerged). |
-| D-05 validation independence is structural only | **FIXED — implementation merged; re-audit required** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes**; merge `b75d601` — **yes** | same defect as round-2 P1-3/P1-4. The integration landed; the independent re-audit did not (H-30b `f92d5f8` — **no**). |
-| D-06 stale CB-QA-10 claim survives in README | **OPEN — documentation defect on master; fix branch unmerged** | H-11 `t_6f41e0b0` | branch `wt/harness-docs` @ `b2233ac` — **no** | The stale claim is still on master **and is now also false**: `README.md:97` and `:202`, `docs/PRIVACY_EGRESS.md:167`, `docs/ACCEPTANCE.md:32` (S07 FAIL row) and `docs/REVIEW_CB014.md:31`/`:114` still call CB-QA-10 open. At `1fc0542` `coursebook/evidence.py:45`/`:57` projects only `PUBLIC_CRITERION_FIELDS`, and `tests/test_review_evidence.py::test_evidence_inspect_never_carries_the_reference_answer` passes (H-41 ran the module: 24 tests OK). `docs/HARNESS-STATUS.md`, the H-11 deliverable, does not resolve on master. |
+| D-05 validation independence is structural only | **FIXED — implementation merged; no independent probe of the verdict exists** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes**; merge `b75d601` — **yes** | same defect as round-2 P1-3/P1-4. The integration landed. H-30b merged too (`f92d5f8` via `90e1f0d`), but it did not re-probe validator identity, so the "independently validated" claim is still implementation-plus-review, not an independent audit. |
+| D-06 stale CB-QA-10 claim survives in README | **PARTIAL — H-11 docs merged and reconcile the live docs; `README.md` still carries the stale claim** | H-11 `t_6f41e0b0` | `b2233ac` via `097c32c` (H-47) — **yes** | At `54dd2eb` the H-11 deliverable `docs/HARNESS-STATUS.md` resolves, and §4 of it re-derives CB-QA-10 with the `attack_state.py` S07 probe. `docs/PRIVACY_EGRESS.md:167`, `DEFECTS.md:21` and `docs/SUBMISSION.md:220` now say the defect is fixed, with that command. **The row is not closed:** `README.md:99` ("Two backend defects are open… CB-QA-10") and `README.md:204` ("`evidence.inspect` returns an open check's reference in the L2 projection") are unchanged on master, and `docs/ACCEPTANCE.md:32` / `docs/REVIEW_CB014.md:31,114` are historical records at their own commits and are deliberately not rewritten. Code state at `54dd2eb`: `coursebook/evidence.py` projects only `PUBLIC_CRITERION_FIELDS` and `tests/test_review_evidence.py` passes. |
 
 D-06 also covers the `REVIEW_CB014.md` row for CB-QA-10 ("OPEN"). That row is **not** rewritten in
 this file — the index pins status, it does not edit the review — but H-41 did re-derive the code
@@ -426,36 +461,50 @@ as stale rather than as evidence about master.
 `docs/ADVERSARIAL-UX-REVIEW.md` and `docs/GENERIC-HARNESS-REVIEW.md` are merged at `2e57efa`
 (amended by `31b3132`, `6d062e1`, `db5662c`). `docs/GENERIC-ACCEPTANCE-AUDIT.md` (`ddc71fc`) is
 merged at `090e755` but audits `498b1da`, not `1fc0542`. Card bodies are the authority for scope.
-Every "merged" cell below names a commit that is an ancestor of `1fc0542`; the two packets that are
-not (H-30b's `f92d5f8`, H-40's `9f2de53`) are marked branch-only.
+Every "merged" cell below names a commit that is an ancestor of `54dd2eb`. The two packets that were
+branch-only at the H-41 base — H-30b's `f92d5f8` and H-40's `9f2de53` — are both ancestors at
+`54dd2eb` (merges `90e1f0d` and `be08495`).
+
+One limit on every H-30b verdict below: H-30b measured `f990cad`, which is an ancestor of
+`54dd2eb` but not the tip. It ran before H-42/H-43/H-44/H-45/H-46, so it cannot confirm those
+cards' fixes and did not re-test them; the D4…D8 rows below are closed from the later cards'
+own commits, not from H-30b.
 
 ### Generic-harness findings (G-series, `docs/GENERIC-HARNESS-REVIEW.md`)
 
-| finding | summary | owning card | merged state at `1fc0542` | re-audit |
+| finding | summary | owning card | merged state at `54dd2eb` | re-audit |
 |---|---|---|---|---|
-| G-01 | One-off shape is schema-rejected (`minItems: 4` objectives, 2 sections) | H-21a/b/c (`t_27867486`, `t_fb8b9622`, `t_6576b611`) | **merged** `2252231` — `PLAN_SCHEMA_V2` objectives `minItems: 1`, and `SCOPE_EXPECTATIONS["single"]["blueprint_objectives"] = (1, 1)` | required, H-30b (unmerged) |
-| G-02 | Generated checks are saved, not graded (no reference `kind`) | B-1 `t_673155b0` (H-16 B-1; the card title carries a stale "H-20" collision label) | **merged** `4e709d3` (content `ce6c8c1`), `docs/GRADING-LANES.md`, `tests/test_grading_lanes.py` | required, H-30b (unmerged) |
-| G-03 | Scope is on the wire but the plan shape caps it | H-21a/b/c | **merged** `2252231` — v2 `objectives` `maxItems: 40`, `units` `minItems: 1` | required, H-30b (unmerged) |
-| G-04 | Media/procedure lens incomplete | H-05 `t_7baa29e2` + H-06 `t_7a320d2f`; recovery H-06b | **merged** — H-05 `ce95836`; H-06 `00b502f`; H-06b `acb20f7` (all ancestors). `lesson_procedure_problems` resolves at `1fc0542` | required, H-30b (unmerged) |
-| G-05 | Only a prepared Japanese pack has run end to end | H-09 `t_ebc196db` (packet) + H-30 `t_178dc615` (audit); re-run H-40 | H-09 `111c7e9` branch-only; H-40 `9f2de53` branch-only (3/3 PASS, recorded transcripts, 0 provider calls); H-30 `090e755` merged but audits `498b1da` | **required**, H-30b; H-40 packet merge is the first step |
-| G-06 | Student mode / second import path does not exist | H-25 `t_5535fc66` (design), H-26a `t_faad26cf` (backend), H-27 `t_71ea55ee` (UI), H-26b (read projection) | design **merged** `e978441` (content `3705a7a`); backend **merged** `d0ca064`; UI **merged** `ca1ca4f`; projection **merged** `21e62e5` — all ancestors. `syllabus.intake.create` resolves in `contracts/rpc.v13.json` and `desktop/plugin.js` at `1fc0542` | implementation merged; no independent G-06 re-audit exists |
+| G-01 | One-off shape is schema-rejected (`minItems: 4` objectives, 2 sections) | H-21a/b/c (`t_27867486`, `t_fb8b9622`, `t_6576b611`) | **merged** `2252231` — `PLAN_SCHEMA_V2` objectives `minItems: 1`, and `SCOPE_EXPECTATIONS["single"]["blueprint_objectives"] = (1, 1)` (H-43 renamed the v1 key `v1_objectives` so it cannot be read as the v2 band) | **done** — H-30b `f92d5f8` via `90e1f0d`: a 1-objective `single` is ACCEPTED, a padded 4-objective `single` is refused by the rules |
+| G-02 | Generated checks are saved, not graded (no reference `kind`) | B-1 `t_673155b0` (H-16 B-1; the card title carries a stale "H-20" collision label) | **merged** `4e709d3` (content `ce6c8c1`), `docs/GRADING-LANES.md`, `tests/test_grading_lanes.py` | **done** — H-30b `f92d5f8` via `90e1f0d`: every generated quiz check stores `reference.kind = exact`; correct → `pass`, wrong → `not_yet`, neither `needs_retry` |
+| G-03 | Scope is on the wire but the plan shape caps it | H-21a/b/c | **merged** `2252231` — v2 `objectives` `maxItems: 40`, `units` `minItems: 1` | **done** — H-30b `f92d5f8` via `90e1f0d`: 12/24/40-objective `full` plans accepted, 41 rejected at the declared cap |
+| G-04 | Media/procedure lens incomplete | H-05 `t_7baa29e2` + H-06 `t_7a320d2f`; recovery H-06b | **merged** — H-05 `ce95836`; H-06 `00b502f`; H-06b `acb20f7` (all ancestors). `lesson_procedure_problems` resolves at `54dd2eb` | **partly done** — the merged H-40 packet (`9f2de53` via `be08495`) runs the procedure lens end to end with recorded content; no scenario exercises image or speech media, so the media half still has no probe |
+| G-05 | Only a prepared Japanese pack has run end to end | H-09 `t_ebc196db` (packet) + H-30 `t_178dc615` (audit); re-run H-40 | H-09 `111c7e9` deliberately unmerged (superseded); H-40 `9f2de53` **merged** via `be08495` (3/3 PASS, recorded transcripts, 0 provider calls), re-derived by H-49 at `54dd2eb`; H-30 `090e755` merged but audits `498b1da` | **done** for three non-Japanese goals, on recorded transcripts. Still not done: live provider authoring, live research, course export in the packet (`docs/HARNESS-E2E.md` § gaps) |
+| G-06 | Student mode / second import path does not exist | H-25 `t_5535fc66` (design), H-26a `t_faad26cf` (backend), H-27 `t_71ea55ee` (UI), H-26b (read projection) | design **merged** `e978441` (content `3705a7a`); backend **merged** `d0ca064`; UI **merged** `ca1ca4f`; projection **merged** `21e62e5` — all ancestors. `syllabus.intake.create` resolves in `contracts/rpc.v13.json` and `desktop/plugin.js` at `54dd2eb` | implementation merged; no independent G-06 re-audit exists |
 | G-07 | Rubric profiles are static | H-24 `t_29e6647c` (decision, not a runtime generator) | **merged** `4f42c3c` (content `491443a`), `docs/RUBRIC-EXTENSIBILITY.md` | decision only; no runtime to audit |
 
 ### H-30 acceptance findings (D1…D8, `docs/GENERIC-ACCEPTANCE-AUDIT.md` @ `498b1da`)
 
-H-30 ran on `498b1da`, before `2252231`/`4e709d3`. Its P0 findings are therefore **re-audit
-required** against `1fc0542`, owned by H-30b `t_9b6742f3`. Do not quote them as current.
+H-30 ran on `498b1da`, before `2252231`/`4e709d3`. H-30b `t_9b6742f3` re-ran these shapes after
+blueprint v2; its report `docs/GENERIC-ACCEPTANCE-AUDIT-2.md` is on master (`f92d5f8` via merge
+`90e1f0d`) and says the H-30 result is stale. D1/D2/D3 no longer reproduce. D4…D8 were closed by
+later cards and are verified against `54dd2eb` below.
 
-| id | H-30 verdict at `498b1da` | what changed on `1fc0542` | status |
+Two numbering traps, both live: H-30b's **own** P3 findings are also called D1…D4 (partial unit
+batch, self-reported one-off check, stale `full` prompt sentence, v1 ranges in `SCOPE_EXPECTATIONS`)
+and they collide with this table's H-30 D1…D8. H-42 `a24b566` closed H-30b-D1, H-43 `a326d22`
+closed H-30b-D3 and H-30b-D4, and H-30b-D2 is open by design (a tick-list is self-report). Those
+four are *not* rows in this table.
+
+| id | H-30 verdict at `498b1da` | what changed on `54dd2eb` | status |
 |---|---|---|---|
-| D1 | `single` padded to 4 objectives — FAIL | `PLAN_SCHEMA_V2` `minItems: 1`; `blueprint_objectives` for `single` = (1, 1) in `bcd545e` | **re-audit required** (H-30b, unmerged) |
-| D2 | `full` truncated at 8, no units/prereqs — BLOCKED | `maxItems: 40`, `plan_units` in `db.v7` migration `0007_plan_units.sql`, §14 gating in `bcd545e` | **re-audit required** (H-30b, unmerged) |
-| D3 | generated checks return `needs_retry` for both answers — FAIL | fix `ce6c8c1` merged at `4e709d3` | **re-audit required** (H-30b, unmerged) |
-| D4 | language goal with no locale/domain silently `general` | unchanged; no merged card closes it | OPEN — Atlas to route (nearest H-13/H-18b) |
-| D5 | H-09 evidence docs do not name the evidence commit; test count environment-dependent | the H-40 packet (`9f2de53`, branch-only) names base `c588e4a`, its evidence commit and 11/1422 test counts | **addressed on an unmerged branch only** — H-40 packet; H-11 (`b2233ac`, unmerged) owns the doc reconciliation |
-| D6 | H-09 `scope_matches_documented_bounds` compares the code to itself | unchanged | OPEN — H-40 packet, unmerged |
-| D7 | evidence packet not byte-reproducible (verdict-only freshness guard) | unchanged | OPEN — H-40 packet, unmerged |
-| D8 | lesson validator accepted truncated authored texts | unchanged | OPEN — H-40 / lesson-validator owner |
+| D1 | `single` padded to 4 objectives — FAIL | `PLAN_SCHEMA_V2` `minItems: 1`; `blueprint_objectives` for `single` = (1, 1) in `bcd545e` | **re-audited — no longer reproduces** (H-30b `f92d5f8` via `90e1f0d`: 1 unit / 1 objective accepted, 4-objective `single` refused by the rules) |
+| D2 | `full` truncated at 8, no units/prereqs — BLOCKED | `maxItems: 40`, `plan_units` in `db.v7` migration `0007_plan_units.sql`, §14 gating in `bcd545e` | **re-audited — no longer reproduces** (H-30b `f92d5f8` via `90e1f0d`: 6 units / 24 objectives with backward-only prereq edges; 40 accepted, 41 rejected) |
+| D3 | generated checks return `needs_retry` for both answers — FAIL | fix `ce6c8c1` merged at `4e709d3` | **re-audited — fixed and proven** (H-30b `f92d5f8` via `90e1f0d`: every generated quiz check stores `reference.kind = exact`; correct → `pass`, wrong → `not_yet`) |
+| D4 | language goal with no locale/domain silently `general` | H-44 `67fdf4f`: `_domain_provenance()` in `coursebook/generation.py`, copied into the job checkpoint by `coursebook/executor.py`. The authoring result is still `general` by design, but it now reports `source: default` plus the declared locale/domain and appends a human note to the warnings | **FIXED** — the fallback is recorded, not silent. H-44 deliberately does **not** infer a language from goal text (`docs/COURSE-BLUEPRINT.md` §15) |
+| D5 | H-09 evidence docs do not name the evidence commit; test count environment-dependent | the H-40 packet is merged (`9f2de53` via `be08495`), names base `c588e4a` and, after H-45, pins every evidence file and harness input by sha256 in `manifest.json`; the H-11 docs line is merged too (`b2233ac` via `097c32c`) and `docs/HARNESS-STATUS.md` resolves | **FIXED** — the packet's own 11/1422 counts are branch-era and §3 says so; the current counts are the H-49 run's |
+| D6 | H-09 `scope_matches_documented_bounds` compares the code to itself | H-45 `5d251cb`: the check now reads `contracts/rpc.v13.json`, `PLAN_SCHEMA_V2` and the published `blueprint_*` band, fails when those declarations disagree, and records the bound and every violation. Negative tests refuse a padded 4-objective `single`, a 6-objective `full` and a 41-objective plan | **FIXED** — `5d251cb` via `5917bfb` |
+| D7 | evidence packet not byte-reproducible (verdict-only freshness guard) | H-45 `5d251cb`: deterministic id minting plus `manifest.json`, and `harness_e2e.py --verify` compares hashes (`PacketManifestTest` at `tests/test_harness_e2e.py:238`, docstring "D7"). H-49 regenerated the evidence on the merged tree and the manifest reads **FRESH** | **FIXED** — `5d251cb` via `5917bfb`; re-verified at `54dd2eb` |
+| D8 | lesson validator accepted truncated authored texts | H-46 `cd818fa` adds `coursebook/text_completeness.py` as a structural ending gate inside `lesson_document.validate_blocks`, used by both unit-section and lesson enforcement; `tests/test_text_completeness.py` pins one truncation per shape. H-46b `74978ca` re-authored the recorded shorts the new gate rejected, and H-49 re-derived the packet | **FIXED** — `cd818fa` via `57dcd97`. Known residue: the gate false-positives on a complete sentence ending in a stranded preposition, recorded in `audit/adversarial/harness-e2e/STATUS.md` and owned by H-46/H-51 |
 
 ### UX findings (UX-series, `docs/ADVERSARIAL-UX-REVIEW.md`)
 
@@ -467,7 +516,7 @@ did verify is the copy the review demanded: at `1fc0542` `desktop/plugin.js` con
 it" ×1, "Reported by you — not independently verified." ×1 and "Your answer is text, a choice, or a
 checklist" ×1; at `c588e4a` every one of those counts is 0.
 
-| finding | summary | owning card | merged state at `1fc0542` |
+| finding | summary | owning card | merged state at `54dd2eb` |
 |---|---|---|---|
 | UX-01 | First run explains the system, not the invitation | H-28 `t_271e19e7` | merged — `184640a` via `1fc0542`; copy verified, no re-audit |
 | UX-02 | "Recipe" is the wrong first question; Japanese-only placeholders | H-28 `t_271e19e7` | merged — `184640a` via `1fc0542`; no re-audit |
@@ -483,24 +532,26 @@ checklist" ×1; at `c588e4a` every one of those counts is 0.
 ### H-16 B-series (defect register inside `docs/ASSESSMENT-BREADTH.md` §11)
 
 The decision document is on master (`fa316c5`, content `dd43d82`). The three implementation
-defects split: B-1 and B-3 are merged at `1fc0542`, B-2 is not.
+defects split: B-1 and B-3 are merged at `54dd2eb`, B-2 is not — and the sha the earlier revisions
+recorded for it is wrong, which is corrected here rather than copied forward.
 
-| finding | summary | owning card | merged state at `1fc0542` |
+| finding | summary | owning card | merged state at `54dd2eb` |
 |---|---|---|---|
 | B-1 | Generated lesson checks store no reference `kind`; grader falls to the unconfigured open lane | `t_673155b0` (title still says "H-20"; **B-1** is authoritative) | **merged** `4e709d3` (content `ce6c8c1`); `docs/GRADING-LANES.md`, `tests/test_grading_lanes.py` (15 tests) |
-| B-2 | `record_observation` has no RPC method, handler or UI; `self_reported`/`parent_reported` unreachable | `t_74d99ca5` (Atlas's earlier label was "H-21"; **B-2** is authoritative) | done, **unmerged**: `wt/harness-observation-record` @ `423908f` — **not** an ancestor of `1fc0542` |
+| B-2 | `record_observation` has no RPC method, handler or UI; `self_reported`/`parent_reported` unreachable | `t_74d99ca5` (Atlas's earlier label was "H-21"; **B-2** is authoritative) | **OPEN, and the row's sha is wrong.** `423908f` is **not** an ancestor of `54dd2eb` and is not the commit that introduced the behaviour: `git log --reverse -S'_OBSERVATION_CLASSES' 54dd2eb -- coursebook/domain.py` returns `cde58c6` (CB-002, the authoritative kernel), so `_OBSERVATION_CLASSES = ("self_reported", "parent_reported")` and `def record_observation(...)` are library code that **predates** the B-2 branch. What B-2 actually asks for — an RPC method, handler and UI — is still absent at `54dd2eb`: `observation.record` appears nowhere in `contracts/rpc.v13.json` and `record_observation` is never dispatched from `coursebook/api.py`; `desktop/plugin.js` has zero `observation.record` hits. The branch's 9,248 added lines are largely a duplicate `contracts/db.v7.json`/`rpc.v12.json` and were never merged |
 | B-3 | `EVIDENCE_CLASS_COPY` covers 4 of 6 evidence classes | H-22 `t_966d50f4` (frozen disclosure copy + labels) | **merged** — `47e152c` via `1fc0542` (H-38 union). `EVIDENCE_CLASS_COPY` at `1fc0542` has all six keys: `cold`, `hinted`, `answer_shown`, `self_reported`, `parent_reported`, `override` |
 
 **H-23 `t_132531da` ("Generated checks are ungradable") is `done` as a duplicate with no product
 code:** it was seeded before the B-1 duplicate was noticed. It is not evidence for B-1 and must not
 be re-run. B-1's owner is `t_673155b0`, and B-1's fix is `ce6c8c1`.
 
-## 8. Card index — H-21…H-41
+## 8. Card index — H-21…H-50
 
 Every card created after the second wave, with the findings it owns or audits, its branch, and its
-**merged** state at `1fc0542`.
+**merged** state at `54dd2eb`. Cards with no commit and no evidence on that tree (H-48 has neither,
+and the numbering skips it) are not listed.
 
-| card | id | owner | parents | branch | merged at `1fc0542` | owns / audits |
+| card | id | owner | parents | branch | merged at `54dd2eb` | owns / audits |
 |---|---|---|---|---|---|---|
 | H-21 (original) | `t_2a2fc90c` | cinder | H-13, H-01 | `wt/t_2a2fc90c` @ `5ba4e4c` | **no — superseded, no merge** | closed and split; the branch tip is history, not evidence |
 | H-21a | `t_27867486` | cinder | H-21 | `wt/h21a-contract-migration` @ `8eb83d8` | **yes** — `2252231` | cb.rpc v11, cb.db v7, migration `0007_plan_units.sql`, legacy-hash invariance |
@@ -517,7 +568,7 @@ Every card created after the second wave, with the findings it owns or audits, i
 | H-28 | `t_271e19e7` | vellum | H-02, H-22, H-21 | `wt/harness-ux-first-run` @ `184640a` | **yes** — `1fc0542` | UX-01, UX-02, UX-03, UX-06, UX-07, UX-09 |
 | H-29 | `t_70686b14` | vellum | H-28 | `wt/harness-ux-learning` @ `eb8e4c5` | **yes** — `1fc0542` | UX-04, UX-05, UX-08, UX-10 |
 | H-30 | `t_178dc615` | sentinel | H-09 | `wt/harness-generic-audit` @ `ddc71fc` | **yes** — `090e755` | G-05 independent audit, **of `498b1da`** |
-| H-30b | `t_9b6742f3` | sentinel | H-30, H-21c | `wt/harness-generic-audit-2` @ `f92d5f8` | **no** | **re-audit** of the single/short/full findings; its four P3 findings are reproduced in the H-40 packet STATUS.md |
+| H-30b | `t_9b6742f3` | sentinel | H-30, H-21c | `wt/harness-generic-audit-2` @ `f92d5f8` | **yes** — `90e1f0d`; report `docs/GENERIC-ACCEPTANCE-AUDIT-2.md` | **re-audit** of the single/short/full findings — PASS for all three shapes on `f990cad`; no P0/P1/P2 defect. Its four P3 items were later routed: D1 → H-42, D3/D4 → H-43, D2 open by design |
 | H-31 | `t_1c9d0ba6` | quill | H-12, H-14, H-02, H-03 | `wt/harness-audit-refresh` @ `512c5f6` | **yes** — `fdecc9e` | first index refresh; rewrites no finding |
 | H-31b | `t_a8e017b5` | quill | H-31, H-21c, H-35 | `wt/harness-audit-refresh-2` @ `2bfeb1c` | **yes, not as its own tip** — content re-landed as `a671511` + `385ebac`; `2bfeb1c` is **not** an ancestor | previous revision: merged-vs-card reconciliation, H-30b re-audit marker |
 | H-32 | `t_69873d4c` | cinder | H-07, H-13, H-14 | `wt/harness-parent-brief-rebase` @ `bc508ce` | **not as its own tip** — the union landed as `afac32c` inside `ce95836`; `bc508ce` is branch-only | conflict repair so H-07 can merge onto H-13/H-14 |
@@ -529,88 +580,119 @@ Every card created after the second wave, with the findings it owns or audits, i
 | H-36 | `t_48645f63` | atlas | H-15, H-21c, H-35 | `wt/harness-validator-integration` @ `833e335` | **yes** — merge `b75d601` | integrate H-15 onto v13; recovery, not a new design |
 | H-37 (student/syllabus union) | — (id not recorded here) | supervisor | H-25, H-26b, H-27 | `wt/harness-student-ui` @ `73c64ad`; `wt/harness-syllabus-read-projection` @ `1d025ae` | **yes** — merges `ca1ca4f` (H-27) and `21e62e5` (H-26b), then `c588e4a` (M4-V regeneration) | G-06 second import path |
 | H-38 (UX union) | `t_4adb4907` | supervisor | H-22, H-28, H-29 | `wt/ux-union` @ `1fc0542` | **yes** — `1fc0542` is the merge commit on master | six `desktop/plugin.js` conflicts resolved as a union; the frozen §7 copy lands |
-| H-39 (M4-V re-pin) | `t_5fb93891` | — | H-38 | `wt/m4v-determinism` @ `8ba5704`; `wt/m4v-landing` @ `7404e9c` | **no** | re-pin the M4-V frames against the shipped plugin sha `c206e1c9` |
-| H-40 (H-09 re-run) | `t_e32900ef` | sentinel | H-09 | `wt/h09-e2e-rerun` @ `9f2de53` | **no** | arbitrary-topic packet on blueprint v2 — 3/3 PASS, recorded transcripts, 0 provider calls, 11 focused / 1422 full tests on the branch |
-| H-41 (this card) | `t_ef2600f8` | quill | H-38 | `wt/audit-index-h41` | no (this card) | this revision: audit-index truth pass on `1fc0542` |
+| H-39 (M4-V re-pin) | `t_5fb93891` | — | H-38 | `wt/m4v-determinism` @ `8ba5704`; `wt/m4v-landing` @ `7404e9c` | **yes** — `7404e9c` and `4945061` via `be08495`; both tips are now ancestors | re-pin the M4-V frames against the shipped plugin sha `c206e1c9`; `docs/M4-VISUAL-MEDIA-AUDIT.md` re-pinned (content sha moved) |
+| H-40 (H-09 re-run) | `t_e32900ef` | sentinel | H-09 | `wt/h09-e2e-rerun` @ `9f2de53` | **yes** — `be08495`; packet re-derived by H-49 at `54dd2eb` | arbitrary-topic packet on blueprint v2 — 3/3 PASS, recorded transcripts, 0 provider calls. The 11/1422 counts are branch-era; see §3 and `audit/adversarial/harness-e2e/STATUS.md` §H-49 |
+| H-41 (audit index) | `t_ef2600f8` | quill | H-38 | `wt/audit-index-h41` @ `7163903` | **yes** — `7163903` via `be08495` | the H-41 revision re-landed on the merged tree; §12 is its record |
+| H-42 (partial unit batch) | `t_590a6be4` | cinder | H-40 | — | **yes** — `a24b566` via `be08495` | H-30b P3-D1: the unit_sections stage is transactional; a rule violation or validator rejection discards the batch and fails the job with typed reasons |
+| H-43 (stale v1 scope copy) | `t_d71f9441` | cinder | H-40 | — | **yes** — `a326d22` via `be08495` | H-30b P3-D3/D4: the `full` note makes no numeric claim; the v1 ranges are renamed `v1_objectives`; `tests/test_scope_copy.py` pins the rendered v2 prompt |
+| H-44 (silent general domain) | `t_c1faf526` | atlas | — | — | **yes** — `67fdf4f` via `8e7ebc4` | records `domain_provenance` (`source`, `resolved_domain`, `declared_subject_domain`, `declared_locale`, `target_language`) on the plan job and checkpoint; freezes the no-inference choice in `docs/COURSE-BLUEPRINT.md` §15 |
+| H-45 (scope contract + packet freshness) | `t_645ad886` | cbqa | — | — | **yes** — `5d251cb` via `5917bfb` | H-30 acceptance D6 and D7: scope judged against the declared contracts; deterministic ids + `manifest.json` + `--verify` freshness |
+| H-46 (truncated lesson text) | `t_8977ce2c` | cinder | — | — | **yes** — `cd818fa` via `57dcd97` | H-30 acceptance D8: `coursebook/text_completeness.py` in the shared lesson validator; `tests/test_text_completeness.py` |
+| H-46b (recorded shorts) | `t_4e1efe01` | sentinel | H-46 | — | **yes** — `74978ca` via `57dcd97` | re-authored the recorded shorts the H-46 gate rejected; regenerated the packet on `cd818fa` + H-45 |
+| H-47 (H-11 docs landing) | `t_0d97c3e7` | quill | — | `wt/h47-docs-union` @ `13b60ae` | **yes** — `097c32c`/`13b60ae` via `43daf21` | landed the H-11 docs (`docs/HARNESS-STATUS.md` + DEFECTS/PRIVACY_EGRESS/SUBMISSION/DEMO/INSTALL) on `be08495` without regressing H-41's index; §5.1 records the landing gate |
+| H-49 (packet re-run on merged tree) | (card id not recorded here) | sentinel | — | — | **yes** — `54dd2eb` is the commit itself | regenerated the H-40 packet after H-44 added `domain_provenance`; manifest FRESH, 3/3 PASS, 24 added evidence lines, no verdict changed |
+| H-50 (this card) | `t_37df1fb9` | quill | — (top-level) | `wt/h50-audit-refresh` | no (this card) | this revision: audit-index truth pass on `54dd2eb` |
 
 ## 9. Provenance checks this index relies on
 
-Run on `master` at `1fc0542`. Each must stay true or the index is stale.
+Run on `master` at `54dd2eb`. Each must stay true or the index is stale.
 
 ```
-git cat-file -e 1fc0542:docs/ADVERSARIAL-HARNESS-REVIEW.md
-git cat-file -e 1fc0542:docs/ADVERSARIAL-AUDIT-ROUND2.md
-git cat-file -e 1fc0542:docs/ADVERSARIAL-UX-REVIEW.md
-git cat-file -e 1fc0542:docs/GENERIC-HARNESS-REVIEW.md
-git cat-file -e 1fc0542:docs/GENERIC-ACCEPTANCE-AUDIT.md
-git cat-file -e 1fc0542:docs/ASSESSMENT-BREADTH.md
-git cat-file -e 1fc0542:docs/COURSE-BLUEPRINT.md
-git cat-file -e 1fc0542:docs/PLAN-CEILING.md
-git cat-file -e 1fc0542:docs/GRADING-LANES.md
-git cat-file -e 1fc0542:docs/CHECKLIST-CONFIRMATION.md
-git cat-file -e 1fc0542:docs/RUBRIC-EXTENSIBILITY.md
-git cat-file -e 1fc0542:docs/STUDENT-MODE.md
-git cat-file -e 1fc0542:docs/H15-VALIDATOR-INDEPENDENCE.md
-git cat-file -e 1fc0542:docs/H35B-LIVE-CHECKLIST-EVIDENCE.md
-git cat-file -e 1fc0542:contracts/rpc.v13.json
-git cat-file -e 1fc0542:contracts/db.v7.json
-git cat-file -e 1fc0542:coursebook/migrations/0007_plan_units.sql
-git cat-file -e 1fc0542:tests/test_prerequisite_gating.py
-git cat-file -e 1fc0542:tests/test_grading_lanes.py
-git cat-file -e 1fc0542:tests/test_checklist_confirmation.py
-git cat-file -e 1fc0542:tests/test_course_export.py
-git cat-file -e 1fc0542:tests/test_procedure_authoring.py
-git cat-file -e 1fc0542:tests/test_locale_scaffolds.py
-git cat-file -e 1fc0542:tests/test_validator_independence.py
-git cat-file -e 1fc0542:desktop/plugin.js
+git cat-file -e 54dd2eb:docs/ADVERSARIAL-HARNESS-REVIEW.md
+git cat-file -e 54dd2eb:docs/ADVERSARIAL-AUDIT-ROUND2.md
+git cat-file -e 54dd2eb:docs/ADVERSARIAL-UX-REVIEW.md
+git cat-file -e 54dd2eb:docs/GENERIC-HARNESS-REVIEW.md
+git cat-file -e 54dd2eb:docs/GENERIC-ACCEPTANCE-AUDIT.md
+git cat-file -e 54dd2eb:docs/GENERIC-ACCEPTANCE-AUDIT-2.md
+git cat-file -e 54dd2eb:docs/ASSESSMENT-BREADTH.md
+git cat-file -e 54dd2eb:docs/COURSE-BLUEPRINT.md
+git cat-file -e 54dd2eb:docs/PLAN-CEILING.md
+git cat-file -e 54dd2eb:docs/GRADING-LANES.md
+git cat-file -e 54dd2eb:docs/CHECKLIST-CONFIRMATION.md
+git cat-file -e 54dd2eb:docs/RUBRIC-EXTENSIBILITY.md
+git cat-file -e 54dd2eb:docs/STUDENT-MODE.md
+git cat-file -e 54dd2eb:docs/HARNESS-STATUS.md
+git cat-file -e 54dd2eb:docs/HARNESS-E2E.md
+git cat-file -e 54dd2eb:docs/H15-VALIDATOR-INDEPENDENCE.md
+git cat-file -e 54dd2eb:docs/H35B-LIVE-CHECKLIST-EVIDENCE.md
+git cat-file -e 54dd2eb:contracts/rpc.v13.json
+git cat-file -e 54dd2eb:contracts/db.v7.json
+git cat-file -e 54dd2eb:coursebook/migrations/0007_plan_units.sql
+git cat-file -e 54dd2eb:coursebook/text_completeness.py
+git cat-file -e 54dd2eb:tests/test_prerequisite_gating.py
+git cat-file -e 54dd2eb:tests/test_grading_lanes.py
+git cat-file -e 54dd2eb:tests/test_checklist_confirmation.py
+git cat-file -e 54dd2eb:tests/test_course_export.py
+git cat-file -e 54dd2eb:tests/test_procedure_authoring.py
+git cat-file -e 54dd2eb:tests/test_locale_scaffolds.py
+git cat-file -e 54dd2eb:tests/test_validator_independence.py
+git cat-file -e 54dd2eb:tests/test_text_completeness.py
+git cat-file -e 54dd2eb:tests/test_harness_e2e.py
+git cat-file -e 54dd2eb:audit/adversarial/harness-e2e/STATUS.md
+git cat-file -e 54dd2eb:audit/adversarial/harness-e2e/manifest.json
+git cat-file -e 54dd2eb:desktop/plugin.js
 
-git merge-base --is-ancestor 13480c4 1fc0542   # H-12 merge
-git merge-base --is-ancestor 903a606 1fc0542   # H-12 round-2 audit assertion (test commit)
-git merge-base --is-ancestor b1f2978 1fc0542   # H-01 merge
-git merge-base --is-ancestor a12176b 1fc0542   # H-14 merge
-git merge-base --is-ancestor 1bbd502 1fc0542   # H-02 merge
-git merge-base --is-ancestor 54087de 1fc0542   # H-03 design merge
-git merge-base --is-ancestor 6779030 1fc0542   # H-13 merge
-git merge-base --is-ancestor ce95836 1fc0542   # integration merge: H-04/H-05/H-07/H-17/H-19
-git merge-base --is-ancestor fa316c5 1fc0542   # H-16 decision
-git merge-base --is-ancestor d079b4c 1fc0542   # H-20 frozen contract
-git merge-base --is-ancestor 2252231 1fc0542   # H-21a/b/c implementation merge
-git merge-base --is-ancestor 4e709d3 1fc0542   # H-20/H-33/H-34/H-35 checklist + grading merge
-git merge-base --is-ancestor e978441 1fc0542   # H-25 design merge
-git merge-base --is-ancestor 090e755 1fc0542   # H-30 audit merge
-git merge-base --is-ancestor c7461fc 1fc0542   # H-32b merge
-git merge-base --is-ancestor 4f42c3c 1fc0542   # H-24 decision merge
-git merge-base --is-ancestor fdecc9e 1fc0542   # H-31 index merge
-git merge-base --is-ancestor a671511 1fc0542   # H-31b content re-landed
-git merge-base --is-ancestor 385ebac 1fc0542   # H-31b follow-up
-git merge-base --is-ancestor 18638be 1fc0542   # H-08b authored export
-git merge-base --is-ancestor acb20f7 1fc0542   # H-06b procedure lens
-git merge-base --is-ancestor 00b502f 1fc0542   # H-06 original tip (landed through H-06b)
-git merge-base --is-ancestor 580bbb6 1fc0542   # H-18b locale scaffolds
-git merge-base --is-ancestor b75d601 1fc0542   # H-36 validator integration (H-15 tip 833e335 inside)
-git merge-base --is-ancestor 833e335 1fc0542   # H-15 itself, now merged through H-36
-git merge-base --is-ancestor d0ca064 1fc0542   # H-26a student intake
-git merge-base --is-ancestor 2d7ecde 1fc0542   # H-26 salvage, landed through H-26a
-git merge-base --is-ancestor ca1ca4f 1fc0542   # H-27 / H-37 student UI merge
-git merge-base --is-ancestor 21e62e5 1fc0542   # H-26b / H-37 read projection merge
-git merge-base --is-ancestor c588e4a 1fc0542   # M4-V regeneration before the H-38 union
-git merge-base --is-ancestor 47e152c 1fc0542   # H-22 copy, merged by H-38
-git merge-base --is-ancestor 184640a 1fc0542   # H-28 first-run copy, merged by H-38
-git merge-base --is-ancestor eb8e4c5 1fc0542   # H-29 learning copy, merged by H-38
-git merge-base --is-ancestor 7a6b4b0 1fc0542   # H-35b live checklist capture
-git merge-base --is-ancestor 1fc0542 1fc0542   # H-38 itself is master
+git merge-base --is-ancestor 13480c4 54dd2eb   # H-12 merge
+git merge-base --is-ancestor 903a606 54dd2eb   # H-12 round-2 audit assertion (test commit)
+git merge-base --is-ancestor b1f2978 54dd2eb   # H-01 merge
+git merge-base --is-ancestor a12176b 54dd2eb   # H-14 merge
+git merge-base --is-ancestor 1bbd502 54dd2eb   # H-02 merge
+git merge-base --is-ancestor 54087de 54dd2eb   # H-03 design merge
+git merge-base --is-ancestor 6779030 54dd2eb   # H-13 merge
+git merge-base --is-ancestor ce95836 54dd2eb   # integration merge: H-04/H-05/H-07/H-17/H-19
+git merge-base --is-ancestor fa316c5 54dd2eb   # H-16 decision
+git merge-base --is-ancestor d079b4c 54dd2eb   # H-20 frozen contract
+git merge-base --is-ancestor 2252231 54dd2eb   # H-21a/b/c implementation merge
+git merge-base --is-ancestor 4e709d3 54dd2eb   # H-20/H-33/H-34/H-35 checklist + grading merge
+git merge-base --is-ancestor e978441 54dd2eb   # H-25 design merge
+git merge-base --is-ancestor 090e755 54dd2eb   # H-30 audit merge
+git merge-base --is-ancestor c7461fc 54dd2eb   # H-32b merge
+git merge-base --is-ancestor 4f42c3c 54dd2eb   # H-24 decision merge
+git merge-base --is-ancestor fdecc9e 54dd2eb   # H-31 index merge
+git merge-base --is-ancestor a671511 54dd2eb   # H-31b content re-landed
+git merge-base --is-ancestor 385ebac 54dd2eb   # H-31b follow-up
+git merge-base --is-ancestor 18638be 54dd2eb   # H-08b authored export
+git merge-base --is-ancestor acb20f7 54dd2eb   # H-06b procedure lens
+git merge-base --is-ancestor 00b502f 54dd2eb   # H-06 original tip (landed through H-06b)
+git merge-base --is-ancestor 580bbb6 54dd2eb   # H-18b locale scaffolds
+git merge-base --is-ancestor 9e6c5e4 54dd2eb   # H-18b locale test line
+git merge-base --is-ancestor 8600bcd 54dd2eb   # locale dir/lang test rendered through the shipped plugin
+git merge-base --is-ancestor b75d601 54dd2eb   # H-36 validator integration (H-15 tip 833e335 inside)
+git merge-base --is-ancestor 833e335 54dd2eb   # H-15 itself, now merged through H-36
+git merge-base --is-ancestor d0ca064 54dd2eb   # H-26a student intake
+git merge-base --is-ancestor 2d7ecde 54dd2eb   # H-26 salvage, landed through H-26a
+git merge-base --is-ancestor ca1ca4f 54dd2eb   # H-27 / H-37 student UI merge
+git merge-base --is-ancestor 21e62e5 54dd2eb   # H-26b / H-37 read projection merge
+git merge-base --is-ancestor c588e4a 54dd2eb   # M4-V regeneration before the H-38 union
+git merge-base --is-ancestor 47e152c 54dd2eb   # H-22 copy, merged by H-38
+git merge-base --is-ancestor 184640a 54dd2eb   # H-28 first-run copy, merged by H-38
+git merge-base --is-ancestor eb8e4c5 54dd2eb   # H-29 learning copy, merged by H-38
+git merge-base --is-ancestor 7a6b4b0 54dd2eb   # H-35b live checklist capture
+git merge-base --is-ancestor 1fc0542 54dd2eb   # H-38 UX union, the previous index base
+git merge-base --is-ancestor 8ba5704 54dd2eb   # H-39 M4-V determinism branch
+git merge-base --is-ancestor 7404e9c 54dd2eb   # H-39 M4-V landing branch
+git merge-base --is-ancestor 7163903 54dd2eb   # H-41 index truth pass
+git merge-base --is-ancestor 9f2de53 54dd2eb   # H-40 arbitrary-topic packet
+git merge-base --is-ancestor be08495 54dd2eb   # merge of H-41/H-40/H-39/H-43/H-42
+git merge-base --is-ancestor f92d5f8 54dd2eb   # H-30b re-audit
+git merge-base --is-ancestor 90e1f0d 54dd2eb   # merge of H-30b
+git merge-base --is-ancestor b2233ac 54dd2eb   # H-11 docs truth pass
+git merge-base --is-ancestor 097c32c 54dd2eb   # H-47 landing of the H-11 docs
+git merge-base --is-ancestor 13b60ae 54dd2eb   # H-47 landing-gate note
+git merge-base --is-ancestor a24b566 54dd2eb   # H-42 transactional unit stage
+git merge-base --is-ancestor a326d22 54dd2eb   # H-43 scope copy
+git merge-base --is-ancestor 67fdf4f 54dd2eb   # H-44 domain provenance
+git merge-base --is-ancestor 5d251cb 54dd2eb   # H-45 scope contract + packet manifest
+git merge-base --is-ancestor cd818fa 54dd2eb   # H-46 text-completeness gate
+git merge-base --is-ancestor 74978ca 54dd2eb   # H-46b complete-sentence shorts
+git merge-base --is-ancestor 54dd2eb 54dd2eb   # master itself
 
 # must NOT be ancestors — a merged fix must not be claimed where it is not
-! git merge-base --is-ancestor b2233ac 1fc0542                  # H-11 docs truth pass unmerged
-! git merge-base --is-ancestor 111c7e9 1fc0542                  # H-09 pre-v2 packet unmerged
-! git merge-base --is-ancestor 9f2de53 1fc0542                  # H-40 re-run packet unmerged
-! git merge-base --is-ancestor f92d5f8 1fc0542                  # H-30b re-audit unmerged
-! git merge-base --is-ancestor 423908f 1fc0542                  # B-2 unmerged
-! git merge-base --is-ancestor c9c6cec 1fc0542                  # H-08 pre-recovery tip
-! git merge-base --is-ancestor 2aca201 1fc0542                  # H-18 pre-recovery tip
-! git merge-base --is-ancestor 2bfeb1c 1fc0542                  # H-31b branch tip (content re-landed)
-! git merge-base --is-ancestor 8ba5704 1fc0542                  # H-39 M4-V determinism branch
-! git merge-base --is-ancestor 7404e9c 1fc0542                  # H-39 M4-V landing branch
+! git merge-base --is-ancestor 111c7e9 54dd2eb                  # H-09 pre-v2 packet, deliberately superseded
+! git merge-base --is-ancestor 423908f 54dd2eb                  # B-2 branch (not the commit that introduced _OBSERVATION_CLASSES)
+! git merge-base --is-ancestor c9c6cec 54dd2eb                  # H-08 pre-recovery tip
+! git merge-base --is-ancestor 2aca201 54dd2eb                  # H-18 pre-recovery tip (replacement 8600bcd)
+! git merge-base --is-ancestor 2bfeb1c 54dd2eb                  # H-31b branch tip (content re-landed)
 ```
 
 Every line above was run for this revision under `set -e`: the block exits 0. Ancestor lines must
@@ -620,15 +702,20 @@ the same verdicts, or the index is stale.
 Rules enforced:
 
 - **No claim cites a file that exists only in a worktree.** Every report above is tracked at
-  `1fc0542`. The rows that describe a branch-only fix or a branch-only packet name the tip so a
-  reader can check it, not so it can be treated as merged.
+  `54dd2eb`. The rows that describe an unmerged branch name its tip so a reader can check it, not
+  so it can be treated as merged.
 - **A branch is not a merge, and a done card is not a merge.** After this revision the only named
-  work whose commit is not an ancestor of `1fc0542` is H-09 (`111c7e9`), H-40 (`9f2de53`), H-30b
-  (`f92d5f8`), H-11 (`b2233ac`), B-2 (`423908f`), H-39 (`8ba5704`/`7404e9c`) and the superseded
-  pre-recovery tips `c9c6cec`/`2aca201`/`2bfeb1c`. Every other card row above names an ancestor.
-- **A merged fix is not a passed re-audit.** H-30's single/full findings and H-15's validator
-  independence are marked re-audit required until H-30b probes `1fc0542`. The rows are not allowed
-  to read as closed.
+  work whose commit is not an ancestor of `54dd2eb` is H-09 (`111c7e9`), B-2 (`423908f`) and the
+  superseded pre-recovery tips `c9c6cec`/`2aca201`/`2bfeb1c`. Everything else the ledger names is
+  an ancestor. H-09 and `2aca201` are **deliberately** unmerged: H-09's packet measured a harness
+  three generations old and is replaced by `9f2de53` (re-derived by `74978ca`), and `2aca201`'s
+  locale scaffolds are replaced by `580bbb6` with the shipped-plugin rendering test `8600bcd`.
+  Being superseded is not the same as being merged.
+- **A merged fix is not a passed re-audit.** H-30b (`f92d5f8` via `90e1f0d`) has now probed the
+  single/short/full shapes and the grading lanes on `f990cad`, so D1…D3 and G-01…G-03 moved. It
+  did **not** probe validator identity or the no-research waiver, so those rows still read
+  "no independent probe exists" rather than "closed". A re-audit on one behaviour is not a
+  re-audit of every behaviour that shares a card.
 - **A prepared pack is not a topic proof.** No row above derives a harness claim from
   `bundled/packs/japanese-affection-context-l0`.
 - **A live capture is not implied by a merged surface.** H-35's surface is merged, and H-35b's live
@@ -637,17 +724,22 @@ Rules enforced:
 
 ## 10. What this index does not claim
 
-- It does not claim the harness is fully generic. `docs/GENERIC-HARNESS-REVIEW.md` at `1fc0542`
-  says "partially generic". The shape blockers G-01/G-03 are *implemented* at `2252231`, but no
-  independent probe has re-run them against `1fc0542`; H-30b owns that.
-- It does not claim H-09 or H-11 is fixed; both branches are unmerged and every such row says so.
-  H-06, H-08, H-15, H-18, H-22, B-3 and the H-26 line are merged — being merged is not the same as
-  having passed a re-audit, and the rows that need one say so.
+- It does not claim the harness is fully generic. `docs/GENERIC-HARNESS-REVIEW.md` at `54dd2eb`
+  says "partially generic". The shape blockers G-01/G-03 are *implemented* at `2252231` and were
+  re-probed by H-30b (`f92d5f8` via `90e1f0d`) on `f990cad`; H-30b's model half is a scripted
+  double and its research page is a recording, so "generic" here means the contract and pipeline
+  accept the three shapes, not that a live model authors them.
+- It does not claim H-09's branch is merged: `111c7e9` is deliberately superseded and stays out.
+  H-11's docs **are** merged (`b2233ac` via `097c32c`) and the D-06 row says what is still stale.
+  H-06, H-08, H-15, H-18, H-22, B-3, H-40 and the H-26 line are merged — being merged is not the
+  same as having passed a re-audit, and the rows that need one say so.
 - It does not claim H-15's validator independence has been independently re-audited on master. The
-  integration is merged at `b75d601`; the re-audit card H-30b is unmerged at `f92d5f8`.
+  integration is merged at `b75d601`. H-30b is merged too (`f92d5f8` via `90e1f0d`), but its
+  re-audit measured shape, grading and the approval gate, not the reported model identities, so no
+  independent probe of the independence claim exists.
 - It does not claim H-23 did any work: it was closed as a duplicate with no code.
 - It does not claim H-26's original card completed. It timed out; its WIP was salvaged at `2d7ecde`
-  and the work was finished by H-26a, whose merge `d0ca064` is an ancestor of `1fc0542`. The code is
+  and the work was finished by H-26a, whose merge `d0ca064` is an ancestor of `54dd2eb`. The code is
   on master; the card that shipped it is H-26a.
 - It does not claim the checklist confirmation has a live Desktop capture **at the shipped plugin
   sha**. H-35b's capture exists and is merged (`7a6b4b0`), but it was taken at `f990cad` plugin sha
@@ -655,10 +747,11 @@ Rules enforced:
 - It does not claim any finding is closed because a card is `done`.
 - It does not re-run, re-grade or extend any audit; probe results are attributed to the card that
   produced them.
-- It does not claim the harness is installable, demo-ready, or proven on an arbitrary topic. H-40's
-  re-run packet (`9f2de53`) reports 3/3 PASS on blueprint v2, but it is **branch-only**, its model
-  half is a recorded transcript, it called no provider and it did not exercise course export. H-30
-  audited an older tree; H-30b's re-audit is also unmerged.
+- It does not claim the harness is installable, demo-ready, or proven on a **live** arbitrary
+  topic. H-40's packet is merged (`9f2de53` via `be08495`) and re-derived at `54dd2eb`, and reports
+  3/3 PASS on blueprint v2 — but its model half is a recorded transcript, it called no provider,
+  and it did not exercise course export or a media lane. H-30 audited an older tree; H-30b
+  re-audited shape and grading with a scripted model.
 - It does not use the prepared Japanese pack as evidence for anything.
 - It changes no product code, contract, schema, migration or test.
 
@@ -766,3 +859,169 @@ module, and it re-ran no product gate and no audit probe. Two things it delibera
 The release gate reads this file. After this revision the only rows that can support a release
 claim are those naming an ancestor of `1fc0542`, and every ledger row that names one also says
 whether an independent re-audit exists.
+
+## 13. Changes in the H-50 revision — every moved row and its commit
+
+Base: `master` = `54dd2eb` (`54dd2eb48f5f3410cb9f591f4a2d9a283e20672c`), the H-49 packet re-run.
+Compared with the H-41 revision: commit `7163903`, whose parent is `1fc0542`. `be08495` merged it
+without changing the file (`git diff 7163903 be08495 -- docs/AUDIT-INDEX.md` is empty). Every
+verdict below was re-run against `54dd2eb` for this card; do not copy them, re-run them. Rows not
+listed did not change status. §11/§12 are untouched.
+
+| row | previous status (H-41) | status now | commit that justifies it | ancestor of `54dd2eb` |
+|---|---|---|---|---|
+| round-1 P0-7 no live arbitrary-topic generation | OPEN — packet re-run on v2; merge pending supervisor | **OPEN — packet merged, but no live provider call exists** | `9f2de53` via merge `be08495`; re-derived by H-49 at `54dd2eb` | yes (packet); the *live* half is still unproven, so the row stays open |
+| round-1 P2-1 test matrix proves policy, not generation | OPEN — blocked on the H-40 packet merging | **FIXED — packet merged; model half is a recorded transcript** | `9f2de53` via `be08495`; `tests/test_harness_e2e.py` resolves at `54dd2eb` | yes |
+| round-1 P2-3 procedure/media evidence is static or fixture | OPEN — blocked on the H-40 packet merging | **PARTIAL — procedure lane proven; media lane unproven** | `9f2de53` via `be08495` (`soldering_full`); no media scenario exists | yes for procedure; media has no evidence |
+| H-30 D1 `single` padded to 4 objectives | re-audit required (H-30b, unmerged) | **re-audited — no longer reproduces** | `f92d5f8` via merge `90e1f0d`; `docs/GENERIC-ACCEPTANCE-AUDIT-2.md` | yes |
+| H-30 D2 `full` truncated at 8 | re-audit required (H-30b, unmerged) | **re-audited — no longer reproduces** (6 units / 24 objectives; 40 accepted, 41 rejected) | `f92d5f8` via `90e1f0d` | yes |
+| H-30 D3 checks `needs_retry` for both answers | re-audit required (H-30b, unmerged) | **re-audited — fixed and proven** | `f92d5f8` via `90e1f0d`; fix `ce6c8c1` via `4e709d3` | yes |
+| H-30 D4 language goal silently `general` | OPEN — Atlas to route | **FIXED — fallback recorded with provenance, not silent** | H-44 `67fdf4f` via `8e7ebc4` | yes |
+| H-30 D5 H-09 evidence docs / test count | addressed on an unmerged branch only | **FIXED — packet and H-11 docs both merged** | `9f2de53` via `be08495`; `b2233ac` via `097c32c` | yes |
+| H-30 D6 scope compared to itself | OPEN — H-40 packet, unmerged | **FIXED — judged against the declared contracts** | H-45 `5d251cb` via `5917bfb` | yes |
+| H-30 D7 packet not byte-reproducible | OPEN — H-40 packet, unmerged | **FIXED — content-addressed manifest; `--verify` reads FRESH** | H-45 `5d251cb` via `5917bfb`; re-verified by H-49 at `54dd2eb` | yes |
+| H-30 D8 validator accepted truncated text | OPEN — H-40 / lesson-validator owner | **FIXED — structural ending gate in the shared lesson validator** | H-46 `cd818fa` via `57dcd97`; evidence by H-46b `74978ca` | yes |
+| §6 D-05 validation independence | FIXED — implementation merged; re-audit required | **FIXED — implementation merged; no independent probe of the verdict exists** | `833e335` via `b75d601`; H-30b `f92d5f8` merged but did not probe identity | yes (fix); re-audit still missing |
+| §6 D-06 stale CB-QA-10 claim in README | OPEN — documentation defect on master; fix branch unmerged | **PARTIAL — live docs reconciled by H-11; `README.md:99` and `:204` still stale** | `b2233ac` via `097c32c` | yes |
+| G-01 one-off shape rejected | re-audit required, H-30b (unmerged) | **done — 1-objective `single` accepted, 4-objective refused** | `f92d5f8` via `90e1f0d` | yes |
+| G-02 checks saved, not graded | re-audit required, H-30b (unmerged) | **done — every generated check carries `reference.kind`** | `f92d5f8` via `90e1f0d`; fix `ce6c8c1` | yes |
+| G-03 plan shape caps scope | re-audit required, H-30b (unmerged) | **done — 12/24/40 accepted, 41 rejected** | `f92d5f8` via `90e1f0d` | yes |
+| G-04 media/procedure lens | required, H-30b (unmerged) | **partly done — procedure proven, media unproven** | `9f2de53` via `be08495` | yes for procedure |
+| G-05 only the Japanese pack ran end to end | required, H-30b; H-40 merge is the first step | **done for three non-Japanese goals, on recorded transcripts** | `9f2de53` via `be08495`; H-49 `54dd2eb` | yes |
+| round-2 P1-3 / §6 D-05 re-audit marker | "independent re-audit is H-30b" (unmerged) | **H-30b merged; it did not cover validator identity** | `f92d5f8` via `90e1f0d` | yes |
+| round-2 P2-8 prerequisite edges | FIXED — re-audit required | **FIXED — re-audited by H-30b** | `f92d5f8` via `90e1f0d`; `2252231` | yes |
+| §7 B-2 row sha | done, unmerged: `423908f` | **OPEN, and the sha is wrong** — `_OBSERVATION_CLASSES` and `record_observation` were introduced by `cde58c6` (CB-002) and predate the branch; no `observation.record` RPC, handler or UI exists at `54dd2eb` | `cde58c6` for the constant; `423908f` is **not** an ancestor | constant yes; the B-2 branch **no** |
+| §8 H-30b card | no | **yes** — `90e1f0d` | `f92d5f8` | yes |
+| §8 H-39 card | no | **yes** — `7404e9c`, `4945061` via `be08495` | `4945061` | yes |
+| §8 H-40 card | no | **yes** — `be08495` | `9f2de53` | yes |
+| §8 H-41 card | no (this card) | **yes** — `7163903` via `be08495` | `7163903` | yes |
+| §1 register pins | hashes at `1fc0542` | **recomputed at `54dd2eb`**; 19 of 22 reproduced, three moved (`COURSE-BLUEPRINT.md` by H-43, `M4-VISUAL-MEDIA-AUDIT.md` by H-39, `DEMO.md` by H-11); three rows added | `54dd2eb` | — |
+| §9 ancestor block | `b2233ac`, `9f2de53`, `f92d5f8`, `423908f` asserted **not** ancestors | the first three **are** ancestors now; `423908f`, `111c7e9`, `2aca201`, `c9c6cec`, `2bfeb1c` are not; H-09's and H-18's old tips are recorded as deliberately superseded | see §9 | mixed |
+
+New rows added by this revision: the three report-register rows (§1), the H-42/H-43/H-44/H-45/H-46/
+H-46b/H-47/H-49/H-50 card rows and the corrected H-30b/H-39/H-40/H-41 states (§8), and the
+numbering note in §7 that distinguishes H-30b's own P3 D1…D4 from this index's H-30 D1…D8.
+
+### The rows whose wording changed materially — old text kept verbatim
+
+The H-41 cells below are quoted from `git show 54dd2eb:docs/AUDIT-INDEX.md` as it stood before this
+card, so a reader can see what was claimed and why it moved. Nothing here is deleted from history:
+the same cells remain readable at `54dd2eb` and in §12.
+
+- round-1 P0-7: `OPEN — packet re-run on v2; merge pending supervisor` … `H-40 9f2de53 on
+  wt/h09-e2e-rerun (base c588e4a) — no. The packet reports 3/3 PASS with recorded transcripts and 0
+  provider calls` … `done; neither branch merged`.
+- round-1 P2-1: `OPEN — blocked on the H-40 packet merging` … `111c7e9 — no; 9f2de53 — no` …
+  `done, unmerged`.
+- round-1 P2-3: `OPEN — blocked on the H-40 packet merging` … `111c7e9 — no; 9f2de53 — no` …
+  `done, unmerged`.
+- §6 D-06: `OPEN — documentation defect on master; fix branch unmerged` … `branch wt/harness-docs
+  @ b2233ac — no` … `The stale claim is still on master and is now also false: README.md:97 and
+  :202, docs/PRIVACY_EGRESS.md:167, docs/ACCEPTANCE.md:32 (S07 FAIL row) and docs/REVIEW_CB014.md:31
+  /:114 still call CB-QA-10 open. At 1fc0542 coursebook/evidence.py:45/:57 projects only
+  PUBLIC_CRITERION_FIELDS … docs/HARNESS-STATUS.md, the H-11 deliverable, does not resolve on
+  master.` Two corrections: the README lines are `:99` and `:204` at `54dd2eb` (this card measured
+  them), and `docs/HARNESS-STATUS.md` **does** resolve on master. The claim that the README text is
+  still stale is unchanged and is the reason the row is only PARTIAL.
+- §7 B-2: `done, unmerged: wt/harness-observation-record @ 423908f — not an ancestor of 1fc0542`. The "not an ancestor" half is still true at `54dd2eb`; the implied "this is the fix"
+  reading was never true and is corrected above.
+- §3 H-40 heading: `### H-40 arbitrary-topic packet — branch-only @ 9f2de53`, whose command block
+  asserted `git cat-file -e 1fc0542:audit/adversarial/harness-e2e/STATUS.md ; test $? -eq 1 # absent
+  from master` and `git merge-base --is-ancestor 9f2de53 1fc0542 ; test $? -eq 1 # not merged`. Both
+  were true at `1fc0542` and are false at `54dd2eb`; the block is replaced, not deleted, in §3.
+
+### The verifying commands and what they printed
+
+Run for this card, in this worktree, at `54dd2eb`:
+
+```text
+$ for c in 9f2de53 f92d5f8 b2233ac 097c32c 67fdf4f 5d251cb cd818fa 74978ca 423908f 111c7e9 2aca201 8600bcd; do
+    git merge-base --is-ancestor $c 54dd2eb; echo "$?  $c"; done
+0  9f2de53
+0  f92d5f8
+0  b2233ac
+0  097c32c
+0  67fdf4f
+0  5d251cb
+0  cd818fa
+0  74978ca
+1  423908f
+1  111c7e9
+1  2aca201
+0  8600bcd
+
+$ git log --reverse -S'_OBSERVATION_CLASSES' --format='%h %s' 54dd2eb -- coursebook/domain.py
+cde58c6 CB-002: authoritative SQLite kernel, grading gate and transactional commands
+0f6310b CB-002: authoritative SQLite kernel, grading gate and transactional commands
+
+$ git show 54dd2eb:coursebook/domain.py | grep -n '^_OBSERVATION_CLASSES'
+3684:_OBSERVATION_CLASSES = ("self_reported", "parent_reported")
+$ git show 54dd2eb:coursebook/domain.py | grep -c '^def record_observation'
+1
+$ git show 54dd2eb:contracts/rpc.v13.json | grep -c 'observation.record'
+0                    # exit 1 — no such RPC method in the contract
+$ grep -c 'observation.record' desktop/plugin.js
+0
+
+$ git cat-file -e 54dd2eb:docs/HARNESS-STATUS.md                                    # exit 0
+$ grep -n 'CB-QA-10' README.md
+99: ... two backend defects are open ... (CB-QA-10), ...
+204: - `evidence.inspect` returns an open check's reference in the L2 projection (CB-QA-10).
+$ grep -n 'CB-QA-10' docs/PRIVACY_EGRESS.md DEFECTS.md docs/SUBMISSION.md
+167: ... Fixed on this tree and re-derived ...
+21:  ... CB-QA-10 is fixed ...
+220: ... (CB-QA-10, **fixed**) ...
+
+$ git merge-base --is-ancestor 1fc0542 54dd2eb ; echo $?
+0                    # the H-41 base is inside this master, so its history is readable here
+$ git diff --stat 1fc0542 54dd2eb -- docs/
+ docs/AUDIT-INDEX.md                | 602 +++++++++++++-----
+ docs/COURSE-BLUEPRINT.md           |  52 ++
+ docs/DEMO.md                       |  21 +
+ docs/GENERIC-ACCEPTANCE-AUDIT-2.md | 188 +++++
+ docs/HARNESS-E2E.md                | 109 +++
+ docs/HARNESS-STATUS.md             | 158 +++++
+ docs/INSTALL.md                    |  11 +-
+ docs/M4-VISUAL-MEDIA-AUDIT.md      |  24 +-
+ docs/PRIVACY_EGRESS.md             |   9 +-
+ docs/PRODUCT-LINE-RELEASE-NOTES.md |  14 +-
+ docs/SUBMISSION.md                 |   9 +-
+```
+
+Two claims in this revision are **card-measured, not re-run here**: the H-49 packet (manifest FRESH,
+3/3 PASS, 26 focused / 1524 full tests) is quoted from
+`audit/adversarial/harness-e2e/STATUS.md` §H-49 with its own commands, and H-30b's verdicts are
+quoted from `docs/GENERIC-ACCEPTANCE-AUDIT-2.md` at `f92d5f8`. This card ran no product gate, no
+provider call and no harness run.
+
+### Rows deliberately left open, with the reason
+
+- **round-1 P0-7 — no live arbitrary-topic generation.** The merged packet's model half is a
+  recorded transcript and `labels.provider_calls = 0`. Merging the evidence does not create the
+  live provenance the finding asks for.
+- **round-1 P2-3 / G-04 — the media half.** `soldering_full` proves the procedure lens; no packet
+  scenario exercises image or speech media, so "media evidence is static or fixture" is still true.
+- **B-2 — the row's sha is wrong and the behaviour it asks for is still missing.** Naming
+  `cde58c6` (which introduced the constant long before B-2) would have been the easy fix and would
+  have closed a finding that is not closed: there is no `observation.record` RPC method, no handler
+  dispatch and no UI at `54dd2eb`.
+- **§6 D-06 — README.** H-11 reconciled `PRIVACY_EGRESS.md`, `DEFECTS.md` and `SUBMISSION.md`
+  and landed `docs/HARNESS-STATUS.md`; `README.md:99` and `:204` still call CB-QA-10 open. Flipping
+  the row to FIXED would require editing README, which is a docs change this card does not own.
+- **D-04 — untouched by instruction.** The "do not market it as adaptive teaching" warning and its
+  requalification stand exactly as written; nothing in H-30b's shape re-audit, H-42's transactional
+  unit stage or H-43's scope copy adds dynamic re-plan or attempt-driven content change.
+- **The demo gate `t_6a32ffe9` — untouched.** No row here reports a demo result.
+
+### What this revision is, and is not
+
+It is a status reconciliation against a new master, not a new audit. It re-ran `git merge-base
+--is-ancestor`, `git cat-file -e`, `git log -S`, and file-level greps at `54dd2eb`; it ran no product
+gate and no audit probe, and it changed no product code, contract, schema, migration or test. It
+keeps §11/§12 exactly as written so the H-31b and H-41 claims stay readable next to the
+correction, rather than being silently deleted.
+
+**The release gate reads this file.** After this revision the only rows that can support a release
+claim are those naming an ancestor of `54dd2eb`, and every ledger row that names one also says
+whether an independent re-audit exists. The two rows that most invite overstatement — P0-7 and
+P2-3's media half — stay OPEN on purpose.
