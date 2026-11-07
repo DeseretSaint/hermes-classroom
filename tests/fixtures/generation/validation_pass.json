@@ -58,6 +58,7 @@
       "item": "objective:1",
       "source_id": "SRC_ALPHA",
       "support": "supported",
+      "evidence_quote": "こんにちは",
       "reason": "the fetched page states the greeting and its polite register"
     }
   ]

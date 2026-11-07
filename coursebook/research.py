@@ -11,9 +11,11 @@ Research is a *bounded* job (``PREBUILD_SPEC.md`` §9, ``AUDIT.md`` H2/R7), not 
 * fetched text is kept as a bounded excerpt only. It is untrusted content: it never becomes
   policy, rubric or prompt-injection surface (``PREBUILD_SPEC.md`` §9).
 
-Provenance is not support. A fetched source starts at ``unverified`` and only a *separate*
-validation pass may move it to ``supported`` / ``partial`` / ``contradictory`` through
-:func:`apply_support_verdicts`. A model asserting its own citation support is not evidence.
+Provenance is not support. A fetched source starts at ``unverified`` and only an *independent*
+validation pass (a different model identity) may move it to ``supported`` / ``partial`` /
+``contradictory`` through :func:`apply_support_verdicts`, and only when the verdict quotes a span
+that appears verbatim in the fetched excerpt. A model asserting its own citation support is not
+evidence, and a same-model "validator" cannot move the ledger at all.
 
 The search/extract seam is injected. The production adapter is :class:`HermesToolSearch`, which
 uses the host's own ``web_search`` / ``web_extract`` tools through ``ctx.dispatch_tool`` so the
@@ -448,17 +450,35 @@ def run_research(
     )
 
 
+def _normalize_evidence(text: str) -> str:
+    """Normalise a quoted span for a byte-level comparison against fetched text."""
+    return " ".join(str(text).lower().split())
+
+
 def apply_support_verdicts(
     sources: Iterable[SourceRecord],
     verdicts: Iterable[dict[str, Any]],
+    *,
+    independent: bool = False,
 ) -> list[SourceRecord]:
     """Move source support from ``unverified`` using *validator* claim verdicts only.
 
+    Two conditions are required, and neither is a model's opinion of itself:
+
+    * ``independent`` — the validator's model identity differs from the author's. A same-model
+      "validator" is a second prompt, not a second opinion, so it may not move the ledger at all.
+    * a **deterministic claim link** — the verdict carries an ``evidence_quote`` that, after
+      whitespace/case normalisation, appears verbatim in the fetched ``excerpt``. A fabricated
+      quote does not match, so the source stays ``unverified``.
+
     A source with no verdict stays ``unverified``; a ``contradictory`` verdict wins over
     ``supported`` because conflicting evidence is the fact worth surfacing. Provenance never
-    upgrades support on its own.
+    upgrades support on its own, and a same-model pass never upgrades it either.
     """
     by_id = {source.source_id: source for source in sources}
+    if not independent:
+        # Explicitly refused, never silently skipped: the ledger is the artifact a learner reads.
+        return list(by_id.values())
     rank = {"unverified": 0, "partial": 1, "supported": 2, "contradictory": 3}
     for verdict in verdicts or []:
         source_id = verdict.get("source_id")
@@ -466,6 +486,11 @@ def apply_support_verdicts(
         if not source_id or source_id not in by_id or status not in SUPPORT_STATUSES:
             continue
         source = by_id[source_id]
+        quote = verdict.get("evidence_quote")
+        if not isinstance(quote, str) or not _normalize_evidence(quote):
+            continue
+        if _normalize_evidence(quote) not in _normalize_evidence(source.excerpt or ""):
+            continue
         if rank[status] > rank.get(source.support_status, 0):
             source.support_status = status
     return list(by_id.values())

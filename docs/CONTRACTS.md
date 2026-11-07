@@ -763,6 +763,31 @@ approval that covers the answer guide, so v6 carves one narrow exception:
 * `jobs.get` already returns the raw `brief` object (`_job_view`), but its v1 response schema is an
   open object; v6 does **not** tighten that preserved payload. `parent.brief.get` is the typed read.
 
+### Validation provenance at approval (H-15, no wire change)
+
+`plan.approve` still fences on the plan hash and the enrollment revision. What changed is what a
+caller is obliged to disclose before it sends that command, and the fact that a pass is no longer
+sufficient to call a plan validated:
+
+* The generation job records, per artifact, the `independence` state of the validation pass
+  (`independent`, `same_model`, `unidentified`) and an `outcome`
+  (`independently_validated`, `model_assessed`, `rejected`). Only `independently_validated` sets
+  `gen_plan_documents.generation_state = 'draft'`; the other outcomes record `needs_review`.
+* `plan_document()` returns `validation` (both model identities, prompt hashes, waived unknown
+  criteria, `facts_unverified`, cost) and `approval` (`needs_review`, `warning`). The job result
+  carries the same as `validation` / `approval_provenance`, and `warnings` includes the sentence
+  `facts unverified, no sources: ...` whenever research was not `ok`.
+* A `model_assessed` plan may still be approved by a human: that is the review the word
+  `needs_review` names. Approval is not factual verification, and the warning says so. A
+  `rejected` outcome is a different case; binding approval to the validation record is H-11's
+  work, not silently redefined here.
+* `plans.state` keeps its frozen enum (`draft`/`approved`/`superseded`). The distinction lives in
+  the authored document and the validation record, not in a new kernel state.
+
+This is documented rather than schemaed: no `rpc.v9` request/response field was added, so a
+Desktop build that wants to render the warning must read the job result (which already exposes
+`warnings`) or wait for the `rpc.v10` contract card. The plugin does not invent a surfaced field.
+
 ### `parent.plan.edit`
 
 * **Draft only.** An edit against an `approved` plan is refused with `POLICY_VIOLATION` /

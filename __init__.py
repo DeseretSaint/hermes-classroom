@@ -23,7 +23,7 @@ from typing import Any
 from .coursebook import __version__, executor, hooks, tools
 from .coursebook import media as media_mod
 from .coursebook import research
-from .coursebook.generation import bind_host_llm
+from .coursebook.generation import bind_host_llm, bind_validator_llm
 
 logger = logging.getLogger("coursebook")
 
@@ -38,6 +38,16 @@ def register(ctx: Any) -> None:
     # Generation jobs run in the agent process; bind the host-owned LLM once so the pipeline
     # never reaches for a raw provider key. Unbound calls fail loudly in generation.host_llm().
     bind_host_llm(getattr(ctx, "llm", None))
+    # The independent validator is a *different model*, not a different prompt. Both settings are
+    # read here and nowhere else; empty means no cross-model path exists and the pipeline records
+    # a model-assessed pass instead of calling the author model "independent". The host's own
+    # per-plugin llm trust gate still decides whether the override is permitted.
+    read_setting = getattr(ctx, "get_config", None)
+    validator_provider = str(read_setting("validator_provider", "") or "") if callable(read_setting) else ""
+    validator_model = str(read_setting("validator_model", "") or "") if callable(read_setting) else ""
+    bind_validator_llm(
+        getattr(ctx, "llm", None), provider=validator_provider, model=validator_model
+    )
     # Media uses the host's own image_generate/text_to_speech tools through ctx.dispatch_tool:
     # no provider key enters the plugin, and an old/bare host leaves media as a complete text
     # lesson instead of fabricating a file.
