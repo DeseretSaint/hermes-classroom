@@ -6349,6 +6349,250 @@ function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewE
 }
 
 /**
+ * The parent-observation lane (cb.rpc v14, `observation.record`).
+ *
+ * `docs/CHECKLIST-CONFIRMATION.md` §6 draws the boundary: a parent-recipe objective is observed by
+ * the adult, never ticked or answered by the child, so the observation is the only recording path
+ * for that objective. The write is one layer-1 evidence row — no attempt, no check state, no
+ * verdict, no objective transition — and the response `revision` is the enrollment revision echoed
+ * unchanged, so nothing here may be rendered as a pass, a grade or a completed objective.
+ *
+ * The note bound is the contract's own (`maxLength: 1000`). The schema refuses 1001 rather than
+ * truncating, so the control bounds the field and the call refuses before the wire, never slicing
+ * a parent's words.
+ */
+const OBSERVATION_NOTE_MAX = 1000
+const PARENT_OBSERVATION_CLASS = 'parent_reported'
+
+/** The exact `observation.record` payload. An absent note travels as `null`, never `''`. */
+function parentObservationPayload({ enrollmentId, objectiveId, note }) {
+  const trimmed = String(note === undefined || note === null ? '' : note).trim()
+  return {
+    enrollment_id: enrollmentId,
+    objective_id: objectiveId,
+    evidence_class: PARENT_OBSERVATION_CLASS,
+    note: trimmed ? trimmed : null
+  }
+}
+
+/**
+ * The envelope key for one submission.
+ *
+ * `idempotency_key` lives at the envelope root and is required, so a double click cannot mint two
+ * evidence rows. The caller mints one key per distinct payload and reuses it on retry; a new key on
+ * a retry of the same payload would record a second observation.
+ */
+function parentObservationKey({ enrollmentId, objectiveId, nonce }) {
+  return `cb-observation-${enrollmentId}-${objectiveId}-${nonce}`
+}
+
+/** What identifies one submission: the same ids and the same note are the same write. */
+function observationSignature({ enrollmentId, objectiveId, note }) {
+  const trimmed = String(note === undefined || note === null ? '' : note).trim()
+  return `${enrollmentId}|${objectiveId}|${trimmed}`
+}
+
+/**
+ * The submission on screen, and its key.
+ *
+ * An unchanged payload keeps the key it already sent, so a retry of a failed or duplicated call
+ * replays the stored observation instead of recording a second one. A changed note is a different
+ * observation and gets its own key. Pure, with the nonce injected, so the rule is asserted directly.
+ */
+function nextObservationSubmission(previous, { enrollmentId, objectiveId, note, nonce }) {
+  const signature = observationSignature({ enrollmentId, objectiveId, note })
+  if (previous && previous.signature === signature) return previous
+  return {
+    signature,
+    key: parentObservationKey({ enrollmentId, objectiveId, nonce: nonce || newOperationId('observation') })
+  }
+}
+
+/**
+ * One parent observation, over an injected transport so a test can prove the envelope.
+ *
+ * `call` is the rpc transport (`rpc` in the app). No `expected_revision` is sent: v14 declares no
+ * fence for this method and the append moves no aggregate.
+ */
+async function recordParentObservation({ call, key, enrollmentId, objectiveId, note }) {
+  const payload = parentObservationPayload({ enrollmentId, objectiveId, note })
+  if (payload.note !== null && payload.note.length > OBSERVATION_NOTE_MAX) {
+    return {
+      ok: false,
+      stage: 'note_too_long',
+      error: {
+        code: 'VALIDATION_FAILED',
+        message: `A note is at most ${OBSERVATION_NOTE_MAX} characters. Nothing was recorded.`
+      }
+    }
+  }
+  return call('observation.record', payload, { idempotencyKey: key, expectedRevision: null })
+}
+
+/** The recorded state. Reuses `EvidenceClassText`, so no second badge language is invented. */
+function ParentObservationRecorded({ result, nodeRef }) {
+  const evidenceId = result && result.evidence_id
+  return jsxs('div', {
+    className: 'flex flex-col gap-1',
+    role: 'status',
+    tabIndex: -1,
+    ref: nodeRef,
+    'data-cb-parent-observation-recorded': evidenceId || 'recorded',
+    children: [
+      jsx(EvidenceClassText, { value: (result && result.evidence_class) || PARENT_OBSERVATION_CLASS }),
+      jsx('p', {
+        className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+        children:
+          'Recorded. This is a parent report: it is not independent evidence, it is not a pass or a grade, and it does not complete this objective.'
+      }),
+      evidenceId
+        ? jsx('p', { className: 'text-xs text-(--ui-text-secondary)', children: `Observation ${evidenceId}` })
+        : null
+    ]
+  })
+}
+
+/**
+ * Record what the parent saw. Keyboard-first: a labelled textarea, a labelled button, the error
+ * inline and the control left enabled, and the recorded state announced (`role="status"`, focus
+ * moved to it) instead of silently swapping the form.
+ *
+ * The submission ref holds the key of the payload on screen. Retrying an unchanged note re-sends
+ * the SAME key (the backend replays the stored evidence); editing the note is a different payload
+ * and mints a new key; a success clears it so the next observation is a new write.
+ */
+function ParentObservation({ enrollmentId, objectiveId, onRecorded }) {
+  const [note, setNote] = useState('')
+  const [phase, setPhase] = useState('editing')
+  const [recorded, setRecorded] = useState(null)
+  const [error, setError] = useState(null)
+  const submissionRef = useRef(null)
+  const statusRef = useRef(null)
+  const trimmed = note.trim()
+  const overLimit = trimmed.length > OBSERVATION_NOTE_MAX
+
+  useEffect(() => {
+    if (phase === 'recorded') statusRef.current?.focus({ preventScroll: true })
+  }, [phase])
+
+  const submission = useCallback(
+    () =>
+      nextObservationSubmission(submissionRef.current, {
+        enrollmentId,
+        objectiveId,
+        note: trimmed
+      }),
+    [enrollmentId, objectiveId, trimmed]
+  )
+
+  const submit = useCallback(async () => {
+    if (!enrollmentId || !objectiveId) return
+    if (trimmed.length > OBSERVATION_NOTE_MAX) {
+      setError({
+        code: 'VALIDATION_FAILED',
+        message: `A note is at most ${OBSERVATION_NOTE_MAX} characters. Nothing was recorded.`
+      })
+      return
+    }
+    const current = submission()
+    submissionRef.current = current
+    setPhase('saving')
+    setError(null)
+    const response = await recordParentObservation({
+      call: rpc,
+      key: current.key,
+      enrollmentId,
+      objectiveId,
+      note: trimmed
+    })
+    if (!response || !response.ok) {
+      // The control stays exactly as it was: the note is still in the field and Retry re-sends the
+      // same key, so an offline call is recoverable rather than a lost observation.
+      setError((response && response.error) || { code: 'INTERNAL_ERROR', message: 'No contract envelope was returned.' })
+      setPhase('failed')
+      return
+    }
+    setRecorded(response.result || null)
+    setPhase('recorded')
+    submissionRef.current = null
+    if (onRecorded) onRecorded(response.result, response)
+  }, [enrollmentId, objectiveId, trimmed, submission, onRecorded])
+
+  const recordAgain = () => {
+    setRecorded(null)
+    setError(null)
+    setNote('')
+    setPhase('editing')
+  }
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-2',
+    'data-cb-parent-observation': objectiveId || 'objective',
+    children: [
+      jsx(sdk.PanelSectionLabel, { children: 'PARENT OBSERVATION' }),
+      jsx('p', {
+        className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+        children:
+          'Record what you saw your child do. It is stored as a parent report — not independent evidence — and it does not grade, pass or complete the objective.'
+      }),
+      recorded
+        ? jsxs('div', {
+            className: 'flex flex-col gap-2',
+            children: [
+              jsx(ParentObservationRecorded, { result: recorded, nodeRef: statusRef }),
+              jsx('div', {
+                className: 'flex flex-wrap items-center gap-2',
+                children: jsx(sdk.Button, {
+                  variant: 'secondary',
+                  size: 'sm',
+                  onClick: recordAgain,
+                  children: 'Record another observation'
+                })
+              })
+            ]
+          })
+        : jsxs('div', {
+            className: 'flex flex-col gap-2',
+            children: [
+              jsx('label', {
+                className: 'text-xs font-medium text-(--ui-text-secondary)',
+                htmlFor: 'cb-observation-note',
+                children: 'What did you observe? (optional note)'
+              }),
+              jsx(sdk.Textarea, {
+                id: 'cb-observation-note',
+                'aria-describedby': 'cb-observation-help',
+                'aria-invalid': overLimit ? 'true' : undefined,
+                disabled: phase === 'saving',
+                maxLength: OBSERVATION_NOTE_MAX,
+                onChange: (event) => setNote(event.target.value),
+                placeholder: 'For example: set the table and lit the candle without being asked.',
+                rows: 3,
+                value: note
+              }),
+              jsx('p', {
+                id: 'cb-observation-help',
+                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                children: `Optional, up to ${OBSERVATION_NOTE_MAX} characters. ${trimmed.length}/${OBSERVATION_NOTE_MAX}`
+              }),
+              error ? jsx(ErrorLine, { error }) : null,
+              jsx('div', {
+                className: 'flex flex-wrap items-center gap-2',
+                children: jsx(sdk.Button, {
+                  variant: 'default',
+                  size: 'sm',
+                  disabled: phase === 'saving' || overLimit,
+                  onClick: submit,
+                  children: phase === 'saving' ? 'Recording…' : error ? 'Try again' : 'Record observation'
+                })
+              })
+            ]
+          })
+    ]
+  })
+}
+
+/**
  * One attempt, started and finished in the pane or on the lesson page.
  *
  * Idempotency is enrollment + check + a per-view nonce: retrying a failed grade re-sends the SAME
@@ -9384,6 +9628,32 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
     checkStimulus && Array.isArray(checkStimulus.items)
       ? checkStimulus.items.map((item) => item && item.label).filter(Boolean)
       : []
+  // A parent-recipe objective is observed by the adult: its check is a parent observation
+  // (`coursebook/generation.py` rejects anything else for that recipe) and the confirmation lane is
+  // disabled for it (`coursebook/grading.py`, docs/CHECKLIST-CONFIRMATION.md §6), so the observation
+  // is the only recording path for this surface. A learner surface never gets this node.
+  const parentLed = Boolean(row && row.recipe === 'parent')
+  const observationNode = parentLed
+    ? supports('observation.record')
+      ? jsx(ParentObservation, {
+          enrollmentId: row.enrollment_id,
+          objectiveId,
+          onRecorded: () => {
+            if (onChanged) onChanged()
+          }
+        })
+      : jsxs('div', {
+          className: 'flex flex-col gap-2',
+          children: [
+            jsx(sdk.PanelSectionLabel, { children: 'PARENT OBSERVATION' }),
+            jsx(QuietNote, {
+              children:
+                'This Desktop build cannot record a parent observation: the backend does not implement observation.record (cb.rpc v14). The section stays readable; nothing can be recorded here yet.'
+            })
+          ]
+        })
+    : null
+
   const checkNode =
     check.status === 'error'
       ? jsx(QuietNote, {
@@ -9398,11 +9668,15 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
           revision: page ? page.revision : 0,
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
-          parentLed: Boolean(row && row.recipe === 'parent'),
+          parentLed,
           onCommitted: () => {
             if (onChanged) onChanged()
           }
         })
+  // The practice slot: the observation for a parent-led lesson, the graded check everywhere else.
+  // It is mounted once by the page body below, not inside a document block: a parent observation is
+  // not a check, so it must not inherit the block's `CHECK` heading, and it must still be reachable
+  // on a section whose document has no blocks yet.
 
   const begin = useCallback(
     async (mode) => {
@@ -9582,7 +9856,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 document,
                 view: lessonView,
                 sources: sourceIndex,
-                checkSlot: checkNode,
+                checkSlot: parentLed ? null : checkNode,
                 checkLabels,
                 progress: row.evidence_summary || null,
                 focusBlockId,
@@ -9656,8 +9930,11 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
               description: 'Segments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.'
             }),
 
-        document ? null : jsx(sdk.PanelSectionLabel, { children: 'CURRENT CHECK' }),
-        document ? null : checkNode,
+        // A parent-recipe page records an observation; it never mounts the graded check node.
+        parentLed ? observationNode : null,
+
+        document || parentLed ? null : jsx(sdk.PanelSectionLabel, { children: 'CURRENT CHECK' }),
+        document || parentLed ? null : checkNode,
 
         page.attempts && page.attempts.length > 0
           ? jsxs('div', {
@@ -9749,7 +10026,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
           section.last_opened_at ? `last opened ${whenLabel(section.last_opened_at)}` : null
         ].filter(Boolean).join(' · ')
       : null,
-    meta: page && check.status === 'error' ? [jsx(QuietNote, { children: 'The check could not be opened.' })] : [],
+    meta: page && !parentLed && check.status === 'error' ? [jsx(QuietNote, { children: 'The check could not be opened.' })] : [],
     actions: shellActions,
     rail: page
       ? jsx(FieldRail, {
@@ -15155,7 +15432,10 @@ export {
   LessonDocumentView,
   MediaFrame,
   NotebookView,
+  OBSERVATION_NOTE_MAX,
   OverviewView,
+  ParentObservation,
+  ParentObservationRecorded,
   TextbookView,
   PronunciationSeat,
   PronunciationStudio,
@@ -15170,6 +15450,10 @@ export {
   cbScopeStyle,
   checklistAnswer,
   checklistItems,
+  parentObservationKey,
+  parentObservationPayload,
+  nextObservationSubmission,
+  recordParentObservation,
   deskEstimateLabel,
   learnerEvidenceTarget,
   objectiveProgress,

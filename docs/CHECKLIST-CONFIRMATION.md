@@ -305,6 +305,15 @@ check, so a `verification` checklist that *is* the objective's check still submi
 `attempt.submit` `selection`, and a parent-recipe course still records through `observation.record`
 only. The lane predicate in §4.1 is untouched.
 
+**The Desktop surface (H-55).** `desktop/plugin.js` now renders the recording control on the
+lesson page (`SectionPage`) for a `recipe: "parent"` enrollment, in the practice slot where a
+learner page shows its check. It posts `observation.record` with
+`evidence_class: "parent_reported"`, an optional note bounded at 1000 characters, and one envelope
+`idempotency_key` per distinct payload — retried unchanged, the key is reused and the handler
+replays it. The recorded state prints the same parent-reported sentence this document's vocabulary
+already fixes, and says it is not a pass, a grade or an objective completion. The control does not
+exist on a learner recipe at all.
+
 ---
 
 ## 7. Implementation map (Cinder's card)
