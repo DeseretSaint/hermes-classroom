@@ -121,6 +121,29 @@ those modules live on their branches; the 1230-test count in the H-09 handoff is
 **A green suite is not the harness gate.** It runs with the model and the researcher replaced by
 doubles in the generation tests; that is exactly why H-09 exists as a separate, product-path run.
 
+### 5.1 Landing note (H-47)
+
+This file was written against `498b1da` and landed on `master` later, through the H-47 merge
+(`t_0d97c3e7`, branch `wt/h47-docs-union`) at `097c32c48f1983de5f56d8a21676b1ca1cda3bd8`. The base
+pin in the header and every "not on `master`" verdict in §1-§3 are statements about `498b1da`, not
+about the landing commit. Several of them have since changed: at `097c32c` these are ancestors —
+H-06 `00b502f`, H-08b `18638be` (cb.rpc v13), H-15 `833e335`, H-18b `9e6c5e4`, H-24 `491443a` — and
+`111c7e9` (H-09) is still not. No row here is re-derived for a later tree; check
+`git merge-base --is-ancestor <commit> HEAD` before quoting one as current.
+
+The H-47 landing was gated on its own commit, not on this branch's history:
+
+```
+python3 -m unittest discover -s tests -t .     # Ran 1484 tests in 187.548s — OK
+python3 tests/adversarial/attack_state.py      # SUMMARY total=22 fail=0 pass=22
+node --check desktop/plugin.js                 # syntax OK
+bash scripts/validate-plugin.sh                # Release gate passed: 3/3 checks on 097c32c (1362 files)
+```
+
+`docs/AUDIT-INDEX.md` still records finding D-06 as "fix branch unmerged", which was true of its
+own base `1fc0542`. The fix lands with `097c32c`; the index needs its own refresh pass and was not
+rewritten by this docs-only merge.
+
 ## 6. What a reader may conclude
 
 - A course can be generated, approved, validated and exported end to end **on
