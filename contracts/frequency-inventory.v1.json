@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.coursebook.hermes/frequency-inventory/v1",
+  "title": "Coursebook frequency inventory v1",
+  "description": "A frequency inventory is a declared, immutable, ranked list of lexical items for exactly one language and one declared modality. Frequency ranks are corpus- and modality-specific: a rank from a written-newspaper corpus does not order spoken conversation, and no rank or band in this document is a comprehension percentage or evidence that a learner knows a share of the language. Coursebook bundles no third-party frequency list; this contract describes a user- or pack-supplied import, and the only bundled document is an explicitly synthetic test fixture. A row's `band` must name a declared band and its `rank` must fall inside that band's rank range; every rank from 1 to the row count belongs to exactly one band. Rows whose part of speech is `particle`, `copula`, `auxiliary` or `conjunction` are grammatical items: a plan must teach them as grammar in context and must not name them as vocabulary targets.",
+  "x-contract-id": "cb.frequency_inventory",
+  "x-contract-version": 1,
+  "x-owner": "atlas",
+  "x-status": "frozen",
+  "x-frequency-note": "A frequency rank orders items inside the corpus and modality that produced it. It is not a comprehension percentage. 80% token coverage is not comprehension; 95-98% coverage is the useful reading/listening target, and only when a cited source supports that band. Kanji frequency is a separate problem from word frequency and is out of scope for this contract.",
+  "x-bundling-rule": "Only `redistribution: allowed` inventories whose licence is CC0-1.0, public-domain, CC-BY-4.0 or CC-BY-SA-4.0 may be bundled with the plugin. CC-BY-NC-* and all-rights-reserved lists may be imported by a user into their own workspace but never shipped. The repository currently carries no outbound licence, so no third-party inventory may be bundled here yet.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "contract_version",
+    "inventory_id",
+    "language",
+    "source_id",
+    "source_url",
+    "licence",
+    "licence_url",
+    "attribution",
+    "redistribution",
+    "modality",
+    "tokenization",
+    "scope_note",
+    "published_at",
+    "fetched_at",
+    "content_hash",
+    "bands",
+    "rows"
+  ],
+  "properties": {
+    "contract": {"const": "cb.frequency_inventory"},
+    "contract_version": {"const": 1},
+    "inventory_id": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+    "language": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/locale"},
+    "source_id": {"type": "string", "minLength": 3, "maxLength": 128},
+    "source_url": {"type": "string", "minLength": 8, "maxLength": 500, "pattern": "^https?://"},
+    "licence": {
+      "type": "string",
+      "enum": [
+        "CC0-1.0",
+        "public-domain",
+        "CC-BY-4.0",
+        "CC-BY-SA-4.0",
+        "CC-BY-NC-4.0",
+        "CC-BY-NC-SA-4.0",
+        "all-rights-reserved",
+        "user-supplied"
+      ]
+    },
+    "licence_url": {"type": "string", "minLength": 8, "maxLength": 500, "pattern": "^https?://"},
+    "attribution": {"type": "string", "minLength": 3, "maxLength": 2000},
+    "redistribution": {"type": "string", "enum": ["allowed", "local_only", "forbidden"]},
+    "modality": {
+      "type": "string",
+      "enum": ["spoken", "written", "mixed"],
+      "description": "The modality of the corpus the ranks were counted from. `mixed` means the source aggregates modalities and cannot be attributed to one of them."
+    },
+    "tokenization": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 500,
+      "description": "How the corpus was segmented into the listed lemmas, and on what unit the rank counts (for example UniDic short units, MeCab+IPADIC, or hand-authored fixture rows)."
+    },
+    "scope_note": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 1000,
+      "description": "What the ranks do and do not claim for this list. Must not present coverage as comprehension."
+    },
+    "published_at": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"},
+    "fetched_at": {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"},
+    "content_hash": {
+      "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/sha256_hash",
+      "description": "sha256 over the canonical JSON of the rows array exactly as shipped: UTF-8, keys sorted, no insignificant whitespace."
+    },
+    "bands": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "from_rank", "to_rank"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1, "maxLength": 40, "pattern": "^[a-z0-9][a-z0-9_-]*$"},
+          "label": {"type": "string", "maxLength": 120},
+          "from_rank": {"type": "integer", "minimum": 1, "maximum": 200000},
+          "to_rank": {"type": "integer", "minimum": 1, "maximum": 200000}
+        }
+      }
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 200000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rank", "lemma", "reading", "part_of_speech", "band"],
+        "properties": {
+          "rank": {"type": "integer", "minimum": 1, "maximum": 200000},
+          "lemma": {"type": "string", "minLength": 1, "maxLength": 120},
+          "reading": {"type": "string", "minLength": 1, "maxLength": 120},
+          "part_of_speech": {
+            "type": "string",
+            "enum": [
+              "noun",
+              "verb",
+              "adjective",
+              "adverb",
+              "particle",
+              "copula",
+              "auxiliary",
+              "conjunction",
+              "interjection",
+              "pronoun",
+              "counter",
+              "prefix",
+              "suffix",
+              "expression",
+              "other"
+            ]
+          },
+          "band": {"type": "string", "minLength": 1, "maxLength": 40},
+          "frequency": {"type": "number", "minimum": 0},
+          "notes": {"type": "string", "maxLength": 300}
+        }
+      }
+    }
+  }
+}

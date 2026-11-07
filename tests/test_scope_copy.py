@@ -100,7 +100,9 @@ class ScopeCopyInTheRenderedPromptsTest(unittest.TestCase):
 
     def test_the_v1_prompt_still_asks_for_the_v1_range(self) -> None:
         # No prompt-semantics change: an unscoped/legacy brief keeps the range it always had.
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v4")
+        # H-89 adds the vocabulary-inventory block, so the prompt version advances (v4 -> v6)
+        # without changing that range.
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v6")
         for scope, expected in (("single", "4 to 5"), ("short", "4 to 6"), ("full", "4 to 8")):
             with self.subTest(scope=scope):
                 text = gen._plan_instructions(

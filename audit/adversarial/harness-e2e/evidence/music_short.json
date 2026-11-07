@@ -334,7 +334,7 @@
     "plan_scope": "short",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v5",
+    "prompt_version": "plan-prompt.v7",
     "schema_name": "coursebook_plan_v2",
     "sections": 4,
     "units": 2,
@@ -1110,7 +1110,7 @@
           3,
           6
         ],
-        "prompt_version": "plan-prompt.v5",
+        "prompt_version": "plan-prompt.v7",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -1227,6 +1227,21 @@
         },
         "validation_id": "0000000000000011",
         "validation_verdict": "pass",
+        "vocabulary": {
+          "band": null,
+          "content_hash": null,
+          "detail": "the course is not a language course; no vocabulary inventory applies",
+          "inventory_id": null,
+          "items": [],
+          "licence": null,
+          "modality": null,
+          "note": null,
+          "reason": null,
+          "source_id": null,
+          "source_url": null,
+          "status": "not_applicable",
+          "tokenization": null
+        },
         "warnings": []
       }
     },

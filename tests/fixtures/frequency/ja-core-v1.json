@@ -1,0 +1,139 @@
+{
+  "attribution": "Synthetic H-89 test fixture authored for Coursebook. No corpus was consulted and no frequency was measured.",
+  "bands": [
+    {
+      "from_rank": 1,
+      "id": "band-core",
+      "label": "fixture core",
+      "to_rank": 12
+    },
+    {
+      "from_rank": 13,
+      "id": "band-extension",
+      "label": "fixture extension",
+      "to_rank": 15
+    }
+  ],
+  "content_hash": "sha256:956c42bb07ed17493a0b5696d58054f36b3fb668ffdb0d6d9a3a23e2afa3687e",
+  "contract": "cb.frequency_inventory",
+  "contract_version": 1,
+  "fetched_at": "2026-11-07T00:00:00Z",
+  "inventory_id": "fixture-ja-core-v1",
+  "language": "ja",
+  "licence": "CC0-1.0",
+  "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "modality": "mixed",
+  "published_at": "2026-11-07T00:00:00Z",
+  "redistribution": "allowed",
+  "rows": [
+    {
+      "band": "band-core",
+      "lemma": "は",
+      "part_of_speech": "particle",
+      "rank": 1,
+      "reading": "は"
+    },
+    {
+      "band": "band-core",
+      "lemma": "です",
+      "part_of_speech": "copula",
+      "rank": 2,
+      "reading": "です"
+    },
+    {
+      "band": "band-core",
+      "lemma": "水",
+      "part_of_speech": "noun",
+      "rank": 3,
+      "reading": "みず"
+    },
+    {
+      "band": "band-core",
+      "lemma": "これ",
+      "part_of_speech": "pronoun",
+      "rank": 4,
+      "reading": "これ"
+    },
+    {
+      "band": "band-core",
+      "lemma": "食べる",
+      "part_of_speech": "verb",
+      "rank": 5,
+      "reading": "たべる"
+    },
+    {
+      "band": "band-core",
+      "lemma": "私",
+      "part_of_speech": "pronoun",
+      "rank": 6,
+      "reading": "わたし"
+    },
+    {
+      "band": "band-core",
+      "lemma": "行く",
+      "part_of_speech": "verb",
+      "rank": 7,
+      "reading": "いく"
+    },
+    {
+      "band": "band-core",
+      "lemma": "大きい",
+      "part_of_speech": "adjective",
+      "rank": 8,
+      "reading": "おおきい"
+    },
+    {
+      "band": "band-core",
+      "lemma": "今日",
+      "part_of_speech": "noun",
+      "rank": 9,
+      "reading": "きょう"
+    },
+    {
+      "band": "band-core",
+      "lemma": "とても",
+      "part_of_speech": "adverb",
+      "rank": 10,
+      "reading": "とても"
+    },
+    {
+      "band": "band-core",
+      "lemma": "電車",
+      "part_of_speech": "noun",
+      "rank": 11,
+      "reading": "でんしゃ"
+    },
+    {
+      "band": "band-core",
+      "lemma": "ありがとう",
+      "part_of_speech": "expression",
+      "rank": 12,
+      "reading": "ありがとう"
+    },
+    {
+      "band": "band-extension",
+      "lemma": "新幹線",
+      "part_of_speech": "noun",
+      "rank": 13,
+      "reading": "しんかんせん"
+    },
+    {
+      "band": "band-extension",
+      "lemma": "予約",
+      "part_of_speech": "noun",
+      "rank": 14,
+      "reading": "よやく"
+    },
+    {
+      "band": "band-extension",
+      "lemma": "確認",
+      "part_of_speech": "noun",
+      "rank": 15,
+      "reading": "かくにん"
+    }
+  ],
+  "scope_note": "Synthetic teaching fixture. The ranks order this fixture's own rows for the H-89 sequence tests; they are not measured corpus frequencies and say nothing about coverage or comprehension.",
+  "source_id": "coursebook-fixture-ja-v1",
+  "source_url": "https://example.invalid/coursebook/coursebook-fixture-ja-v1",
+  "tokenization": "Hand-authored fixture rows, one row per short unit; ranks are the fixture's own teaching order, not a corpus count."
+}

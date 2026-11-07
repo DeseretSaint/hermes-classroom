@@ -1,0 +1,70 @@
+{
+  "attribution": "Synthetic H-89 test fixture authored for Coursebook. No corpus was consulted and no frequency was measured.",
+  "bands": [
+    {
+      "from_rank": 1,
+      "id": "band-core",
+      "label": "fixture core",
+      "to_rank": 6
+    }
+  ],
+  "content_hash": "sha256:1569344b30b90f1963b3e53ebfe1fcd6fd8c9ae7bec709f7bfc70bc59bbe58df",
+  "contract": "cb.frequency_inventory",
+  "contract_version": 1,
+  "fetched_at": "2026-11-07T00:00:00Z",
+  "inventory_id": "fixture-es-core-v1",
+  "language": "es",
+  "licence": "CC0-1.0",
+  "licence_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "modality": "mixed",
+  "published_at": "2026-11-07T00:00:00Z",
+  "redistribution": "allowed",
+  "rows": [
+    {
+      "band": "band-core",
+      "lemma": "agua",
+      "part_of_speech": "noun",
+      "rank": 1,
+      "reading": "agua"
+    },
+    {
+      "band": "band-core",
+      "lemma": "comer",
+      "part_of_speech": "verb",
+      "rank": 2,
+      "reading": "comer"
+    },
+    {
+      "band": "band-core",
+      "lemma": "casa",
+      "part_of_speech": "noun",
+      "rank": 3,
+      "reading": "casa"
+    },
+    {
+      "band": "band-core",
+      "lemma": "grande",
+      "part_of_speech": "adjective",
+      "rank": 4,
+      "reading": "grande"
+    },
+    {
+      "band": "band-core",
+      "lemma": "hoy",
+      "part_of_speech": "adverb",
+      "rank": 5,
+      "reading": "hoy"
+    },
+    {
+      "band": "band-core",
+      "lemma": "gracias",
+      "part_of_speech": "expression",
+      "rank": 6,
+      "reading": "gracias"
+    }
+  ],
+  "scope_note": "Synthetic teaching fixture for the non-Japanese seam test. The ranks order this fixture's own rows; they are not measured corpus frequencies and say nothing about coverage or comprehension.",
+  "source_id": "coursebook-fixture-es-v1",
+  "source_url": "https://example.invalid/coursebook/coursebook-fixture-es-v1",
+  "tokenization": "Hand-authored fixture rows, one row per short unit; ranks are the fixture's own teaching order, not a corpus count."
+}
