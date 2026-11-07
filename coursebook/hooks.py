@@ -29,8 +29,11 @@ revision.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Any
+
+logger = logging.getLogger("coursebook")
 
 #: Imported by callers that need the ceiling without importing Hermes internals.
 GRADING_DEADLINE_MS = 8000
@@ -62,6 +65,31 @@ def _forget_governed(session_key: str) -> None:
     _GOVERNED.pop(session_key, None)
 
 
+#: Last skill decision per session, so the log states a load once rather than every turn.
+_SKILLS: dict[str, str] = {}
+_MAX_SKILLS = 1024
+
+
+def _note_skill(session_key: str, decision: dict[str, Any]) -> None:
+    """Log the skill decision once per session. Evidence for a reviewer, not a control flow."""
+    if not session_key:
+        return
+    skill = decision.get("skill")
+    previous = _SKILLS.get(session_key)
+    if previous == skill:
+        return
+    if session_key not in _SKILLS and len(_SKILLS) >= _MAX_SKILLS:
+        _SKILLS.pop(next(iter(_SKILLS)), None)
+    if skill:
+        _SKILLS[session_key] = str(skill)
+        logger.info(
+            "coursebook lesson skill %s for session %s (%s)", skill, session_key,
+            decision.get("reason"),
+        )
+    else:
+        _SKILLS.pop(session_key, None)
+
+
 def _fingerprint(value: Any) -> str | None:
     if value is None or value == "":
         return None
@@ -86,8 +114,14 @@ def pre_llm_call(
     including when this profile has no Coursebook store at all, which is the ordinary state of an
     install nobody has opened yet. Absent is not unreadable: a store that exists and cannot be read
     still fails closed below.
+
+    Every governed turn also carries the *skill* instruction (``coursebook/lesson_skills.py``):
+    a live binding loads ``coursebook:lesson-tutoring``, a Coursebook chat whose run was
+    superseded loads ``coursebook:learner-coach``, and a chat the store never recorded gets
+    nothing. Plugin skills are not in the agent's automatic index, so this turn-local line is
+    what actually loads one — the same decision is what the lesson pane shows.
     """
-    from . import db, turn
+    from . import db, lesson_skills, turn
 
     key = _session_key(session_id)
     if not db.store_exists():
@@ -114,6 +148,10 @@ def pre_llm_call(
             _remember_governed(key, reconcile.get("binding_id"))
         else:
             _forget_governed(key)
+        # The skill decision is a read of the same store: which bundled skill (if any) this chat
+        # must load for this turn. Computed here so a block below can still carry it to the pane.
+        decision = lesson_skills.skill_for_session(session_id)
+        _note_skill(key, decision)
         outcome = turn.pre_turn(session_id, user_message, deadline_ms=GRADING_DEADLINE_MS)
         if outcome.nonce:
             _TURNS[key] = {
@@ -122,7 +160,9 @@ def pre_llm_call(
                 "verdict": outcome.verdict,
                 "attempt_id": outcome.attempt_id,
             }
-        return outcome.hook
+        return lesson_skills.attach(
+            outcome.hook, decision.get("skill"), str(decision.get("reason") or "")
+        )
     except Exception:  # noqa: BLE001 - a hook that cannot finish must never grant a pass
         _TURNS.pop(key, None)
         _forget_governed(key)

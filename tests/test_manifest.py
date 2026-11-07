@@ -150,6 +150,8 @@ class PackageLayoutTest(unittest.TestCase):
                 "/media/{artifact_id}",
                 # CB-013: the write half of binding.get — a stored session id is never an RPC field.
                 "/sessions/bind",
+                # H-65: which bundled learner skill this chat's next turn loads (read-only).
+                "/sessions/skill",
                 # M3-B1: one bounded take; the recogniser's honest availability probe.
                 "/pronunciation/attempt",
                 "/pronunciation/status",

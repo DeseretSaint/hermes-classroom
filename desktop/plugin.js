@@ -515,6 +515,66 @@ function startLessonChat(profile) {
 }
 
 /**
+ * Start a lesson chat that is bound BEFORE its first turn.
+ *
+ * Why this exists: a fresh draft has no stored session id until its first turn, so the binding
+ * that makes a chat "the lesson chat" could only land after turn one — and a turn with no binding
+ * is a turn where the tutor skill cannot be proven to apply (the skill question is answered from
+ * the store's own row, never from recency). Creating the session through the host first gives the
+ * chat a stored id while it is still empty: this file binds it, then reveals it. Turn one is then
+ * a governed lesson turn.
+ *
+ * Feature-detected and non-fatal on purpose: an older host that cannot create a session through
+ * `host.request` keeps exactly today's path (arm a pending bind, open a draft, bind on the first
+ * stored id). The coaching window is one turn, not a broken lesson.
+ */
+async function startBoundLessonChat({ enrollmentId, objectiveId, lessonRunId, title, profile }) {
+  const target = profile || currentScope().profile || null
+  if (typeof host.request !== 'function' || typeof host.openSession !== 'function') {
+    return { ok: false, reason: 'unsupported' }
+  }
+  let created
+  try {
+    created = await host.request('session.create', {
+      source: 'desktop',
+      cols: 96,
+      title: title || 'Coursebook lesson',
+      ...(target ? { profile: target } : {}),
+      idempotency_key: newOperationId('lesson-chat')
+    })
+  } catch (error) {
+    return { ok: false, reason: 'create-failed', message: describeError(error) }
+  }
+  const storedSessionId = created && created.stored_session_id
+  if (!storedSessionId) return { ok: false, reason: 'no-stored-id' }
+  const bound = await rest('/sessions/bind', {
+    method: 'POST',
+    body: {
+      stored_session_id: storedSessionId,
+      enrollment_id: enrollmentId,
+      objective_id: objectiveId,
+      lesson_run_id: lessonRunId,
+      profile: target || undefined
+    }
+  })
+  if (!bound || bound.ok === false) {
+    // The chat exists but is not this lesson's chat. Say so instead of opening a look-alike.
+    return {
+      ok: false,
+      reason: 'bind-refused',
+      message: `${(bound && bound.code) || 'BIND_REFUSED'}: ${(bound && bound.message) || 'this chat could not be bound.'}`
+    }
+  }
+  try {
+    await host.openSession(storedSessionId, { profile: target || undefined })
+  } catch (error) {
+    return { ok: false, reason: 'open-failed', message: describeError(error) }
+  }
+  revealCoursebookPane()
+  return { ok: true, storedSessionId }
+}
+
+/**
  * Start or resume one governed lesson run and put the learner in front of it.
  *
  * Shared by the course detail and the Field Desk so both next-step buttons take exactly the same
@@ -558,10 +618,22 @@ async function beginLessonFor({ row, objectiveId, objectiveTitle, mode, profile 
         'There is no saved lesson chat for this section yet. Read the section below, then start a new lesson when you are ready.'
     }
   }
-  // A fresh run does NOT open a chat. `host.newChat` swaps the route to `#/` by SDK design, which
-  // unmounted this page and left the learner on a blank draft with no way back (H-64). The run is
-  // armed to this exact id; the surface stays on the section, which is the teaching-bearing
-  // result, and the chat door is an explicit next action.
+  const boundChat = await startBoundLessonChat({
+    enrollmentId: row.enrollment_id,
+    objectiveId: target,
+    lessonRunId: outcome.lesson_run_id,
+    title: row.title || row.course_title || 'Coursebook lesson',
+    profile: profile || currentScope().profile
+  })
+  if (boundChat.ok) {
+    return {
+      ok: true,
+      started: true,
+      bound: true,
+      storedSessionId: boundChat.storedSessionId,
+      message: 'A governed run is ready in this chat. Its first message is already the lesson chat.'
+    }
+  }
   armPendingBind({
     enrollmentId: row.enrollment_id,
     objectiveId: target,
@@ -15448,6 +15520,29 @@ function CoursebookPane() {
   const scopeProfile = currentScope().profile
   const [bindNote, setBindNote] = useState(null)
   const attemptedBind = useRef(null)
+  // Which bundled learner skill this chat's next turn loads. Read from the backend's own rule
+  // (`GET /sessions/skill` -> coursebook.lesson_skills), the same function the pre_llm_call hook
+  // calls, so the note cannot describe a different skill than the turn loads.
+  const [skillNote, setSkillNote] = useState(null)
+
+  useEffect(() => {
+    if (!storedId) {
+      setSkillNote(null)
+      return undefined
+    }
+    let cancelled = false
+    rest(`/sessions/skill?session_id=${encodeURIComponent(storedId)}`)
+      .then((answer) => {
+        if (cancelled) return
+        setSkillNote(answer && answer.skill ? answer : null)
+      })
+      .catch(() => {
+        if (!cancelled) setSkillNote(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [storedId, state.status, state.binding])
 
   useEffect(() => {
     // A run this Desktop opened is armed. Bind it to the focused chat once that chat has a
@@ -15551,6 +15646,17 @@ function CoursebookPane() {
     children: [
       jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }),
       bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-secondary)', children: bindNote }) : null,
+      skillNote
+        ? jsx('div', {
+            className: 'pb-2 text-xs text-(--ui-text-secondary)',
+            'data-cb-skill': skillNote.skill,
+            'data-cb-skill-reason': skillNote.reason || '',
+            children:
+              skillNote.reason === 'lesson_binding'
+                ? `Tutor skill: ${skillNote.skill} — loads on this chat's next message.`
+                : `Coach skill: ${skillNote.skill} — no live lesson run for this chat.`
+          })
+        : null,
       body
     ]
   })

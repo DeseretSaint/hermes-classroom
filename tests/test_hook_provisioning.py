@@ -218,7 +218,11 @@ class BoundChatStillGatedAndAttributed(KernelCase):
         lesson = self.bind_lesson()
 
         # The gate runs: a clarification passes through ungraded, but the chat is now governed.
-        self.assertIsNone(hooks.pre_llm_call(session_id=_STORED, user_message="what does this task mean?"))
+        # The only thing on the turn is the skill instruction — no grade, no attempt, no retry.
+        hook = hooks.pre_llm_call(session_id=_STORED, user_message="what does this task mean?")
+        self.assertIsNotNone(hook)
+        self.assertIn("coursebook:lesson-tutoring", hook["context"])
+        self.assertNotIn("Grade:", hook["context"], "a clarification must not be graded")
         self.assertIn(_STORED, hooks._GOVERNED, "the gate did not mark the bound chat governed")
 
         self.assertIsNone(

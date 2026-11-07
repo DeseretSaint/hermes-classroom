@@ -234,7 +234,8 @@ class LessonStartHasAVisibleResultTest(unittest.TestCase):
             self.fail("beginLessonFor no longer arms a bind")
         self.assertIn("lessonRunId: outcome.lesson_run_id", armed.group(1))
         # The returned contract names the same run so each surface can show what it armed.
-        self.assertEqual(body.count("lessonRunId: outcome.lesson_run_id"), 2)
+        # H-65 adds a bound-chat path before the armed fallback; both name the same run.
+        self.assertGreaterEqual(body.count("lessonRunId: outcome.lesson_run_id"), 2)
         self.assertIn("lessonRunId: outcome.lesson_run_id,", body)
         # pendingBindFor only returns a bind that carries a run id: no armed state without one.
         bind = _function_body(self.source, "function armPendingBind(")
