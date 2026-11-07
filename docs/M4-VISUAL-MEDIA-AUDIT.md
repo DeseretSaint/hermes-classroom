@@ -1,9 +1,11 @@
 # M4 visual, accessibility and media truth gate
 
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
-§11 ("M4 — visual identity and polish"). Branch `wt/m4v-landing`, based on `master` at `1fc0542`
-(post-H-38 UX union). The evidence is pinned to the module that ships from that tree:
-`desktop/plugin.js` sha256 `c206e1c9091400af11594a440a105cda8a6794fe3563ad15a23a10e522232463`.
+§11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
+`1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
+regenerated on `master` at `48be4af` (after H-83's Atlas Lamp composition) and is pinned to the
+module that ships from that tree: `desktop/plugin.js` sha256
+`635b7061e6a6a3d130701614fdc43829bc2c5fa8eb9f45ee4d067bb51f68d90a`.
 
 This is **not** release evidence. Nothing here was published, tagged, pushed or merged, and the
 audit makes no claim that Coursebook is installable.
@@ -23,9 +25,17 @@ both runs' plugin sha and reference time on success.
 Output: `audit/visual/m4-visual/audit.json` (62 frames, per-frame measurements, 15 claims,
 1 defect — D-1, fixed in this tree) and `audit/visual/m4-visual/*.png` (62 frames). The evidence
 records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00:00.000Z`), so
-"Last touched 17 hr ago" is a property of the fixture, not of the day the audit ran. Reproducible
-identity of the committed `audit.json` with `generated_at` removed: sha256
-`5b0b3187aab781bff3b937023d6f9bea900ab309a43080ef168f0abd2efc7301`.
+"Last touched 17 hr ago" is a property of the fixture, not of the day the audit ran.
+
+### Reproducibility debt (open)
+
+`scripts/m4v-repro-check.py` was run twice on this pin (plugin `635b7061…`,
+`reference_time 2026-11-07T10:00:00.000Z`). `audit.json` matched between the two independent runs
+modulo `generated_at`, and **61 of 62 screenshots were byte-identical**; the Field Quest light
+1280 px / 16 px frame (`quest-light-1280-16.png`) differed. Every number the tests assert comes from
+the measurements, which matched, so the gate's verdicts are unaffected — but the painted pixels of
+that one frame are not yet proven deterministic. Tracked as card H-90; the earlier pin `09c1dacd`
+reproduced 62/62, so the drift arrived with H-83's Field Quest composition.
 
 ## Method
 
@@ -55,10 +65,10 @@ audio players, text-only, media-unavailable.
 
 | Claim | Verdict | Evidence (in `audit/visual/m4-visual/audit.json`) |
 |---|---|---|
-| C-01 Paint only from the `--cb-*` token layer | **PASS** | 62/62 frames carry all ten tokens; 0 colour literals in authored inline paint; 0 colour literals in `desktop/plugin.js` outside the embedded table; table equals `contracts/cb.tokens.v1.json` |
-| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,102 measured text nodes; worst authored ratio **6.61:1** (procedure, dark), up to 21:1 |
+| C-01 Paint only from the `--cb-*` token layer | **PASS** | 62/62 frames carry all ten measured tokens; 0 colour literals in authored inline paint; 0 colour literals in `desktop/plugin.js` outside the embedded table; table equals `contracts/cb.tokens.v2.json` |
+| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,050 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
 | C-03 No clipped text, no horizontal overflow | **PASS** | 0 clipped nodes in 62 frames; 0 frames overflow; includes 460 px at 200 % text |
-| C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 340 AX controls across the 32 measured frames; the 280 controls the DOM declares are exactly the 280 distinct stops the Tab walk visits, 0 unreachable, 0 without a visible focus ring; 80 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex` |
+| C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 364 AX controls across the 32 measured frames; 304 distinct Tab stops, 0 unreachable, 0 without a visible focus ring; 80 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex` |
 | C-05 No autoplay | **PASS** | 0 of 22 painted `<audio>` elements autoplay or play on load |
 | C-06 Every instructional image has a text equivalent | **PASS** | 60 images, 0 without `alt`, 0 of 106 media frames without a caption/text equivalent |
 | C-07 Every audio has a transcript | **PASS** | 22 audio elements, 0 without an accessible transcript/`aria-label` |
