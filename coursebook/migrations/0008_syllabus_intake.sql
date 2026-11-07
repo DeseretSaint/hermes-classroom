@@ -8,13 +8,13 @@
 -- syllabus row writes `courses.pack_id`; no pack, library or export path reads these tables.
 
 CREATE TABLE syllabus_series (
-    id TEXT PRIMARY KEY,
+    id TEXT NOT NULL PRIMARY KEY,
     learner_label TEXT,
     created_at TEXT NOT NULL
 );
 
 CREATE TABLE syllabi (
-    id TEXT PRIMARY KEY,
+    id TEXT NOT NULL PRIMARY KEY,
     series_id TEXT NOT NULL REFERENCES syllabus_series(id),
     revision INTEGER NOT NULL CHECK (revision >= 1),
     supersedes_id TEXT REFERENCES syllabi(id),
@@ -33,14 +33,14 @@ CREATE INDEX idx_syllabi_series ON syllabi(series_id);
 CREATE INDEX idx_syllabi_sha ON syllabi(content_sha256);
 
 CREATE TABLE syllabus_files (
-    syllabus_id TEXT PRIMARY KEY REFERENCES syllabi(id),
+    syllabus_id TEXT NOT NULL PRIMARY KEY REFERENCES syllabi(id),
     bytes BLOB NOT NULL,
     size INTEGER NOT NULL CHECK (size >= 0),
     sha256 TEXT NOT NULL
 );
 
 CREATE TABLE syllabus_blocks (
-    id TEXT PRIMARY KEY,
+    id TEXT NOT NULL PRIMARY KEY,
     syllabus_id TEXT NOT NULL REFERENCES syllabi(id),
     ordinal INTEGER NOT NULL,
     kind TEXT NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE syllabus_blocks (
 CREATE INDEX idx_syllabus_blocks_syllabus ON syllabus_blocks(syllabus_id);
 
 CREATE TABLE syllabus_parse_runs (
-    id TEXT PRIMARY KEY,
+    id TEXT NOT NULL PRIMARY KEY,
     syllabus_id TEXT NOT NULL REFERENCES syllabi(id),
     schema TEXT NOT NULL,
     state TEXT NOT NULL CHECK (state IN ('parsed', 'needs_review', 'failed')),
@@ -70,7 +70,7 @@ CREATE TABLE syllabus_parse_runs (
 CREATE INDEX idx_syllabus_parse_runs_syllabus ON syllabus_parse_runs(syllabus_id);
 
 CREATE TABLE syllabus_items (
-    id TEXT PRIMARY KEY,
+    id TEXT NOT NULL PRIMARY KEY,
     syllabus_id TEXT NOT NULL REFERENCES syllabi(id),
     parse_run_id TEXT NOT NULL REFERENCES syllabus_parse_runs(id),
     kind TEXT NOT NULL CHECK (kind IN (
@@ -90,7 +90,7 @@ CREATE INDEX idx_syllabus_items_syllabus_kind ON syllabus_items(syllabus_id, kin
 CREATE INDEX idx_syllabus_items_parse_run ON syllabus_items(parse_run_id);
 
 CREATE TABLE course_syllabi (
-    course_id TEXT PRIMARY KEY REFERENCES courses(id),
+    course_id TEXT NOT NULL PRIMARY KEY REFERENCES courses(id),
     syllabus_id TEXT NOT NULL REFERENCES syllabi(id),
     syllabus_revision INTEGER NOT NULL,
     alignment_revision INTEGER NOT NULL DEFAULT 0,
@@ -102,7 +102,7 @@ CREATE TABLE course_syllabi (
 CREATE INDEX idx_course_syllabi_syllabus ON course_syllabi(syllabus_id);
 
 CREATE TABLE syllabus_alignments (
-    id TEXT PRIMARY KEY,
+    id TEXT NOT NULL PRIMARY KEY,
     course_id TEXT NOT NULL REFERENCES courses(id),
     plan_id TEXT NOT NULL REFERENCES plans(id),
     syllabus_id TEXT NOT NULL REFERENCES syllabi(id),
