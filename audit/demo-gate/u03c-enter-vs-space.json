@@ -1,0 +1,35 @@
+{
+  "setup": true,
+  "trials": [
+    {
+      "key": "Enter",
+      "params": [],
+      "clicks": [],
+      "panelOpen": false
+    },
+    {
+      "key": "Enter",
+      "params": [
+        "text",
+        "unmodifiedText"
+      ],
+      "clicks": [
+        "Import pack"
+      ],
+      "panelOpen": true
+    },
+    {
+      "key": "Space",
+      "params": [],
+      "clicks": [],
+      "panelOpen": false
+    }
+  ],
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    }
+  ]
+}

@@ -1,0 +1,308 @@
+{
+  "hash": "#/coursebook",
+  "routeText": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport a pack\nClose\nChoose a pack archive\nPick the folder that holds the .zip a pack arrived in. Coursebook reads it in a staging area, checks every file and hash, and shows the review below before anything is adopted.\nChoose another folder\npacks\nCancel\njapanese-affection-context-l0.zip\nReview\ntampered-hash-pack.zip\nReview",
+  "buttons": [
+    {
+      "label": "1",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Open settings",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Layout editor",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "HUD mode",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Swap sidebar sides",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Hide right sidebar",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Minimize",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "New session\nCtrl\nN",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Capabilities",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Messaging",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Artifacts",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Scheduled jobs",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Coursebook",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "PINNED",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Hermes Classroom Plugin Feasibility Plan",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "SESSIONS",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Mark all as read",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "New session",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Filters",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Revive Marketing LLC business details",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Launch multiple Hermes sessions on Omarchy",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Resume Hermes classroom plugin chat",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "[Message withheld: a pre_llm_call policy hook blocked it.]",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Casual vs polite Japanese confession",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "EARLIER TODAY",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "New session",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Diagnose Electron SIGTRAP crash via systemd-coredump",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Diagnose electron SIGTRAP crash via diagnose-crash skill",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Diagnose electron SIGTRAP crash via systemd-coredump",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Diagnose Electron SIGTRAP crash via systemd-coredump #2",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Diagnose Electron SIGTRAP crash on Omarchy",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Explain casual vs polite affection",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Casual vs polite affection difference",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Practise transfer section",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Identify practice focus for section",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Choose line for first confession",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Learn two lines, lesson 1",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "YESTERDAY",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "New session",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Fix broken Hermes update from last session",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Our last session was trying to update Hermes and broke. Can ...",
+      "disabled": false,
+      "inRoute": false
+    },
+    {
+      "label": "Session actions",
+      "disabled": false,
+      "inRoute": false
+    }
+  ],
+  "dialogs": [],
+  "fileTreePresent": false
+}

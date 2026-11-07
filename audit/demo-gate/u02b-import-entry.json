@@ -1,0 +1,16 @@
+{
+  "before": 3189,
+  "after": {
+    "hash": "#/coursebook",
+    "dialogs": [],
+    "bodyTail": "URSEBOOK\n\nNo durable chat yet\n\nA new chat gets its stored session id after its first turn. Coursebook binds a lesson to that stored id — never to the live runtime id and never to \"the most recent chat\".\n\nOpen Coursebook\nDESERETSAINT\n.agents\n.android\n.claude\n.claude.json.lock\n.codex\n.config\n.copilot\n.cua-driver\n.gemini\n.grok\n.hermes\n.local\n.npm\n.openviking\n.oracle_jre_usage\n.pi\n.pki\n.ssh\n.steam\nandroid-sdk\ncb015-packs\ncb015-rig\nDocuments\nDownloads\nlinux-unpacked\nMusic\nObsidian\nPictures\nProjects\ntools\nVideos\nWork\n.bash_history\n.bash_logout\n.bash_profile\n.bashrc\n.claude.json\n.profile\n.pulse-cookie\n.steampath\n.steampid\n.XCompose\n70-keychron.rules\nhermes-backup-2026-10-28-001037.zip\nhermes-desktop-cap12-linux-x64-20261016.tar.gz\nhermes-remote-gateway-diagnosis.md\nhidmon.py\nopenviking-setup\nTERMINAL\n127.0.0.1:44297\nBackend\ninference unavailable\ndeseretsaint\nSmart\nclient v0.23.0\nbackend v0.23.0",
+    "active": "BODY:1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nAr"
+  },
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    }
+  ]
+}

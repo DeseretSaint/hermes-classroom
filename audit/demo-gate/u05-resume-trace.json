@@ -1,0 +1,89 @@
+{
+  "trace": [
+    {
+      "label": "route",
+      "hash": "#/coursebook",
+      "mounted": true,
+      "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese aff"
+    },
+    {
+      "label": "after-open",
+      "hash": "#/coursebook",
+      "mounted": true,
+      "text": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration cla"
+    },
+    {
+      "label": "t+0.5s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+1s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+1.5s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+2s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+2.5s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+3s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+3.5s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+4s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+4.5s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+5s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+5.5s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    },
+    {
+      "label": "t+6s",
+      "hash": "#/",
+      "mounted": false,
+      "text": ""
+    }
+  ],
+  "consoleErrors": []
+}

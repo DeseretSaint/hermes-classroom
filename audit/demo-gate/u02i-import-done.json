@@ -1,0 +1,28 @@
+{
+  "steps": [],
+  "done": true,
+  "state": {
+    "hash": "#/coursebook",
+    "text": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport a pack\nClose\nPack imported\nPack\njapanese-affection-context-l0\nCourse\ncrs_f8284b1d8e4240c6a9316150590b4bad\nEnrollment\nenr_1851453223f54e9e99a81fc92ab8788d\nIt appears in Courses and Library. Lesson pages are the pack’s own text, not a rephrasing.\nBack to the library",
+    "buttons": [
+      {
+        "label": "Close",
+        "disabled": false
+      },
+      {
+        "label": "Back to the library",
+        "disabled": false
+      }
+    ],
+    "storedIds": [
+      null
+    ]
+  },
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    }
+  ]
+}

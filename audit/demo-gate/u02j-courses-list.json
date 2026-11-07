@@ -1,0 +1,28 @@
+{
+  "steps": [
+    {
+      "step": "courses-list",
+      "hash": "#/coursebook",
+      "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+      "buttons": [
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "All",
+        "In progress",
+        "Review due",
+        "Archived",
+        "Open",
+        "Resume lesson"
+      ]
+    }
+  ],
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    }
+  ]
+}

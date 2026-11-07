@@ -1,36 +1,36 @@
 # Demo script (0.1.0 candidate)
 
-Status: not recorded, and not recordable on this host today. Gate 7 is unmet: Sentinel's demo
-scenarios (U01-U04) have not passed on the release commit, and recording needs operator approval.
+Status: measured, not recordable. Sentinel ran the demo gate on the release commit
+`29bede7643403cd9d608499232125e6347c680dd` (`origin/master`) on 2026-11-07, in a fresh isolated rig:
+home `~/.hermes/coursebook-demo-gate-29bede7/home`, backend `127.0.0.1:44297` serving that worktree,
+Desktop window on CDP 9367. The backend reported `cb.rpc` v7, 52/52 implemented,
+`contract_problems: []`, and the installed `desktop/plugin.js` sha256 is
+`c59ebc3c937385f1119787a5522acda09fb852f8180c06e3d3f4615e3c8281fb`, the file in that commit.
 
-Two surfaces decide it, and they fail for different reasons:
+The four scenarios U01-U04 pass on that commit: the `#/coursebook` route mounts from a real sidebar
+click (U01); a bundled Japanese pack previews, imports and creates a course and enrollment through
+the UI (U02); the route is reachable and operable by keyboard with visible focus and named controls
+(U03); and 200% text, 460 px narrow, reduced motion and no-media all hold, with 8 clipped nodes only
+at 460 px plus 200% (U04). Raw captures: `audit/demo-gate/`.
 
-- **The route mounts.** With a reachable backend, `#/coursebook` renders the course library,
-  `New course` and Parent Studio on this tree's `desktop/plugin.js`
-  (`docs/cb017-shots/row9r-01-plan-before-replan.png`, `docs/CB017-RELEASE-VERIFICATION.md` §2).
-- **The chat has no composer.** This host runs one gateway for profile `default` and refuses a
-  second for any isolated home (`Cannot reserve gateway profiles`), so an isolated window has no
-  gateway to bind a lesson's chat to. Atlas reclassified this as P3-operational — a host binding,
-  not a plugin defect (`docs/REVIEW_CB017-FINAL.md` §3.1). The 8-25 s chat shot needs that operator
-  decision. Until it is made there is no honest way to record the chat turns.
+The demo is still not recordable, and the blocker is now the lesson surface rather than the route.
+On `29bede7`, every lesson-start action ("Resume lesson" on the card or overview, "Start a fresh
+run" in the textbook) moves the window to `#/`, unmounts `[data-cb-route]`, and opens no chat and no
+Coursebook pane. That is the 8-25 s, 25-34 s, 34-40 s and 40-47 s surface, so those shots cannot be
+driven, and D1 in `docs/REVIEW_CB017-demo-gate.md` is a P1 on the recorded build. Separately, the
+Japanese pack the script names states "No audio is bundled", so the 73-82 s narration line "spoken"
+has no asset on this pack. The Library empty state also still says this build has no pack import
+(`desktop/plugin.js:2271`) while import works (D2).
 
-Row 9 of the contest matrix is closed end to end on this tree: replan → plan approve (v10) →
-lessons job start → 4 lessons authored → lesson-set approve → export, with the UI and the backend
-agreeing on the approved content hash (`sha256:ccf69462…e5a5`, export `exp_2e068c56`,
-`export.ready: true`, no `blocked_reason`). Evidence: `docs/REVIEW_CB017-row9-ui.json`,
-`docs/REVIEW_CB017-FINAL.md` §10.
+Gate status: NOT MET on `29bede7`. Recording starts only after Sentinel passes U01-U04 on the exact
+build being recorded, and the shots themselves must be drivable; both are re-run after D1 is fixed.
+Nothing is recorded before that, and no recording is labeled as having passed this gate. Recording
+and publishing also need DeseretSaint's approval.
 
-The build does perform the four flows this file once said were missing. Course creation and pack
-export run on this tree: `pack.import` creates a course and enrollment, `pack.export` returns a
-hashed archive (`tests/adversarial/evidence/attack-packs.json`, P17, P18, P20), and the last full
-mounted-backend run counted 31/31 expectations (`scripts/validate.sh`). Chat binding is
-written by `POST /sessions/bind` and read back by `binding.get` in the CB-014 log. Grading commits
-exactly one attempt and one transition per submit, and fails closed on an invalid, hung or throwing
-grader (`tests/adversarial/evidence/attack-state.json`, S01, S02, S10-S12).
-
-Gate status: NOT MET. Recording starts only after Sentinel passes the demo scenarios on the exact
-build being recorded. Nothing is recorded before that, and no recording is labeled as having passed
-this gate. Recording and publishing also need DeseretSaint's approval.
+The one operator action left, beyond the D1 fix, is profile choice: this host runs one gateway,
+owned by profile `default`, and a second gateway is refused. To record chat and pane together,
+install the recorded commit into that profile and restart its gateway
+(`scripts/install-local.sh --home ~/.hermes/profiles/default`, then `hermes gateway restart`).
 
 ## Rules
 
@@ -61,10 +61,12 @@ Times are targets. Total must stay under 90 seconds.
 | 73-82s | Lesson media | Show the sourced visual and audio, then the text alternative and the next review date | "A sourced visual, spoken, with the text right here. The next review is scheduled." | Media precomputed and disclosed; navigation live | Media, scheduling |
 | 82-86s | Closing card | Static end card | "A chat answers. Coursebook makes the next step depend on what you did." | Static | None |
 
-The 8-25 s chat row is the one this host cannot capture today: a lesson binds to a chat, and no
-second gateway can start while profile `default` owns the host gateway. The other rows need the
-route that does mount here, but none of them may be recorded before Sentinel passes U01-U04 on this
-commit.
+The route itself mounts on `29bede7` (U01), so no row is excluded for an unmounted surface. The rows
+that cannot be captured today are 8-25 s, 25-34 s, 34-40 s and 40-47 s: starting a lesson leaves the
+route for `#/` (D1), so the chat-and-pane, attempt, notebook and restart shots have no surface to
+show. The 73-82 s row has a visual and a text alternative but no audio in the named pack. Those rows
+stay in the script as targets, not as shots that can be captured today. A partial cut that drops them
+is a different video with different claims, not this script.
 
 ## Precomputed and live split
 

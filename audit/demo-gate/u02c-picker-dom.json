@@ -1,0 +1,22 @@
+{
+  "found": true,
+  "tag": "DIV",
+  "cls": "flex min-h-0 flex-1 flex-col",
+  "role": null,
+  "inputs": [],
+  "buttons": [
+    {
+      "label": "Show gitignored files",
+      "disabled": false
+    },
+    {
+      "label": "Refresh tree",
+      "disabled": false
+    },
+    {
+      "label": "Collapse all folders",
+      "disabled": true
+    }
+  ],
+  "text": "DESERETSAINT\n.agents\n.android\n.claude\n.claude.json.lock\n.codex\n.config\n.copilot\n.cua-driver\n.gemini\n.grok\n.hermes\n.local\n.npm\n.openviking\n.oracle_jre_usage\n.pi\n.pki\n.ssh\n.steam\nandroid-sdk\ncb015-packs\ncb015-rig\nDocuments\nDownloads\nlinux-unpacked\nMusic\nObsidian\nPictures\nProjects\ntools\nVideos\nWork\n.bash_history\n.bash_logout\n.bash_profile\n.bashrc\n.claude.json\n.profile\n.pulse-cookie\n.steampath\n.steampid\n.XCompose\n70-keychron.rules\nhermes-backup-2026-10-28-001037.zip\nhermes-desktop-cap12-linux-x64-20261016.tar.gz\nhermes-remote-gateway-diagnosis.md\nhidmon.py\nopenviking-setup"
+}

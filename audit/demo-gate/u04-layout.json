@@ -1,0 +1,104 @@
+{
+  "scenario": "U04",
+  "name": "200% text / narrow layout / reduced motion / no-media",
+  "rows": [
+    {
+      "id": "desktop-100",
+      "width": 1440,
+      "height": 900,
+      "font": "16px",
+      "rootFontPx": 16,
+      "viewport": [
+        1606,
+        1004
+      ],
+      "overflowX": 0,
+      "routeWidth": 963,
+      "routeText": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport pack\nCourses\nLibrary\nParent Studio\nPacks installed on this profile, by where they came from. No marketplace ranking and no verified badge.\nAll\nBundled\nLocal\nJapanese affectio",
+      "controls": 8,
+      "unnamedControls": 0,
+      "clippedNodes": 0,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7f53677c/audit/demo-gate/shots/u04-desktop-100.png"
+    },
+    {
+      "id": "text-200",
+      "width": 1440,
+      "height": 900,
+      "font": "32px",
+      "rootFontPx": 32,
+      "viewport": [
+        1606,
+        1004
+      ],
+      "overflowX": 0,
+      "routeWidth": 963,
+      "routeText": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport pack\nCourses\nLibrary\nParent Studio\nPacks installed on this profile, by where they came from. No marketplace ranking and no verified badge.\nAll\nBundled\nLocal\nJapanese affectio",
+      "controls": 8,
+      "unnamedControls": 0,
+      "clippedNodes": 0,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7f53677c/audit/demo-gate/shots/u04-text-200.png"
+    },
+    {
+      "id": "narrow-460",
+      "width": 460,
+      "height": 900,
+      "font": "16px",
+      "rootFontPx": 16,
+      "viewport": [
+        513,
+        1004
+      ],
+      "overflowX": 0,
+      "routeWidth": 267,
+      "routeText": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport pack\nCourses\nLibrary\nParent Studio\nPacks installed on this profile, by where they came from. No marketplace ranking and no verified badge.\nAll\nBundled\nLocal\nJapanese affectio",
+      "controls": 8,
+      "unnamedControls": 0,
+      "clippedNodes": 0,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7f53677c/audit/demo-gate/shots/u04-narrow-460.png"
+    },
+    {
+      "id": "narrow-text-200",
+      "width": 460,
+      "height": 900,
+      "font": "32px",
+      "rootFontPx": 32,
+      "viewport": [
+        513,
+        1004
+      ],
+      "overflowX": 0,
+      "routeWidth": 267,
+      "routeText": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport pack\nCourses\nLibrary\nParent Studio\nPacks installed on this profile, by where they came from. No marketplace ranking and no verified badge.\nAll\nBundled\nLocal\nJapanese affectio",
+      "controls": 8,
+      "unnamedControls": 0,
+      "clippedNodes": 8,
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7f53677c/audit/demo-gate/shots/u04-narrow-text-200.png"
+    }
+  ],
+  "motion": {
+    "mediaMatchesReduce": true,
+    "animatedNodes": 41,
+    "transitionNodes": 41,
+    "animationNames": [
+      "none"
+    ]
+  },
+  "noMedia": {
+    "hash": "#/coursebook",
+    "route": null,
+    "text": "",
+    "images": []
+  },
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    },
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Hermes failed to load TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:5174/src/main.tsx?t=1793998910974"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "href": "http://127.0.0.1:5174/#/coursebook",
+  "hash": "#/coursebook",
+  "title": "Hermes",
+  "ready": "complete",
+  "bodyText": "HERMES AGENT\n\nHermes couldn’t load\n\nPart of the app didn’t load; reloading usually fixes it.\n\nReload",
+  "sidebarItems": [],
+  "routeEl": false,
+  "routeName": null,
+  "paneEl": false,
+  "coursebookNodes": 0,
+  "connText": [],
+  "errors": null
+}

@@ -1,0 +1,22 @@
+{
+  "lib": {
+    "hash": "#/coursebook",
+    "text": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport pack\nCourses\nLibrary\nParent Studio\nPacks installed on this profile, by where they came from. No marketplace ranking and no verified badge.\nAll\nBundled\nLocal\nNo packs installed on this profile\nA pack appears here once it exists on this profile. Bundled packs ship with the Coursebook package; importing one needs the backend’s pack import command, which this build does not have.",
+    "buttons": [
+      "Import pack",
+      "Courses",
+      "Library",
+      "Parent Studio",
+      "All",
+      "Bundled",
+      "Local"
+    ]
+  },
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    }
+  ]
+}
