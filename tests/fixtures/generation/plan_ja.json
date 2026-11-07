@@ -61,6 +61,7 @@
       "ordinal": 1,
       "title": "Greeting and opening",
       "lesson_intent": "Model one polite greeting, then have the learner produce it cold before seeing romaji removed.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         1
       ],
@@ -77,6 +78,7 @@
       "ordinal": 2,
       "title": "Ordering a drink",
       "lesson_intent": "Model one polite request form, then have the learner order a single drink with it.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         2
       ],
@@ -90,6 +92,7 @@
       "ordinal": 3,
       "title": "This, that and over there",
       "lesson_intent": "Point at three menu items at different distances and choose これ / それ / あれ each time.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         3
       ],
@@ -103,6 +106,7 @@
       "ordinal": 4,
       "title": "Price and follow-up",
       "lesson_intent": "Ask a price, then recognise and answer a size question.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         4
       ],
