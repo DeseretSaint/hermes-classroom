@@ -50,7 +50,7 @@ describe this tree. The product-line rows are separate, and they use two weaker 
 
 | Product-line surface | State on this tree | Evidence |
 | --- | --- | --- |
-| Contracts `cb.rpc` v9 and `cb.db` v5 | Working: 54 declared methods and 54 handlers, parity asserted by the suite; schema 5 from migrations `0001`-`0005` | `contracts/rpc.v9.json`, `contracts/db.v5.json`; parity asserted by the suite (`1039 tests OK`) |
+| Contracts `cb.rpc` v10 and `cb.db` v6 | Working: 54 declared methods and 54 handlers, parity asserted by the suite; schema 6 from migrations `0001`-`0006` | `contracts/rpc.v10.json`, `contracts/db.v6.json`; parity asserted by the suite (`1056 tests OK`) |
 | Textbook view | Working (live): a real document served over the real RPC; the frame set covers Textbook and Guided (13 frames) | `audit/visual/m1-guided-authoring/README.md` |
 | Guided view | Working (live) on a newly authored document (`state=complete`, `views.guided=true`). The older demo course still reports `textbook_only` because its stored page predates `lesson-prompt.v5`; it was not rewritten | `audit/visual/m1-guided-authoring/` |
 | Field Desk home (Continue, path, sources, all courses) | Working (live): the desk and its backend-off, empty and loading states were read from an isolated window | `audit/visual/m2-field-desk/README.md`, `live-evidence.json` |

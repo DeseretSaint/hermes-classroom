@@ -1047,6 +1047,38 @@ VALIDATION_SYSTEM_PROMPT = (
 )
 
 
+def _plan_input(brief: dict[str, Any], name: str) -> str | None:
+    """One declared plan-brief input, trimmed; blank is NULL ("the brief did not name it").
+
+    Deliberately not read from ``dials``: v10 keeps the four dials closed, so a level that only
+    exists inside ``dials`` is a payload the contract does not accept. The brief is the source,
+    and the course row stores the same value this job uses.
+    """
+    value = brief.get(name)
+    if isinstance(value, str):
+        text = value.strip()
+        return text or None
+    return None
+
+
+def _policy_dials(
+    dials: dict[str, Any], *, level: str | None = None, subject_domain: str | None = None
+) -> dict[str, Any]:
+    """The dials the capability policy and scaffold read, with the declared inputs added.
+
+    ``dials_json`` stays the four contract dials. This is the in-memory view only: the policy's
+    inputs are level and subject_domain, and before v10 they were unreachable from the product
+    path, so a Spanish technical procedure was scored as a language lesson. No value is invented:
+    a missing level or domain changes nothing.
+    """
+    merged = dict(dials or {})
+    if level and not merged.get("level"):
+        merged["level"] = level
+    if subject_domain and not merged.get("subject_domain"):
+        merged["subject_domain"] = subject_domain
+    return merged
+
+
 def _subject_domain(
     *,
     plan: dict[str, Any] | None = None,
@@ -1975,6 +2007,9 @@ _GENERATION_DDL: tuple[str, ...] = (
         recipe TEXT NOT NULL,
         goal TEXT NOT NULL,
         locale TEXT,
+        level TEXT,
+        subject_domain TEXT,
+        scope TEXT,
         dials_json TEXT NOT NULL DEFAULT '{}',
         status TEXT NOT NULL,
         pack_id TEXT,
@@ -2155,6 +2190,14 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
         }
         if "policy_json" not in columns:
             connection.execute("ALTER TABLE gen_lessons ADD COLUMN policy_json TEXT")
+        # Same additive rule for the cb.db v6 course inputs: a database this module created before
+        # v10 (or a test fixture) gains the columns instead of failing an INSERT that names them.
+        course_columns = {
+            str(row[1]) for row in connection.execute("PRAGMA table_info(courses)").fetchall()
+        }
+        for column in ("level", "subject_domain", "scope"):
+            if column not in course_columns:
+                connection.execute(f"ALTER TABLE courses ADD COLUMN {column} TEXT")
 
 
 # ── Persistence helpers ─────────────────────────────────────────────────────
@@ -2230,7 +2273,22 @@ def _load_json(text: str | None, default: Any) -> Any:
         return default
 
 
-def _request_fingerprint(goal: str, recipe: str, dials: dict[str, Any], locale: str | None) -> str:
+def _request_fingerprint(
+    goal: str,
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    *,
+    level: str | None = None,
+    subject_domain: str | None = None,
+    scope: str | None = None,
+) -> str:
+    """Cache key for one plan request. Every declared input is part of it.
+
+    A level or subject domain that changed the policy must not reuse a plan authored under a
+    different decision, so the v10 plan-brief inputs are in the key. Their absence hashes as
+    ``null``, which is what a pre-v10 brief means.
+    """
     return sha256_of_text(
         canonical_json(
             {
@@ -2239,6 +2297,9 @@ def _request_fingerprint(goal: str, recipe: str, dials: dict[str, Any], locale: 
                 "recipe": recipe,
                 "dials": dials,
                 "locale": locale,
+                "level": level,
+                "subject_domain": subject_domain,
+                "scope": scope,
                 "plan_prompt": PLAN_PROMPT_VERSION,
                 "validation_prompt": VALIDATION_PROMPT_VERSION,
             }
@@ -2652,14 +2713,18 @@ def _course_id(connection: sqlite3.Connection, brief: dict[str, Any], *, goal: s
     timestamp = _now_iso(now)
     with _transaction(connection):
         connection.execute(
-            "INSERT INTO courses (id, title, recipe, goal, locale, dials_json, status, pack_id, revision, "
-            "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO courses (id, title, recipe, goal, locale, level, subject_domain, scope,"
+            " dials_json, status, pack_id, revision, created_at, updated_at)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 course_id,
                 str(brief.get("title") or goal)[:200],
                 recipe,
                 goal,
                 locale,
+                _plan_input(brief, "level"),
+                _plan_input(brief, "subject_domain"),
+                _plan_input(brief, "scope"),
                 _json(brief.get("dials") or {}),
                 "draft",
                 None,
@@ -2699,11 +2764,25 @@ def run_plan_job(
         raise GenerationRejected(f"unknown recipe {recipe!r}")
     dials = dict(brief.get("dials") or {})
     locale = brief.get("locale")
+    # The declared plan-brief inputs (cb.rpc v10). They are stored on the course and are the same
+    # values the capability policy, the language scaffold and the research pass read.
+    level = _plan_input(brief, "level")
+    subject_domain = _plan_input(brief, "subject_domain")
+    scope = _plan_input(brief, "scope")
+    policy_dials = _policy_dials(dials, level=level, subject_domain=subject_domain)
     job_id = str(job.get("job_id") or "") or None
     usage = _Usage(budget or default_cost_budget())
 
     ensure_schema(connection)
-    fingerprint = _request_fingerprint(goal, recipe, dials, locale)
+    fingerprint = _request_fingerprint(
+        goal,
+        recipe,
+        dials,
+        locale,
+        level=level,
+        subject_domain=subject_domain,
+        scope=scope,
+    )
     course_id = _course_id(connection, brief, goal=goal, recipe=recipe, locale=locale, now=now)
 
     # CB-011 integration fix (Vellum): this reuse cache is scoped to **this course**. It used to
@@ -2752,7 +2831,7 @@ def run_plan_job(
             plan_request = build_plan_request(
                 goal=goal,
                 recipe=recipe,
-                dials=dials,
+                dials=policy_dials,
                 locale=locale,
                 research_run=research_run,
                 feedback=feedback,
@@ -2762,7 +2841,7 @@ def run_plan_job(
 
             try:
                 enforce_plan_rules(
-                    candidate, recipe=recipe, dials=dials, locale=locale, ledger=research_run.sources
+                    candidate, recipe=recipe, dials=policy_dials, locale=locale, ledger=research_run.sources
                 )
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
@@ -2776,7 +2855,7 @@ def run_plan_job(
                 plan=candidate,
                 goal=goal,
                 recipe=recipe,
-                dials=dials,
+                dials=policy_dials,
                 locale=locale,
                 research_run=research_run,
             )
@@ -2955,6 +3034,12 @@ def run_plan_job(
                             "recipe": recipe,
                             "dials": dials,
                             "locale": locale,
+                            # The declared plan-brief inputs, stored beside the dials so the
+                            # lesson stage reads the same level/domain the plan was authored
+                            # under. `dials` above stays the four contract dials.
+                            "level": level,
+                            "subject_domain": subject_domain,
+                            "scope": scope,
                             "pipeline_version": PIPELINE_VERSION,
                         }
                     ),
@@ -3152,7 +3237,13 @@ def run_lesson_job(
 
     plan = document["document"].get("plan") or {}
     recipe = str(document["document"].get("recipe") or "casual")
-    dials = dict(document["document"].get("dials") or {})
+    # The plan document stores the declared inputs beside the dials; a plan authored before v10
+    # has neither key, so its lessons behave exactly as they did.
+    dials = _policy_dials(
+        dict(document["document"].get("dials") or {}),
+        level=_plan_input(document["document"], "level"),
+        subject_domain=_plan_input(document["document"], "subject_domain"),
+    )
     locale = document["document"].get("locale")
     digest = str(document["plan_hash"])
     research_doc = document["research"]

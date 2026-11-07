@@ -123,6 +123,18 @@ def _now() -> str:
     return db.utcnow()
 
 
+def _named_input(value: Any) -> str | None:
+    """A declared plan-brief input as stored: trimmed, with blank collapsed to NULL.
+
+    ``NULL`` is the honest value for "the brief did not name this input". It is never filled in
+    from another field, so a course row cannot claim a level or subject domain nobody supplied.
+    """
+    if isinstance(value, str):
+        text = value.strip()
+        return text or None
+    return None
+
+
 def _json_load(value: Any, default: Any) -> Any:
     if value is None:
         return default
@@ -346,6 +358,9 @@ def course_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
             "recipe": course["recipe"],
             "goal": course["goal"],
             "locale": course["locale"],
+            "level": course["level"],
+            "subject_domain": course["subject_domain"],
+            "scope": course["scope"],
             "dials": _json_load(course["dials_json"], {}),
             "status": course["status"],
             "pack_id": course["pack_id"],
@@ -529,10 +544,12 @@ def course_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
         if replay is not None:
             return replay
         connection.execute(
-            "INSERT INTO courses (id, title, recipe, goal, locale, dials_json, status, pack_id, revision, created_at, updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, 'draft', NULL, 0, ?, ?)",
+            "INSERT INTO courses (id, title, recipe, goal, locale, level, subject_domain, scope,"
+            " dials_json, status, pack_id, revision, created_at, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', NULL, 0, ?, ?)",
             (course_id, payload["title"], payload["recipe"], payload["goal"], payload.get("locale"),
-             _json_dump(payload.get("dials") or {}), now, now),
+             _named_input(payload.get("level")), _named_input(payload.get("subject_domain")),
+             _named_input(payload.get("scope")), _json_dump(payload.get("dials") or {}), now, now),
         )
         connection.execute(
             "INSERT INTO plans (id, course_id, version, state, plan_hash, schedule_json, created_at, approved_at)"

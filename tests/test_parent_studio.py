@@ -164,7 +164,8 @@ class ExecutorTest(KernelCase):
         brief = {
             "goal": "Order coffee in Japanese",
             "recipe": "committed",
-            "dials": {"level": "L0"},
+            "dials": {},
+            "level": "L0",
             "locale": "ja-JP",
         }
         brief.update(overrides)
@@ -524,7 +525,7 @@ class ParentPlanEditTest(ParentSeedMixin):
         job_id = self.ok(
             "jobs.create",
             {"kind": "plan", "brief": {"goal": "Order coffee in Japanese", "recipe": "committed",
-                                       "dials": {"level": "L0"}, "locale": "ja-JP"}},
+                                       "dials": {}, "level": "L0", "locale": "ja-JP"}},
         )["result"]["job_id"]
         executor.pump_once(
             llm=FakeLLM(
