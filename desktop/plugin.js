@@ -3380,6 +3380,387 @@ function sectionRows({ row, review, notebooks, outline, page }) {
     .sort((left, right) => (left.ordinal || 0) - (right.ordinal || 0))
 }
 
+/**
+ * ── Ink & Field Notes: the scoped Coursebook token layer ────────────────────────────────────
+ *
+ * The Desktop SDK has no per-route theme seam: `THEMES_AREA` registers an app-wide theme, and a
+ * runtime plugin may import only `@hermes/plugin-sdk`, `react` and `react/jsx-runtime`, so a
+ * second stylesheet cannot be shipped as a module. The smallest honest seam is therefore a scoped
+ * route shell: the token table below is applied as CSS custom properties on the Coursebook route
+ * and pane roots only, and every Coursebook surface paints from `var(--cb-*)`. Hermes chrome is
+ * untouched, and the host's own `--ui-*` tokens still supply anything outside this layer.
+ *
+ * The table is one embedded JSON literal so `tests/test_desktop_tokens.py` can read the shipped
+ * module, compare it byte-for-byte with `contracts/cb.tokens.v1.json`, and compute WCAG contrast
+ * on the values that actually ship. `CB_TOKENS_JSON` is the ONLY colour literal in this file: the
+ * test refuses any hex outside it.
+ */
+const CB_TOKENS_JSON =
+  '{"light":{"paper":"#f7f3ea","paper-raised":"#fffdf7","ink":"#191713","ink-soft":"#5a5347","rule":"#d9d1c2","accent":"#2f4a8a","accent-soft":"#e4e9f4","field":"#3f5c33","ochre":"#7a4e0d","coral":"#9e2f1d"},"dark":{"paper":"#141312","paper-raised":"#1e1c19","ink":"#f2ece0","ink-soft":"#b5aa97","rule":"#3b372f","accent":"#9db5ee","accent-soft":"#232b3c","field":"#9cba87","ochre":"#d7a94e","coral":"#e38a76"}}'
+
+const CB_TOKENS = JSON.parse(CB_TOKENS_JSON)
+const CB_TOKEN_NAMES = Object.freeze([
+  'paper',
+  'paper-raised',
+  'ink',
+  'ink-soft',
+  'rule',
+  'accent',
+  'accent-soft',
+  'field',
+  'ochre',
+  'coral'
+])
+
+/** The rail collapses before the reading measure does. 1024px is the app's own rail breakpoint. */
+const CB_WIDE_BREAKPOINT = 1024
+/** A comfortable reading measure (62-72 characters) for the lesson column. */
+const CB_MEASURE = '68ch'
+const CB_RAIL_WIDTH = '19rem'
+
+/** Painted light/dark, from the SDK's own theme context. Never inferred from a colour value. */
+function cbModeFromTheme(theme) {
+  const mode = theme && (theme.renderedMode || theme.resolvedMode)
+  return mode === 'light' || mode === 'dark' ? mode : null
+}
+
+/**
+ * `useTheme()` is a hook, so it may only be called when the running host exports it. The
+ * fallback reads the `.dark` class the host's theme context toggles on `:root`; older hosts
+ * therefore still land on the right palette, they just do not repaint mid-session.
+ */
+function useCbMode() {
+  const theme = typeof sdk.useTheme === 'function' ? sdk.useTheme() : null
+  const painted = cbModeFromTheme(theme)
+  if (painted) return painted
+  try {
+    if (typeof document !== 'undefined' && document.documentElement) {
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    }
+  } catch (error) {
+    // A host without a document (SSR) falls through to the light default.
+  }
+  return 'light'
+}
+
+/** The scoped custom properties. Inline, so the layer travels with the route and nothing leaks. */
+function cbScopeStyle(mode) {
+  const palette = CB_TOKENS[mode === 'dark' ? 'dark' : 'light']
+  const style = {}
+  for (const name of CB_TOKEN_NAMES) style[`--cb-${name}`] = palette[name]
+  style.colorScheme = mode === 'dark' ? 'dark' : 'light'
+  style.backgroundColor = 'var(--cb-paper)'
+  style.color = 'var(--cb-ink)'
+  return style
+}
+
+/** Motion is functional only; a reduced-motion reader gets none of the transitions. */
+function cbMotionPreference(media) {
+  return media && media.matches === true ? 'reduced' : 'full'
+}
+
+function useCbMotion() {
+  const read = () => {
+    try {
+      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+        return cbMotionPreference(window.matchMedia('(prefers-reduced-motion: reduce)'))
+      }
+    } catch (error) {
+      // No matchMedia: assume the default, motion-on posture.
+    }
+    return 'full'
+  }
+  const [motion, setMotion] = useState(read)
+  useEffect(() => {
+    let media = null
+    try {
+      media = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)')
+        : null
+    } catch (error) {
+      media = null
+    }
+    if (!media) return undefined
+    const onChange = () => setMotion(cbMotionPreference(media))
+    onChange()
+    if (typeof media.addEventListener === 'function') media.addEventListener('change', onChange)
+    else if (typeof media.addListener === 'function') media.addListener(onChange)
+    return () => {
+      if (typeof media.removeEventListener === 'function') media.removeEventListener('change', onChange)
+      else if (typeof media.removeListener === 'function') media.removeListener(onChange)
+    }
+  }, [])
+  return motion
+}
+
+/** Live width from `host.state.viewport`, with a static read for hosts that predate the atom. */
+function useCbViewportWidth() {
+  const atom = sdk.host && sdk.host.state ? sdk.host.state.viewport : null
+  const read = () => {
+    try {
+      const rect = atom && typeof atom.get === 'function' ? atom.get() : null
+      if (rect && typeof rect.width === 'number') return rect.width
+    } catch (error) {
+      // A host without the atom reports 0, which stacks the rail rather than overflowing.
+    }
+    return 0
+  }
+  if (atom && typeof sdk.useValue === 'function') {
+    const rect = sdk.useValue(atom)
+    if (rect && typeof rect.width === 'number') return rect.width
+  }
+  return read()
+}
+
+/** Pure so the layout decision is testable without a window: wide only when the width is known. */
+function cbLayoutFor(width) {
+  return typeof width === 'number' && width >= CB_WIDE_BREAKPOINT ? 'wide' : 'stacked'
+}
+
+function CbRailSection({ label, children }) {
+  return jsxs('section', {
+    'data-cb-rail-section': label,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.3rem',
+      paddingTop: '0.6rem',
+      borderTop: '1px solid var(--cb-rule)'
+    },
+    children: [
+      jsx('div', {
+        style: {
+          fontSize: '0.65rem',
+          fontWeight: 600,
+          letterSpacing: '0.09em',
+          textTransform: 'uppercase',
+          color: 'var(--cb-ink-soft)'
+        },
+        children: label
+      }),
+      children
+    ]
+  })
+}
+
+/**
+ * The Field rail: next action, the section's own facts, source cards and saved notes. It is the
+ * third part of the workspace and becomes a bottom sheet (a stacked section) below 1024px.
+ */
+function FieldRail({ next, facts, sources, notes }) {
+  const sourceRows = (sources || []).slice(0, 4)
+  const noteRows = (notes || []).slice(0, 3)
+  return jsxs('aside', {
+    'data-cb-field-rail': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.8rem', lineHeight: 1.5 },
+    children: [
+      jsx(CbRailSection, {
+        label: 'Next action',
+        children: jsx('div', {
+          'data-cb-next-action': '',
+          style: { color: 'var(--cb-ink)', fontWeight: 500 },
+          children: next || 'No next action was recorded for this section.'
+        })
+      }),
+      facts && facts.length
+        ? jsx(CbRailSection, {
+            label: 'This section',
+            children: jsx('div', {
+              style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', color: 'var(--cb-ink-soft)' },
+              children: facts.map((fact) =>
+                jsxs('div', { style: { display: 'flex', justifyContent: 'space-between', gap: '0.5rem' }, children: [
+                  jsx('span', { children: fact.label }),
+                  jsx('span', { style: { color: 'var(--cb-ink)', textAlign: 'right' }, children: fact.value })
+                ]}, fact.label)
+              )
+            })
+          })
+        : null,
+      jsx(CbRailSection, {
+        label: 'Source cards',
+        children: sourceRows.length
+          ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.35rem' }, children: sourceRows.map((source) =>
+              jsxs('div', {
+                'data-cb-source-card': source.source_id || '',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.05rem', borderLeft: '2px solid var(--cb-rule)', paddingLeft: '0.45rem' },
+                children: [
+                  jsx('span', { style: { color: 'var(--cb-ink)' }, children: source.title || 'Untitled source' }),
+                  jsx('span', { style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
+                ]
+              }, source.source_id || source.title)
+            ) })
+          : jsx('div', { style: { color: 'var(--cb-ink-soft)' }, children: 'The backend recorded no sources for this course.' })
+      }),
+      jsx(CbRailSection, {
+        label: 'Saved notes',
+        children: noteRows.length
+          ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', color: 'var(--cb-ink-soft)' }, children: noteRows.map((entry) =>
+              jsx('div', { 'data-cb-rail-note': entry.entry_id || '', children: entry.excerpt || entry.note || entry.kind }, entry.entry_id || entry.excerpt)
+            ) })
+          : jsx('div', { style: { color: 'var(--cb-ink-soft)' }, children: 'Nothing saved from this section yet.' })
+      })
+    ]
+  })
+}
+
+/**
+ * The three-part lesson workspace: header, reading column, field rail. Layout is computed from the
+ * live viewport width rather than a media query, because a runtime plugin cannot ship a stylesheet;
+ * the rail stacks under the reading column at 460px instead of shrinking the text.
+ */
+function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, children }) {
+  const width = useCbViewportWidth()
+  const layout = cbLayoutFor(width)
+  const wide = layout === 'wide'
+  return jsxs('div', {
+    'data-cb-workspace-shell': layout,
+    style: { display: 'flex', flexDirection: 'column', gap: '0.85rem', minHeight: 0 },
+    children: [
+      jsxs('header', {
+        'data-cb-workspace-header': '',
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          gap: '0.5rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid var(--cb-rule)'
+        },
+        children: [
+          jsxs('div', {
+            style: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.15rem' },
+            children: [
+              eyebrow
+                ? jsx('div', {
+                    style: {
+                      fontSize: '0.65rem',
+                      fontWeight: 600,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      color: 'var(--cb-ink-soft)'
+                    },
+                    children: eyebrow
+                  })
+                : null,
+              jsx('h2', {
+                'data-cb-workspace-title': '',
+                style: {
+                  margin: 0,
+                  fontSize: 'clamp(1.45rem, 1.1rem + 1.2vw, 2rem)',
+                  lineHeight: 1.15,
+                  letterSpacing: '-0.01em',
+                  color: 'var(--cb-ink)'
+                },
+                children: title
+              }),
+              subtitle
+                ? jsx('div', { style: { fontSize: '0.85rem', color: 'var(--cb-ink-soft)' }, children: subtitle })
+                : null
+            ]
+          }),
+          actions
+            ? jsx('div', {
+                style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: '0.35rem' },
+                children: actions
+              })
+            : null
+        ]
+      }),
+      meta && meta.length
+        ? jsx('div', {
+            'data-cb-route-meta': '',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            children: meta
+          })
+        : null,
+      jsxs('div', {
+        'data-cb-workspace-body': '',
+        style: wide
+          ? { display: 'grid', gridTemplateColumns: `minmax(0, 1fr) ${CB_RAIL_WIDTH}`, alignItems: 'start', gap: '1.25rem' }
+          : { display: 'flex', flexDirection: 'column', gap: '1rem' },
+        children: [
+          jsx('div', {
+            'data-cb-reading-column': '',
+            style: { minWidth: 0, maxWidth: wide ? CB_MEASURE : '100%' },
+            children
+          }),
+          rail
+            ? jsx('div', {
+                'data-cb-rail-slot': wide ? 'side' : 'bottom',
+                style: wide ? { minWidth: 0 } : { minWidth: 0, borderTop: '1px solid var(--cb-rule)', paddingTop: '0.75rem' },
+                children: rail
+              })
+            : null
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * A field-note frame: thin rule, the media itself, a caption, a provenance line and an explicit
+ * text-equivalent disclosure. It is never decoration: a media item with no teaching role does not
+ * belong in a lesson document, and a failed preview keeps the text equivalent rather than
+ * substituting a fake file.
+ */
+function MediaFrame({ artifactId, kind, label, caption, provenance, textEquivalent, children }) {
+  return jsxs('figure', {
+    'data-cb-media': artifactId || 'text-only',
+    'data-cb-media-kind': kind || 'visual',
+    style: {
+      margin: '0.75rem 0',
+      padding: '0.6rem 0.75rem 0.6rem 0.85rem',
+      borderLeft: '2px solid var(--cb-rule)',
+      background: 'var(--cb-paper-raised)',
+      maxWidth: '48rem',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.4rem'
+    },
+    children: [
+      children,
+      caption
+        ? jsx('figcaption', {
+            'data-cb-media-caption': '',
+            style: { fontSize: '0.85rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+            children: caption
+          })
+        : null,
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', color: 'var(--cb-ink-soft)' },
+        children: [
+          label
+            ? jsx('span', {
+                'data-cb-media-label': '',
+                style: {
+                  border: '1px solid var(--cb-rule)',
+                  borderRadius: '0.25rem',
+                  padding: '0 0.3rem',
+                  color: 'var(--cb-ink-soft)'
+                },
+                children: label
+              })
+            : null,
+          provenance
+            ? jsx('span', { 'data-cb-media-provenance': '', children: provenance })
+            : null
+        ]
+      }),
+      textEquivalent
+        ? jsxs('details', {
+            'data-cb-media-text-equivalent': '',
+            style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', { style: { cursor: 'pointer' }, children: 'Text equivalent' }),
+              jsx('div', { style: { paddingTop: '0.25rem', lineHeight: 1.5 }, children: textEquivalent })
+            ]
+          })
+        : null
+    ]
+  })
+}
+
 function MediaSegment({ segment }) {
   const [preview, setPreview] = useState({ state: 'loading' })
   useEffect(() => {
@@ -3417,65 +3798,250 @@ function MediaSegment({ segment }) {
   }, [segment.artifact_id])
 
   const caption = segment.text || preview.text_equivalent || ''
-  const label = preview.label || (preview.mime && preview.mime.startsWith('audio/') ? 'Narration' : 'Illustration')
-  return jsxs('figure', {
-    className: 'my-2 flex max-w-3xl flex-col gap-1.5 border-l-2 border-(--ui-stroke-secondary) pl-3',
-    'data-cb-media': segment.artifact_id || 'text-only',
+  const label =
+    preview.label ||
+    segment.label ||
+    (preview.mime && preview.mime.startsWith('audio/') ? 'Narration' : 'Illustration')
+  const kind = preview.mime && preview.mime.startsWith('audio/') ? 'audio' : 'visual'
+  const provenance =
+    preview.state === 'ready'
+      ? [
+          preview.mime,
+          typeof preview.bytes === 'number' ? `${preview.bytes} bytes` : null,
+          segment.purpose || 'served by this host’s artifact route'
+        ].filter(Boolean).join(' · ')
+      : null
+  const textEquivalent =
+    preview.text_equivalent || segment.text_equivalent || segment.purpose || null
+  const element =
+    preview.state === 'ready' && preview.mime === 'image/svg+xml'
+      ? jsx('img', {
+          alt: caption,
+          style: { maxHeight: '380px', width: '100%', objectFit: 'contain' },
+          loading: 'lazy',
+          src: preview.data_url
+        })
+      : preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/')
+        ? jsx('img', {
+            alt: caption,
+            style: { maxHeight: '380px', width: '100%', objectFit: 'contain', borderRadius: '0.125rem' },
+            loading: 'lazy',
+            src: preview.data_url
+          })
+        : preview.state === 'ready' && preview.mime && preview.mime.startsWith('audio/')
+          ? jsx('audio', {
+              'aria-label': caption || 'Coursebook narration',
+              style: { width: '100%' },
+              controls: true,
+              preload: 'metadata',
+              src: preview.data_url
+            })
+          : preview.state === 'loading'
+            ? jsx('div', { style: { padding: '0.35rem 0', fontSize: '0.75rem', color: 'var(--cb-ink-soft)' }, children: 'Loading media' })
+            : jsx('div', {
+                style: { padding: '0.25rem 0', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                children: preview.message
+              })
+  return jsx(MediaFrame, {
+    artifactId: segment.artifact_id,
+    kind,
+    label,
+    caption,
+    provenance,
+    textEquivalent: textEquivalent && textEquivalent !== caption ? textEquivalent : null,
+    children: jsxs('div', {
+      style: { display: 'flex', flexDirection: 'column', gap: '0.35rem' },
+      children: [
+        element,
+        segment.artifact_id && supportsArtifactGet()
+          ? jsx(sdk.Button, {
+              variant: 'text',
+              size: 'sm',
+              onClick: async () => {
+                const response = await rpc('artifact.get', { artifact_id: segment.artifact_id })
+                if (!response.ok) {
+                  host.notify({ kind: 'warning', message: `${response.error.code}: ${describeError(response.error)}` })
+                  return
+                }
+                host.notify({ kind: 'info', message: `Artifact ready: ${response.result.mime}, ${response.result.bytes} bytes.` })
+              },
+              children: 'Artifact details'
+            })
+          : null
+      ]
+    })
+  })
+}
+
+function supportsArtifactGet() {
+  return backendSupports('artifact.get')
+}
+
+/** The two presentation views this build implements (docs/VISUAL_MEDIA_PLAN.md §3.3, §5). */
+const LESSON_VIEWS = [
+  { id: 'textbook', label: 'Textbook' },
+  { id: 'guided', label: 'Guided' }
+]
+
+/** A role is where the block sits in the teaching sequence, never a skin or a difficulty claim. */
+const BLOCK_ROLE_COPY = {
+  orient: 'Orient',
+  explain: 'Explain',
+  example: 'Example',
+  practice: 'Practice',
+  recap: 'Recap'
+}
+
+/**
+ * Source chips for one block.
+ *
+ * A chip prints the course's own source title. An id the course did not return is printed as the
+ * id: the Desktop never turns an unknown id into a citation it cannot show.
+ */
+function BlockSourceChips({ ids, index }) {
+  if (!ids || ids.length === 0) return null
+  return jsx('div', {
+    className: 'flex flex-wrap items-center gap-1',
+    'data-cb-block-sources': String(ids.length),
+    children: ids.map((id) =>
+      jsx(
+        'span',
+        { className: 'inline-flex max-w-full min-w-0 items-center', children: jsx(sdk.Badge, {
+            size: 'xs',
+            variant: 'outline',
+            children: (index && index[id] && index[id].title) || `Source ${id}`
+          }) },
+        id
+      )
+    )
+  })
+}
+
+/**
+ * Media as a child of a block.
+ *
+ * One artifact, one text equivalent, one label. The preview, the audio player and the honest
+ * text fallback are `MediaSegment`'s own implementation: a block view re-frames the same node, it
+ * does not grow a second media renderer.
+ */
+function BlockMedia({ media, blockId, ordinal }) {
+  const segment = {
+    artifact_id: media.artifact_id,
+    text: media.text_equivalent || media.purpose,
+    label: media.label
+  }
+  return jsx(
+    'div',
+    {
+      className: 'flex flex-col gap-1',
+      'data-cb-block-media': media.artifact_id || 'text-only',
+      children: [
+        jsx(MediaSegment, { segment }),
+        media.degraded && media.reason
+          ? jsx(QuietNote, { children: `Media is degraded: ${media.reason}` })
+          : null
+      ]
+    },
+    `${blockId}-media-${ordinal}`
+  )
+}
+
+function BlockBody({ block, sources, checkSlot }) {
+  return jsxs('div', {
+    className: 'flex flex-col gap-2',
     children: [
-      preview.state === 'ready' && preview.mime === 'image/svg+xml'
-        ? jsx('img', {
-            alt: caption,
-            className: 'max-h-[380px] w-full object-contain',
-            loading: 'lazy',
-            src: preview.data_url
-          })
-        : null,
-      preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.mime !== 'image/svg+xml'
-        ? jsx('img', {
-            alt: caption,
-            className: 'max-h-[380px] w-full rounded-sm object-contain',
-            loading: 'lazy',
-            src: preview.data_url
-          })
-        : null,
-      preview.state === 'ready' && preview.mime && preview.mime.startsWith('audio/')
-        ? jsx('audio', {
-            'aria-label': caption || 'Coursebook narration',
-            className: 'w-full',
-            controls: true,
-            preload: 'metadata',
-            src: preview.data_url
-          })
-        : null,
-      preview.state === 'loading'
-        ? jsx('div', { className: 'py-2 text-xs text-(--ui-text-secondary)', children: 'Loading media' })
-        : null,
-      preview.state === 'text'
-        ? jsx('div', { className: 'py-1 text-xs leading-relaxed text-(--ui-text-secondary)', children: preview.message })
-        : null,
-      caption
-        ? jsx('figcaption', {
-            className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-            children: caption
-          })
-        : null,
-      jsx('div', {
-        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
+      jsx('div', { className: 'max-w-prose', children: jsx(sdk.MessageTextContent, { text: block.deep }) }),
+      (block.media || []).map((media, index) =>
+        jsx(BlockMedia, { media, blockId: block.id, ordinal: index }, `${block.id}-media-${index}`)
+      ),
+      jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+      checkSlot
+        ? jsx('div', { className: 'flex flex-col gap-2 pt-1', 'data-cb-block-check': block.id, children: checkSlot })
+        : null
+    ]
+  })
+}
+
+/** Textbook: every block in authored order, the full `deep` prose, inline figures. */
+function TextbookBlock({ block, sources, checkSlot }) {
+  return jsxs('article', {
+    className: 'flex flex-col gap-2 border-b border-(--ui-stroke-tertiary) py-3 first:pt-0 last:border-b-0 last:pb-0',
+    'data-cb-block': block.id,
+    'data-cb-role': block.role,
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-baseline gap-2',
         children: [
-          jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: label }),
-          segment.artifact_id && supportsArtifactGet()
-            ? jsx(sdk.Button, {
-                variant: 'text',
-                size: 'sm',
-                onClick: async () => {
-                  const response = await rpc('artifact.get', { artifact_id: segment.artifact_id })
-                  if (!response.ok) {
-                    host.notify({ kind: 'warning', message: `${response.error.code}: ${describeError(response.error)}` })
-                    return
-                  }
-                  host.notify({ kind: 'info', message: `Artifact ready: ${response.result.mime}, ${response.result.bytes} bytes.` })
-                },
-                children: 'Artifact details'
+          jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: BLOCK_ROLE_COPY[block.role] || block.role }),
+          jsx('h3', { className: 'min-w-0 text-base font-semibold leading-snug', children: block.headline })
+        ]
+      }),
+      BlockBody({ block, sources, checkSlot })
+    ]
+  })
+}
+
+/** Guided: one block at a time, the authored `short` prose, progress and a check on its block. */
+function GuidedBlock({ block, index, total, sources, checkSlot, onBack, onNext }) {
+  const last = index >= total - 1
+  return jsxs('section', {
+    className: 'flex flex-col gap-3',
+    'aria-labelledby': `cb-guided-headline-${block.id}`,
+    'data-cb-block': block.id,
+    'data-cb-role': block.role,
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-baseline justify-between gap-2',
+        children: [
+          jsxs('div', {
+            className: 'flex flex-wrap items-baseline gap-2',
+            children: [
+              jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: BLOCK_ROLE_COPY[block.role] || block.role }),
+              jsx('h3', {
+                className: 'min-w-0 text-base font-semibold leading-snug',
+                id: `cb-guided-headline-${block.id}`,
+                children: block.headline
+              })
+            ]
+          }),
+          jsx('span', {
+            className: 'text-xs text-(--ui-text-secondary)',
+            'aria-live': 'polite',
+            'data-cb-step': `${index + 1}/${total}`,
+            children: `Step ${index + 1} of ${total}`
+          })
+        ]
+      }),
+      jsx('div', {
+        className: 'max-w-prose',
+        children: jsx(sdk.MessageTextContent, { text: block.short || block.deep })
+      }),
+      (block.media || []).map((media, ordinal) =>
+        jsx(BlockMedia, { media, blockId: block.id, ordinal }, `${block.id}-media-${ordinal}`)
+      ),
+      jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+      checkSlot ? jsx('div', { className: 'flex flex-col gap-2', 'data-cb-block-check': block.id, children: checkSlot }) : null,
+      jsxs('div', {
+        className: 'flex flex-wrap items-center gap-2',
+        children: [
+          jsx(sdk.Button, {
+            variant: 'secondary',
+            size: 'sm',
+            disabled: index === 0,
+            onClick: onBack,
+            children: 'Back'
+          }),
+          jsx(sdk.Button, {
+            variant: 'default',
+            size: 'sm',
+            disabled: last,
+            onClick: onNext,
+            children: 'Continue'
+          }),
+          last
+            ? jsx('span', {
+                className: 'text-xs text-(--ui-text-secondary)',
+                children: 'End of the guided pass. The Textbook view keeps the full text.'
               })
             : null
         ]
@@ -3484,8 +4050,76 @@ function MediaSegment({ segment }) {
   })
 }
 
-function supportsArtifactGet() {
-  return backendSupports('artifact.get')
+/**
+ * The lesson document, rendered as one of its views.
+ *
+ * The document is server-owned; this component decides placement, never content. A view switch
+ * re-renders the same blocks, the same ids and the same single check.
+ */
+function LessonDocumentView({ document, view, sources, checkSlot }) {
+  const blocks = (document && document.blocks) || []
+  const [step, setStep] = useState(0)
+  if (blocks.length === 0) {
+    return jsx(EmptyState, {
+      title: 'This section has no teaching content yet',
+      description:
+        (document && document.view_note) ||
+        'Teaching content appears here after a lesson turn, and Coursebook does not write it for you.'
+    })
+  }
+  const checkId = document.check_id
+  const attached = checkId ? blocks.findIndex((block) => block.check_id === checkId) : -1
+  const unattached = attached < 0 && checkSlot
+    ? jsxs('div', {
+        className: 'flex flex-col gap-2',
+        children: [jsx(sdk.PanelSectionLabel, { children: 'CHECK' }), checkSlot]
+      })
+    : null
+
+  if (view === 'guided' && document.views && document.views.guided) {
+    const current = Math.min(step, blocks.length - 1)
+    const block = blocks[current]
+    return jsxs('div', {
+      className: 'flex flex-col gap-3',
+      'data-cb-lesson-view': 'guided',
+      'data-cb-document': document.document_id,
+      children: [
+        jsx(GuidedBlock, {
+          block,
+          index: current,
+          total: blocks.length,
+          sources,
+          checkSlot: block.check_id && block.check_id === checkId ? checkSlot : null,
+          onBack: () => setStep(Math.max(0, current - 1)),
+          onNext: () => setStep(Math.min(blocks.length - 1, current + 1))
+        }),
+        unattached
+      ]
+    })
+  }
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-3',
+    'data-cb-lesson-view': 'textbook',
+    'data-cb-document': document.document_id,
+    children: [
+      jsx('div', {
+        className: 'flex flex-col',
+        children: blocks.map((block) =>
+          jsx(
+            TextbookBlock,
+            {
+              block,
+              sources,
+              checkSlot: attached >= 0 && block.check_id === checkId ? checkSlot : null
+            },
+            block.id
+          )
+        )
+      }),
+      unattached
+    ]
+  })
 }
 
 function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review }) {
@@ -3496,12 +4130,43 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const [saveSeed, setSaveSeed] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
+  const [lessonView, setLessonView] = useState('textbook')
+  // The document is a v8 read projection. A backend that predates it answers with segments only,
+  // so the segment list below stays as the fallback rather than becoming dead code.
+  const document = page && page.document ? page.document : null
+  const sourceIndex = {}
+  for (const source of (page && page.sources) || []) {
+    if (source && source.source_id) sourceIndex[source.source_id] = source
+  }
+  // One view is on screen at a time, so a single check node serves the Textbook block, the Guided
+  // step and the legacy segment list. It is never rendered twice in one view.
+  useEffect(() => {
+    setLessonView('textbook')
+  }, [objectiveId])
   const check = useOpenCheck({
     enrollmentId: row.enrollment_id,
     objectiveId,
     revision: page ? page.revision : 0,
     enabled: Boolean(page) && supports('check.open') && Boolean(section)
   })
+  const checkNode =
+    check.status === 'error'
+      ? jsx(QuietNote, {
+          children: check.error
+            ? `${check.error.code}: ${describeError(check.error)}`
+            : 'The current check could not be opened.'
+        })
+      : jsx(AttemptControls, {
+          enrollmentId: row.enrollment_id,
+          objectiveId,
+          check: check.check,
+          revision: page ? page.revision : 0,
+          implemented,
+          bindingState: runtime ? runtime.binding_status : 'detached',
+          onCommitted: () => {
+            if (onChanged) onChanged()
+          }
+        })
 
   const begin = useCallback(
     async (mode) => {
@@ -3565,28 +4230,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
     body = jsxs('div', {
       className: 'flex flex-col gap-4',
       children: [
-        jsxs('div', {
-          className: 'flex flex-col gap-1',
-          children: [
-            jsx('div', { className: 'text-sm font-semibold', children: section ? section.title : 'Section' }),
-            jsxs('div', {
-              className: 'flex flex-wrap items-center gap-2',
-              children: [
-                section ? jsx(StateText, { state: section.state }) : null,
-                section && section.evidence_target
-                  ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: section.evidence_target })
-                  : null,
-                section && section.last_opened_at
-                  ? jsx('span', {
-                      className: 'text-xs text-(--ui-text-secondary)',
-                      children: `Last opened ${whenLabel(section.last_opened_at)}`
-                    })
-                  : null,
-                runtime ? jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: runtime.session_state }) : null
-              ]
-            })
-          ]
-        }),
+        document && !(document.views && document.views.guided) && document.view_note
+          ? jsx(QuietNote, { children: document.view_note })
+          : null,
 
         runtime && !bindingActive
           ? jsxs('div', {
@@ -3629,8 +4275,19 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         }),
         notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
 
-        jsx(sdk.PanelSectionLabel, { children: 'TEACHING SEGMENTS' }),
-        page.segments && page.segments.length > 0
+        document
+          ? jsx(
+              LessonDocumentView,
+              {
+                document,
+                view: lessonView,
+                sources: sourceIndex,
+                checkSlot: checkNode
+              },
+              objectiveId
+            )
+          : jsx(sdk.PanelSectionLabel, { children: 'TEACHING SEGMENTS' }),
+        document ? null : page.segments && page.segments.length > 0
           ? jsx('div', {
               className: 'flex flex-col',
               children: page.segments.map((segment) =>
@@ -3693,24 +4350,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
               description: 'Segments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.'
             }),
 
-        jsx(sdk.PanelSectionLabel, { children: 'CURRENT CHECK' }),
-        check.status === 'error'
-          ? jsx(QuietNote, {
-              children: check.error
-                ? `${check.error.code}: ${describeError(check.error)}`
-                : 'The current check could not be opened.'
-            })
-          : jsx(AttemptControls, {
-              enrollmentId: row.enrollment_id,
-              objectiveId,
-              check: check.check,
-              revision: page.revision,
-              implemented,
-              bindingState: runtime ? runtime.binding_status : 'detached',
-              onCommitted: () => {
-                if (onChanged) onChanged()
-              }
-            }),
+        document ? null : jsx(sdk.PanelSectionLabel, { children: 'CURRENT CHECK' }),
+        document ? null : checkNode,
 
         page.attempts && page.attempts.length > 0
           ? jsxs('div', {
@@ -3750,43 +4391,63 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 )
               ]
             })
-          : null,
-
-        jsxs('div', {
-          className: 'flex flex-col gap-1',
-          children: [
-            jsx(sdk.PanelSectionLabel, { children: 'SOURCES ON THIS COURSE' }),
-            (page.sources || []).length === 0
-              ? jsx(QuietNote, { children: 'The backend recorded no sources for this course.' })
-              : (page.sources || []).slice(0, 6).map((source) =>
-                  jsxs(
-                    'div',
-                    {
-                      className: 'flex flex-wrap items-baseline justify-between gap-2 border-b border-(--ui-stroke-tertiary) py-1.5 text-xs last:border-b-0',
-                      children: [
-                        jsx('span', { className: 'min-w-0 break-words text-(--ui-text-secondary)', children: source.title }),
-                        jsxs('span', {
-                          className: 'flex items-center gap-2 text-(--ui-text-secondary)',
-                          children: [
-                            jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status }),
-                            jsx('span', { children: source.fetched_at ? `fetched ${whenLabel(source.fetched_at)}` : '' })
-                          ]
-                        })
-                      ]
-                    },
-                    source.source_id
-                  )
-                )
-          ]
-        })
+          : null
       ]
     })
   }
 
-  return jsxs('div', {
-    className: 'flex flex-col gap-3',
+  // The header, the view switcher and the field rail are the route shell; `body` is the reading
+  // column only. The rail replaces the old in-page sources/notebook blocks, so nothing is printed
+  // twice: the source cards and saved notes live in the third part of the workspace.
+  const railFacts = section
+    ? [
+        { label: 'State', value: section.state || 'unrecorded' },
+        { label: 'Evidence', value: section.evidence_target || 'unrecorded' },
+        { label: 'Attempts', value: String((page && page.attempts ? page.attempts.length : 0)) }
+      ]
+    : []
+  const switcher = document
+    ? jsxs('div', {
+        className: 'flex flex-wrap items-center gap-2',
+        'data-cb-view-switcher': document.views && document.views.guided ? 'available' : 'textbook-only',
+        children: [
+          jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: 'Lesson view' }),
+          document.views && document.views.guided
+            ? jsx(sdk.SegmentedControl, {
+                onChange: setLessonView,
+                options: LESSON_VIEWS,
+                sizing: 'content',
+                value: lessonView
+              })
+            : jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: 'Textbook only' })
+        ]
+      })
+    : null
+  const shellActions = page
+    ? [switcher, runtime ? jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: runtime.session_state }) : null]
+    : [jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onBack, children: 'All sections' })]
+
+  return jsx(WorkspaceShell, {
+    eyebrow: 'Coursebook',
+    title: section && section.title ? section.title : 'Section',
+    subtitle: section
+      ? [
+          section.state || null,
+          section.evidence_target || null,
+          section.last_opened_at ? `last opened ${whenLabel(section.last_opened_at)}` : null
+        ].filter(Boolean).join(' · ')
+      : null,
+    meta: page && check.status === 'error' ? [jsx(QuietNote, { children: 'The check could not be opened.' })] : [],
+    actions: shellActions,
+    rail: page
+      ? jsx(FieldRail, {
+          next: row.next_step && (row.next_step.label || row.next_step.kind) ? (row.next_step.label || row.next_step.kind) : null,
+          facts: railFacts,
+          sources: page.sources || [],
+          notes: page.notebook_entries || []
+        })
+      : null,
     children: [
-      page ? null : jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onBack, children: 'All sections' }),
       body,
       jsx(NotebookSaveDialog, {
         open: Boolean(saveSeed),
@@ -7591,6 +8252,10 @@ function FocusReturningDialog({ open, ...props }) {
 function CoursebookPage() {
   const { state: health, reload: reloadHealth } = useHealth()
   const implemented = useRuntime(health.status)
+  // The scoped Ink & Field Notes layer: every Coursebook surface paints from `--cb-*`, and the
+  // layer stops at this root, so Hermes chrome keeps its own theme untouched.
+  const cbMode = useCbMode()
+  const cbMotion = useCbMotion()
   const [destination, setDestination] = useState(rememberedDestination)
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -7745,6 +8410,9 @@ function CoursebookPage() {
     className: 'flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
     'data-cb-destination': destination,
     'data-cb-route': ROUTE_PATH,
+    'data-cb-scope': cbMode,
+    'data-cb-motion': cbMotion,
+    style: cbScopeStyle(cbMode),
     children: [
       jsxs('header', {
         className: 'flex shrink-0 flex-col gap-2 pt-3',
@@ -7819,6 +8487,9 @@ function CoursebookPage() {
  */
 function CoursebookPane() {
   const { state, storedId, reload } = useSessionBinding()
+  // The pane is part of the same scoped surface as the route: same token table, same mode.
+  const cbMode = useCbMode()
+  const cbMotion = useCbMotion()
   const scopeProfile = currentScope().profile
   const [bindNote, setBindNote] = useState(null)
   const attemptedBind = useRef(null)
@@ -7906,6 +8577,9 @@ function CoursebookPane() {
     className: 'flex h-full min-h-0 flex-col px-3 py-2',
     'data-cb-stored-id': storedId || '',
     'data-cb-binding-id': (state.binding && state.binding.binding_id) || '',
+    'data-cb-scope': cbMode,
+    'data-cb-motion': cbMotion,
+    style: cbScopeStyle(cbMode),
     children: [
       jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }),
       bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-secondary)', children: bindNote }) : null,
@@ -8078,6 +8752,24 @@ function CoursebookSettings() {
       jsx(ContractList, {})
     ]
   })
+}
+
+// Named seam for tests/test_desktop_lesson_views.py. The block views and the section page are pure
+// components over a server-owned document, so a Node test can render them without a backend, a
+// chat or a window.
+export {
+  CB_TOKENS,
+  CB_TOKEN_NAMES,
+  FieldRail,
+  LESSON_VIEWS,
+  LessonDocumentView,
+  MediaFrame,
+  SectionPage,
+  WorkspaceShell,
+  cbLayoutFor,
+  cbModeFromTheme,
+  cbMotionPreference,
+  cbScopeStyle
 }
 
 export default {

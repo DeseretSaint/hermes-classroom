@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "name": "ink-field-notes",
+  "scope": "[data-cb-scope] on the Coursebook route and pane roots",
+  "note": "One token table for the whole Coursebook surface. No raw colour is allowed outside this contract; decorative gradients are not part of the language.",
+  "tokens": [
+    "paper",
+    "paper-raised",
+    "ink",
+    "ink-soft",
+    "rule",
+    "accent",
+    "accent-soft",
+    "field",
+    "ochre",
+    "coral"
+  ],
+  "modes": {
+    "light": {
+      "paper": "#f7f3ea",
+      "paper-raised": "#fffdf7",
+      "ink": "#191713",
+      "ink-soft": "#5a5347",
+      "rule": "#d9d1c2",
+      "accent": "#2f4a8a",
+      "accent-soft": "#e4e9f4",
+      "field": "#3f5c33",
+      "ochre": "#7a4e0d",
+      "coral": "#9e2f1d"
+    },
+    "dark": {
+      "paper": "#141312",
+      "paper-raised": "#1e1c19",
+      "ink": "#f2ece0",
+      "ink-soft": "#b5aa97",
+      "rule": "#3b372f",
+      "accent": "#9db5ee",
+      "accent-soft": "#232b3c",
+      "field": "#9cba87",
+      "ochre": "#d7a94e",
+      "coral": "#e38a76"
+    }
+  },
+  "gates": [
+    {
+      "foreground": "ink",
+      "background": "paper",
+      "min": 7.0,
+      "why": "reading text; AAA body contrast"
+    },
+    {
+      "foreground": "ink",
+      "background": "paper-raised",
+      "min": 7.0,
+      "why": "reading text on the raised frame"
+    },
+    {
+      "foreground": "ink-soft",
+      "background": "paper",
+      "min": 4.5,
+      "why": "secondary text and captions"
+    },
+    {
+      "foreground": "ink-soft",
+      "background": "paper-raised",
+      "min": 4.5,
+      "why": "secondary text inside the raised frame"
+    },
+    {
+      "foreground": "accent",
+      "background": "paper",
+      "min": 4.5,
+      "why": "active path, links and focus text"
+    },
+    {
+      "foreground": "accent",
+      "background": "paper-raised",
+      "min": 4.5,
+      "why": "active path inside the raised frame"
+    },
+    {
+      "foreground": "field",
+      "background": "paper",
+      "min": 4.5,
+      "why": "done and field-note text"
+    },
+    {
+      "foreground": "ochre",
+      "background": "paper",
+      "min": 4.5,
+      "why": "needs-review text"
+    },
+    {
+      "foreground": "coral",
+      "background": "paper",
+      "min": 4.5,
+      "why": "attention text; never a substitute for the host error red"
+    },
+    {
+      "foreground": "ink",
+      "background": "accent-soft",
+      "min": 4.5,
+      "why": "selected block tint"
+    },
+    {
+      "foreground": "ink-soft",
+      "background": "accent-soft",
+      "min": 4.5,
+      "why": "secondary text on a selected block"
+    },
+    {
+      "foreground": "rule",
+      "background": "paper",
+      "min": 1.25,
+      "why": "hairline visibility floor (non-text)"
+    }
+  ]
+}
