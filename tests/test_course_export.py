@@ -32,6 +32,9 @@ NOW = "2026-11-07T09:00:00Z"
 #: response, the allowlist failed.
 NOTE_MARKER = "NOTE-MARKER-not-a-pack-file"
 ATTEMPT_MARKER = "ANSWER-MARKER-not-in-the-archive"
+#: A layer-1 observation note (cb.rpc v14 / cb.db v9). It is learner/parent prose about what
+#: happened, so it belongs to the same "never export personal rows" rule as a notebook entry.
+OBSERVATION_MARKER = "OBSERVATION-MARKER-not-a-pack-file"
 
 
 def page_document(title: str) -> dict:
@@ -220,6 +223,9 @@ class AuthoredCourseCase(KernelCase):
         """Personal rows that exist for this enrollment and must never reach an export."""
         enrollment_id = seeded["enrollment_id"]
         objective_id = seeded["objective_ids"][0]
+        domain.record_observation(
+            enrollment_id, objective_id, evidence_class="parent_reported", note=OBSERVATION_MARKER
+        )
         with db.transaction() as connection:
             connection.execute(
                 "INSERT INTO notebook_entries (id, enrollment_id, objective_id, lesson_run_id,"
@@ -497,18 +503,21 @@ class CourseExportWriteTest(AuthoredCourseCase):
         wire = json.dumps(reviewed)
         self.assertNotIn(NOTE_MARKER, wire)
         self.assertNotIn(ATTEMPT_MARKER, wire)
+        self.assertNotIn(OBSERVATION_MARKER, wire)
         self.assertNotIn("notebook", wire)
         self.assertNotIn("attempts", wire)
 
         result = self.export(seeded["enrollment_id"], reviewed["content_hash"], key="key-private")
         self.assertNotIn(NOTE_MARKER, json.dumps(result))
         self.assertNotIn(ATTEMPT_MARKER, json.dumps(result))
+        self.assertNotIn(OBSERVATION_MARKER, json.dumps(result))
 
         with zipfile.ZipFile(self.archive_path(result)) as bundle:
             for name in bundle.namelist():
                 payload = bundle.read(name)
                 self.assertNotIn(NOTE_MARKER.encode(), payload, name)
                 self.assertNotIn(ATTEMPT_MARKER.encode(), payload, name)
+                self.assertNotIn(OBSERVATION_MARKER.encode(), payload, name)
             manifest_name = [name for name in bundle.namelist() if name.endswith("/pack.json")].pop()
             document = json.loads(bundle.read(manifest_name).decode("utf-8"))
         self.assertEqual(packs.contains_private_fields(document), [])

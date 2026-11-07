@@ -419,10 +419,10 @@ class RegistryTest(unittest.TestCase):
         # NOT_IMPLEMENTED.
         pending_v6: set[str] = set()
         self.assertTrue(pending_v6 <= set(method_names()), "allowance names a non-contract method")
-        # cb.rpc v14 (H-53) froze `observation.record`; this branch ships the contract and the
-        # migration only, so its handler is the follow-up kernel card. The allowance is explicit:
-        # when that handler lands it is removed, and a v14 method that loses its handler fails here.
-        pending_v14: set[str] = {"observation.record"}
+        # cb.rpc v14 (H-53) froze `observation.record`; H-54 registered its handler, so this
+        # allowance is empty. It stays here as the explicit wiring assertion: a v14 method that
+        # loses its handler fails this test instead of silently answering NOT_IMPLEMENTED.
+        pending_v14: set[str] = set()
         self.assertTrue(pending_v14 <= set(method_names()), "allowance names a non-contract method")
         expected = set(method_names()) - pack_methods - pending_v6 - pending_v14
         implemented = set(api.implemented_methods())

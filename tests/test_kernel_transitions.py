@@ -348,6 +348,64 @@ class EvidenceClassTest(KernelCase):
             domain.record_observation(lesson["enrollment_id"], lesson["objective_id"], evidence_class="cold")
         self.assertEqual(raised.exception.error["code"], "POLICY_VIOLATION")
 
+    def test_cannot_self_assert_a_hint_class_as_an_observation(self) -> None:
+        lesson = self.prepare_lesson()
+        from coursebook.api import RpcError
+
+        with self.assertRaises(RpcError) as raised:
+            domain.record_observation(lesson["enrollment_id"], lesson["objective_id"],
+                                      evidence_class="override")
+        self.assertEqual(raised.exception.error["code"], "POLICY_VIOLATION")
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM evidence"), 0)
+
+    def test_the_note_is_persisted_verbatim(self) -> None:
+        """H-54 regression: before cb.db v9 this note was accepted and silently dropped.
+
+        ``record_observation(..., note=...)`` had no ``note`` column to write to, so the row landed
+        with the prose gone. The assertion below fails against the pre-fix INSERT (``note`` reads
+        back NULL) and passes only when the note is written in the same transaction.
+        """
+        lesson = self.prepare_lesson()
+        note = "Read the passage aloud without being asked, then explained the ending."
+        evidence_id = domain.record_observation(
+            lesson["enrollment_id"], lesson["objective_id"],
+            evidence_class="parent_reported", note=note,
+        )
+        row = self.rows("SELECT * FROM evidence WHERE id = ?", (evidence_id,))[0]
+        self.assertEqual(row["note"], note)
+        self.assertIsNone(row["attempt_id"])
+        self.assertEqual(row["layer"], 1)
+        self.assertEqual(row["kind"], "observation")
+        self.assertEqual(row["evidence_class"], "parent_reported")
+
+    def test_no_note_stays_null_rather_than_an_empty_string(self) -> None:
+        lesson = self.prepare_lesson()
+        evidence_id = domain.record_observation(
+            lesson["enrollment_id"], lesson["objective_id"], evidence_class="self_reported"
+        )
+        self.assertIsNone(self.scalar("SELECT note FROM evidence WHERE id = ?", (evidence_id,)))
+
+    def test_an_over_long_note_is_refused_not_truncated(self) -> None:
+        lesson = self.prepare_lesson()
+        from coursebook.api import RpcError
+
+        with self.assertRaises(RpcError) as raised:
+            domain.record_observation(
+                lesson["enrollment_id"], lesson["objective_id"],
+                evidence_class="self_reported", note="x" * (domain.OBSERVATION_NOTE_LIMIT + 1),
+            )
+        self.assertEqual(raised.exception.error["code"], "VALIDATION_FAILED")
+        self.assertEqual(raised.exception.error["details"]["reason"], "note_too_long")
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM evidence"), 0)
+
+    def test_a_note_at_the_bound_is_accepted(self) -> None:
+        lesson = self.prepare_lesson()
+        note = "x" * domain.OBSERVATION_NOTE_LIMIT
+        evidence_id = domain.record_observation(
+            lesson["enrollment_id"], lesson["objective_id"], evidence_class="self_reported", note=note
+        )
+        self.assertEqual(self.scalar("SELECT note FROM evidence WHERE id = ?", (evidence_id,)), note)
+
     def test_database_rejects_an_evidence_class_outside_the_contract(self) -> None:
         lesson = self.prepare_lesson()
         with db.read() as connection:
@@ -357,6 +415,186 @@ class EvidenceClassTest(KernelCase):
                     " created_at) VALUES ('evd_bad_0001', ?, ?, 2, 'mastery', 'mastered', 'now')",
                     (lesson["enrollment_id"], lesson["objective_id"]),
                 )
+
+
+class ObservationRecordRpcTest(KernelCase):
+    """``observation.record`` on the wire: one layer-1 row per accepted class, key-fenced.
+
+    ``cb.rpc`` v14 declares this method with an ``idempotency_key`` and no ``expected_revision``
+    (the write cannot move the enrollment aggregate), so there is deliberately no stale-revision
+    case here: under v14 a ``STALE_REVISION`` refusal is unreachable, and a test for it would be
+    asserting a fence the contract does not have.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.lesson = self.prepare_lesson()
+
+    def record(self, lesson: dict | None = None, *, key: str | None = "obs-key-0001",
+               **overrides) -> dict:
+        lesson = lesson or self.lesson
+        payload = {
+            "enrollment_id": lesson["enrollment_id"],
+            "objective_id": lesson["objective_id"],
+            "evidence_class": "self_reported",
+        }
+        payload.update(overrides)
+        return self.dispatch("observation.record", payload, idempotency_key=key)
+
+    def evidence_rows(self) -> list[dict]:
+        return self.rows("SELECT * FROM evidence ORDER BY rowid")
+
+    def test_every_accepted_class_writes_exactly_one_row_and_the_note_round_trips(self) -> None:
+        for evidence_class in domain._OBSERVATION_CLASSES:
+            with self.subTest(evidence_class=evidence_class):
+                note = f"What the {evidence_class} reporter saw."
+                response = self.record(
+                    evidence_class=evidence_class, note=note,
+                    key=f"obs-key-{evidence_class}",
+                )
+                self.assertTrue(response["ok"], response.get("error"))
+                self.assertEqual(
+                    set(response["result"]), {"evidence_id", "evidence_class", "revision"}
+                )
+                self.assertEqual(response["result"]["evidence_class"], evidence_class)
+                # The echo is the enrollment revision, read but not bumped.
+                self.assertEqual(response["result"]["revision"], self.lesson["revision"])
+                row = self.rows(
+                    "SELECT * FROM evidence WHERE id = ?", (response["result"]["evidence_id"],)
+                )[0]
+                self.assertEqual(row["note"], note)
+                self.assertEqual(row["layer"], 1)
+                self.assertEqual(row["kind"], "observation")
+                self.assertEqual(row["attempt_id"], None)
+                self.assertEqual(row["evidence_class"], evidence_class)
+        self.assertEqual(len(self.evidence_rows()), 2)
+        self.assertEqual(
+            self.scalar("SELECT revision FROM enrollments WHERE id = ?", (self.lesson["enrollment_id"],)),
+            self.lesson["revision"],
+        )
+
+    def test_cold_and_override_are_refused_with_policy_violation(self) -> None:
+        for evidence_class in ("cold", "override", "hinted", "answer_shown"):
+            with self.subTest(evidence_class=evidence_class):
+                error = self.record(evidence_class=evidence_class, key=f"obs-key-{evidence_class}")["error"]
+                self.assertEqual(error["code"], "POLICY_VIOLATION")
+        self.assertEqual(self.evidence_rows(), [])
+
+    def test_a_cross_course_objective_is_refused(self) -> None:
+        course_id, plan_id = self.new_course(title="A different course")
+        self.new_enrollment(course_id)
+        foreign_objective = self.seed_objective(plan_id)
+        response = self.record(objective_id=foreign_objective, key="obs-key-cross-course")
+        error = response["error"]
+        self.assertEqual(error["code"], "VALIDATION_FAILED")
+        self.assertEqual(error["details"]["reason"], "objective_not_in_enrollment_course")
+        self.assertEqual(error["details"]["field"], "objective_id")
+        self.assertEqual(self.evidence_rows(), [])
+
+    def test_the_same_key_replays_and_a_different_payload_conflicts(self) -> None:
+        first = self.record(note="Said it unprompted.", key="obs-key-replay-1")["result"]
+        again = self.record(note="Said it unprompted.", key="obs-key-replay-1")["result"]
+        self.assertEqual(again, first)
+        self.assertEqual(len(self.evidence_rows()), 1)
+
+        conflict = self.record(note="A different sentence.", key="obs-key-replay-1")
+        self.assertFalse(conflict["ok"])
+        self.assertEqual(conflict["error"]["code"], "IDEMPOTENCY_CONFLICT")
+        self.assertEqual(len(self.evidence_rows()), 1)
+
+    def test_a_missing_idempotency_key_is_refused_by_the_envelope(self) -> None:
+        response = self.record(key=None)
+        self.assertFalse(response["ok"])
+        self.assertEqual(response["error"]["code"], "VALIDATION_FAILED")
+        self.assertEqual(self.evidence_rows(), [])
+
+    def test_an_over_long_note_is_refused_at_the_wire_and_the_kernel(self) -> None:
+        over = "x" * (domain.OBSERVATION_NOTE_LIMIT + 1)
+        wire = self.record(note=over, key="obs-key-too-long")
+        self.assertFalse(wire["ok"])
+        self.assertEqual(wire["error"]["code"], "VALIDATION_FAILED")
+
+        # The handler's own bound, reached without the wire validator: the kernel refuses rather
+        # than truncating, and nothing is written.
+        from coursebook.api import RpcError
+
+        with self.assertRaises(RpcError) as raised:
+            domain.observation_record(
+                {
+                    "enrollment_id": self.lesson["enrollment_id"],
+                    "objective_id": self.lesson["objective_id"],
+                    "evidence_class": "self_reported",
+                    "note": over,
+                },
+                {"idempotency_key": "obs-key-too-long-kernel", "operation_id": "op-direct"},
+            )
+        self.assertEqual(raised.exception.error["details"]["reason"], "note_too_long")
+        self.assertEqual(self.evidence_rows(), [])
+
+    def test_an_observation_writes_no_attempt_transition_or_verdict(self) -> None:
+        before = {
+            "attempts": self.scalar("SELECT COUNT(*) FROM attempts"),
+            "transitions": self.scalar("SELECT COUNT(*) FROM transitions"),
+            "revision": self.scalar(
+                "SELECT revision FROM enrollments WHERE id = ?", (self.lesson["enrollment_id"],)
+            ),
+        }
+        accepted = self.record(note="Watched them do it.", key="obs-key-no-state")["result"]
+        # Nothing a grade would leave behind moved.
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM attempts"), before["attempts"])
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM transitions"), before["transitions"])
+        self.assertEqual(
+            self.scalar(
+                "SELECT revision FROM enrollments WHERE id = ?", (self.lesson["enrollment_id"],)
+            ),
+            before["revision"],
+        )
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) FROM evidence WHERE attempt_id IS NOT NULL"), 0
+        )
+        # No verdict can be read for this enrollment because no attempt exists.
+        self.assertEqual(
+            self.scalar(
+                "SELECT COUNT(*) FROM attempts a JOIN checks c ON c.id = a.check_id"
+                " WHERE a.enrollment_id = ?",
+                (self.lesson["enrollment_id"],),
+            ),
+            0,
+        )
+        # The objective did not move.
+        self.assertEqual(
+            self.scalar("SELECT state FROM objectives WHERE id = ?", (self.lesson["objective_id"],)),
+            "not_started",
+        )
+        # ...and the row is the one read back as a layer-1 event.
+        bundle = self.ok("evidence.inspect", {"enrollment_id": self.lesson["enrollment_id"]})["result"]
+        events = {event["evidence_id"]: event for event in bundle["l1"]["events"]}
+        self.assertIn(accepted["evidence_id"], events)
+        self.assertEqual(events[accepted["evidence_id"]]["layer"], 1)
+        self.assertEqual(events[accepted["evidence_id"]]["kind"], "observation")
+        self.assertEqual(events[accepted["evidence_id"]]["evidence_class"], "self_reported")
+        self.assertIsNone(events[accepted["evidence_id"]]["attempt_id"])
+        self.assertEqual(bundle["l1"]["attempts"], [])
+        # L2 stays empty: an observation is never independent evidence.
+        self.assertEqual(bundle["l2"]["objectives"][0]["L2_evidence_ids"], [])
+        self.assertFalse(bundle["l2"]["objectives"][0]["independent"])
+
+    def test_the_envelope_revision_fence_is_absent_by_contract(self) -> None:
+        # v14: the key is the fence. A stale expected_revision describes a fence this method does
+        # not have, so it is neither required nor checked — the write is an append.
+        response = self.dispatch(
+            "observation.record",
+            {
+                "enrollment_id": self.lesson["enrollment_id"],
+                "objective_id": self.lesson["objective_id"],
+                "evidence_class": "parent_reported",
+            },
+            idempotency_key="obs-key-no-revision-fence",
+            expected_revision=self.lesson["revision"] - 1,
+        )
+        self.assertTrue(response["ok"], response.get("error"))
+        self.assertEqual(response["result"]["revision"], self.lesson["revision"])
+        self.assertEqual(len(self.evidence_rows()), 1)
 
 
 class RegistrationTest(unittest.TestCase):
