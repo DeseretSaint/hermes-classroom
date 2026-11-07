@@ -747,6 +747,99 @@ def plan_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
     return to_revision, result
 
 
+def _carry_plan_units(
+    connection,
+    *,
+    source_plan_id: str,
+    target_plan_id: str,
+    ordinal_map: dict[int, int],
+    added_ordinals: Sequence[int],
+    now: str,
+) -> None:
+    """Copy a replanned version's unit structure and re-point its objectives (R3).
+
+    ``plan.replan`` writes new ``plans`` and ``objectives`` rows; without this carry every
+    blueprint plan loses its units — and with them every edge the learner approved — the moment
+    it is replanned. Mapping is structural, never guessed:
+
+    * a unit whose every source objective is removed from the new version is dropped, and the
+      surviving units are renumbered contiguously;
+    * a surviving unit that still names a dropped unit is **refused**: an edge may not outlive
+      its target (§14.2 R3), and the whole replan rolls back because the refusal is raised inside
+      the transaction;
+    * added objectives join the last surviving unit, so they still project into a unit rather
+      than becoming invisible in ``course.outline``.
+    """
+    source_units = _plan_unit_rows(connection, source_plan_id)
+    if not source_units:
+        return
+    members: dict[str, list[int]] = {}
+    for row in connection.execute(
+        "SELECT ordinal, unit_id FROM objectives WHERE plan_id = ? ORDER BY ordinal",
+        (str(source_plan_id),),
+    ).fetchall():
+        if row["unit_id"] is not None and int(row["ordinal"]) in ordinal_map:
+            members.setdefault(str(row["unit_id"]), []).append(int(row["ordinal"]))
+    surviving = [unit for unit in source_units if members.get(str(unit["id"]))]
+    dropped = {
+        int(unit["ordinal"]) for unit in source_units if not members.get(str(unit["id"]))
+    }
+    new_ordinal = {
+        int(unit["ordinal"]): index for index, unit in enumerate(surviving, start=1)
+    }
+    rebuilt: list[tuple[Any, int, list[int]]] = []
+    for unit in surviving:
+        old_ordinal = int(unit["ordinal"])
+        refs: list[int] = []
+        for ref in _unit_prereqs(unit):
+            if ref not in new_ordinal:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    f"the replan drops unit {ref}, which unit {old_ordinal} still requires.",
+                    reason="prerequisite_missing_unit",
+                    unit_ordinal=old_ordinal,
+                    prerequisite_ordinal=ref,
+                    removed_unit_ordinals=sorted(dropped),
+                )
+            refs.append(new_ordinal[ref])
+        rebuilt.append((unit, new_ordinal[old_ordinal], refs))
+    target_objective_ids = {
+        int(row["ordinal"]): str(row["id"])
+        for row in connection.execute(
+            "SELECT id, ordinal FROM objectives WHERE plan_id = ?", (str(target_plan_id),)
+        ).fetchall()
+    }
+    unit_ids: dict[int, str] = {}
+    for unit, ordinal, refs in rebuilt:
+        unit_ids[ordinal] = _new_id("unt")
+        connection.execute(
+            "INSERT INTO plan_units (id, plan_id, ordinal, title, goal, prereq_unit_ordinals_json,"
+            " target_lessons, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                unit_ids[ordinal], str(target_plan_id), ordinal, unit["title"], unit["goal"],
+                _json_dump(refs), int(unit["target_lessons"]), now,
+            ),
+        )
+    for unit in surviving:
+        for source_ordinal in members.get(str(unit["id"]), []):
+            target_ordinal = ordinal_map[source_ordinal]
+            objective_id = target_objective_ids.get(target_ordinal)
+            if objective_id is None:
+                continue
+            connection.execute(
+                "UPDATE objectives SET unit_id = ? WHERE id = ?",
+                (unit_ids[new_ordinal[int(unit["ordinal"])]], objective_id),
+            )
+    if unit_ids and added_ordinals:
+        last_unit_id = unit_ids[max(unit_ids)]
+        for ordinal in added_ordinals:
+            objective_id = target_objective_ids.get(int(ordinal))
+            if objective_id is not None:
+                connection.execute(
+                    "UPDATE objectives SET unit_id = ? WHERE id = ?", (last_unit_id, objective_id)
+                )
+
+
 @_handler("plan.replan")
 def plan_replan(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """Create a new draft plan version. The approved plan is superseded, so checks pause until
@@ -805,6 +898,20 @@ def plan_replan(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                 " state, version, created_at) VALUES (?, ?, ?, ?, 'recall', '[]', 'not_started', 1, ?)",
                 (_new_id("obj"), new_plan_id, offset, change.get("title") or "Untitled objective", now),
             )
+        # R3: the new version carries the approved unit structure, or every edge the learner
+        # approved would point at a unit the replanned version does not have. The carry refuses a
+        # structure the change set cannot preserve and rolls the whole replan back.
+        _carry_plan_units(
+            connection,
+            source_plan_id=str(current["id"]),
+            target_plan_id=new_plan_id,
+            ordinal_map={
+                int(by_id[source_id]["ordinal"]): index
+                for index, (source_id, _title, _change) in enumerate(ordinals, start=1)
+            },
+            added_ordinals=list(range(len(ordinals) + 1, len(ordinals) + len(added) + 1)),
+            now=now,
+        )
         plan = _row(connection, "SELECT * FROM plans WHERE id = ?", (new_plan_id,))
         connection.execute("UPDATE plans SET plan_hash = ? WHERE id = ?", (_plan_hash(connection, plan), new_plan_id))
         # A replan edits the plan, not the authored outline. Without carrying the outline the new
@@ -848,6 +955,181 @@ def _insert_check(connection, objective, spec: dict[str, Any], stimulus: dict, r
     return check_id
 
 
+# ── §14.2 prerequisite edges: reader fence and disclosure ───────────────────
+
+#: The only objective states that satisfy a prerequisite edge (§14.2 R5a). ``overridden``
+#: satisfies access only and is still described as *not independently demonstrated*.
+_PREREQUISITE_SATISFIED = ("independent_evidence", "delayed_evidence", "overridden")
+
+
+def _plan_unit_rows(connection, plan_id: str) -> list[Any]:
+    """The plan's ``plan_units`` rows, or ``[]`` on a legacy database without the table."""
+    try:
+        return connection.execute(
+            "SELECT * FROM plan_units WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
+        ).fetchall()
+    except sqlite3.OperationalError:  # a v6 database has no plan_units table yet
+        return []
+
+
+def _unit_prereqs(row: Any) -> list[int]:
+    return [int(value) for value in _json_load(row["prereq_unit_ordinals_json"], [])]
+
+
+def _validated_unit_rows(connection, plan_id: str) -> list[Any]:
+    """Read a stored plan's units and refuse a document the writer could not have produced.
+
+    The writer refuses forward references, so a cycle cannot be authored; unrepresentability is
+    a property of the writer, not of the reader (§14.2 R2). A hand-edited, imported or
+    future-extension document is refused here with a typed reason and nothing else is read from
+    it. A cycle is named first, because the backwards rule would otherwise report only its
+    forward half.
+    """
+    rows = _plan_unit_rows(connection, plan_id)
+    if not rows:
+        return rows
+    edges = {int(row["ordinal"]): _unit_prereqs(row) for row in rows}
+    # A self reference is named as such before cycle detection: it *is* a one-node cycle, and
+    # "unit N names itself" is the more useful refusal for a hand-edited row.
+    for ordinal, refs in edges.items():
+        if ordinal in refs:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                f"unit {ordinal} names itself as a prerequisite.",
+                reason="prerequisite_self_ref",
+                unit_ordinal=ordinal,
+            )
+    cycle = generation.find_unit_cycle(edges)
+    if cycle is not None:
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "the plan's unit prerequisites form a cycle; the plan cannot be sequenced.",
+            reason="prerequisite_cycle",
+            cycle=cycle,
+        )
+    known = set(edges)
+    for ordinal, refs in edges.items():
+        for ref in refs:
+            if ref == ordinal:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    f"unit {ordinal} names itself as a prerequisite.",
+                    reason="prerequisite_self_ref",
+                    unit_ordinal=ordinal,
+                )
+            if refs.count(ref) > 1:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    f"unit {ordinal} names prerequisite unit {ref} more than once.",
+                    reason="prerequisite_duplicate_ref",
+                    unit_ordinal=ordinal,
+                    prerequisite_ordinal=ref,
+                )
+            if ref not in known:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    f"unit {ordinal} names missing prerequisite unit {ref}.",
+                    reason="prerequisite_missing_unit",
+                    unit_ordinal=ordinal,
+                    prerequisite_ordinal=ref,
+                )
+            if ref > ordinal:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    f"unit {ordinal} names prerequisite {ref}; every prerequisite must be a "
+                    "lower unit.",
+                    reason="prerequisite_forward_ref",
+                    unit_ordinal=ordinal,
+                    prerequisite_ordinal=ref,
+                )
+    return rows
+
+
+def _prerequisite_state(connection, plan, objective) -> dict[str, Any] | None:
+    """R5's disclosure for one objective: ``None`` when the plan has no edges into its unit.
+
+    ``no_edges`` is a legacy or flat plan and returns ``None`` so the command response is
+    unchanged. ``satisfied`` and ``unmet`` are computed only from the seven objective-state
+    labels the kernel already has — never from criteria, timing, attempt count, model opinion or
+    a score (R5a, R7).
+    """
+    rows = _validated_unit_rows(connection, plan["id"])
+    if not rows:
+        return None
+    unit_id = dict(objective).get("unit_id")
+    if unit_id is None:
+        return None
+    unit = next((row for row in rows if str(row["id"]) == str(unit_id)), None)
+    if unit is None:
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "this objective names a unit the plan does not have.",
+            reason="prerequisite_missing_unit",
+            objective_id=str(objective["id"]),
+            unit_id=str(unit_id),
+        )
+    prereqs = _unit_prereqs(unit)
+    if not prereqs:
+        return None
+    unmet: list[dict[str, Any]] = []
+    totals = 0
+    for ref in prereqs:
+        members = connection.execute(
+            "SELECT id, ordinal, title, state FROM objectives WHERE plan_id = ? AND unit_id IN"
+            " (SELECT id FROM plan_units WHERE plan_id = ? AND ordinal = ?) ORDER BY ordinal",
+            (str(plan["id"]), str(plan["id"]), ref),
+        ).fetchall()
+        for row in members:
+            totals += 1
+            if str(row["state"]) not in _PREREQUISITE_SATISFIED:
+                unmet.append(
+                    {
+                        "objective_id": str(row["id"]),
+                        "ordinal": int(row["ordinal"]),
+                        "title": str(row["title"]),
+                        "state": str(row["state"]),
+                    }
+                )
+    state = "unmet" if unmet else "satisfied"
+    return {"state": state, "unmet": unmet, "_totals": totals, "_unit": unit,
+            "_prereq_units": [row for row in rows if int(row["ordinal"]) in prereqs]}
+
+
+def prerequisite_unmet_error(state: dict[str, Any]) -> RpcError:
+    """The §14.3 refusal: the disclosure is the message, and it names the learner's choice."""
+    unit = state["_unit"]
+    prereq_units = state["_prereq_units"]
+    goal = " and ".join(str(row["goal"]) for row in prereq_units if str(row["goal"]).strip())
+    count = len(state["unmet"])
+    total = int(state["_totals"])
+    noun = "objective" if total == 1 else "objectives"
+    titles = "; ".join(str(item["title"]) for item in state["unmet"])
+    message = (
+        f"Unit {int(unit['ordinal'])} assumes you can {goal or 'the prerequisite unit'}. "
+        f"{count} of {total} {noun} there have not been shown independently yet: {titles}. "
+        "You can start now; the course will not count the prerequisite as met."
+    )
+    return RpcError.of(
+        "PREREQUISITE_UNMET",
+        message,
+        prerequisite_state={"state": "unmet", "unmet": list(state["unmet"])},
+        unit_ordinal=int(unit["ordinal"]),
+        prerequisite_unit_ordinals=[
+            int(row["ordinal"]) for row in prereq_units
+        ],
+    )
+
+
+def _gated_prerequisite_state(connection, plan, objective, *, acknowledge: bool) -> dict[str, Any] | None:
+    """Compute R5's state and apply R6: refuse an unacknowledged unmet edge, write nothing."""
+    state = _prerequisite_state(connection, plan, objective)
+    if state is None or state["state"] != "unmet":
+        return state
+    if not acknowledge:
+        raise prerequisite_unmet_error(state)
+    return {"state": "unmet_acknowledged", "unmet": list(state["unmet"])}
+
+
 @_handler("check.open")
 def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """Open the objective's audited check, or return the one that is already open.
@@ -871,18 +1153,25 @@ def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
                 "VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved"
             )
         objective = _objective_in_plan(connection, payload["objective_id"], plan["id"])
+        prerequisite_state = _gated_prerequisite_state(
+            connection, plan, objective,
+            acknowledge=bool(payload.get("acknowledge_prerequisites")),
+        )
         existing = _row(
             connection,
             "SELECT * FROM checks WHERE objective_id = ? AND state = 'open' ORDER BY version DESC LIMIT 1",
             (objective["id"],),
         )
         if existing is not None:
-            return int(enrollment["revision"]), {
+            result = {
                 "check_id": existing["id"],
                 "check_version": int(existing["version"]),
                 "evidence_target": existing["evidence_target"],
                 "revision": int(enrollment["revision"]),
             }
+            if prerequisite_state is not None:
+                result["prerequisite_state"] = prerequisite_state
+            return int(enrollment["revision"]), result
         spec = _check_spec(objective)
         if spec is None:
             raise RpcError.of(
@@ -919,6 +1208,8 @@ def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
             "evidence_target": objective["evidence_target"],
             "revision": to_revision,
         }
+        if prerequisite_state is not None:
+            result["prerequisite_state"] = prerequisite_state
         _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result)
     return to_revision, result
 
@@ -1901,6 +2192,19 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 "VALIDATION_FAILED", "that objective does not belong to this enrollment's course.",
                 field="objective_id", reason="objective_not_in_enrollment_course",
             )
+        # R5/R6: the gate lives here and on ``check.open`` because they are the two commands that
+        # start learner work. An unacknowledged unmet edge refuses **before** any row is written;
+        # an acknowledged one proceeds and the response records the learner's decision. The
+        # acknowledgment is never evidence and never moves an objective.
+        approved_plan = _approved_plan(connection, enrollment["course_id"])
+        prerequisite_state = (
+            _gated_prerequisite_state(
+                connection, approved_plan, objective,
+                acknowledge=bool(payload.get("acknowledge_prerequisites")),
+            )
+            if approved_plan is not None and str(approved_plan["id"]) == str(objective["plan_id"])
+            else None
+        )
         run = _row(
             connection,
             "SELECT * FROM lesson_runs WHERE enrollment_id = ? AND objective_id = ?"
@@ -1932,6 +2236,8 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 "resume": resume,
                 "revision": int(run["revision"]),
             }
+            if prerequisite_state is not None:
+                result["prerequisite_state"] = prerequisite_state
         else:
             run_id = _new_id("run")
             connection.execute(
@@ -1954,6 +2260,8 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 "resume": {"available": False, "reason": "no_binding"},
                 "revision": 0,
             }
+        if prerequisite_state is not None:
+            result["prerequisite_state"] = prerequisite_state
         _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
                   result["revision"], result)
     return int(result["revision"]), result
@@ -2897,13 +3205,10 @@ def _outline_units(
     no unit rows is one unit whose title is the plan title (§10): no backfill, no rewritten row.
     """
     by_ordinal = {int(item["ordinal"]): item for item in objectives}
-    unit_rows = []
-    try:
-        unit_rows = connection.execute(
-            "SELECT * FROM plan_units WHERE plan_id = ? ORDER BY ordinal", (plan["id"],)
-        ).fetchall()
-    except Exception:  # noqa: BLE001 - a v6 database has no plan_units table yet
-        unit_rows = []
+    # A stored document that carries a cycle (imported, hand-edited or a future forward-ref
+    # extension) is refused here with ``prerequisite_cycle``; the writer's backwards rule is not
+    # a property of a reader (R2).
+    unit_rows = _validated_unit_rows(connection, plan["id"])
     if not unit_rows:
         return [
             {

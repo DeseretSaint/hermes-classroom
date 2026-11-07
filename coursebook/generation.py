@@ -43,7 +43,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from jsonschema import Draft202012Validator
 
@@ -99,6 +99,8 @@ __all__ = [
     "PLAN_SCHEMA_V2",
     "PLAN_SCHEMA_V2_NAME",
     "UNIT_SCHEMA",
+    "find_unit_cycle",
+    "prerequisite_edge_reasons",
     "UNIT_SECTION_SCHEMA",
     "UNIT_SECTIONS_SCHEMA",
     "UNIT_SECTIONS_SCHEMA_NAME",
@@ -2847,6 +2849,79 @@ def _enforce_plan_tail(
             reasons.append("this learner's context needs must include romaji")
 
 
+def find_unit_cycle(edges: Mapping[int, Sequence[int]]) -> list[int] | None:
+    """Return one prerequisite cycle as the node path that closes it, or ``None``.
+
+    ``edges[ordinal]`` is the unit's ``prereq_unit_ordinals``. The writer refuses forward
+    references, so a cycle cannot be authored; a reader still has to refuse one, because a
+    hand-edited or imported document is not bound by the writer's rule (§14.2 R2). The path is
+    deterministic: units are visited in ordinal order and each node's refs in declared order, and
+    the returned list starts and ends at the repeated unit (``[2, 3, 2]``).
+    """
+    colour: dict[int, int] = {}  # 1 = on the current path, 2 = fully explored
+    path: list[int] = []
+
+    def visit(node: int) -> list[int] | None:
+        colour[node] = 1
+        path.append(node)
+        for ref in edges.get(node, ()):  # type: ignore[arg-type]
+            ref = int(ref)
+            if colour.get(ref) == 1:
+                start = path.index(ref)
+                return path[start:] + [ref]
+            if colour.get(ref) is None and ref in edges:
+                found = visit(ref)
+                if found is not None:
+                    return found
+        path.pop()
+        colour[node] = 2
+        return None
+
+    for node in sorted(edges):
+        if colour.get(node) is None:
+            found = visit(node)
+            if found is not None:
+                return found
+    return None
+
+
+def prerequisite_edge_reasons(units: Sequence[dict[str, Any]]) -> list[str]:
+    """§14.2 R1-R3 and §5 rule 6, as reasons a plan document is refused.
+
+    A cycle is named *as a cycle* before the per-reference checks run: the backwards rule below
+    would otherwise report only the forward half of a cycle, and R2 requires the cycle itself.
+    """
+    reasons: list[str] = []
+    edges: dict[int, list[int]] = {}
+    for unit in units:
+        ordinal = int(unit.get("ordinal", 0))
+        edges[ordinal] = [int(value) for value in unit.get("prereq_unit_ordinals") or []]
+    known_units = set(edges)
+    cycle = find_unit_cycle(edges)
+    if cycle is not None:
+        reasons.append(
+            "prerequisite edges form a cycle: " + " -> ".join(str(value) for value in cycle)
+        )
+    for unit in units:
+        ordinal = int(unit.get("ordinal", 0))
+        prereqs = [int(value) for value in unit.get("prereq_unit_ordinals") or []]
+        if len(set(prereqs)) != len(prereqs):
+            reasons.append(f"unit {ordinal} repeats a prerequisite unit")
+        for ref in prereqs:
+            if ref == ordinal:
+                reasons.append(f"unit {ordinal} names itself as a prerequisite")
+            elif ref > ordinal:
+                reasons.append(
+                    f"unit {ordinal} names prerequisite {ref}; every prerequisite must be a "
+                    "strictly lower ordinal"
+                )
+            if ref not in known_units:
+                reasons.append(f"unit {ordinal} names missing prerequisite unit {ref}")
+        if ordinal == 1 and prereqs:
+            reasons.append("unit 1 cannot declare a prerequisite")
+    return reasons
+
+
 def _enforce_plan_rules_v2(
     plan: dict[str, Any],
     *,
@@ -2967,22 +3042,9 @@ def _enforce_plan_rules_v2(
 
     # Rule 6 — prerequisite edges point backwards, are unique, no self ref. The schema bounds
     # the values; acyclicity and self-reference are properties of the document a reader must
-    # still refuse (R2).
-    for unit in units:
-        ordinal = int(unit.get("ordinal", 0))
-        prereqs = [int(value) for value in unit.get("prereq_unit_ordinals") or []]
-        if len(set(prereqs)) != len(prereqs):
-            reasons.append(f"unit {ordinal} repeats a prerequisite unit")
-        for ref in prereqs:
-            if ref >= ordinal:
-                reasons.append(
-                    f"unit {ordinal} names prerequisite {ref}; every prerequisite must be a "
-                    "strictly lower ordinal"
-                )
-            if ref not in known_units:
-                reasons.append(f"unit {ordinal} names missing prerequisite unit {ref}")
-        if ordinal == 1 and prereqs:
-            reasons.append("unit 1 cannot declare a prerequisite")
+    # still refuse (R2). One implementation produces the reasons for both the writer here and
+    # the typed reader refusal in ``domain``.
+    reasons.extend(prerequisite_edge_reasons(units))
 
     # Rule 7/8 — schedule arithmetic. Each authored lesson is one session at the declared
     # session length; the sum of target lessons must fit the declared weeks.
