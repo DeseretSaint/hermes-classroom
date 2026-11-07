@@ -145,6 +145,9 @@ class _Resolvers:
                     # The next unit is offered to the client as an action. This executor never
                     # enqueues it: a silent chain would hide cost and failure (§7).
                     "next_unit_ordinal": result.get("next_unit_ordinal"),
+                    # H-44: how the domain was chosen travels with the job, so a `general`
+                    # fallback is visible on the run record rather than only in a log line.
+                    "domain_provenance": result.get("domain_provenance"),
                 },
                 message=f"plan authored ({result.get('status')})",
             )

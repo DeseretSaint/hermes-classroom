@@ -2064,6 +2064,57 @@ def _scope_expectation(scope: str | None) -> dict[str, Any] | None:
     return {**expectation, "scope": key}
 
 
+def _domain_provenance(
+    *, subject_domain: str | None, locale: str | None
+) -> dict[str, Any]:
+    """How this course's domain was chosen, for the run record (H-44).
+
+    The pre-v10 rule in :func:`policy.normalise_subject_domain` is unchanged: a declared subject
+    domain wins, a declared locale with no domain routes to ``language``, and neither means
+    ``general``. The defect this records is that the ``general`` fallback was indistinguishable
+    from a deliberate general course. ``source`` names which case a caller is looking at:
+
+    * ``declared`` — the brief declared a subject domain;
+    * ``declared_locale`` — the brief declared a locale and no domain;
+    * ``default`` — the brief declared neither, so the course is authored as ``general``.
+
+    Only ``default`` carries a human ``note``; it is also appended to the result's warnings, so a
+    language goal that named no locale is never *silently* authored as a general course.
+    """
+    declared_locale = locale if isinstance(locale, str) and locale.strip() else None
+    resolved = capability_policy.normalise_subject_domain(subject_domain, declared_locale)
+    if subject_domain:
+        return {
+            "resolved_domain": resolved,
+            "declared_subject_domain": subject_domain,
+            "declared_locale": declared_locale,
+            "target_language": (
+                localization.primary_language(declared_locale) if resolved == "language" else None
+            ),
+            "source": "declared",
+        }
+    if declared_locale:
+        return {
+            "resolved_domain": resolved,
+            "declared_subject_domain": None,
+            "declared_locale": declared_locale,
+            "target_language": localization.primary_language(declared_locale),
+            "source": "declared_locale",
+        }
+    return {
+        "resolved_domain": resolved,
+        "declared_subject_domain": None,
+        "declared_locale": None,
+        "target_language": None,
+        "source": "default",
+        "note": (
+            "no locale and no subject domain were declared, so this course is authored as a "
+            "general course: the domain is the default, not a content decision. If the goal is a "
+            "language goal, declare its locale to author a language course."
+        ),
+    }
+
+
 #: The typed Parent Studio brief fields that reach the plan model. Internal routing keys and the
 #: two consent flags do not: ``egress_acknowledged`` is a precondition of the command, and
 #: ``redaction_requested`` is an export instruction the planner cannot act on.
@@ -5573,6 +5624,11 @@ def run_plan_job(
     # values the capability policy, the language scaffold and the research pass read.
     level = _plan_input(brief, "level")
     subject_domain = _plan_input(brief, "subject_domain")
+    # H-44: the domain choice is recorded, not just computed. A brief that declared neither a
+    # locale nor a subject domain is authored as `general`; that fallback is named in the run
+    # record (and in the result's warnings) instead of being indistinguishable from a declared
+    # general course. The authoring rule itself is unchanged.
+    domain_provenance = _domain_provenance(subject_domain=subject_domain, locale=locale)
     scope = _plan_input(brief, "scope")
     # Validate the scope enum before any provider call: a fourth scope value would otherwise be
     # authored under no cap at all while the document claimed one.
@@ -5822,12 +5878,17 @@ def run_plan_job(
                 "queries": [entry.get("query") for entry in research_run.queries],
             },
             "warnings": _plan_warnings(recipe, research_run, verdict)
-            + list(verdict.get("provenance_flags") or []),
+            + list(verdict.get("provenance_flags") or [])
+            + ([domain_provenance["note"]] if domain_provenance.get("note") else []),
             # The declared cb.rpc v10 inputs round-trip on the job result as themselves: a caller
             # that sent a level/domain/scope must be able to read back the exact value the plan
-            # was authored under rather than guess it from the locale.
+            # was authored under rather than guess it from the locale. ``domain_provenance`` says
+            # whether the resolved domain was declared, locale-derived or the `general` default.
             "level": level,
             "subject_domain": subject_domain,
+            "locale": locale,
+            "target_language": domain_provenance.get("target_language"),
+            "domain_provenance": domain_provenance,
             "scope": scope,
             "scope_cap_weeks": (
                 scope_expectation["max_weeks"] if scope_expectation is not None else None

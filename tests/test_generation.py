@@ -171,7 +171,7 @@ def plan_job(
     *,
     recipe: str = "committed",
     dials=None,
-    locale="ja-JP",
+    locale: str | None = "ja-JP",
     scope: str | None = None,
     job_id="job-plan-1",
 ) -> dict:
@@ -1083,6 +1083,67 @@ class PlanJobTest(GenerationTestBase):
         self.assertEqual(llm.calls_for("coursebook.plan.validate"), 0)
         checks = self.rows("SELECT audit_state FROM checks")
         self.assertEqual(checks, [])
+
+
+class LanguageGoalDomainProvenanceTest(GenerationTestBase):
+    """H-44: a language goal with no locale is authored as ``general`` *and told so*."""
+
+    GOAL = "Learn Spanish to order food in Mexico City"
+
+    def _run(self, *, locale: str | None) -> dict:
+        llm = FakeLLM(
+            {
+                "coursebook.plan.generate": plan_from_fixture(),
+                "coursebook.plan.validate": validation_from_fixture(),
+            }
+        )
+        return gen.run_plan_job(
+            self.connection,
+            plan_job(goal=self.GOAL, recipe="committed", dials={"level": "L0"}, locale=locale),
+            llm,
+            FakeSearch(),
+            now=NOW,
+        )
+
+    def test_language_goal_without_locale_records_the_general_default(self) -> None:
+        result = self._run(locale=None)
+        # The authoring rule is unchanged: no locale and no domain still resolves to `general`.
+        self.assertIsNone(result["subject_domain"])
+        self.assertIsNone(result["locale"])
+        self.assertIsNone(result["target_language"])
+        # ...but the run record now says the domain was the default, not a content decision.
+        provenance = result["domain_provenance"]
+        self.assertEqual(provenance["source"], "default")
+        self.assertEqual(provenance["resolved_domain"], "general")
+        self.assertEqual(provenance["declared_locale"], None)
+        self.assertIn("general course", provenance["note"])
+        self.assertTrue(any("general course" in warning for warning in result["warnings"]))
+
+    def test_language_goal_with_locale_records_the_declared_locale(self) -> None:
+        result = self._run(locale="es-MX")
+        # The declared locale routes the course to `language`; the record states where it came
+        # from and no default warning is invented.
+        self.assertEqual(result["locale"], "es-MX")
+        self.assertEqual(result["target_language"], "es")
+        provenance = result["domain_provenance"]
+        self.assertEqual(provenance["source"], "declared_locale")
+        self.assertEqual(provenance["resolved_domain"], "language")
+        self.assertEqual(provenance["declared_locale"], "es-MX")
+        self.assertNotIn("note", provenance)
+        self.assertFalse(any("general course" in warning for warning in result["warnings"]))
+
+    def test_the_two_records_differ_in_the_returned_value_not_a_log(self) -> None:
+        without = self._run(locale=None)
+        with_locale = self._run(locale="es-MX")
+        self.assertNotEqual(
+            without["domain_provenance"]["resolved_domain"],
+            with_locale["domain_provenance"]["resolved_domain"],
+        )
+        self.assertNotEqual(
+            without["domain_provenance"]["source"], with_locale["domain_provenance"]["source"]
+        )
+        self.assertIn(without["domain_provenance"]["note"], without["warnings"])
+        self.assertNotIn(without["domain_provenance"]["note"], with_locale["warnings"])
 
 
 def _with_source(document: dict, request: gen.LLMRequest) -> dict:
