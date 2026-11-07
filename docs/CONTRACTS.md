@@ -1349,6 +1349,44 @@ here.
   pre-0007 plan therefore hashes byte-identically and every H-12 `plan_content_hash` keeps
   binding. `tests/test_plan_units.py::LegacyPlanHashInvarianceTest` pins the fixture hash.
 
+## v12 delta (H-26) — the student syllabus import path
+
+`docs/STUDENT-MODE.md` freezes a second import path: a learner uploads the syllabus of a class they
+already take, and Coursebook builds a **companion course** aligned to it. It is never a `cb.pack`,
+never a catalog artifact, and never an enrollment claim. v12 is additive over v11; every v11 method,
+payload and enum value is preserved, the version echo moves to 12, and `cb.vocabulary` stays v1.
+
+| Surface | Added | Notes |
+|---|---|---|
+| `cb.rpc` v12 | `syllabus.intake.create`, `syllabus.get`, `syllabus.parse`, `syllabus.align`, `syllabus.alignment.get`, `syllabus.alignment.review`, `syllabus.delete` | Intake takes `content_base64` or `pasted_text` — **no path field and no URL field**. A parse/align job is `kind=import` (an existing vocabulary family) with a closed `$defs/import_brief` and `stage` `syllabus_parse`/`syllabus_align`. |
+| `course.create.request` | optional `syllabus_id` + `syllabus_revision` (together or not at all) | Writes one `course_syllabi` row, leaves `courses.pack_id` NULL, and refuses `recipe != companion`. |
+| `$defs/plan_brief` | optional `syllabus_id`, `syllabus_revision`, `alignment_revision` | The plan job reads validated syllabus items as bounded untrusted scope text; the planner still authors every objective. The brief stays closed. |
+| `cb.db` v8 | eight tables via migration `0008_syllabus_intake.sql`: `syllabus_series`, `syllabi`, `syllabus_files`, `syllabus_blocks`, `syllabus_parse_runs`, `syllabus_items`, `course_syllabi`, `syllabus_alignments` | Additive only, no backfill: a pre-v8 course has no `course_syllabi` row and behaves exactly as before. H-21's `plan_units` storage is untouched. |
+| `cb.errors` v4 | `SYLLABUS_REJECTED`, `SYLLABUS_NO_TEXT_LAYER`, `SYLLABUS_STALE`, `SYLLABUS_UNREVIEWED`, `SYLLABUS_IN_USE`, `PARSER_UNAVAILABLE`, `BLUEPRINT_UNAVAILABLE` | Every one is a typed refusal with no partial write. H-21's `PREREQUISITE_UNMET` is carried unchanged. |
+| `cb.jobs` | unchanged (v3) | The syllabus stages run under the existing `import` job family; no state, transition or kind is added. |
+
+**What the shipped stages do.** Intake sniffs magic bytes (`%PDF-`, `PK\x03\x04`) rather than trusting
+a filename or MIME, refuses encrypted/active-content PDFs, macro/external-relationship DOCX, non-UTF-8
+or NUL-bearing text, and enforces the 4 MiB / 8 MiB / 200,000-character caps before storing a byte.
+Extraction is deterministic and local: stdlib for text/Markdown/DOCX, optional `pypdf` for PDF, whose
+absence is `PARSER_UNAVAILABLE`. Every parsed scalar is an item with `extracted` / `unknown` /
+`ambiguous` state and a page/section/line anchor; an item's quote is verified verbatim against its
+block and a mismatch downgrades it to `unknown`. No model call is made by either stage in this build,
+so no syllabus text leaves the machine. Alignment is deterministic too: title-token overlap gives
+`aligned`/`partial`/`unmatched`, and an assessment whose syllabus week is earlier than the matching
+objective's plan section is a `conflict`. The model-assist lane in `docs/STUDENT-MODE.md` §4.3 is
+**not** implemented, and no row claims it was.
+
+**Full scope plans through v11, it is not refused.** A companion course is an ordinary course with
+`recipe='companion'`; `scope='full'` runs through the v11 unit-scoped CourseBlueprint exactly like any
+other full-scope course (units, unit stages, R1-R9 edge validation, `coursebook.plan.v2`). The
+external class in the syllabus is the scope authority for the objective count and ordering, and H-12
+`plan.approve` still gates authoring. `BLUEPRINT_UNAVAILABLE` survives in the catalog only for a host
+build that cannot run `coursebook.plan.v2`; it is not returned by the companion path on this build.
+
+**Not in this delta.** No UI, no pack change, no second course/plan/lesson engine, no second
+enrollment authority, no export of syllabus text, no LMS client, no calendar, no gradebook.
+
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
@@ -1376,6 +1414,7 @@ here.
 | v10 | 2026-11-07 | H-01 additive amendment. `course.create` gains optional `level`, `subject_domain` and `scope`; `jobs.create` gains one closed `$defs/plan_brief` for `kind = "plan"` so unknown fields are refused instead of silently ignored. cb.db **v6** adds nullable `courses.level`/`subject_domain`/`scope` via migration 0006, with no backfill. 54 RPC methods unchanged; no error code, job kind, vocabulary value or dial changes. `rpc.v9.json` and `db.v5.json` are pinned by sha256. |
 | v10 (H-17) | 2026-11-07 | Additive inside v10: `$defs/plan_brief` names the optional `budget_usd` (positive number ≤1000), the per-job cost-ceiling override the `CostCeilingExceeded` recovery checkpoint's `raise_budget` action passes. The H-17 behaviour note was written as "no wire change", but a closed brief refuses an unnamed property, so the field had to be declared for the documented override to be reachable. Every earlier v10 payload still validates; no method, table, migration, error code, job kind or vocabulary value changes, and `additionalProperties: false` stays. |
 | v11 | 2026-11-07 | H-21 slice A additive amendment (contract and migration only). `plan_brief.unit_ordinal` (1-12) and `stage = unit_sections`; optional `units` projection on `outline_plan` with `$defs/outline_unit` (R9 key set) and optional `unit` on `outline_objective`; `acknowledge_prerequisites` and `$defs/prerequisite_state` on `lesson.begin`/`check.open`; `PREREQUISITE_UNMET` in cb.errors **v3**. cb.db **v7** adds `plan_units`, `objectives.unit_id`, `gen_plan_sections.unit_id` and `section_role` via migration 0007, additive with no backfill. 54 RPC methods unchanged. R4: `parent_authoring.plan_hash` is byte-identical for every stored pre-0007 plan (pinned by `test_legacy_plan_hash_unchanged_after_0007`). `rpc.v10.json`, `db.v6.json` and `errors.v2.json` are pinned by sha256. Handlers for gating, unit stages and PLAN_SCHEMA v2 are explicitly out of this slice. |
+| v12 | 2026-11-07 | H-26 additive amendment: the student syllabus import path. Seven `syllabus.*` methods; optional `syllabus_id`/`syllabus_revision` on `course.create` (companion recipes only); optional `syllabus_id`/`syllabus_revision`/`alignment_revision` on the closed `plan_brief`; a closed `import_brief` for `kind=import` with `stage=syllabus_parse`/`syllabus_align`. cb.db **v8** adds the eight syllabus tables via migration 0008, additive with no backfill and no change to `plan_units`. cb.errors **v4** adds the seven syllabus refusals and carries `PREREQUISITE_UNMET`. 61 RPC methods; no job kind, vocabulary value, transition or dial changes. Full scope plans through the v11 blueprint; `BLUEPRINT_UNAVAILABLE` remains only for a host without `coursebook.plan.v2`. `rpc.v11.json`, `db.v7.json` and `errors.v3.json` are pinned by sha256. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
