@@ -29,17 +29,17 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 #: The v1 files stay on disk as immutable history; only the current version is in the inventory.
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
-    "cb.errors": "errors.v3.json",
-    "cb.rpc": "rpc.v11.json",
-    "cb.db": "db.v7.json",
-    "cb.jobs": "jobs.v3.json",
+    "cb.errors": "errors.v4.json",
+    "cb.rpc": "rpc.v12.json",
+    "cb.db": "db.v8.json",
+    "cb.jobs": "jobs.v4.json",
     "cb.pack": "pack-manifest.v1.json",
     "cb.projection": "projection.v1.json",
 }
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 11
+WIRE_CONTRACT_VERSION = 12
 
 
 class ContractError(Exception):

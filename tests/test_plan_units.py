@@ -83,14 +83,15 @@ class PlanUnitsSchemaTest(KernelCase):
 
     # ── schema ──────────────────────────────────────────────────────────────
 
-    def test_target_schema_version_is_pinned_to_v7(self) -> None:
-        self.assertEqual(db.DB_SCHEMA_VERSION, 7)
-        self.assertEqual(db.target_schema_version(), 7)
-        self.assertEqual(contract("cb.db")["schema_version"], 7)
-        self.assertEqual(db.applied_schema_version(), 7)
+    def test_target_schema_version_is_pinned_to_v8(self) -> None:
+        # H-26 took cb.db to v8 for the syllabus tables; the plan_units migration is still 0007.
+        self.assertEqual(db.DB_SCHEMA_VERSION, 8)
+        self.assertEqual(db.target_schema_version(), 8)
+        self.assertEqual(contract("cb.db")["schema_version"], 8)
+        self.assertEqual(db.applied_schema_version(), 8)
         with db.read() as connection:
             recorded = connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0]
-        self.assertEqual(recorded, 7)
+        self.assertEqual(recorded, 8)
 
     def test_unit_columns_match_the_contract_exactly(self) -> None:
         spec = contract("cb.db")["tables"]

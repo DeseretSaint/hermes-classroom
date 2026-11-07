@@ -290,7 +290,12 @@ class PromptPolicyTest(unittest.TestCase):
                 self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v7")
                 self.assertIn("Capability policy", instructions)
                 self.assertIn(f"check angle: {row['angle']}", instructions)
-                self.assertIn(f"rubric profile: {row['profile']}", instructions)
+                statements = [
+                    line for line in instructions.splitlines()
+                    if "rubric profile" in line.lower()
+                ]
+                self.assertEqual(len(statements), 1, statements)
+                self.assertIn(f"Rubric profile: {row['profile']}", statements[0])
                 self.assertIn(row["target"], str(request_for(row).input_text))
 
     def test_forbidden_media_is_never_offered(self) -> None:

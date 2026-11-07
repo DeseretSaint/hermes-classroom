@@ -31,11 +31,18 @@ from datetime import datetime
 from typing import Any, Callable, Sequence
 
 from . import db, generation, job_service, media as media_mod, research
+from . import syllabus as syllabus_mod
 
 logger = logging.getLogger("coursebook.executor")
 
 #: The single job kind this executor serves. Kept as a constant so a caller can assert it.
 JOB_KIND = "plan"
+
+#: The student-syllabus job family. ``brief.stage`` selects parse or align; neither stage calls a
+#: model or the network, so no egress can happen from syllabus text.
+IMPORT_KIND = "import"
+SYLLABUS_PARSE_STAGE = "syllabus_parse"
+SYLLABUS_ALIGN_STAGE = "syllabus_align"
 
 #: Stage names. They are progress labels, never job kinds.
 PLAN_STAGE = "plan"
@@ -265,6 +272,53 @@ class _Resolvers:
         return run
 
 
+class _ImportResolvers:
+    """Stages for ``kind=import``: deterministic syllabus parse and alignment only."""
+
+    def __call__(self, brief: dict[str, Any]) -> Sequence[job_service.Stage]:
+        stage = str((brief or {}).get("stage") or "")
+        if stage == SYLLABUS_PARSE_STAGE:
+            return [job_service.Stage(stage, self._parse_stage(dict(brief or {})))]
+        if stage == SYLLABUS_ALIGN_STAGE:
+            return [job_service.Stage(stage, self._align_stage(dict(brief or {})))]
+        return [job_service.Stage(stage or "invalid", _rejecting_stage(stage))]
+
+    def _parse_stage(self, brief: dict[str, Any]) -> Callable[[job_service.Lease], job_service.StageResult]:
+        def run(lease: job_service.Lease) -> job_service.StageResult:
+            if job_service.is_cancel_requested(lease.job_id):
+                raise job_service.JobCancelled("cancelled before the syllabus parse stage")
+            with db.transaction() as connection:
+                result = syllabus_mod.parse_stored(
+                    connection, str(brief["syllabus_id"]), int(brief["revision"])
+                )
+            return job_service.StageResult(
+                checkpoint={"syllabus_id": result["syllabus_id"], "revision": result["revision"],
+                            "parse_run_id": result.get("parse_run_id"), "parse_state": result["state"]},
+                message="syllabus parsed from the stored file; no text left this machine",
+            )
+
+        return run
+
+    def _align_stage(self, brief: dict[str, Any]) -> Callable[[job_service.Lease], job_service.StageResult]:
+        def run(lease: job_service.Lease) -> job_service.StageResult:
+            if job_service.is_cancel_requested(lease.job_id):
+                raise job_service.JobCancelled("cancelled before the syllabus align stage")
+            with db.transaction() as connection:
+                alignment_revision = syllabus_mod.align_plan(
+                    connection,
+                    syllabus_id=str(brief["syllabus_id"]),
+                    revision=int(brief["revision"]),
+                    course_id=str(brief["course_id"]),
+                    plan_id=str(brief["plan_id"]),
+                )
+            return job_service.StageResult(
+                checkpoint={"alignment_revision": alignment_revision},
+                message=f"alignment revision {alignment_revision} built from validated items",
+            )
+
+        return run
+
+
 def resolvers(*, llm: Any = None, search: Any = None, now: datetime | None = None) -> dict[str, Callable[..., Any]]:
     """The registration table a host passes to :func:`job_service.run_pending`.
 
@@ -274,7 +328,8 @@ def resolvers(*, llm: Any = None, search: Any = None, now: datetime | None = Non
     """
     resolved_llm = llm  # resolved lazily at stage run so an idle tick never raises
     resolved_search = _resolve_search(search)
-    return {JOB_KIND: _Resolvers(resolved_llm, resolved_search, now)}
+    return {JOB_KIND: _Resolvers(resolved_llm, resolved_search, now),
+            IMPORT_KIND: _ImportResolvers()}
 
 
 def pump_once(
