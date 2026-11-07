@@ -18,6 +18,7 @@ chat-lifecycle adapter hooks. Nothing here claims a capability the backend does 
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any
 
 from .coursebook import __version__, executor, hooks, tools
@@ -31,8 +32,26 @@ PLUGIN_ID = "coursebook"
 TOOLSET = "coursebook"
 
 
+def _register_bundled_skills(ctx: Any) -> None:
+    """Expose this package's learner/tutor skills as ``coursebook:<name>``.
+
+    Plugin skills are opt-in and read-only: they never collide with a user's own
+    ``~/.hermes/skills`` copy. A host older than the skill API keeps working; the
+    absence of a loader seam is not allowed to break course generation.
+    """
+    register = getattr(ctx, "register_skill", None)
+    skills_dir = Path(__file__).resolve().parent / "skills"
+    if not callable(register) or not skills_dir.is_dir():
+        return
+    for child in sorted(skills_dir.iterdir()):
+        skill_md = child / "SKILL.md"
+        if child.is_dir() and skill_md.is_file():
+            register(child.name, skill_md)
+
+
 def register(ctx: Any) -> None:
     """Wire the agent half. Called once by the Hermes plugin loader."""
+    _register_bundled_skills(ctx)
     # A declared config_schema key is only honest when its reader is wired here, at register.
     tools.configure(getattr(ctx, "get_config", None))
     # Generation jobs run in the agent process; bind the host-owned LLM once so the pipeline

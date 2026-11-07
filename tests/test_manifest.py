@@ -72,6 +72,15 @@ class ManifestTest(unittest.TestCase):
             "jsonschema must be a declared dependency: grading must not depend on an optional host package",
         )
 
+    def test_pypdf_range_overlaps_the_host_documents_pin(self) -> None:
+        deps = self.manifest.get("python_dependencies") or []
+        pypdf = [dep for dep in deps if dep.split(">")[0].split("=")[0].strip() == "pypdf"]
+        self.assertTrue(pypdf, "pypdf must be declared for PDF syllabus extraction")
+        self.assertTrue(
+            any("<7" in dep for dep in pypdf),
+            "pypdf must admit the host's documents pin (pypdf==6.x); a <6 cap blocks plugin admission",
+        )
+
     def test_no_secrets_or_env_requirements(self) -> None:
         self.assertFalse(self.manifest.get("requires_env"), "Coursebook stores no secrets")
 

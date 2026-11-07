@@ -34,7 +34,9 @@ python_dependencies:
   - "faster-whisper>=1.0,<2"
   # Student syllabus import: PDF text extraction only. Optional at runtime — when it is absent,
   # `syllabus.intake.create` answers PARSER_UNAVAILABLE (a typed refusal) rather than guessing.
-  - "pypdf>=4.0,<6"
+  # The range must overlap the host's core `documents` pin (pypdf==6.x) or plugin admission refuses
+  # the whole plugin; this was the live enable blocker on 2026-11-07.
+  - "pypdf>=4.0,<7"
 
 # No requires_env in the skeleton: Coursebook stores no secrets. Every key below has a reader
 # wired in this build (`coursebook/tools.py::configure` <- `ctx.get_config`); a settings field

@@ -29,13 +29,13 @@ bespoke file manager, or an LMS integration. The evidence:
 
 Two consequences follow and are part of the design, not caveats bolted on:
 
-1. **PDF text extraction needs a declared dependency.** This tree declares only `jsonschema` and
-   `faster-whisper` (`plugin.yaml`), and `coursebook/archive.py` only checks PDF magic bytes and
-   active-content markers; it does not extract text (`archive.py:80-90`, `:155-158`). DOCX can be
-   read deterministically with stdlib (`zipfile` + `ElementTree`, with DTD/entity and zip-bomb
-   guards). PDF cannot be parsed honestly without an extractor. H-26 must declare an optional
-   `pypdf` dependency and answer `PARSER_UNAVAILABLE` — a typed refusal, not a guess — when it is
-   absent. Markdown, plain text and pasted text work with no new dependency.
+1. **PDF text extraction needs a declared dependency.** This tree declares `jsonschema`,
+   `faster-whisper` and `pypdf>=4.0,<7` (`plugin.yaml`), and `coursebook/archive.py` only checks
+   PDF magic bytes and active-content markers; it does not extract text (`archive.py:80-90`,
+   `:155-158`). DOCX can be read deterministically with stdlib (`zipfile` + `ElementTree`, with
+   DTD/entity and zip-bomb guards). PDF cannot be parsed honestly without an extractor. The
+   optional `pypdf` dependency answers `PARSER_UNAVAILABLE` — a typed refusal, not a guess — when
+   it is absent. Markdown, plain text and pasted text work with no new dependency.
 2. **`full` scope is blocked on H-21.** `PLAN_SCHEMA` is still 4–8 objectives and 2–8 sections
    (`coursebook/generation.py:671-672`). A 14-week companion course cannot be honest until H-21's
    CourseBlueprint v2 lands. H-26 may ship intake, parse, anchors and alignment before that, but it
@@ -720,7 +720,7 @@ read coursebook/migrations/0001_initial.sql:18-110; 0006_courses_plan_brief_inpu
 read coursebook/generation.py:671-672 (PLAN_SCHEMA 4-8 objectives, 2-8 sections)
 read coursebook/research.py:313-320 (companion query is generic today)
 read coursebook/archive.py:80-90, :100-158 (magic bytes, PDF active-content scan; no extraction)
-read plugin.yaml (declared dependencies: jsonschema, faster-whisper)
+read plugin.yaml (declared dependencies: jsonschema, faster-whisper, pypdf)
 ```
 
 What this document does not claim:
