@@ -4137,7 +4137,9 @@ const OBJECTIVE_STATE_COPY = {
 }
 
 const EVIDENCE_CLASS_COPY = {
-  cold: 'Cold attempt',
+  // The backend's `cold` class means *independent*: no hint and no shown answer. The learner reads
+  // what that means for them, never the evidence vocabulary (H-29, UX-05).
+  cold: 'First try, no hints',
   hinted: 'Hinted',
   answer_shown: 'Answer shown',
   self_reported: 'Reported by you — not independently verified.',
@@ -4155,7 +4157,81 @@ const SELF_REPORTED_EVIDENCE_COPY =
 
 /** The notice a bare evidence-class badge cannot carry, keyed by class. */
 const EVIDENCE_CLASS_NOTICE = {
-  self_reported: SELF_REPORTED_EVIDENCE_COPY
+  self_reported: SELF_REPORTED_EVIDENCE_COPY,
+  // One line, because the phrase "First try, no hints" raises the obvious question: why does it
+  // matter? It matters because it is the only thing that counts as independent evidence.
+  cold: 'Independent evidence is worth more: it shows what you can do without help.'
+}
+
+/**
+ * The learner-facing words for the rubric's evidence target.
+ *
+ * `discrimination` is a construct id, not a label a person should have to decode. The badge shows
+ * the plain phrase; the raw id travels in the index's opened details panel so an audit can still
+ * name the exact construct (UX-04, UX-05).
+ */
+const EVIDENCE_TARGET_LEARNER_COPY = {
+  recall: 'Remember it',
+  comprehension: 'Explain it',
+  production: 'Say or write it',
+  discrimination: 'Tell the difference',
+  procedure: 'Do the steps',
+  transfer: 'Use it somewhere new'
+}
+
+function learnerEvidenceTarget(value) {
+  if (!value) return ''
+  const known = EVIDENCE_TARGET_LEARNER_COPY[value]
+  if (known) return known
+  // An unknown enum is still never printed raw: snake_case becomes sentence case.
+  return String(value)
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+/**
+ * The four states the index uses. Every row carries BOTH an icon and a word, so the state is
+ * legible without colour. `next` is not a stored state: it is projected from the backend's own
+ * next step, and it wins over the stored state only while that section is still open.
+ */
+const SECTION_STATE_SEMANTIC = {
+  not_started: { key: 'not_started', label: 'Not started', icon: 'circle-outline' },
+  introduced: { key: 'started', label: 'Started', icon: 'circle-filled' },
+  independent_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
+  delayed_evidence: { key: 'complete', label: 'Complete', icon: 'pass' },
+  review_due: { key: 'review', label: 'Review due', icon: 'history' },
+  needs_review: { key: 'review', label: 'Review needed', icon: 'history' },
+  overridden: { key: 'moved_on', label: 'Moved on without a grade', icon: 'dash' }
+}
+
+function sectionStateSemantic(state, isNext) {
+  const settled = state === 'independent_evidence' || state === 'delayed_evidence'
+  if (isNext && !settled) return { key: 'next', label: 'Next', icon: 'chevron-right' }
+  return SECTION_STATE_SEMANTIC[state] || SECTION_STATE_SEMANTIC.not_started
+}
+
+/**
+ * "3 of 4 objectives have independent evidence" — a count the backend already records.
+ *
+ * There is no percentage, no streak and no mastery word: `independent` is the objective's own
+ * stored state, and a course with nothing recorded says so instead of showing a zero that looks
+ * like a grade.
+ */
+function progressStatement(independent, total) {
+  const done = Math.max(0, Number(independent) || 0)
+  const all = Math.max(0, Number(total) || 0)
+  if (all === 0) return 'No objectives recorded yet'
+  const noun = all === 1 ? 'objective' : 'objectives'
+  return `${done} of ${all} ${noun} ${all === 1 ? 'has' : 'have'} independent evidence`
+}
+
+/** The counts the index and overview print, read only from the outline the backend returned. */
+function objectiveProgress(objectives, totalFallback) {
+  const list = Array.isArray(objectives) ? objectives.filter(Boolean) : []
+  const total = list.length > 0 ? list.length : Math.max(0, Number(totalFallback) || 0)
+  const independent = list.filter((entry) => entry.independent).length
+  const due = list.filter((entry) => entry.state === 'review_due' || entry.state === 'needs_review').length
+  return { total, independent, due, statement: progressStatement(independent, total) }
 }
 
 /**
@@ -4184,6 +4260,24 @@ function nextActionCopy(result) {
     return SELF_REPORTED_NEXT_ACTION[result.next_action]
   }
   return NEXT_ACTION_COPY[result.next_action] || 'The backend recorded the next action.'
+}
+
+/**
+ * One concrete thing the learner showed, read from the graded criteria.
+ *
+ * This replaces the old "objective complete" line. It is deliberately not a compliment
+ * generator: it repeats only what the backend marked `met` with an observation, and a pass with no
+ * observation says exactly that instead of inventing a takeaway.
+ */
+function verdictTakeaway(result, criteria) {
+  if (!result || result.verdict !== 'pass') return null
+  if (result.evidence_class === 'self_reported') return null
+  const shown = (criteria || [])
+    .filter((item) => item && item.met && item.observed)
+    .map((item) => String(item.observed).trim())
+    .filter(Boolean)
+  if (shown.length === 0) return 'You answered with no hints, and the backend recorded this check as a pass.'
+  return `What you showed: ${shown.slice(0, 2).join('; ')}.`
 }
 
 /**
@@ -4222,11 +4316,16 @@ const VERDICT_COPY = {
   pass: 'Passed',
   partial: 'Partly there',
   not_yet: 'Not yet',
-  needs_retry: 'Grading failed'
+  // The system's state, not the learner's outcome: this says what happened to the answer, and the
+  // saved/not-graded line right under it says nothing was lost (H-29, UX-05/UX-10).
+  needs_retry: 'We could not grade this answer'
 }
 
 const NEXT_ACTION_COPY = {
-  complete_objective: 'This objective is complete. Move to the next section when you are ready.',
+  // A pass is evidence for one objective, never mastery of the course. The takeaway (what the
+  // learner actually showed) is rendered from the graded criteria above this line.
+  complete_objective:
+    'Next: open the section after this one and keep going. This check is independent evidence for one objective, not mastery of the whole course.',
   continue: 'Continue the lesson when you are ready.',
   review_objective: 'Access advanced, but this was not independent evidence. It will come back for review.',
   retry_grading: 'The answer is saved. Retry grading does not consume a new attempt.'
@@ -4394,6 +4493,7 @@ function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewE
   })
   const confirmedCount = confirmed.filter((item) => item.met).length
   const selfReportedPass = selfReported && result.verdict === 'pass'
+  const takeaway = verdictTakeaway(result, criteria)
   return jsxs('div', {
     className: 'flex flex-col gap-2',
     'data-cb-verdict': result.verdict,
@@ -4406,6 +4506,14 @@ function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewE
             children: SELF_REPORTED_CONFIRM_COPY
           })
         : jsx('div', { className: 'text-sm font-medium', children: verdictLabel(result.verdict, result.evidence_class) }),
+
+      takeaway
+        ? jsx('div', {
+            className: 'max-w-prose text-sm leading-relaxed',
+            'data-cb-takeaway': '',
+            children: takeaway
+          })
+        : null,
 
       confirmed.length > 0
         ? jsxs('div', {
@@ -4942,12 +5050,13 @@ function AttemptControls({
                   })
                 : jsx('div', {
                     className: 'text-sm font-medium',
-                    children: 'I couldn’t grade this attempt.'
+                    children: 'We could not grade this answer'
                   }),
               openLaneUnconfigured
                 ? null
                 : jsx(QuietNote, {
-                    children: 'Your answer is saved; no progress was changed. Retrying does not create a second attempt.'
+                    children:
+                      'Your answer is saved, not graded. No progress was changed, and Retry grading does not create a second attempt.'
                   }),
               error ? jsx(ErrorLine, { error }) : null,
               jsxs('div', {
@@ -5232,6 +5341,8 @@ function sectionRows({ row, review, notebooks, outline, page }) {
         state: objective.state,
         evidence_target: objective.evidence_target,
         attempt_count: objective.attempt_count,
+        independent: objective.independent,
+        unit: objective.unit,
         last_opened_at: objective.last_opened_at
       })
     )
@@ -5251,13 +5362,26 @@ function sectionRows({ row, review, notebooks, outline, page }) {
   }
   const current = row && row.evidence_summary && row.evidence_summary.current_objective_id
   if (current) {
-    add({
-      objective_id: current,
-      title: (page && page.section && page.section.objective_id === current && page.section.title) || 'Current section',
-      ordinal: page && page.section ? page.section.ordinal : 0,
-      state: (page && page.section && page.section.state) || undefined,
-      evidence_target: page && page.section ? page.section.evidence_target : undefined
-    })
+    const pageSection = page && page.section && page.section.objective_id === current ? page.section : null
+    // The current objective only *names* a row the outline already carries; it must not overwrite
+    // that row's title with a placeholder or drop the unit it belongs to.
+    if (!seen.has(current)) {
+      add({
+        objective_id: current,
+        title: (pageSection && pageSection.title) || 'Current section',
+        ordinal: pageSection ? pageSection.ordinal : 0,
+        state: pageSection ? pageSection.state : undefined,
+        evidence_target: pageSection ? pageSection.evidence_target : undefined
+      })
+    } else if (pageSection) {
+      add({
+        objective_id: current,
+        title: pageSection.title,
+        ordinal: pageSection.ordinal,
+        state: pageSection.state,
+        evidence_target: pageSection.evidence_target
+      })
+    }
   }
   if (notebooks && Array.isArray(notebooks.entries)) {
     notebooks.entries.forEach((entry) => {
@@ -7826,7 +7950,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const railFacts = section
     ? [
         { label: 'State', value: section.state || 'unrecorded' },
-        { label: 'Evidence', value: section.evidence_target || 'unrecorded' },
+        { label: 'Evidence', value: learnerEvidenceTarget(section.evidence_target) || 'unrecorded' },
         { label: 'Attempts', value: String((page && page.attempts ? page.attempts.length : 0)) }
       ]
     : []
@@ -7894,19 +8018,39 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
     ]
   })
 }
-/** Overview: what to do next, one review row, recent meaningful event, action banners only. */
-function OverviewView({ row, page, review, quizzes, implemented, onOpenSection, onResume }) {
+/** Overview: where you are, what is next, one review row, then the course's own metadata. */
+function OverviewView({ row, page, review, quizzes, outline, implemented, onOpenSection, onResume }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const next = row.next_step || {}
   const section = page && page.section
   const due = review && Array.isArray(review.items) ? review.items.filter((item) => item.overdue) : []
   const recent = quizzes && Array.isArray(quizzes.attempts) ? quizzes.attempts[0] : null
   const warning = row.warning ? WARNING_COPY_LEARNING[row.warning] : null
+  const objectives = outline && Array.isArray(outline.objectives) ? outline.objectives.filter(Boolean) : []
+  const summary = row.evidence_summary || {}
+  const progress = objectives.length
+    ? objectiveProgress(objectives)
+    : {
+        total: Number(summary.total_objectives) || 0,
+        independent: Number(summary.independent) || 0,
+        due: Number(summary.review_due) || 0
+      }
+  const nextEntry = mainlineObjective(row, objectives)
+  const nextTitle = section ? section.title : nextEntry ? nextEntry.title : next.label || null
+  const nextSemantic = nextEntry ? sectionStateSemantic(nextEntry.state, true) : null
 
   return jsxs('div', {
     className: 'flex max-w-2xl flex-col gap-4',
     children: [
       warning ? jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: warning }) : null,
+
+      jsx(CourseIdentity, {
+        title: row.title || 'This course',
+        progress: progress.statement || progressStatement(progress.independent, progress.total),
+        nextTitle,
+        nextSemantic,
+        compact: true
+      }),
 
       jsxs('div', {
         className: 'flex flex-col gap-1',
@@ -7919,7 +8063,7 @@ function OverviewView({ row, page, review, quizzes, implemented, onOpenSection, 
                 children: [
                   jsx(StateText, { state: section.state }),
                   section.evidence_target
-                    ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: section.evidence_target })
+                    ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: learnerEvidenceTarget(section.evidence_target) })
                     : null
                 ]
               })
@@ -7991,31 +8135,377 @@ function OverviewView({ row, page, review, quizzes, implemented, onOpenSection, 
         ]
       }),
 
-      jsxs('div', {
+      // Reference material, not the headline: it opens on purpose, after the learner has already
+      // read where they are and what is next.
+      jsxs('details', {
+        'data-cb-overview-details': '',
         className: 'flex flex-col',
         children: [
-          jsx(sdk.PanelSectionLabel, { children: 'THIS COURSE' }),
-          jsx(StatusRow, {
-            label: 'How you will use it',
-            value: (RECIPE_COPY[row.recipe] || {}).title || 'Not recorded'
+          jsx('summary', {
+            className: 'cursor-pointer text-xs font-medium text-(--ui-text-secondary)',
+            children: 'Course details'
           }),
-          jsx(StatusRow, {
-            label: 'Enrolment',
-            value: enrollmentStatusLabel(row.enrollment_status),
-            detail: `revision ${row.revision}`
+          jsxs('div', {
+            className: 'flex flex-col pt-1',
+            children: [
+              jsx(StatusRow, {
+                label: 'How you will use it',
+                value: (RECIPE_COPY[row.recipe] || {}).title || 'Not recorded'
+              }),
+              jsx(StatusRow, {
+                label: 'Enrolment',
+                value: enrollmentStatusLabel(row.enrollment_status),
+                detail: `revision ${row.revision}`
+              }),
+              jsx(StatusRow, {
+                label: 'Evidence',
+                value: `${Number(summary.independent || 0)} independent`,
+                detail: `${Number(summary.total_objectives || 0)} objectives · ${Number(summary.review_due || 0)} due`
+              }),
+              jsx(StatusRow, {
+                label: 'Where it came from',
+                value: sourceLabel(row.provenance && row.provenance.source),
+                detail: row.provenance && row.provenance.pack_id ? `${row.provenance.pack_id}${row.provenance.pack_version ? ` v${row.provenance.pack_version}` : ''}` : 'authored on this profile'
+              }),
+              supports('pack.export') && row.provenance && row.provenance.pack_id
+                ? jsx(QuietNote, { children: 'Exporting the pack is a Library action; it never includes your answers or notes.' })
+                : null
+            ]
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * A deterministic field-note mark, seeded from the course title.
+ *
+ * This is composition, not a second theme: every stroke is a `--cb-*` token, there is no gradient,
+ * no image asset and no randomness, so the same course paints the same mark on every render. It is
+ * decorative (`aria-hidden`), and the course title beside it carries the identity in text.
+ */
+function fieldNoteSeed(text) {
+  let hash = 2166136261
+  const value = String(text || '')
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 16777619) >>> 0
+  }
+  return hash
+}
+
+function FieldNoteMark({ title, compact }) {
+  const seed = fieldNoteSeed(title)
+  // Ruled-note strokes, not a bar chart: every line is horizontal and the variation is indentation
+  // and length, so the mark cannot be misread as a progress meter.
+  const lines = Array.from({ length: 5 }, (_, index) => {
+    const width = 34 + (((seed >>> (index * 5)) & 0xff) % 58)
+    const indent = ((seed >>> (index * 5 + 3)) & 0x1) * 8
+    return { width, indent, y: 5 + index * 6, accent: index === 2 }
+  })
+  return jsx('svg', {
+    'aria-hidden': 'true',
+    focusable: 'false',
+    width: compact ? '76' : '108',
+    height: compact ? '24' : '32',
+    viewBox: '0 0 108 32',
+    'data-cb-field-note': '',
+    style: { flex: '0 0 auto' },
+    children: lines.map((line, index) =>
+      jsx(
+        'line',
+        {
+          x1: line.indent,
+          y1: line.y,
+          x2: line.indent + line.width,
+          y2: line.y,
+          stroke: line.accent ? 'var(--cb-accent)' : 'var(--cb-rule)',
+          strokeWidth: line.accent ? 1.8 : 1,
+          strokeLinecap: 'round'
+        },
+        index
+      )
+    )
+  })
+}
+
+/** The token that tints a state's icon; the word beside it is what actually names the state. */
+function sectionToneColor(key) {
+  if (key === 'complete') return 'var(--cb-field)'
+  if (key === 'review') return 'var(--cb-ochre)'
+  if (key === 'next') return 'var(--cb-accent)'
+  return 'var(--cb-ink-soft)'
+}
+
+/**
+ * Course identity + the one-screen answer: where am I, and what is next.
+ *
+ * It sits above the section list and above the overview's metadata. The progress sentence is a
+ * count the backend records; there is no percentage, ring or streak.
+ */
+function CourseIdentity({ title, subtitle, progress, nextTitle, nextSemantic, compact }) {
+  return jsxs('section', {
+    'data-cb-identity': 'course',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.4rem',
+      padding: compact ? '0.6rem 0 0.65rem' : '0.85rem 0 0.9rem',
+      borderTop: '2px solid var(--cb-ink)',
+      borderBottom: '1px solid var(--cb-rule)',
+      maxWidth: '46rem'
+    },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
+            children: [
+              jsx('div', {
+                style: {
+                  fontSize: '0.63rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'var(--cb-ink-soft)'
+                },
+                children: 'Field notes'
+              }),
+              jsx('h3', {
+                style: {
+                  margin: 0,
+                  fontSize: compact ? '1.05rem' : 'clamp(1.25rem, 1rem + 0.9vw, 1.65rem)',
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.005em',
+                  color: 'var(--cb-ink)',
+                  overflowWrap: 'anywhere'
+                },
+                children: title
+              })
+            ]
           }),
-          jsx(StatusRow, {
-            label: 'Evidence',
-            value: `${Number((row.evidence_summary || {}).independent || 0)} independent`,
-            detail: `${Number((row.evidence_summary || {}).total_objectives || 0)} objectives · ${Number((row.evidence_summary || {}).review_due || 0)} due`
+          jsx(FieldNoteMark, { title, compact })
+        ]
+      }),
+      jsx('div', {
+        'data-cb-progress-statement': '',
+        style: { fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+        children: progress
+      }),
+      nextTitle
+        ? jsxs('div', {
+            'data-cb-next-statement': '',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.35rem', fontSize: '0.8rem' },
+            children: [
+              jsx('span', { style: { fontWeight: 600, color: 'var(--cb-accent)' }, children: 'Next ·' }),
+              jsx('span', { style: { color: 'var(--cb-ink)', overflowWrap: 'anywhere' }, children: nextTitle }),
+              nextSemantic
+                ? jsx('span', { style: { color: sectionToneColor(nextSemantic.key) }, children: ` ${nextSemantic.label}` })
+                : null
+            ]
+          })
+        : null,
+      subtitle
+        ? jsx('div', { style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' }, children: subtitle })
+        : null
+    ]
+  })
+}
+
+/**
+ * One section row. The row itself is the action: a single button, one chevron, no repeated
+ * "Open section" label. State is an icon plus a word, never colour alone.
+ */
+function SectionRow({ entry, semantic, isNext, onOpen }) {
+  const target = learnerEvidenceTarget(entry.evidence_target)
+  return jsx(sdk.Button, {
+    variant: 'text',
+    className: 'w-full justify-start',
+    'aria-current': isNext ? 'step' : undefined,
+    'data-cb-section-row': entry.objective_id,
+    'data-cb-section-state': semantic.key,
+    onClick: () => onOpen(entry.objective_id),
+    children: jsxs('span', {
+      style: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '0.7rem',
+        width: '100%',
+        padding: '0.5rem 0.1rem',
+        textAlign: 'left',
+        borderLeft: isNext ? '2px solid var(--cb-accent)' : '2px solid transparent',
+        paddingLeft: '0.55rem'
+      },
+      children: [
+        jsxs('span', {
+          style: {
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            flex: '0 0 auto',
+            minWidth: '5.8rem',
+            fontSize: '0.72rem',
+            fontWeight: 500,
+            color: sectionToneColor(semantic.key)
+          },
+          children: [
+            jsx(sdk.Codicon, { name: semantic.icon, size: '0.8rem' }),
+            jsx('span', { children: semantic.label })
+          ]
+        }),
+        jsxs('span', {
+          style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0, flex: '1 1 auto' },
+          children: [
+            jsx('span', {
+              style: {
+                overflowWrap: 'anywhere',
+                fontSize: '0.9rem',
+                fontWeight: isNext ? 600 : 400,
+                color: 'var(--cb-ink)'
+              },
+              children: entry.title
+            }),
+            target
+              ? jsx('span', { style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' }, children: target })
+              : null,
+            isNext && entry.last_opened_at
+              ? jsx('span', {
+                  style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' },
+                  children: `last opened ${whenLabel(entry.last_opened_at)}`
+                })
+              : null
+          ]
+        }),
+        jsx('span', {
+          'aria-hidden': 'true',
+          style: { flex: '0 0 auto', alignSelf: 'center', color: 'var(--cb-ink-soft)' },
+          children: jsx(sdk.Codicon, { name: 'chevron-right', size: '0.9rem' })
+        })
+      ]
+    })
+  })
+}
+
+/** A unit heading with its own progress line, shown only when the plan really has more than one. */
+function UnitHeading({ unit, entries }) {
+  const progress = objectiveProgress(entries)
+  const blocked =
+    unit.prerequisite_state === 'unmet' && Array.isArray(unit.prereq_unit_ordinals) && unit.prereq_unit_ordinals.length > 0
+  return jsxs('div', {
+    'data-cb-unit': String(unit.ordinal),
+    style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', paddingTop: '0.55rem' },
+    children: [
+      jsxs('div', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: '0.2rem 0.75rem',
+          borderBottom: '1px solid var(--cb-rule)',
+          paddingBottom: '0.3rem'
+        },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.45rem', minWidth: 0 },
+            children: [
+              jsx('span', {
+                style: {
+                  fontSize: '0.63rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--cb-ink-soft)'
+                },
+                children: `Unit ${unit.ordinal}`
+              }),
+              jsx('span', {
+                style: { fontSize: '0.92rem', fontWeight: 600, color: 'var(--cb-ink)', overflowWrap: 'anywhere' },
+                children: unit.title
+              })
+            ]
           }),
-          jsx(StatusRow, {
-            label: 'Where it came from',
-            value: sourceLabel(row.provenance && row.provenance.source),
-            detail: row.provenance && row.provenance.pack_id ? `${row.provenance.pack_id}${row.provenance.pack_version ? ` v${row.provenance.pack_version}` : ''}` : 'authored on this profile'
+          jsx('span', {
+            'data-cb-unit-progress': '',
+            style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+            children: progress.statement
+          })
+        ]
+      }),
+      blocked
+        ? jsx('div', {
+            style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+            children: `This unit starts after Unit ${unit.prereq_unit_ordinals.join(', ')}. You can still open it.`
+          })
+        : null
+    ]
+  })
+}
+
+/**
+ * The index's one details affordance: the legend and the rubric's own construct names.
+ *
+ * A learner never has to decode "discrimination" in the list — the row says "Tell the difference".
+ * The raw id is still auditable here, inside a panel the learner opens on purpose.
+ */
+function TextbookIndexDetails({ rows }) {
+  const targets = Array.from(new Set(rows.map((entry) => entry.evidence_target).filter(Boolean)))
+  const legend = [
+    { semantic: { key: 'complete', label: 'Complete', icon: 'pass' }, meaning: 'this objective has independent evidence.' },
+    { semantic: { key: 'next', label: 'Next', icon: 'chevron-right' }, meaning: 'the section the course points to now.' },
+    { semantic: { key: 'review', label: 'Review due', icon: 'history' }, meaning: 'evidence is scheduled to come back.' },
+    { semantic: { key: 'not_started', label: 'Not started', icon: 'circle-outline' }, meaning: 'no attempt recorded yet.' }
+  ]
+  return jsxs('details', {
+    'data-cb-index-details': '',
+    style: { maxWidth: '46rem', paddingTop: '0.2rem' },
+    children: [
+      jsx('summary', {
+        style: { cursor: 'pointer', fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+        children: 'What the states and check types mean'
+      }),
+      jsxs('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.4rem' },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.2rem' },
+            children: legend.map((entry) =>
+              jsxs(
+                'div',
+                {
+                  style: { display: 'flex', alignItems: 'baseline', gap: '0.4rem', fontSize: '0.72rem' },
+                  children: [
+                    jsx('span', { style: { color: sectionToneColor(entry.semantic.key) }, children: entry.semantic.label }),
+                    jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: `— ${entry.meaning}` })
+                  ]
+                },
+                entry.semantic.key
+              )
+            )
           }),
-          supports('pack.export') && row.provenance && row.provenance.pack_id
-            ? jsx(QuietNote, { children: 'Exporting the pack is a Library action; it never includes your answers or notes.' })
+          targets.length > 0
+            ? jsxs('div', {
+                'data-cb-check-types': '',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.72rem' },
+                children: [
+                  jsx('div', {
+                    style: { fontWeight: 600, color: 'var(--cb-ink-soft)' },
+                    children: 'Check types in this course'
+                  }),
+                  ...targets.map((target) =>
+                    jsx(
+                      'div',
+                      {
+                        style: { color: 'var(--cb-ink-soft)' },
+                        children: `${learnerEvidenceTarget(target)} — the backend calls this “${target}”.`
+                      },
+                      target
+                    )
+                  )
+                ]
+              })
             : null
         ]
       })
@@ -8025,9 +8515,39 @@ function OverviewView({ row, page, review, quizzes, implemented, onOpenSection, 
 
 /** Textbook — a scannable section list, not one endless thread. */
 function TextbookView({ row, page, pageState, review, notebooks, outline, implemented, openSectionId, onOpenSection, onCloseSection, onChanged, targetBlockId }) {
-  const supports = (method) => Boolean(implemented && implemented.has(method))
   const rows = sectionRows({ row, review, notebooks, outline, page })
   const hasOutline = Boolean(outline && Array.isArray(outline.objectives))
+  const objectives = hasOutline ? outline.objectives.filter(Boolean) : []
+  const summary = row.evidence_summary || {}
+  const progress = objectives.length
+    ? objectiveProgress(objectives)
+    : {
+        total: Number(summary.total_objectives) || 0,
+        independent: Number(summary.independent) || 0,
+        due: Number(summary.review_due) || 0
+      }
+  const nextEntry = mainlineObjective(row, objectives) || rows.find((entry) => !entry.independent) || null
+  const nextSemantic = nextEntry ? sectionStateSemantic(nextEntry.state, true) : null
+  const nextTitle = nextEntry ? nextEntry.title : null
+
+  // A plan with more than one unit groups its sections. One implicit unit (a legacy or pack plan)
+  // stays a flat list: the backend's single unit is not a heading the learner should have to read.
+  const units =
+    outline && outline.plan && Array.isArray(outline.plan.units)
+      ? outline.plan.units.filter((unit) => unit && Array.isArray(unit.objectives))
+      : []
+  const rowIndex = new Map(rows.map((entry) => [entry.objective_id, entry]))
+  const grouped = units.length > 1
+  const groups = grouped
+    ? units.map((unit) => ({
+        unit,
+        entries: unit.objectives
+          .map((objective) => rowIndex.get(objective && objective.objective_id) || objective)
+          .filter((entry) => entry && entry.objective_id)
+      }))
+    : []
+  const groupedIds = new Set(groups.flatMap((group) => group.entries.map((entry) => entry.objective_id)))
+  const extras = grouped ? rows.filter((entry) => !groupedIds.has(entry.objective_id)) : []
 
   // Opening a section is owned by CourseDetail, so a route in from Overview, Notebook or Quizzes
   // ("Continue from here") lands on the same durable page as a click in this list, and the
@@ -8048,70 +8568,84 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
     })
   }
 
+  const rowFor = (entry) => {
+    const isNext = Boolean(nextEntry && nextEntry.objective_id === entry.objective_id)
+    return jsx(
+      SectionRow,
+      {
+        entry,
+        semantic: sectionStateSemantic(entry.state, isNext),
+        isNext,
+        onOpen: onOpenSection
+      },
+      entry.objective_id
+    )
+  }
+
   return jsxs('div', {
     className: 'flex max-w-3xl flex-col gap-3',
     children: [
+      jsx(CourseIdentity, {
+        title: row.title || 'This course',
+        progress: progress.statement || progressStatement(progress.independent, progress.total),
+        nextTitle,
+        nextSemantic,
+        subtitle:
+          progress.due > 0
+            ? `${progress.due} ${progress.due === 1 ? 'section is' : 'sections are'} due for review.`
+            : null
+      }),
       hasOutline
         ? null
         : jsx(QuietNote, {
             children:
               'This build can name the current section and every section with scheduled evidence. The complete ' +
-              'section list needs course.outline (cb.rpc v5); rows light up here automatically once that ' +
-              'command is registered.'
+              'section list needs course.outline; rows light up here automatically once that command is registered.'
           }),
       rows.length === 0
         ? jsx(EmptyState, {
             title: 'No sections yet',
             description: 'A section appears once the course has an approved plan with objectives. Approve the plan first.'
           })
-        : jsx('div', {
-            className: 'flex flex-col',
-            children: rows.map((entry) =>
-              jsx(
-                'div',
-                {
-                  className: 'flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) py-2 last:border-b-0',
-                  children: jsxs('div', {
-                    className: 'flex flex-wrap items-start justify-between gap-2',
-                    children: [
-                      jsxs('div', {
-                        className: 'flex min-w-0 flex-col gap-0.5',
-                        children: [
-                          jsx('div', {
-                            className: 'min-w-0 break-words text-sm font-medium',
-                            children: entry.title
-                          }),
-                          jsxs('div', {
-                            className: 'flex flex-wrap items-center gap-2',
-                            children: [
-                              jsx(StateText, { state: entry.state || 'not_started' }),
-                              entry.evidence_target
-                                ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: entry.evidence_target })
-                                : null,
-                              entry.overdue ? jsx(sdk.Badge, { size: 'xs', variant: 'warn', children: `overdue ${entry.overdue_days || 0}d` }) : null,
-                              entry.last_opened_at
-                                ? jsx('span', {
-                                    className: 'text-xs text-(--ui-text-secondary)',
-                                    children: `last opened ${whenLabel(entry.last_opened_at)}`
-                                  })
-                                : null
-                            ]
-                          })
-                        ]
-                      }),
-                      jsx(sdk.Button, {
-                        variant: 'secondary',
-                        size: 'sm',
-                        onClick: () => onOpenSection(entry.objective_id),
-                        children: 'Open section'
-                      })
-                    ]
-                  })
-                },
-                entry.objective_id
-              )
-            )
-          }),
+        : grouped
+          ? jsxs('div', {
+              className: 'flex flex-col',
+              children: [
+                ...groups.map((group) =>
+                  jsxs(
+                    'div',
+                    {
+                      className: 'flex flex-col',
+                      children: [
+                        jsx(UnitHeading, { unit: group.unit, entries: group.entries }, `unit-${group.unit.ordinal}`),
+                        ...group.entries.map(rowFor)
+                      ]
+                    },
+                    `group-${group.unit.ordinal}`
+                  )
+                ),
+                extras.length > 0
+                  ? jsxs('div', {
+                      className: 'flex flex-col',
+                      children: [
+                        jsx('div', {
+                          style: {
+                            fontSize: '0.72rem',
+                            color: 'var(--cb-ink-soft)',
+                            paddingTop: '0.55rem',
+                            borderBottom: '1px solid var(--cb-rule)',
+                            paddingBottom: '0.3rem'
+                          },
+                          children: 'Also recorded on this course'
+                        }),
+                        ...extras.map(rowFor)
+                      ]
+                    })
+                  : null
+              ]
+            })
+          : jsx('div', { className: 'flex flex-col', children: rows.map(rowFor) }),
+      jsx(TextbookIndexDetails, { rows }),
       !hasOutline
         ? jsx(QuietNote, {
             children:
@@ -8537,7 +9071,7 @@ function QuizzesView({ row, quizzes, implemented, onOpenSection, onChanged }) {
               { id: 'pass', label: 'Passed' },
               { id: 'partial', label: 'Partly there' },
               { id: 'not_yet', label: 'Not yet' },
-              { id: 'needs_retry', label: 'Grading failed' }
+              { id: 'needs_retry', label: 'Could not be graded' }
             ],
             sizing: 'content',
             value: verdict
@@ -8546,7 +9080,7 @@ function QuizzesView({ row, quizzes, implemented, onOpenSection, onChanged }) {
             onChange: setKlass,
             options: [
               { id: 'all', label: 'All assistance' },
-              { id: 'cold', label: 'Cold' },
+              { id: 'cold', label: 'First try' },
               { id: 'hinted', label: 'Hinted' },
               { id: 'answer_shown', label: 'Answer shown' },
               { id: 'override', label: 'Override' }
@@ -8802,7 +9336,7 @@ function PlanView({ row, review, notebooks, outline, page, implemented, onOpenSe
                     jsxs('div', {
                       className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
                       children: [
-                        entry.evidence_target ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: entry.evidence_target }) : null,
+                        entry.evidence_target ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: learnerEvidenceTarget(entry.evidence_target) }) : null,
                         item ? jsx('span', { children: `next review ${whenLabel(item.due_at)}` }) : null,
                         item ? jsx('span', { children: `interval ${item.interval_days}d · step ${item.step}` }) : null
                       ]
@@ -9125,6 +9659,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       page: page.data,
       review: review.data,
       quizzes: quizzes.data,
+      outline: outline.data,
       implemented,
       onOpenSection: openSection,
       onResume: () => startLesson(row.next_step && row.next_step.kind === 'resume_lesson' ? 'resume' : 'resume')
@@ -12454,6 +12989,8 @@ export {
   LessonDocumentView,
   MediaFrame,
   NotebookView,
+  OverviewView,
+  TextbookView,
   PronunciationSeat,
   PronunciationStudio,
   QuestMission,
@@ -12468,6 +13005,9 @@ export {
   checklistAnswer,
   checklistItems,
   deskEstimateLabel,
+  learnerEvidenceTarget,
+  objectiveProgress,
+  progressStatement,
   lessonViewOptions,
   mainlineObjective,
   notebookSourceRef,
