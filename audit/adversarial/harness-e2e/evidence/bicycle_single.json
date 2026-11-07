@@ -16,6 +16,8 @@
     "plan_independently_validated": true,
     "plan_validated_before_approval": true,
     "prerequisite_edges_point_backwards": true,
+    "scope_contract_is_coherent": true,
+    "scope_matches_documented_bounds": true,
     "the_check_is_verification": true,
     "units_user_enqueued_not_chained": true,
     "verification_is_graded_as_self_reported": true
@@ -29,7 +31,7 @@
   },
   "lesson_rows": [
     {
-      "lesson_id": "21baca99682d5314",
+      "lesson_id": "000000000000001e",
       "page": {
         "check": {
           "assistance_policy": {
@@ -95,7 +97,7 @@
           ]
         }
       },
-      "section_id": "2a6fe13061c9f376",
+      "section_id": "0000000000000018",
       "state": "validated"
     }
   ],
@@ -109,17 +111,17 @@
     },
     "attempt_rows": [
       {
-        "check_id": "d33bb76d6e4441cf",
+        "check_id": "000000000000001f",
         "evidence_class": "self_reported",
         "grading_provenance_json": "{\"confirmed_items\":3,\"declared_items\":3,\"grader\":\"provider-free:confirmation\",\"reference_sha256\":\"sha256:c9f28941ee122f56fd10f7feabd55f3e9e7dd93b9578ffa9ce14457718805d39\"}",
-        "id": "att_65146774170542e2b25c9c82bb9f4320",
+        "id": "att_00000000000000000000000000000027",
         "state": "committed",
         "verdict": "pass"
       }
     ],
     "check_lanes": [
       {
-        "objective_id": "a4c48818eeaaf46f",
+        "objective_id": "000000000000000b",
         "reference_kind": "rubric_only",
         "state": "closed",
         "stimulus_format": "verification"
@@ -214,6 +216,58 @@
     "subject_domain": "repair",
     "title": "Replace a bicycle inner tube"
   },
+  "scope_bounds": {
+    "brief_scope": "single",
+    "contract": "contracts/rpc.v13.json",
+    "contract_scopes": [
+      "single",
+      "short",
+      "full"
+    ],
+    "declared": {
+      "full": {
+        "objectives": [
+          12,
+          40
+        ],
+        "units": [
+          2,
+          12
+        ]
+      },
+      "short": {
+        "objectives": [
+          3,
+          6
+        ],
+        "units": [
+          1,
+          3
+        ]
+      },
+      "single": {
+        "objectives": [
+          1,
+          1
+        ],
+        "units": [
+          1,
+          1
+        ]
+      }
+    },
+    "schema": {
+      "objectives": [
+        1,
+        40
+      ],
+      "units": [
+        1,
+        12
+      ]
+    },
+    "violations": []
+  },
   "steps": {
     "approval_refusals": [
       {
@@ -231,13 +285,13 @@
     ],
     "approve": {
       "approval_provenance": null,
-      "plan_hash": "sha256:33b964d417b243cb0b11440a8b965f9bb522737f7cfbdfbb750938cd2021e721",
+      "plan_hash": "sha256:1606503724aa443c22bb0f78b9a3051796a8695412336b2a89acbfb50f929bcd",
       "revision": 1,
       "state_after": "approved"
     },
     "grading": [
       {
-        "check_id": "d33bb76d6e4441cf",
+        "check_id": "000000000000001f",
         "label": "correct",
         "objective_ordinal": 1,
         "open": {
@@ -248,9 +302,9 @@
         "submit": {
           "contract_version": 13,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-f32635",
+          "operation_id": "op-h40-attempt-submit-000026",
           "result": {
-            "attempt_id": "att_65146774170542e2b25c9c82bb9f4320",
+            "attempt_id": "att_00000000000000000000000000000027",
             "criteria": [
               {
                 "id": "item_1",
@@ -284,14 +338,14 @@
         {
           "attempt_count": 0,
           "audit_state": "passed",
-          "check_id": "d33bb76d6e4441cf",
+          "check_id": "000000000000001f",
           "evidence_target": "procedure",
           "state": "open",
           "version": 1
         }
       ],
       "course": {
-        "course_id": "crs_abab43aaec2a43eb8a6d0d05eb3db7e6",
+        "course_id": "crs_00000000000000000000000000000002",
         "title": "Replace a bicycle inner tube"
       },
       "document": {
@@ -307,7 +361,7 @@
             "source_ids": []
           },
           {
-            "check_id": "d33bb76d6e4441cf",
+            "check_id": "000000000000001f",
             "deep": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
             "headline": "Do it",
             "id": "blk_656e77780b5513e8a8d3",
@@ -337,10 +391,10 @@
             "source_ids": []
           }
         ],
-        "check_id": "d33bb76d6e4441cf",
-        "content_hash": "sha256:1486ee65b608dd3e0bad31fdf45168b4b2b57d83c455b0d5d5bc54c833bebf1f",
+        "check_id": "000000000000001f",
+        "content_hash": "sha256:a0e094cbcd902ddbdaa1f1a53154e398a9efc9cbac207b910e4d2770d7adc346",
         "direction": "ltr",
-        "document_id": "doc_1486ee65b608dd3e0bad",
+        "document_id": "doc_a0e094cbcd902ddbdaa1",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -355,14 +409,14 @@
           "textbook": true
         }
       },
-      "enrollment_id": "enr_e302048cdc92417d8bd64c0c36b8683c",
+      "enrollment_id": "enr_00000000000000000000000000000005",
       "notebook_entries": [],
       "revision": 1,
       "runtime": null,
       "section": {
         "evidence_target": "procedure",
         "last_opened_at": null,
-        "objective_id": "a4c48818eeaaf46f",
+        "objective_id": "000000000000000b",
         "ordinal": 1,
         "state": "not_started",
         "title": "Remove the rear wheel, replace the inner tube and check the brakes"
@@ -373,7 +427,7 @@
           "fetched_at": "2026-11-07T12:00:00Z",
           "published_at": null,
           "publisher": null,
-          "source_id": "1d589ea20736deef",
+          "source_id": "0000000000000008",
           "source_type": "web_page",
           "support_status": "unassessed",
           "title": "Recorded page: replacing a clincher inner tube",
@@ -393,16 +447,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_c37db22a69144a7db78c14fe9b54725e",
+          "job_id": "job_0000000000000000000000000000001d",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "d33bb76d6e4441cf",
-              "lesson_id": "21baca99682d5314",
+              "check_id": "000000000000001f",
+              "lesson_id": "000000000000001e",
               "reused": false,
-              "section_id": "2a6fe13061c9f376",
+              "section_id": "0000000000000018",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -425,7 +479,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "514c148fb7e55069",
+              "validation_id": "0000000000000020",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -433,7 +487,7 @@
           "needs_review": [],
           "next_unit_ordinal": null,
           "plan_hash": "sha256:0ed49b16a0035111db2c0c4ed99683b29e201837671556a54ebe2c9c5de29993",
-          "plan_id": "1b9b399c0ca03c5e",
+          "plan_id": "0000000000000009",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -482,7 +536,7 @@
       }
     ],
     "outline": {
-      "enrollment_id": "enr_e302048cdc92417d8bd64c0c36b8683c",
+      "enrollment_id": "enr_00000000000000000000000000000005",
       "objectives": [
         {
           "attempt_count": 0,
@@ -490,15 +544,15 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "a4c48818eeaaf46f",
+          "objective_id": "000000000000000b",
           "ordinal": 1,
           "state": "not_started",
           "title": "Remove the rear wheel, replace the inner tube and check the brakes"
         }
       ],
       "plan": {
-        "plan_hash": "sha256:33b964d417b243cb0b11440a8b965f9bb522737f7cfbdfbb750938cd2021e721",
-        "plan_id": "1b9b399c0ca03c5e",
+        "plan_hash": "sha256:1606503724aa443c22bb0f78b9a3051796a8695412336b2a89acbfb50f929bcd",
+        "plan_id": "0000000000000009",
         "state": "approved",
         "units": [
           {
@@ -510,7 +564,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "a4c48818eeaaf46f",
+                "objective_id": "000000000000000b",
                 "ordinal": 1,
                 "state": "not_started",
                 "title": "Remove the rear wheel, replace the inner tube and check the brakes"
@@ -558,15 +612,15 @@
           "outcome": "independently_validated",
           "warning": null
         },
-        "course_id": "crs_abab43aaec2a43eb8a6d0d05eb3db7e6",
-        "job_id": "job_5a3ddd5e23a847c6b1594a1a32d55679",
+        "course_id": "crs_00000000000000000000000000000002",
+        "job_id": "job_00000000000000000000000000000007",
         "job_kind": "plan",
         "level": "beginner",
         "next_unit_ordinal": 1,
         "objectives": 1,
-        "plan_content_hash": "sha256:33b964d417b243cb0b11440a8b965f9bb522737f7cfbdfbb750938cd2021e721",
+        "plan_content_hash": "sha256:1606503724aa443c22bb0f78b9a3051796a8695412336b2a89acbfb50f929bcd",
         "plan_hash": "sha256:0ed49b16a0035111db2c0c4ed99683b29e201837671556a54ebe2c9c5de29993",
-        "plan_id": "1b9b399c0ca03c5e",
+        "plan_id": "0000000000000009",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 2,
         "research": {
@@ -577,7 +631,7 @@
           "reason": null,
           "status": "ok"
         },
-        "research_id": "e349c4c521ec4105",
+        "research_id": "000000000000000c",
         "reused": false,
         "scope": "single",
         "scope_cap_weeks": 1,
@@ -638,7 +692,7 @@
           "waived_unknown": [],
           "warning": null
         },
-        "validation_id": "b1a006ee15040971",
+        "validation_id": "000000000000000d",
         "validation_verdict": "pass",
         "warnings": [
           "one-off brief: completion is instruction_complete plus a self-reported checklist"
@@ -669,17 +723,17 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_594b3c61b22945b6abd31422557f130d",
+          "job_id": "job_00000000000000000000000000000017",
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 1,
           "plan_hash": "sha256:0ed49b16a0035111db2c0c4ed99683b29e201837671556a54ebe2c9c5de29993",
-          "plan_id": "1b9b399c0ca03c5e",
+          "plan_id": "0000000000000009",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "2a6fe13061c9f376"
+            "0000000000000018"
           ],
           "sections": 1,
           "stage": "unit_sections",
@@ -711,7 +765,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "fe6a92ae9fbd78fb",
+          "validation_id": "0000000000000019",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 1

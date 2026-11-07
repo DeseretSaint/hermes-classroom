@@ -143,3 +143,90 @@ overall: PASS  (3/3 scenarios)
 Focused test run: **11 tests OK** (`tests.test_harness_e2e`).
 Full suite on `c588e4a` + this branch: **1422 tests OK** in 218.674s
 (`evidence/full-suite.txt`; the 11 tests above are included).
+
+> The counts above describe the H-40 run on `c588e4a`. The H-45 section below supersedes the
+> focused/full counts and the "ids change between runs" paragraph in `docs/HARNESS-E2E.md`.
+
+## H-45 — scope against the declared contract, packet content-addressed (base `be08495`)
+
+Two H-30 P2 findings that survived the H-40 merge are closed. No product code changed, no provider
+was called, no credential or network request was used.
+
+### D6 — `scope_matches_documented_bounds` can now fail
+
+The check no longer compares the plan to the table that generated it. It reads the declared bound
+from three places and refuses a plan that leaves any of them:
+
+* `contracts/rpc.v13.json` — the published scope vocabulary (`single`/`short`/`full`);
+* `PLAN_SCHEMA_V2` — objectives `minItems 1` / `maxItems 40`, units `minItems 1` / `maxItems 12`;
+* `SCOPE_EXPECTATIONS[scope]["blueprint_objectives"|"blueprint_units"]` — the per-scope band.
+
+`declared_scope_bounds()` also fails when those three declarations disagree, so editing one of them
+cannot silently loosen the assertion. Every run records the bound it used and any violation under
+`scope_bounds` in its evidence JSON, and adds two PASS assertions:
+`scope_matches_documented_bounds` and `scope_contract_is_coherent`.
+
+The negative tests (in `ScopeBoundsContractTest`) are the proof the check is not tautological:
+
+| plan handed to the assertion | result |
+|---|---|
+| committed 1-objective `single`, 4-objective `short`, 12-objective `full` | PASS |
+| 40-objective `full` (the declared ceiling) | PASS |
+| 41-objective `full` | FAIL — outside the schema and the scope band |
+| 6-objective plan labelled `full` (the H-30 repro) | FAIL — outside the `full` band |
+| 4-objective plan labelled `single` (the padded one-off) | FAIL — outside the `single` band |
+| plan whose `scope` contradicts the brief | FAIL |
+
+### D7 — the packet is content-addressed and byte-reproducible
+
+* **Deterministic ids.** `run_scenario`, `run_ceiling_probe` and `run_partial_unit_probe` mint ids
+  from a counter (uuid4 / `secrets.token_hex` / `os.urandom` are scoped and restored), and
+  `coursebook.job_service` is imported before the first replay so a lazy import cannot shift the
+  sequence. Two full runs of `harness_e2e.py` now write byte-identical evidence, and a scenario
+  replayed alone produces the same bytes as the same scenario replayed fourth.
+* **`manifest.json`** records a sha256 per evidence file, the harness sha256, and each harness
+  input: transcript sha256, the capability brief and its hash, the scope, and the recorded model /
+  validator transcript ids.
+* **`harness_e2e.py --verify`** recomputes those hashes and prints `FRESH` or `STALE`. The packet
+  test's guard compares hashes, not verdicts; a changed transcript or a changed evidence file reads
+  stale (both are negative tests in `PacketManifestTest`).
+
+Manifest hash list (`manifest.json`, generated on base `be08495`):
+
+```text
+harness  e7abd7c40171ab48ed0fad2d467f7ec63e2fbd74c5555ae9c25968f78e0a868c  harness_e2e.py
+input    aca77120320bb1047d808d2bbfea3295876ac8abdd93553e81abf5770e6ca4f7  transcripts/bicycle_single.json  scope=single
+input    c14afea32603a20bf39be4a513e586a262ba9ada02b4d94e00f36cf9cb4cb28c  transcripts/music_short.json     scope=short
+input    0ba1d8acfc7d46556123c078c03076e914cd4ad9e97562a2cf260c2f5e6d9604  transcripts/soldering_full.json  scope=full
+evidence 0a86195e547f3cdaf777195092e64b154e3b806d2b7e271e11a2ebe896bc6db6  evidence/bicycle_single.json
+evidence c89aafbfea73afcf2fa710a02c46a6e6bc0b0061779e6093a13281741550c824  evidence/focused-tests.txt
+evidence eab31c01fcd0a057cb9445f3164bc8f2ee6b3b9641cea4204b2dcca1fc101d45  evidence/full-suite.txt
+evidence ef13e4f3379ffdd6177328dcaee812d14ed97da577b7499d2b51a0190c89b82a  evidence/music_short.json
+evidence f828f19d8570c2337cf7fd935951ba3bea9a786c861c67207cb07a1e593b98ff  evidence/partial_unit_batch.json
+evidence 79f7f61e6feba83bd4bedae6d301fd6138a8364ba593fc2ecec255f5d28254d8  evidence/run-output.txt
+evidence adeae3d66a9d21d53358c8b56b7026c66a519034f1ab4fb7d40c2e7ab600a143  evidence/soldering_full.json
+evidence ea566e9a1f0d195fdfef9f054894820aa640d955d8f46305839003730c687a87  evidence/summary.json
+```
+
+### Evidence files whose hash changed against the H-40 packet, and why
+
+| file | why the bytes changed |
+|---|---|
+| `bicycle_single.json`, `music_short.json`, `soldering_full.json` | new `scope_bounds` block and the two scope assertions; ids are now deterministic, so `plan_hash` and every id are stable across runs |
+| `partial_unit_batch.json` | H-42 made the unit stage transactional on the merged head: the probe now records `unit_stage_refusal` and `persisted_sections: 0`, where H-40 (pre-H-42) recorded one persisted section and `state: needs_review` |
+| `focused-tests.txt` | regenerated on `be08495`: 21 tests OK (was 11) |
+| `full-suite.txt` | regenerated on `be08495`: 1494 tests OK in 218.262s (was 1422 on `c588e4a`) |
+| `run-output.txt` | the D1 probe line names the H-42 refusal and the run ends with the manifest line |
+| `summary.json` | unchanged (3/3 PASS) |
+
+### Reproduce
+
+```bash
+cd <worktree at wt/h45-e2e-honesty, base be08495>
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py          # rewrite evidence + manifest
+PYTHONPATH=. python3 audit/adversarial/harness-e2e/harness_e2e.py --verify # FRESH or STALE per file
+PYTHONPATH=. python3 -m unittest tests.test_harness_e2e -v                 # 21 tests
+```
+
+A second `harness_e2e.py` run is byte-identical (verified by `sha256sum` before/after). No provider
+call, no spend, no network: the model and research halves remain recorded.
