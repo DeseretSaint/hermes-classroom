@@ -567,12 +567,27 @@ def aggregate() -> int:
         },
     ]
 
+    # D-1 was found by the first run of this gate: a refused media route dropped the authored
+    # kind and typed narration as `visual`. The Desktop fix carries `media.kind` into the segment
+    # and lets the served MIME override it only when the preview is ready. The status below is
+    # derived from the freshly generated frames, so a regression re-opens the defect here.
+    unavailable_audio = [
+        item for frame in frames if frame["surface"] == "textbook-unavailable"
+        for item in frame["media_frames"] if str(item.get("artifact") or "").startswith("art_audio")
+    ]
+    audio_kind_fixed = bool(unavailable_audio) and all(item["kind"] == "audio" for item in unavailable_audio)
+
     defects = [
         {
             "id": "D-1", "severity": "low",
+            "status": "fixed" if audio_kind_fixed else "open",
             "title": "A failed audio preview is typed as `visual` in the media frame",
-            "detail": "MediaSegment derives `kind` from the preview MIME. When the media route refuses, preview.mime is absent and the fallback is 'visual', so an audio item's `data-cb-media-kind` says visual while its label and transcript say narration.",
-            "evidence": "audit/visual/m4-visual/audit.json → frames[textbook-unavailable-*].media_frames[1] (kind: visual, label: Narration)",
+            "detail": "MediaSegment derived `kind` from the preview MIME, so a refused route typed an audio item as visual. It now carries the authored `kind` into the segment and uses the served MIME only when the preview is ready.",
+            "evidence": {
+                "frames": [frame["id"] for frame in frames if frame["surface"] == "textbook-unavailable"],
+                "audio_media_frames": len(unavailable_audio),
+                "audio_kinds": sorted({item["kind"] for item in unavailable_audio}),
+            },
             "owner": "desktop specialist (product code)",
         }
     ]

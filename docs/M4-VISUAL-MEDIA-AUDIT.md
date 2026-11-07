@@ -14,7 +14,8 @@ python3 scripts/m4v-audit.py
 ```
 
 Output: `audit/visual/m4-visual/audit.json` (62 frames, per-frame measurements, 15 claims,
-1 defect) and `audit/visual/m4-visual/*.png` (62 frames).
+1 defect — D-1, fixed in this tree) and `audit/visual/m4-visual/*.png` (62 frames). The evidence,
+`plugin_sha256` and all screenshots were regenerated on `wt/d1-media-kind` after the D-1 fix.
 
 ## Method
 
@@ -77,14 +78,20 @@ suitable only as labelled context — which is exactly how the renderer presents
 and the procedure lens keeps the deterministic schematic rows as the only torque authority).
 Verdict **PASS**.
 
-## Defect found
+## Defect found and fixed
 
-**D-1 (low, desktop/product code — not fixed here):** when the media route refuses, `MediaSegment`
-falls back to `kind = 'visual'` because it derives the kind from the preview MIME. An audio item
-whose preview fails is therefore typed `visual` in the frame while its label and transcript still
-say narration. Evidence: `frames[textbook-unavailable-*].media_frames[1]` (`kind: visual`,
-`label: Narration`). Visible consequence is limited to the internal `data-cb-media-kind`
-attribute; the visible label and transcript are correct. Owner: the desktop specialist.
+**D-1 (low, desktop/product code — fixed on `wt/d1-media-kind`):** when the media route refused,
+`MediaSegment` fell back to `kind = 'visual'` because it derived the kind only from the preview
+MIME. An audio item whose preview failed was therefore typed `visual` in the frame while its label
+and transcript still said narration.
+
+The fix: `BlockMedia` carries the authored `media.kind` into the segment, and `MediaSegment` uses
+the served MIME only once the preview is ready; otherwise the authored kind is the fallback. On the
+regenerated evidence, `frames[textbook-unavailable-*].media_frames[1]` for `art_audio00000002`
+reports `kind: audio`, `label: Narration — the transcript is authoritative`, and the transcript as
+its caption in all six media-unavailable frames — unchanged from before except the kind.
+`audit.json` derives `defects[].D-1.status` from those frames (so a regression re-opens it), and
+`tests/test_m4_visual_audit.py::test_a_failed_audio_preview_keeps_its_authored_kind` guards it.
 
 ## Honest limits
 

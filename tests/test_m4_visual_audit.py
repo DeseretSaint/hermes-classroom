@@ -103,6 +103,24 @@ class VisualMediaAuditTest(unittest.TestCase):
                 self.assertEqual(frame["audios"], [], frame["id"])
                 self.assertTrue(frame["media_fallback_text"], f"{frame['id']} lost its honest fallback text")
 
+    def test_a_failed_audio_preview_keeps_its_authored_kind(self) -> None:
+        """D-1: a refused media route must not relabel authored narration as visual."""
+        unavailable = [frame for frame in self.frames if frame["surface"] == "textbook-unavailable"]
+        self.assertTrue(unavailable, "the media-unavailable surface was not captured")
+        audio_frames = []
+        for frame in unavailable:
+            for item in frame["media_frames"]:
+                if not str(item.get("artifact") or "").startswith("art_audio"):
+                    continue
+                audio_frames.append(item)
+                self.assertEqual(item["kind"], "audio", f"{frame['id']} typed narration as {item['kind']}")
+                self.assertIn("Narration", item["label"], frame["id"])
+                self.assertTrue(item["caption_is_text_equivalent"], f"{frame['id']} lost the transcript")
+        self.assertTrue(audio_frames, "the media-unavailable surface carried no audio media frame")
+        defect = next((item for item in self.evidence.get("defects", []) if item["id"] == "D-1"), None)
+        self.assertIsNotNone(defect, "D-1 missing from the audit defect record")
+        self.assertEqual((defect or {}).get("status"), "fixed", "D-1 re-opened in the committed evidence")
+
     def test_tokens_are_the_only_paint_and_match_the_contract(self) -> None:
         scan = self.evidence["source_scan"]
         self.assertEqual(scan["colour_literals_outside_token_table"], 0)

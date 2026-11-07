@@ -4872,12 +4872,24 @@ function MediaFrame({ artifactId, kind, label, caption, provenance, textEquivale
 function MediaSegment({ segment }) {
   const preview = useArtifactPreview(segment.artifact_id)
 
+  // The authored kind is the description of the item; a served MIME is the observation. The
+  // observation wins once the preview is ready, but a route that refuses or is unreachable must
+  // not silently turn authored narration into a visual.
+  const authoredKind = segment.kind === 'audio' || segment.kind === 'visual' ? segment.kind : null
+  const previewKind =
+    preview.state === 'ready' && preview.mime
+      ? preview.mime.startsWith('audio/')
+        ? 'audio'
+        : preview.mime.startsWith('image/')
+          ? 'visual'
+          : null
+      : null
+  const kind = previewKind || authoredKind || 'visual'
   const caption = segment.text || preview.text_equivalent || ''
   const label =
     preview.label ||
     segment.label ||
-    (preview.mime && preview.mime.startsWith('audio/') ? 'Narration' : 'Illustration')
-  const kind = preview.mime && preview.mime.startsWith('audio/') ? 'audio' : 'visual'
+    (kind === 'audio' ? 'Narration' : 'Illustration')
   const provenance =
     preview.state === 'ready'
       ? [
@@ -5668,6 +5680,9 @@ function BlockSourceChips({ ids, index }) {
 function BlockMedia({ media, blockId, ordinal }) {
   const segment = {
     artifact_id: media.artifact_id,
+    // The authored kind travels with the media child: a failed preview still knows whether the
+    // author wrote narration or an illustration, so it cannot relabel audio as visual.
+    kind: media.kind,
     text: media.text_equivalent || media.purpose,
     label: media.label
   }
