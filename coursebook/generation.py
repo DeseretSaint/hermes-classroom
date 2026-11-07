@@ -189,9 +189,11 @@ SCOPES: tuple[str, ...] = ("single", "short", "full")
 SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
     "single": {
         "max_weeks": 1,
-        # v1 objective range stays what an unscoped/legacy brief authored under. The blueprint
-        # bounds below are the v2 contract (`full` is a product cap, not a provider promise).
-        "objectives": (4, 5),
+        # ``v1_objectives`` is the pre-blueprint range the v1 prompt asks for; it is deliberately
+        # named for its contract so no reader can mistake it for the enforced v2 band. The
+        # ``blueprint_*`` bounds below are the v2 contract and the only source of enforcement
+        # (``full`` is a product cap, not a provider promise).
+        "v1_objectives": (4, 5),
         "blueprint_objectives": (1, 1),
         "blueprint_units": (1, 1),
         "unit_objectives": (1, 1),
@@ -199,7 +201,7 @@ SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
     },
     "short": {
         "max_weeks": 8,
-        "objectives": (4, 6),
+        "v1_objectives": (4, 6),
         "blueprint_objectives": (3, 6),
         "blueprint_units": (1, 3),
         "unit_objectives": (1, 6),
@@ -207,11 +209,13 @@ SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
     },
     "full": {
         "max_weeks": 104,
-        "objectives": (4, 8),
+        "v1_objectives": (4, 8),
         "blueprint_objectives": (12, 40),
         "blueprint_units": (2, 12),
         "unit_objectives": (2, 6),
-        "note": "a full course; the standard objective range stands",
+        # No numeric claim here: this note is rendered by both prompt paths, and the two scopes
+        # hold different bands. Each prompt states its own band on the same bullet.
+        "note": "a full course spanning several units, not a single topic",
     },
 }
 
@@ -2345,7 +2349,11 @@ def _plan_instructions(
     parent_brief: dict[str, Any] | None = None,
 ) -> str:
     expectation = _scope_expectation(scope)
-    low, high = expectation["objectives"] if expectation else (4, 8)
+    # The v1 prompt asks for ``v1_objectives``; the enforced v2 contract lives in
+    # ``blueprint_objectives`` and is read only by ``_plan_instructions_v2`` and
+    # ``enforce_plan_rules``. The key is named for its contract so a reader cannot pick the
+    # legacy band and report it as v2.
+    low, high = expectation["v1_objectives"] if expectation else (4, 8)
     lines = [
         "Design plan v1 for the goal in the input.",
         f"Recipe: {recipe}.",
