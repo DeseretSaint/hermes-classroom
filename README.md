@@ -52,7 +52,7 @@ describe this tree. The product-line rows are separate, and they use two weaker 
 
 | Product-line surface | State on this tree | Evidence |
 | --- | --- | --- |
-| Contracts `cb.rpc` v14 and `cb.db` v9, with `cb.jobs` v4, `cb.errors` v4 and the v1 `cb.pack`, `cb.projection` and `cb.vocabulary` | Working at this commit: 64 declared methods and 63 handlers. `observation.record`, frozen by `cb.rpc` v14 in H-53, is contract and migration only in this tree; its handler is H-54, and the registry test allows exactly that one gap, so any other declared method that loses its handler fails the suite. Schema 9 from migrations `0001`-`0009` | `contracts/rpc.v14.json`, `contracts/db.v9.json`; parity asserted by the suite (`1542 tests OK`); `coursebook/api.py` `implemented_methods()` returns 63 of the 64 declared methods |
+| Contracts `cb.rpc` v14 and `cb.db` v9, with `cb.jobs` v4, `cb.errors` v4 and the v1 `cb.pack`, `cb.projection` and `cb.vocabulary` | Working at this commit: 64 declared methods and 64 handlers. `observation.record` was frozen by `cb.rpc` v14 in H-53 and wired by H-54, so the registry test allows no gap: any declared method that loses its handler fails the suite. Schema 9 from migrations `0001`-`0009` | `contracts/rpc.v14.json`, `contracts/db.v9.json`; parity asserted by the suite (`1555 tests OK`); `coursebook/api.py` `implemented_methods()` returns all 64 declared methods |
 | Textbook view | Working (live): a real document served over the real RPC; the frame set covers Textbook and Guided (13 frames) | `audit/visual/m1-guided-authoring/README.md` |
 | Guided view | Working (live) on a newly authored document (`state=complete`, `views.guided=true`). The older demo course still reports `textbook_only` because its stored page predates `lesson-prompt.v5`; it was not rewritten | `audit/visual/m1-guided-authoring/` |
 | Field Desk home (Continue, path, sources, all courses) | Working (live): the desk and its backend-off, empty and loading states were read from an isolated window | `audit/visual/m2-field-desk/README.md`, `live-evidence.json` |
@@ -80,10 +80,10 @@ there is no code path at all. Unless a row names a later commit, the row describ
 | One installable package (agent half plus Desktop half) | Working: `scripts/install-local.sh` installs both halves; `hermes plugins validate` and `hermes plugins doctor` pass |
 | `coursebook_status` agent tool (read-only health) | Working: the single registered tool |
 | Backend routes `/health`, `/schema`, `/rpc`, `/runtime`, `/packs/*`, `/artifacts/<handle>`, `/media/<artifact_id>` | Implemented: the first six were re-driven by `scripts/probe-backend.py` (31/31). `/media/<artifact_id>` is an M0 addition (`3cead45`), covered by `tests/test_manifest.py` and `tests/test_media_generation.py`; it does not exist at `29bede7` |
-| Frozen contracts at `29bede7`: `cb.rpc` v7, `cb.db` v4, `cb.jobs` v2, `cb.errors` v2, `cb.pack` v1, `cb.projection` v1, `cb.vocabulary` v1 | Working in that build: 52 declared methods, 52 handlers, no contract problems from `/runtime`. This tree has moved to `cb.rpc` v14 and `cb.db` v9 with 64 declared methods and 63 handlers; the product-line row above carries the current numbers |
+| Frozen contracts at `29bede7`: `cb.rpc` v7, `cb.db` v4, `cb.jobs` v2, `cb.errors` v2, `cb.pack` v1, `cb.projection` v1, `cb.vocabulary` v1 | Working in that build: 52 declared methods, 52 handlers, no contract problems from `/runtime`. This tree has moved to `cb.rpc` v14 and `cb.db` v9 with 64 declared methods and 64 handlers; the product-line row above carries the current numbers |
 | Profile-scoped SQLite schema and migrations `0001`-`0004` at `29bede7` | Working: `health.get` answers `db.ready: true`, `schema_version: 4` on a fresh home. This tree ships migrations `0001`-`0009` and answers `db.ready: true`, `schema_version: 9` on a fresh home |
 | Desktop route `#/coursebook`, sidebar entry, pane, command palette, settings page | Working with a reachable backend: mounts the library, `New course`, Parent Studio and a course card (`docs/CB017-RELEASE-VERIFICATION.md` §2). A window with no gateway renders no route page for any hash — host shell degradation, reclassified P3-operational by Atlas (`docs/REVIEW_CB017-FINAL.md` §3.1) |
-| Course creation, plans, lessons, grading, transitions, evidence | Implemented, unverified in the UI: 685-test suite at `29bede7`, plus adversarial S01/S02/S10-S12 (duplicate submit, stale revision, invalid/hung/throwing grader) all pass in that build. The suite is 1542 tests on this tree |
+| Course creation, plans, lessons, grading, transitions, evidence | Implemented, unverified in the UI: 685-test suite at `29bede7`, plus adversarial S01/S02/S10-S12 (duplicate submit, stale revision, invalid/hung/throwing grader) all pass in that build. The suite is 1555 tests on this tree |
 | Replan of an approved plan, then lessons, then export | Working end to end for this tree: replan → plan approve (v10) → lessons job start → 4 lessons authored → lesson-set approve → export, with the UI and the backend agreeing on the approved content hash (`sha256:ccf69462…e5a5`), `export.ready: true` and no `blocked_reason`. Evidence: `docs/REVIEW_CB017-row9-ui.json`, `docs/REVIEW_CB017-FINAL.md` §10 |
 | Notebooks, quiz history, review queue, usage accounting | Implemented, unverified in the UI: `notebook.save/list/update/delete`, `quiz.history`, `review.queue/action` and `usage.summary` are in the mounted registry |
 | Pack import and export, Parent Studio authoring | Implemented, unverified in the UI: `pack.import/export/preview/inspect/list/delete` and eight `parent.*` methods; P17/P18/P20 pass, and export reproduces the reviewed content hash |
@@ -91,14 +91,12 @@ there is no code path at all. Unless a row names a later commit, the row describ
 | Image and speech generation | Implemented on `master` since `3cead45` (M0): the host's configured image/TTS providers are called through `ctx.dispatch_tool`; generated visuals and narration are stored as content-addressed artifacts with text equivalents and honest degraded states. Absent at the 0.1.0 release commit `29bede7`. Pronunciation scoring is not shipped yet |
 | Reminders | Absent: no RPC, no job runner, no storage |
 
-Every method declared by `cb.rpc` v7 had a handler in the `29bede7` build. On this tree 63 of
-`cb.rpc` v14's 64 declared methods have handlers: the one declared method without one is
-`observation.record`, which H-53 froze as contract and forward-only migration (`cb.db` v9,
-`0009_evidence_note.sql`) and left to the H-54 handler card. The count comes from
+Every method declared by `cb.rpc` v7 had a handler in the `29bede7` build. On this tree all 64 of
+`cb.rpc` v14's declared methods have handlers, `observation.record` included — frozen by H-53 and
+wired by H-54, with the H-53→H-54 registry allowance removed. The count comes from
 `coursebook/api.py`'s `implemented_methods()` after importing `coursebook.domain` and
 `coursebook.pack_flow` (the modules that register handlers), not from a text search, and
-`tests/test_kernel_v2.py` asserts the registry covers every declared method except that named
-allowance. So there is no command that answers a plausible success for work it cannot do. A method
+`tests/test_kernel_v2.py` asserts the registry covers every declared method. So there is no command that answers a plausible success for work it cannot do. A method
 outside the contract is refused with `VALIDATION_FAILED`; a declared method with no handler answers
 `NOT_IMPLEMENTED`; a handler that cannot answer returns a contract error rather than a fabricated
 result. `evidence.inspect` no longer carries an open check's reference answer: criteria
@@ -287,7 +285,7 @@ bash scripts/validate-plugin.sh # release gate: admission on a git archive expor
 
 Run `scripts/validate.sh` before any merge into master. It is the pre-merge gate; it passed on the
 0.1.0 commit with 685 tests, node check OK and 31/31 backend expectations. On this tree the suite
-is 1542 tests (`python3 -m unittest discover -s tests -t .`, `OK`). Its admission step validates
+is 1555 tests (`python3 -m unittest discover -s tests -t .`, `OK`). Its admission step validates
 an export of the tracked tree (`scripts/lib/gate-export.sh`), not the checkout root, so the
 gitignored `.worktrees/` farm is never scanned and an uncommitted edit to a tracked file still fails
 that step. `scripts/validate-plugin.sh` is the release gate for one pinned commit.
