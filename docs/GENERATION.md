@@ -34,7 +34,7 @@ actually reported and records one typed state:
 
 | `independence` | Meaning | Consequence |
 |---|---|---|
-| `independent` | both identities known, model names differ | a criteria pass with `research_status = ok` is `independently_validated` |
+| `independent` | both identities known, model names differ | a criteria pass with research not `unavailable` is `independently_validated` |
 | `same_model` | validator model equals author model | a pass is `model_assessed`; never independent, never a source upgrade |
 | `unidentified` | the provider did not report a model on one side | a pass is `model_assessed`; independence cannot be claimed |
 
@@ -45,7 +45,7 @@ park the artifact `needs_review`. A caller must read `outcome`/`independence`, n
 A validator cannot pass while a criterion failed, cannot omit a criterion, and cannot answer
 `unknown` outside the two criteria where missing research makes uncertainty the honest answer
 (`source_support`, `factual_correctness`). Those waived answers are recorded as `waived_unknown`
-and they close the factual gate: with `research_status != "ok"` the best possible outcome is
+and they close the factual gate: with `research_status = "unavailable"` the best possible outcome is
 `model_assessed`, even when every criterion is answered `pass`. There is no path from unavailable
 research to `independently_validated`. Ten criteria are mandatory:
 

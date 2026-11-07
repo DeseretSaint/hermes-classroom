@@ -1891,7 +1891,7 @@ def validation_verdict(
     :func:`validation_independence`). A pass from the author's own model is stored as
     ``model_assessed`` and is never reported as independent validation.
     """
-    allowed_unknown = {"source_support", "factual_correctness"} if research_status != "ok" else set()
+    allowed_unknown = {"source_support", "factual_correctness"} if research_status == "unavailable" else set()
     seen: dict[str, str] = {}
     for entry in report.get("criteria") or []:
         seen[str(entry.get("id"))] = str(entry.get("verdict"))
@@ -1903,7 +1903,7 @@ def validation_verdict(
     waived = [criterion for criterion, value in seen.items() if value == "unknown" and criterion in allowed_unknown]
     rejections = list(report.get("rejections") or [])
     declared = str(report.get("verdict"))
-    facts_unverified = research_status != "ok"
+    facts_unverified = research_status == "unavailable"
     passed = declared == "pass" and not failed and not unknown and not rejections
     if not passed:
         outcome = OUTCOME_REJECTED
@@ -3147,7 +3147,7 @@ def run_plan_job(
                 "independence": INDEPENDENCE_UNIDENTIFIED,
                 "independent": False,
                 "research_status": research_run.status,
-                "facts_unverified": research_run.status != "ok",
+                "facts_unverified": research_run.status == "unavailable",
                 "outcome": OUTCOME_REJECTED,
             }
 
@@ -3379,8 +3379,9 @@ def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, An
         warnings.append(
             "research "
             + research_run.status
-            + ": claims are labelled unverified and no citation is presented as fetched support"
+            + ": only fetched pages are cited and every unfetched claim stays unverified"
         )
+    if research_run.status == "unavailable":
         warnings.append(
             "facts unverified, no sources: research was unavailable, so this plan is not factually "
             "validated. Approval is a human decision, not factual verification."
@@ -3829,7 +3830,7 @@ def _author_section(
             "independence": INDEPENDENCE_UNIDENTIFIED,
             "independent": False,
             "research_status": research_status,
-            "facts_unverified": research_status != "ok",
+            "facts_unverified": research_status == "unavailable",
             "outcome": OUTCOME_REJECTED,
         }
 
