@@ -4,17 +4,20 @@
     {
       "kind": "model",
       "heading": "Two phrases you will hear",
-      "body": "お願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms."
+      "body": "お願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms.",
+      "short": "お願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks."
     },
     {
       "kind": "explain",
       "heading": "Why register matters",
-      "body": "Standard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met."
+      "body": "Standard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met.",
+      "short": "Standard polite forms are the safe default in a shop; casual forms belong with friends."
     },
     {
       "kind": "guided",
       "heading": "Say it with romaji visible",
-      "body": "Repeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading."
+      "body": "Repeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading.",
+      "short": "Repeat お願いします with romaji visible, then once more without it."
     }
   ],
   "worked_example": {
@@ -24,7 +27,8 @@
       "Wait for the staff member to respond",
       "Thank them with ありがとうございます"
     ],
-    "answer": "お願いします (onegaishimasu)"
+    "answer": "お願いします (onegaishimasu)",
+    "short": "Wait for the staff member to respond, then thank them with ありがとうございます."
   },
   "learner_explanation": "Pick the phrase that fits entering a shop and speaking to staff for the first time. Script is shown; romaji is available as a scaffold until you no longer need it.",
   "check": {
@@ -81,5 +85,6 @@
   ],
   "media": [],
   "parent_notes": null,
-  "supervision_notes": []
+  "supervision_notes": [],
+  "learner_explanation_short": "Pick the phrase that fits entering a shop and speaking to staff for the first time."
 }

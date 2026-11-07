@@ -1,0 +1,65 @@
+{
+  "backend": {
+    "route": "http://127.0.0.1:44331/api/plugins/coursebook/rpc",
+    "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7890cf1f",
+    "wire_version": 8,
+    "contract_methods": 52
+  },
+  "pre_existing_course": {
+    "course": "Japanese affection and register - an L0 demonstration classroom",
+    "enrollment_id": "enr_36266a77f6024e4da1130d6bd2404bbf",
+    "objective_id": "obj_70327ddd55a348858228a15590a664da",
+    "state": "textbook_only",
+    "views": {
+      "textbook": true,
+      "guided": false,
+      "field_quest": false,
+      "field_notes": false
+    },
+    "view_note": "This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only.",
+    "block_roles": [
+      "orient",
+      "practice"
+    ],
+    "block_shorts": [
+      null,
+      null
+    ],
+    "check_id": null,
+    "blocks_claiming_the_check": [],
+    "segment_count": 2,
+    "content_hash": "sha256:4cec0fc6f716b5947a570ad6103d588390059374db24f0fc75c1c38e28f21cd8"
+  },
+  "authored_lesson": {
+    "enrollment_id": "enr_4edc11e37dff47c4aa1e0200e00a3813",
+    "objective_id": "59a186e978db31bf",
+    "state": "complete",
+    "views": {
+      "textbook": true,
+      "guided": true,
+      "field_quest": true,
+      "field_notes": true
+    },
+    "view_note": null,
+    "block_roles": [
+      "example",
+      "explain",
+      "practice",
+      "example",
+      "recap"
+    ],
+    "block_shorts": [
+      "お願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.",
+      "Standard polite forms are the safe default in a shop; casual forms belong with friends.",
+      "Repeat お願いします with romaji visible, then once more without it.",
+      "Wait for the staff member to respond, then thank them with ありがとうございます.",
+      "Pick the phrase that fits entering a shop and speaking to staff for the first time."
+    ],
+    "check_id": "b1bfc1425f9b9f64",
+    "blocks_claiming_the_check": [
+      2
+    ],
+    "segment_count": 0,
+    "content_hash": "sha256:cb0c0af423236b90835bcfff38aabb238203b4f535d0ced859d8d3cb4013d76f"
+  }
+}

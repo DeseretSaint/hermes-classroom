@@ -4,12 +4,14 @@
     {
       "kind": "model",
       "heading": "Warm things",
-      "body": "The kettle, the toaster and the oven make things warm. Ask your grown-up before going near any of them."
+      "body": "The kettle, the toaster and the oven make things warm. Ask your grown-up before going near any of them.",
+      "short": "The kettle, the toaster and the oven make things warm; ask your grown-up first."
     },
     {
       "kind": "guided",
       "heading": "Try it yourself",
-      "body": "Have the child fill the kettle at the sink and switch it on, then touch the side to feel the warmth."
+      "body": "Have the child fill the kettle at the sink and switch it on, then touch the side to feel the warmth.",
+      "short": "Fill the kettle and switch it on, then touch the side for warmth."
     }
   ],
   "worked_example": {
@@ -20,7 +22,8 @@
       "Point at the fridge",
       "Say cold"
     ],
-    "answer": "kettle and fridge"
+    "answer": "kettle and fridge",
+    "short": "Point, say warm, then point at the fridge and say cold."
   },
   "learner_explanation": "Look around the kitchen and name one warm and one cold thing.",
   "check": {
@@ -70,5 +73,6 @@
   "parent_notes": "Let the child explore the kitchen freely while you set the table.",
   "supervision_notes": [
     "Adult nearby"
-  ]
+  ],
+  "learner_explanation_short": "Name one warm and one cold thing in the kitchen."
 }

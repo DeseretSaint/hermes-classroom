@@ -25,6 +25,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Sequence
@@ -1750,6 +1751,41 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
     return int(result["revision"]), result
 
 
+def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
+    """The validated authored page for this objective, if the generation pipeline wrote one.
+
+    ``gen_lessons`` is keyed by ``(section, plan_hash, version)`` and the section names its
+    objective refs, so the objective is the only join key the kernel has. A profile that has never
+    run the pipeline has no ``gen_*`` tables: that is a normal course built from packs or chat
+    segments, not an error, and it stays on the segment projection.
+    """
+    try:
+        document = connection.execute(
+            "SELECT plan_hash FROM gen_plan_documents WHERE plan_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (str(objective["plan_id"]),),
+        ).fetchone()
+        if document is None:
+            return None
+        section = connection.execute(
+            "SELECT id FROM gen_plan_sections WHERE plan_id = ? AND plan_hash = ?"
+            " AND json_extract(objective_refs_json, '$[0]') = ? ORDER BY ordinal LIMIT 1",
+            (str(objective["plan_id"]), str(document["plan_hash"]), int(objective["ordinal"])),
+        ).fetchone()
+        if section is None:
+            return None
+        lesson = connection.execute(
+            "SELECT page_json FROM gen_lessons WHERE section_id = ? AND plan_hash = ?"
+            " AND state = 'validated' ORDER BY version DESC, rowid DESC LIMIT 1",
+            (str(section["id"]), str(document["plan_hash"])),
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    if lesson is None:
+        return None
+    page = _json_load(lesson["page_json"], None)
+    return page if isinstance(page, dict) and page else None
+
+
 @_handler("lesson.page")
 def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """The durable textbook page. Read-only: opening a section changes no evidence."""
@@ -1802,16 +1838,34 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         # v8 read projection. The blocks are derived from the same durable rows the page already
         # returned: no column, no rewrite, and an older section gains a document on read instead
         # of needing a migration. The check attaches to one block, never to a view.
+        #
+        # A section authored by the lesson pipeline has a validated page in `gen_lessons`, and that
+        # page carries the authored `short` beside each `deep`. Project it with
+        # `document_from_page`, which publishes only shorts the author wrote. Everything else (a
+        # pack/composed section, a chat-written transcript, or a page whose stored document no
+        # longer validates) keeps the segment projection and therefore stays `textbook_only`.
         active_check = next((row for row in checks if row["state"] == "open"), checks[0] if checks else None)
-        document = lesson_document.document_from_segments(
-            [dict(row) for row in segments],
-            section_title=objective["title"],
-            objective_id=objective["id"],
-            check_id=active_check["id"] if active_check is not None else None,
-            artifacts={
-                row["id"]: {"kind": row["kind"], "mime": row["mime"]} for row in artifacts
-            },
-        )
+        check_id = active_check["id"] if active_check is not None else None
+        document = None
+        authored = _authored_lesson_page(connection, objective)
+        if authored is not None:
+            try:
+                document = lesson_document.document_from_page(authored, check_id=check_id)
+            except lesson_document.LessonDocumentError:
+                # A stored page that no longer validates is refused, not repaired: the learner
+                # still gets the durable segment text, and the failure is visible in the document
+                # state rather than in a half-built Guided view.
+                document = None
+        if document is None:
+            document = lesson_document.document_from_segments(
+                [dict(row) for row in segments],
+                section_title=objective["title"],
+                objective_id=objective["id"],
+                check_id=check_id,
+                artifacts={
+                    row["id"]: {"kind": row["kind"], "mime": row["mime"]} for row in artifacts
+                },
+            )
     result = {
         "enrollment_id": enrollment["id"],
         "course": {"course_id": course["id"], "title": course["title"]},

@@ -62,15 +62,27 @@ def lesson_body(
     return {
         "section_title": "A durable section",
         "segments": [
-            {"kind": "model", "heading": "Model", "body": "A model segment for this section."},
-            {"kind": "guided", "heading": "Guided", "body": "A guided segment for this section."},
+            {
+                "kind": "model",
+                "heading": "Model",
+                "body": "A model segment for this section.",
+                "short": "Model segment for this section.",
+            },
+            {
+                "kind": "guided",
+                "heading": "Guided",
+                "body": "A guided segment for this section.",
+                "short": "Guided segment for this section.",
+            },
         ],
         "worked_example": {
             "prompt": "An example prompt",
             "steps": ["First step of the example", "Second step of the example"],
             "answer": "An example answer",
+            "short": "Two steps, then the example answer.",
         },
         "learner_explanation": "A learner explanation that does not announce the check answer.",
+        "learner_explanation_short": "A learner explanation without the check answer.",
         "check": {
             "kind": check_kind,
             "stimulus": {"prompt": "Do the thing", "format": stimulus_format, "choices": []},
@@ -268,7 +280,7 @@ class PromptPolicyTest(unittest.TestCase):
                 self.assertEqual(plan.audio, row["audio"])
 
                 instructions = request_for(row).instructions
-                self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v4")
+                self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v5")
                 self.assertIn("Capability policy", instructions)
                 self.assertIn(f"check angle: {row['angle']}", instructions)
                 self.assertIn(f"rubric profile: {row['profile']}", instructions)

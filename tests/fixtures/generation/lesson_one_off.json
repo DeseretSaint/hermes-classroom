@@ -4,12 +4,14 @@
     {
       "kind": "model",
       "heading": "Read the manual first",
-      "body": "Find the pad model in the manufacturer's manual before touching the brake. The manual names the tool and the fastener."
+      "body": "Find the pad model in the manufacturer's manual before touching the brake. The manual names the tool and the fastener.",
+      "short": "Find the pad model in the manufacturer's manual before touching the brake."
     },
     {
       "kind": "guided",
       "heading": "Remove with the listed tool",
-      "body": "Hold the caliper steady and loosen only the fastener the manual names. Stop if the caliper moves or the fastener will not turn by hand."
+      "body": "Hold the caliper steady and loosen only the fastener the manual names. Stop if the caliper moves or the fastener will not turn by hand.",
+      "short": "Loosen only the fastener the manual names; stop if the caliper moves."
     }
   ],
   "worked_example": {
@@ -19,7 +21,8 @@
       "Confirm the pad model matches BR-42",
       "Loosen the fastener and slide the worn pad out"
     ],
-    "answer": "Worn pad removed with the listed key"
+    "answer": "Worn pad removed with the listed key",
+    "short": "Lay out the pad and the listed key, then loosen the fastener and slide the worn pad out."
   },
   "learner_explanation": "Work through the checklist with the manual open. This is a verification list, not a quiz: you confirm each step honestly.",
   "check": {
@@ -70,5 +73,6 @@
   "sources": [],
   "media": [],
   "parent_notes": null,
-  "supervision_notes": []
+  "supervision_notes": [],
+  "learner_explanation_short": "Work through the checklist with the manual open; you confirm each step honestly."
 }
