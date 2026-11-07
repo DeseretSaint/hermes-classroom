@@ -396,8 +396,10 @@ narration tab, not a fake audio file.
   `tests/test_media_generation.py`. A live lesson-pane observation remains gated by the
   operator-owned default-gateway restart (`t_6a32ffe9`).
 
-### Phase M1 — LessonDocument and Textbook/Guided
+### Phase M1 — capability policy, rubrics and LessonDocument
 
+- Implement `LessonCapabilityPolicy` and the rubric-angle registry; integrate both into the
+  plan/lesson prompts and validators before the document projection.
 - Add the v8 `document` projection and block authoring.
 - Implement Textbook and Guided; one-block-at-a-time progress; the same check.
 - Migrate old pages to Textbook-only with a clear state.
