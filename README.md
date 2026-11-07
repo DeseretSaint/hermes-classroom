@@ -95,10 +95,12 @@ Every method declared by `cb.rpc` v7 has a handler in that build, and the same h
 for v9's 54 methods, so there is no command that
 answers a plausible success for work it cannot do. A method outside the contract is refused with
 `VALIDATION_FAILED`; a handler that cannot answer returns a contract error rather than a
-fabricated result. Two backend defects are open and recorded in `docs/REVIEW_CB014.md`:
-`evidence.inspect` carries an open check's reference answer in the L2 projection (CB-QA-10), and
-the optional auxiliary grader cannot yet distinguish a persuaded pass from an honest one
-(CB-QA-11).
+fabricated result. `evidence.inspect` no longer carries an open check's reference answer: criteria
+are projected through `PUBLIC_CRITERION_FIELDS` with a `check_spec_withheld` marker, so the
+`check_spec` that holds the reference never leaves the backend. That closes CB-QA-10 on the wire
+(`docs/HARNESS-STATUS.md` §4; S07 passes in `tests/adversarial/attack_state.py`). One backend
+defect remains open and is recorded in `docs/REVIEW_CB014.md`: the optional auxiliary grader cannot
+yet distinguish a persuaded pass from an honest one (CB-QA-11).
 
 ## Requirements
 
@@ -201,8 +203,11 @@ This candidate is not shippable as a Desktop product.
 - The auxiliary open-response grader is disabled. Closed checks are graded against a stored
   reference; with the lane enabled, an answer that persuades an obedient grader is accepted
   (CB-QA-11).
-- `evidence.inspect` returns an open check's reference in the L2 projection (CB-QA-10). The UI
-  does not render it; the RPC boundary does.
+- `evidence.inspect` withholds an open check's reference on the wire (CB-QA-10 closed). The L2
+  projection carries `id`, `description`, `check_id` and a `check_spec_withheld` marker from
+  `coursebook/evidence.py`'s `PUBLIC_CRITERION_FIELDS`, so the spec that holds the reference never
+  reaches the caller; `tests/test_review_evidence.py:378,384` assert its absence and S07 passes
+  22/22 in `tests/adversarial/attack_state.py`.
 
 The product line adds surfaces with limits of their own; these are not the 0.1.0 rows above.
 
