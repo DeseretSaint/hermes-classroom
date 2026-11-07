@@ -480,6 +480,12 @@ class BlueprintPlanJobTest(UnitStageCase):
         self.assertEqual(view["state"], "completed")
         self.assertEqual(view["checkpoint"]["units"], 2)
         self.assertEqual(view["checkpoint"]["next_unit_ordinal"], 1)
+        # H-44: the domain provenance reaches the job record the operator reads, not only the
+        # in-process result.
+        self.assertEqual(view["checkpoint"]["domain_provenance"]["source"], "default")
+        self.assertEqual(
+            view["checkpoint"]["domain_provenance"]["resolved_domain"], "general"
+        )
         with db.read() as connection:
             jobs = connection.execute("SELECT kind, brief_json FROM jobs").fetchall()
             sections = connection.execute("SELECT COUNT(*) AS n FROM gen_plan_sections").fetchone()["n"]

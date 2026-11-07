@@ -614,3 +614,55 @@ express an edge. Its companion `test_adaptation_is_a_state_transition_only` is c
 tautology (it compares the seven-state set with itself, `tests/test_adversarial_round2.py:303-308`)
 and therefore pins nothing beyond the two `_objective_state_after` assertions that follow it; the
 implementing card must replace it with the R5/R7 assertions above rather than treat it as coverage.
+
+## 15. Language goals with no declared locale (H-44, 2026-11-07)
+
+`docs/GENERIC-ACCEPTANCE-AUDIT.md` finding D4: the goal "Order a meal at a restaurant in
+Spanish", with no `locale` and no `subject_domain`, was authored as `general`. The policy had
+nothing to route on and nothing said so. This section freezes the choice made for H-44.
+
+### 15.1 The decision
+
+**The authoring rule is unchanged; the fallback is now part of the record.** A brief that declares
+neither `locale` nor `subject_domain` still resolves to `general`. The plan job's result — and the
+`cb.jobs` checkpoint that carries it — now contains `domain_provenance`:
+
+| `source` | when | `resolved_domain` |
+|---|---|---|
+| `declared` | the brief declared `subject_domain` | that domain |
+| `declared_locale` | the brief declared `locale`, no domain | `language` |
+| `default` | the brief declared neither | `general` |
+
+`target_language` is the primary subtag of a declared locale (or `null`), and `locale` is echoed on
+the result. Only `default` carries a human `note`, and the same sentence is appended to the
+result's `warnings`:
+
+> no locale and no subject domain were declared, so this course is authored as a general course:
+> the domain is the default, not a content decision. If the goal is a language goal, declare its
+> locale to author a language course.
+
+H-44 deliberately did **not** infer a language from the goal text. The pipeline's standing rule is
+that it never infers a level or a domain from a phrase it does not understand; a regex that turned
+"read Spanish colonial history" into a Spanish course would be a worse defect than the silent
+default. A learner who names Spanish in the goal declares `locale: es-MX` (or `es`) and gets the
+language route, locale scaffolds and audio the capability policy already owns.
+
+### 15.2 What changes for a parent or learner
+
+On the run record only: nothing in the authored plan, the plan hash, the lesson pages or the
+approval gate changes. A parent who left the locale blank sees the default sentence on the job
+result instead of discovering later that a language goal became a general course. The Desktop
+copy for this surface is out of scope for H-44 (`plugin.js` is unchanged); the record is the
+contract-side evidence, and a later UI card may render it.
+
+### 15.3 Tests
+
+`tests/test_generation.py::LanguageGoalDomainProvenanceTest`:
+
+1. `test_language_goal_without_locale_records_the_general_default` — the Spanish goal with no
+   locale resolves to `general`, `source = default`, and the note is in `warnings`.
+2. `test_language_goal_with_locale_records_the_declared_locale` — the same goal with `es-MX`
+   resolves to `language`, `source = declared_locale`, `target_language = es`, and no default
+   warning is invented.
+3. `test_the_two_records_differ_in_the_returned_value_not_a_log` — the difference is asserted on
+   the returned record, not on log output.
