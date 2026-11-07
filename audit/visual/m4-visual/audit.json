@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T06:48:30.804Z",
+  "generated_at": "2026-11-07T08:02:59.368Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
   "frames": [
@@ -4922,11 +4922,19 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 7,
+      "keyboard_count": 8,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 7
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-textonly-dark-1280-32",
@@ -6335,19 +6343,11 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Artifact details",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 10,
+      "keyboard_count": 9,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 10
+      "keyboard_visible_ring": 9
     },
     {
       "id": "textbook-unavailable-light-1280-32",
@@ -9066,11 +9066,19 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 6,
+      "keyboard_count": 7,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 6
+      "keyboard_visible_ring": 7
     },
     {
       "id": "guided-light-1280-32",
@@ -9854,19 +9862,11 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 7,
+      "keyboard_count": 6,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 7
+      "keyboard_visible_ring": 6
     },
     {
       "id": "guided-dark-1280-32",
@@ -20760,7 +20760,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(90, 83, 71)",
           "bg": "rgb(255, 253, 247)",
           "size": 12,
@@ -21320,7 +21320,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(90, 83, 71)",
           "bg": "rgb(255, 253, 247)",
           "size": 24,
@@ -21880,7 +21880,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(90, 83, 71)",
           "bg": "rgb(255, 253, 247)",
           "size": 12,
@@ -22404,7 +22404,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(181, 170, 151)",
           "bg": "rgb(30, 28, 25)",
           "size": 12,
@@ -22873,11 +22873,19 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "tag": "button",
+          "text": "Open the section",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 11,
+      "keyboard_count": 12,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 12
     },
     {
       "id": "field-desk-dark-1280-32",
@@ -23017,7 +23025,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(181, 170, 151)",
           "bg": "rgb(30, 28, 25)",
           "size": 24,
@@ -23630,7 +23638,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(181, 170, 151)",
           "bg": "rgb(30, 28, 25)",
           "size": 12,
@@ -28621,7 +28629,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(90, 83, 71)",
           "bg": "rgb(255, 253, 247)",
           "size": 24,
@@ -29145,7 +29153,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(181, 170, 151)",
           "bg": "rgb(30, 28, 25)",
           "size": 24,
@@ -32316,7 +32324,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 12,
@@ -32787,7 +32795,7 @@
         },
         {
           "tag": "span",
-          "text": "Last touched 13 hr ago",
+          "text": "Last touched 15 hr ago",
           "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 12,
@@ -35846,7 +35854,7 @@
     "hex_literals_outside_token_table": 0,
     "sample": [],
     "tertiary_text_utility_uses": 0,
-    "contract_file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_acd97416/contracts/cb.tokens.v1.json",
+    "contract_file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_867d3b52/contracts/cb.tokens.v1.json",
     "contract_present": true,
     "contract_matches_shipped_table": true,
     "contract_gates": {
@@ -35867,7 +35875,7 @@
           "hex_literals_outside_token_table": 0,
           "sample": [],
           "tertiary_text_utility_uses": 0,
-          "contract_file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_acd97416/contracts/cb.tokens.v1.json",
+          "contract_file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_867d3b52/contracts/cb.tokens.v1.json",
           "contract_present": true,
           "contract_matches_shipped_table": true,
           "contract_gates": {
@@ -36177,8 +36185,8 @@
         "owner": "desktop specialist (product code)"
       }
     ],
-    "plugin_sha256": "f764e6aa28ca11cf91f8ee57653c048589d10c9f53d177b9c2fa0e4386d8b710",
-    "branch": "wt/d1-media-kind",
+    "plugin_sha256": "5beed34797ef18fa328c748e6d82fcbd0fef84997e9cc640fab46363b2879b25",
+    "branch": "wt/harness-create-flow",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }
