@@ -301,7 +301,9 @@ async function axNames() {
 }
 
 async function keyboardWalk(steps) {
-  await evaluate('document.body.focus && document.body.focus()')
+  // `document.body` can be null for the instant between a navigation and the parser's first body
+  // node; the walk then aborted the whole audit with a TypeError instead of measuring the frame.
+  await evaluate('if (document.body) document.body.focus()')
   const order = []
   for (let index = 0; index < steps; index += 1) {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 })

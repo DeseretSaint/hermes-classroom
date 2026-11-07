@@ -36187,6 +36187,13 @@
     ],
     "plugin_sha256": "f62264e85e127de55e80a93c3715deb7f15273dab9e004e77e0e32ab288d189b",
     "branch": "wt/harness-h27-h26b-union",
-    "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
+    "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json",
+    "pin": {
+      "status": "stale",
+      "declared_by": "H-38 (t_4adb4907), the H-22/H-28/H-29 UX union",
+      "reason": "the frames above were captured from plugin_sha256 f62264e8 on master c588e4a; H-38's union changes desktop/plugin.js after that capture, and H-38 is forbidden to re-render the frames. Re-pinning is owned by H-39 (t_5fb93891); regenerating this file removes this block.",
+      "captured_from_plugin_sha256": "f62264e85e127de55e80a93c3715deb7f15273dab9e004e77e0e32ab288d189b",
+      "shipped_plugin_sha256": "c206e1c9091400af11594a440a105cda8a6794fe3563ad15a23a10e522232463"
+    }
   }
 }

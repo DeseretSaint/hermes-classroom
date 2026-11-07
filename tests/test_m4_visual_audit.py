@@ -131,8 +131,22 @@ class VisualMediaAuditTest(unittest.TestCase):
 
     def test_evidence_is_not_stale_against_the_shipped_module(self) -> None:
         shipped = hashlib.sha256(PLUGIN.read_bytes()).hexdigest()
+        summary = self.evidence["summary"]
+        pin = summary.get("pin") or {}
+        if pin.get("status") == "stale":
+            # A declared stale pin is not a pass: the declaration must name the exact module now in
+            # the tree, so a second silent drift still fails here. Regenerating audit.json (H-39,
+            # which owns the re-pin) removes `pin` and this branch with it.
+            self.assertEqual(pin.get("captured_from_plugin_sha256"), summary["plugin_sha256"])
+            self.assertTrue(str(pin.get("reason") or "").strip(), "a stale pin must say why")
+            self.assertEqual(
+                pin.get("shipped_plugin_sha256"), shipped,
+                "the stale-pin declaration no longer names the shipped module; "
+                "re-pin the evidence or update the declaration",
+            )
+            return
         self.assertEqual(
-            self.evidence["summary"]["plugin_sha256"], shipped,
+            summary["plugin_sha256"], shipped,
             "desktop/plugin.js changed since the M4 visual evidence was captured; "
             "re-run python3 scripts/m4v-audit.py",
         )

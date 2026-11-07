@@ -1,0 +1,43 @@
+{
+  "checklist": {
+    "count": 3,
+    "ids": [
+      "item_1",
+      "item_2",
+      "item_3"
+    ],
+    "labels": [
+      "Pad model matched to the manual",
+      "Worn pad removed with the listed tool",
+      "Caliper undamaged"
+    ],
+    "disabled": false
+  },
+  "answerKind": "selection",
+  "ticked": [
+    "item_1",
+    "item_2",
+    "item_3"
+  ],
+  "enabled": {
+    "submitDisabled": false,
+    "ticks": [
+      "true",
+      "true",
+      "true"
+    ]
+  },
+  "verdict": {
+    "verdict": null,
+    "evidenceClass": null,
+    "text": null,
+    "criteria": [],
+    "evidenceNotice": "Self-reported\nSelf-reported — you told us. It cannot count as independent evidence.",
+    "pageLines": [
+      "Self-reported pass",
+      "Self-reported",
+      "Self-reported — you told us. It cannot count as independent evidence."
+    ]
+  },
+  "screenshot": "/home/deseretsaint/.hermes/h35b-live-1794046842/shots/checklist-live.png"
+}

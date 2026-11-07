@@ -352,7 +352,9 @@ process.stdout.write(
 
     def test_the_parent_observation_label_exists_and_no_parent_control_ticks(self) -> None:
         source = _source()
-        self.assertIn("parent_reported: 'Parent reported'", source)
+        # H-22 (a parent of H-28) froze the evidence-class labels to sentences: the parent's report is
+        # named and explicitly not graded by Coursebook. H-28 may not soften it back to a bare noun.
+        self.assertIn("parent_reported: 'Reported by the parent — not graded by Coursebook.'", source)
         # `observation.record` is H-21's control; this card must not grow a second observation path.
         self.assertNotIn("observation.record", source)
 
