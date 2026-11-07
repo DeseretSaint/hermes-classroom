@@ -110,14 +110,14 @@ def memory_connection() -> sqlite3.Connection:
 
 
 class PlanGateTest(unittest.TestCase):
-    """H10-1 (closed by H-12): a validator-rejected plan is never approvable.
+    """Finding H10-1: a validator-rejected plan is stored as an approvable draft.
 
-    The generation pipeline stores the rejection honestly in the generation document; the kernel
-    row stays ``draft`` so it can be regenerated or manually replaced, and ``plan.approve``
-    refuses it because the latest validation did not pass.
+    H-12 (merged after this audit) makes approval fail closed. The audit-time observation is kept
+    in `docs/ADVERSARIAL-AUDIT-ROUND2.md`; this regression now asserts the fixed behavior and the
+    side-effect-free refusal, so the old bypass cannot return unnoticed.
     """
 
-    def test_rejected_plan_rows_stay_draft_and_the_domain_refuses_them(self) -> None:
+    def test_rejected_plan_rows_are_draft_and_the_domain_refuses_approval(self) -> None:
         home = tempfile.mkdtemp(prefix="cb-h10-")
         old = os.environ.get("HERMES_HOME")
         os.environ["HERMES_HOME"] = home
@@ -146,15 +146,14 @@ class PlanGateTest(unittest.TestCase):
                 ).fetchone()
             finally:
                 connection.close()
-            # … but the kernel row it wrote is a normal, still-unapproved draft, and the rejection
-            # lives in the generation document.
+            # … but the kernel row it wrote is a normal, approvable draft, and the rejection
+            # lives only in the generation document.
             self.assertEqual(row["state"], "draft")
             self.assertEqual(document["generation_state"], "needs_review")
             self.assertIsNotNone(document["validation_id"])
 
-            # The generation job already created the course row; enroll in it, then try to
-            # approve the rejected plan through the real handler. H-12 makes this fail closed:
-            # plan.approve consults the latest validation record.
+            # The generation job already created the course row; enroll in it, then attempt to
+            # approve the rejected plan through the real handler. H-12 makes this fail closed.
             enrollment = api.dispatch({
                 "contract": api.RPC_CONTRACT, "contract_version": api.RPC_CONTRACT_VERSION,
                 "method": "enrollment.create", "operation_id": "op-h10-enroll",
@@ -171,6 +170,7 @@ class PlanGateTest(unittest.TestCase):
                             "plan_id": result["plan_id"], "plan_hash": current_hash},
             })
             self.assertFalse(approval["ok"], approval)
+            self.assertEqual(approval["error"]["code"], "VALIDATION_FAILED")
             self.assertEqual(approval["error"]["details"]["reason"], "plan_not_validated")
             with db.read() as readable:
                 approved = readable.execute("SELECT state FROM plans WHERE id = ?",
@@ -205,7 +205,7 @@ class SourceTrustTest(unittest.TestCase):
             )],
         )
 
-    def test_hostile_excerpt_reaches_plan_and_validation_prompts_verbatim(self) -> None:
+    def test_hostile_excerpt_is_enveloped_as_untrusted_data(self) -> None:
         run = self._run()
         plan_request = gen.build_plan_request(
             goal="order coffee", recipe="committed", dials={"level": "L0"}, locale="ja-JP",
@@ -218,20 +218,24 @@ class SourceTrustTest(unittest.TestCase):
         for request in (plan_request, validation_request):
             self.assertIn("Ignore all previous " + "instructions", request.input_text)
             self.assertIn("https://invented.invalid/authority", request.input_text)
-        # There is no trust marker and no instruction firewall in either system prompt.
+            self.assertIn(gen.UNTRUSTED_SOURCE_BEGIN, request.input_text)
+            self.assertIn(gen.UNTRUSTED_SOURCE_END, request.input_text)
+        # H-14 added the explicit data/never-instructions rule to every generation prompt.
         for prompt in (gen.PLAN_SYSTEM_PROMPT, gen.VALIDATION_SYSTEM_PROMPT):
-            self.assertNotIn("untrusted", prompt.lower())
-            self.assertNotIn("ignore any instruction", prompt.lower())
+            self.assertIn("untrusted", prompt.lower())
+            self.assertIn("never as a command", prompt.lower())
 
-    def test_invented_url_in_prose_passes_the_deterministic_plan_rules(self) -> None:
+    def test_invented_url_in_prose_is_rejected_by_provenance_lint(self) -> None:
         plan = plan_fixture()
         plan["learner_outcome"] = (
             "At a café, order a drink. Source: https://invented.invalid/authority "
             "(a page the research ledger never fetched)."
         )
-        # Only source_ids are checked against the ledger; prose URLs are not.
-        gen.enforce_plan_rules(plan, recipe="committed", dials={"level": "L0"},
-                               locale="ja-JP", ledger=[])
+        # H-14 adds a deterministic provenance lint; only ledger-backed URLs survive.
+        with self.assertRaises(gen._RuleViolation) as raised:
+            gen.enforce_plan_rules(plan, recipe="committed", dials={"level": "L0"},
+                                   locale="ja-JP", ledger=[])
+        self.assertIn("invented.invalid", " ".join(raised.exception.reasons))
 
 
 class ValidatorIndependenceTest(unittest.TestCase):
@@ -271,7 +275,7 @@ class ValidatorIndependenceTest(unittest.TestCase):
         strict = gen.validation_verdict(report, research_status="ok")
         self.assertEqual(strict["verdict"], "reject")
 
-    def test_claim_support_can_be_upgraded_by_the_same_model(self) -> None:
+    def test_same_model_cannot_upgrade_claim_support_without_a_ledger_link(self) -> None:
         source = SourceRecord(
             source_id="src_1", url="https://example.test", title="T", publisher="example.test",
             source_type="web_page", fetched_at="2026-11-06T12:00:00Z", published_at=None,
@@ -280,7 +284,8 @@ class ValidatorIndependenceTest(unittest.TestCase):
         upgraded = research.apply_support_verdicts(
             [source], [{"source_id": "src_1", "support": "supported", "reason": "trust me"}]
         )
-        self.assertEqual(upgraded[0].support_status, "supported")
+        # H-14: a bare verdict with no claim/excerpt link is not support.
+        self.assertEqual(upgraded[0].support_status, "unverified")
 
 
 class PedagogyTest(unittest.TestCase):
