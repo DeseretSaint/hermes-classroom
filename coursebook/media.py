@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from . import artifacts, db
+from . import deadline as deadline_mod
 
 #: The preview route caps one inline data URL. Larger media keeps its download handle and text
 #: equivalent; a lesson page must never become a multi-megabyte JSON response by accident.
@@ -56,6 +57,32 @@ _HOST_MEDIA: "HostMedia | None" = None
 
 class MediaGenerationError(RuntimeError):
     """A host media call did not produce usable bytes. Callers degrade to text."""
+
+
+class MediaTimeout(MediaGenerationError):
+    """A host media tool missed its declared deadline (H-66). Callers degrade to text."""
+
+    def __init__(self, message: str, *, tool: str, deadline_s: float) -> None:
+        self.tool = str(tool)
+        self.deadline_s = float(deadline_s)
+        super().__init__(message)
+
+
+#: Declared deadline for one host image/TTS call. Media is optional for a complete text lesson,
+#: so an overrun degrades that item instead of hanging the lesson stage.
+MEDIA_TOOL_TIMEOUT_SECONDS = 180.0
+MEDIA_TIMEOUT_ENV = "COURSEBOOK_MEDIA_TOOL_TIMEOUT_SECONDS"
+
+
+def media_tool_timeout_s() -> float:
+    raw = os.environ.get(MEDIA_TIMEOUT_ENV, "").strip()
+    if not raw:
+        return MEDIA_TOOL_TIMEOUT_SECONDS
+    try:
+        value = float(raw)
+    except ValueError:
+        return MEDIA_TOOL_TIMEOUT_SECONDS
+    return value if value > 0 else MEDIA_TOOL_TIMEOUT_SECONDS
 
 
 @dataclass
@@ -80,14 +107,35 @@ class MediaGenerationSummary:
 class HostMedia:
     """The two host seams Coursebook is allowed to use for media bytes."""
 
-    def __init__(self, dispatch_tool: Callable[[str, dict[str, Any]], Any]) -> None:
+    def __init__(
+        self,
+        dispatch_tool: Callable[[str, dict[str, Any]], Any],
+        *,
+        timeout_s: float | None = None,
+    ) -> None:
         if not callable(dispatch_tool):
             raise TypeError("HostMedia needs a callable ctx.dispatch_tool")
         self._dispatch_tool = dispatch_tool
+        self._timeout_s = timeout_s
+
+    def _deadline(self) -> float:
+        return float(self._timeout_s) if self._timeout_s is not None else media_tool_timeout_s()
 
     def _dispatch_json(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         try:
-            raw = self._dispatch_tool(name, arguments)
+            raw = deadline_mod.run_bounded(
+                lambda: self._dispatch_tool(name, arguments),
+                timeout_s=self._deadline(),
+                label=str(name),
+            )
+        except deadline_mod.DeadlineExceeded as exc:
+            raise MediaTimeout(
+                f"{name} exceeded its {exc.deadline_s:g}s deadline",
+                tool=str(name),
+                deadline_s=exc.deadline_s,
+            ) from exc
+        except deadline_mod.CallCapacityExhausted as exc:
+            raise MediaGenerationError(f"{name} unavailable: {exc}") from exc
         except Exception as exc:  # noqa: BLE001 - provider/host failure becomes text fallback
             raise MediaGenerationError(f"{name} failed: {type(exc).__name__}: {exc}") from exc
         if isinstance(raw, Mapping):

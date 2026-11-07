@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -34,6 +35,11 @@ from typing import Any, Iterable, Protocol
 from urllib.parse import urlparse
 
 from . import policy
+from .deadline import (
+    CallCapacityExhausted,
+    DeadlineExceeded,
+    run_bounded,
+)
 
 __all__ = [
     "SUPPORT_STATUSES",
@@ -46,6 +52,7 @@ __all__ = [
     "SOURCE_TYPE_RANK",
     "ResearchBudget",
     "ResearchUnavailable",
+    "ResearchTimeout",
     "ResearchBudgetExceeded",
     "SourceRecord",
     "ResearchRun",
@@ -134,6 +141,28 @@ _MAX_SOURCE_TYPE = 40
 _MAX_QUERY = 220
 _MAX_REASON = 300
 
+#: Declared deadlines for the host research tools (H-66). The host may ignore any timeout the
+#: plugin merely forwards, so the adapter enforces its own wall clock. These are outer bounds
+#: for one call, not target latencies; an operator can raise them per tool.
+RESEARCH_TOOL_TIMEOUT_SECONDS: dict[str, float] = {"web_search": 45.0, "web_extract": 60.0}
+RESEARCH_TIMEOUT_ENV: dict[str, str] = {
+    "web_search": "COURSEBOOK_WEB_SEARCH_TIMEOUT_SECONDS",
+    "web_extract": "COURSEBOOK_WEB_EXTRACT_TIMEOUT_SECONDS",
+}
+
+
+def research_tool_timeout_s(tool: str) -> float:
+    """The declared deadline for one host research tool, overridable by environment."""
+    default = RESEARCH_TOOL_TIMEOUT_SECONDS.get(str(tool), 60.0)
+    raw = os.environ.get(RESEARCH_TIMEOUT_ENV.get(str(tool), ""), "").strip()
+    if not raw:
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
 
 class ResearchUnavailable(RuntimeError):
     """No usable search/extract seam is wired in this process.
@@ -141,6 +170,20 @@ class ResearchUnavailable(RuntimeError):
     Callers must not degrade silently: a plan may still be proposed from model knowledge, but
     every claim is then labelled ``unverified`` and the research block says ``unavailable``.
     """
+
+
+class ResearchTimeout(ResearchUnavailable):
+    """A host search/extract call missed its declared deadline (H-66).
+
+    A subclass of :class:`ResearchUnavailable` so an ordinary research pass degrades honestly
+    (the page/query is recorded as failed), while the job service can still report it as a
+    *host* failure rather than a policy refusal.
+    """
+
+    def __init__(self, message: str, *, tool: str, deadline_s: float) -> None:
+        self.tool = str(tool)
+        self.deadline_s = float(deadline_s)
+        super().__init__(message)
 
 
 class ResearchBudgetExceeded(RuntimeError):
@@ -309,17 +352,51 @@ class HermesToolSearch:
     i.e. the agent process, not the dashboard backend loaded by path (see ``docs/GENERATION.md``).
     """
 
-    def __init__(self, host: Any) -> None:
+    def __init__(self, host: Any, *, timeout_s: float | dict[str, float] | None = None) -> None:
         if not callable(getattr(host, "dispatch_tool", None)):
             raise ResearchUnavailable("host context exposes no dispatch_tool; research seam unavailable")
         self._host = host
+        #: Explicit deadline(s) for tests; production resolves per tool from policy.
+        self._timeouts = timeout_s
 
     @classmethod
-    def from_ctx(cls, ctx: Any) -> "HermesToolSearch":
-        return cls(ctx)
+    def from_ctx(cls, ctx: Any, **kwargs: Any) -> "HermesToolSearch":
+        return cls(ctx, **kwargs)
+
+    def _deadline(self, tool: str) -> float:
+        if isinstance(self._timeouts, dict):
+            value = self._timeouts.get(tool)
+            if value is not None:
+                return float(value)
+        elif self._timeouts is not None:
+            return float(self._timeouts)
+        return research_tool_timeout_s(tool)
+
+    def _dispatch(self, tool: str, arguments: dict[str, Any]) -> Any:
+        """Call one host tool under a real deadline (H-66).
+
+        The host is free to ignore a forwarded timeout, and a blocked tool call cannot be
+        interrupted from Python, so the adapter enforces its own wall clock through the bounded
+        pool. Overrun is a typed :class:`ResearchTimeout`; a fully stuck pool is
+        :class:`ResearchUnavailable` — never an unbounded wait.
+        """
+        try:
+            return run_bounded(
+                lambda: self._host.dispatch_tool(tool, arguments),
+                timeout_s=self._deadline(tool),
+                label=tool,
+            )
+        except DeadlineExceeded as exc:
+            raise ResearchTimeout(
+                f"{tool} exceeded its {exc.deadline_s:g}s deadline; research cannot wait",
+                tool=tool,
+                deadline_s=exc.deadline_s,
+            ) from exc
+        except CallCapacityExhausted as exc:
+            raise ResearchUnavailable(str(exc)) from exc
 
     def search(self, query: str, limit: int) -> list[dict[str, Any]]:
-        raw = self._host.dispatch_tool("web_search", {"query": query, "limit": int(limit)})
+        raw = self._dispatch("web_search", {"query": query, "limit": int(limit)})
         payload = _loads_tool_json(raw)
         if payload.get("success") is False:
             raise ResearchUnavailable(_bound(str(payload.get("error") or "web_search failed"), _MAX_REASON))
@@ -341,7 +418,7 @@ class HermesToolSearch:
         return results[:limit]
 
     def fetch(self, url: str, max_chars: int) -> dict[str, Any]:
-        raw = self._host.dispatch_tool("web_extract", {"urls": [url], "char_limit": int(max_chars)})
+        raw = self._dispatch("web_extract", {"urls": [url], "char_limit": int(max_chars)})
         payload = _loads_tool_json(raw)
         results = payload.get("results")
         if not isinstance(results, list) or not results:
@@ -512,6 +589,7 @@ def run_research(
     budget: ResearchBudget | None = None,
     now: datetime | None = None,
     mint_id: Any = None,
+    cancel_probe: Any = None,
 ) -> ResearchRun:
     """Run one bounded research pass and return the ledger rows it produced.
 
@@ -559,11 +637,19 @@ def run_research(
     candidates: list[dict[str, Any]] = []
     seen_urls: set[str] = set()
     for query_index, query in enumerate(queries):
+        if callable(cancel_probe) and cancel_probe():
+            raise ResearchCancelled("job cancelled before the next search call")
         entry: dict[str, Any] = {"query": query, "result_count": 0, "error": None}
         try:
             results = search.search(query, budget.max_results_per_query)
         except ResearchCancelled:
             raise
+        except ResearchTimeout as exc:
+            # A host tool that missed its deadline is very likely stuck; spending the rest of
+            # the query budget waiting on it would turn one bounded call into many.
+            entry["error"] = _bound(str(exc), _MAX_REASON)
+            records.append(entry)
+            break
         except ResearchUnavailable as exc:
             entry["error"] = _bound(str(exc), _MAX_REASON)
             records.append(entry)
@@ -608,10 +694,17 @@ def run_research(
     for candidate in candidates[: budget.max_pages]:
         if len(sources) >= budget.max_sources:
             break
+        if callable(cancel_probe) and cancel_probe():
+            raise ResearchCancelled("job cancelled before the next extract call")
         try:
             page = search.fetch(candidate["url"], budget.max_page_chars)
         except ResearchCancelled:
             raise
+        except ResearchTimeout as exc:
+            failures.append(
+                {"url": candidate["url"], "query": str(candidate.get("query") or ""), "error": _bound(str(exc), _MAX_REASON)}
+            )
+            break
         except ResearchUnavailable as exc:
             failures.append(
                 {"url": candidate["url"], "query": str(candidate.get("query") or ""), "error": _bound(str(exc), _MAX_REASON)}
