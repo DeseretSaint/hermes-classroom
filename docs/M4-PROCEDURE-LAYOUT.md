@@ -98,8 +98,12 @@ over the same document.
 - The frames are a static render of the shipped module in headless Chromium, not a live Desktop
   capture: no backend, no `lesson.page` RPC, no artifact bytes. The schematic image therefore
   shows the module's "Loading media" state; the rows above it are the authority.
-- No live backend authors `procedure` today. This card proves the validator, contract and
-  renderer against a contract-valid fixture; authoring the header in the lesson prompt is a
-  separate backend card.
+- H-06 added the authoring path: `LESSON_SCHEMA` accepts the typed `procedure` object,
+  `lesson-prompt.v8` asks for it on a technical procedure, `_build_learner_page` projects it onto
+  the stored page as segment references, and `document_from_page` resolves those to the projected
+  block ids. `tests/test_procedure_authoring.py` drives the real lesson job with a fake model and
+  asserts the served document renders the header, hazards, numbered steps, schematic rows and the
+  source card. That run is a fake model, not a live provider call, and no live course has yet been
+  authored through it.
 - The workspace is scoped to the section; no chat, transcript or composer was touched.
 - Not merged to master, not pushed, no tag, no publish, no catalog PR.

@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author | `coursebook.plan.generate` | `plan-prompt.v3` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v7` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v8` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
@@ -355,10 +355,10 @@ whose labels read the same once case, spacing and punctuation are ignored are re
 read seam's own normalisation (`domain._check_label_key`, imported rather than reimplemented).
 Both raise `_RuleViolation`: attempt 1 is retried with the reasons, attempt 2 parks the lesson
 `needs_review` with the check closed, and `check.get` would refuse the same duplicate anyway. The
-prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v7` is
+prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v8` is
 the current label.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v7`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v8`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
@@ -372,7 +372,7 @@ construct. `enforce_plan_rules` refuses a missing declaration and hands each dec
 (a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
 The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
 the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
-section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v7`
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v8`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
@@ -393,6 +393,42 @@ complain; it is refused before the validator is called.
 target is authoritative, and an advisory construct that cannot score it falls back to that target's
 default profile. The profile's own criteria are then validated (3–6 distinct observable aspects, no
 mental-state claims, no restated aspect).
+
+**Procedure header (H-06).** A technical procedure lesson carries an optional typed `procedure`
+object in `LESSON_SCHEMA`; `lesson-prompt.v8` asks the author for it whenever the check's evidence
+target is `procedure` or the lesson's construct is a technical procedure, and forbids it
+everywhere else. The label is `v8`, not `v7`: master's `v7` (the rubric-profile fix) and this
+branch's `v7` were two different instruction texts under one label, and the label is recorded in
+stored validation bindings and the idempotency fingerprint, so the merged line takes the next free
+number rather than reusing a `v7` that already meant something else. The authored shape is closed
+(`additionalProperties: false`):
+
+```
+procedure:
+  tools[]                       strings, <= 12
+  parts[]                       strings, <= 12
+  hazards[]                     required, names the hazards or states that none apply
+  stop_condition                required
+  steps[]: { segment, check? }  segment = 1-based index into segments; check = short cue
+  schematic|null:               { title, text_equivalent, source_id, rows[{label, value, row}] }
+  source: { source_id, permission }   permission = public_domain | licensed | linked
+```
+
+Two authorities stay separate on purpose. A step is a **reference** to a segment, so the action
+text is that block's own `deep` prose and there is no second copy of the steps in prose (a cue may
+not repeat or contain the segment's text). The schematic rows are the only place a measurement or
+sequence value may appear, and `lesson_procedure_problems` refuses a non-technical lesson carrying
+the header, a step naming no segment, a missing or uncited `source`, an `unknown` permission, and
+any row whose value does not appear in the cited source's recorded excerpt — an illustration is
+never the authority. When a schematic media item exists beside the header, its `facts.rows` must be
+the same rows and cite the same source; the rendered table and the drawn schematic cannot diverge.
+
+The stored page keeps segment ordinals, never block ids: `document_from_page` resolves each
+ordinal to the id of the block it projects, so the page is stable, the served document keeps the
+contract's `{block_id, check}` step shape, and a page written before the header existed projects
+byte-identically without it. `tests/test_procedure_authoring.py` drives the real lesson job with a
+fake model and asserts the served document carries the header, hazards, numbered step references
+to real blocks, schematic rows and the source card.
 
 **Nuance worth keeping.** A selection check's correct choice necessarily appears among the
 stimulus choices. The invariant is that the *key* is not announced — the reference answer must not
@@ -440,7 +476,7 @@ Two stored shapes project into the same `$defs/lesson_document`:
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v7`)
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v8`)
   authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
   projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
   runs before the independent validator: it builds the document, re-runs `validate_blocks`
