@@ -573,9 +573,98 @@ def enrollment_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tupl
     return 0, result
 
 
+#: Provenance a ``plan.approve`` caller can receive. Approval never invents a validation pass:
+#: ``generated_validated`` means a durable generation record binds this exact kernel content hash
+#: to a ``pass`` verdict; ``manual`` means an authored non-empty outline with no validation claim.
+PLAN_VALIDATION_GENERATED = "generated_validated"
+PLAN_VALIDATION_MANUAL = "manual"
+
+
+def _table_exists(connection, name: str) -> bool:
+    return connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)
+    ).fetchone() is not None
+
+
+def _plan_outline_ready(connection, plan_id: str) -> bool:
+    """Whether the plan carries at least one usable authored objective.
+
+    A manual plan's outline is its objectives: a title and an evidence target the learner can be
+    assessed against. This is deliberately *not* a validation claim.
+    """
+    row = connection.execute(
+        "SELECT COUNT(*) AS n FROM objectives WHERE plan_id = ?"
+        " AND TRIM(COALESCE(title, '')) <> '' AND TRIM(COALESCE(evidence_target, '')) <> ''",
+        (plan_id,),
+    ).fetchone()
+    return row is not None and int(row["n"]) > 0
+
+
+def _plan_validation_source(connection, plan, actual_hash: str) -> str:
+    """Resolve the approval provenance or refuse with a typed, fail-closed error.
+
+    A generated plan is approvable only when the *latest* generation document for this plan
+    records the independent validation pass **and** carries a durable snapshot of the kernel
+    content hash it validated. ``gen_plan_documents.plan_hash`` is the generation digest (a
+    different function), so it is never compared to the kernel hash directly.
+
+    A plan with no generation document is manually authored: it may approve on a real outline,
+    and it is never described as validated. An invalidation performed by an authoring command
+    leaves ``manual_authoring = true`` on the generation record, which is the durable manual
+    decision; a carried/replanned record without it stays unvalidated.
+    """
+    if not _table_exists(connection, "gen_plan_documents"):
+        return PLAN_VALIDATION_MANUAL
+    row = connection.execute(
+        "SELECT * FROM gen_plan_documents WHERE plan_id = ?"
+        " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (str(plan["id"]),),
+    ).fetchone()
+    if row is None:
+        return PLAN_VALIDATION_MANUAL
+    result = _json_load(row["result_json"], {})
+    if not isinstance(result, dict):
+        result = {}
+    if result.get("manual_authoring") is True:
+        return PLAN_VALIDATION_MANUAL
+    if str(row["generation_state"]) != "draft" or str(result.get("validation_verdict") or "") != "pass":
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "the plan's independent validation did not pass; it cannot be approved.",
+            reason="plan_not_validated",
+            plan_id=str(plan["id"]),
+            generation_state=str(row["generation_state"]),
+            validation_verdict=result.get("validation_verdict"),
+        )
+    snapshot = result.get("plan_content_hash")
+    if not isinstance(snapshot, str) or not snapshot:
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "the plan has no durable validation binding; revalidate before approving.",
+            reason="plan_not_validated",
+            plan_id=str(plan["id"]),
+            detail="validation passed without a bound content hash",
+        )
+    if snapshot != actual_hash:
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "the plan changed after it was validated; the recorded pass is stale.",
+            reason="plan_validation_stale",
+            plan_id=str(plan["id"]),
+            validated_plan_hash=snapshot,
+            current_plan_hash=actual_hash,
+        )
+    return PLAN_VALIDATION_GENERATED
+
+
 @_handler("plan.approve")
 def plan_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
-    """Approve the exact plan content the caller saw: the hash must still match."""
+    """Approve the exact plan content the caller saw, and only when it is approvable.
+
+    Fail closed: an empty plan is never approved; a generated plan needs a durable pass bound to
+    this exact content hash; a manually authored plan needs a real outline. A refusal writes no
+    transition, no revision and no approval timestamp.
+    """
     db.ensure_schema()
     expected = _require_revision(envelope)
     method = "plan.approve"
@@ -597,9 +686,36 @@ def plan_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 field="plan_hash",
                 current_plan_hash=actual_hash,
             )
-        to_revision = _bump_enrollment(connection, enrollment["id"], expected)
+        if int(enrollment["revision"]) != expected:
+            # Revision fencing wins before approval semantics: a stale caller must reconcile, and
+            # this check writes nothing.
+            raise _stale(
+                "the enrollment moved on; reconcile against current_revision.",
+                int(enrollment["revision"]),
+                enrollment_id=enrollment["id"],
+            )
         if plan["state"] == "approved":
             raise RpcError.of("POLICY_VIOLATION", "this plan version is already approved.", plan_id=plan["id"])
+        objectives = int(_row(
+            connection, "SELECT COUNT(*) AS n FROM objectives WHERE plan_id = ?", (plan["id"],)
+        )["n"])
+        if objectives == 0:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "an empty plan cannot be approved; it has no objectives.",
+                reason="plan_empty",
+                plan_id=str(plan["id"]),
+            )
+        validation_source = _plan_validation_source(connection, plan, actual_hash)
+        if validation_source == PLAN_VALIDATION_MANUAL and not _plan_outline_ready(connection, plan["id"]):
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "a manually authored plan needs at least one objective with a title and evidence target.",
+                reason="plan_not_validated",
+                plan_id=str(plan["id"]),
+                detail="manual outline is empty",
+            )
+        to_revision = _bump_enrollment(connection, enrollment["id"], expected)
         connection.execute(
             "UPDATE plans SET state = 'superseded' WHERE course_id = ? AND state = 'approved'",
             (enrollment["course_id"],),
@@ -2834,6 +2950,12 @@ def _insert_objective(connection, plan_id: str, *, title: str, evidence_target: 
         " state, version, created_at) VALUES (?, ?, ?, ?, ?, ?, 'not_started', 1, ?)",
         (objective_id, plan_id, ordinal, title, evidence_target, _json_dump(criteria), _now()),
     )
+    # Direct authoring changes the plan, so any recorded validation pass no longer describes this
+    # content. The authoring act is the explicit manual decision, and approval will report manual
+    # provenance rather than claiming the old pass.
+    generation.invalidate_plan_validation(
+        connection, plan_id, reason="objective_authored", manual_authoring=True
+    )
     return objective_id
 
 
@@ -3293,6 +3415,11 @@ def parent_plan_edit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple
         refreshed = _row(connection, "SELECT * FROM plans WHERE id = ?", (plan["id"],))
         new_hash = _plan_hash(connection, refreshed)
         connection.execute("UPDATE plans SET plan_hash = ? WHERE id = ?", (new_hash, plan["id"]))
+        # The edit changed the plan version/hash and any generated outline no longer matches a
+        # recorded pass. Invalidate durably and record the parent's explicit manual decision.
+        generation.invalidate_plan_validation(
+            connection, str(plan["id"]), reason="plan_edited", manual_authoring=True
+        )
         reason = "plan_edited" if any(
             payload.get(name) is not None
             for name in ("objective_edits", "add_objectives", "remove_objective_ids", "order")
