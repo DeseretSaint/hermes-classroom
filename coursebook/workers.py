@@ -42,9 +42,19 @@ class ResearchRequest:
     #: are never folded into ``dials``, which stays the closed four-dial object.
     subject_domain: str | None = None
     level: str | None = None
-    budget: research.ResearchBudget = field(default_factory=research.ResearchBudget)
+    budget: research.ResearchBudget | None = None
+
+    @property
+    def effective_budget(self) -> research.ResearchBudget:
+        """The explicit budget, else the cell the declared depth selects.
+
+        A research job used to default to one fixed budget regardless of `dials.depth`, which is
+        the same no-op this card removes from the plan path.
+        """
+        return self.budget or research.budget_for(self.dials.get("depth"))
 
     def as_brief(self) -> dict[str, Any]:
+        budget = self.effective_budget
         return {
             "goal": self.goal,
             "course_id": self.course_id,
@@ -54,11 +64,11 @@ class ResearchRequest:
             "subject_domain": self.subject_domain,
             "level": self.level,
             "budget": {
-                "max_queries": self.budget.max_queries,
-                "max_results_per_query": self.budget.max_results_per_query,
-                "max_pages": self.budget.max_pages,
-                "max_sources": self.budget.max_sources,
-                "max_page_chars": self.budget.max_page_chars,
+                "max_queries": budget.max_queries,
+                "max_results_per_query": budget.max_results_per_query,
+                "max_pages": budget.max_pages,
+                "max_sources": budget.max_sources,
+                "max_page_chars": budget.max_page_chars,
             },
         }
 
@@ -146,7 +156,7 @@ def research_stages(
             recipe=request.recipe,
             dials=request.dials,
             locale=request.locale,
-            max_queries=request.budget.max_queries,
+            max_queries=request.effective_budget.max_queries,
             subject_domain=request.subject_domain,
             level=request.level,
         )
@@ -167,7 +177,7 @@ def research_stages(
             locale=request.locale,
             subject_domain=request.subject_domain,
             level=request.level,
-            budget=request.budget,
+            budget=request.effective_budget,
         )
         box["run"] = run
         persist_result = _persist_run(lease, request, run)

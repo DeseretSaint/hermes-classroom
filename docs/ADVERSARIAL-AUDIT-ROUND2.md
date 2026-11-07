@@ -22,11 +22,13 @@ python3 -m unittest discover -s tests -t .                # full suite, result i
 bash scripts/validate-plugin.sh <clean export>            # result in the card summary
 ```
 
-- The review named in the card, `docs/ADVERSARIAL-HARNESS-REVIEW.md`, is **untracked** in the
-  main checkout (`git status --porcelain docs/ADVERSARIAL-HARNESS-REVIEW.md` returns `?? ...`,
-  and `git log --all -- docs/ADVERSARIAL-HARNESS-REVIEW.md` returns nothing). It was read from
-  the working tree at `/home/deseretsaint/Projects/hermes-classroom/docs/` and is not part of any
-  commit. See H10-10.
+- Provenance of the round-1 review, corrected 2026-11-07 (H-19): the review named in the card,
+  `docs/ADVERSARIAL-HARNESS-REVIEW.md`, was **untracked at audit time**; it is now committed in
+  `2e3508f` ("docs: adversarial harness review and next-card index"). At audit time the file was
+  read from the working tree at `/home/deseretsaint/Projects/hermes-classroom/docs/`, and
+  `git log --all -- docs/ADVERSARIAL-HARNESS-REVIEW.md` returned nothing. The finding P2-10 below
+  is retained as the audit-time observation; its reproducibility defect is closed by `2e3508f`
+  plus the index in `docs/AUDIT-INDEX.md`. See P2-10.
 
 ## Ranked findings
 
@@ -335,6 +337,10 @@ returns no commit. The card's "read first" premise therefore cannot be reproduce
 or tag. No content judgment is implied; it is a reproducibility defect. Proposed next card: H-18
 "Commit the round-1 review and the audit evidence index", so later audits cite hashes, not a
 working-tree path.
+
+**Status (2026-11-07, H-19): FIXED as a reproducibility defect.** The review is committed in
+`2e3508f`; the board card is H-19 `t_ec1d2c15`. The audit-time observation above is left unchanged.
+See `docs/AUDIT-INDEX.md`.
 
 ## Angles checked that did not yield a new finding (stated so the limits are honest)
 
