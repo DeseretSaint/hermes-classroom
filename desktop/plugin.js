@@ -900,9 +900,10 @@ function supportNote(implemented) {
 }
 
 /** The honest welcome: real state, real actions, no marketing hero and no fake sample progress. */
-function FirstRun({ implemented, onCreate }) {
+function FirstRun({ implemented, onCreate, onSyllabus }) {
   const canCreate = Boolean(implemented && implemented.has('course.create')) && typeof onCreate === 'function'
   const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
+  const canSyllabus = typeof onSyllabus === 'function' && Boolean(implemented && implemented.has('syllabus.intake.create'))
   return jsxs('div', {
     className: 'mx-auto flex w-full max-w-2xl flex-col py-2',
     children: [
@@ -915,15 +916,18 @@ function FirstRun({ implemented, onCreate }) {
         children:
           'Your courses will appear here. Progress and personal answers stay on this profile.'
       }),
-      canCreate || canImport
+      canCreate || canImport || canSyllabus
         ? jsxs('div', {
             className: 'mt-4 flex flex-wrap items-center gap-2',
             children: [
               canCreate
                 ? jsx(sdk.Button, { variant: 'default', onClick: onCreate, children: 'Create a course' })
                 : null,
+              canSyllabus
+                ? jsx(sdk.Button, { variant: canCreate ? 'secondary' : 'default', onClick: onSyllabus, children: SYLLABUS_COPY.action })
+                : null,
               canImport
-                ? jsx(sdk.Button, { variant: 'secondary', onClick: onImportPlaceholder, children: 'Import a pack' })
+                ? jsx(sdk.Button, { variant: 'ghost', onClick: onImportPlaceholder, children: 'Import a pack' })
                 : null
             ]
           })
@@ -2492,6 +2496,7 @@ function FieldDeskHome({
   notice,
   onRetry,
   onCreate,
+  onSyllabus,
   onPrimary,
   onOpenSection,
   onOpen,
@@ -2529,7 +2534,7 @@ function FieldDeskHome({
   if (!desk.row) {
     return jsx('div', {
       'data-cb-desk': 'empty',
-      children: jsx(FirstRun, { implemented, onCreate })
+      children: jsx(FirstRun, { implemented, onCreate, onSyllabus })
     })
   }
 
@@ -2640,7 +2645,7 @@ function useSessionEstimate({ row, current, enabled }) {
  * recently written row), `course.outline` supplies the path, and the section's sources are read
  * only when the drawer opens. A failure in any of those is shown, never papered over.
  */
-function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, profile }) {
+function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSyllabus, profile }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const payload = { filter: 'all', limit: 50, sort: 'recent' }
   const key = JSON.stringify(payload)
@@ -2715,6 +2720,7 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, profile }) {
     notice,
     onRetry: library.reload,
     onCreate: onStartCreate,
+    onSyllabus: onStartSyllabus,
     onPrimary,
     onOpenSection: (objectiveId, blockId) => onOpen(desk.row, objectiveId, blockId),
     notes,
@@ -2731,7 +2737,7 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, profile }) {
   })
 }
 
-function CoursesView({ implemented, onStartCreate, createOpen, onOpen, onShowDesk }) {
+function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, onOpen, onShowDesk }) {
   const [filter, setFilter] = useState('all')
   const [searchInput, setSearchInput] = useState('')
   const [query, setQuery] = useState('')
@@ -2883,7 +2889,7 @@ function CoursesView({ implemented, onStartCreate, createOpen, onOpen, onShowDes
             ]
           })
         })
-      : jsx(FirstRun, { implemented, onCreate: onStartCreate })
+      : jsx(FirstRun, { implemented, onCreate: onStartCreate, onSyllabus: onStartSyllabus })
   } else {
     body = jsxs('div', {
       className: 'flex flex-col',
@@ -3125,7 +3131,7 @@ function formatWhen(value) {
   return parsed.toLocaleString()
 }
 
-function LibraryView({ implemented, createOpen }) {
+function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }) {
   const [view, setView] = useState('all')
   const [selected, setSelected] = useState(null)
   const [packPanel, setPackPanel] = useState(null)
@@ -3299,6 +3305,9 @@ function LibraryView({ implemented, createOpen }) {
             children: 'Back to the Field Desk'
           })
         : null,
+      // Two import paths, side by side and named plainly. A syllabus is not a pack, so it is
+      // never nested behind the pack flow.
+      jsx(SyllabusEntry, { onStartSyllabus, onStartImport }),
       jsxs('div', {
         className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
         children: [
@@ -3877,6 +3886,1273 @@ function CreateCourseFlow({ onCancel, onCreated }) {
     ]
   })
 }
+// ══ H-27 — the student syllabus path: intake, parse review, anchors and alignment ══
+//
+// `docs/STUDENT-MODE.md` is the frozen design (H-25). This half renders exactly what the
+// `syllabus.*` commands answer and nothing else:
+//
+//   intake     the host door reads bytes; the RPC carries bytes or pasted text and never a path;
+//              when this Desktop build has no byte-reading door the screen says so and offers the
+//              paste path, which the design makes first-class;
+//   parse      every scalar is an item with a state and anchors. `unknown` renders as
+//              "Not in your file" — a table cell is never filled from world knowledge;
+//   alignment  one row per syllabus item with its state, one-line reason and the verbatim anchor;
+//              conflict and stale block approval, and the learner's review is the gate;
+//   course     the existing `course.create` → `enrollment.create` → plan job path, with the
+//              syllabus fields the contract added. There is no second job engine and no percentage
+//              invented for a job the backend reports by state only.
+//
+// The external class is the authority; Coursebook is a companion. That sentence is copy, not a
+// badge, and `tests/test_desktop_syllabus_ui.py` refuses the marketing claims the design bans.
+
+const SYLLABUS_LIMITS = Object.freeze({
+  file_name: 255,
+  text_bytes: 4 * 1024 * 1024,
+  binary_bytes: 8 * 1024 * 1024,
+  text_chars: 200000,
+  pdf_pages: 60,
+  docx_paragraphs: 2000,
+  base64_chars: 11184812
+})
+
+/** The closed type list (§2.2). Anything else is refused; the UI does not offer it. */
+const SYLLABUS_ACCEPT = Object.freeze([
+  { ext: 'md', label: 'Markdown (.md)', format: 'markdown', mime: 'text/markdown', text: true },
+  { ext: 'markdown', label: 'Markdown (.markdown)', format: 'markdown', mime: 'text/markdown', text: true },
+  { ext: 'txt', label: 'Plain text (.txt)', format: 'text', mime: 'text/plain', text: true },
+  { ext: 'pdf', label: 'PDF (.pdf)', format: 'pdf', mime: 'application/pdf', text: false },
+  { ext: 'docx', label: 'Word document (.docx)', format: 'docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', text: false }
+])
+
+const SYLLABUS_MIME_HINTS = Object.freeze([
+  'text/markdown',
+  'text/plain',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/octet-stream'
+])
+
+/**
+ * The surface's copy, in one place so a test can read it without scraping JSX.
+ *
+ * Design §3.2 forbids "complete", "official" and "verified with your institution" as claims about
+ * the parse; §4.6 forbids "official week 4 lesson", "your professor's lesson", "required by your
+ * course", "counts toward your grade", "enrolled" and "accredited". "Not official course material"
+ * is the required calm disclaimer and is written as a negation, never a promise.
+ */
+const SYLLABUS_COPY = Object.freeze({
+  action: 'Use my college syllabus',
+  actionDetail: 'You already have the syllabus. Coursebook builds a companion course around it.',
+  entryTitle: 'Have a college syllabus?',
+  entryBody:
+    'Start a companion course from your own class. Your syllabus sets the scope; Coursebook authors its own lessons alongside it.',
+  authority:
+    'Your syllabus is the authority for what the class covers. Coursebook is a companion that supports it — it is not your class, your registrar, or a grade.',
+  notOfficial: 'Not official course material. Coursebook writes its own lessons; your instructor’s document stays the authority.',
+  parseSentence: 'Parsed from your file. Check each item against the page.',
+  unknownValue: 'Not in your file',
+  unknownWeight: 'Weight not in your file',
+  unknownDue: 'Due date not in your file',
+  ambiguousValue: 'Two readings in your file',
+  acceptTypes: 'Markdown, plain text, PDF or Word (.docx). Up to 8 MB; 200,000 characters of text.',
+  noFileDoor:
+    'This Hermes Desktop build has no file door, so it cannot open a syllabus file here. Paste the text below — it is stored the same way and gets the same anchors.',
+  noBackend:
+    'This Coursebook backend does not have the syllabus import yet. Nothing here pretends to read your file until it does.',
+  parseRunning: 'Reading your file. Extraction is local and runs in stages, so there is no percentage to show.',
+  parseNeedsReview:
+    'Some items could not be tied to a quote in your file. Check the ones marked below, or upload a cleaner copy.',
+  storage: 'Your file stays on this profile. The parse and the alignment are sent to the model provider you have configured, and only after you acknowledge that.',
+  alignmentGate: 'Review the mapping before a course is built. Conflict or stale items block approval.',
+  researchMinutes: 'Research and authoring may take several minutes. The plan appears when the backend finishes it.',
+  staleLead: 'Your syllabus changed. The earlier mapping was made against the old revision, so it is marked stale.',
+  staleAction: 'Check the new revision, then review the mapping again. Your approved plan and lessons are kept as they were.',
+  startsCompanion: 'Create companion course',
+  coversLine: (covered, total) => `This course covers ${covered} of ${total} syllabus weeks.`
+})
+
+const ALIGNMENT_STATE_COPY = Object.freeze({
+  aligned: { label: 'Aligned', tone: 'ok', line: 'Coursebook covers what this item asks.' },
+  partial: { label: 'Partly covered', tone: 'warn', line: 'This is covered, but less than the syllabus asks.' },
+  unmatched: { label: 'Not covered', tone: 'warn', line: 'Nothing in this course plan maps to this item yet.' },
+  conflict: { label: 'Conflicts', tone: 'bad', line: 'The course plan contradicts this item.' },
+  unknown: { label: 'Not checked', tone: 'muted', line: 'This item has not been evaluated yet.' },
+  stale: { label: 'Out of date', tone: 'bad', line: 'The syllabus or the plan changed after this was mapped.' }
+})
+
+const SYLLABUS_REASON_COPY = Object.freeze({
+  week_ordinal: 'Matched on the week number in your syllabus.',
+  title_tokens: 'Matched on the wording of the topic.',
+  reading_match: 'Matched on the reading named in your syllabus.',
+  assessment_match: 'Matched on the assessment name.',
+  model: 'Suggested by the model; treat it as a hypothesis, not proof.',
+  anchor_mismatch: 'The quote could not be found in your file, so this stays unknown.',
+  no_target: 'No row in the course plan matched this item.',
+  week_mismatch: 'The plan places this topic in a different week.',
+  deadline_passed: 'The plan schedules work after the date in your syllabus.',
+  scope_exceeded: 'The plan claims more than this item asks for.',
+  ignored_assessment: 'The plan claims coverage while ignoring this assessment.',
+  revision_changed: 'The syllabus revision changed after this mapping was made.',
+  plan_superseded: 'The plan was replaced after this mapping was made.'
+})
+
+/** Format from the extension, never from a declared MIME (§2.1: magic bytes decide at the backend). */
+function syllabusFormatFor(name) {
+  const value = String(name || '')
+  const dot = value.lastIndexOf('.')
+  if (dot < 0 || dot === value.length - 1) return null
+  const ext = value.slice(dot + 1).toLowerCase()
+  const entry = SYLLABUS_ACCEPT.find((candidate) => candidate.ext === ext)
+  return entry ? entry.format : null
+}
+
+function syllabusAcceptEntry(name) {
+  const value = String(name || '')
+  const dot = value.lastIndexOf('.')
+  const ext = dot >= 0 ? value.slice(dot + 1).toLowerCase() : ''
+  return SYLLABUS_ACCEPT.find((candidate) => candidate.ext === ext) || null
+}
+
+function base64FromUtf8(text) {
+  const encoder = new TextEncoder()
+  const bytes = encoder.encode(String(text))
+  let binary = ''
+  const step = 0x8000
+  for (let index = 0; index < bytes.length; index += step) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(index, index + step))
+  }
+  return btoa(binary)
+}
+
+function utf8Bytes(text) {
+  return new TextEncoder().encode(String(text)).length
+}
+
+/**
+ * The `syllabus.intake.create` payload, or a typed refusal.
+ *
+ * Exactly one of `content_base64` / `pasted_text` (§2.1). Bounds are checked here, before a job
+ * exists, so an oversized file is refused with the measured size instead of being uploaded to be
+ * refused later. Nothing here is a sample: a caller that passes nothing gets a refusal.
+ */
+function syllabusIntakePayload(input = {}) {
+  const fail = (code, message) => ({ ok: false, error: { code, message } })
+  const pasted = typeof input.pastedText === 'string' ? input.pastedText : null
+  const text = typeof input.text === 'string' ? input.text : null
+  const dataUrl = typeof input.dataUrl === 'string' ? input.dataUrl : null
+  const supplied = [pasted !== null, text !== null, dataUrl !== null].filter(Boolean).length
+  if (supplied !== 1) {
+    return fail('VALIDATION_FAILED', 'Send one file or one pasted syllabus, not several at once.')
+  }
+
+  const supersedes = input.supersedesSyllabusId ? String(input.supersedesSyllabusId) : null
+
+  if (pasted !== null) {
+    const chars = pasted.length
+    if (chars === 0) return fail('VALIDATION_FAILED', 'The pasted syllabus is empty.')
+    if (chars > SYLLABUS_LIMITS.text_chars) {
+      return fail('SYLLABUS_REJECTED', `That text is ${chars.toLocaleString()} characters; the limit is ${SYLLABUS_LIMITS.text_chars.toLocaleString()}.`)
+    }
+    const payload = { pasted_text: pasted }
+    if (supersedes) payload.supersedes_syllabus_id = supersedes
+    return { ok: true, payload }
+  }
+
+  const fileName = String(input.fileName || '').trim()
+  if (!fileName) return fail('VALIDATION_FAILED', 'The file has no name to show beside it.')
+  if (fileName.length > SYLLABUS_LIMITS.file_name) {
+    return fail('SYLLABUS_REJECTED', 'That file name is longer than the 255 characters the contract accepts.')
+  }
+  const entry = syllabusAcceptEntry(fileName)
+  if (!entry) {
+    return fail('SYLLABUS_REJECTED', 'Coursebook reads Markdown, plain text, PDF and Word (.docx) only. Nothing else is accepted.')
+  }
+
+  if (text !== null) {
+    if (!entry.text) return fail('SYLLABUS_REJECTED', 'A PDF or Word file has to be read as bytes, not as text.')
+    const chars = text.length
+    const bytes = utf8Bytes(text)
+    if (chars === 0) return fail('VALIDATION_FAILED', 'That file is empty.')
+    if (chars > SYLLABUS_LIMITS.text_chars) {
+      return fail('SYLLABUS_REJECTED', `That file is ${chars.toLocaleString()} characters; the limit is ${SYLLABUS_LIMITS.text_chars.toLocaleString()}.`)
+    }
+    if (bytes > SYLLABUS_LIMITS.text_bytes) {
+      return fail('SYLLABUS_REJECTED', `That file is ${bytesLabel(bytes)}; the text limit is ${bytesLabel(SYLLABUS_LIMITS.text_bytes)}.`)
+    }
+    if (text.indexOf('\u0000') >= 0) return fail('SYLLABUS_REJECTED', 'That file is not plain UTF-8 text.')
+    const payload = { content_base64: base64FromUtf8(text), file_name: fileName, mime_hint: entry.mime }
+    if (supersedes) payload.supersedes_syllabus_id = supersedes
+    return { ok: true, payload }
+  }
+
+  const match = /^data:([^;,]*)(?:;[^,]*)?;base64,(.*)$/s.exec(dataUrl)
+  if (!match) return fail('VALIDATION_FAILED', 'The host returned a file in a form Coursebook cannot read. Paste the text instead.')
+  const base64 = match[2] || ''
+  if (base64.length > SYLLABUS_LIMITS.base64_chars) {
+    return fail('SYLLABUS_REJECTED', `That file is larger than the 8 MB limit for PDF and Word.`)
+  }
+  const bytes = Math.floor((base64.length * 3) / 4)
+  if (bytes > SYLLABUS_LIMITS.binary_bytes) {
+    return fail('SYLLABUS_REJECTED', `That file is ${bytesLabel(bytes)}; the limit is ${bytesLabel(SYLLABUS_LIMITS.binary_bytes)}.`)
+  }
+  if (entry.text) return fail('SYLLABUS_REJECTED', 'A text document has to be read as text, not as bytes.')
+  const declared = String(match[1] || '')
+  const hint = SYLLABUS_MIME_HINTS.indexOf(declared) >= 0 ? declared : entry.mime
+  const payload = { content_base64: base64, file_name: fileName, mime_hint: hint }
+  if (supersedes) payload.supersedes_syllabus_id = supersedes
+  return { ok: true, payload }
+}
+
+/** One anchor as a short human label: a page, a line range, or a named section. */
+function syllabusAnchorLabel(anchor) {
+  if (!anchor) return 'your file'
+  const page = anchor.page
+  if (page !== undefined && page !== null && String(page).length) return `p. ${page}`
+  const start = anchor.line_start
+  const end = anchor.line_end
+  if (start !== undefined && start !== null && String(start).length) {
+    if (end !== undefined && end !== null && String(end).length && end !== start) return `lines ${start}–${end}`
+    return `line ${start}`
+  }
+  if (anchor.section) return String(anchor.section)
+  if (anchor.label) return String(anchor.label)
+  return 'your file'
+}
+
+/**
+ * One parsed scalar as the review screen shows it.
+ *
+ * `unknown` never renders a value: the cell says the file does not state it. `ambiguous` shows
+ * that the file supports two readings and lists them; it does not pick one. A state this module
+ * does not know is treated as unknown, because guessing is the one thing this surface must not do.
+ */
+function syllabusItemView(item) {
+  const state = item && typeof item.state === 'string' ? item.state : 'unknown'
+  const anchors = (item && Array.isArray(item.anchors) ? item.anchors : []).filter(Boolean)
+  const anchorLabels = anchors.map(syllabusAnchorLabel)
+  if (state === 'extracted' && item.value !== null && item.value !== undefined && item.value !== '') {
+    return {
+      state: 'extracted',
+      unknown: false,
+      text: String(item.value),
+      anchors,
+      anchorLabels,
+      derivation: item.derivation || 'explicit'
+    }
+  }
+  if (state === 'ambiguous') {
+    return {
+      state: 'ambiguous',
+      unknown: true,
+      text: SYLLABUS_COPY.ambiguousValue,
+      candidates: Array.isArray(item.candidates) ? item.candidates : [],
+      anchors,
+      anchorLabels,
+      derivation: item.derivation || 'ambiguous'
+    }
+  }
+  return {
+    state: 'unknown',
+    unknown: true,
+    text: SYLLABUS_COPY.unknownValue,
+    reason: item && item.reason ? String(item.reason) : null,
+    anchors,
+    anchorLabels,
+    derivation: 'unknown'
+  }
+}
+
+/** Weight and due date, each stated or explicitly unknown. No conversion, no arithmetic. */
+function syllabusAssessmentRows(assessments) {
+  return (Array.isArray(assessments) ? assessments : []).map((assessment) => {
+    const rawTitle = assessment && assessment.title
+    const title = syllabusItemView(
+      rawTitle && typeof rawTitle === 'object'
+        ? rawTitle
+        : rawTitle
+          ? { value: rawTitle, state: 'extracted', anchors: assessment.anchors }
+          : { state: 'unknown' }
+    )
+    const weight = syllabusItemView((assessment && assessment.weight) || { state: 'unknown' })
+    const unit = (assessment && assessment.weight_unit) || 'unknown'
+    let weightText = weight.text
+    if (!weight.unknown) {
+      if (unit === 'percent') weightText = `${weight.text}%`
+      else if (unit === 'points') weightText = `${weight.text} points`
+    } else {
+      weightText = SYLLABUS_COPY.unknownWeight
+    }
+    const due = syllabusItemView((assessment && assessment.due) || { state: 'unknown' })
+    let dueText = due.text
+    if (due.unknown) dueText = SYLLABUS_COPY.unknownDue
+    else if (due.derivation === 'computed_from_term_start') dueText = `${due.text} (counted from your term start)`
+    return {
+      id: (assessment && assessment.id) || null,
+      title: title.text,
+      titleUnknown: title.unknown,
+      kind: (assessment && assessment.kind) || 'unknown',
+      due: dueText,
+      dueUnknown: due.unknown,
+      weight: weightText,
+      weightUnknown: weight.unknown,
+      weekOrdinal: assessment && assessment.week_ordinal !== undefined ? assessment.week_ordinal : null,
+      anchors: (assessment && assessment.anchors) || [],
+      anchorLabels: ((assessment && assessment.anchors) || []).map(syllabusAnchorLabel)
+    }
+  })
+}
+
+/**
+ * The scope the parser proposes, with its reason. A syllabus with no term length proposes
+ * nothing — the learner chooses, and the screen says why (§5).
+ */
+function syllabusScopeProposal(parsed) {
+  const document = parsed && parsed.document ? parsed.document : parsed || {}
+  const weeks = Array.isArray(document.weeks) ? document.weeks.length : 0
+  const assessments = Array.isArray(document.assessments) ? document.assessments.length : 0
+  if (weeks === 0) {
+    return { proposal: null, reason: 'Your file does not list weeks, so Coursebook cannot propose a length. Choose one.', weeks, assessments }
+  }
+  if (weeks === 1) {
+    return { proposal: 'single', reason: 'Your file covers one week, so one lesson is enough — you can choose a short course instead.', weeks, assessments }
+  }
+  if (weeks <= 7) {
+    return { proposal: 'short', reason: `Your file lists ${weeks} weeks, so a short course fits.`, weeks, assessments }
+  }
+  return { proposal: 'full', reason: `Your file lists ${weeks} weeks and ${assessments} assessment${assessments === 1 ? '' : 's'}, so this is a long course; authoring runs unit by unit.`, weeks, assessments }
+}
+
+/** The course's own metadata, each field stated by the file or absent. Nothing is composed. */
+function syllabusCourseFields(parsed) {
+  const document = parsed && parsed.document ? parsed.document : parsed || {}
+  const course = document.course || {}
+  const code = syllabusItemView(course.code || { state: 'unknown' })
+  const title = syllabusItemView(course.title || { state: 'unknown' })
+  return {
+    code: code.unknown ? null : code.text,
+    title: title.unknown ? null : title.text,
+    codeView: code,
+    titleView: title,
+    institution: syllabusItemView(document.institution ? document.institution : { state: 'unknown' })
+  }
+}
+
+/**
+ * `course.create` for a companion course (§6.2). The syllabus id and revision travel together or
+ * not at all; `recipe` is always `companion` and `pack_id` is never sent, so the backend keeps
+ * `courses.pack_id` NULL.
+ */
+function syllabusCoursePayload({ parsed, scope, goal, learnerLabel }) {
+  const fields = syllabusCourseFields(parsed)
+  const title = fields.title || fields.code || String(learnerLabel || '').trim() || 'Companion course'
+  const payload = {
+    title,
+    recipe: 'companion',
+    goal: String(goal || '').trim() || (fields.title ? `Support the class on ${fields.title}.` : 'Support the class described in my syllabus.'),
+    dials: {},
+    scope: scope || 'short'
+  }
+  if (parsed && parsed.syllabus_id) payload.syllabus_id = parsed.syllabus_id
+  if (parsed && parsed.revision !== undefined) payload.syllabus_revision = parsed.revision
+  return payload
+}
+
+/** The plan job brief: the existing brief plus the syllabus fields the contract added. */
+function syllabusPlanBrief({ courseId, enrollmentId, goal, syllabusId, syllabusRevision, alignmentRevision, scope }) {
+  const brief = { stage: 'plan', course_id: courseId, enrollment_id: enrollmentId, goal, recipe: 'companion', dials: {} }
+  if (scope) brief.scope = scope
+  if (syllabusId) brief.syllabus_id = syllabusId
+  if (syllabusRevision !== undefined && syllabusRevision !== null) brief.syllabus_revision = syllabusRevision
+  if (alignmentRevision !== undefined && alignmentRevision !== null) brief.alignment_revision = alignmentRevision
+  return brief
+}
+
+/** `syllabus.align` between the draft plan and the parsed syllabus. */
+function syllabusAlignPayload({ syllabusId, revision, courseId, planId }) {
+  return { syllabus_id: syllabusId, revision: Number(revision) || 0, course_id: courseId, plan_id: planId }
+}
+
+/**
+ * The alignment as the review screen shows it.
+ *
+ * One row per syllabus item. `aligned` and `partial` do not block; `conflict`, `stale`, and an
+ * extracted item still awaiting evaluation (`unknown`) do. An item whose *value* is unknown never
+ * blocks, because nothing was mapped, so nothing was invented (§4.2).
+ */
+function syllabusAlignmentView(alignment) {
+  const source = alignment || {}
+  const items = Array.isArray(source.items) ? source.items : []
+  const rows = items.map((item) => {
+    const state = typeof item.state === 'string' ? item.state : 'unknown'
+    const copy = ALIGNMENT_STATE_COPY[state] || ALIGNMENT_STATE_COPY.unknown
+    const valueState = item.value_state || item.valueState || (item.value === undefined || item.value === null ? 'unknown' : 'extracted')
+    const anchors = Array.isArray(item.anchors) ? item.anchors : []
+    const target = item.target || null
+    const reasonCode = item.reason_code || item.reasonCode || null
+    const reason = item.reason || (reasonCode && SYLLABUS_REASON_COPY[reasonCode]) || copy.line
+    const blocks = state === 'conflict' || state === 'stale' || (state === 'unknown' && valueState !== 'unknown')
+    const actions = []
+    if (state === 'partial') actions.push({ action: 'accept_partial', label: 'Accept what it covers' })
+    if (state === 'unmatched') actions.push({ action: 'accept_unmatched', label: 'Accept not covered' })
+    if (state === 'conflict') {
+      actions.push({ action: 'accept_divergence', label: 'Accept this divergence' })
+      actions.push({ action: 'request_replan', label: 'Replan to match my syllabus' })
+    }
+    return {
+      itemId: item.item_id || item.itemId || null,
+      kind: item.kind || 'item',
+      title: item.title || item.value || (item.kind ? String(item.kind) : 'Syllabus item'),
+      state,
+      stateLabel: copy.label,
+      tone: copy.tone,
+      line: copy.line,
+      reason,
+      reasonCode,
+      valueState,
+      anchors,
+      anchorLabels: anchors.map(syllabusAnchorLabel),
+      target,
+      targetLabel: target ? target.title || target.label || target.target_id || null : null,
+      reviewState: item.review_state || 'pending',
+      blocks,
+      actions
+    }
+  })
+  const counts = { aligned: 0, partial: 0, unmatched: 0, conflict: 0, unknown: 0, stale: 0 }
+  if (source.counts && typeof source.counts === 'object') {
+    for (const key of Object.keys(counts)) counts[key] = Number(source.counts[key] || 0)
+  } else {
+    rows.forEach((row) => {
+      counts[row.state] = (counts[row.state] || 0) + 1
+    })
+  }
+  const alignmentRevision = Number(source.alignment_revision) || 0
+  const reviewedRevision = Number(source.reviewed_revision) || 0
+  const stale = Boolean(source.stale) || rows.some((row) => row.state === 'stale')
+  const blocking = rows.filter((row) => row.blocks)
+  const awaitingReview = rows.filter((row) => row.state !== 'aligned' && row.state !== 'unknown' && row.reviewState === 'pending')
+  return {
+    rows,
+    counts,
+    stale,
+    alignmentRevision,
+    reviewedRevision,
+    reviewComplete: alignmentRevision > 0 && reviewedRevision === alignmentRevision,
+    blocking,
+    awaitingReview,
+    approveReady: !stale && blocking.length === 0 && alignmentRevision > 0 && reviewedRevision === alignmentRevision,
+    approveBlockedReason: stale
+      ? SYLLABUS_COPY.staleLead
+      : blocking.length
+        ? `${blocking.length} item${blocking.length === 1 ? '' : 's'} must be resolved before the plan can be approved.`
+        : reviewedRevision !== alignmentRevision
+          ? 'Review each item, then approve the mapping.'
+          : null
+  }
+}
+
+/** `syllabus.alignment.review`: the decisions, fenced to the revision the learner actually saw. */
+function syllabusReviewPayload({ syllabusId, revision, courseId, alignmentRevision, decisions }) {
+  const accepted = ['accept_partial', 'accept_unmatched', 'accept_divergence', 'request_replan']
+  const rows = (Array.isArray(decisions) ? decisions : [])
+    .filter((decision) => decision && decision.item_id && accepted.indexOf(decision.action) >= 0)
+    .map((decision) => ({ item_id: decision.item_id, action: decision.action }))
+  return {
+    syllabus_id: syllabusId,
+    revision: Number(revision) || 0,
+    course_id: courseId,
+    alignment_revision: Number(alignmentRevision) || 0,
+    decisions: rows
+  }
+}
+
+/** The revision notice. A new revision marks the old mapping stale; it never regenerates a plan. */
+function syllabusStaleNotice({ revision, counts, planRevision }) {
+  const pending = counts && typeof counts === 'object' ? Number(counts.conflict || 0) + Number(counts.stale || 0) : 0
+  const lines = [SYLLABUS_COPY.staleLead]
+  if (pending > 0) lines.push(`${pending} mapping${pending === 1 ? '' : 's'} need another look.`)
+  if (planRevision !== undefined && planRevision !== null) {
+    lines.push(`Your approved plan is still the one aligned to syllabus revision ${planRevision}; it stays readable.`)
+  }
+  lines.push(SYLLABUS_COPY.staleAction)
+  return { revision: Number(revision) || 0, pending, lines, action: 'Check the new revision' }
+}
+
+/**
+ * One companion course: `course.create` → `enrollment.create` → one plan job.
+ *
+ * The same shape as `startLearnerPlan`, with the syllabus binding and no second engine. A failed
+ * plan job keeps the ids that already exist, and the same key retries the same job.
+ */
+async function startCompanionCourse({ call, key, parsed, scope, goal, learnerLabel }) {
+  const course = await call('course.create', syllabusCoursePayload({ parsed, scope, goal, learnerLabel }), {
+    idempotencyKey: key,
+    expectedRevision: null
+  })
+  if (!course || !course.ok) return { ok: false, stage: 'course.create', error: (course && course.error) || null }
+  const courseId = course.result.course_id
+  const planId = course.result.plan_id || null
+
+  const enrollment = await call(
+    'enrollment.create',
+    { course_id: courseId, learner_label: learnerLabel || course.result.title || 'Companion course' },
+    { idempotencyKey: `${key}-enroll`, expectedRevision: null }
+  )
+  if (!enrollment || !enrollment.ok) {
+    return { ok: false, stage: 'enrollment.create', error: (enrollment && enrollment.error) || null, courseId, planId }
+  }
+  const enrollmentId = enrollment.result.enrollment_id
+
+  const job = await call(
+    'jobs.create',
+    {
+      kind: 'plan',
+      brief: syllabusPlanBrief({
+        courseId,
+        enrollmentId,
+        goal,
+        scope,
+        syllabusId: parsed && parsed.syllabus_id,
+        syllabusRevision: parsed && parsed.revision
+      })
+    },
+    { idempotencyKey: `${key}-plan` }
+  )
+  if (!job || !job.ok) {
+    return { ok: false, stage: 'jobs.create', error: (job && job.error) || null, courseId, planId, enrollmentId }
+  }
+  return {
+    ok: true,
+    courseId,
+    planId,
+    enrollmentId,
+    jobId: job.result.job_id,
+    jobState: job.result.state
+  }
+}
+
+/** `syllabus.align` once a draft plan exists. Idempotent per (syllabus, revision, plan). */
+async function queueSyllabusAlignment({ call, syllabusId, revision, courseId, planId }) {
+  const response = await call(
+    'syllabus.align',
+    syllabusAlignPayload({ syllabusId, revision, courseId, planId }),
+    { idempotencyKey: `cb-syllabus-align-${syllabusId}-${revision}-${planId}` }
+  )
+  if (!response || !response.ok) return { ok: false, error: (response && response.error) || null }
+  return { ok: true, jobId: response.result.job_id, alignmentRevision: response.result.alignment_revision, state: response.result.state }
+}
+
+// ── surfaces ────────────────────────────────────────────────────────────────────────────────
+
+/** A value and its anchors. An unknown is a word, not an empty cell. */
+function SyllabusValue({ item, label, onAnchor }) {
+  const view = syllabusItemView(item)
+  return jsxs('div', {
+    className: 'flex min-w-0 flex-col gap-1 py-1.5',
+    'data-cb-syllabus-field': label,
+    'data-cb-syllabus-state': view.state,
+    children: [
+      jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: label }),
+      jsxs('div', {
+        className: 'flex flex-wrap items-baseline gap-2',
+        children: [
+          jsx('div', {
+            className: view.unknown ? 'text-sm italic text-(--ui-text-secondary)' : 'text-sm',
+            children: view.text
+          }),
+          ...view.anchorLabels.map((anchorLabel, index) =>
+            jsx(
+              sdk.Button,
+              {
+                key: `${label}-${index}`,
+                size: 'sm',
+                variant: 'text',
+                'aria-label': `${label} — show the source at ${anchorLabel}`,
+                onClick: () => onAnchor && onAnchor({ anchors: [view.anchors[index]], label }),
+                children: anchorLabel
+              },
+              `${label}-anchor-${index}`
+            )
+          )
+        ]
+      })
+    ]
+  })
+}
+
+function SyllabusAnchorPanel({ open, anchors, blocks, label, onClose }) {
+  if (!open) return null
+  const index = new Map((Array.isArray(blocks) ? blocks : []).map((block) => [block.block_id, block]))
+  return jsxs('div', {
+    className: 'mt-2 flex flex-col gap-2 border-l-2 border-(--ui-stroke-secondary) pl-3',
+    'data-cb-syllabus-anchor': label || 'source',
+    children: [
+      jsxs('div', {
+        className: 'flex items-center justify-between gap-2',
+        children: [
+          jsx('div', { className: 'text-xs font-semibold', children: 'Source in your file' }),
+          jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: onClose, children: 'Close source' })
+        ]
+      }),
+      ...(Array.isArray(anchors) ? anchors : []).map((anchor, position) => {
+        const block = anchor && anchor.block_id ? index.get(anchor.block_id) : null
+        const text = (anchor && anchor.quote) || (block && block.text) || null
+        return jsxs(
+          'div',
+          {
+            className: 'flex flex-col gap-0.5',
+            children: [
+              jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: syllabusAnchorLabel(anchor) }),
+              jsx('div', {
+                className: 'whitespace-pre-wrap break-words text-sm',
+                children: text || 'That quote is no longer in this copy of your file.'
+              })
+            ]
+          },
+          `anchor-${position}`
+        )
+      }),
+      jsx('div', {
+        className: 'text-xs text-(--ui-text-secondary)',
+        children: 'This is the text the item was read from. If it does not match, the item is wrong.'
+      })
+    ]
+  })
+}
+
+function SyllabusWeekRow({ week, onAnchor }) {
+  const ordinal = syllabusItemView(week && week.ordinal !== undefined ? { value: week.ordinal, state: 'extracted', anchors: week.anchors } : { state: 'unknown' })
+  const label = syllabusItemView(week && week.label ? { value: week.label, state: 'extracted', anchors: week.anchors } : { state: 'unknown' })
+  // `topic` is an item in the parse document and a plain string in a hand-written fixture: both
+  // shapes are honoured, and neither is turned into a value the file did not state.
+  const rawTopic = week && week.topic
+  const topic = syllabusItemView(
+    rawTopic && typeof rawTopic === 'object'
+      ? rawTopic
+      : rawTopic
+        ? { value: rawTopic, state: 'extracted', anchors: week.anchors }
+        : { state: 'unknown' }
+  )
+  const readings = (week && Array.isArray(week.readings) ? week.readings : []).map(syllabusItemView)
+  return jsxs('div', {
+    className: 'flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) py-2 last:border-b-0',
+    'data-cb-syllabus-week': ordinal.unknown ? label.text : ordinal.text,
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-baseline gap-2',
+        children: [
+          jsx('div', { className: 'text-sm font-medium', children: ordinal.unknown ? label.text : `Week ${ordinal.text}` }),
+          label.unknown ? null : jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: label.text }),
+          ...topic.anchorLabels.map((anchorLabel, index) =>
+            jsx(sdk.Button, { key: `w-${index}`, size: 'sm', variant: 'text', onClick: () => onAnchor && onAnchor({ anchors: [topic.anchors[index]], label: 'the week' }), children: anchorLabel }, `w-${index}`)
+          )
+        ]
+      }),
+      jsx('div', { className: topic.unknown ? 'text-sm italic text-(--ui-text-secondary)' : 'text-sm', children: topic.text }),
+      readings.length
+        ? jsx('div', {
+            className: 'text-xs text-(--ui-text-secondary)',
+            children: `Reading: ${readings.map((entry) => entry.text).join('; ')}`
+          })
+        : null
+    ]
+  })
+}
+
+/**
+ * The parse review: course facts, outcomes, weeks, assessments, then what the file does not
+ * state. The coverage line is measured by the backend; the sentence is the design's own.
+ */
+function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, busy }) {
+  const [anchor, setAnchor] = useState(null)
+  const document = parsed && parsed.document ? parsed.document : parsed || {}
+  const fields = syllabusCourseFields(document)
+  const outcomes = (Array.isArray(document.learning_outcomes) ? document.learning_outcomes : []).map(syllabusItemView)
+  const weeks = Array.isArray(document.weeks) ? document.weeks : []
+  const assessments = syllabusAssessmentRows(document.assessments)
+  const policies = (Array.isArray(document.policies) ? document.policies : []).map(syllabusItemView)
+  const unknowns = Array.isArray(document.unknowns) ? document.unknowns : []
+  const coverage = document.coverage || {}
+  const needsReview = (parsed && parsed.parse_state) === 'needs_review'
+  const warnings = Array.isArray(parsed && parsed.warnings) ? parsed.warnings : []
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-4',
+    'data-cb-syllabus': 'parse-review',
+    children: [
+      jsxs('div', { className: 'flex flex-col gap-1', children: [
+        jsx('div', { className: 'text-sm font-semibold', children: 'What Coursebook read from your syllabus' }),
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.parseSentence }),
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.notOfficial })
+      ] }),
+      needsReview
+        ? jsxs('div', {
+            className: 'flex flex-col gap-1 border-l-2 border-(--ui-stroke-secondary) pl-3',
+            'data-cb-syllabus': 'parse-warning',
+            children: [
+              jsx('div', { className: 'text-sm font-medium', children: 'Check these items before you continue' }),
+              jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.parseNeedsReview })
+            ]
+          })
+        : null,
+      ...warnings.slice(0, 6).map((warning, index) =>
+        jsx('div', { key: `warning-${index}`, className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: String(warning) }, `warning-${index}`)
+      ),
+      jsxs('div', {
+        className: 'grid grid-cols-1 gap-x-8 gap-y-1 min-[47.5rem]:grid-cols-2',
+        children: [
+          jsx(SyllabusValue, { item: document.course && document.course.code, label: 'Course code', onAnchor: setAnchor }),
+          jsx(SyllabusValue, { item: document.course && document.course.title, label: 'Course title', onAnchor: setAnchor }),
+          jsx(SyllabusValue, { item: document.institution, label: 'Institution', onAnchor: setAnchor }),
+          jsx(SyllabusValue, { item: document.instructor, label: 'Instructor', onAnchor: setAnchor }),
+          jsx(SyllabusValue, { item: document.meeting_pattern, label: 'When it meets', onAnchor: setAnchor }),
+          jsx(SyllabusValue, { item: document.term && document.term.start_date, label: 'Term starts', onAnchor: setAnchor }),
+          jsx(SyllabusValue, { item: document.term && document.term.end_date, label: 'Term ends', onAnchor: setAnchor })
+        ]
+      }),
+      anchor ? jsx(SyllabusAnchorPanel, { open: true, anchors: anchor.anchors, blocks, label: anchor.label, onClose: () => setAnchor(null) }) : null,
+      jsx(sdk.PanelSectionLabel, { children: 'LEARNING OUTCOMES IN YOUR FILE' }),
+      outcomes.length
+        ? jsxs('div', { className: 'flex flex-col', children: outcomes.map((outcome, index) =>
+            jsxs('div', { className: 'flex flex-col gap-0.5 border-b border-(--ui-stroke-tertiary) py-1.5 last:border-b-0', children: [
+              jsx('div', { className: outcome.unknown ? 'text-sm italic text-(--ui-text-secondary)' : 'text-sm', children: outcome.text }),
+              jsxs('div', { className: 'flex flex-wrap gap-2', children: outcome.anchorLabels.map((label, position) =>
+                jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: () => setAnchor({ anchors: [outcome.anchors[position]], label: 'an outcome' }), children: label }, `o-${index}-${position}`)) })
+            ] }, `outcome-${index}`)) })
+        : jsx(sdk.PanelEmpty, { children: 'Your file does not list learning outcomes.' }),
+      jsx(sdk.PanelSectionLabel, { children: 'WEEKS' }),
+      weeks.length
+        ? jsx('div', { className: 'flex flex-col', children: weeks.map((week, index) => jsx(SyllabusWeekRow, { week, onAnchor: setAnchor }, `week-${index}`)) })
+        : jsx(sdk.PanelEmpty, { children: 'Your file does not list weeks.' }),
+      jsx(sdk.PanelSectionLabel, { children: 'ASSESSMENTS AND WEIGHTS' }),
+      assessments.length
+        ? jsx('div', {
+            className: 'flex flex-col',
+            children: assessments.map((row, index) =>
+              jsxs('div', {
+                className: 'flex flex-col gap-0.5 border-b border-(--ui-stroke-tertiary) py-1.5 last:border-b-0',
+                'data-cb-syllabus-assessment': row.title,
+                children: [
+                  jsxs('div', { className: 'flex flex-wrap items-baseline gap-2', children: [
+                    jsx('div', { className: row.titleUnknown ? 'text-sm italic text-(--ui-text-secondary)' : 'text-sm font-medium', children: row.title }),
+                    jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: row.due }),
+                    jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: row.weight })
+                  ] }),
+                  jsxs('div', { className: 'flex flex-wrap gap-2', children: row.anchorLabels.map((label, position) =>
+                    jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: () => setAnchor({ anchors: [row.anchors[position]], label: 'an assessment' }), children: label }, `a-${index}-${position}`)) })
+                ]
+              }, `assessment-${index}`)
+            )
+          })
+        : jsx(sdk.PanelEmpty, { children: 'Your file does not list assessments.' }),
+      jsx(sdk.PanelSectionLabel, { children: 'POLICIES YOUR FILE STATES' }),
+      policies.length
+        ? jsx('div', { className: 'flex flex-col', children: policies.map((policy, index) =>
+            jsx('div', { className: 'max-w-prose border-b border-(--ui-stroke-tertiary) py-1.5 text-sm last:border-b-0', children: policy.text }, `policy-${index}`)) })
+        : jsx(sdk.PanelEmpty, { children: 'Your file does not state study policies Coursebook can quote.' }),
+      jsx(sdk.PanelSectionLabel, { children: 'WHAT YOUR FILE DOES NOT STATE' }),
+      unknowns.length
+        ? jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: unknowns.join(' · ') })
+        : jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: 'Nothing was left out by this parse.' }),
+      jsx('div', {
+        className: 'text-xs text-(--ui-text-secondary)',
+        'data-cb-syllabus-coverage': `${coverage.pages || 0}/${coverage.items_total || 0}/${coverage.items_extracted || 0}`,
+        children: coverage.pages
+          ? `Read from ${coverage.pages} page${coverage.pages === 1 ? '' : 's'}: ${coverage.items_extracted || 0} of ${coverage.items_total || 0} items had a quote in your file.`
+          : 'The backend did not report coverage for this parse.'
+      }),
+      jsxs('div', { className: 'flex flex-wrap items-center gap-2 border-t border-(--ui-stroke-tertiary) pt-3', children: [
+        jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: onBack, children: 'Back' }),
+        onReparse ? jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: onReparse, disabled: Boolean(busy), children: 'Read it again' }) : null,
+        jsx(sdk.Button, {
+          size: 'sm',
+          variant: 'default',
+          disabled: Boolean(busy) || needsReview,
+          onClick: onContinue,
+          children: 'Confirm these details'
+        })
+      ] })
+    ]
+  })
+}
+
+/** The authority sentence, the counts, then one row per item with its reason and source. */
+function SyllabusAlignmentReview({ alignment, onDecision, onApprove, onRealign, busy }) {
+  const [anchor, setAnchor] = useState(null)
+  const view = syllabusAlignmentView(alignment)
+  const countsLine = ['aligned', 'partial', 'unmatched', 'conflict', 'unknown', 'stale']
+    .filter((state) => Number(view.counts[state] || 0) > 0)
+    .map((state) => `${view.counts[state]} ${(ALIGNMENT_STATE_COPY[state] || ALIGNMENT_STATE_COPY.unknown).label.toLowerCase()}`)
+    .join(' · ')
+  return jsxs('div', {
+    className: 'flex flex-col gap-3',
+    'data-cb-syllabus': 'alignment',
+    'data-cb-syllabus-approve': view.approveReady ? 'ready' : 'blocked',
+    children: [
+      jsxs('div', { className: 'flex flex-col gap-1', children: [
+        jsx('div', { className: 'text-sm font-semibold', children: 'How the course maps to your syllabus' }),
+        jsx('div', { className: 'max-w-prose text-sm', 'data-cb-syllabus': 'authority', children: SYLLABUS_COPY.authority }),
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.alignmentGate })
+      ] }),
+      view.stale
+        ? jsxs('div', {
+            className: 'flex flex-col gap-1 border-l-2 border-(--ui-stroke-secondary) pl-3',
+            'data-cb-syllabus': 'stale',
+            children: [
+              jsx('div', { className: 'text-sm font-medium', children: 'This mapping is out of date' }),
+              jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.staleAction }),
+              onRealign ? jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onRealign, disabled: Boolean(busy), children: 'Check the new revision' }) : null
+            ]
+          })
+        : null,
+      jsx('div', { className: 'text-xs text-(--ui-text-secondary)', 'data-cb-syllabus-counts': countsLine, children: countsLine || 'The backend reported no items to align.' }),
+      view.rows.length
+        ? jsx('div', { className: 'flex flex-col', children: view.rows.map((row, index) =>
+            jsxs('div', {
+              className: 'flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) py-2 last:border-b-0',
+              'data-cb-align-row': row.state,
+              'data-cb-align-item': row.itemId || `row-${index}`,
+              children: [
+                jsxs('div', { className: 'flex flex-wrap items-baseline gap-2', children: [
+                  jsx('div', { className: 'text-sm font-medium', children: row.title }),
+                  jsx(sdk.Badge, { variant: row.tone === 'bad' ? 'warn' : row.tone === 'ok' ? 'muted' : 'outline', size: 'xs', children: row.stateLabel }),
+                  row.targetLabel ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `→ ${row.targetLabel}` }) : null
+                ] }),
+                jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: row.reason }),
+                jsxs('div', { className: 'flex flex-wrap items-center gap-2', children: [
+                  row.anchorLabels.map((label, position) =>
+                    jsx(sdk.Button, {
+                      key: `anchor-${position}`,
+                      size: 'sm',
+                      variant: 'text',
+                      onClick: () => setAnchor({ anchors: [row.anchors[position]], label: row.title }),
+                      children: label
+                    }, `anchor-${position}`)),
+                  row.actions.map((entry) =>
+                    jsx(sdk.Button, {
+                      key: entry.action,
+                      size: 'sm',
+                      variant: 'secondary',
+                      disabled: Boolean(busy),
+                      onClick: () => onDecision && onDecision({ item_id: row.itemId, action: entry.action }),
+                      children: entry.label
+                    }, entry.action))
+                ] })
+              ]
+            }, row.itemId || `row-${index}`)) })
+        : jsx(sdk.PanelEmpty, { children: 'Nothing has been mapped yet. Run the alignment against a draft plan first.' }),
+      anchor ? jsx(SyllabusAnchorPanel, { open: true, anchors: anchor.anchors, blocks: alignment && alignment.blocks, label: anchor.label, onClose: () => setAnchor(null) }) : null,
+      jsxs('div', { className: 'flex flex-wrap items-center gap-2 border-t border-(--ui-stroke-tertiary) pt-3', children: [
+        jsx(sdk.Button, {
+          size: 'sm',
+          variant: 'default',
+          disabled: Boolean(busy) || !view.approveReady,
+          onClick: onApprove,
+          children: 'Approve this mapping'
+        }),
+        view.approveBlockedReason
+          ? jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', 'data-cb-syllabus': 'approve-reason', children: view.approveBlockedReason })
+          : jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Approved. The plan can be approved on the Plan tab.' })
+      ] })
+    ]
+  })
+}
+
+/**
+ * Intake. The file door is feature-detected: a build without a byte-reading door gets the honest
+ * sentence and the paste box, never a picker that cannot deliver. Every refusal is the backend's
+ * typed code with a readable sentence, and cancellation stops before the next call.
+ */
+function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
+  const [step, setStep] = useState('choose')
+  const [pasted, setPasted] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [syllabus, setSyllabus] = useState(null)
+  const [parsed, setParsed] = useState(null)
+  const [cancelled, setCancelled] = useState(false)
+  const [ack, setAck] = useState(false)
+  const [door, setDoor] = useState('unknown')
+  const cancelledRef = useRef(false)
+
+  useEffect(() => {
+    const files = pluginContext && pluginContext.files
+    const canRead =
+      files &&
+      typeof files.readText === 'function' &&
+      typeof files.readDataUrl === 'function' &&
+      typeof files.requestFolder === 'function'
+    setDoor(canRead ? 'available' : 'absent')
+  }, [])
+
+  const refuse = useCallback((failure) => {
+    const code = failure && failure.code ? failure.code : 'HOST_UNAVAILABLE'
+    const message = failure && failure.message ? failure.message : describeError(failure)
+    setError({ code, message })
+  }, [])
+
+  const submitPasted = useCallback(async () => {
+    if (busy || cancelledRef.current) return
+    const built = syllabusIntakePayload({ pastedText: pasted })
+    if (!built.ok) {
+      refuse(built.error)
+      return
+    }
+    setBusy(true)
+    setError(null)
+    setStep('reading')
+    try {
+      const created = await rpc('syllabus.intake.create', built.payload, {
+        idempotencyKey: `cb-syllabus-intake-${newOperationId('intake')}`,
+        expectedRevision: null
+      })
+      if (cancelledRef.current) return
+      if (!created.ok) {
+        refuse(created.error)
+        setStep('choose')
+        return
+      }
+      setSyllabus(created.result)
+      const job = await rpc('syllabus.parse', {
+        syllabus_id: created.result.syllabus_id,
+        revision: created.result.revision,
+        egress_acknowledged: true
+      }, { idempotencyKey: `cb-syllabus-parse-${created.result.syllabus_id}-${created.result.revision}-${created.result.content_sha256}` })
+      if (cancelledRef.current) return
+      if (!job.ok) {
+        refuse(job.error)
+        setStep('choose')
+        return
+      }
+      onParsed && onParsed(created.result)
+      setStep('parsing')
+    } catch (failure) {
+      refuse({ code: 'HOST_UNAVAILABLE', message: describeError(failure) })
+      setStep('choose')
+    } finally {
+      setBusy(false)
+    }
+  }, [busy, pasted, refuse, onParsed])
+
+  const openFile = useCallback(async () => {
+    const files = pluginContext && pluginContext.files
+    if (!files || typeof files.requestFolder !== 'function') {
+      setDoor('absent')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const picked = await files.requestFolder()
+      if (cancelledRef.current) return
+      if (!picked || !picked.ok || !picked.folder) {
+        if (picked && picked.message) refuse({ code: 'HOST_UNAVAILABLE', message: picked.message })
+        return
+      }
+      const listing = await files.list(picked.folder.id)
+      if (!listing || !listing.ok) {
+        refuse({ code: 'HOST_UNAVAILABLE', message: (listing && listing.message) || 'That folder could not be read.' })
+        return
+      }
+      const entry = (listing.entries || []).find((candidate) => !candidate.isDirectory && syllabusAcceptEntry(candidate.name))
+      if (!entry) {
+        refuse({ code: 'SYLLABUS_REJECTED', message: 'No Markdown, text, PDF or Word file was in that folder.' })
+        return
+      }
+      const acceptable = syllabusAcceptEntry(entry.name)
+      const read = acceptable.text
+        ? await files.readText(picked.folder.id, entry.path)
+        : await files.readDataUrl(picked.folder.id, entry.path)
+      if (cancelledRef.current) return
+      if (!read || !read.ok) {
+        refuse({ code: (read && read.code) || 'HOST_UNAVAILABLE', message: (read && read.message) || 'The host could not read that file.' })
+        return
+      }
+      const built = syllabusIntakePayload(
+        acceptable.text
+          ? { fileName: entry.name, text: read.text }
+          : { fileName: entry.name, dataUrl: read.dataUrl }
+      )
+      if (!built.ok) {
+        refuse(built.error)
+        return
+      }
+      await sendIntake(built.payload)
+    } catch (failure) {
+      refuse({ code: 'HOST_UNAVAILABLE', message: describeError(failure) })
+    } finally {
+      setBusy(false)
+    }
+  }, [])
+
+  const sendIntake = useCallback(async (payload) => {
+    const created = await rpc('syllabus.intake.create', payload, {
+      idempotencyKey: `cb-syllabus-intake-${newOperationId('intake')}`,
+      expectedRevision: null
+    })
+    if (!created.ok) {
+      refuse(created.error)
+      return
+    }
+    setSyllabus(created.result)
+    const job = await rpc('syllabus.parse', {
+      syllabus_id: created.result.syllabus_id,
+      revision: created.result.revision,
+      egress_acknowledged: true
+    }, { idempotencyKey: `cb-syllabus-parse-${created.result.syllabus_id}-${created.result.revision}-${created.result.content_sha256}` })
+    if (!job.ok) {
+      refuse(job.error)
+      return
+    }
+    onParsed && onParsed(created.result)
+    setStep('parsing')
+  }, [refuse, onParsed])
+
+  const cancel = useCallback(() => {
+    cancelledRef.current = true
+    setCancelled(true)
+    onCancel && onCancel()
+  }, [onCancel])
+
+  if (step === 'parsing' || step === 'parsed') {
+    return jsx(SyllabusParseStage, {
+      syllabus,
+      parsed,
+      onParsed: setParsed,
+      onStep: setStep,
+      onCancel: cancel,
+      onCreated,
+      door: door,
+      busy,
+      error,
+      refuse
+    })
+  }
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-3',
+    'data-cb-syllabus': 'intake',
+    children: [
+      jsxs('div', { className: 'flex flex-col gap-1', children: [
+        jsx('div', { className: 'text-sm font-semibold', children: SYLLABUS_COPY.action }),
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.entryBody }),
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.acceptTypes })
+      ] }),
+      door === 'absent'
+        ? jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', 'data-cb-syllabus': 'no-file-door', children: SYLLABUS_COPY.noFileDoor })
+        : null,
+      jsxs('div', { className: 'flex flex-wrap items-center gap-2', children: [
+        door === 'available'
+          ? jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: openFile, disabled: busy, children: 'Choose a syllabus file' })
+          : null,
+        jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: cancel, children: 'Cancel' })
+      ] }),
+      jsxs('div', { className: 'flex flex-col gap-1', children: [
+        jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Or paste the syllabus text' }),
+        jsx(sdk.Textarea, {
+          'aria-label': 'Paste your syllabus text',
+          value: pasted,
+          rows: 8,
+          onChange: (event) => setPasted(event && event.target ? event.target.value : '')
+        }),
+        jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `${pasted.length.toLocaleString()} of ${SYLLABUS_LIMITS.text_chars.toLocaleString()} characters` })
+      ] }),
+      jsxs('div', { className: 'flex items-start gap-2', children: [
+        jsx(sdk.Checkbox, {
+          id: 'cb-syllabus-egress',
+          'aria-label': 'Acknowledge that the extracted text goes to my configured model provider',
+          checked: ack,
+          onCheckedChange: setAck
+        }),
+        jsx('div', {
+          className: 'max-w-prose text-xs text-(--ui-text-secondary)',
+          'data-cb-syllabus': 'egress',
+          children: SYLLABUS_COPY.storage
+        })
+      ] }),
+      jsx(sdk.Button, {
+        className: 'self-start',
+        size: 'sm',
+        variant: 'default',
+        disabled: busy || !ack || pasted.trim().length === 0,
+        onClick: submitPasted,
+        children: busy ? 'Reading your syllabus' : 'Use this text'
+      }),
+      error
+        ? jsx(sdk.ErrorState, { title: error.code, description: error.message })
+        : null,
+      cancelled
+        ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Cancelled. Nothing further was sent.' })
+        : null
+    ]
+  })
+}
+
+/** Parse stage: poll the stored document, then hand the review screen its real items. */
+function SyllabusParseStage({ syllabus, parsed, onParsed, onStep, onCancel, onCreated, busy, error, refuse }) {
+  const [document, setDocument] = useState(null)
+  const [state, setState] = useState(parsed ? 'parsed' : 'parsing')
+  const [step, setStep] = useState('review')
+  const [scope, setScope] = useState('short')
+  const [submitting, setSubmitting] = useState(false)
+  const [failure, setFailure] = useState(null)
+  const keyRef = useRef(null)
+
+  useEffect(() => {
+    if (!syllabus || parsed) return undefined
+    let stopped = false
+    let attempts = 0
+    let dispose = null
+    const stop = () => {
+      stopped = true
+      if (dispose) {
+        dispose()
+        dispose = null
+      }
+    }
+    const tick = async () => {
+      attempts += 1
+      const response = await rpc('syllabus.get', {
+        syllabus_id: syllabus.syllabus_id,
+        revision: syllabus.revision,
+        include_blocks: true
+      })
+      if (stopped) return
+      if (!response.ok) {
+        setFailure(response.error)
+        stop()
+        return
+      }
+      const result = response.result || {}
+      if (result.state === 'parsed' || result.parse_state) {
+        setDocument(result)
+        setState('parsed')
+        onParsed && onParsed(result)
+        stop()
+        return
+      }
+      if (result.state === 'failed') {
+        setFailure({ code: 'SYLLABUS_REJECTED', message: 'Your file could not be read. Check it is the syllabus itself and try again.' })
+        setState('failed')
+        stop()
+        return
+      }
+      if (attempts >= 150) {
+        setState('slow')
+        stop()
+      }
+    }
+    // `ctx.setInterval` returns a disposer and is cleared when the plugin unloads, so a poller
+    // cannot outlive the surface that started it.
+    if (pluginContext && typeof pluginContext.setInterval === 'function') {
+      dispose = pluginContext.setInterval(tick, 2000)
+    } else {
+      const handle = setInterval(tick, 2000)
+      dispose = () => clearInterval(handle)
+    }
+    return stop
+  }, [syllabus, parsed, onParsed])
+
+  const target = document || parsed
+
+  if (state === 'parsing') {
+    return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'parsing', children: [
+      jsx(sdk.Loader, { label: 'Reading your syllabus' }),
+      jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.parseRunning }),
+      jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'ghost', onClick: onCancel, children: 'Stop watching this parse' })
+    ] })
+  }
+  if (state === 'failed' || failure) {
+    return jsxs('div', { className: 'flex flex-col gap-2', children: [
+      jsx(sdk.ErrorState, { title: failure ? failure.code : 'SYLLABUS_REJECTED', description: failure ? failure.message : 'The parse did not finish.' }),
+      jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Back' })
+    ] })
+  }
+  if (state === 'slow') {
+    return jsxs('div', { className: 'flex flex-col gap-2', children: [
+      jsx('div', { className: 'max-w-prose text-sm', children: 'The parse is taking longer than usual. It keeps running on this device; you can come back to it from Library.' }),
+      jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Back to Library' })
+    ] })
+  }
+
+  if (step === 'scope') {
+    const proposal = syllabusScopeProposal(target)
+    const choices = [
+      { id: 'single', label: 'One lesson' },
+      { id: 'short', label: 'A short course' },
+      { id: 'full', label: 'The whole term' }
+    ]
+    return jsxs('div', { className: 'flex flex-col gap-3', 'data-cb-syllabus': 'scope', children: [
+      jsx('div', { className: 'text-sm font-semibold', children: 'How much of the class should this course support?' }),
+      jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: proposal.proposal ? proposal.reason : proposal.reason }),
+      jsx(sdk.SegmentedControl, { onChange: setScope, options: choices, sizing: 'content', value: scope }),
+      jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.researchMinutes }),
+      failure ? jsx(sdk.ErrorState, { title: failure.code, description: failure.message }) : null,
+      jsxs('div', { className: 'flex flex-wrap gap-2 border-t border-(--ui-stroke-tertiary) pt-3', children: [
+        jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: () => setStep('review'), disabled: submitting, children: 'Back to the details' }),
+        jsx(sdk.Button, {
+          size: 'sm',
+          variant: 'default',
+          disabled: submitting,
+          onClick: async () => {
+            if (!keyRef.current) keyRef.current = `cb-companion-${newOperationId('companion')}`
+            setSubmitting(true)
+            const outcome = await startCompanionCourse({
+              call: rpc,
+              key: keyRef.current,
+              parsed: target,
+              scope,
+              goal: '',
+              learnerLabel: (syllabusCourseFields(target).title || 'Companion course')
+            })
+            setSubmitting(false)
+            if (!outcome.ok) {
+              setFailure(outcome.error || { code: 'INTERNAL_ERROR', message: 'The course could not be created.' })
+              return
+            }
+            onCreated && onCreated(outcome)
+          },
+          children: submitting ? 'Creating the course' : SYLLABUS_COPY.startsCompanion
+        })
+      ] })
+    ] })
+  }
+
+  return jsx(SyllabusParseReview, {
+    parsed: target,
+    blocks: (target && target.blocks) || [],
+    busy: Boolean(busy),
+    onBack: onCancel,
+    onContinue: () => {
+      const proposal = syllabusScopeProposal(target)
+      setScope(proposal.proposal || 'short')
+      setStep('scope')
+    }
+  })
+}
+
+/** The entry point, shared by Library and the first-run card. Two import paths, said plainly. */
+function SyllabusEntry({ onStartSyllabus, onStartImport, compact }) {
+  return jsxs('div', {
+    className: compact ? 'mb-2 flex flex-wrap items-center gap-2' : 'mb-4 flex flex-col gap-2 border-b border-(--ui-stroke-tertiary) pb-3',
+    'data-cb-syllabus': 'entry',
+    children: [
+      compact
+        ? null
+        : jsxs('div', { className: 'flex flex-col gap-1', children: [
+            jsx('div', { className: 'text-sm font-medium', children: SYLLABUS_COPY.entryTitle }),
+            jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.entryBody })
+          ] }),
+      onStartSyllabus
+        ? jsx(sdk.Button, { size: 'sm', variant: compact ? 'secondary' : 'default', onClick: onStartSyllabus, children: SYLLABUS_COPY.action })
+        : null,
+      onStartImport
+        ? jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: onStartImport, children: 'Import a pack' })
+        : null
+    ]
+  })
+}
+
 
 // ══ CB-009 — the learning workspace: course detail, lessons, notebook, quizzes ══
 //
@@ -11588,6 +12864,7 @@ function CoursebookPage() {
   const [coursesMode, setCoursesMode] = useState('desk')
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [syllabusFlow, setSyllabusFlow] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
   const [studioCourse, setStudioCourse] = useState(null)
   const [studioSeed, setStudioSeed] = useState(null)
@@ -11598,6 +12875,7 @@ function CoursebookPage() {
     rememberedDestination = next
     setCreating(false)
     setImporting(false)
+    setSyllabusFlow(false)
     setCoursesMode('desk')
     setOpenCourse(null)
     setStudioCourse(null)
@@ -11612,6 +12890,7 @@ function CoursebookPage() {
         rememberedDestination = 'courses'
         setDestination('courses')
         setCreating(true)
+        setSyllabusFlow(false)
         setImporting(false)
         setStudioCourse(null)
         setStudioSeed(null)
@@ -11619,13 +12898,23 @@ function CoursebookPage() {
         rememberedDestination = 'library'
         setDestination('library')
         setCreating(false)
+        setSyllabusFlow(false)
         setImporting(true)
+        setStudioCourse(null)
+        setStudioSeed(null)
+      } else if (intent.kind === 'syllabus') {
+        rememberedDestination = 'library'
+        setDestination('library')
+        setCreating(false)
+        setImporting(false)
+        setSyllabusFlow(true)
         setStudioCourse(null)
         setStudioSeed(null)
       } else if (intent.kind === 'library') {
         rememberedDestination = 'library'
         setDestination('library')
         setCreating(false)
+        setSyllabusFlow(false)
         setImporting(false)
         setStudioCourse(null)
         setStudioSeed(null)
@@ -11650,6 +12939,7 @@ function CoursebookPage() {
 
   const canCreate = Boolean(implemented && implemented.has('course.create'))
   const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
+  const canSyllabus = Boolean(implemented && implemented.has('syllabus.intake.create'))
   const canAuthor = Boolean(implemented && implemented.has('parent.brief.create'))
 
   let body
@@ -11670,6 +12960,16 @@ function CoursebookPage() {
       onCancel: () => setImporting(false),
       onImported: () => {
         setImporting(false)
+        reloadHealth()
+      }
+    })
+  } else if (syllabusFlow) {
+    body = jsx(SyllabusIntakeFlow, {
+      onCancel: () => setSyllabusFlow(false),
+      // The course and its plan job are real ids the backend returned; the desk reloads so the
+      // new companion course appears from `library.list`, not from this screen's memory.
+      onCreated: () => {
+        setSyllabusFlow(false)
         reloadHealth()
       }
     })
@@ -11714,7 +13014,12 @@ function CoursebookPage() {
       })
     }
   } else if (destination === 'library') {
-    body = jsx(LibraryView, { createOpen: creating, implemented })
+    body = jsx(LibraryView, {
+      createOpen: creating,
+      implemented,
+      onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
+      onStartImport: canImport ? onImportPlaceholder : null
+    })
   } else if (openCourse) {
     body = jsx(CourseDetail, {
       row: openCourse.row,
@@ -11731,6 +13036,7 @@ function CoursebookPage() {
       createOpen: creating,
       implemented,
       onStartCreate: () => setCreating(true),
+      onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
       onOpen: (row) => setOpenCourse({ row, objectiveId: null }),
       onShowDesk: () => setCoursesMode('desk')
     })
@@ -11741,13 +13047,14 @@ function CoursebookPage() {
       onOpen: (row, objectiveId, blockId, view) =>
         setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null }),
       onShowAll: () => setCoursesMode('list'),
-      onStartCreate: () => setCreating(true)
+      onStartCreate: () => setCreating(true),
+      onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null
     })
   }
 
   const statusCopy = backendCopy(health.status)
   const online = useOnline()
-  const showDestinationNav = health.status === 'ready' && !creating && !importing
+  const showDestinationNav = health.status === 'ready' && !creating && !importing && !syllabusFlow
 
   return jsxs('div', {
     className: 'flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
@@ -11792,7 +13099,10 @@ function CoursebookPage() {
                   health.status === 'ready' && online && !creating && !importing && destination === 'courses' && canCreate
                     ? jsx(sdk.Button, { onClick: () => setCreating(true), size: 'sm', variant: 'default', children: 'New course' })
                     : null,
-                  health.status === 'ready' && !creating && !importing && destination === 'library' && canImport
+                  health.status === 'ready' && !creating && !importing && !syllabusFlow && destination === 'library' && canSyllabus
+                    ? jsx(sdk.Button, { onClick: () => setSyllabusFlow(true), size: 'sm', variant: 'secondary', children: SYLLABUS_COPY.action })
+                    : null,
+                  health.status === 'ready' && !creating && !importing && !syllabusFlow && destination === 'library' && canImport
                     ? jsx(sdk.Button, { onClick: onImportPlaceholder, size: 'sm', variant: 'default', children: 'Import pack' })
                     : null,
                   health.status === 'ready' && online && !studioSeed && destination === 'studio' && !studioCourse && canAuthor
@@ -12117,6 +13427,32 @@ export {
   LESSON_VIEWS,
   SELF_REPORTED_CONFIRM_COPY,
   SELF_REPORTED_EVIDENCE_COPY,
+  SYLLABUS_ACCEPT,
+  SYLLABUS_COPY,
+  SYLLABUS_LIMITS,
+  SYLLABUS_MIME_HINTS,
+  ALIGNMENT_STATE_COPY,
+  SyllabusAlignmentReview,
+  SyllabusAnchorPanel,
+  SyllabusEntry,
+  SyllabusIntakeFlow,
+  SyllabusParseReview,
+  SyllabusValue,
+  queueSyllabusAlignment,
+  startCompanionCourse,
+  syllabusAlignmentView,
+  syllabusAlignPayload,
+  syllabusAnchorLabel,
+  syllabusAssessmentRows,
+  syllabusCourseFields,
+  syllabusCoursePayload,
+  syllabusFormatFor,
+  syllabusIntakePayload,
+  syllabusItemView,
+  syllabusPlanBrief,
+  syllabusReviewPayload,
+  syllabusScopeProposal,
+  syllabusStaleNotice,
   LearnerPlanView,
   LessonDocumentView,
   MediaFrame,
@@ -12227,6 +13563,16 @@ export default {
           label: 'Write a parent lesson brief',
           keywords: ['parent', 'brief', 'new lesson', 'author', 'prepare'],
           run: () => requestIntent({ kind: 'studio-new' })
+        }
+      })
+      ctx.register({
+        id: 'syllabus',
+        area: AREAS.palette,
+        data: {
+          id: 'coursebook.syllabus',
+          label: SYLLABUS_COPY.action,
+          keywords: ['syllabus', 'college', 'class', 'student', 'import', 'companion'],
+          run: () => requestIntent({ kind: 'syllabus' })
         }
       })
     }
