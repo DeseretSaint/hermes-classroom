@@ -498,6 +498,53 @@ function startLessonChat(profile) {
   return true
 }
 
+/**
+ * Start or resume one governed lesson run and put the learner in front of it.
+ *
+ * Shared by the course detail and the Field Desk so both next-step buttons take exactly the same
+ * path: `lesson.begin` under an idempotency key, the bound chat when the backend says a resume is
+ * available, otherwise an armed pending bind plus a fresh chat draft. It returns a message rather
+ * than notifying, so each surface can place it where it belongs.
+ */
+async function beginLessonFor({ row, objectiveId, mode, profile }) {
+  if (!row || !row.enrollment_id) return { ok: false, message: 'No course was read for this action.' }
+  const target = objectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id)
+  if (!target) {
+    return { ok: false, message: 'This course has no current objective yet; approve the plan first.' }
+  }
+  const response = await rpc(
+    'lesson.begin',
+    { enrollment_id: row.enrollment_id, objective_id: target, mode },
+    {
+      idempotencyKey: `cb-lesson-${target}-${mode}-${
+        mode === 'fresh' ? newOperationId('run') : 'resume'
+      }`
+    }
+  )
+  if (!response.ok) {
+    return { ok: false, message: `${response.error.code}: ${describeError(response.error)}` }
+  }
+  const outcome = response.result
+  if (mode === 'resume' && outcome.resume && outcome.resume.available && outcome.binding) {
+    const opened = await resumeBoundSession(outcome.binding)
+    return { ok: opened.ok, message: opened.ok ? 'Resumed the bound lesson chat.' : opened.message }
+  }
+  armPendingBind({
+    enrollmentId: row.enrollment_id,
+    objectiveId: target,
+    lessonRunId: outcome.lesson_run_id,
+    profile: profile || currentScope().profile
+  })
+  const started = startLessonChat(profile || currentScope().profile)
+  return {
+    ok: true,
+    started,
+    message: started
+      ? 'A governed run is ready. Its chat binds after your first message.'
+      : 'This Desktop build cannot open a new chat. Start one from the sidebar, then resume this section.'
+  }
+}
+
 function describeError(error) {
   if (!error) return 'The Coursebook backend did not answer.'
   if (typeof error === 'string') return error
@@ -1784,7 +1831,681 @@ function CourseRow({ row, implemented, onResume, onArchive, onDelete, onOpen }) 
   })
 }
 
-function CoursesView({ implemented, onStartCreate, createOpen, onOpen }) {
+// ══ M2 — the Field Desk home ═══════════════════════════════════════════════════════════════
+//
+// The home answers one question: what do I do next? It is assembled only from reads the contract
+// already has:
+//
+//   library.list       the row: next_step, evidence_summary, updated_at and pack provenance
+//   course.outline     the path: every objective with its state and last_opened_at
+//   lesson.page        the current section's sources, fetched only when the drawer is opened
+//   pack.inspect / parent.brief.get   the estimate the backend already recorded
+//
+// There is no sample course, no invented minutes and no vanity metric. A read that fails is
+// rendered as a failure with its code and a retry; a value the backend never recorded is rendered
+// as "not recorded" rather than guessed.
+
+const DESK_STATE_WORD = {
+  not_started: 'Not started',
+  introduced: 'Started',
+  independent_evidence: 'Evidence',
+  delayed_evidence: 'Delayed evidence',
+  review_due: 'Review due',
+  needs_review: 'Needs review',
+  overridden: 'Overridden'
+}
+
+/** The tone is a token name, never a colour literal: `done`/`due`/`active`/`quiet`. */
+const DESK_STATE_TONE = {
+  not_started: 'quiet',
+  introduced: 'active',
+  independent_evidence: 'done',
+  delayed_evidence: 'done',
+  review_due: 'due',
+  needs_review: 'due',
+  overridden: 'quiet'
+}
+
+const DESK_PRIMARY_LABEL = {
+  start_lesson: 'Start the lesson',
+  resume_lesson: 'Resume the lesson',
+  resolve_review_due: 'Start the review',
+  rebind_session: 'Reconnect the chat',
+  review_plan: 'Review the plan',
+  review_pack: 'Review the pack'
+}
+
+function deskToneColor(tone) {
+  if (tone === 'done') return 'var(--cb-field)'
+  if (tone === 'due') return 'var(--cb-ochre)'
+  if (tone === 'active') return 'var(--cb-accent)'
+  return 'var(--cb-ink-soft)'
+}
+
+/**
+ * The section the desk continues. A due review wins when the backend's own `next_step` says so;
+ * otherwise the row's `current_objective_id` decides; otherwise the first objective without
+ * independent evidence. No title matching, no recency guess.
+ */
+function mainlineObjective(row, objectives) {
+  const list = Array.isArray(objectives) ? objectives : []
+  if (list.length === 0) return null
+  const kind = row && row.next_step ? row.next_step.kind : null
+  if (kind === 'resolve_review_due') {
+    const due = list.find((entry) => entry.state === 'review_due' || entry.state === 'needs_review')
+    if (due) return due
+  }
+  const currentId = row && row.evidence_summary ? row.evidence_summary.current_objective_id : null
+  const byId = currentId ? list.find((entry) => entry.objective_id === currentId) : null
+  if (byId) return byId
+  return list.find((entry) => !entry.independent) || list[list.length - 1]
+}
+
+/** "Estimated minutes" is either recorded by the backend or said to be missing. Never derived. */
+function deskEstimateLabel(estimate) {
+  if (estimate && (estimate.status === 'loading' || estimate.status === 'idle')) return 'Reading the estimate'
+  if (estimate && estimate.status === 'ready' && Number(estimate.minutes) > 0) {
+    return `≈ ${Number(estimate.minutes)} min`
+  }
+  return 'Session length not recorded'
+}
+
+/** Pure projection of the three reads into what the desk renders. Tested without a DOM. */
+function buildDeskModel({ library, outline, estimate }) {
+  const rows = library && Array.isArray(library.items) ? library.items : []
+  const row = rows[0] || null
+  if (!row) {
+    return {
+      rows: [],
+      row: null,
+      current: null,
+      objectives: [],
+      total: 0,
+      settled: 0,
+      dueCount: 0,
+      sectionLabel: null,
+      nextLabel: null,
+      primaryLabel: null,
+      primaryKind: null,
+      estimateLabel: deskEstimateLabel(estimate),
+      lastTouched: null,
+      touchedSource: null
+    }
+  }
+  const objectives = outline && Array.isArray(outline.objectives) ? outline.objectives : []
+  const current = mainlineObjective(row, objectives)
+  const total = outline && Number(outline.total) ? Number(outline.total) : objectives.length
+  const settled = objectives.filter((entry) => entry.independent).length
+  const dueCount = objectives.filter(
+    (entry) => entry.state === 'review_due' || entry.state === 'needs_review'
+  ).length
+  const next = row.next_step || {}
+  return {
+    rows,
+    row,
+    current,
+    objectives,
+    total,
+    settled,
+    dueCount,
+    sectionLabel: current ? `Section ${current.ordinal} of ${total}` : null,
+    nextLabel: next.label || 'The backend did not record a next step for this course.',
+    primaryLabel: DESK_PRIMARY_LABEL[next.kind] || 'Open the lesson',
+    primaryKind: next.kind || 'start_lesson',
+    estimateLabel: deskEstimateLabel(estimate),
+    // `last_opened_at` is this section's newest lesson run; `updated_at` is the enrollment's own
+    // write. The section wins when it exists, and the label says which clock was read.
+    lastTouched: (current && current.last_opened_at) || row.updated_at || null,
+    touchedSource: current && current.last_opened_at ? 'section' : 'course'
+  }
+}
+
+function DeskLabel({ children }) {
+  return jsx('div', {
+    style: {
+      fontSize: '0.65rem',
+      fontWeight: 600,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color: 'var(--cb-ink-soft)'
+    },
+    children
+  })
+}
+
+/** One raised frame, not a card in a card: the Continue card is the only surface on the desk. */
+function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
+  const current = desk.current
+  const title = current ? current.title : desk.nextLabel
+  return jsxs('section', {
+    'data-cb-continue': '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+      padding: '1rem 1.1rem 1.05rem',
+      background: 'var(--cb-paper-raised)',
+      border: '1px solid var(--cb-rule)',
+      maxWidth: '46rem'
+    },
+    children: [
+      jsx(DeskLabel, { children: 'Continue' }),
+      jsx('h3', {
+        'data-cb-continue-section': '',
+        style: {
+          margin: 0,
+          fontSize: 'clamp(1.1rem, 1rem + 0.7vw, 1.5rem)',
+          lineHeight: 1.25,
+          letterSpacing: '-0.005em',
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: title
+      }),
+      jsxs('div', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'baseline',
+          gap: '0.2rem 0.85rem',
+          fontSize: '0.75rem',
+          color: 'var(--cb-ink-soft)'
+        },
+        children: [
+          desk.sectionLabel
+            ? jsx('span', { 'data-cb-continue-position': '', children: desk.sectionLabel })
+            : null,
+          jsx('span', { 'data-cb-continue-minutes': '', children: desk.estimateLabel }),
+          jsx('span', {
+            'data-cb-continue-touched': desk.touchedSource || 'none',
+            children: desk.lastTouched ? `Last touched ${whenLabel(desk.lastTouched)}` : 'Nothing touched yet'
+          })
+        ]
+      }),
+      jsxs('p', {
+        'data-cb-continue-next': '',
+        style: { margin: 0, fontSize: '0.9rem', lineHeight: 1.55, color: 'var(--cb-ink)' },
+        children: [
+          jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: 'Next · ' }),
+          desk.nextLabel
+        ]
+      }),
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem', paddingTop: '0.2rem' },
+        children: [
+          jsx(sdk.Button, {
+            variant: 'default',
+            disabled: Boolean(busy) || !current,
+            onClick: onPrimary,
+            children: busy ? 'Opening' : desk.primaryLabel
+          }),
+          jsx(sdk.Button, {
+            variant: 'secondary',
+            disabled: !current,
+            onClick: onOpenSection,
+            children: 'Open the section'
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * The path is a route, not a table: ordinal, title and the state word, with the current section
+ * marked `aria-current="step"`. Every row is a real button into that section.
+ */
+function PathPreview({ desk, onOpenSection }) {
+  const objectives = desk.objectives.slice(0, 8)
+  const remaining = Math.max(0, desk.total - objectives.length)
+  return jsxs('section', {
+    'data-cb-path': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '46rem' },
+    children: [
+      jsxs('div', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: '0.25rem 0.75rem'
+        },
+        children: [
+          jsx(DeskLabel, { children: 'Path' }),
+          jsx('span', {
+            'data-cb-path-summary': '',
+            style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+            children: objectives.length
+              ? `${desk.settled} of ${desk.total} sections have evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
+              : 'No path read yet'
+          })
+        ]
+      }),
+      jsx('ol', {
+        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' },
+        children: objectives.map((objective) => {
+          const tone = DESK_STATE_TONE[objective.state] || 'quiet'
+          const isCurrent = Boolean(desk.current && desk.current.objective_id === objective.objective_id)
+          return jsx(
+            'li',
+            {
+              style: { borderTop: '1px solid var(--cb-rule)' },
+              children: jsx(sdk.Button, {
+                variant: 'text',
+                className: 'w-full justify-start',
+                'aria-current': isCurrent ? 'step' : undefined,
+                onClick: () => onOpenSection(objective.objective_id),
+                children: jsxs('span', {
+                  'data-cb-path-item': objective.objective_id,
+                  'data-cb-path-state': objective.state,
+                  'data-cb-path-current': isCurrent ? 'true' : 'false',
+                  style: {
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '0.7rem',
+                    width: '100%',
+                    padding: '0.4rem 0.1rem',
+                    textAlign: 'left',
+                    color: 'var(--cb-ink)',
+                    fontSize: '0.85rem',
+                    borderLeft: isCurrent ? '2px solid var(--cb-accent)' : '2px solid transparent',
+                    paddingLeft: '0.55rem'
+                  },
+                  children: [
+                    jsx('span', {
+                      style: {
+                        flex: '0 0 1.6rem',
+                        color: deskToneColor(tone),
+                        fontVariantNumeric: 'tabular-nums',
+                        fontSize: '0.75rem'
+                      },
+                      children: String(objective.ordinal).padStart(2, '0')
+                    }),
+                    jsx('span', {
+                      style: { flex: '1 1 auto', minWidth: 0, overflowWrap: 'anywhere' },
+                      children: objective.title
+                    }),
+                    jsx('span', {
+                      style: { flex: '0 0 auto', fontSize: '0.7rem', color: deskToneColor(tone), fontWeight: 500 },
+                      children: DESK_STATE_WORD[objective.state] || objective.state
+                    })
+                  ]
+                })
+              })
+            },
+            objective.objective_id
+          )
+        })
+      }),
+      remaining > 0
+        ? jsx('div', { style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)', paddingTop: '0.2rem' }, children: `${remaining} more section${remaining === 1 ? '' : 's'} in the path` })
+        : null,
+      objectives.length === 0
+        ? jsx('p', {
+            style: { margin: 0, fontSize: '0.8rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+            children: 'The backend returned no objectives for this course, so there is no path to show yet.'
+          })
+        : null
+    ]
+  })
+}
+
+/**
+ * Sources are collapsed by default and read only when opened. The read is `lesson.page` for the
+ * section the desk continues, so the drawer names exactly whose sources these are.
+ */
+function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, onRetry }) {
+  const items = Array.isArray(sources) ? sources : []
+  return jsxs('section', {
+    'data-cb-sources-drawer': open ? 'open' : 'closed',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', maxWidth: '46rem' },
+    children: [
+      jsx(sdk.Button, {
+        variant: 'text',
+        size: 'sm',
+        className: 'self-start',
+        'aria-expanded': open ? 'true' : 'false',
+        'aria-controls': 'cb-desk-sources',
+        onClick: onToggle,
+        children: open ? 'Hide sources' : 'Show sources'
+      }),
+      jsx('div', {
+        style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+        children: sectionTitle ? `Sources for “${sectionTitle}”` : 'Sources'
+      }),
+      open
+        ? jsx('div', {
+            id: 'cb-desk-sources',
+            role: 'region',
+            'aria-label': 'Sources for the current section',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', borderTop: '1px solid var(--cb-rule)', paddingTop: '0.45rem' },
+            children:
+              status === 'loading'
+                ? jsx(sdk.Loader, { label: 'Reading this section’s sources' })
+                : status === 'error'
+                  ? jsxs('div', {
+                      style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--cb-ink-soft)' },
+                      children: [
+                        jsx('span', {
+                          children: `${error && error.code ? error.code + ': ' : ''}${describeError(error)} The sources were not read.`
+                        }),
+                        jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: onRetry, children: 'Try again' })
+                      ]
+                    })
+                  : items.length === 0
+                    ? jsx('p', { style: { margin: 0, fontSize: '0.8rem', color: 'var(--cb-ink-soft)' }, children: 'The backend recorded no sources for this section.' })
+                    : jsx('ul', {
+                        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' },
+                        children: items.map((source) =>
+                          jsxs(
+                            'li',
+                            {
+                              'data-cb-desk-source': source.source_id || '',
+                              style: { borderLeft: '2px solid var(--cb-rule)', paddingLeft: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.05rem' },
+                              children: [
+                                jsx('span', { style: { fontSize: '0.85rem', color: 'var(--cb-ink)' }, children: source.title || 'Untitled source' }),
+                                jsx('span', { style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
+                              ]
+                            },
+                            source.source_id || source.title
+                          )
+                        )
+                      })
+          })
+        : null
+    ]
+  })
+}
+
+/** The secondary list: the other courses on this profile, by their own next step. */
+function AllCoursesList({ rows, onOpen, onShowAll }) {
+  const others = rows.slice(1)
+  // The desk stays one glance: three more courses, then the honest count and the full list.
+  const shown = others.slice(0, 3)
+  const hidden = others.length - shown.length
+  return jsxs('section', {
+    'data-cb-all-courses': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: '46rem' },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
+        children: [
+          jsx(DeskLabel, { children: `All courses · ${rows.length}` }),
+          jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'Search and manage courses' })
+        ]
+      }),
+      others.length === 0
+        ? jsx('p', {
+            style: { margin: 0, fontSize: '0.8rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+            children: 'This is the only course on this profile.'
+          })
+        : jsx('div', {
+            style: { display: 'flex', flexDirection: 'column' },
+            children: shown.map((row) =>
+              jsx(
+                'div',
+                {
+                  'data-cb-all-courses-row': row.enrollment_id,
+                  style: { borderTop: '1px solid var(--cb-rule)', padding: '0.35rem 0' },
+                  children: jsx(sdk.ListRow, {
+                    title: jsx('span', { style: { overflowWrap: 'anywhere' }, children: row.title }),
+                    description: jsx('span', {
+                      children: (row.next_step && row.next_step.label) || 'No next step recorded'
+                    }),
+                    action: jsx(sdk.Button, {
+                      variant: 'secondary',
+                      size: 'sm',
+                      onClick: () => onOpen(row),
+                      children: 'Open'
+                    })
+                  })
+                },
+                row.enrollment_id
+              )
+            )
+          }),
+      hidden > 0
+        ? jsx('div', {
+            'data-cb-all-courses-more': String(hidden),
+            style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)', paddingTop: '0.1rem' },
+            children: `+${hidden} more course${hidden === 1 ? '' : 's'} on this profile`
+          })
+        : null
+    ]
+  })
+}
+
+/** The pure desk view. The container below owns the reads; this owns the geometry. */
+function FieldDeskHome({
+  desk,
+  libraryStatus,
+  libraryError,
+  stale,
+  busy,
+  notice,
+  onRetry,
+  onCreate,
+  onPrimary,
+  onOpenSection,
+  onOpen,
+  onShowAll,
+  sourcesOpen,
+  onToggleSources,
+  sourcesStatus,
+  sourcesError,
+  sources,
+  onRetrySources,
+  implemented
+}) {
+  const root = 'flex flex-col gap-4'
+
+  if (libraryStatus === 'loading' && !desk.row) {
+    return jsx('div', { 'data-cb-desk': 'loading', className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading your courses' }) })
+  }
+  if (libraryStatus === 'error' && !desk.row) {
+    return jsx('div', {
+      'data-cb-desk': 'error',
+      className: 'mx-auto w-full max-w-xl py-6',
+      children: jsxs(sdk.ErrorState, {
+        title: 'The Field Desk could not read your courses',
+        description: `${libraryError && libraryError.code ? libraryError.code + ': ' : ''}${describeError(libraryError)} This desk will not show an empty course in place of a failed read.`,
+        children: jsxs('div', {
+          className: 'flex flex-wrap items-center justify-center gap-2',
+          children: [
+            jsx(sdk.Button, { variant: 'default', onClick: onRetry, children: 'Try again' }),
+            jsx(sdk.Button, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
+          ]
+        })
+      })
+    })
+  }
+  if (!desk.row) {
+    return jsx('div', {
+      'data-cb-desk': 'empty',
+      children: jsx(FirstRun, { implemented, onCreate })
+    })
+  }
+
+  return jsxs('div', {
+    'data-cb-desk': 'ready',
+    className: root,
+    children: [
+      stale
+        ? jsxs('div', {
+            className: 'flex flex-wrap items-center justify-between gap-2 border-b border-(--ui-stroke-tertiary) pb-2',
+            children: [
+              jsx('div', {
+                className: 'text-xs text-(--ui-text-secondary)',
+                children: 'Reconnecting. Showing the courses that were last read; the desk is paused.'
+              }),
+              jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onRetry, children: 'Retry now' })
+            ]
+          })
+        : null,
+      notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
+      jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection }),
+      jsx(PathPreview, { desk, onOpenSection }),
+      jsx(SourcesDrawer, {
+        open: sourcesOpen,
+        onToggle: onToggleSources,
+        sectionTitle: desk.current ? desk.current.title : null,
+        status: sourcesStatus,
+        error: sourcesError,
+        sources,
+        onRetry: onRetrySources
+      }),
+      jsx(AllCoursesList, { rows: desk.rows, onOpen, onShowAll })
+    ]
+  })
+}
+
+/**
+ * The estimate the backend already recorded: a pack manifest's per-objective `estimated_minutes`,
+ * or the parent brief's `duration_minutes`. It never computes one from a count of sections.
+ */
+function useSessionEstimate({ row, current, enabled }) {
+  const [state, setState] = useState({ status: 'none', minutes: null, source: null, error: null })
+  const courseId = row ? row.course_id : null
+  const packId = row && row.provenance ? row.provenance.pack_id : null
+  const packVersion = row && row.provenance ? row.provenance.pack_version : null
+  const ordinal = current ? current.ordinal : null
+  const key = [courseId, packId, packVersion, ordinal].join('|')
+
+  useEffect(() => {
+    if (!enabled || !courseId || !ordinal) {
+      setState({ status: 'none', minutes: null, source: null, error: null })
+      return undefined
+    }
+    let cancelled = false
+    setState({ status: 'loading', minutes: null, source: null, error: null })
+    let read
+    if (packId && packVersion && backendSupports('pack.inspect')) {
+      read = rpc('pack.inspect', { pack_id: packId, pack_version: packVersion }).then((response) => {
+        if (!response.ok) return null
+        const manifest = response.result && response.result.manifest
+        const entries = manifest && Array.isArray(manifest.objectives) ? manifest.objectives : []
+        const match = entries.find((entry) => Number(entry.ordinal) === Number(ordinal))
+        const minutes = match && Number(match.estimated_minutes) > 0 ? Number(match.estimated_minutes) : null
+        return minutes ? { minutes, source: 'pack_manifest' } : null
+      })
+    } else if (backendSupports('parent.brief.get')) {
+      read = rpc('parent.brief.get', { course_id: courseId }).then((response) => {
+        if (!response.ok) return null
+        const brief = response.result && response.result.brief
+        const minutes = brief && Number(brief.duration_minutes) > 0 ? Number(brief.duration_minutes) : null
+        return minutes ? { minutes, source: 'parent_brief' } : null
+      })
+    } else {
+      read = Promise.resolve(null)
+    }
+    read
+      .then((found) => {
+        if (cancelled) return
+        setState(
+          found
+            ? { status: 'ready', minutes: found.minutes, source: found.source, error: null }
+            : { status: 'none', minutes: null, source: null, error: null }
+        )
+      })
+      .catch(() => {
+        if (!cancelled) setState({ status: 'none', minutes: null, source: null, error: null })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [enabled, courseId, packId, packVersion, ordinal, key])
+
+  return state
+}
+
+/**
+ * The Field Desk container. One `library.list` read picks the course to continue (the most
+ * recently written row), `course.outline` supplies the path, and the section's sources are read
+ * only when the drawer opens. A failure in any of those is shown, never papered over.
+ */
+function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, profile }) {
+  const supports = (method) => Boolean(implemented && implemented.has(method))
+  const payload = { filter: 'all', limit: 50, sort: 'recent' }
+  const key = JSON.stringify(payload)
+  const library = useRpcQuery('library.list', payload, key, backendSupports('library.list'))
+
+  const provisional = buildDeskModel({ library: library.data, outline: null, estimate: null })
+  const row = provisional.row
+  const outline = useRpcQuery(
+    'course.outline',
+    { enrollment_id: row ? row.enrollment_id : null },
+    `desk-outline-${row ? row.enrollment_id : 'none'}`,
+    Boolean(row) && supports('course.outline')
+  )
+  const withOutline = buildDeskModel({ library: library.data, outline: outline.data, estimate: null })
+  const current = withOutline.current
+  const estimate = useSessionEstimate({ row, current, enabled: Boolean(row) && Boolean(current) })
+  const desk = buildDeskModel({ library: library.data, outline: outline.data, estimate })
+
+  const [sourcesOpen, setSourcesOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState(null)
+
+  // A different continued course must not inherit the previous course's open drawer.
+  useEffect(() => {
+    setSourcesOpen(false)
+  }, [row ? row.enrollment_id : 'none'])
+
+  const page = useRpcQuery(
+    'lesson.page',
+    {
+      enrollment_id: row ? row.enrollment_id : null,
+      objective_id: current ? current.objective_id : null
+    },
+    `desk-page-${row ? row.enrollment_id : 'none'}-${current ? current.objective_id : 'none'}`,
+    sourcesOpen && Boolean(row) && Boolean(current) && supports('lesson.page')
+  )
+
+  const onPrimary = useCallback(async () => {
+    if (!desk.row || !desk.current) return
+    const kind = desk.primaryKind
+    if (kind === 'start_lesson' || kind === 'resume_lesson') {
+      setBusy(true)
+      setNotice(null)
+      const outcome = await beginLessonFor({
+        row: desk.row,
+        objectiveId: desk.current.objective_id,
+        mode: kind === 'resume_lesson' ? 'resume' : 'fresh',
+        profile: profile || currentScope().profile
+      })
+      setBusy(false)
+      setNotice(outcome.message)
+      if (outcome.ok) library.reload()
+      return
+    }
+    // Review, plan and pack states are course-detail actions, not a second lesson path.
+    onOpen(desk.row)
+  }, [desk, profile, onOpen, library])
+
+  return jsx(FieldDeskHome, {
+    desk,
+    libraryStatus: library.status,
+    libraryError: library.error,
+    stale: Boolean(library.stale),
+    busy,
+    notice,
+    onRetry: library.reload,
+    onCreate: onStartCreate,
+    onPrimary,
+    onOpenSection: (objectiveId) => onOpen(desk.row, objectiveId),
+    onOpen,
+    onShowAll,
+    sourcesOpen,
+    onToggleSources: () => setSourcesOpen((value) => !value),
+    sourcesStatus: page.status,
+    sourcesError: page.error,
+    sources: page.data && page.data.sources,
+    onRetrySources: page.reload,
+    implemented
+  })
+}
+
+function CoursesView({ implemented, onStartCreate, createOpen, onOpen, onShowDesk }) {
   const [filter, setFilter] = useState('all')
   const [searchInput, setSearchInput] = useState('')
   const [query, setQuery] = useState('')
@@ -2343,6 +3064,15 @@ function LibraryView({ implemented, createOpen }) {
   return jsxs('div', {
     className: 'flex flex-col',
     children: [
+      onShowDesk
+        ? jsx(sdk.Button, {
+            className: 'mb-2 self-start',
+            variant: 'text',
+            size: 'sm',
+            onClick: onShowDesk,
+            children: 'Back to the Field Desk'
+          })
+        : null,
       jsxs('div', {
         className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
         children: [
@@ -5529,13 +6259,15 @@ function SourcesView({ page }) {
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
  * control; below ~47.5rem it collapses into one labelled picker so the strip can never clip.
  */
-function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
+function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
-  const [view, setView] = useState('overview')
+  // A route in from the Field Desk names the section to open; otherwise the course opens on its
+  // overview with the backend's own current objective already selected.
+  const [view, setView] = useState(focusObjectiveId ? 'textbook' : 'overview')
   const [objectiveId, setObjectiveId] = useState(
-    (row.evidence_summary && row.evidence_summary.current_objective_id) || null
+    focusObjectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id) || null
   )
-  const [openSectionId, setOpenSectionId] = useState(null)
+  const [openSectionId, setOpenSectionId] = useState(focusObjectiveId || null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
 
@@ -5610,39 +6342,15 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged }) {
       }
       setBusy(true)
       setNotice(null)
-      const response = await rpc(
-        'lesson.begin',
-        { enrollment_id: row.enrollment_id, objective_id: target, mode },
-        {
-          idempotencyKey: `cb-lesson-${target}-${mode}-${
-            mode === 'fresh' ? newOperationId('run') : 'resume'
-          }`
-        }
-      )
-      setBusy(false)
-      if (!response.ok) {
-        setNotice(`${response.error.code}: ${describeError(response.error)}`)
-        return
-      }
-      const outcome = response.result
-      if (mode === 'resume' && outcome.resume && outcome.resume.available && outcome.binding) {
-        const opened = await resumeBoundSession(outcome.binding)
-        setNotice(opened.ok ? 'Resumed the bound lesson chat.' : opened.message)
-        return
-      }
-      armPendingBind({
-        enrollmentId: row.enrollment_id,
+      const outcome = await beginLessonFor({
+        row,
         objectiveId: target,
-        lessonRunId: outcome.lesson_run_id,
+        mode,
         profile: profile || currentScope().profile
       })
-      const started = startLessonChat(profile || currentScope().profile)
-      setNotice(
-        started
-          ? 'A governed run is ready. Its chat binds after your first message.'
-          : 'This Desktop build cannot open a new chat. Start one from the sidebar, then resume this section.'
-      )
-      refresh()
+      setBusy(false)
+      setNotice(outcome.message)
+      if (outcome.ok) refresh()
     },
     [objectiveId, row, profile, refresh]
   )
@@ -8257,6 +8965,7 @@ function CoursebookPage() {
   const cbMode = useCbMode()
   const cbMotion = useCbMotion()
   const [destination, setDestination] = useState(rememberedDestination)
+  const [coursesMode, setCoursesMode] = useState('desk')
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
@@ -8269,6 +8978,7 @@ function CoursebookPage() {
     rememberedDestination = next
     setCreating(false)
     setImporting(false)
+    setCoursesMode('desk')
     setOpenCourse(null)
     setStudioCourse(null)
     setStudioSeed(null)
@@ -8387,18 +9097,28 @@ function CoursebookPage() {
     body = jsx(LibraryView, { createOpen: creating, implemented })
   } else if (openCourse) {
     body = jsx(CourseDetail, {
-      row: openCourse,
+      row: openCourse.row,
+      focusObjectiveId: openCourse.objectiveId,
       implemented,
       profile: currentScope().profile,
       onBack: () => setOpenCourse(null),
       onChanged: () => reloadHealth()
     })
-  } else {
+  } else if (coursesMode === 'list') {
     body = jsx(CoursesView, {
       createOpen: creating,
       implemented,
       onStartCreate: () => setCreating(true),
-      onOpen: (row) => setOpenCourse(row)
+      onOpen: (row) => setOpenCourse({ row, objectiveId: null }),
+      onShowDesk: () => setCoursesMode('desk')
+    })
+  } else {
+    body = jsx(FieldDesk, {
+      implemented,
+      profile: currentScope().profile,
+      onOpen: (row, objectiveId) => setOpenCourse({ row, objectiveId: objectiveId || null }),
+      onShowAll: () => setCoursesMode('list'),
+      onStartCreate: () => setCreating(true)
     })
   }
 
@@ -8435,7 +9155,9 @@ function CoursebookPage() {
                           ? 'Packs you can teach from, with the provenance the backend recorded.'
                           : openCourse
                             ? 'One objective, its evidence and the next permitted action.'
-                            : 'A governed learning workspace: one objective, real evidence, honest next steps.'
+                            : coursesMode === 'list'
+                              ? 'Every course on this profile, with search and the backend’s own next step.'
+                              : 'One next move: the section to continue, the path and its sources.'
                   })
                 ]
               }),
@@ -8758,18 +9480,23 @@ function CoursebookSettings() {
 // components over a server-owned document, so a Node test can render them without a backend, a
 // chat or a window.
 export {
+  BackendUnavailable,
   CB_TOKENS,
   CB_TOKEN_NAMES,
   FieldRail,
+  FieldDeskHome,
   LESSON_VIEWS,
   LessonDocumentView,
   MediaFrame,
   SectionPage,
   WorkspaceShell,
+  buildDeskModel,
   cbLayoutFor,
   cbModeFromTheme,
   cbMotionPreference,
-  cbScopeStyle
+  cbScopeStyle,
+  deskEstimateLabel,
+  mainlineObjective
 }
 
 export default {
