@@ -38,6 +38,10 @@ class ResearchRequest:
     recipe: str = "casual"
     dials: dict[str, Any] = field(default_factory=dict)
     locale: str | None = None
+    #: Declared cb.rpc v10 inputs. They shape the query set the same way the plan job's do; they
+    #: are never folded into ``dials``, which stays the closed four-dial object.
+    subject_domain: str | None = None
+    level: str | None = None
     budget: research.ResearchBudget = field(default_factory=research.ResearchBudget)
 
     def as_brief(self) -> dict[str, Any]:
@@ -47,6 +51,8 @@ class ResearchRequest:
             "recipe": self.recipe,
             "dials": dict(self.dials),
             "locale": self.locale,
+            "subject_domain": self.subject_domain,
+            "level": self.level,
             "budget": {
                 "max_queries": self.budget.max_queries,
                 "max_results_per_query": self.budget.max_results_per_query,
@@ -141,6 +147,8 @@ def research_stages(
             dials=request.dials,
             locale=request.locale,
             max_queries=request.budget.max_queries,
+            subject_domain=request.subject_domain,
+            level=request.level,
         )
         box["queries"] = queries
         return StageResult(
@@ -157,6 +165,8 @@ def research_stages(
             recipe=request.recipe,
             dials=request.dials,
             locale=request.locale,
+            subject_domain=request.subject_domain,
+            level=request.level,
             budget=request.budget,
         )
         box["run"] = run

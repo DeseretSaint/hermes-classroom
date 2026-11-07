@@ -144,6 +144,11 @@ _DOMAIN_ALIASES: dict[str, str] = {
     "trades": "technical_procedure",
     "maintenance": "technical_procedure",
     "engineering": "technical_procedure",
+    "repair": "technical_procedure",
+    "repairs": "technical_procedure",
+    "mechanic": "technical_procedure",
+    "mechanical": "technical_procedure",
+    "automotive": "technical_procedure",
     "mathematics": "mathematics",
     "math": "mathematics",
     "maths": "mathematics",
@@ -335,6 +340,17 @@ def _normalise_domain(subject_domain: str | None, locale: str | None) -> str:
         return "language" if locale else "general"
     domain = str(subject_domain).strip().lower().replace("-", "_").replace(" ", "_")
     return _DOMAIN_ALIASES.get(domain, domain)
+
+
+def normalise_subject_domain(subject_domain: str | None, locale: str | None = None) -> str:
+    """The canonical domain name for a declared ``subject_domain``.
+
+    Public because the research pass has to ask the same question ("what is this course
+    *about*?") and there must be exactly one alias table. ``locale`` is only consulted when no
+    domain was declared, which is the pre-v10 shape; a declared domain always wins, so a
+    Spanish brake-pad procedure is ``technical_procedure`` and not ``language``.
+    """
+    return _normalise_domain(subject_domain, locale)
 
 
 def _normalise_intent(lesson_intent: str) -> str:

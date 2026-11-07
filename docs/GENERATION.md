@@ -89,8 +89,13 @@ etiquette, with no new credentials and no direct scraping.
 `ResearchBudget` (defaults): 4 queries, 5 results per query, 6 pages, 6 sources, 6000 characters
 per page, 600-character excerpt.
 
-* Queries are derived deterministically from goal + recipe + dials + locale. `depth: overview`
-  keeps only the base query. Every query that ran is recorded with its result count or its error.
+* Queries are derived deterministically from goal + recipe + dials + locale, plus the declared
+  `subject_domain`/`level` when the brief carries them. `depth: overview` keeps only the base
+  query. Every query that ran is recorded with its result count or its error. `subject_domain`
+  supplies one subject qualifier (a procedure brief asks for procedure steps and safety limits; a
+  mathematics brief asks for definitions and worked examples); when it is declared, `locale` no
+  longer adds a language query unless the domain is `language`. This keeps the language of
+  delivery and the subject of the course separate (adversarial review P0-4).
 * Each ledger row keeps URL, title, publisher, `fetched_at`, nullable `published_at`, source type,
   `sha256` content hash over the bounded text, support status and claim links.
 * Fetched text is kept as a bounded excerpt only. It is untrusted content: it cannot change recipe
@@ -178,6 +183,11 @@ paraphrased title, an author (the ledger has no author field), or whether a real
 supports the sentence around its URL. The ledger stores no ISBN, so any ISBN assertion is flagged.
 These are provenance checks, not truth checks; the validator's linked-quote rule is the support
 check, and that too remains partly a model judgment.
+* Scope cap (`cb.rpc` v10 `scope`): `single` caps `time_estimate.weeks` at 1, `short` at 8, `full`
+  at 104. The authored estimate stays the authority — the rule only refuses one that exceeds the
+  declared scope, with the reason naming the scope and the estimate. There is **no** separate
+  scope engine in this branch: `scope` is recorded on the course and in the plan document, stated
+  in the plan prompt, and capped here. Objective counts follow the same table (4–5 / 4–6 / 4–8).
 
 The plan is persisted as `plans.state = 'draft'`. `approved_at` stays `NULL`; approval is
 `plan.approve`, i.e. the learner's or parent's command.
@@ -185,6 +195,29 @@ The plan is persisted as `plans.state = 'draft'`. `approved_at` stays `NULL`; ap
 After two failed attempts (rule violation or validator reject) the artifact is still persisted, but
 `generation_state`/lesson `state` is `needs_review`, `validation_id` is `NULL` when no validator ever
 ran, and the reasons are stored. Nothing is quietly discarded and nothing is quietly approved.
+
+## 5a. The declared plan inputs: level, subject_domain, scope
+
+`run_plan_job` reads `level`, `subject_domain` and `scope` from the job brief (`docs/CONTRACTS.md`,
+v10). They are their own fields; they are never written into `dials`, which stays the closed
+`pace`/`depth`/`assessment`/`autonomy` object. Concretely:
+
+* **Research** receives `subject_domain` and `level` and uses them for query derivation (§4).
+* **The plan prompt** states each value as itself: `Learner level: …`, `Subject domain: … (declared
+  as …). This is what the course is about, not the language it is delivered in.`, `Scope: …`, and
+  the objective range for that scope. `Content locale` remains the language of delivery.
+* **The plan-time capability decision** is `policy.plan_lesson_capability` called with the same
+  declared inputs and an empty lesson intent (no lesson exists yet, so it decides no media). The
+  decision and its reasons are in the request payload as `capability_policy` and in the
+  instructions, which is what keeps a Spanish brake-pad procedure from being scored as a language
+  lesson. The lesson stage still makes the final per-lesson decision with the section's intent.
+* **The validator** receives `level`, `subject_domain` and `scope` too, so it judges the plan
+  against the declared level and scope, not against the locale.
+* **The fingerprint** (`_request_fingerprint`) and therefore the reuse cache include all three, so
+  a plan authored under a different level, domain or scope is never reused. Reuse is still scoped
+  to one course; an identical retry of the same brief is still free.
+* **Round-trip**: the job result, `plan_document` and `course.get` all return the declared values;
+  a plan authored before v10 has none and returns `None` rather than inferring them from `locale`.
 
 ## 6. Lessons, checks and answer separation
 

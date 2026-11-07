@@ -1230,9 +1230,26 @@ and language scaffold agree with the plan it belongs to. Nothing here invents a 
 three absent, every code path behaves exactly as it did at v9.
 
 **Deliberately not in this delta.** No UI control, no plan-shape change from `scope` (the planner
-still authors one section per objective; acting on `scope` is a later card), no research-budget
-change, and no new dial. The contract only guarantees the inputs arrive and are persisted honestly;
-it does not claim the planner uses them yet.
+still authors one section per objective), no research-budget change, and no new dial. The contract
+only guarantees the inputs arrive and are persisted honestly. Threading them through the plan
+runtime is a follow-up with no contract change of its own — see *v10 follow-up (H-13)* below.
+
+## v10 follow-up (H-13) — the plan runtime reads the declared inputs
+
+**No contract change.** Still `cb.rpc` v10 and `cb.db` v6; no method, field, enum or error code is
+added or altered. H-13 is the generator side of the same delta, and it is documented here because
+it changes what v10's fields *mean* at runtime:
+
+| Input | Research | Plan prompt | Plan-time capability decision | Fingerprint / reuse cache | `plan_document` / `course.get` |
+|---|---|---|---|---|---|
+| `level` | language-course query qualifier | `Learner level: …`; never inferred from `locale` | `level` on the decision | included | returned |
+| `subject_domain` | one subject qualifier; suppresses the locale language query unless the domain is `language` | `Subject domain: …` stated as *what the course is about* | domain-normalised; drives the media reasons | included | returned |
+| `scope` | not used (no budget change) | `Scope: …` plus the objective range and week cap | not used | included | returned |
+
+`dials` stays the closed four-dial object wherever the contract carries it — the course row,
+`course.get` and the plan document: the declared inputs are siblings there, never members. `scope`
+gains exactly one deterministic consequence — a cap on `time_estimate.weeks` (`single` 1, `short`
+8, `full` 104) — and no second scope engine is claimed.
 
 ## Changing a contract
 
