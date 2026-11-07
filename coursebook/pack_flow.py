@@ -55,6 +55,8 @@ PACK_METHODS: tuple[str, ...] = (
     "pack.export",
     "pack.list",
     "pack.inspect",
+    "course.export.read",
+    "course.export",
 )
 
 #: Roles whose content may be rendered as a lesson segment on import.
@@ -936,6 +938,7 @@ def _adopt_artifact(
     data_hash: str,
     size: int,
     notes: str,
+    generator: str = "coursebook.parent_export",
 ) -> str:
     """Record (or reuse) one artifact row for bytes that already exist on disk.
 
@@ -974,7 +977,7 @@ def _adopt_artifact(
             mime,
             json.dumps(
                 {
-                    "generator": "coursebook.parent_export",
+                    "generator": generator,
                     "model": None,
                     "prompt_hash": None,
                     "source_ids": [],
@@ -1228,6 +1231,348 @@ def parent_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[in
         destination.unlink(missing_ok=True)
         if pdf_path is not None:
             pdf_path.unlink(missing_ok=True)
+        raise
+    return 0, result
+
+
+# ── general authored export (cb.rpc v13) ──────────────────────────────────
+
+#: Rights statement paired with :data:`coursebook.parent_authoring.AUTHORED_LICENSE`. The surface
+#: prints it verbatim next to the content hash, so a reader never has to infer what the file is.
+AUTHORED_RIGHTS = (
+    "All rights reserved by the author. This archive is a local copy for reuse; it is not a "
+    "publication and it grants no redistribution right."
+)
+
+#: The no-upload statement. ``course.export`` opens no socket: it writes one file under this
+#: profile's data directory and records the artifact row.
+AUTHORED_NO_UPLOAD = (
+    "Nothing was uploaded. The archive was written to a local file in this profile's data "
+    "directory; export made no network call and recorded no telemetry."
+)
+
+
+def _authored_export_plan(connection, enrollment_id: str) -> dict[str, Any]:
+    """Read-only: what ``course.export`` would package, or the one reason it cannot.
+
+    The gate is exactly four questions, asked in this order and answered with one typed reason:
+
+    1. is this a course a learner authored (not an imported pack, which has ``pack.export``)?
+    2. is its current plan approved?
+    3. is every lesson section generated **and** in the ``validated`` state?
+    4. does the lesson text still hash to what an existing final approval bound?
+
+    Question 4 is the hash fence for a course a parent approved in Parent Studio. Final approval
+    is **not required** for ``course.export`` — the approved plan plus validated pages is the
+    authority — but a stored active approval is honoured: once an adult approved this exact text,
+    a changed page blocks instead of quietly shipping under the old decision. The caller's own
+    reviewed hash is the second fence, enforced by ``course_export``.
+
+    Nothing here writes: the manifest and file bytes are composed in memory so the read can show
+    the exact files, hashes and content hash the export will produce.
+    """
+    enrollment = _row(connection, "SELECT * FROM enrollments WHERE id = ?", (enrollment_id,))
+    if enrollment is None:
+        raise RpcError.of("NOT_FOUND", "enrollment not found", enrollment_id=enrollment_id)
+    course = _row(connection, "SELECT * FROM courses WHERE id = ?", (enrollment["course_id"],))
+    if course is None or str(course["status"]) == "deleted":
+        raise RpcError.of("NOT_FOUND", "course not found", course_id=enrollment["course_id"])
+
+    plan_record: dict[str, Any] = {
+        "enrollment": enrollment,
+        "course": course,
+        "plan": None,
+        "manifest": None,
+        "files": {},
+        "content_hash": None,
+        "sections": {"total": 0, "validated": 0},
+        "blocked_reason": None,
+        "blocked_message": None,
+        "problems": [],
+        "pack_backed": course["pack_id"] is not None,
+    }
+
+    if course["pack_id"] is not None:
+        plan_record.update(
+            blocked_reason="course_pack_backed",
+            blocked_message=(
+                "this course was imported from a pack; use pack.export for its stored content."
+            ),
+        )
+        return plan_record
+
+    plan = authoring.current_plan(connection, str(course["id"]))
+    if plan is None or str(plan["state"]) != "approved":
+        plan_record.update(
+            blocked_reason="plan_not_approved",
+            blocked_message="the plan must be approved before this course can be packaged.",
+        )
+        return plan_record
+    plan_record["plan"] = plan
+
+    composed = authoring.sections(connection, course, plan)
+    plan_record["sections"] = {"total": len(composed), "validated": 0}
+    if not composed:
+        plan_record.update(
+            blocked_reason="no_generated_content",
+            blocked_message="this course has no lesson sections to package.",
+        )
+        return plan_record
+
+    validated, problems = authoring.validated_sections(composed)
+    plan_record["sections"]["validated"] = len(validated)
+    if problems:
+        plan_record.update(
+            blocked_reason="lessons_not_validated",
+            blocked_message=(
+                "every lesson page must be in a validated state before this course can be packaged."
+            ),
+            problems=problems,
+        )
+        return plan_record
+
+    digest = authoring.content_hash(
+        str(course["id"]), str(plan["id"]), authoring.plan_hash(connection, plan), composed
+    )
+    plan_record["content_hash"] = digest
+
+    approval = _row(
+        connection,
+        "SELECT * FROM final_approvals WHERE course_id = ? AND state = 'active'"
+        " ORDER BY approved_at DESC LIMIT 1",
+        (course["id"],),
+    )
+    if approval is not None and str(approval["content_hash"]) != digest:
+        plan_record.update(
+            blocked_reason="changes_need_review",
+            blocked_message=(
+                "the lesson text changed after it was approved; review it again before packaging."
+            ),
+            approved_content_hash=str(approval["content_hash"]),
+        )
+        return plan_record
+
+    try:
+        manifest, files = authoring.build_pack(
+            connection,
+            course,
+            plan,
+            composed,
+            pack_prefix="authored",
+            attribution=f"{course['title']} — authored in Coursebook.",
+            contributors=[{"name": "Course author", "role": "author"}],
+        )
+        # Readiness must be honest about import minima: a pack that cannot be imported is not a
+        # package for reuse, so the read reports the same refusal the writer would hit.
+        packs.validate_minima(manifest)
+    except authoring.AuthoredExportBlocked as exc:
+        plan_record.update(
+            blocked_reason=exc.reason, blocked_message=str(exc), problems=exc.problems
+        )
+        return plan_record
+    except PackRejected as exc:
+        plan_record.update(
+            blocked_reason="export_not_exportable",
+            blocked_message=f"the authored pack is not exportable: {exc}",
+        )
+        return plan_record
+
+    leaked = packs.contains_private_fields(manifest)
+    if leaked:  # build_manifest is allowlisted; a hit is a programming error, never a user refusal
+        raise RpcError.of("INTERNAL_ERROR", f"authored pack carried private fields {leaked}")
+
+    plan_record.update(manifest=manifest, files=files, ready=True)
+    return plan_record
+
+
+def _authored_file_rows(manifest: Mapping[str, Any] | None) -> list[dict[str, Any]]:
+    if manifest is None:
+        return []
+    return [
+        {
+            "role": str(record["role"]),
+            "name": str(record["path"]),
+            "sha256": str(record["sha256"]),
+            "bytes": int(record["bytes"]),
+            "mime": str(record["mime"]),
+        }
+        for record in manifest["files"]
+    ]
+
+
+def _authored_plan_summary(plan: Any) -> dict[str, Any] | None:
+    if plan is None:
+        return None
+    return {
+        "plan_id": str(plan["id"]),
+        "version": int(plan["version"]),
+        "plan_hash": str(plan["plan_hash"] or ""),
+        "state": str(plan["state"]),
+    }
+
+
+def course_export_read(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """``course.export.read``: the exact files, hash, rights and blockers of a possible export.
+
+    This is the review half of the fence. It returns the same content hash ``course.export`` will
+    demand back, so the caller cannot export text it did not see.
+    """
+    db.ensure_schema()
+    enrollment_id = str(payload["enrollment_id"])
+    with db.read() as connection:
+        plan_record = _authored_export_plan(connection, enrollment_id)
+    manifest = plan_record.get("manifest")
+    result = {
+        "ready": bool(plan_record.get("ready")),
+        "blocked_reason": plan_record["blocked_reason"],
+        "blocked_message": plan_record["blocked_message"],
+        "problems": list(plan_record["problems"])[:50],
+        "pack_backed": bool(plan_record["pack_backed"]),
+        "content_hash": plan_record["content_hash"],
+        "files": _authored_file_rows(manifest),
+        "license": dict(authoring.AUTHORED_LICENSE),
+        "rights": AUTHORED_RIGHTS,
+        "no_upload": AUTHORED_NO_UPLOAD,
+        "plan": _authored_plan_summary(plan_record.get("plan")),
+        "sections": {
+            "total": int(plan_record["sections"]["total"]),
+            "validated": int(plan_record["sections"]["validated"]),
+        },
+    }
+    return 0, result
+
+
+def course_export(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """``course.export``: package a learner-authored course as a fresh, allowlisted pack.
+
+    Same work order as ``parent.export`` (PREBUILD_SPEC §12): short read → build and archive the
+    bytes with **no transaction open** → short write transaction that re-asks every gate question
+    and adopts the artifact. A page that changed between the two reads discards the file and
+    refuses with ``changes_need_review``; a reviewed hash that no longer matches refuses with
+    ``DELETE_SCOPE_STALE`` before a byte is written.
+
+    The response is built from the manifest this call produced. A stored manifest, attempt,
+    notebook entry, transcript, provider setting, path or telemetry value has no route into it.
+    """
+    db.ensure_schema()
+    method = "course.export"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    if not key:
+        raise RpcError.of(
+            "VALIDATION_FAILED", "course.export requires an idempotency_key.", field="idempotency_key"
+        )
+    enrollment_id = str(payload["enrollment_id"])
+    expected = str(payload["expected_content_hash"])
+    if not re.match(r"^sha256:[a-f0-9]{64}$", expected):
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "expected_content_hash must be sha256:<64 hex>",
+            field="expected_content_hash",
+        )
+
+    with db.read() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+    if replay is not None:
+        return replay
+
+    with db.read() as connection:
+        plan_record = _authored_export_plan(connection, enrollment_id)
+    if not plan_record.get("ready"):
+        details = {"problems": list(plan_record["problems"])} if plan_record["problems"] else {}
+        raise _blocked(
+            str(plan_record["blocked_reason"]),
+            str(plan_record["blocked_message"]),
+            **details,
+        )
+    # The course-text digest is the reviewed identity of the export; the pack's own manifest hash
+    # is a different function and is reported separately as ``pack.manifest_hash``.
+    reviewed_hash = str(plan_record["content_hash"])
+    if reviewed_hash != expected:
+        raise RpcError.of(
+            "DELETE_SCOPE_STALE",
+            "the authored content changed since it was reviewed; nothing was exported.",
+            current_data_scope_hash=str(plan_record["content_hash"]),
+        )
+
+    manifest = plan_record["manifest"]
+    files = plan_record["files"]
+    course = plan_record["course"]
+    packs.warn_authoring_bound(manifest, files)
+
+    root = export_root()
+    root.mkdir(parents=True, exist_ok=True)
+    digest = str(manifest["content_hash"]).split(":", 1)[1]
+    destination = root / f"{manifest['pack_id']}-{manifest['pack_version']}-{digest[:16]}.zip"
+    temporary = destination.with_name(destination.stem + ".partial.zip")
+    try:
+        archive.write_archive(temporary, manifest, files)
+        os.replace(temporary, destination)
+        written = _rehash_written_archive(destination)
+    except (PackRejected, OSError) as exc:
+        temporary.unlink(missing_ok=True)
+        destination.unlink(missing_ok=True)
+        raise _blocked("export_write_failed", f"the authored pack could not be written: {exc}") from exc
+    if str(written["content_hash"]) != str(manifest["content_hash"]):
+        destination.unlink(missing_ok=True)
+        raise RpcError.of("INTERNAL_ERROR", "the exported archive does not re-hash to its manifest")
+
+    # Digest the bytes that exist, with no transaction open; the adopt transaction stays short.
+    zip_bytes = destination.read_bytes()
+    file_digest = packs.file_sha256(zip_bytes)
+    now = _now()
+    export_id = _new_id("exp")
+    try:
+        with db.transaction() as connection:
+            replay = _idempotent_lookup(connection, key, method, payload_hash)
+            if replay is not None:
+                return replay
+            # Re-ask every gate question against storage: the page may have changed while the
+            # archive was being written, and the file must not outlive that answer.
+            fresh = _authored_export_plan(connection, enrollment_id)
+            if (
+                not fresh.get("ready")
+                or str(fresh.get("content_hash")) != reviewed_hash
+            ):
+                raise _blocked(
+                    "changes_need_review",
+                    "the authored content changed while exporting; nothing was adopted.",
+                    current_content_hash=fresh.get("content_hash"),
+                )
+            artifact_id = _adopt_artifact(
+                connection,
+                course_id=str(course["id"]),
+                kind="export",
+                mime="application/zip",
+                path=destination,
+                data_hash=file_digest,
+                size=len(zip_bytes),
+                notes=(
+                    f"course.export of course {course['id']} from enrollment {enrollment_id}; "
+                    f"manifest {manifest['content_hash']}"
+                ),
+                generator="coursebook.course_export",
+            )
+            result = {
+                "export_id": export_id,
+                "pack": {
+                    "pack_id": str(manifest["pack_id"]),
+                    "pack_version": str(manifest["pack_version"]),
+                    "manifest_hash": str(manifest["content_hash"]),
+                },
+                "files": _authored_file_rows(manifest),
+                "artifacts": [_artifact_ref(connection, artifact_id)],
+                "content_hash": reviewed_hash,
+                "exported_at": now,
+                "license": dict(authoring.AUTHORED_LICENSE),
+                "rights": AUTHORED_RIGHTS,
+                "no_upload": AUTHORED_NO_UPLOAD,
+            }
+            _remember(
+                connection, key, method, payload_hash, envelope.get("operation_id", ""), 0, result
+            )
+    except RpcError:
+        destination.unlink(missing_ok=True)
         raise
     return 0, result
 
@@ -1562,6 +1907,8 @@ def ensure_registered() -> tuple[str, ...]:
         ("pack.export", pack_export),
         ("pack.list", pack_list),
         ("pack.inspect", pack_inspect),
+        ("course.export.read", course_export_read),
+        ("course.export", course_export),
     ):
         api.register_handler(method, handler)
         registered.append(method)

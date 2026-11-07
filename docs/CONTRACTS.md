@@ -1,7 +1,8 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v11** (H-21 slice A additive amendment; v10 = H-01, v9 = M3-B1, v8 = M1-P4, v7 = CB-015 residual,
-v6 = CB-011, v5 = CB-026, v4 = CB-024, v3 = CB-022, v2 = CB-018).
+Status: **frozen at v13** (H-08 authored-course export; v12 = H-26 student syllabus intake, v11 = H-21 slice A,
+v10 = H-01, v9 = M3-B1, v8 = M1-P4, v7 = CB-015 residual, v6 = CB-011, v5 = CB-026, v4 = CB-024,
+v3 = CB-022, v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
 contract: **Atlas**. Implementers are the specialists named below.
 
@@ -15,18 +16,18 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | Contract id | File | Ver | Implementer | Consumers |
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
-| `cb.errors` | `contracts/errors.v3.json` | 3 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v11.json` | 11 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v7.json` | 7 | Cinder | migrations, every command, evidence views |
-| `cb.jobs` | `contracts/jobs.v3.json` | 3 | Cinder | job service, Activity view |
+| `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
+| `cb.rpc` | `contracts/rpc.v13.json` | 13 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.db` | `contracts/db.v8.json` | 8 | Cinder | migrations, every command, evidence views |
+| `cb.jobs` | `contracts/jobs.v4.json` | 4 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v10** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json` and `rpc.v10.json`), the
-v1 **to v6** files for `cb.db` (including `db.v3.json`, `db.v5.json` and `db.v6.json`), and the v1
-**to v2** files for `cb.errors` and the v1 and v2 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v10.json`, `db.v6.json`,
-`errors.v2.json` and `jobs.v2.json`.
+The v1 **to v12** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json` and `rpc.v12.json`), the
+v1 **to v7** files for `cb.db` (including `db.v3.json`, `db.v5.json` and `db.v7.json`), and the v1
+**to v3** files for `cb.errors` and the v1 to v3 files for `cb.jobs` remain on disk, unmodified,
+as immutable history: the superseded current files are `rpc.v12.json`, `db.v7.json`,
+`errors.v3.json` and `jobs.v3.json`.
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 `tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so
@@ -1387,6 +1388,58 @@ build that cannot run `coursebook.plan.v2`; it is not returned by the companion 
 **Not in this delta.** No UI, no pack change, no second course/plan/lesson engine, no second
 enrollment authority, no export of syllabus text, no LMS client, no calendar, no gradebook.
 
+## v13 delta (H-08) — a learner-authored course packages itself
+
+The adversarial harness review (P0-5) found that "package the result for reuse" was true only for a
+pack-backed course or a Parent Studio blueprint. `pack.export` refused a course with no `pack_id`
+(`course_not_pack_backed`), and the only authored export, `parent.export`, requires a Parent Studio
+`final_approvals` row that a `course.create` course never has. The main learner path — a course
+created from a goal — had no export command and therefore no export action.
+
+v13 adds exactly two commands. Every earlier method name and payload is preserved unchanged, the
+method enum grows from 61 to 63, and no error code, job kind or vocabulary value changes. (The H-08
+work was authored as a v11 of its own against an older base; on this line v11 is H-21's unit
+contract and v12 is H-26a's syllabus-intake contract, so the delta lands at v13.)
+
+| Method | Input | Output | What it may never do |
+|---|---|---|---|
+| `course.export.read` | `enrollment_id` | `ready`, `blocked_reason`, `blocked_message`, `problems[]`, `pack_backed`, `content_hash`, `files[]`, `license`, `rights`, `no_upload`, `plan`, `sections` | write an artifact, change a revision, or show a file list it would not export |
+| `course.export` | `enrollment_id`, `expected_content_hash` + envelope `idempotency_key` | `export_id`, `pack` (`pack_id`/`pack_version`/`manifest_hash`), `files[]`, `artifacts[]`, `content_hash`, `exported_at`, `license`, `rights`, `no_upload` | copy a stored manifest, an attempt, a notebook entry, a transcript, a provider setting, a path or telemetry; export a page a validator did not clear; export text the caller did not review |
+
+**The gate, in order.** (1) The course must be learner-authored, not pack-backed; an imported
+course is refused with `course_pack_backed` and keeps using `pack.export`. (2) The current plan must
+be approved (`plan_not_approved`). (3) **Every** lesson section must carry a generated page whose
+`gen_lessons.state` is `validated` (`lessons_not_validated`, with one `problems[]` line per
+section). (4) If the course has an active `final_approvals` row — a course a parent approved in
+Parent Studio — its `content_hash` must still equal the recomputed one (`changes_need_review`).
+
+**Final approval is not required for `course.export`.** Its approval authority is the approved plan
+plus explicitly validated pages; requiring a Parent Studio signature would make the learner path
+depend on a surface the learner never sees. A stored active approval is still honoured as a hash
+fence, so text an adult signed off cannot change and then ship under that signature.
+
+**Two hash fences.** The caller must send back the `content_hash` that `course.export.read`
+returned; a mismatch is `DELETE_SCOPE_STALE` and nothing is written. The write then re-reads the
+course inside its adopt transaction and refuses with `changes_need_review` if the text changed
+between the read and the archive — the exported bytes can never be a page the caller did not see.
+
+**What is rebuilt.** `coursebook.parent_authoring.build_pack` composes a *fresh* `cb.pack` v1
+manifest from the validated `gen_lessons.page_json` rows, the plan objectives and the check rows:
+`parent-guide/*.md`, `lessons/*.md`, `answer-guide/*.md`, for every objective. Identity is
+`authored-<course>`, version `1.0.0`, licence `all-rights-reserved` with `redistribution:
+local_only`. `pack.export` is unchanged for pack-backed content, and an imported pack is still never
+writable: importing this archive cuts a new course bound to the pack, exactly like any other pack.
+
+**Response, not a path.** `artifacts[]` carries the `artifact.get`-fetchable record; `pack` carries
+the manifest identity and `content_hash` the reviewed course-text digest. `rights` and `no_upload`
+are sentences the surface prints verbatim: the archive is a local copy, not a publication, and the
+no-upload statement (`no_upload`) says the export made no network call and recorded no telemetry.
+
+**Not in this delta.** No PDF handout from the learner surface (that stays `parent.export`; the
+archive already carries the lesson text as Markdown), no upload or catalog submission, no change to
+`pack.export`'s allowlist, no new `cb.db` table, column or migration, and no `course.export` on a
+pack-backed course.
+
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
@@ -1415,6 +1468,7 @@ enrollment authority, no export of syllabus text, no LMS client, no calendar, no
 | v10 (H-17) | 2026-11-07 | Additive inside v10: `$defs/plan_brief` names the optional `budget_usd` (positive number ≤1000), the per-job cost-ceiling override the `CostCeilingExceeded` recovery checkpoint's `raise_budget` action passes. The H-17 behaviour note was written as "no wire change", but a closed brief refuses an unnamed property, so the field had to be declared for the documented override to be reachable. Every earlier v10 payload still validates; no method, table, migration, error code, job kind or vocabulary value changes, and `additionalProperties: false` stays. |
 | v11 | 2026-11-07 | H-21 slice A additive amendment (contract and migration only). `plan_brief.unit_ordinal` (1-12) and `stage = unit_sections`; optional `units` projection on `outline_plan` with `$defs/outline_unit` (R9 key set) and optional `unit` on `outline_objective`; `acknowledge_prerequisites` and `$defs/prerequisite_state` on `lesson.begin`/`check.open`; `PREREQUISITE_UNMET` in cb.errors **v3**. cb.db **v7** adds `plan_units`, `objectives.unit_id`, `gen_plan_sections.unit_id` and `section_role` via migration 0007, additive with no backfill. 54 RPC methods unchanged. R4: `parent_authoring.plan_hash` is byte-identical for every stored pre-0007 plan (pinned by `test_legacy_plan_hash_unchanged_after_0007`). `rpc.v10.json`, `db.v6.json` and `errors.v2.json` are pinned by sha256. Handlers for gating, unit stages and PLAN_SCHEMA v2 are explicitly out of this slice. |
 | v12 | 2026-11-07 | H-26 additive amendment: the student syllabus import path. Seven `syllabus.*` methods; optional `syllabus_id`/`syllabus_revision` on `course.create` (companion recipes only); optional `syllabus_id`/`syllabus_revision`/`alignment_revision` on the closed `plan_brief`; a closed `import_brief` for `kind=import` with `stage=syllabus_parse`/`syllabus_align`. cb.db **v8** adds the eight syllabus tables via migration 0008, additive with no backfill and no change to `plan_units`. cb.errors **v4** adds the seven syllabus refusals and carries `PREREQUISITE_UNMET`. 61 RPC methods; no job kind, vocabulary value, transition or dial changes. Full scope plans through the v11 blueprint; `BLUEPRINT_UNAVAILABLE` remains only for a host without `coursebook.plan.v2`. `rpc.v11.json`, `db.v7.json` and `errors.v3.json` are pinned by sha256. |
+| v13 | 2026-11-07 | H-08 additive amendment: a learner-authored course packages itself. Two methods appended (`course.export.read`, `course.export`) to the 61 v12 methods, so a course created from a goal can export instead of only a pack-backed course or a Parent Studio blueprint; `pack.export` keeps the pack-backed bytes with its own allowlist and unchanged behaviour. The gate is an approved plan plus every lesson page in `validated` state; a stored active final approval is honoured as a hash fence, and the caller's reviewed `expected_content_hash` is the second. No new cb.db table, column, migration, error code, job kind or vocabulary value. Numbered v13 because v11 is H-21's unit contract and v12 is H-26's syllabus intake; `rpc.v12.json` is pinned by sha256. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 

@@ -195,7 +195,11 @@ class SyllabusCase(KernelCase):
 
 class ContractDeltaTest(KernelCase):
     def test_v12_publishes_the_seven_syllabus_commands_and_no_path_field(self) -> None:
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 12)
+        # v12's delta is measured against its own snapshot; the live wire has since moved to v13
+        # (H-08's authored-course export appended two methods and left these seven unchanged).
+        v12 = json.loads((contracts.CONTRACT_DIR / "rpc.v12.json").read_text(encoding="utf-8"))
+        self.assertEqual(v12["x-contract-version"], 12)
+        self.assertEqual(v12["$id"], "https://contracts.coursebook.hermes/rpc/v12")
         for method in ("syllabus.intake.create", "syllabus.get", "syllabus.parse",
                        "syllabus.align", "syllabus.alignment.get",
                        "syllabus.alignment.review", "syllabus.delete"):
