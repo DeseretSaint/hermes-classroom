@@ -17,6 +17,9 @@ replace the sources.
 - OpenViking: `viking://resources/dm-vault/knowledge/DESIGN-SYSTEMS-UI.md`,
   `DESIGN-RENDER-QUALITY-GATES.md`, `DESIGN-REFERENCE-PACK.md`,
   `DESIGN-VERIFICATION-GATES-DIGEST.md`.
+- Product research already in this repo: `docs/FIELD-DESK-RESEARCH.md`, `docs/INK-FIELD-NOTES.md`,
+  `docs/UX-AUDIT-ROUND3.md` and `docs/COURSEBOOK-VISUAL-IDENTITY-V2.md`. The visual-identity spec is
+  subordinate to this file where they conflict.
 
 ## 1. The four design laws (CRAFT-LENS, verbatim)
 
