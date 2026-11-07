@@ -2260,7 +2260,7 @@ V10_NEW_COURSE_FIELDS = ("level", "subject_domain", "scope")
 #: it because a Parent Studio job is re-queued from its own stored brief.
 V10_PLAN_BRIEF_FIELDS = {
     "goal", "brief", "title", "recipe", "dials", "locale", "level", "subject_domain", "scope",
-    "course_id", "enrollment_id", "plan_id", "stage",
+    "course_id", "enrollment_id", "plan_id", "budget_usd", "stage",
     "starting_point", "age_band", "reading_level", "duration_minutes", "setting", "materials",
     "exclusions", "supervision", "desired_pages", "desired_visuals", "narration",
     "egress_acknowledged", "redaction_requested",
@@ -2436,8 +2436,39 @@ class V10AmendmentTest(unittest.TestCase):
                 "supervision": "An adult pours.", "desired_pages": 6,
                 "desired_visuals": "diagrams", "narration": "script",
                 "egress_acknowledged": True, "redaction_requested": False,
+                "budget_usd": 2.5,
             }},
         )
+
+    def test_the_plan_brief_names_a_typed_positive_budget_override(self) -> None:
+        """H-17: ``brief.budget_usd`` is an accepted input, not a typo the closed brief refuses."""
+        plan_brief = contracts.contract("cb.rpc")["$defs"]["plan_brief"]
+        budget = plan_brief["properties"]["budget_usd"]
+        self.assertEqual(budget["type"], "number")
+        self.assertEqual(budget["exclusiveMinimum"], 0)
+        self.assertEqual(budget["maximum"], 1000)
+        self.assertNotIn("budget_usd", plan_brief.get("required", []))
+        # The lessons-retry brief the recovery checkpoint names validates as-is.
+        contracts.validate_request_payload(
+            "jobs.create",
+            {"kind": "plan",
+             "brief": {"stage": "lessons", "plan_id": "pln_12345678", "budget_usd": 2.0}},
+        )
+        for impossible in (0, -1.5, "cheap", True):
+            with self.assertRaises(contracts.ContractError, msg=repr(impossible)):
+                contracts.validate_request_payload(
+                    "jobs.create",
+                    {"kind": "plan",
+                     "brief": {"stage": "lessons", "plan_id": "pln_12345678",
+                               "budget_usd": impossible}},
+                )
+        # The brief stays closed: a near-miss is still refused rather than stored.
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "jobs.create",
+                {"kind": "plan",
+                 "brief": {"stage": "lessons", "plan_id": "pln_12345678", "budget": 2.0}},
+            )
 
     def test_db_v6_adds_only_the_three_nullable_course_columns(self) -> None:
         v5 = _document("db.v5.json")

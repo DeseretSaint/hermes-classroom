@@ -6854,6 +6854,12 @@
         "plan_id": {
           "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
         },
+        "budget_usd": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000,
+          "description": "Optional per-job operator override for the dollar cost ceiling, in USD. Beats COURSEBOOK_JOB_MAX_COST_USD and the plan-sized default; must be positive. Named here because the brief is closed: an unnamed field is refused, and a raised ceiling must stay an accepted, typed brief input."
+        },
         "stage": {
           "type": "string",
           "enum": [

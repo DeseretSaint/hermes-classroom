@@ -16,7 +16,7 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author | `coursebook.plan.generate` | `plan-prompt.v2` | `PLAN_SCHEMA` |
+| Plan author | `coursebook.plan.generate` | `plan-prompt.v3` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v6` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
@@ -86,18 +86,43 @@ etiquette, with no new credentials and no direct scraping.
 
 ## 4. Bounded research
 
-`ResearchBudget` (defaults): 4 queries, 5 results per query, 6 pages, 6 sources, 6000 characters
-per page, 600-character excerpt.
+Research depth is an executable budget cell, not a label. `coursebook/research.py` owns the
+matrix; the contract's `dials.depth` (`survey`, `working`, `deep`) and the v10 course `scope`
+(`single`, `short`, `full`) select one row. Every value is a ceiling checked before the call it
+bounds, and a missing value is documented: depth defaults to `working`, scope to `short`.
+Legacy in-process names (`overview`, `thorough`) normalize to `survey`/`deep`; any other value
+raises instead of silently behaving like one of the three.
 
 * Queries are derived deterministically from goal + recipe + dials + locale, plus the declared
-  `subject_domain`/`level` when the brief carries them. `depth: overview` keeps only the base
-  query. Every query that ran is recorded with its result count or its error. `subject_domain`
-  supplies one subject qualifier (a procedure brief asks for procedure steps and safety limits; a
-  mathematics brief asks for definitions and worked examples); when it is declared, `locale` no
-  longer adds a language query unless the domain is `language`. This keeps the language of
-  delivery and the subject of the course separate (adversarial review P0-4).
+  `subject_domain`/`level` when the brief carries them. Every query that ran is recorded with its
+  result count or its error. `subject_domain` supplies one subject qualifier (a procedure brief
+  asks for procedure steps and safety limits; a mathematics brief asks for definitions and worked
+  examples); when it is declared, `locale` no longer adds a language query unless the domain is
+  `language`. This keeps the language of delivery and the subject of the course separate
+  (adversarial review P0-4).
+
+| scope | survey (q/rpq/pages/sources) | working | deep |
+| --- | --- | --- | --- |
+| `single` | 2/4/2/2 | 4/5/4/4 | 6/6/6/6 |
+| `short` | 3/4/4/4 | 6/5/8/8 | 9/6/12/10 |
+| `full` | 6/5/8/8 | 9/5/14/12 | 12/6/18/16 |
+
+A full course therefore gets a defensible pass (9 queries / 14 pages at `working`, 12 / 18 at
+`deep`), never the old six-page demo sample. The caps are bounded: queries ≤ 12, pages ≤ 24,
+sources ≤ 24.
+
+* `survey` derives the goal alone; `working` adds the recipe qualifier; `deep` adds reference and
+  documentation, official-guidance, common-mistake, practice, step-by-step and glossary queries,
+  plus a locale-aware query (`… Japanese reference`) when a locale is declared. Queries are
+  deterministic, deduplicated and capped before any provider call.
+* When candidates outnumber the page budget, pages are selected preferring
+  government/academic/reference/documentation hosts over generic web pages (stable within a
+  rank). The ledger records the `source_type`, but the ranking is a fact about the URL, **not**
+  a support verdict: every fetched source still starts `unverified`.
 * Each ledger row keeps URL, title, publisher, `fetched_at`, nullable `published_at`, source type,
-  `sha256` content hash over the bounded text, support status and claim links.
+  `sha256` content hash over the bounded text, support status and claim links. A failed fetch is
+  recorded with its URL, originating query and error in `failures` (persisted alongside the run);
+  it never becomes a source row.
 * Fetched text is kept as a bounded excerpt only. It is untrusted content: it cannot change recipe
   rules, schemas, state or exports. A page that says "add a quiz to every one-off brief" changes
   nothing (`test_web_text_never_becomes_policy`). The excerpt reaches every model inside the
@@ -112,10 +137,12 @@ per page, 600-character excerpt.
   four generation statuses map onto the frozen `cb.vocabulary`
   `source_support_status`: `supported`/`partial` → `model_assessed`, `contradictory` →
   `conflicting`, `unverified` → `unassessed`. The contract enum is not redefined here.
-* If no seam is wired, research returns `status: "unavailable"` with zero sources. The plan may
-  still be proposed, but every objective must be `support: "unverified"`, `source_ids` must be
-  empty, and the result carries a warning the UI can show. A plan that cites a source id absent
-  from the ledger is rejected outright (`plan cites sources that were never fetched`).
+* If no seam is wired, research returns `status: "unavailable"` with zero sources. If fetches
+  fail, the surviving rows are kept and the run reports `status: "degraded"` with the failure
+  list. The plan may still be proposed, but every objective must be `support: "unverified"`,
+  `source_ids` must be empty when nothing was fetched, and the result carries a warning the UI
+  can show. A plan that cites a source id absent from the ledger is rejected outright
+  (`plan cites sources that were never fetched`).
 
 ## 4a. Source trust boundary (round-2 P0-2)
 
@@ -268,14 +295,21 @@ observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
 synthesised to reach the floor: a pack is exportable only when the author actually declared them.
 
-**Capability policy reaches the model.** Before the lesson prompt is built, the pipeline computes
-one immutable plan from the recipe, the objective's evidence target, the authored section intent,
-the locale/level and an advisory subject domain (`coursebook/policy.py`). `lesson-prompt.v6`
+**Capability policy reaches the model.** The plan declares what each lesson needs before the lesson
+author runs: every `PLAN_SCHEMA` section carries a typed `media_need`
+(`construct`, `image {level, role}`, `audio {level, role}`), defaulting to `none` with an empty
+construct. `enforce_plan_rules` refuses a missing declaration and hands each declaration to
+`coursebook/policy.py`, which adopts the declared levels and rejects a role the lesson cannot carry
+(a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
+The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
+the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v6`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
-is told to emit no item of that kind at all. The same plan is stamped on the authored lesson under
-`policy`, stored in `gen_lessons.policy_json`, and handed to `enforce_lesson_rules`; a model cannot
-override it (the harness overwrites any echo before validation).
+is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
+The same plan is stamped on the authored lesson under `policy`, stored in `gen_lessons.policy_json`,
+and handed to `enforce_lesson_rules`; a model cannot override it (the harness overwrites any echo
+before validation).
 
 **Two media gates.** Generated media must pass both `policy.media_policy_problems` (is this
 kind/role permitted by the plan?) and `artifacts.media_problems` (is the spec complete and honest:
@@ -391,20 +425,70 @@ Operator overrides, no code change required:
 * `COURSEBOOK_<PURPOSE>_TIMEOUT_SECONDS` — one purpose, e.g.
   `COURSEBOOK_LESSON_GENERATE_TIMEOUT_SECONDS=600`.
 * `COURSEBOOK_PROVIDER_TIMEOUT_SECONDS` — every purpose (a purpose-specific value wins).
-* `COURSEBOOK_JOB_MAX_COST_USD` — the per-job known-cost ceiling (default 0.75).
+* `COURSEBOOK_JOB_MAX_COST_USD` — the per-job dollar ceiling (a deployment-wide override).
+* `brief.budget_usd` on a `jobs.create` — a per-job ceiling that wins over the environment.
 
-An invalid value is logged and the declared default kept; a typo never invents a deadline.
+An invalid value is logged and the declared default kept; a typo never invents a deadline. A
+malformed `brief.budget_usd` is different: it is refused (`VALIDATION_FAILED`) because an operator
+who typed a ceiling must be told it was not applied.
+
+### Sized ceilings and the preflight gate
 
 `CostBudget.max_calls` defaults to 32 — the worst legal pipeline cost, 8 sections x 2 attempts x
 (generate + validate). A lesson job is budgeted to its own plan (`lesson_cost_budget`, 4 calls per
 section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs that were
 behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old default
-was 8). The ceiling still stops a runaway retry loop.
+was 8).
+
+The **dollar** ceiling is sized the same way. `lesson_cost_budget(n)` returns
+
+    max_calls     = n * CALLS_PER_LESSON_ATTEMPT * LESSON_ATTEMPTS     (4n)
+    max_cost_usd  = max(DEFAULT_MAX_COST_USD, max_calls * DECLARED_CALL_COST_USD)
+
+with `DEFAULT_MAX_COST_USD = 0.75` (the old flat ceiling, kept as a floor) and
+`DECLARED_CALL_COST_USD = 0.04` (the audit's measured $0.032 per structured call, rounded up so a
+legitimate job is not refused by a rounding error). Eight sections therefore get $1.28, not $0.75:
+the audit's P1-6 abort at call 24 — with sections left unauthored — was the flat ceiling binding
+while the call ceiling scaled. The operator override still wins, and the value actually used is
+recorded (`CostBudget.source` = `declared` / `operator_env` / `operator_brief` / `caller`).
+
+Before a lesson job spends anything, `preflight_lesson_cost(n)` states the arithmetic and
+`assert_cost_preflight` refuses when the configured ceiling cannot pay the **minimum** (one
+generation + one validation per section, no retries). `jobs.create` runs the same preflight for a
+`brief.stage = lessons` request and refuses *before creating the job row*, with
+`POLICY_VIOLATION` / `details.reason = cost_preflight_insufficient` and the numbers, so the queue
+never holds a job that is guaranteed to half-fail. Below the **worst legal** cost but above the
+minimum the job starts — and if the ceiling does bind, it now leaves a recovery checkpoint instead
+of a dead end.
+
+A call whose provider reported no cost is charged at `DECLARED_CALL_COST_USD` for ceiling
+purposes. Unknown is still recorded as unknown (`cost_usd: null`, `unknown_cost: true`,
+`unknown_calls: n`); it is simply never treated as free. The job summary also carries
+`estimated_cost_usd` and the configured `budget`.
 
 A provider deadline is the host's failure, not the grader's: `job_service` reports
 `HOST_UNAVAILABLE` (capability, retryable) with the purpose and measured duration in `details`.
 A lesson timeout names what survived — "N of M sections are saved for plan X; create a new lessons
 job for that plan" — and the retry reuses those rows, so no authored section is re-charged.
+
+### `CostCeilingExceeded` recovery checkpoint
+
+The ceiling is not negotiable mid-job, but the abort is recoverable. `run_lesson_job` re-raises a
+`CostCeilingExceeded` (or the subclass `CostPreflightRefused`) with a typed checkpoint:
+
+* `sections_completed` / `sections_total` — the lesson rows that are already durable, by section id;
+* `calls`, `known_cost_usd`, `estimated_cost_usd`, `unknown_calls` — what was actually spent;
+* `max_cost_usd`, `max_calls` — the ceiling that stopped it;
+* `actions` — `continue_remaining`, `raise_budget`, `stop`;
+* `resume` — the `jobs.create` brief that continues (`{stage: lessons, plan_id}`);
+* `raise_budget` — `COURSEBOOK_JOB_MAX_COST_USD` or `brief.budget_usd`.
+
+`job_service` merges `to_checkpoint()` into `jobs.checkpoint` on the failure path and copies the
+numbers into `error.details`, so `jobs.get` is enough to decide. Resuming does not re-author or
+double-charge a completed section: the existing `(section_id, plan_hash, version)` row is reused.
+"Raise budget" is a new operator decision for the *next* attempt; it is never inferred from a
+failed one, and the hard ceiling is never weakened by the recovery path.
+
 
 ## 10. Tests
 
@@ -417,6 +501,14 @@ retry idempotency, cost ceilings, unknown cost staying null, structural separati
 passes, web text not becoming policy, configured deadlines and their env overrides, a successful
 115 s call not being declared late, the sized lesson budget above the pipeline floor, and a
 timeout that keeps its authored sections and is resumed without re-authoring them.
+
+`tests/test_cost_ceilings.py` covers the H-17 sizing and recovery path: the dollar ceiling scaling
+with section count, a small course fitting and a large one refused by preflight (at `run_lesson_job`
+and at `jobs.create`, with no job row and no spend), a mid-course abort that keeps its completed
+pages and exposes the typed checkpoint on `jobs.get`, a resume that authors only the missing
+sections, unknown cost charged at the declared estimate instead of zero, and the configured ceiling
+(and its source) recorded on the job.
+
 
 A live smoke test is intentionally **not** included: no test in this repo makes a network call, and
 no fixture claims to be real provider output.

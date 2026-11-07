@@ -639,5 +639,48 @@ class PurityTest(unittest.TestCase):
         self.assertEqual(policy.MIN_RUBRIC_CRITERIA, packs.MIN_RUBRIC_CRITERIA)
 
 
+class ParentMediaPreferenceTest(unittest.TestCase):
+    """H-07: the parent's typed media answers may narrow the capability decision, never widen it."""
+
+    def test_the_parent_answer_withholds_a_medium_the_intent_would_have_earned(self) -> None:
+        # Two intents that really earn a medium: a torque sequence earns a schematic, a spoken
+        # greeting earns a pronunciation reference.
+        visual = plan(recipe="committed", evidence_target="procedure",
+                      subject_domain="technical_procedure",
+                      lesson_intent="Replace the head gasket: follow the torque sequence and the stop condition.")
+        self.assertEqual((visual.image, visual.image_role), ("required", "schematic"))
+        withheld_visual = policy.plan_lesson_capability(
+            recipe="committed", evidence_target="procedure",
+            subject_domain="technical_procedure",
+            lesson_intent="Replace the head gasket: follow the torque sequence and the stop condition.",
+            media_preferences={"desired_visuals": "none"},
+        )
+        self.assertEqual((withheld_visual.image, withheld_visual.image_role), ("none", None))
+        self.assertIn("parent brief asked for no visuals", " ".join(withheld_visual.reasons))
+
+        spoken = plan(recipe="committed", evidence_target="production", subject_domain="language",
+                      locale="ja-JP", level="L0",
+                      lesson_intent="Greet a coworker and introduce yourself, saying the phrase aloud.")
+        self.assertEqual((spoken.audio, spoken.audio_role), ("required", "pronunciation_reference"))
+        withheld_audio = policy.plan_lesson_capability(
+            recipe="committed", evidence_target="production", subject_domain="language",
+            locale="ja-JP", level="L0",
+            lesson_intent="Greet a coworker and introduce yourself, saying the phrase aloud.",
+            media_preferences={"narration": "none"},
+        )
+        self.assertEqual((withheld_audio.audio, withheld_audio.audio_role), ("none", None))
+        self.assertIn("parent brief asked for no narration", " ".join(withheld_audio.reasons))
+
+    def test_a_parent_permission_never_forces_media(self) -> None:
+        permitted = plan(recipe="parent", evidence_target="recall",
+                         lesson_intent="The parent names one object and the child points to it.",
+                         locale="ja-JP", subject_domain="language",
+                         media_preferences={"desired_visuals": "illustrations", "narration": "script"})
+        self.assertEqual((permitted.image, permitted.audio), ("none", "none"))
+        self.assertEqual(permitted, plan(recipe="parent", evidence_target="recall",
+                                         lesson_intent="The parent names one object and the child points to it.",
+                                         locale="ja-JP", subject_domain="language"))
+
+
 if __name__ == "__main__":
     unittest.main()

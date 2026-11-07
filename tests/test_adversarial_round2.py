@@ -146,8 +146,8 @@ class PlanGateTest(unittest.TestCase):
                 ).fetchone()
             finally:
                 connection.close()
-            # … but the kernel row it wrote is a normal, approvable draft, and the rejection
-            # lives only in the generation document.
+            # … and the kernel row it wrote stays a plain draft; the rejection lives in the
+            # generation document.
             self.assertEqual(row["state"], "draft")
             self.assertEqual(document["generation_state"], "needs_review")
             self.assertIsNotNone(document["validation_id"])
@@ -428,31 +428,46 @@ class ContractFalseConfidenceTest(unittest.TestCase):
 
 
 class ScaleTest(unittest.TestCase):
-    """Finding H10-10: the cost ceiling does not scale with the plan's section count."""
+    """Finding H10-10 / audit P1-6: both ceilings must scale with the plan."""
 
-    def test_cost_ceiling_is_flat_while_call_ceiling_scales(self) -> None:
+    def test_cost_and_call_ceilings_both_scale_with_the_plan(self) -> None:
         small = gen.lesson_cost_budget(4)
         large = gen.lesson_cost_budget(8)
         self.assertEqual((small.max_calls, large.max_calls), (16, 32))
-        self.assertEqual(small.max_cost_usd, large.max_cost_usd)  # both 0.75 by default
+        # H-17: the dollar ceiling is sized from the plan, with the old flat 0.75 as the floor.
+        small_cost = small.max_cost_usd
+        large_cost = large.max_cost_usd
+        assert small_cost is not None and large_cost is not None
+        self.assertEqual(small_cost, gen.DEFAULT_MAX_COST_USD)
+        self.assertAlmostEqual(large_cost, 32 * gen.DECLARED_CALL_COST_USD)
+        self.assertGreater(large_cost, small_cost)
 
-        usage = gen._Usage(large)
         request = gen.LLMRequest(purpose="coursebook.lesson.generate", prompt_version="v",
                                  system_prompt="s", instructions="i", input_text="x",
                                  schema={"type": "object"}, schema_name="s",
                                  max_tokens=1, timeout_s=1.0)
-        for index in range(23):
-            response_ = gen.LLMResponse(text="{}", parsed={}, provider="p", model="m",
-                                        input_tokens=1, output_tokens=1, cost_usd=0.032)
-            usage.record(request, response_, 1)
-        # $0.736 spent, so the pre-call check still admits the 24th call …
-        usage.before_call(request)
-        # … and the 24th call (section 6's second validation) busts the flat $0.75 ceiling,
-        # with two of eight sections untaught.
+
+        def costed() -> gen.LLMResponse:
+            return gen.LLMResponse(text="{}", parsed={}, provider="p", model="m",
+                                   input_tokens=1, output_tokens=1, cost_usd=0.032)
+
+        usage = gen._Usage(large)
+        # The audit's abort point: 24 calls at the measured $0.032 = $0.768. The sized ceiling
+        # admits it instead of stopping a full course with two of eight sections untaught.
+        for _ in range(24):
+            usage.before_call(request)
+            usage.record(request, costed(), 1)
+        self.assertAlmostEqual(usage.known_cost, 24 * 0.032)
+
+        # The call ceiling still bounds the job: the 33rd call is refused, not the 24th.
+        for _ in range(8):
+            usage.before_call(request)
+            usage.record(request, costed(), 1)
+        self.assertEqual(len(usage.calls), large.max_calls)
         with self.assertRaises(gen.CostCeilingExceeded):
-            usage.record(request, gen.LLMResponse(text="{}", parsed={}, provider="p", model="m",
-                                                  input_tokens=1, output_tokens=1, cost_usd=0.032), 1)
-        self.assertEqual(usage.budget.max_calls, 32)
+            usage.before_call(request)
+        # A caller can still pass a tighter explicit ceiling; the default never regresses to flat.
+        self.assertEqual(gen.lesson_cost_budget(4).max_cost_usd, gen.DEFAULT_MAX_COST_USD)
 
 
 if __name__ == "__main__":

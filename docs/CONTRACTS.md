@@ -956,6 +956,53 @@ rewriting the document snapshot. Request/response shapes, error codes and file f
 — this is a behaviour note for a frozen v6 method, not a version bump. `require_revision`,
 idempotency replay and `plan.approve`'s hash fence are untouched.
 
+### Cost ceilings and the `CostCeilingExceeded` recovery checkpoint (behaviour note + one additive brief field)
+
+The dollar ceiling is now sized from the plan, not flat, and a mid-course abort is a recoverable
+state rather than a dead end. No contract *version* moves: the checkpoint and `cb.errors#details`
+facts fit inside the existing `jobs.checkpoint` (`type: object`, `maxProperties: 40`),
+`cb.errors#details` (`maxProperties: 32`) and the already-frozen `POLICY_VIOLATION` code. One
+additive byte change lands inside v10: the closed `$defs/plan_brief` now names the optional
+`budget_usd` (positive number, ≤1000) that the `raise_budget` action passes. Without that property
+the brief's `additionalProperties: false` refused the field, so the documented override was
+unreachable on the wire. Every earlier v10 payload still validates; no method, table, error code,
+job kind or vocabulary value moves.
+
+* **`jobs.create` preflight.** When `kind = plan` and `brief.stage = lessons`, the handler counts
+  `gen_plan_sections` for `brief.plan_id` and resolves the ceiling
+  (`brief.budget_usd` > `COURSEBOOK_JOB_MAX_COST_USD` > the plan-sized default). If the ceiling
+  cannot pay the plan's *minimum* (one generation + one validation per section), the request is
+  refused with `POLICY_VIOLATION`, `details.reason = "cost_preflight_insufficient"` and the
+  preflight arithmetic (`section_count`, `minimum_calls`, `maximum_calls`, `minimum_cost_usd`,
+  `maximum_cost_usd`, `max_calls`, `max_cost_usd`, `budget_source`, `fits_minimum`,
+  `fits_maximum`). **No job row is created and nothing is spent.** `brief.budget_usd` must be a
+  positive number; anything else is `VALIDATION_FAILED` / `field: brief.budget_usd`.
+* **The ceiling actually used is recorded.** A successful lessons stage stores
+  `checkpoint.budget = {max_calls, max_cost_usd, source}` and `checkpoint.preflight = {...}`.
+  `source` is `declared`, `operator_env`, `operator_brief` or `caller`, so an operator can tell a
+  raised ceiling from a sized one. `usage.summary` response shape is unchanged (it is frozen to
+  aggregate calls/tokens/artifacts); the per-job configured value lives on the job's checkpoint.
+* **Mid-course abort checkpoint.** When a lessons stage hits the ceiling the job fails with
+  `POLICY_VIOLATION` and `details` carrying `reason: cost_ceiling_exceeded`,
+  `sections_total`, `sections_completed_count`, `calls`, `estimated_cost_usd`, `unknown_calls`,
+  `max_cost_usd`, `max_calls` and `actions`. The same facts — plus the completed section ids — are
+  merged into `jobs.checkpoint` (it survives the failure; `finish` writes it on the failed path):
+
+  | key | meaning |
+  |---|---|
+  | `kind` | `cost_ceiling_exceeded` or `cost_preflight_refused` |
+  | `plan_id`, `sections_total`, `sections_completed`, `sections_completed_count` | what already has durable lesson rows |
+  | `calls`, `known_cost_usd`, `estimated_cost_usd`, `unknown_calls` | what was actually spent |
+  | `max_cost_usd`, `max_calls` | the ceiling that stopped it |
+  | `actions` | `["continue_remaining", "raise_budget", "stop"]` |
+  | `resume` | `{method: jobs.create, brief: {stage: lessons, plan_id}}` |
+  | `raise_budget` | `{env: COURSEBOOK_JOB_MAX_COST_USD, brief_field: brief.budget_usd}` |
+
+  `continue_remaining` is a plain `jobs.create` for the same plan: `run_lesson_job` reuses the
+  existing `(section_id, plan_hash, version)` rows, so completed sections are neither re-authored
+  nor re-charged. The action labels authorize nothing on their own — each is a separate command.
+  `stop` is the default because the job is already `failed`, not running.
+
 ### Handlers Cinder must register (after this freeze)
 
 **Registration status: landed in CB-014.** All eight `parent.*` methods are registered — seven in
@@ -1217,7 +1264,7 @@ new field is optional.
 | Surface | Added | Notes |
 |---|---|---|
 | `course.create.request` | `level` (string ≤35 or null), `subject_domain` (string ≤60 or null), `scope` (`single`/`short`/`full` or null) | Optional; `locale` stays optional as before. The four dials are unchanged and stay closed — a level or domain is **not** smuggled into `dials`. |
-| `jobs.create.request` | one typed `plan` brief (`$defs/plan_brief`) applied when `kind = "plan"` | Carries `goal`, `brief`, `title`, `recipe`, `dials`, `locale`, `level`, `subject_domain`, `scope`, `course_id`, `enrollment_id`, `plan_id`, `stage`, plus the Parent Studio authoring fields (a `parent.brief.create` job is re-queued through `jobs.create` from the brief its own `jobs.get` returned). `additionalProperties: false`, so an unknown field is `VALIDATION_FAILED` rather than a silent no-op. Other job families keep the bounded open `brief` object. |
+| `jobs.create.request` | one typed `plan` brief (`$defs/plan_brief`) applied when `kind = "plan"` | Carries `goal`, `brief`, `title`, `recipe`, `dials`, `locale`, `level`, `subject_domain`, `scope`, `course_id`, `enrollment_id`, `plan_id`, `stage`, plus the Parent Studio authoring fields (a `parent.brief.create` job is re-queued through `jobs.create` from the brief its own `jobs.get` returned). `additionalProperties: false`, so an unknown field is `VALIDATION_FAILED` rather than a silent no-op. Other job families keep the bounded open `brief` object. H-17 adds the optional `budget_usd` (positive number ≤1000): it is named inside the closed brief because the `CostCeilingExceeded` recovery action tells an operator to pass `brief.budget_usd`, and a closed brief would otherwise refuse it. |
 | `cb.db` v6 | nullable `courses.level`, `courses.subject_domain`, `courses.scope` via migration `0006_courses_plan_brief_inputs.sql` | Stored once on the course so `course.get` and the plan job read the same values. `scope` is CHECK-constrained to `single`/`short`/`full` or NULL. No backfill: an existing row keeps NULL, which means "the brief did not name it". |
 
 **What reads them.** `coursebook.domain.course_create` stores the three values (blank collapses to
@@ -1276,6 +1323,7 @@ gains exactly one deterministic consequence — a cap on `time_estimate.weeks` (
 | v8 | 2026-11-06 | M1-P4 additive amendment. One new response field, `lesson.page.document` (the §5 block document), with `$defs/lesson_document`, `$defs/lesson_block` and `$defs/lesson_document_media`. 52 RPC methods unchanged; no cb.db table, column, migration, error code, job kind or vocabulary value; every v7 `lesson.page` field stays required and unchanged. The document is projected at read time from the same durable rows, so old rows are never rewritten; a page authored before v8 reports `state = "textbook_only"` with `views.guided = false` and a human note rather than a broken toggle. One check attaches to exactly one block, media is a child of a block, and the document can contain no reference answer or rubric text. `rpc.v7.json` is pinned by sha256. |
 | v9 | 2026-11-06 | M3-B1 additive amendment. 54 RPC methods (+`pronunciation.attempt`, `pronunciation.dispute`) and cb.db **v5** `pronunciation_attempts` via migration 0005. A pronunciation result is `model_assessed`, never a grade: it cannot close a check, advance an objective or write a transition, and no audio is stored. No new error code, job kind or vocabulary value. `rpc.v8.json` is pinned by sha256. |
 | v10 | 2026-11-07 | H-01 additive amendment. `course.create` gains optional `level`, `subject_domain` and `scope`; `jobs.create` gains one closed `$defs/plan_brief` for `kind = "plan"` so unknown fields are refused instead of silently ignored. cb.db **v6** adds nullable `courses.level`/`subject_domain`/`scope` via migration 0006, with no backfill. 54 RPC methods unchanged; no error code, job kind, vocabulary value or dial changes. `rpc.v9.json` and `db.v5.json` are pinned by sha256. |
+| v10 (H-17) | 2026-11-07 | Additive inside v10: `$defs/plan_brief` names the optional `budget_usd` (positive number ≤1000), the per-job cost-ceiling override the `CostCeilingExceeded` recovery checkpoint's `raise_budget` action passes. The H-17 behaviour note was written as "no wire change", but a closed brief refuses an unnamed property, so the field had to be declared for the documented override to be reachable. Every earlier v10 payload still validates; no method, table, migration, error code, job kind or vocabulary value changes, and `additionalProperties: false` stays. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 

@@ -389,9 +389,15 @@ def finish(
     artifact_ids: Sequence[str] = (),
     error: dict[str, Any] | None = None,
     message: str | None = None,
+    checkpoint: dict[str, Any] | None = None,
     now: datetime | None = None,
 ) -> str:
-    """Close the attempt. A completion that raced a cancel becomes ``completed_late``."""
+    """Close the attempt. A completion that raced a cancel becomes ``completed_late``.
+
+    ``checkpoint`` merges into the persisted checkpoint on a *failed* attempt too: a typed
+    recovery record (what survived, what was spent) is the only thing that lets a retry skip
+    finished work, so it must not be lost just because the stage raised.
+    """
     moment = _now(now)
     with db.transaction() as connection:
         row = _fenced_row(connection, lease)
@@ -403,12 +409,15 @@ def finish(
         progress = _load(row["progress_json"], {})
         if message:
             progress["message"] = message[:300]
+        stored = _load(row["checkpoint_json"], {})
+        stored.update({k: v for k, v in (checkpoint or {}).items() if k not in ("progress", "stages")})
         connection.execute(
-            "UPDATE jobs SET state = ?, progress_json = ?, error_json = ?, lease_owner = NULL,"
-            " lease_expires_at = NULL, updated_at = ? WHERE id = ? AND attempt_id = ?",
+            "UPDATE jobs SET state = ?, progress_json = ?, checkpoint_json = ?, error_json = ?,"
+            " lease_owner = NULL, lease_expires_at = NULL, updated_at = ? WHERE id = ? AND attempt_id = ?",
             (
                 target,
                 _json(progress),
+                _json(stored),
                 _json(error) if error else "{}",
                 _iso(moment),
                 lease.job_id,
@@ -418,8 +427,14 @@ def finish(
     return target
 
 
-def fail(lease: Lease, error: dict[str, Any], *, now: datetime | None = None) -> str:
-    return finish(lease, state="failed", error=error, now=now)
+def fail(
+    lease: Lease,
+    error: dict[str, Any],
+    *,
+    checkpoint: dict[str, Any] | None = None,
+    now: datetime | None = None,
+) -> str:
+    return finish(lease, state="failed", error=error, checkpoint=checkpoint, now=now)
 
 
 def resume(job_id: str, *, now: datetime | None = None) -> dict[str, Any]:
@@ -554,7 +569,7 @@ def execute(
                 finish(lease, state="cancelled", now=now)
                 return _view(job_id)
             except Exception as exc:  # noqa: BLE001 - a stage failure is durable, not a crash
-                fail(lease, _stage_error(exc))
+                fail(lease, _stage_error(exc), checkpoint=_stage_checkpoint(exc))
                 return _view(job_id)
             with db.transaction() as connection:
                 _record_usage(connection, job_id, result.usage, now, "job")
@@ -581,6 +596,11 @@ def execute(
 #: deadline as a grader failure sends the reader to the wrong subsystem (CB-011-D1).
 _PROVIDER_ERRORS = frozenset({"ProviderTimeout", "ProviderFailure"})
 
+#: Exceptions that are a declared policy ceiling, not a bug or a host outage. A cost ceiling is a
+#: deterministic stop, so the same request will fail the same way until the operator raises it —
+#: the recovery checkpoint, not an automatic retry, is the next step.
+_POLICY_ERRORS = frozenset({"ResearchUnavailable", "CostCeilingExceeded", "CostPreflightRefused"})
+
 
 def _error_code(exc: Exception) -> str:
     code = getattr(exc, "code", None)
@@ -589,7 +609,7 @@ def _error_code(exc: Exception) -> str:
     name = type(exc).__name__
     if name in _PROVIDER_ERRORS:
         return "HOST_UNAVAILABLE"
-    if name in ("ResearchUnavailable", "CostCeilingExceeded"):
+    if name in _POLICY_ERRORS:
         return "POLICY_VIOLATION"
     return "INTERNAL_ERROR"
 
@@ -600,6 +620,7 @@ def _stage_error(exc: Exception) -> dict[str, Any]:
     ``cb.errors`` is the single authority for category/retryability, so this builds the error
     from it instead of repeating ``category: capability`` for every failure. Structured
     ``details`` name the purpose and the measured duration, never a secret or a reference answer.
+    A cost abort also carries its ceiling arithmetic so the operator can act on the numbers.
     """
     code = _error_code(exc)
     message = str(exc)[:_MAX_ERROR_TEXT] or type(exc).__name__
@@ -608,7 +629,42 @@ def _stage_error(exc: Exception) -> dict[str, Any]:
         value = getattr(exc, attribute, None)
         if value is not None:
             details[attribute] = value
+    details.update(_cost_details(exc))
     return contracts.build_error(code, message, **details)
+
+
+def _cost_details(exc: Exception) -> dict[str, Any]:
+    """Bounded typed cost facts for ``error.details``. Absent for non-cost failures."""
+    if not hasattr(exc, "estimated_cost_usd"):
+        return {}
+    details: dict[str, Any] = {
+        "reason": "cost_preflight_insufficient" if type(exc).__name__ == "CostPreflightRefused" else "cost_ceiling_exceeded",
+        "sections_total": int(getattr(exc, "sections_total", 0) or 0),
+        "sections_completed_count": int(len(getattr(exc, "sections_completed", []) or [])),
+        "calls": int(getattr(exc, "calls", 0) or 0),
+        "estimated_cost_usd": float(getattr(exc, "estimated_cost_usd", 0.0) or 0.0),
+        "unknown_calls": int(getattr(exc, "unknown_calls", 0) or 0),
+    }
+    for attribute in ("max_cost_usd", "max_calls"):
+        value = getattr(exc, attribute, None)
+        if value is not None:
+            details[attribute] = value
+    actions = list(getattr(exc, "actions", []) or [])
+    if actions:
+        details["actions"] = actions
+    return details
+
+
+def _stage_checkpoint(exc: Exception) -> dict[str, Any]:
+    """The typed recovery checkpoint a failed stage wants persisted, if it has one."""
+    factory = getattr(exc, "to_checkpoint", None)
+    if not callable(factory):
+        return {}
+    try:
+        checkpoint = factory()
+    except Exception:  # noqa: BLE001 - a broken recovery record must not mask the failure
+        return {}
+    return checkpoint if isinstance(checkpoint, dict) else {}
 
 
 def _view(job_id: str) -> dict[str, Any]:
