@@ -203,6 +203,48 @@ round-1 review was committed after H-10's snapshot (`2e3508f`), so H-19 must rec
 audit time; committed in `2e3508f`" rather than repeating a present-tense defect.
 
 
+## Third wave — UX, generic proof, and student mode (2026-11-07)
+
+The two adversarial reviews are committed at `2e57efa`:
+`docs/ADVERSARIAL-UX-REVIEW.md` and `docs/GENERIC-HARNESS-REVIEW.md`. They add the following
+reviewable cards. The existing cards are not renumbered; `B-1`/`B-2` are finding keys, not new
+H-numbers, and they were renamed from two accidental duplicate H-20/H-21 labels created by Atlas.
+
+| key | id | card | owner | parents | branch |
+|---|---|---|---|---|---|
+| B-1 | `t_673155b0` | Grading lane gap — generated checks store no reference kind | cinder | H-16 | `wt/...` (scratch) |
+| B-2 | `t_74d99ca5` | Observation evidence is unreachable — expose recording | cinder | H-16 | scratch |
+| H-21 | `t_2a2fc90c` | Implement the CourseBlueprint v2 | cinder | H-13, H-01 | `wt/t_2a2fc90c` |
+| H-22 | `t_966d50f4` | Frozen breadth disclosure copy and evidence labels | vellum | H-16 | scratch |
+| H-24 | `t_29e6647c` | Rubric registry extensibility decision | atlas | H-16 | `wt/harness-rubric-extensibility` |
+| H-25 | `t_5535fc66` | Student syllabus import and alignment — design | atlas | H-03, H-02 | `wt/harness-student-mode-design` |
+| H-26 | `t_da9e472c` | Student syllabus import — backend parse/map/companion course | cinder | H-25 | `wt/harness-student-import` |
+| H-27 | `t_71ea55ee` | Student syllabus import — learner intake/anchors/alignment UI | vellum | H-25, H-26 | `wt/harness-student-ui` |
+| H-28 | `t_271e19e7` | UX humanification — first run, create, import | vellum | H-02, H-22, H-21 | `wt/harness-ux-first-run` |
+| H-29 | `t_70686b14` | UX humanification — lesson index, results, progress | vellum | H-28 | `wt/harness-ux-learning` |
+| H-30 | `t_178dc615` | Independent generic-harness acceptance audit | sentinel | H-09 | `wt/harness-generic-audit` |
+| H-31 | `t_1c9d0ba6` | Refresh the audit index after merges and reviews | quill | H-12, H-14, H-02, H-03 | `wt/harness-audit-refresh` |
+
+**H-23 was seeded as a duplicate of B-1 and was closed without code.** Do not recreate it; the
+B-1 owner is `t_673155b0`. The board currently has two H-20/H-21 labels from Atlas's earlier
+seeding; `B-1` and `B-2` are the authoritative names for those two cards now.
+
+### What these cards must prove
+
+- **H-24** is a decision, not a runtime rubric generator. It must either show the six profiles
+  cover the supported constructs or design a declarative, validated extension gate. No free-text
+  rubrics.
+- **H-25** is design only. Student mode is a companion course aligned to an uploaded syllabus; the
+  syllabus remains the scope authority, is untrusted data, and is stored locally. No LMS scraping,
+  grade import, assignment submission, official-enrollment claim or child mode.
+- **H-26/H-27** are the backend and UI halves of that design. They must not bypass plan approval or
+  create a second course/job engine.
+- **H-28/H-29** are copy and composition, not capability. They must keep the M4 contrast/keyboard
+  gate and never fake progress, mastery or encouragement that contradicts the verdict.
+- **H-30** is an independent audit of H-09. A prepared Japanese pack or a Japanese-only run is a
+  failure; the three shapes are one-off, short and full, all non-Japanese.
+- **H-31** updates the index; it does not rewrite historical findings.
+
 ## Execution rules
 
 - A card's branch is merged by the integrator only after the merged tree passes the frozen gate:

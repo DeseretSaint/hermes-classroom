@@ -22,8 +22,8 @@ Three structural limits remain on current master:
 2. **Generated checks are ungradable.** Generated checks store `reference_answer`,
    `accepted_answers` and `accepted_alternatives` without a reference `kind`, so the grader routes
    every generated check to the unconfigured open lane. A correct generated answer is saved and
-   returned as `needs_retry`; it cannot complete the objective. This is the H-16 B-1 defect; it
-   has no owning board card until H-23 is created by this review.
+   returned as `needs_retry`; it cannot complete the objective. This is the H-16 B-1 defect; its
+   implementation card is H-20 `t_673155b0` (running on the board).
 3. **The arbitrary-topic proof has not been run.** H-09 is still `todo`; the only complete course
    evidence is the prepared Japanese pack, which proves the kernel and demo, not generation. No
    non-Japanese one-off, short or full course has been generated through the product path and
@@ -97,7 +97,8 @@ closed control:      {"ok": true, "verdict": "pass", "next_action": "complete_ob
 therefore cannot use the deterministic lane and the generated answer never advances. This is not a
 UI issue and not a model-quality issue; it is a data-shape defect. It is the single most important
 generic-harness defect after the plan cap, because it makes every generated course's checks
-advisory. `docs/ASSESSMENT-BREADTH.md` B-1 records it; H-23 is the missing card.
+advisory. `docs/ASSESSMENT-BREADTH.md` B-1 records it; H-20 `t_673155b0` is the owning
+implementation card.
 
 ### G-03 — Scope is real on the wire, but the plan shape is not
 
@@ -170,7 +171,7 @@ prepared Japanese pack has been run end to end.**
 | finding | card | owner | dependency |
 |---|---|---|---|
 | G-01 plan shape | H-03 design (merged) + H-21 implementation (running) | cinder | H-13 |
-| G-02 ungraded generated checks | **H-23** | cinder | H-16 |
+| G-02 ungraded generated checks | H-20 `t_673155b0` (running) | cinder | H-16 |
 | G-03 scope vs shape | H-21 | cinder | H-13 |
 | G-04 media/procedure | H-05/H-06 | cinder | H-03/H-04 |
 | G-05 arbitrary-topic proof | H-09 + **H-30** audit | sentinel | H-02…H-08 |
