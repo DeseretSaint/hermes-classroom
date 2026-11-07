@@ -609,14 +609,17 @@ class PlanJobTest(GenerationTestBase):
         self.assertFalse(tokens["unknown_cost"])
 
     def test_full_scope_deep_brief_runs_a_full_bounded_pass_and_keeps_failures(self) -> None:
+        from tests.blueprint_support import blueprint_plan, response as support_response, validation_pass
+
         seam = ExpandingSearch(fail_suffixes=("/3",))
+        scoped = blueprint_plan(scope="full", units=2, objectives_per_unit=6)
         result = gen.run_plan_job(
             self.connection,
             plan_job(dials={"depth": "deep"}, scope="full"),
             FakeLLM(
                 {
-                    "coursebook.plan.generate": plan_from_fixture(),
-                    "coursebook.plan.validate": validation_from_fixture(),
+                    "coursebook.plan.generate": support_response(scoped),
+                    "coursebook.plan.validate": support_response(validation_pass()),
                 }
             ),
             seam,

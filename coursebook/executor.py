@@ -39,6 +39,7 @@ JOB_KIND = "plan"
 
 #: Stage names. They are progress labels, never job kinds.
 PLAN_STAGE = "plan"
+UNIT_SECTIONS_STAGE = "unit_sections"
 LESSONS_STAGE = "lessons"
 
 #: At most this many queued jobs are claimed in one tick. A tick must be short enough that the
@@ -95,6 +96,12 @@ class _Resolvers:
         stage = str((brief or {}).get("stage") or PLAN_STAGE)
         if stage == PLAN_STAGE:
             return [job_service.Stage(PLAN_STAGE, self._plan_stage(dict(brief or {})))]
+        if stage == UNIT_SECTIONS_STAGE:
+            return [
+                job_service.Stage(
+                    UNIT_SECTIONS_STAGE, self._unit_sections_stage(dict(brief or {}))
+                )
+            ]
         if stage == LESSONS_STAGE:
             return [job_service.Stage(LESSONS_STAGE, self._lessons_stage(dict(brief or {})))]
         return [job_service.Stage(stage or "invalid", _rejecting_stage(stage))]
@@ -125,8 +132,56 @@ class _Resolvers:
                     "plan_hash": result.get("plan_hash"),
                     "plan_version": result.get("plan_version"),
                     "generation_state": result.get("status"),
+                    "plan_schema": result.get("plan_schema"),
+                    "units": result.get("units"),
+                    "objectives": result.get("objectives"),
+                    # The next unit is offered to the client as an action. This executor never
+                    # enqueues it: a silent chain would hide cost and failure (§7).
+                    "next_unit_ordinal": result.get("next_unit_ordinal"),
                 },
                 message=f"plan authored ({result.get('status')})",
+            )
+
+        return run
+
+    def _unit_sections_stage(
+        self, brief: dict[str, Any]
+    ) -> Callable[[job_service.Lease], job_service.StageResult]:
+        """One unit's sections. The stage boundary is the unit, never the course."""
+
+        def run(lease: job_service.Lease) -> job_service.StageResult:
+            if job_service.is_cancel_requested(lease.job_id):
+                raise job_service.JobCancelled("cancelled before the unit_sections stage")
+            connection = db.connect()
+            try:
+                result = generation.run_unit_sections_job(
+                    connection,
+                    {"job_id": lease.job_id, "brief": brief},
+                    self._llm(),
+                    plan_id=brief.get("plan_id"),
+                    unit_ordinal=brief.get("unit_ordinal"),
+                    now=self.now,
+                )
+            finally:
+                connection.close()
+            return job_service.StageResult(
+                artifacts=[],
+                usage=[],  # generation recorded the real usage against this job id
+                checkpoint={
+                    "plan_id": result.get("plan_id"),
+                    "plan_hash": result.get("plan_hash"),
+                    "unit_ordinal": result.get("unit_ordinal"),
+                    "sections": result.get("sections"),
+                    "owners": result.get("owners"),
+                    "reviews": result.get("reviews"),
+                    "state": result.get("state"),
+                    "next_unit_ordinal": result.get("next_unit_ordinal"),
+                    "budget": result.get("budget"),
+                },
+                message=(
+                    f"unit {result.get('unit_ordinal')} sections authored "
+                    f"({result.get('sections')} sections)"
+                ),
             )
 
         return run
@@ -142,6 +197,7 @@ class _Resolvers:
                     {"job_id": lease.job_id, "brief": brief},
                     self._llm(),
                     plan_id=brief.get("plan_id"),
+                    unit_ordinal=brief.get("unit_ordinal"),
                     now=self.now,
                 )
                 lesson_ids = [
@@ -181,6 +237,10 @@ class _Resolvers:
             checkpoint = {
                 "plan_id": result.get("plan_id"),
                 "plan_hash": result.get("plan_hash"),
+                "plan_schema": result.get("plan_schema"),
+                "unit_ordinal": result.get("unit_ordinal"),
+                "next_unit_ordinal": result.get("next_unit_ordinal"),
+                "sections_total": result.get("sections_total"),
                 "lessons": len(result.get("lessons") or []),
                 "media": media_result.as_checkpoint(),
             }

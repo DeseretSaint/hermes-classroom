@@ -1672,6 +1672,49 @@ def _library_warning(connection, enrollment, course, pack_row) -> str | None:
     return None
 
 
+def _library_unit_label(
+    connection, *, course_id: str, current_objective_id: str | None
+) -> str | None:
+    """The card's unit label for a blueprint course, or ``None`` for a legacy/pack course.
+
+    Display only: it reads ``plan_units`` and the current objective's ``unit_id``. It never
+    derives readiness and never labels a legacy plan as multi-unit — a plan with no unit rows
+    keeps the learner label it already had.
+    """
+    plan = _approved_plan(connection, course_id)
+    if plan is None:
+        plan = _row(
+            connection,
+            "SELECT * FROM plans WHERE course_id = ? ORDER BY version DESC LIMIT 1",
+            (course_id,),
+        )
+    if plan is None:
+        return None
+    try:
+        unit_rows = connection.execute(
+            "SELECT ordinal, title FROM plan_units WHERE plan_id = ? ORDER BY ordinal",
+            (plan["id"],),
+        ).fetchall()
+    except Exception:  # noqa: BLE001 - schema v6 has no plan_units table
+        return None
+    if not unit_rows:
+        return None
+    current_unit = None
+    if current_objective_id:
+        row = connection.execute(
+            "SELECT unit_id FROM objectives WHERE id = ?", (current_objective_id,)
+        ).fetchone()
+        current_unit = row["unit_id"] if row is not None else None
+    unit = connection.execute(
+        "SELECT ordinal, title FROM plan_units WHERE plan_id = ? AND id = ?",
+        (plan["id"], current_unit),
+    ).fetchone() if current_unit else None
+    if unit is None:
+        unit = unit_rows[0]
+    label = f"Unit {int(unit['ordinal'])} of {len(unit_rows)} · {unit['title']}"
+    return label[:300]
+
+
 @_handler("library.list")
 def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """The library survives a restart: it is rebuilt from enrollments/courses, never from UI state."""
@@ -1755,11 +1798,19 @@ def library_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 " ORDER BY o.ordinal LIMIT 1",
                 (row["course_id"],),
             ).fetchone()
+            current_unit_label = _library_unit_label(
+                connection,
+                course_id=row["course_id"],
+                current_objective_id=current["id"] if current else None,
+            )
             items.append({
                 "enrollment_id": row["enrollment_id"],
                 "course_id": row["course_id"],
                 "title": row["title"],
-                "subtitle": row["learner_label"],
+                # The library label for a blueprint course names which unit the learner is on.
+                # It reuses the existing nullable subtitle field, so no contract addition and no
+                # second authority: a legacy plan keeps the learner label exactly as before.
+                "subtitle": current_unit_label or row["learner_label"],
                 "recipe": row["recipe"],
                 "level_label": None,
                 "locale": row["locale"],
@@ -2777,6 +2828,9 @@ def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         total = int(
             _row(connection, "SELECT COUNT(*) AS n FROM objectives WHERE plan_id = ?", (plan["id"],))["n"]
         )
+        course_row = _row(
+            connection, "SELECT title FROM courses WHERE id = ?", (enrollment["course_id"],)
+        )
         rows = connection.execute(
             "SELECT o.*,"
             " (SELECT c.state FROM checks c WHERE c.objective_id = o.id"
@@ -2804,6 +2858,14 @@ def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         }
         for row in rows
     ]
+    with db.read() as connection:
+        units = _outline_units(
+            connection,
+            plan=plan,
+            enrollment_id=enrollment_id,
+            objectives=objectives,
+            course_title=course_row["title"] if course_row is not None else None,
+        )
     return 0, {
         "enrollment_id": enrollment_id,
         "plan": {
@@ -2811,11 +2873,106 @@ def course_outline(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             "version": int(plan["version"]),
             "state": plan["state"],
             "plan_hash": plan["plan_hash"],
+            # Additive in cb.rpc v11 (§14.2 R9). A legacy plan projects exactly one implicit
+            # unit titled with the plan title, so every client can rely on the array.
+            "units": units,
         },
         "objectives": objectives,
         "total": total,
         "truncated": total > len(objectives),
     }
+
+
+def _outline_units(
+    connection,
+    *,
+    plan,
+    enrollment_id: str,
+    objectives: list[dict[str, Any]],
+    course_title: str | None,
+) -> list[dict[str, Any]]:
+    """R9's unit projection, built from ``plan_units`` or from the implicit legacy unit.
+
+    The kernel stores ``unit_id`` on objectives and ``plan_units`` rows on the plan. A plan with
+    no unit rows is one unit whose title is the plan title (§10): no backfill, no rewritten row.
+    """
+    by_ordinal = {int(item["ordinal"]): item for item in objectives}
+    unit_rows = []
+    try:
+        unit_rows = connection.execute(
+            "SELECT * FROM plan_units WHERE plan_id = ? ORDER BY ordinal", (plan["id"],)
+        ).fetchall()
+    except Exception:  # noqa: BLE001 - a v6 database has no plan_units table yet
+        unit_rows = []
+    if not unit_rows:
+        return [
+            {
+                "ordinal": 1,
+                "title": course_title or "Course",
+                "goal": "",
+                "prereq_unit_ordinals": [],
+                "prerequisite_state": "no_edges",
+                "unmet": [],
+                "objectives": list(objectives),
+            }
+        ]
+    unit_by_id = {str(row["id"]): int(row["ordinal"]) for row in unit_rows}
+    state_by_ordinal: dict[int, dict[str, Any]] = {}
+    membership: dict[int, int | None] = {}
+    for row in connection.execute(
+        "SELECT id, ordinal, title, state, unit_id FROM objectives WHERE plan_id = ? ORDER BY ordinal",
+        (plan["id"],),
+    ).fetchall():
+        state_by_ordinal[int(row["ordinal"])] = dict(row)
+        membership[int(row["ordinal"])] = unit_by_id.get(str(row["unit_id"]))
+    units: list[dict[str, Any]] = []
+    for row in unit_rows:
+        ordinal = int(row["ordinal"])
+        unit_objectives = [
+            by_ordinal[objective_ordinal]
+            for objective_ordinal, unit_ordinal in sorted(membership.items())
+            if unit_ordinal == ordinal and objective_ordinal in by_ordinal
+        ]
+        prereqs = [
+            int(value) for value in json.loads(row["prereq_unit_ordinals_json"] or "[]")
+        ]
+        unmet: list[dict[str, Any]] = []
+        if not prereqs:
+            prerequisite_state = "no_edges"
+        else:
+            for prereq in prereqs:
+                for objective_ordinal, unit_ordinal in sorted(membership.items()):
+                    if unit_ordinal != prereq:
+                        continue
+                    objective_row = state_by_ordinal.get(objective_ordinal)
+                    if objective_row is None:
+                        continue
+                    if objective_row["state"] not in (
+                        "independent_evidence",
+                        "delayed_evidence",
+                        "overridden",
+                    ):
+                        unmet.append(
+                            {
+                                "objective_id": objective_row["id"],
+                                "ordinal": objective_ordinal,
+                                "title": objective_row["title"],
+                                "state": objective_row["state"],
+                            }
+                        )
+            prerequisite_state = "unmet" if unmet else "satisfied"
+        units.append(
+            {
+                "ordinal": ordinal,
+                "title": row["title"],
+                "goal": row["goal"],
+                "prereq_unit_ordinals": prereqs,
+                "prerequisite_state": prerequisite_state,
+                "unmet": unmet,
+                "objectives": unit_objectives,
+            }
+        )
+    return units
 
 
 @_handler("check.get")
