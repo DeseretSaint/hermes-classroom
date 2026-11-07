@@ -1,0 +1,74 @@
+{
+  "grading": {
+    "evidence_class": "cold",
+    "next_action": "complete_objective",
+    "verdict": "pass"
+  },
+  "hash_unchanged": true,
+  "lessons_authored": 4,
+  "lessons_needing_review": [],
+  "objectives": 4,
+  "outline_units": [
+    {
+      "goal": "",
+      "objectives": [
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "13d856cea87a5a67",
+          "ordinal": 1,
+          "state": "not_started",
+          "title": "Read the dial and set the tool to the stated value"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "e51bcad5083daaec",
+          "ordinal": 2,
+          "state": "not_started",
+          "title": "Hold the work steady and make the first pass"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "27e3344f3b77b4c3",
+          "ordinal": 3,
+          "state": "not_started",
+          "title": "Check the result against the stated criterion"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "3744c185a42d6ed5",
+          "ordinal": 4,
+          "state": "not_started",
+          "title": "Repeat the task without notes and state the limit"
+        }
+      ],
+      "ordinal": 1,
+      "prereq_unit_ordinals": [],
+      "prerequisite_state": "no_edges",
+      "title": "Legacy unscoped arbitrary topic",
+      "unmet": []
+    }
+  ],
+  "plan_content_hash_after_approval_and_lessons": "sha256:c6d7efb474c51167bd32b3ebedac5ec79fdbf48d2fbac7a76f14290189b942af",
+  "plan_content_hash_at_validation": "sha256:c6d7efb474c51167bd32b3ebedac5ec79fdbf48d2fbac7a76f14290189b942af",
+  "plan_schema_field": null,
+  "plan_units_rows": 0,
+  "prompt_version": "plan-prompt.v3",
+  "schema_name": "coursebook_plan_v1",
+  "validation_verdict": "pass"
+}

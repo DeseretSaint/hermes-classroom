@@ -1,0 +1,18 @@
+{
+  "approve_error": {
+    "category": "validation",
+    "code": "VALIDATION_FAILED",
+    "details": {
+      "generation_state": "needs_review",
+      "plan_id": "6ff53d98bcd1789c",
+      "reason": "plan_not_validated",
+      "validation_verdict": "reject"
+    },
+    "message": "the plan's independent validation did not pass; it cannot be approved.",
+    "retryable": false
+  },
+  "approve_ok": false,
+  "plan_result_status": "needs_review",
+  "plan_state": "draft",
+  "validation_verdict": "reject"
+}

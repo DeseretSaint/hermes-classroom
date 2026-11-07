@@ -1,0 +1,791 @@
+{
+  "labels": {
+    "model": "FAKE — deterministic ScriptedLLM, no provider call",
+    "provider_calls": 0,
+    "provider_spend_usd": 0.0,
+    "research": "RECORDED in-memory page through the real search seam"
+  },
+  "observations": {
+    "attempt_rows": [
+      {
+        "check_id": "cdf435cb1417857b",
+        "evidence_class": "cold",
+        "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:82a58ffb0997e7506178050150778511bedaef1f9ce86249700178bbf5c6bcee\"}",
+        "id": "att_0f09fe7a484d4ddd831946d9a34be6d6",
+        "state": "committed",
+        "verdict": "pass"
+      },
+      {
+        "check_id": "0b68a3278d5f8b7c",
+        "evidence_class": "cold",
+        "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:23ed2ddc116aa9b2e851b82a03fce88b851e94ce0b3f7639f7868f757e50ec99\"}",
+        "id": "att_d8585754e4034b3db9468da067f8b22e",
+        "state": "committed",
+        "verdict": "not_yet"
+      }
+    ],
+    "check_lanes": [
+      {
+        "objective_id": "d39ee281e1a61a9b",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "741eb6f274430f47",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "0d928397a59eae75",
+        "reference_kind": "exact",
+        "state": "closed",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "8ad45b869e8b8745",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      }
+    ],
+    "checks": 4,
+    "lessons": 4,
+    "objectives": 4,
+    "outline_unit_states": [
+      {
+        "objectives": 2,
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "prerequisite_state": "no_edges",
+        "unmet": 0
+      },
+      {
+        "objectives": 2,
+        "ordinal": 2,
+        "prereq_unit_ordinals": [
+          1
+        ],
+        "prerequisite_state": "unmet",
+        "unmet": 2
+      }
+    ],
+    "outline_units": 2,
+    "plan_scope": "short",
+    "plan_state_after_approval": "approved",
+    "plan_state_before_approval": "draft",
+    "prompt_version": "plan-prompt.v4",
+    "schema_name": "coursebook_plan_v2",
+    "section_rows": [
+      {
+        "objective_refs_json": "[1]",
+        "ordinal": 1,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[2]",
+        "ordinal": 2,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[3]",
+        "ordinal": 3,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[4]",
+        "ordinal": 4,
+        "section_role": "owner"
+      }
+    ],
+    "sections": 4,
+    "unit_rows": [
+      {
+        "ordinal": 1,
+        "prereq_unit_ordinals_json": "[]",
+        "target_lessons": 2,
+        "title": "Unit 1: Hold a knife safely and cut an onion evenly"
+      },
+      {
+        "ordinal": 2,
+        "prereq_unit_ordinals_json": "[1]",
+        "target_lessons": 2,
+        "title": "Unit 2: Control pan heat and judge when oil is ready"
+      }
+    ],
+    "units": 2,
+    "validation_verdict": "pass"
+  },
+  "scenario": {
+    "goal": "Three weeks of practical weeknight cooking: knife skills, pan heat, seasoning and a repeatable dinner plan I can cook without a recipe.",
+    "level": "beginner",
+    "locale": "en-US",
+    "name": "short",
+    "recipe": "committed",
+    "scope": "short",
+    "subject_domain": "general",
+    "title": "Three weeks of practical weeknight cooking"
+  },
+  "steps": {
+    "approve": {
+      "approval_provenance": null,
+      "plan_hash": "sha256:49b1b3889acfd15cad5b368a0b73fcd302a85eb700f1aaa396bcbff3659a90fe",
+      "revision": 1,
+      "state_after": "approved"
+    },
+    "approve_wrong_hash": {
+      "error_code": "VALIDATION_FAILED",
+      "ok": false,
+      "state_after": "draft"
+    },
+    "grading": [
+      {
+        "label": "correct",
+        "open": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-check-open-6f0f37",
+          "result": {
+            "check_id": "cdf435cb1417857b",
+            "check_version": 1,
+            "evidence_target": "recall",
+            "revision": 1
+          },
+          "revision": 1
+        },
+        "submit": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-attempt-submit-6eb7a5",
+          "result": {
+            "attempt_id": "att_0f09fe7a484d4ddd831946d9a34be6d6",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "matches an accepted answer"
+              }
+            ],
+            "evidence_class": "cold",
+            "next_action": "complete_objective",
+            "revision": 2,
+            "verdict": "pass"
+          },
+          "revision": 2
+        }
+      },
+      {
+        "label": "wrong",
+        "open": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-check-open-bcc32c",
+          "result": {
+            "check_id": "0b68a3278d5f8b7c",
+            "check_version": 1,
+            "evidence_target": "comprehension",
+            "revision": 2
+          },
+          "revision": 2
+        },
+        "submit": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-attempt-submit-cc8ad0",
+          "result": {
+            "attempt_id": "att_d8585754e4034b3db9468da067f8b22e",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": false,
+                "observed": "does not match an accepted answer"
+              }
+            ],
+            "evidence_class": "cold",
+            "next_action": "retry_attempt",
+            "revision": 3,
+            "verdict": "not_yet"
+          },
+          "revision": 3
+        }
+      }
+    ],
+    "lesson_stages": [
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 4,
+        "jobs_before_run": 4,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_cf9b3df018fb41308f830c4241f5c3d6",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "cdf435cb1417857b",
+              "lesson_id": "f104c9a6ad97068c",
+              "reused": false,
+              "section_id": "c1fcd9c0e814aa3b",
+              "state": "validated",
+              "validation_id": "c954c15f15899d77",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "0b68a3278d5f8b7c",
+              "lesson_id": "f6a232b309b805ec",
+              "reused": false,
+              "section_id": "fa959ab5d51cec31",
+              "state": "validated",
+              "validation_id": "b7f3530799fd8a83",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": 2,
+          "plan_hash": "sha256:7992b9322769a70ebd4a8bc3732b1fd83366e2c3a12733aa6b327fcf74b7ea67",
+          "plan_id": "8315a59326cd7285",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 8,
+            "maximum_cost_usd": 0.32,
+            "minimum_calls": 4,
+            "minimum_cost_usd": 0.16,
+            "section_count": 2
+          },
+          "sections_total": 2,
+          "stage": "lessons",
+          "unit_ordinal": 1,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 4,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 5029,
+            "output_tokens": 1689,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 1
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 5,
+        "jobs_before_run": 5,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_5d5a3893cedb4fb0884db6cd35ba84dd",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "93dc904578381d2b",
+              "lesson_id": "067e4fc927ba555d",
+              "reused": false,
+              "section_id": "4ddcf394a2a75c06",
+              "state": "validated",
+              "validation_id": "538a0a398a9010a9",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "dabeda7f9f944df8",
+              "lesson_id": "9bd7efecdc9efcc2",
+              "reused": false,
+              "section_id": "61333694c589e8d1",
+              "state": "validated",
+              "validation_id": "aeb7bf6067bc30e2",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": null,
+          "plan_hash": "sha256:7992b9322769a70ebd4a8bc3732b1fd83366e2c3a12733aa6b327fcf74b7ea67",
+          "plan_id": "8315a59326cd7285",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 8,
+            "maximum_cost_usd": 0.32,
+            "minimum_calls": 4,
+            "minimum_cost_usd": 0.16,
+            "section_count": 2
+          },
+          "sections_total": 2,
+          "stage": "lessons",
+          "unit_ordinal": 2,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 4,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 4961,
+            "output_tokens": 1672,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 2
+      }
+    ],
+    "outline": {
+      "enrollment_id": "enr_3e20e90a2bab4bb69b7ead97d16983f1",
+      "objectives": [
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "recall",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "0d928397a59eae75",
+          "ordinal": 1,
+          "state": "not_started",
+          "title": "Hold a knife safely and cut an onion evenly"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "d39ee281e1a61a9b",
+          "ordinal": 2,
+          "state": "not_started",
+          "title": "Control pan heat and judge when oil is ready"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "discrimination",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "741eb6f274430f47",
+          "ordinal": 3,
+          "state": "not_started",
+          "title": "Season a dish by tasting as you go"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "transfer",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "8ad45b869e8b8745",
+          "ordinal": 4,
+          "state": "not_started",
+          "title": "Plan and repeat a weeknight dinner"
+        }
+      ],
+      "plan": {
+        "plan_hash": "sha256:49b1b3889acfd15cad5b368a0b73fcd302a85eb700f1aaa396bcbff3659a90fe",
+        "plan_id": "8315a59326cd7285",
+        "state": "approved",
+        "units": [
+          {
+            "goal": "Unit 1 makes the next body of work possible",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "recall",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "0d928397a59eae75",
+                "ordinal": 1,
+                "state": "not_started",
+                "title": "Hold a knife safely and cut an onion evenly"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "comprehension",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "d39ee281e1a61a9b",
+                "ordinal": 2,
+                "state": "not_started",
+                "title": "Control pan heat and judge when oil is ready"
+              }
+            ],
+            "ordinal": 1,
+            "prereq_unit_ordinals": [],
+            "prerequisite_state": "no_edges",
+            "title": "Unit 1: Hold a knife safely and cut an onion evenly",
+            "unmet": []
+          },
+          {
+            "goal": "Unit 2 makes the next body of work possible",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "discrimination",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "741eb6f274430f47",
+                "ordinal": 3,
+                "state": "not_started",
+                "title": "Season a dish by tasting as you go"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "transfer",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "8ad45b869e8b8745",
+                "ordinal": 4,
+                "state": "not_started",
+                "title": "Plan and repeat a weeknight dinner"
+              }
+            ],
+            "ordinal": 2,
+            "prereq_unit_ordinals": [
+              1
+            ],
+            "prerequisite_state": "unmet",
+            "title": "Unit 2: Control pan heat and judge when oil is ready",
+            "unmet": [
+              {
+                "objective_id": "0d928397a59eae75",
+                "ordinal": 1,
+                "state": "not_started",
+                "title": "Hold a knife safely and cut an onion evenly"
+              },
+              {
+                "objective_id": "d39ee281e1a61a9b",
+                "ordinal": 2,
+                "state": "not_started",
+                "title": "Control pan heat and judge when oil is ready"
+              }
+            ]
+          }
+        ],
+        "version": 2
+      },
+      "total": 4,
+      "truncated": false
+    },
+    "plan_job": {
+      "request": {
+        "max_tokens": 12000,
+        "objective_count_rule": [
+          3,
+          6
+        ],
+        "prompt_version": "plan-prompt.v4",
+        "schema_name": "coursebook_plan_v2",
+        "unit_count_rule": [
+          1,
+          3
+        ]
+      },
+      "research": {
+        "fetches": 1,
+        "queries": 2,
+        "status": "ok"
+      },
+      "result": {
+        "course_id": "crs_536b7925188044be883148cfdf63156b",
+        "job_id": "job_30c99ecaa2fe453ba8e53215b24f4282",
+        "job_kind": "plan",
+        "level": "beginner",
+        "next_unit_ordinal": 1,
+        "objectives": 4,
+        "plan_content_hash": "sha256:49b1b3889acfd15cad5b368a0b73fcd302a85eb700f1aaa396bcbff3659a90fe",
+        "plan_hash": "sha256:7992b9322769a70ebd4a8bc3732b1fd83366e2c3a12733aa6b327fcf74b7ea67",
+        "plan_id": "8315a59326cd7285",
+        "plan_schema": "coursebook.plan.v2",
+        "plan_version": 2,
+        "research": {
+          "queries": [
+            "Three weeks of practical weeknight cooking: knife skills, pan heat, seasoning and a repeatable dinner plan I can cook without a recipe.",
+            "Three weeks of practical weeknight cooking: knife skills, pan heat, seasoning and a repeatable dinner plan I can cook without a recipe. syllabus learning objectives"
+          ],
+          "reason": null,
+          "status": "ok"
+        },
+        "research_id": "38dc2e8376d45991",
+        "reused": false,
+        "scope": "short",
+        "scope_cap_weeks": 8,
+        "sections": 0,
+        "sources": 1,
+        "status": "draft",
+        "subject_domain": "general",
+        "units": 2,
+        "usage": {
+          "budget": {
+            "max_calls": 32,
+            "max_cost_usd": 0.75,
+            "source": "declared"
+          },
+          "calls": 2,
+          "cost_usd": 0.0,
+          "estimated_cost_usd": 0.0,
+          "input_tokens": 1709,
+          "output_tokens": 915,
+          "unknown_calls": 0,
+          "unknown_cost": false
+        },
+        "validation_id": "b4b4d6a995398586",
+        "validation_verdict": "pass",
+        "warnings": []
+      }
+    },
+    "stored_plan": {
+      "document": {
+        "check_plan": [
+          {
+            "evidence_target": "recall",
+            "kind": "quiz",
+            "objective_ref": 1
+          },
+          {
+            "evidence_target": "comprehension",
+            "kind": "quiz",
+            "objective_ref": 2
+          },
+          {
+            "evidence_target": "discrimination",
+            "kind": "quiz",
+            "objective_ref": 3
+          },
+          {
+            "evidence_target": "transfer",
+            "kind": "quiz",
+            "objective_ref": 4
+          }
+        ],
+        "context_needs": [
+          "the actual equipment or textbook"
+        ],
+        "delivery": "self_study",
+        "evidence_note": null,
+        "exclusions": [
+          "Does not certify competence; a supervisor checks the first attempt."
+        ],
+        "learner_outcome": "The learner can do the task or explain the concept without notes.",
+        "objectives": [
+          {
+            "evidence_criteria": [
+              "States or performs step 1 without notes",
+              "Names the condition that would make step 1 unsafe"
+            ],
+            "evidence_target": "recall",
+            "ordinal": 1,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Hold a knife safely and cut an onion evenly",
+            "unit_ref": 1
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 2 without notes",
+              "Names the condition that would make step 2 unsafe"
+            ],
+            "evidence_target": "comprehension",
+            "ordinal": 2,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Control pan heat and judge when oil is ready",
+            "unit_ref": 1
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 3 without notes",
+              "Names the condition that would make step 3 unsafe"
+            ],
+            "evidence_target": "discrimination",
+            "ordinal": 3,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Season a dish by tasting as you go",
+            "unit_ref": 2
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 4 without notes",
+              "Names the condition that would make step 4 unsafe"
+            ],
+            "evidence_target": "transfer",
+            "ordinal": 4,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Plan and repeat a weeknight dinner",
+            "unit_ref": 2
+          }
+        ],
+        "plan_schema": "coursebook.plan.v2",
+        "scope": "short",
+        "source_ids": [],
+        "spaced_review": true,
+        "time_estimate": {
+          "attainment_hours": null,
+          "basis": "none",
+          "benchmark": null,
+          "confidence": "low",
+          "minutes_per_session": 60,
+          "rationale": "Authored estimate; no benchmark transfer claim.",
+          "sessions_per_week": 2,
+          "weeks": 3
+        },
+        "title": "Short course on an arbitrary non-Japanese topic",
+        "units": [
+          {
+            "goal": "Unit 1 makes the next body of work possible",
+            "ordinal": 1,
+            "prereq_unit_ordinals": [],
+            "target_lessons": 2,
+            "title": "Unit 1: Hold a knife safely and cut an onion evenly"
+          },
+          {
+            "goal": "Unit 2 makes the next body of work possible",
+            "ordinal": 2,
+            "prereq_unit_ordinals": [
+              1
+            ],
+            "target_lessons": 2,
+            "title": "Unit 2: Control pan heat and judge when oil is ready"
+          }
+        ]
+      },
+      "generation_state": "draft",
+      "state_before_approval": "draft",
+      "validation_id_present": true
+    },
+    "unit_stages": [
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 2,
+        "jobs_before_run": 2,
+        "offered_next_unit_ordinal": 2,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_1dbf096945ce4a498c3d0d79724c2470",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": 2,
+          "owners": 2,
+          "plan_hash": "sha256:7992b9322769a70ebd4a8bc3732b1fd83366e2c3a12733aa6b327fcf74b7ea67",
+          "plan_id": "8315a59326cd7285",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "c1fcd9c0e814aa3b",
+            "fa959ab5d51cec31"
+          ],
+          "sections": 2,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 1,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 1906,
+            "output_tokens": 503,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "0340e2146bf94bf9",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 1
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 3,
+        "jobs_before_run": 3,
+        "offered_next_unit_ordinal": null,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_29231f4c21e24bb58bd435cae80dfc41",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": null,
+          "owners": 2,
+          "plan_hash": "sha256:7992b9322769a70ebd4a8bc3732b1fd83366e2c3a12733aa6b327fcf74b7ea67",
+          "plan_id": "8315a59326cd7285",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "4ddcf394a2a75c06",
+            "61333694c589e8d1"
+          ],
+          "sections": 2,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 2,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 1893,
+            "output_tokens": 493,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "52621d11ebc58637",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 2
+      }
+    ]
+  }
+}

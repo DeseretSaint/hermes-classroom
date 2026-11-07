@@ -1,0 +1,112 @@
+{
+  "checks_after_refusal": 0,
+  "lesson_job_refusal": {
+    "message": "unit 2 owner sections cover objectives [3] but the unit has objectives [3, 4]; re-author the unit sections.",
+    "type": "GenerationRejected"
+  },
+  "lesson_page_error": null,
+  "lesson_page_ok": true,
+  "lesson_page_result": {
+    "artifacts": [],
+    "attempts": [],
+    "checks": [],
+    "course": {
+      "course_id": "crs_be8a484973004c19acd155b76e4a52fe",
+      "title": "Three weeks of practical weeknight cooking"
+    },
+    "document": {
+      "blocks": [],
+      "check_id": null,
+      "content_hash": "sha256:4e73cfb03479baafbb760ed60ac1376a32c72fad573e39c068770e770ed664d5",
+      "document_id": "doc_4e73cfb03479baafbb76",
+      "objective_id": "fa71f08a8f7dae15",
+      "schema_version": 1,
+      "section_title": "Plan and repeat a weeknight dinner",
+      "source_ids": [],
+      "state": "empty",
+      "view_note": "This section has no teaching content yet.",
+      "views": {
+        "field_notes": false,
+        "field_quest": false,
+        "guided": false,
+        "textbook": false
+      }
+    },
+    "enrollment_id": "enr_69d61ef21e86434e99a1082435edbaa7",
+    "notebook_entries": [],
+    "revision": 1,
+    "runtime": null,
+    "section": {
+      "evidence_target": "transfer",
+      "last_opened_at": null,
+      "objective_id": "fa71f08a8f7dae15",
+      "ordinal": 4,
+      "state": "not_started",
+      "title": "Plan and repeat a weeknight dinner"
+    },
+    "segments": [],
+    "sources": [
+      {
+        "fetched_at": "2026-11-07T09:00:00Z",
+        "published_at": null,
+        "publisher": null,
+        "source_id": "f167d3f87d1d8c82",
+        "source_type": "web_page",
+        "support_status": "unassessed",
+        "title": "Recorded page",
+        "url": "https://example.invalid/recorded-page"
+      }
+    ],
+    "state": "not_started"
+  },
+  "lessons_after_refusal": 0,
+  "outline_objective": {
+    "check_state": "none",
+    "ordinal": 4,
+    "state": "not_started",
+    "title": "Plan and repeat a weeknight dinner"
+  },
+  "sections_after_refusal": 1,
+  "unit_sections_result": {
+    "budget": {
+      "max_calls": 400,
+      "max_cost_usd": 100.0,
+      "source": "caller"
+    },
+    "job_id": "job_2c32f8b5a5d8484990284f6f8967b28f",
+    "job_kind": "unit_sections",
+    "next_unit_ordinal": null,
+    "owners": 1,
+    "plan_hash": "sha256:7992b9322769a70ebd4a8bc3732b1fd83366e2c3a12733aa6b327fcf74b7ea67",
+    "plan_id": "f7d3bc637f52f0e0",
+    "rejection_reasons": [
+      "objective 4 has no owner section; author exactly one owner section per objective",
+      "unit 2 targets 2 lesson(s); this batch would leave 1 section(s)"
+    ],
+    "reused": false,
+    "reviews": 0,
+    "section_ids": [
+      "ef327b7221506259"
+    ],
+    "sections": 1,
+    "stage": "unit_sections",
+    "state": "needs_review",
+    "unit_ordinal": 2,
+    "usage": {
+      "budget": {
+        "max_calls": 400,
+        "max_cost_usd": 100.0,
+        "source": "caller"
+      },
+      "calls": 2,
+      "cost_usd": 0.0,
+      "estimated_cost_usd": 0.0,
+      "input_tokens": 927,
+      "output_tokens": 204,
+      "unknown_calls": 0,
+      "unknown_cost": false
+    },
+    "validation_id": null,
+    "validation_verdict": "reject"
+  }
+}
