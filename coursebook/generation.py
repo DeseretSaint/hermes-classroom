@@ -53,6 +53,7 @@ from jsonschema import Draft202012Validator
 
 from . import research as research_mod
 from . import curriculum
+from . import frequency
 from . import sources as source_ledger
 from . import artifacts
 from . import deadline as deadline_mod
@@ -151,14 +152,15 @@ PIPELINE_VERSION = "cb.gen.v1"
 
 logger = logging.getLogger("coursebook.generation")
 
-PLAN_PROMPT_VERSION = "plan-prompt.v4"
+PLAN_PROMPT_VERSION = "plan-prompt.v6"
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
 #: ``plan-prompt.v3`` (plan-time media needs, H-05), so the next honest number was v4. H-88 adds
-#: the curriculum brief and sequence rules, so the distinct v2 prompt advances to v5. The frozen
-#: requirement is "a distinct prompt version for the v2 schema", not a literal string that would
-#: collide with a shipped version and invalidate stored validation bindings.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v5"
+#: the curriculum brief and sequence rules (v5); H-89 adds the declared frequency inventory and
+#: target-item rules, so the distinct v2 prompt advances to v7 after the v1 prompt's v6. The
+#: frozen requirement is "a distinct prompt version for the v2 schema", not a literal string that
+#: would collide with a shipped version and invalidate stored validation bindings.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v7"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -1198,6 +1200,15 @@ OBJECTIVE_SCHEMA: dict[str, Any] = {
         },
         "support": {"type": "string", "enum": list(SUPPORT_VALUES)},
         "source_ids": {"type": "array", "maxItems": 8, "items": _identifier},
+        # H-89: the lemmas this objective teaches, copied exactly from the declared frequency
+        # inventory. Absent when no inventory is declared (the vocabulary set is unverified)
+        # or when the objective is grammar/skill work rather than vocabulary.
+        "target_items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 6,
+            "items": {"type": "string", "minLength": 1, "maxLength": 60},
+        },
     },
 }
 
@@ -1418,6 +1429,13 @@ OBJECTIVE_SCHEMA_V2: dict[str, Any] = {
         },
         "support": {"type": "string", "enum": list(SUPPORT_VALUES)},
         "source_ids": {"type": "array", "maxItems": 8, "items": _identifier},
+        # H-89: lemmas copied exactly from the declared frequency inventory, in band order.
+        "target_items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 6,
+            "items": {"type": "string", "minLength": 1, "maxLength": 60},
+        },
     },
 }
 
@@ -3267,6 +3285,7 @@ def enforce_plan_rules(
     ledger: Sequence[SourceRecord],
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
+    frequency_selection: frequency.InventorySelection | None = None,
 ) -> None:
     """Dispatch on the document's own schema marker, never on a caller's guess.
 
@@ -3289,6 +3308,7 @@ def enforce_plan_rules(
                 ledger=ledger,
                 scope=scope,
                 parent_brief=parent_brief,
+                frequency_selection=frequency_selection,
             )
         else:
             _enforce_plan_rules_v1(
@@ -3299,6 +3319,7 @@ def enforce_plan_rules(
                 ledger=ledger,
                 scope=scope,
                 parent_brief=parent_brief,
+                frequency_selection=frequency_selection,
             )
     except _RuleViolation as exc:
         if truncated:
@@ -3317,6 +3338,7 @@ def _enforce_plan_rules_v1(
     ledger: Sequence[SourceRecord],
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
+    frequency_selection: frequency.InventorySelection | None = None,
 ) -> None:
     """Deterministic plan rules. Runs *before* the validator and never replaces it.
 
@@ -3400,6 +3422,11 @@ def _enforce_plan_rules_v1(
         reasons=reasons,
         require_independent_declaration=True,
     )
+
+    # H-89: vocabulary targets must come from the declared inventory, in band order, with no
+    # duplicates and no function words presented as word cards. This is a deterministic
+    # sequence check, not a frequency proof.
+    reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
 
     if reasons:
         raise _RuleViolation(reasons)
@@ -3622,6 +3649,7 @@ def _enforce_plan_rules_v2(
     ledger: Sequence[SourceRecord],
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
+    frequency_selection: frequency.InventorySelection | None = None,
 ) -> None:
     """The §5 blueprint rules. Structure first, then the shared tail.
 
@@ -3770,6 +3798,9 @@ def _enforce_plan_rules_v2(
         reasons=reasons,
         require_independent_declaration=False,
     )
+
+    # H-89: same deterministic vocabulary-sequence rules on the blueprint schema.
+    reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
 
     if reasons:
         raise _RuleViolation(reasons)
@@ -4500,6 +4531,63 @@ def _source_brief(sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:
 # ── Provider request builders ───────────────────────────────────────────────
 
 
+def _frequency_block(
+    selection: frequency.InventorySelection | None,
+    status: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """The one vocabulary-inventory block the plan author and validator both receive.
+
+    It is ``None`` when the caller says nothing about vocabulary at all (the pre-H-89 seam) and
+    for a non-language course, so those requests keep their pre-H-89 bytes. A language course
+    passes either a resolved inventory or the typed ``unverified`` status.
+    """
+    if selection is not None:
+        return selection.prompt_block()
+    if status is None:
+        return None
+    state = str(status.get("status") or "")
+    if state == "unverified":
+        return frequency.unavailable_prompt_block(status)
+    # A non-language course gets no vocabulary block at all: the seam is not applicable, and the
+    # request bytes stay identical to the pre-H-89 shape (only the prompt version string moves).
+    return None
+
+
+def _frequency_prompt_lines(block: dict[str, Any] | None) -> list[str]:
+    """Prompt directives for the vocabulary seam. They are rules, never a claim."""
+    if not block:
+        return []
+    if block.get("status") == "inventory":
+        band = block["band"]
+        return [
+            "Vocabulary inventory: every vocabulary target comes from the supplied "
+            f"`vocabulary_inventory` block (source {block['source_id']!r}, licence "
+            f"{block['licence']!r}, modality {block['modality']!r}, tokenization "
+            f"{block['tokenization']!r}, content hash {block['content_hash']!r}, band "
+            f"{band['id']!r} ranks {band['from_rank']}..{band['to_rank']}).",
+            "For each objective that teaches vocabulary, set `target_items` to an array of "
+            "lemmas copied exactly from `vocabulary_inventory.content_items`. Read them in the "
+            "given order: across objectives in ordinal order the declared items must be the "
+            "opening items of that list — the first K entries, with no skipped rank, no "
+            "duplicate and no reordering. Grouping items into objectives is the author's "
+            "decision; which ranks may be used is not.",
+            "Never put an item from `vocabulary_inventory.grammar_items` into `target_items`. "
+            "Particles, copulas, auxiliaries and conjunctions are high-frequency grammatical "
+            "items: teach them as grammar in context, in a grammar objective, not as word cards.",
+            f"{block['note']} Never state a word count, rank or coverage percentage as if it "
+            "measured comprehension.",
+        ]
+    if block.get("status") == "unverified":
+        return [
+            "No frequency inventory is available for this language course "
+            f"({block.get('reason')}: {block.get('detail')}). Do not set `target_items` on any "
+            "objective and do not state a frequency rank, word count or coverage percentage. "
+            "Teach the vocabulary set as unverified, grounded only in the supplied sources and "
+            "the goal.",
+        ]
+    return []
+
+
 def build_plan_request(
     *,
     goal: str,
@@ -4513,6 +4601,8 @@ def build_plan_request(
     subject_domain: str | None = None,
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
+    frequency_selection: frequency.InventorySelection | None = None,
+    frequency_status: dict[str, Any] | None = None,
 ) -> LLMRequest:
     # ``dials`` stays the closed four-dial object the contract spells; the declared plan-brief
     # inputs travel beside it. A legacy caller that still carries level/domains inside its dials
@@ -4616,35 +4706,42 @@ def build_plan_request(
             payload["rules"]["page_budget"] = pages
     if feedback:
         payload["revision_instructions"] = feedback
+    frequency_block = _frequency_block(frequency_selection, frequency_status)
+    if frequency_block is not None:
+        payload["vocabulary_inventory"] = frequency_block
+    instructions = (
+        _plan_instructions_v2(
+            recipe=recipe,
+            dials=dials,
+            locale=locale,
+            research_status=research_run.status,
+            level=declared_level,
+            subject_domain=declared_domain,
+            scope=scope,
+            capability=capability,
+            parent_brief=parent_brief,
+        )
+        if blueprint
+        else _plan_instructions(
+            recipe=recipe,
+            dials=dials,
+            locale=locale,
+            research_status=research_run.status,
+            level=declared_level,
+            subject_domain=declared_domain,
+            scope=scope,
+            capability=capability,
+            parent_brief=parent_brief,
+        )
+    )
+    vocabulary_lines = _frequency_prompt_lines(frequency_block)
+    if vocabulary_lines:
+        instructions = instructions + "\n" + "\n".join(vocabulary_lines)
     return LLMRequest(
         purpose="coursebook.plan.generate",
         prompt_version=PLAN_PROMPT_VERSION_V2 if blueprint else PLAN_PROMPT_VERSION,
         system_prompt=PLAN_SYSTEM_PROMPT,
-        instructions=(
-            _plan_instructions_v2(
-                recipe=recipe,
-                dials=dials,
-                locale=locale,
-                research_status=research_run.status,
-                level=declared_level,
-                subject_domain=declared_domain,
-                scope=scope,
-                capability=capability,
-                parent_brief=parent_brief,
-            )
-            if blueprint
-            else _plan_instructions(
-                recipe=recipe,
-                dials=dials,
-                locale=locale,
-                research_status=research_run.status,
-                level=declared_level,
-                subject_domain=declared_domain,
-                scope=scope,
-                capability=capability,
-                parent_brief=parent_brief,
-            )
-        ),
+        instructions=instructions,
         input_text=_bounded_input(payload),
         schema=schema,
         schema_name=(
@@ -4668,6 +4765,8 @@ def build_plan_validation_request(
     subject_domain: str | None = None,
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
+    frequency_selection: frequency.InventorySelection | None = None,
+    frequency_status: dict[str, Any] | None = None,
 ) -> LLMRequest:
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
@@ -4699,6 +4798,9 @@ def build_plan_validation_request(
     if parent_brief:
         # The independent pass judges the plan against what the parent actually asked for.
         payload["parent_brief"] = parent_brief
+    frequency_block = _frequency_block(frequency_selection, frequency_status)
+    if frequency_block is not None:
+        payload["vocabulary_inventory"] = frequency_block
     return LLMRequest(
         purpose="coursebook.plan.validate",
         prompt_version=VALIDATION_PROMPT_VERSION,
@@ -5928,6 +6030,17 @@ def run_plan_job(
     # record (and in the result's warnings) instead of being indistinguishable from a declared
     # general course. The authoring rule itself is unchanged.
     domain_provenance = _domain_provenance(subject_domain=subject_domain, locale=locale)
+    # H-89: resolve the declared frequency inventory before any provider call. A language course
+    # always gets a typed vocabulary status; absence is a warning (the plan proceeds unverified),
+    # while a corrupt declared artifact is a typed rejection and is never silently downgraded.
+    try:
+        frequency_selection, frequency_status = frequency.selection_from_brief(
+            brief,
+            locale=locale,
+            subject_domain=domain_provenance.get("resolved_domain"),
+        )
+    except frequency.FrequencyInventoryError as exc:
+        raise GenerationRejected(f"frequency inventory: {exc}") from exc
     scope = _plan_input(brief, "scope")
     # Validate the scope enum before any provider call: a fourth scope value would otherwise be
     # authored under no cap at all while the document claimed one.
@@ -6040,6 +6153,8 @@ def run_plan_job(
                 subject_domain=subject_domain,
                 scope=scope,
                 parent_brief=parent_brief,
+                frequency_selection=frequency_selection,
+                frequency_status=frequency_status,
             )
             response = _call_llm(llm, plan_request, usage)
             candidate = _parse_structured(
@@ -6055,6 +6170,7 @@ def run_plan_job(
                     ledger=research_run.sources,
                     scope=scope,
                     parent_brief=parent_brief,
+                    frequency_selection=frequency_selection,
                 )
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
@@ -6075,6 +6191,8 @@ def run_plan_job(
                 subject_domain=subject_domain,
                 scope=scope,
                 parent_brief=parent_brief,
+                frequency_selection=frequency_selection,
+                frequency_status=frequency_status,
             )
             assert_separate_pass(plan_request, validation_request)
             validation_response = _call_llm(validator, validation_request, usage)
@@ -6147,6 +6265,30 @@ def run_plan_job(
         objectives = [dict(obj) for obj in plan.get("objectives") or []]
 
 
+        vocabulary = (
+            frequency_selection.result_block(objectives)
+            if frequency_selection is not None
+            else {
+                "status": frequency_status.get("status"),
+                "reason": frequency_status.get("reason"),
+                "detail": frequency_status.get("detail"),
+                "note": (
+                    frequency.FREQUENCY_NOTE
+                    if frequency_status.get("status") == "unverified"
+                    else None
+                ),
+                "inventory_id": None,
+                "source_id": None,
+                "source_url": None,
+                "licence": None,
+                "modality": None,
+                "tokenization": None,
+                "content_hash": None,
+                "band": None,
+                "items": [],
+            }
+        )
+
         result = {
             "job_id": job_id,
             "job_kind": "plan",
@@ -6179,7 +6321,20 @@ def run_plan_job(
             },
             "warnings": _plan_warnings(recipe, research_run, verdict)
             + list(verdict.get("provenance_flags") or [])
-            + ([domain_provenance["note"]] if domain_provenance.get("note") else []),
+            + ([domain_provenance["note"]] if domain_provenance.get("note") else [])
+            + (
+                [
+                    f"{frequency.WARNING_UNAVAILABLE}: {frequency_status.get('detail')}; "
+                    "the vocabulary set is unverified and no frequency rank or coverage "
+                    "percentage is claimed."
+                ]
+                if frequency_status.get("status") == "unverified"
+                else []
+            ),
+            # H-89: the typed vocabulary provenance. A resolved inventory records its source,
+            # licence, modality, tokenization and exact rows hash; the unavailable path records
+            # the typed reason and no items at all.
+            "vocabulary": vocabulary,
             # The declared cb.rpc v10 inputs round-trip on the job result as themselves: a caller
             # that sent a level/domain/scope must be able to read back the exact value the plan
             # was authored under rather than guess it from the locale. ``domain_provenance`` says

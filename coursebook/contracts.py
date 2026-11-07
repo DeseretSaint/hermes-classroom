@@ -35,6 +35,9 @@ CONTRACT_FILES: dict[str, str] = {
     "cb.jobs": "jobs.v4.json",
     "cb.pack": "pack-manifest.v1.json",
     "cb.projection": "projection.v1.json",
+    # H-89: declared, hash-pinned frequency inventories for language courses. Describes an
+    # imported (or synthetic-fixture) document; the plugin bundles no third-party list.
+    "cb.frequency_inventory": "frequency-inventory.v1.json",
 }
 
 #: The contract whose version the plugin speaks on the wire.
