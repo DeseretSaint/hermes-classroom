@@ -2962,6 +2962,18 @@ class V13AmendmentTest(unittest.TestCase):
         def normalise(payload: dict) -> dict:
             payload = _normalise_refresh_refs(json.loads(json.dumps(payload)))
 
+            # v13 also carries the H-26b amendment: `fields` on a syllabus.get item and a relaxed
+            # decisions minItems on syllabus.alignment.review. Strip exactly that delta so this
+            # stays a v13-vs-v12 check.
+            response_items = payload.get("response", {}).get("properties", {}).get("items")
+            if isinstance(response_items, dict) and isinstance(response_items.get("items"), dict):
+                properties = response_items["items"].get("properties")
+                if isinstance(properties, dict):
+                    properties.pop("fields", None)
+            decisions = payload.get("request", {}).get("properties", {}).get("decisions")
+            if isinstance(decisions, dict):
+                decisions["minItems"] = 1
+
             def walk(node: object) -> None:
                 if isinstance(node, dict):
                     if node.get("contract_version") == {"const": 12}:

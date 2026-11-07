@@ -592,7 +592,7 @@ def parse_document(blocks: list[dict[str, Any]], *, source_kind: str) -> dict[st
             add("reading", reading["value"], reading, week=int(current_week["ordinal"]["value"] or 0))
         for assessment in _assessments_in(block, current_week["ordinal"]["value"]):
             current_week["assessments"].append(assessment)
-            add("assessment", assessment["title"]["value"], assessment["title"],
+            add("assessment", assessment["title"]["value"], _assessment_item(assessment),
                 week=current_week["ordinal"]["value"])
             if assessment["due"]["state"] == "unknown":
                 add("assessment", f"{assessment['title']['value']} (due)", assessment["due"],
@@ -605,7 +605,7 @@ def parse_document(blocks: list[dict[str, Any]], *, source_kind: str) -> dict[st
             if assessment["title"]["value"] in seen_titles:
                 continue
             seen_titles.add(assessment["title"]["value"])
-            add("assessment", assessment["title"]["value"], assessment["title"])
+            add("assessment", assessment["title"]["value"], _assessment_item(assessment))
             if assessment["due"]["state"] == "unknown":
                 add("assessment", f"{assessment['title']['value']} (due)", assessment["due"])
 
@@ -698,6 +698,24 @@ def _reading_from(block: dict[str, Any]) -> dict[str, Any] | None:
     if re.fullmatch(r"TBD|TBA|to be determined|to be announced", value.strip(), re.IGNORECASE):
         return {"value": None, "state": "unknown", "anchors": [], "derivation": "unknown"}
     return _item(value[:400], block, quote=match.group(0))
+
+
+def _assessment_item(assessment: dict[str, Any]) -> dict[str, Any]:
+    """The persisted assessment item: the title as ``value`` plus the stated ``fields``.
+
+    ``fields.due`` and ``fields.weight`` reuse the same item objects ``_assessments_in`` built and
+    ``verify_anchors`` already visits, so an anchor mismatch downgrades the field itself and this
+    adds no second verification pass. ``fields`` is additive response surface (the v13 H-26b
+    amendment); the
+    item ``kind`` stays ``assessment`` and ``cb.db`` v8's closed enum never sees a new value.
+    """
+    item = dict(assessment["title"])
+    item["fields"] = {
+        "due": assessment["due"],
+        "weight": assessment["weight"],
+        "weight_unit": assessment["weight_unit"],
+    }
+    return item
 
 
 def _assessments_in(block: dict[str, Any], week_ordinal: int | None) -> list[dict[str, Any]]:
@@ -794,6 +812,13 @@ def verify_anchors(document: dict[str, Any], blocks: dict[str, dict[str, Any]]) 
 
     for entry in document.get("_items") or []:
         visit(entry["item"])
+        # v13 H-26b: an assessment item carries its stated fields. The due/weight objects are shared
+        # with document["assessments"], so this is the same pass, not a second verification, and
+        # it also covers assessments that sit outside any week heading.
+        fields = entry["item"].get("fields") or {}
+        for name in ("due", "weight"):
+            if isinstance(fields.get(name), dict):
+                visit(fields[name])
     for week in document.get("weeks") or []:
         for field in ("ordinal", "label", "topic"):
             visit(week[field])
@@ -1373,8 +1398,38 @@ def syllabus_alignment_review(payload: dict[str, Any], envelope: dict[str, Any])
                 "STALE_REVISION", "the alignment moved on; re-read it before reviewing.",
                 current_revision=int(binding["alignment_revision"]),
             )
+        decisions = payload["decisions"]
+        if not decisions:
+            # v13 H-26b: an empty decision set is a checked claim, not a shortcut. It means "the
+            # reviewed this mapping and accepted every row as aligned", so it is legal only when
+            # there is no non-aligned, non-stale row left to acknowledge. ``unmatched`` and
+            # ``partial`` do not block ``reviewed_revision`` below, so without this guard a caller
+            # could claim review without ever seeing them.
+            reviewable = connection.execute(
+                "SELECT state, COUNT(*) AS n FROM syllabus_alignments WHERE course_id = ?"
+                " AND syllabus_revision = ? AND stale = 0"
+                " AND state IN ('partial', 'unmatched', 'conflict', 'stale') GROUP BY state",
+                (payload["course_id"], row["revision"]),
+            ).fetchall()
+            owed = {str(entry["state"]): int(entry["n"]) for entry in reviewable}
+            stale_rows = connection.execute(
+                "SELECT COUNT(*) AS n FROM syllabus_alignments WHERE course_id = ? AND stale = 1",
+                (payload["course_id"],),
+            ).fetchone()["n"]
+            if owed or int(stale_rows) > 0:
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "this mapping has rows that need a decision; an empty decision set is only"
+                    " allowed when every row is aligned.",
+                    field="decisions",
+                    alignment_revision=int(binding["alignment_revision"]),
+                    conflict=owed.get("conflict", 0),
+                    partial=owed.get("partial", 0),
+                    unmatched=owed.get("unmatched", 0),
+                    stale=int(owed.get("stale", 0)) + int(stale_rows),
+                )
         plan_replan_required = False
-        for decision in payload["decisions"]:
+        for decision in decisions:
             alignment = connection.execute(
                 "SELECT * FROM syllabus_alignments WHERE course_id = ? AND syllabus_revision = ?"
                 " AND item_id = ? ORDER BY rowid DESC LIMIT 1",

@@ -410,6 +410,62 @@ class ParseTest(SyllabusCase):
         self.assertTrue(items)
         self.assertNotIn("100%", json.dumps(document))
 
+    def test_a_stated_due_date_and_weight_are_served_with_their_anchors(self) -> None:
+        # H-26b: the parse built due/weight but v13 only persisted the title, so a stated deadline
+        # and weight were unrecoverable from syllabus.get. The v13 H-26b amendment persists them as
+        # `fields`.
+        sid, rev = self.intake_ok(text=(FIXTURES / "cs340-databases.md").read_text())
+        self.parse_now(sid, rev)
+        document = self.ok("syllabus.get", {"syllabus_id": sid, "include_blocks": True})["result"]
+        blocks = {block["block_id"]: block["text"] for block in document["blocks"]}
+        assessments = [item for item in document["items"] if item["kind"] == "assessment"]
+        quiz = next(item for item in assessments if item["value"] == "Quiz 1")
+        self.assertEqual(quiz["state"], "extracted")
+        fields = quiz["fields"]
+        self.assertEqual(set(fields), {"due", "weight", "weight_unit"})
+        # The due date is the stated one, with a verbatim anchor, not a computed date.
+        self.assertEqual(fields["due"]["value"], "2026-09-01")
+        self.assertEqual(fields["due"]["state"], "extracted")
+        self.assertEqual(fields["due"]["derivation"], "explicit")
+        self.assertTrue(fields["due"]["anchors"])
+        for anchor in fields["due"]["anchors"]:
+            self.assertIn(" ".join(anchor["quote"].split()),
+                          " ".join(blocks[anchor["block_id"]].split()))
+        # The weight is stored as written: 5 percent, never converted.
+        self.assertEqual(fields["weight"]["value"], 5)
+        self.assertEqual(fields["weight"]["state"], "extracted")
+        self.assertTrue(fields["weight"]["anchors"])
+        self.assertEqual(fields["weight_unit"], "percent")
+        # Every assessment item (title row) carries the same shape; the unknown-due placeholder
+        # row has none, because it is the due item itself.
+        for item in assessments:
+            if item["value"] and item["value"].endswith("(due)"):
+                self.assertNotIn("fields", item)
+            elif item["state"] == "extracted":
+                self.assertIn("fields", item)
+        self.assertNotIn("2026-09-01", json.dumps(
+            [item for item in assessments if item["state"] == "unknown"]))
+
+    def test_an_unknown_due_date_keeps_its_placeholder_row_and_says_unknown(self) -> None:
+        raw = (FIXTURES / "hist210-early-modern-europe.docx").read_bytes()
+        sid, rev = self.intake_ok(
+            name="hist210.docx", raw=raw,
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        self.parse_now(sid, rev)
+        document = self.ok("syllabus.get", {"syllabus_id": sid})["result"]
+        assessments = [item for item in document["items"] if item["kind"] == "assessment"]
+        midterm = next(item for item in assessments if item["value"] == "Midterm exam")
+        self.assertEqual(midterm["fields"]["due"]["state"], "unknown")
+        self.assertIsNone(midterm["fields"]["due"]["value"])
+        self.assertEqual(midterm["fields"]["due"]["anchors"], [])
+        # The v13 `<title> (due)` placeholder row is still emitted for an unknown date.
+        self.assertTrue(any(item["title"] == "Midterm exam (due)" for item in assessments))
+        # The field object is always present; only a stated weight is extracted, and the unit is
+        # one of the three contract values, never an invented conversion.
+        self.assertIn(midterm["fields"]["weight_unit"], ("percent", "points", "unknown"))
+        if midterm["fields"]["weight_unit"] == "unknown":
+            self.assertEqual(midterm["fields"]["weight"]["state"], "unknown")
+
     def test_anchor_verification_downgrades_a_fabricated_quote(self) -> None:
         blocks = [{"id": "b1", "ordinal": 1, "kind": "paragraph", "label": None, "page": None,
                    "line_start": 1, "line_end": 1, "text": "CS 101 — Real text"}]
@@ -574,6 +630,69 @@ class AlignmentTest(SyllabusCase):
         self.assertEqual(plan["plan_schema"], generation.PLAN_SCHEMA_V2_NAME)
         self.assertEqual(plan["scope"], "full")
         self.assertGreaterEqual(len(plan["objectives"]), 12)
+
+    def test_an_all_aligned_mapping_reviews_with_empty_decisions_and_approves(self) -> None:
+        # H-26b gap 2: a mapping the deterministic aligner resolved entirely to `aligned` had no
+        # legal decision (decisions minItems 1, every action targeting a non-aligned state), so
+        # reviewed_revision could never be set and plan.approve refused SYLLABUS_UNREVIEWED.
+        # The four assessment titles carry two or more of a unit's own tokens, and none sits under
+        # a week heading, so the deterministic rule resolves every row to `aligned` with no
+        # schedule conflict.
+        text = (
+            "CS 900 — Testing\n"
+            "Instructor: Dr. Test\n"
+            "Homework relational model due 2027-02-01 (20%)\n"
+            "Homework sql queries due 2027-02-08 (20%)\n"
+            "Homework joins aggregation due 2027-02-15 (20%)\n"
+            "Homework normalization functional dependencies due 2027-02-22 (20%)\n"
+        )
+        sid, rev = self.intake_ok(text=text)
+        self.parse_now(sid, rev)
+        flow = self.companion_course(sid, rev, titles=CS_TITLES, units=2)
+        alignment = self.align_now(sid, rev, flow["course_id"], flow["plan_id"])
+        self.assertEqual(alignment["counts"]["aligned"], 4)
+        self.assertEqual(alignment["counts"]["unmatched"], 0)
+        self.assertEqual(alignment["counts"]["partial"], 0)
+        self.assertEqual(alignment["counts"]["conflict"], 0)
+        needing = [item for item in alignment["items"]
+                   if item["state"] in ("partial", "unmatched", "conflict", "stale")]
+        self.assertEqual(needing, [])
+        approve = {
+            "enrollment_id": flow["enrollment_id"], "plan_id": flow["plan_id"],
+            "plan_hash": domain.plan_hash(flow["plan_id"]),
+        }
+        self.assertEqual(self.err("plan.approve", approve, expected_revision=0)["code"],
+                         "SYLLABUS_UNREVIEWED")
+        # Empty decisions = "I reviewed it and accepted the aligned rows"; the backend verifies
+        # the claim because every row is aligned.
+        reviewed = self.ok("syllabus.alignment.review", {
+            "syllabus_id": sid, "revision": rev, "course_id": flow["course_id"],
+            "alignment_revision": alignment["alignment_revision"], "decisions": [],
+        })["result"]
+        self.assertEqual(reviewed["reviewed_revision"], rev)
+        self.assertFalse(reviewed["plan_replan_required"])
+        approved = self.ok("plan.approve", approve, expected_revision=0)
+        self.assertTrue(approved["ok"])
+
+    def test_empty_decisions_is_refused_when_a_row_still_needs_a_decision(self) -> None:
+        # The guard Atlas required: minItems 0 must not let a caller claim review while an
+        # unmatched/partial/conflict row has never been acknowledged.
+        sid, rev = self.intake_ok(text=(FIXTURES / "cs340-databases.md").read_text())
+        self.parse_now(sid, rev)
+        flow = self.companion_course(sid, rev)
+        alignment = self.align_now(sid, rev, flow["course_id"], flow["plan_id"])
+        self.assertGreater(alignment["counts"]["unmatched"], 0)
+        error = self.err("syllabus.alignment.review", {
+            "syllabus_id": sid, "revision": rev, "course_id": flow["course_id"],
+            "alignment_revision": alignment["alignment_revision"], "decisions": [],
+        })
+        self.assertEqual(error["code"], "VALIDATION_FAILED")
+        self.assertEqual(error["details"]["unmatched"], alignment["counts"]["unmatched"])
+        self.assertEqual(error["details"]["alignment_revision"], alignment["alignment_revision"])
+        after = self.ok("syllabus.alignment.get", {
+            "syllabus_id": sid, "revision": rev, "course_id": flow["course_id"],
+        })["result"]
+        self.assertIsNone(after["reviewed_revision"])
 
 
 class CompanionCourseTest(SyllabusCase):

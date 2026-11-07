@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contracts.coursebook.hermes/rpc/v13",
   "title": "Coursebook backend RPC v13",
-  "description": "Coursebook backend RPC v13. v12 is additive over v11: every v1-v11 method name and every v1-v11 method request/response payload is preserved unchanged, and the version echo moves to 12. v11 froze the unit-scoped CourseBlueprint (plan_units, unit stages, structural prerequisite edges, the R9 units projection and PREREQUISITE_UNMET refusals). v12 freezes the student syllabus import path of docs/STUDENT-MODE.md: seven syllabus.* methods, an additive course.create.request syllabus binding, an additive plan_brief syllabus binding, and the import job kind with the syllabus_parse/syllabus_align stages. A companion course is an ordinary course with recipe='companion' and courses.pack_id NULL; full scope plans through coursebook.plan.v2 exactly as any other course does. No second course, plan, lesson or enrollment engine is claimed, and no syllabus text leaves the machine. v13 is additive over v12 (and, in a tree without the H-26a syllabus-intake snapshot, over v11): every earlier method name and request/response payload is preserved unchanged, the version echo moves to 13, and two methods are appended so a course the learner created from a goal can package itself. `course.export.read` is the review read: readiness, the exact file list with per-file sha256/bytes/mime, the reviewed content hash, the licence and rights statement, and the no-upload statement. `course.export` is the write, fenced by the reviewed `expected_content_hash` and an idempotency key; it re-checks the content hash inside the adopt transaction and refuses a pack-backed course with `course_pack_backed` so `pack.export` keeps owning those bytes. v13 adds no error code, job kind, vocabulary value, cb.db table, column or migration; the two new payloads reference only existing `cb.vocabulary` definitions. v13 also carries the H-18 additive amendment: `$defs/lesson_document` gains optional `lang` (BCP-47-ish text tag, max 35) and `direction` (`ltr`/`rtl`), absent on documents projected from pages that never recorded a locale, so an older document keeps its bytes, `content_hash` and `document_id`. `direction` is derived from the text's script, never from a claim about the learner, and it changes no block, check, media or evidence semantics. The frozen `rpc.v11.json` snapshot is untouched.",
+  "description": "Coursebook backend RPC v13. v12 is additive over v11: every v1-v11 method name and every v1-v11 method request/response payload is preserved unchanged, and the version echo moves to 12. v11 froze the unit-scoped CourseBlueprint (plan_units, unit stages, structural prerequisite edges, the R9 units projection and PREREQUISITE_UNMET refusals). v12 freezes the student syllabus import path of docs/STUDENT-MODE.md: seven syllabus.* methods, an additive course.create.request syllabus binding, an additive plan_brief syllabus binding, and the import job kind with the syllabus_parse/syllabus_align stages. A companion course is an ordinary course with recipe='companion' and courses.pack_id NULL; full scope plans through coursebook.plan.v2 exactly as any other course does. No second course, plan, lesson or enrollment engine is claimed, and no syllabus text leaves the machine. v13 is additive over v12 (and, in a tree without the H-26a syllabus-intake snapshot, over v11): every earlier method name and request/response payload is preserved unchanged, the version echo moves to 13, and two methods are appended so a course the learner created from a goal can package itself. `course.export.read` is the review read: readiness, the exact file list with per-file sha256/bytes/mime, the reviewed content hash, the licence and rights statement, and the no-upload statement. `course.export` is the write, fenced by the reviewed `expected_content_hash` and an idempotency key; it re-checks the content hash inside the adopt transaction and refuses a pack-backed course with `course_pack_backed` so `pack.export` keeps owning those bytes. v13 adds no error code, job kind, vocabulary value, cb.db table, column or migration; the two new payloads reference only existing `cb.vocabulary` definitions. v13 also carries the H-18 additive amendment: `$defs/lesson_document` gains optional `lang` (BCP-47-ish text tag, max 35) and `direction` (`ltr`/`rtl`), absent on documents projected from pages that never recorded a locale, so an older document keeps its bytes, `content_hash` and `document_id`. `direction` is derived from the text's script, never from a claim about the learner, and it changes no block, check, media or evidence semantics. The frozen `rpc.v11.json` snapshot is untouched. v13 also carries the H-26b additive amendment, which adds no method, error code, job kind, vocabulary value, cb.db table, column or migration (cb.db stays v8): `syllabus.get` response items gain one optional property, `fields`, carrying the stated values of an assessment. `fields.due` and `fields.weight` use the item shape (`value`/`state`/`anchors`/`derivation`, optional `candidates`), and `fields.weight_unit` is `percent`|`points`|`unknown`. The values are persisted at parse time inside `syllabus_items.value_json`, so a stated due date or weight is served with its own anchor instead of being dropped, and the item `kind` stays `assessment` (the cb.db v8 enum is closed and unchanged). The existing `<title> (due)` placeholder row for an unknown due date is unchanged. Revisions parsed before this amendment carry no `fields`; consumers key off its presence and there is no backfill. `syllabus.alignment.review.request.decisions` relaxes from `minItems: 1` to `0`; an empty array means the learner reviewed the mapping and accepted every row as aligned, verified by the backend, not trusted: it is refused with `VALIDATION_FAILED` unless the revision has no non-stale `partial`, `unmatched`, `conflict` or `stale` row and no stale row at all, so an all-aligned mapping can set `reviewed_revision` and reach `plan.approve`, while an unacknowledged row can never be silently marked reviewed.",
   "x-contract-id": "cb.rpc",
   "x-contract-version": 13,
   "x-owner": "atlas",
@@ -4814,6 +4814,155 @@
                         "null"
                       ],
                       "maximum": 1000000
+                    },
+                    "fields": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "due",
+                        "weight",
+                        "weight_unit"
+                      ],
+                      "properties": {
+                        "due": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "value",
+                            "state",
+                            "anchors",
+                            "derivation"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "extracted",
+                                "unknown",
+                                "ambiguous"
+                              ]
+                            },
+                            "anchors": {
+                              "type": "array",
+                              "maxItems": 8,
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "block_id",
+                                  "quote"
+                                ],
+                                "properties": {
+                                  "block_id": {
+                                    "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+                                  },
+                                  "quote": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 400
+                                  }
+                                }
+                              }
+                            },
+                            "derivation": {
+                              "type": "string",
+                              "enum": [
+                                "explicit",
+                                "computed_from_term_start",
+                                "ambiguous",
+                                "unknown"
+                              ]
+                            },
+                            "candidates": {
+                              "type": "array",
+                              "maxItems": 8,
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "weight": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "value",
+                            "state",
+                            "anchors",
+                            "derivation"
+                          ],
+                          "properties": {
+                            "value": {
+                              "type": [
+                                "string",
+                                "number",
+                                "null"
+                              ]
+                            },
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "extracted",
+                                "unknown",
+                                "ambiguous"
+                              ]
+                            },
+                            "anchors": {
+                              "type": "array",
+                              "maxItems": 8,
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "block_id",
+                                  "quote"
+                                ],
+                                "properties": {
+                                  "block_id": {
+                                    "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+                                  },
+                                  "quote": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 400
+                                  }
+                                }
+                              }
+                            },
+                            "derivation": {
+                              "type": "string",
+                              "enum": [
+                                "explicit",
+                                "computed_from_term_start",
+                                "ambiguous",
+                                "unknown"
+                              ]
+                            },
+                            "candidates": {
+                              "type": "array",
+                              "maxItems": 8,
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "weight_unit": {
+                          "type": "string",
+                          "enum": [
+                            "percent",
+                            "points",
+                            "unknown"
+                          ]
+                        }
+                      }
                     }
                   }
                 }
@@ -5099,7 +5248,7 @@
               },
               "decisions": {
                 "type": "array",
-                "minItems": 1,
+                "minItems": 0,
                 "maxItems": 4000,
                 "items": {
                   "type": "object",
