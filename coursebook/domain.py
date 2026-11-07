@@ -44,6 +44,7 @@ from . import (
     parent_authoring as authoring,
     review,
     sources as source_ledger,
+    validators,
 )
 from .api import RpcError
 from .contracts import method_names
@@ -903,6 +904,18 @@ def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
             raise RpcError.of(
                 "VALIDATION_FAILED", "the check has no reference answer.", reason="objective_not_checkable"
             )
+        try:
+            validators.reference_kind(reference)
+        except validators.ReferenceSpecError:
+            # A stored reference must name its grading lane before it can reach a learner. This is
+            # the write gate that makes "no kind" impossible by construction, not by convention
+            # (docs/GRADING-LANES.md).
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "this check does not declare a grading lane and cannot be assessed.",
+                reason="check_not_gradable",
+                objective_id=objective["id"],
+            )
         current = _row(
             connection, "SELECT MAX(version) AS version FROM checks WHERE objective_id = ?", (objective["id"],)
         )
@@ -979,9 +992,19 @@ def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any])
             "UPDATE checks SET state = 'superseded' WHERE objective_id = ? AND state = 'open'", (objective["id"],)
         )
         _, reference, rubric = _spec_content(spec)
+        variant_reference = variant.get("reference") or reference
+        try:
+            validators.reference_kind(variant_reference)
+        except validators.ReferenceSpecError:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "this challenge does not declare a grading lane and cannot be assessed.",
+                reason="check_not_gradable",
+                objective_id=objective["id"],
+            )
         check_id = _insert_check(
             connection, objective, spec, variant.get("stimulus") or {},
-            variant.get("reference") or reference, variant.get("rubric") or rubric, version,
+            variant_reference, variant.get("rubric") or rubric, version,
         )
         _transition(connection, enrollment["id"], expected, to_revision, "continue")
         result = {"check_id": check_id, "check_version": version, "revision": to_revision}
@@ -1115,6 +1138,9 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         )
         if prior is not None:
             return int(enrollment["revision"]), _attempt_result(prior, int(enrollment["revision"]))
+        # A parent-recipe course records observations through ``observation.record``, never through
+        # a child-operated checklist; the confirmation lane is disabled for it.
+        recipe = str(_course_of_enrollment(connection, enrollment)["recipe"] or "")
         if int(check["version"]) != int(payload["check_version"]):
             raise _check_stale(
                 "the open check has been superseded; no attempt was created.",
@@ -1150,6 +1176,16 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         graded = grading.grade(
             reference=reference, rubric=rubric, stimulus=stimulus, answer=answer,
             attempt_id=attempt_id, locale=locale,
+            allow_confirmation=recipe != "parent",
+        )
+    except grading.ConfirmationAnswerError as exc:
+        # A refusal, not a failed attempt: no attempt row, no evidence, no revision bump. Raised
+        # before the write transaction opens.
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "that checklist answer is not a confirmation of declared items.",
+            field="answer",
+            reason=exc.reason,
         )
     except Exception as exc:  # noqa: BLE001 - a grader that cannot finish is needs_retry, never a pass
         graded = None
@@ -1204,6 +1240,10 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             return int(enrollment["revision"]), result
 
         verdict = graded.verdict
+        # Only the confirmation lane may name an evidence class, and only its own constant. A
+        # future aux adapter cannot return ``cold`` through this channel.
+        if graded.evidence_class == grading.CONFIRMATION_EVIDENCE_CLASS:
+            evidence_class = graded.evidence_class
         to_revision = _bump_enrollment(connection, enrollment["id"], expected)
         connection.execute(
             "INSERT INTO attempts (id, enrollment_id, check_id, check_version, attempt_nonce, answer_kind,"
