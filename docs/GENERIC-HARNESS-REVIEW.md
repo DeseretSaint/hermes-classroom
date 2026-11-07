@@ -79,9 +79,9 @@ PLAN_SCHEMA one-objective errors: 2
 ```
 
 The schema has `minItems: 4` for `objectives` and `minItems: 2` for `sections`, with maxima 8 and
-8 (`coursebook/generation.py:645-646`). The prompt still says "Produce 4 to 8 objectives"
-(`generation.py:1234`). H-03 correctly calls this the demo-shaped planner; H-21 is the
-implementation card. Until H-21 lands, a bicycle-tube brief cannot become the single lesson the
+8 (`coursebook/generation.py:671-672`). The prompt still says "Produce 4 to 8 objectives" in the
+default branch (`generation.py:1312`). H-03 correctly calls this the demo-shaped planner; H-21 is
+the implementation card. Until H-21 lands, a bicycle-tube brief cannot become the single lesson the
 user asked for.
 
 ### G-02 — Generated checks are saved, not graded
@@ -93,7 +93,7 @@ generated reference: {"ok": true, "verdict": "needs_retry", "next_action": "retr
 closed control:      {"ok": true, "verdict": "pass", "next_action": "complete_objective"}
 ```
 
-`_check_payloads` (`coursebook/generation.py:3518-3531`) writes no `reference.kind`. The grader
+`_check_payloads` (`coursebook/generation.py:3717-3735`) writes no `reference.kind`. The grader
 therefore cannot use the deterministic lane and the generated answer never advances. This is not a
 UI issue and not a model-quality issue; it is a data-shape defect. It is the single most important
 generic-harness defect after the plan cap, because it makes every generated course's checks
