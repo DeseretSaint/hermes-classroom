@@ -1,9 +1,9 @@
 # Reading Coursebook state from data.db
 
-All queries run against `plugin-data/coursebook/data.db` under the HERMES_HOME
-in play (`~/.hermes`, or `~/.hermes/coursebook-test/home` for the isolated dev
-install). Check both: the objective id you were given decides which store is
-live.
+All queries run against the one database the turn names in its `[Coursebook]`
+instruction line — the absolute `…/plugin-data/coursebook/data.db` path, which is the
+store the chat's binding was found in. Do not go looking in other HERMES_HOMEs: the
+objective id on the turn decides the store, not a probe.
 
 ## Which run/objective is open
 

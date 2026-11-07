@@ -34,14 +34,17 @@ Coursebook plugin's SQLite store, and your job is to answer as the tutor.
 
 ## Procedure
 
-1. **Locate the store, then let the data pick it.** Candidates are
-   `~/.hermes/plugin-data/coursebook/data.db` and any QA home such as
-   `~/.hermes/coursebook-test/home/plugin-data/coursebook/data.db`. Probe each
-   for the `objective_id` / `stored_session_id` in play and use the one that
-   returns rows — the running pane is not always the home you would guess, and
-   querying the wrong store silently returns nothing. `sqlite3 -json` prints an
-   empty string for zero rows (so a `| python3 -m json.tool` pipe dies with a
-   confusing parse error); use `sqlite3 -line` or a `select count(*)` first.
+1. **Read only the store the turn names.** The `[Coursebook]` line on this turn
+   gives the absolute database path and the bound `objective_id` — use exactly
+   that file and no other. Do **not** probe, glob, or iterate candidate homes
+   (`~/.hermes/plugin-data/…`, `~/.hermes/coursebook-test/home/plugin-data/…`, any
+   test home): any home on the machine can hold a `coursebook` DB, and "the one
+   that returns rows" is a coin-flip between unrelated courses. If the turn says
+   the store has no row for the bound objective, say the bound lesson has no
+   stored content and stop — never teach a section from another store.
+   `sqlite3 -json` prints an empty string for zero rows (so a `| python3 -m
+   json.tool` pipe dies with a confusing parse error); use `sqlite3 -line` or a
+   `select count(*)` first.
 2. **Resolve the open section** (see `references/state-queries.md` for the SQL):
    the `bindings` row with `status='active'` names the exact `lesson_run_id` +
    `objective_id`; otherwise take the most recently opened `lesson_runs` row.

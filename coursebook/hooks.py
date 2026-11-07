@@ -120,6 +120,10 @@ def pre_llm_call(
     superseded loads ``coursebook:learner-coach``, and a chat the store never recorded gets
     nothing. Plugin skills are not in the agent's automatic index, so this turn-local line is
     what actually loads one — the same decision is what the lesson pane shows.
+
+    The tutor instruction also names the absolute store path and the bound ``objective_id``
+    (H-69): the agent reads the store the binding came from and never probes other homes for
+    "the one that returns rows", which is how a lesson was once answered from another course.
     """
     from . import db, lesson_skills, turn
 
@@ -161,7 +165,12 @@ def pre_llm_call(
                 "attempt_id": outcome.attempt_id,
             }
         return lesson_skills.attach(
-            outcome.hook, decision.get("skill"), str(decision.get("reason") or "")
+            outcome.hook,
+            decision.get("skill"),
+            str(decision.get("reason") or ""),
+            store_path=decision.get("store_path"),
+            objective_id=decision.get("objective_id"),
+            binding_id=decision.get("binding_id"),
         )
     except Exception:  # noqa: BLE001 - a hook that cannot finish must never grant a pass
         _TURNS.pop(key, None)

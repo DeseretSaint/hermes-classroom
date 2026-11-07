@@ -11,7 +11,10 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import shutil
+import sqlite3
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -140,6 +143,152 @@ class AttachTest(unittest.TestCase):
         text = lesson_skills.instruction(lesson_skills.COACH_SKILL)
         for token in ("Japanese", "romaji", "furigana", "kana"):
             self.assertNotIn(token, text)
+
+
+class BoundStoreTest(KernelCase):
+    """H-69: two Coursebook stores on one machine, only one bound to this chat.
+
+    The fix is (a) from the card — hand the resolved store to the turn instead of letting the
+    skill probe candidate homes. So the proof is: the answer names the absolute DB the binding
+    row came from, that DB really holds the bound ``objective_id``, a second store on the same
+    filesystem does not, and nothing in the instruction points at it. When no store holds the
+    bound objective the turn is told to stand down rather than fall back.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        hooks._TURNS.clear()
+        hooks._GOVERNED.clear()
+        hooks._SKILLS.clear()
+
+    def _begin(self, lesson: dict) -> dict:
+        return self.ok(
+            "lesson.begin",
+            {"enrollment_id": lesson["enrollment_id"], "objective_id": lesson["objective_id"], "mode": "fresh"},
+            idempotency_key=f"begin-{os.urandom(6).hex()}",
+        )["result"]
+
+    def _bound_chat(self, objective_id: str | None = None) -> tuple[str, dict]:
+        lesson = self.prepare_lesson()
+        run = self._begin(lesson)
+        stored = "20261106_095109_eac24e"
+        bindings.bind_session(
+            stored_session_id=stored,
+            enrollment_id=lesson["enrollment_id"],
+            objective_id=objective_id or lesson["objective_id"],
+            lesson_run_id=run["lesson_run_id"],
+        )
+        return stored, lesson
+
+    def _foreign_store(self) -> Path:
+        """A second, unrelated Coursebook home: its own DB, its own objective, its own chat."""
+        other = Path(tempfile.mkdtemp(prefix="coursebook-other-home-"))
+        self.addCleanup(shutil.rmtree, other, True)
+        path = other / "plugin-data" / "coursebook" / "data.db"
+        path.parent.mkdir(parents=True)
+        connection = sqlite3.connect(path)
+        try:
+            connection.execute("CREATE TABLE objectives (id TEXT PRIMARY KEY, title TEXT)")
+            connection.execute(
+                "CREATE TABLE bindings (id TEXT PRIMARY KEY, stored_session_id TEXT,"
+                " objective_id TEXT, status TEXT)"
+            )
+            connection.execute(
+                "INSERT INTO objectives VALUES ('obj_flat_repair_s1', 'Roadside flat repair - Section 1')"
+            )
+            connection.execute(
+                "INSERT INTO bindings VALUES ('bind_other', '20261106_090000_other',"
+                " 'obj_flat_repair_s1', 'active')"
+            )
+            connection.commit()
+        finally:
+            connection.close()
+        return path
+
+    def test_the_turn_names_the_store_that_holds_the_bound_objective(self) -> None:
+        stored, lesson = self._bound_chat()
+        foreign = self._foreign_store()
+        answer = lesson_skills.skill_for_session(stored)
+        own = db.store_root() / "data.db"
+
+        self.assertEqual(answer["skill"], lesson_skills.TUTOR_SKILL)
+        self.assertEqual(answer["reason"], lesson_skills.REASON_LIVE_BINDING)
+        self.assertEqual(Path(answer["store_path"]), own.resolve())
+        self.assertNotEqual(Path(answer["store_path"]), foreign.resolve())
+        self.assertEqual(answer["objective_id"], lesson["objective_id"])
+        self.assertTrue(answer["objective_in_store"])
+
+        with db.read() as connection:
+            bound_exists = connection.execute(
+                "SELECT 1 FROM objectives WHERE id = ?", (lesson["objective_id"],)
+            ).fetchone()
+        self.assertIsNotNone(bound_exists, "the named store is the one that holds the bound objective")
+        foreign_db = sqlite3.connect(foreign)
+        try:
+            foreign_has_bound = foreign_db.execute(
+                "SELECT 1 FROM objectives WHERE id = ?", (lesson["objective_id"],)
+            ).fetchone()
+        finally:
+            foreign_db.close()
+        self.assertIsNone(foreign_has_bound, "the other store does not hold the bound objective")
+
+        text = lesson_skills.instruction(
+            str(answer["skill"]), str(answer["reason"]), store_path=answer["store_path"],
+            objective_id=answer["objective_id"],
+        )
+        self.assertIn(str(own.resolve()), text)
+        self.assertIn(lesson["objective_id"], text)
+        self.assertNotIn(str(foreign.resolve()), text, "a turn must never be pointed at another home")
+        self.assertIn("Never print the reference answer", text)
+
+    def test_a_live_binding_with_no_objective_in_the_store_stands_down(self) -> None:
+        # A live binding that carries no objective is exactly the "no stored content" state:
+        # there is no second store to fall back to, and the turn must say so.
+        stored, _lesson = self._bound_chat()
+        self.execute("UPDATE bindings SET objective_id = NULL WHERE stored_session_id = ?", (stored,))
+        foreign = self._foreign_store()
+
+        answer = lesson_skills.skill_for_session(stored)
+        self.assertEqual(answer["reason"], lesson_skills.REASON_BOUND_OBJECTIVE_MISSING)
+        self.assertEqual(answer["skill"], lesson_skills.TUTOR_SKILL)
+        text = lesson_skills.instruction(
+            str(answer["skill"]), str(answer["reason"]), store_path=answer["store_path"],
+            objective_id=answer["objective_id"], binding_id=answer["binding_id"],
+        )
+        self.assertIn("no stored content", text)
+        self.assertIn("Do not teach any section", text)
+        self.assertIn("do not read any other Coursebook store", text)
+        self.assertNotIn(str(foreign.resolve()), text)
+
+    def test_an_objective_row_missing_from_the_store_stands_down(self) -> None:
+        # A dangling binding (FKs off, as a foreign writer could leave it) is the same state:
+        # the store is real, the objective is not in it, so nothing may be taught from elsewhere.
+        stored, lesson = self._bound_chat()
+        raw = sqlite3.connect(db.store_root() / "data.db")
+        try:
+            raw.execute("DELETE FROM objectives WHERE id = ?", (lesson["objective_id"],))
+            raw.commit()
+        finally:
+            raw.close()
+        answer = lesson_skills.skill_for_session(stored)
+        self.assertEqual(answer["reason"], lesson_skills.REASON_BOUND_OBJECTIVE_MISSING)
+        self.assertFalse(answer["objective_in_store"])
+        self.assertEqual(answer["objective_id"], lesson["objective_id"])
+
+    def test_the_bound_turn_carries_the_store_path_and_objective(self) -> None:
+        stored, lesson = self._bound_chat()
+        hook = hooks.pre_llm_call(session_id=stored, user_message="What am I practising here?")
+        self.assertIsNotNone(hook)
+        self.assertIn(str((db.store_root() / "data.db").resolve()), hook["context"])
+        self.assertIn(lesson["objective_id"], hook["context"])
+        self.assertIn("Do not probe, glob, or open any other Coursebook store", hook["context"])
+
+    def test_the_coach_turn_is_not_pointed_at_a_store(self) -> None:
+        stored, _lesson = self._bound_chat()
+        self.execute("UPDATE bindings SET status = 'detached' WHERE stored_session_id = ?", (stored,))
+        answer = lesson_skills.skill_for_session(stored)
+        self.assertEqual(answer["skill"], lesson_skills.COACH_SKILL)
+        self.assertIsNone(answer["store_path"], "a chat with no live run has no lesson store to read")
 
 
 class HookWiringTest(KernelCase):
