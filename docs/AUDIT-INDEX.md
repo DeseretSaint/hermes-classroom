@@ -348,7 +348,7 @@ verdict in the fifth column was re-run for this revision; rows that moved are li
 | P1-2 planner does not plan media; policy guesses from prose | P1 | **FIXED** | H-05 `t_7baa29e2` | content `986190f` merged at `a30487e` into `ce95836` — **yes** | done, merged |
 | P1-3 check `count` / `independent_evidence` are decorative | P1 | **FIXED — re-audit required** | H-21c `t_6576b611` | merge `2252231` (content `bcd545e`) — **yes**; `CHECK_PLAN_SCHEMA_V2` drops both fields | done, merged |
 | P1-4 authoring schemas are Japanese-shaped | P1 | **FIXED** | H-18 `t_8407ea22`; recovery H-18b (same defect as round-2 P2-7) | pre-recovery tip `2aca201` — **no**; recovery merge `580bbb6` — **yes**. `tests/test_locale_scaffolds.py` resolves at `1fc0542` | recovered, merged |
-| P1-5 assessment breadth is narrow | P1 | **FIXED — B-1, B-2 and B-3 all merged** (was `OPEN — B-1 and B-3 merged; B-2 unmerged` at `54dd2eb`) | H-16 `t_3c5d969c`; B-1 `t_673155b0`; B-2 `t_74d99ca5`; B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `b13890c` via `d20a7a6`, `a729e36` via `b7ff866`, `76a59ed` via `bbebd96` — **yes** | all four done and merged; B-2 closed at `bbebd96` (§14) |
+| P1-5 assessment breadth is narrow | P1 | **OPEN — the B-series is closed but construct breadth is still three input formats** (was `OPEN — B-1 and B-3 merged; B-2 unmerged` at `54dd2eb`) | H-16 `t_3c5d969c`; B-1 `t_673155b0`; B-2 `t_74d99ca5`; B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `b13890c` via `d20a7a6`, `a729e36` via `b7ff866`, `76a59ed` via `bbebd96` — **yes** | all four done and merged; B-2 closed at `bbebd96` (§14) |
 | P1-6 rubric registry is static | P1 | **FIXED (decision) — re-audit not applicable** | H-24 `t_29e6647c` | merge `4f42c3c` (content `491443a`), `docs/RUBRIC-EXTENSIBILITY.md` — **yes** | done, merged |
 | P2-1 test matrix proves policy, not generation | P2 | **FIXED — packet merged; its model half is a recorded transcript** | H-09 `t_ebc196db`; re-run H-40 | `111c7e9` — **no**; `9f2de53` via `be08495` — **yes**; `tests/test_harness_e2e.py` resolves at `54dd2eb` (26 tests in the H-49 run) | done, merged |
 | P2-2 depth/locale not tested through the product surface | P2 | **FIXED** | H-04 `t_161d467f` + H-13 `t_543c0767` | `cee1749` via `ce95836` — **yes**; `6779030` — **yes** | done, merged |
@@ -373,7 +373,7 @@ board keys are authoritative and are the only ids used here. Status is the merge
 | P0-2 fetched excerpt is raw prompt content; invented prose URLs pass | P0 | **FIXED** | H-14 `t_031e287f` | merge `a12176b` (content `0ba4dc6`) — **yes** | done, merged |
 | P1-3 "independent validation" is prompt separation; same model upgrades support | P1 | **FIXED — implementation merged; no independent probe of the verdict exists** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes** (through the merge); merge `b75d601` — **yes**; `docs/H15-VALIDATOR-INDEPENDENCE.md` resolves at `54dd2eb` | done, merged. H-30b (`f92d5f8` via `90e1f0d`) re-audited shape, grading and the approval gate; it ran **no** cross-model identity probe, so this row's re-audit is still missing |
 | P1-4 factual gate auto-waives when research is unavailable | P1 | **FIXED — implementation merged; no independent probe of the verdict exists** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes**; merge `b75d601` — **yes**; `outcome`/`facts_unverified` are in `validation_verdict()` at `54dd2eb` | done, merged. H-30b merged (`90e1f0d`) but its recorded research page was a recording, so the no-research waiver was not re-probed |
-| P1-5 assessment breadth: three input formats only | P1 | **FIXED — B-1, B-2 and B-3 all merged** (was `OPEN — B-1 and B-3 merged; B-2 unmerged` at `54dd2eb`) | H-16 `t_3c5d969c` → B-1 `t_673155b0`, B-2 `t_74d99ca5`, B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `b13890c` via `d20a7a6`, `a729e36` via `b7ff866`, `76a59ed` via `bbebd96` — **yes** | all done and merged; B-2 closed at `bbebd96` (§14) |
+| P1-5 assessment breadth: three input formats only | P1 | **OPEN — the B-series is closed but construct breadth is still three input formats** (was `OPEN — B-1 and B-3 merged; B-2 unmerged` at `54dd2eb`) | H-16 `t_3c5d969c` → B-1 `t_673155b0`, B-2 `t_74d99ca5`, B-3 H-22 `t_966d50f4` | decision `dd43d82` via `fa316c5` — **yes**; B-1 `ce6c8c1` via `4e709d3` — **yes**; B-3 `47e152c` via `1fc0542` — **yes**; B-2 `b13890c` via `d20a7a6`, `a729e36` via `b7ff866`, `76a59ed` via `bbebd96` — **yes** | all done and merged; B-2 closed at `bbebd96` (§14) |
 | P1-6 flat `$0.75` ceiling, no cost-abort recovery | P1 | **FIXED** | H-17 `t_9a8543ae` (+ `t_d50cb007` v10 brief fix) | content `722f00f` merged at `4dd68cb` into `ce95836` — **yes**; `fbf96fe` — **yes** | done, merged |
 | P2-7 Japanese-only scaffold triple; no direction field | P2 | **FIXED** | H-18 `t_8407ea22`; recovery H-18b | pre-recovery tip `2aca201` — **no**; recovery merge `580bbb6` — **yes**; `tests/test_locale_scaffolds.py` resolves at `1fc0542` | recovered, merged |
 | P2-8 no prerequisite edges; adaptation is a state label | P2 | **FIXED — re-audited by H-30b** | H-20 `t_43ca17b8` (frozen contract) + H-21c `t_6576b611` (implementation) | contract `516d161` via `d079b4c` — **yes**; implementation merge `2252231` (content `bcd545e`) — **yes** | done, merged; H-30b `f92d5f8` via `90e1f0d` proves `course.outline` projects `prereq_unit_ordinals` and a `prerequisite_state` per unit in `short` and `full`. The state-label half of the finding (no dynamic re-plan) stays OPEN under D-04 |
@@ -1041,13 +1041,15 @@ claim are those naming an ancestor of `54dd2eb`, and every ledger row that names
 whether an independent re-audit exists. The two rows that most invite overstatement — P0-7 and
 P2-3's media half — stay OPEN on purpose.
 
-## 14. Changes in the H-58 revision — B-2 closed at `bbebd96`
+## 14. Changes in the H-58 revision — B-2 closed at `bbebd96`; P1-5 held OPEN by H-59
 
 Base: `master` = `bbebd96` (`bbebd96bd6873c2b22970fd240d0fe410c9ee6b8`), the merge that carried H-55
 (`76a59ed`, "parent-observation control calls observation.record") onto master. This revision moves
-**B-2** from OPEN to FIXED, and the two P1-5 rows whose status was defined by B-2 with it. Rows not
-listed did not change status. §11/§12/§13 are kept as the H-31b, H-41 and H-50 records; §9 of
-`docs/ASSESSMENT-BREADTH.md` (the H-53 authorization paragraph) is untouched.
+**B-2** from OPEN to FIXED and amends the two P1-5 rows whose B-2 half it closes — but it does
+**not** close P1-5, because P1-5's finding is construct breadth (code, performance, artifact), and
+that is still three text input formats. Rows not listed did not change status. §11/§12/§13 are kept
+as the H-31b, H-41 and H-50 records; §9 of `docs/ASSESSMENT-BREADTH.md` (the H-53 authorization
+paragraph) is untouched.
 
 The B-2 closure is three work commits — `b13890c`, `a729e36`, `76a59ed` — carried by the merges
 `d20a7a6`, `b7ff866` and `bbebd96`, and each commit carries a different half of the defect:
@@ -1055,8 +1057,19 @@ The B-2 closure is three work commits — `b13890c`, `a729e36`, `76a59ed` — ca
 | row | previous status (H-50) | status now | commit that justifies it | ancestor of `bbebd96` |
 |---|---|---|---|---|
 | §7 B-2 (H-16 B-series) | `OPEN, and the row's sha is wrong` — no `observation.record` RPC method, handler or UI at `54dd2eb` | **FIXED** — declared in `cb.rpc` v14, dispatched by a registered handler, persisted with its note, and mounted in Desktop | `b13890c` (cb.rpc v14 + cb.db v9 + `0009_evidence_note.sql`) via merge `d20a7a6`; `a729e36` (handler) via merge `b7ff866`; `76a59ed` (Desktop) via merge `bbebd96` | yes |
-| §4 round-1 P1-5 | `OPEN — B-1 and B-3 merged; B-2 unmerged` | **FIXED — B-1, B-2 and B-3 all merged** | the same closure commits; B-1 `ce6c8c1` via `4e709d3`, B-3 `47e152c` via `1fc0542` | yes |
-| §5 round-2 P1-5 | `OPEN — B-1 and B-3 merged; B-2 unmerged` | **FIXED — B-1, B-2 and B-3 all merged** | the same closure commits | yes |
+| §4 round-1 P1-5 | `OPEN — B-1 and B-3 merged; B-2 unmerged` | **OPEN — B-1, B-2 and B-3 are all closed; construct breadth is still three input formats** | the same closure commits; B-1 `ce6c8c1` via `4e709d3`, B-3 `47e152c` via `1fc0542` | yes |
+| §5 round-2 P1-5 | `OPEN — B-1 and B-3 merged; B-2 unmerged` | **OPEN — B-1, B-2 and B-3 are all closed; construct breadth is still three input formats** | the same closure commits | yes |
+
+**Why P1-5 still reads OPEN.** Its finding is not "the B-series is unmerged": it is that a course can
+only be assessed through three text-shaped input formats (authored prompt item, structured
+`stimulus.items[]` checklist, and free text), so code, recorded performance and submitted artifacts
+cannot be graded at all. `docs/ASSESSMENT-BREADTH.md` §10 makes each of those a gated construct whose
+implementation needs a spike that produces real gate evidence, and nothing has landed: at `bbebd96`,
+`grep -c` for `code.run`, `performance.submit` and `artifact.submit` returns **0** in
+`contracts/rpc.v14.json`, **0** in `coursebook/domain.py` and **0** in `desktop/plugin.js`, and
+`docs/ASSESSMENT-BREADTH.md` §10 still opens "Nothing below is authorized now." Closing B-2 makes an
+*existing* evidence class reachable — §9's paragraph is explicit that this is a reachability repair,
+not a fourth construct. So B-2 is FIXED, the B-series is closed, and P1-5 stays OPEN.
 
 ### The verifying commands and what they printed
 
@@ -1124,3 +1137,15 @@ round-trips — not because the finding's prose was re-read and found agreeable.
 revision does **not** claim is a live learner session: the evidence is the contract enum, the
 registry, the migration, the Desktop mount and the suite, and §10's construct gates in
 `docs/ASSESSMENT-BREADTH.md` still have to be met separately.
+
+### H-59 correction — P1-5 stays OPEN (`wt/h59-ledger-p1-5`)
+
+The H-58 revision as first written set both P1-5 rows to "FIXED — B-1, B-2 and B-3 all merged". That
+reads the finding as its defect register: closing all three B-cards would then close P1-5. It does
+not. B-1 fixed a grading lane, B-2 made an existing evidence class reachable and B-3 completed the
+disclosure copy; none of them added a construct. The finding's own text — "three input formats only"
+— is still true at `bbebd96`, and its construct gates in `docs/ASSESSMENT-BREADTH.md` §10 remain
+unauthorized. H-59 therefore restores both §4/§5 cells and both §14 table cells to **OPEN**, changes
+only status wording, and adds the measured `grep -c` evidence above. No other row moved, no product
+code was touched, and the B-2 closure itself stands unchanged.
+
