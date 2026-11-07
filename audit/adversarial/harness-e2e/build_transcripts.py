@@ -467,6 +467,100 @@ SCENARIOS: dict[str, dict] = {
 }
 
 
+#: Authored short text, one entry per lesson field. A provider authored with the guided-writing
+#: contract writes a compressed *sentence*; the replay engine used to synthesise one with a 2/3
+#: word-boundary prefix, and that is the clipped ending D8 recorded and H-46 refuses. These are
+#: hand-authored complete sentences that drop detail and add no claim atom; H-46b regenerated the
+#: packet against them rather than teaching the synthesiser to imitate a provider.
+SHORTS: dict[str, dict[str, str]] = {
+    "Remove the rear wheel, replace the inner tube and check the brakes": {
+        "practice_short": "Deflate the tyre fully and lift the wheel out of the dropouts.",
+        "criterion_short": "Seat the new tube by hand and inflate it in small steps.",
+        "explanation_short": "A tube that is pinched under the bead fails on the first ride.",
+    },
+    "Build a major and a minor triad from a root note": {
+        "practice_short": "From C, stack a major third and a perfect fifth.",
+        "criterion_short": "Both triads share the root and fifth.",
+        "explanation_short": "Only the third moves.",
+    },
+    "Count the semitones in a major third and a perfect fifth": {
+        "practice_short": "Start on C and count four semitones to E.",
+        "criterion_short": "From C, the fifth note arrives after a four-semitone step.",
+        "explanation_short": "Counting semitones turns an interval into a number you can check.",
+    },
+    "Distinguish the two common thirds by sound": {
+        "practice_short": "Play C to E, then C to E flat.",
+        "criterion_short": "The darker, lower interval is the one whose middle note is flattened.",
+        "explanation_short": "The third decides whether a triad sounds major or minor.",
+    },
+    "Use the circle of fifths to name the chords in a pop song": {
+        "practice_short": "Write the song's chords and find each root on the circle.",
+        "criterion_short": "Name the home chord before the key.",
+        "explanation_short": "The circle shows which chords belong together.",
+    },
+    "Name the three burn and fume hazards at the bench": {
+        "practice_short": "Point at the iron, the fume path and your eyes.",
+        "criterion_short": "The three hazards are the hot iron, the solder fumes and flying clippings.",
+        "explanation_short": "Naming the hazard is what makes the bench rules stick.",
+    },
+    "Set an iron to the temperature a leaded joint needs": {
+        "practice_short": "Set the station and wait for the display to settle.",
+        "criterion_short": "Leaded solder wants a moderate setting.",
+        "explanation_short": "Temperature is a time control.",
+    },
+    "Read a resistor value from its colour bands": {
+        "practice_short": "Read the bands left to right.",
+        "criterion_short": "Brown, black, red, gold is ten times one hundred.",
+        "explanation_short": "The code is positional.",
+    },
+    "Inspect a pad for lift before inserting a part": {
+        "practice_short": "Look at the pad edge against the board.",
+        "criterion_short": "A sound pad sits flat on the board.",
+        "explanation_short": "A lifted pad turns a one-minute joint into a board repair.",
+    },
+    "Form a lead so the part seats flush": {
+        "practice_short": "Bend the lead with pliers at the board thickness.",
+        "criterion_short": "The body sits flat with the lead bent.",
+        "explanation_short": "A part that stands off the board strains its joints.",
+    },
+    "Insert a part in the right orientation": {
+        "practice_short": "Find the marking on the part and match it to the board's own marking.",
+        "criterion_short": "Both markings face the same way.",
+        "explanation_short": "Orientation errors survive soldering.",
+    },
+    "Heat the pad and lead together before feeding solder": {
+        "practice_short": "Touch the tip to the pad and the lead at once.",
+        "criterion_short": "The joint reaches temperature first.",
+        "explanation_short": "Solder fed onto the tip makes a cold joint.",
+    },
+    "Recognise a cold joint from its surface": {
+        "practice_short": "Compare a grainy joint with a bright fillet.",
+        "criterion_short": "A cold joint has a grainy, matte surface.",
+        "explanation_short": "Surface is the cheapest inspection you have.",
+    },
+    "Inspect a finished joint against the fillet criterion": {
+        "practice_short": "Judge each joint on the board against the fillet criterion.",
+        "criterion_short": "A sound joint is shiny, concave and covers the pad.",
+        "explanation_short": "Applying one criterion to many joints is the skill.",
+    },
+    "Prove continuity with a meter after rework": {
+        "practice_short": "Set the meter to continuity and probe the two ends.",
+        "criterion_short": "Continuity proves the repair conducts.",
+        "explanation_short": "A joint can look right and still be open.",
+    },
+    "Desolder a two-lead part without overheating it": {
+        "practice_short": "Add fresh solder to each joint and alternate heat between the leads.",
+        "criterion_short": "Fresh solder and alternating heat keep the pads alive.",
+        "explanation_short": "Old solder has lost its flux.",
+    },
+    "Wick a solder bridge without lifting the pad": {
+        "practice_short": "Add flux and lay the wick over the bridge.",
+        "criterion_short": "Heat through the wick and stop.",
+        "explanation_short": "Pulling the wick while the solder is solid lifts pads.",
+    },
+}
+
+
 def _json(value) -> str:
     return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False)
 
@@ -516,6 +610,10 @@ def build(name: str) -> dict:
         raise SystemExit(f"{name}: lesson authored for unknown objective(s) {extra}")
     for objective in shape["objectives"]:
         title = str(objective["title"])
+        short = SHORTS.get(title)
+        if short is None:
+            raise SystemExit(f"{name}: no authored short for lesson {title!r}")
+        lessons[title].update(short)
         leaked = _leaks(title, objective, lessons[title])
         if leaked:
             raise SystemExit(f"{name}: lesson {title!r} announces its own answer(s) {leaked}")

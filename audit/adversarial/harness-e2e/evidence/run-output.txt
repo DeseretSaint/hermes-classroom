@@ -1,4 +1,4 @@
-H-40 arbitrary-topic evidence packet — base c588e4a (blueprint v2)
+H-40 arbitrary-topic evidence packet — H-46b re-run on cd818fa (blueprint v2)
 model: RECORDED TRANSCRIPT (recorded-transcript-h40) / validator RECORDED (recorded-validator-h40)
 provider calls: 0, provider spend: $0.00, network: none
 

@@ -75,6 +75,18 @@ _TERMINAL_MARKS = ".!?\u2026\u3002\uff01\uff1f"
 #: Marks that separate clauses, so a sentence's own boundary can be kept when it has no full stop.
 _CLAUSE_MARKS = ",;:\u2014\u2013"
 _TRAILING_SEPARATORS = " ,;:\u2014\u2013"
+#: Words that open a new clause even when the author used no punctuation: a coordinating or
+#: subordinating conjunction, or a relative pronoun. Cutting in front of one of these keeps a whole
+#: clause rather than a sliced one. Prepositions are deliberately absent: cutting in front of a
+#: preposition strands the phrase it heads, which is how a mechanical short turns ungrammatical.
+_CLAUSE_WORDS = frozenset(
+    """
+    and but or nor so yet then
+    because if when whenever while before after until unless though although
+    that which who whom whose where whereas
+    """.split()
+)
+_CLAUSE_PHRASES = ("as soon as", "every time", "so that", "even though")
 #: The lesson schema's floor for an authored short; a candidate below it is not schema-valid.
 _MIN_SHORT = 8
 
@@ -93,14 +105,41 @@ def _terminated(fragment: str, terminal: str) -> str:
     return fragment.rstrip(_TRAILING_SEPARATORS).rstrip() + terminal
 
 
+def _boundaries(text: str):
+    """Offsets where ``text`` can be cut without slicing a word or a clause.
+
+    Punctuation is the author's own boundary; a connective word is the next best thing when the
+    sentence has none. Every offset is the start of the material that would be dropped.
+    """
+    for index, char in enumerate(text[:-1]):
+        if char in _CLAUSE_MARKS:
+            yield index
+    words = text.split()
+    offset = 0
+    for position, word in enumerate(words):
+        if position and word.lower() in _CLAUSE_WORDS:
+            yield offset - 1  # the space in front of the connective
+        if position:
+            for phrase in _CLAUSE_PHRASES:
+                if " ".join(words[position : position + len(phrase.split())]).lower() == phrase:
+                    yield offset - 1
+                    break
+        offset += len(word) + 1
+
+
 def _shorten(text: str) -> str:
     """A strictly shorter, complete-sentence prefix of ``text``: drops detail, adds no claim.
 
-    The H-46 gate refuses a short that stops mid-sentence, so the old 2/3 word-boundary prefix is
-    no longer an authored short — D8 recorded precisely those clipped endings, and the gate is
-    right to refuse them. The contract is otherwise unchanged: the result is a strict prefix, so
+    The H-46 completeness gate refuses a short that stops mid-sentence, so the old 2/3 word-boundary
+    prefix is no longer an authored short — D8 recorded precisely those clipped endings, and the gate
+    is right to refuse them. The contract is otherwise unchanged: the result is a strict prefix, so
     every claim atom it carries already occurs in the deep text. It now lands on a sentence or
     clause boundary and keeps the terminal mark, so it reads as a sentence on its own.
+
+    This is the deterministic fallback. Mechanical cutting cannot tell a whole clause from one that
+    only looks whole, so ``transcripts/*.json`` authors ``practice_short`` / ``criterion_short`` /
+    ``explanation_short`` for every lesson and the replay engine prefers them; nothing in this
+    function is what the recorded packet actually serves.
     """
     stripped = text.strip()
     if not stripped:
@@ -117,11 +156,9 @@ def _shorten(text: str) -> str:
 
     target = (len(stripped) * 2) // 3
 
-    # 2. The clause boundary closest to two thirds of the text, re-terminated as a sentence.
+    # 2. The boundary closest to two thirds of the text, re-terminated as a sentence.
     clauses: list[str] = []
-    for index, char in enumerate(stripped[:-1]):
-        if char not in _CLAUSE_MARKS:
-            continue
+    for index in _boundaries(stripped):
         candidate = _terminated(stripped[:index], terminal)
         if _MIN_SHORT <= len(candidate) < len(stripped) and _complete(candidate):
             clauses.append(candidate)
@@ -289,6 +326,14 @@ class RecordedLLM:
         practice = str(recording["practice"])
         criterion = str(recording["criterion"])
         explanation = str(recording["explanation"])
+        # A short is authored text, not a slice of the deep text: the recording carries one for
+        # every lesson (build_transcripts.py), and the boundary-aware synthesiser is only the
+        # fallback for a recording that predates that field.
+        practice_short = str(recording.get("practice_short") or _shorten(practice))
+        criterion_short = str(recording.get("criterion_short") or _shorten(criterion))
+        explanation_short = str(
+            recording.get("explanation_short") or _shorten(explanation)
+        )
         if recording.get("items"):
             check = {
                 "kind": "verification",
@@ -329,9 +374,9 @@ class RecordedLLM:
             "section_title": section["title"],
             "segments": [
                 {"kind": "model", "heading": "The step", "body": practice,
-                 "short": _shorten(practice)},
+                 "short": practice_short},
                 {"kind": "guided", "heading": "Do it", "body": criterion,
-                 "short": _shorten(criterion)},
+                 "short": criterion_short},
             ],
             "worked_example": {
                 "prompt": f"A worked example of {section['title']}",
@@ -340,7 +385,7 @@ class RecordedLLM:
                 "short": _shorten(f"The step is done and checked. {criterion}"),
             },
             "learner_explanation": explanation,
-            "learner_explanation_short": _shorten(explanation),
+            "learner_explanation_short": explanation_short,
             "check": check,
             "sources": [],
             "media": [],
@@ -1402,7 +1447,7 @@ def main(argv: list[str]) -> int:
         print(text)
         lines.append(text)
 
-    emit("H-40 arbitrary-topic evidence packet — base c588e4a (blueprint v2)")
+    emit("H-40 arbitrary-topic evidence packet — H-46b re-run on cd818fa (blueprint v2)")
     emit(f"model: RECORDED TRANSCRIPT ({AUTHOR_MODEL}) / validator RECORDED ({VALIDATOR_MODEL})")
     emit("provider calls: 0, provider spend: $0.00, network: none")
     emit()

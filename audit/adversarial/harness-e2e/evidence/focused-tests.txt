@@ -1,5 +1,5 @@
 # python3 -m unittest tests.test_harness_e2e -v
-# H-45 packet on base be08495, 2026-11-07T08:16:26-07:00
+# H-46b packet on base cd818fa (wt/h46-truncation) + H-45 merge, 2026-11-07T08:29:36-07:00
 test_approval_is_fail_closed_and_happens_after_validation (tests.test_harness_e2e.HarnessEndToEndTest.test_approval_is_fail_closed_and_happens_after_validation) ... ok
 test_every_scenario_passes_its_own_assertions (tests.test_harness_e2e.HarnessEndToEndTest.test_every_scenario_passes_its_own_assertions) ... ok
 test_every_scenario_was_generated_from_a_non_japanese_goal (tests.test_harness_e2e.HarnessEndToEndTest.test_every_scenario_was_generated_from_a_non_japanese_goal) ... ok
@@ -24,8 +24,14 @@ The historical D6 shape defect: a six-objective plan labelled `full`. ... ok
 test_the_contract_schema_and_expectations_agree (tests.test_harness_e2e.ScopeBoundsContractTest.test_the_contract_schema_and_expectations_agree) ... ok
 test_the_declared_ceiling_passes_and_one_past_it_does_not (tests.test_harness_e2e.ScopeBoundsContractTest.test_the_declared_ceiling_passes_and_one_past_it_does_not) ... ok
 test_the_three_committed_plans_match_the_declared_bounds (tests.test_harness_e2e.ScopeBoundsContractTest.test_the_three_committed_plans_match_the_declared_bounds) ... ok
+test_a_multi_sentence_body_keeps_its_first_complete_sentence (tests.test_harness_e2e.ShortCompletenessTest.test_a_multi_sentence_body_keeps_its_first_complete_sentence) ... ok
+test_every_authored_short_is_a_complete_sentence (tests.test_harness_e2e.ShortCompletenessTest.test_every_authored_short_is_a_complete_sentence) ... ok
+test_every_lesson_carries_an_authored_short (tests.test_harness_e2e.ShortCompletenessTest.test_every_lesson_carries_an_authored_short) ... ok
+test_the_fallback_synthesiser_is_still_gate_clean (tests.test_harness_e2e.ShortCompletenessTest.test_the_fallback_synthesiser_is_still_gate_clean)
+``_shorten`` remains a fallback; any text it compresses must still be admissible. ... ok
+test_the_recorded_d8_clip_is_no_longer_synthesised (tests.test_harness_e2e.ShortCompletenessTest.test_the_recorded_d8_clip_is_no_longer_synthesised) ... ok
 
 ----------------------------------------------------------------------
-Ran 21 tests in 8.561s
+Ran 26 tests in 5.163s
 
 OK

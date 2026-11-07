@@ -19,6 +19,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from coursebook import generation
+from coursebook import text_completeness
+
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "audit" / "adversarial" / "harness-e2e" / "harness_e2e.py"
 _spec = importlib.util.spec_from_file_location("harness_e2e_h40", RUNNER)
@@ -320,6 +323,91 @@ class PacketManifestTest(unittest.TestCase):
             problems = harness_e2e.verify_packet(root)
             self.assertTrue(problems, "a changed evidence file was accepted as fresh")
             self.assertTrue(any("bicycle_single" in problem for problem in problems), problems)
+
+
+class ShortCompletenessTest(unittest.TestCase):
+    """H-46b: the harness's authored shorts are whole sentences, never 2/3 word prefixes.
+
+    H-46 refuses a short that stops mid-sentence, and the H-40 harness synthesised exactly that
+    shape (D8's recorded ``"... lift the wheel out"``). These assertions pin the authoring contract
+    without a pipeline run, so the fixture cannot silently drift back to the rejected shape.
+    """
+
+    def _recorded_pairs(self):
+        for path in sorted(harness_e2e.TRANSCRIPTS.glob("*.json")):
+            transcript = json.loads(path.read_text(encoding="utf-8"))
+            for title, lesson in transcript["lessons"].items():
+                for field in ("practice", "criterion", "explanation"):
+                    yield (
+                        f"{path.stem}:{title}:{field}",
+                        str(lesson[field]),
+                        str(lesson[f"{field}_short"]),
+                    )
+                deep = f"The step is done and checked. {lesson['criterion']}"
+                yield (
+                    f"{path.stem}:{title}:worked_example",
+                    deep,
+                    harness_e2e._shorten(deep),
+                )
+
+    def test_every_authored_short_is_a_complete_sentence(self) -> None:
+        seen = 0
+        for label, deep, short in self._recorded_pairs():
+            with self.subTest(label=label, short=short):
+                self.assertLess(len(short), len(deep), f"{label}: the short omits nothing")
+                self.assertEqual(
+                    text_completeness.completeness_problems(short, where="short"), [],
+                    f"{label}: the authored short is not a finished text",
+                )
+                self.assertEqual(
+                    generation._short_problems([{"short": short, "deep": deep}]), [],
+                    f"{label}: the authored short breaks the omission-only contract",
+                )
+                seen += 1
+        self.assertGreaterEqual(seen, 30, "the recordings did not supply the lesson text")
+
+    def test_every_lesson_carries_an_authored_short(self) -> None:
+        for path in sorted(harness_e2e.TRANSCRIPTS.glob("*.json")):
+            transcript = json.loads(path.read_text(encoding="utf-8"))
+            for title, lesson in transcript["lessons"].items():
+                for field in ("practice", "criterion", "explanation"):
+                    self.assertTrue(
+                        str(lesson.get(f"{field}_short") or "").strip(),
+                        f"{path.stem}: {title}: {field}_short is missing",
+                    )
+
+    def test_the_fallback_synthesiser_is_still_gate_clean(self) -> None:
+        """``_shorten`` remains a fallback; any text it compresses must still be admissible."""
+        for path in sorted(harness_e2e.TRANSCRIPTS.glob("*.json")):
+            transcript = json.loads(path.read_text(encoding="utf-8"))
+            for title, lesson in transcript["lessons"].items():
+                for field in ("practice", "criterion", "explanation"):
+                    deep = str(lesson[field])
+                    short = harness_e2e._shorten(deep)
+                    with self.subTest(label=f"{path.stem}:{title}:{field}", short=short):
+                        self.assertLess(len(short), len(deep))
+                        self.assertEqual(
+                            text_completeness.completeness_problems(short, where="short"), []
+                        )
+                        self.assertEqual(
+                            generation._short_problems([{"short": short, "deep": deep}]), []
+                        )
+
+    def test_a_multi_sentence_body_keeps_its_first_complete_sentence(self) -> None:
+        deep = "The step is done and checked. Seat the new tube by hand, inflate in small steps."
+        self.assertEqual(harness_e2e._shorten(deep), "The step is done and checked.")
+
+    def test_the_recorded_d8_clip_is_no_longer_synthesised(self) -> None:
+        deep = (
+            "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the "
+            "dropouts without levering the bead."
+        )
+        words = deep.split()
+        clipped = " ".join(words[: max(2, (len(words) * 2) // 3)])
+        short = harness_e2e._shorten(deep)
+        self.assertNotEqual(short, clipped, "the 2/3 word prefix D8 recorded is back")
+        self.assertTrue(short.endswith("."), short)
+        self.assertEqual(text_completeness.completeness_problems(short, where="short"), [])
 
 
 if __name__ == "__main__":

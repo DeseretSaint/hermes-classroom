@@ -65,7 +65,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "A tube that is pinched under the bead fails on the first ride; the hand-check of the bead is the step that catches it.",
-        "learner_explanation_short": "A tube that is pinched under the bead fails on the first ride; the hand-check of",
+        "learner_explanation_short": "A tube that is pinched under the bead fails on the first ride.",
         "lesson_intent": "Talk the learner through the repair and confirm each step was done.",
         "media": [],
         "parent_notes": null,
@@ -75,13 +75,13 @@
             "body": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead.",
             "heading": "The step",
             "kind": "model",
-            "short": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out"
+            "short": "Deflate the tyre fully and lift the wheel out of the dropouts."
           },
           {
             "body": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "Seat the new tube by hand, inflate in small steps, and close"
+            "short": "Seat the new tube by hand and inflate it in small steps."
           }
         ],
         "sources": [],
@@ -89,7 +89,7 @@
         "worked_example": {
           "answer": "The step is done and checked. Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
           "prompt": "A worked example of Remove the rear wheel, replace the inner tube and check the brakes",
-          "short": "The step is done and checked. Seat the new tube by hand, inflate in small steps,",
+          "short": "The step is done and checked.",
           "steps": [
             "Deflate fully",
             "Lift the wheel out",
@@ -354,47 +354,47 @@
             "check_id": null,
             "deep": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead.",
             "headline": "The step",
-            "id": "blk_20ffee7a94224a6a55db",
+            "id": "blk_99d2b43364fec3143d41",
             "media": [],
             "role": "example",
-            "short": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out",
+            "short": "Deflate the tyre fully and lift the wheel out of the dropouts.",
             "source_ids": []
           },
           {
             "check_id": "000000000000001f",
             "deep": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
             "headline": "Do it",
-            "id": "blk_656e77780b5513e8a8d3",
+            "id": "blk_f9de1defbbaa5c277955",
             "media": [],
             "role": "practice",
-            "short": "Seat the new tube by hand, inflate in small steps, and close",
+            "short": "Seat the new tube by hand and inflate it in small steps.",
             "source_ids": []
           },
           {
             "check_id": null,
             "deep": "Deflate fully\nLift the wheel out\nSeat the tube by hand\nAnswer: The step is done and checked. Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
             "headline": "A worked example of Remove the rear wheel, replace the inner tube and check the brakes",
-            "id": "blk_dc5758cae5a9766ff1eb",
+            "id": "blk_bc4a059df4391490731c",
             "media": [],
             "role": "example",
-            "short": "The step is done and checked. Seat the new tube by hand, inflate in small steps,",
+            "short": "The step is done and checked.",
             "source_ids": []
           },
           {
             "check_id": null,
             "deep": "A tube that is pinched under the bead fails on the first ride; the hand-check of the bead is the step that catches it.",
             "headline": "Recap",
-            "id": "blk_df0da7251fedcc53c104",
+            "id": "blk_f09deeecdb536c041266",
             "media": [],
             "role": "recap",
-            "short": "A tube that is pinched under the bead fails on the first ride; the hand-check of",
+            "short": "A tube that is pinched under the bead fails on the first ride.",
             "source_ids": []
           }
         ],
         "check_id": "000000000000001f",
-        "content_hash": "sha256:a0e094cbcd902ddbdaa1f1a53154e398a9efc9cbac207b910e4d2770d7adc346",
+        "content_hash": "sha256:746cd272107d0fd3aed2e05367daef14d27f15506e30e2fb80a1372b43ecf799",
         "direction": "ltr",
-        "document_id": "doc_a0e094cbcd902ddbdaa1",
+        "document_id": "doc_746cd272107d0fd3aed2",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -526,8 +526,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2885,
-            "output_tokens": 967,
+            "input_tokens": 2842,
+            "output_tokens": 945,
             "unknown_calls": 0,
             "unknown_cost": false
           }

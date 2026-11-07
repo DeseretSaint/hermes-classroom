@@ -51,7 +51,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Counting semitones turns an interval from a feeling into a number you can check at the keyboard.",
-        "learner_explanation_short": "Counting semitones turns an interval from a feeling into a number",
+        "learner_explanation_short": "Counting semitones turns an interval into a number you can check.",
         "lesson_intent": "Teach the semitone count and check recall of the two numbers.",
         "media": [],
         "parent_notes": null,
@@ -61,13 +61,13 @@
             "body": "Start on C, count four semitones to E, and say the interval name out loud before you play it.",
             "heading": "The step",
             "kind": "model",
-            "short": "Start on C, count four semitones to E, and say the interval"
+            "short": "Start on C and count four semitones to E."
           },
           {
             "body": "From C, the fifth note arrives after the same four-semitone step plus three more.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "From C, the fifth note arrives after the same"
+            "short": "From C, the fifth note arrives after a four-semitone step."
           }
         ],
         "sources": [],
@@ -75,7 +75,7 @@
         "worked_example": {
           "answer": "The step is done and checked. From C, the fifth note arrives after the same four-semitone step plus three more.",
           "prompt": "A worked example of Count the semitones in a major third and a perfect fifth",
-          "short": "The step is done and checked. From C, the fifth note arrives after",
+          "short": "The step is done and checked.",
           "steps": [
             "Start on C",
             "Count four semitones",
@@ -108,7 +108,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "The third decides whether a triad sounds major or minor, so the ear has to hear the difference before the theory helps.",
-        "learner_explanation_short": "The third decides whether a triad sounds major or minor, so the ear has",
+        "learner_explanation_short": "The third decides whether a triad sounds major or minor.",
         "lesson_intent": "Teach the sound difference and check the learner can name it.",
         "media": [],
         "parent_notes": null,
@@ -118,13 +118,13 @@
             "body": "Play C to E, then C to E flat, and hum each interval back before naming it.",
             "heading": "The step",
             "kind": "model",
-            "short": "Play C to E, then C to E flat, and hum"
+            "short": "Play C to E, then C to E flat."
           },
           {
             "body": "The darker, lower interval is the one whose middle note is flattened; name it before checking the keys.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "The darker, lower interval is the one whose middle note is flattened;"
+            "short": "The darker, lower interval is the one whose middle note is flattened."
           }
         ],
         "sources": [],
@@ -132,7 +132,7 @@
         "worked_example": {
           "answer": "The step is done and checked. The darker, lower interval is the one whose middle note is flattened; name it before checking the keys.",
           "prompt": "A worked example of Distinguish the two common thirds by sound",
-          "short": "The step is done and checked. The darker, lower interval is the one whose middle note",
+          "short": "The step is done and checked.",
           "steps": [
             "Play C to E",
             "Play C to E flat",
@@ -165,7 +165,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Both triads share the root and fifth; only the third moves, which is why the third carries the quality.",
-        "learner_explanation_short": "Both triads share the root and fifth; only the third moves, which",
+        "learner_explanation_short": "Only the third moves.",
         "lesson_intent": "Teach the triad recipes and check both spellings.",
         "media": [],
         "parent_notes": null,
@@ -175,13 +175,13 @@
             "body": "From C, stack a major third and a perfect fifth for the major triad, then lower the middle note for the minor.",
             "heading": "The step",
             "kind": "model",
-            "short": "From C, stack a major third and a perfect fifth for the major triad,"
+            "short": "From C, stack a major third and a perfect fifth."
           },
           {
             "body": "Both triads share the root and fifth; lowering the middle note is the whole difference.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "Both triads share the root and fifth; lowering the middle"
+            "short": "Both triads share the root and fifth."
           }
         ],
         "sources": [],
@@ -189,7 +189,7 @@
         "worked_example": {
           "answer": "The step is done and checked. Both triads share the root and fifth; lowering the middle note is the whole difference.",
           "prompt": "A worked example of Build a major and a minor triad from a root note",
-          "short": "The step is done and checked. Both triads share the root and fifth; lowering",
+          "short": "The step is done and checked.",
           "steps": [
             "Stack root, third, fifth",
             "Lower the third",
@@ -222,7 +222,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "The circle shows which chords belong together, so a song's chord list becomes a key and a set of functions.",
-        "learner_explanation_short": "The circle shows which chords belong together, so a song's chord list becomes",
+        "learner_explanation_short": "The circle shows which chords belong together.",
         "lesson_intent": "Teach the circle as a song-analysis tool and check one mapping.",
         "media": [],
         "parent_notes": null,
@@ -232,13 +232,13 @@
             "body": "Write the song's chords, find each root on the circle, and mark the home chord before naming the key.",
             "heading": "The step",
             "kind": "model",
-            "short": "Write the song's chords, find each root on the circle, and mark"
+            "short": "Write the song's chords and find each root on the circle."
           },
           {
             "body": "The home chord is the one the song resolves to; name it before the key.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "The home chord is the one the song resolves to;"
+            "short": "Name the home chord before the key."
           }
         ],
         "sources": [],
@@ -246,7 +246,7 @@
         "worked_example": {
           "answer": "The step is done and checked. The home chord is the one the song resolves to; name it before the key.",
           "prompt": "A worked example of Use the circle of fifths to name the chords in a pop song",
-          "short": "The step is done and checked. The home chord is the one the song",
+          "short": "The step is done and checked.",
           "steps": [
             "List the chords",
             "Place the roots",
@@ -622,47 +622,47 @@
             "check_id": null,
             "deep": "Start on C, count four semitones to E, and say the interval name out loud before you play it.",
             "headline": "The step",
-            "id": "blk_f1b0365ec56479730b5b",
+            "id": "blk_d06e212d323dbda61c01",
             "media": [],
             "role": "example",
-            "short": "Start on C, count four semitones to E, and say the interval",
+            "short": "Start on C and count four semitones to E.",
             "source_ids": []
           },
           {
             "check_id": "000000000000002b",
             "deep": "From C, the fifth note arrives after the same four-semitone step plus three more.",
             "headline": "Do it",
-            "id": "blk_770635f6fe6bdf113ee5",
+            "id": "blk_d0a217836f2a3d2a1c16",
             "media": [],
             "role": "practice",
-            "short": "From C, the fifth note arrives after the same",
+            "short": "From C, the fifth note arrives after a four-semitone step.",
             "source_ids": []
           },
           {
             "check_id": null,
             "deep": "Start on C\nCount four semitones\nName the interval\nAnswer: The step is done and checked. From C, the fifth note arrives after the same four-semitone step plus three more.",
             "headline": "A worked example of Count the semitones in a major third and a perfect fifth",
-            "id": "blk_0df242ad94a6aca66d7c",
+            "id": "blk_14a8be3fa50f57fcfe5d",
             "media": [],
             "role": "example",
-            "short": "The step is done and checked. From C, the fifth note arrives after",
+            "short": "The step is done and checked.",
             "source_ids": []
           },
           {
             "check_id": null,
             "deep": "Counting semitones turns an interval from a feeling into a number you can check at the keyboard.",
             "headline": "Recap",
-            "id": "blk_13ff1dd37efd515cafdc",
+            "id": "blk_cfa13ea638562baa7bc0",
             "media": [],
             "role": "recap",
-            "short": "Counting semitones turns an interval from a feeling into a number",
+            "short": "Counting semitones turns an interval into a number you can check.",
             "source_ids": []
           }
         ],
         "check_id": "000000000000002b",
-        "content_hash": "sha256:b0fac0640503646c2699dde36e53c3951215bf478c9065bdc8fd66098ea80ef0",
+        "content_hash": "sha256:172fb5e88791cd67c33fdcd70031d8322c1c8560028936d4868d75afeac1526f",
         "direction": "ltr",
-        "document_id": "doc_b0fac0640503646c2699",
+        "document_id": "doc_172fb5e88791cd67c33f",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -827,8 +827,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5135,
-            "output_tokens": 1703,
+            "input_tokens": 5075,
+            "output_tokens": 1673,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -957,8 +957,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5239,
-            "output_tokens": 1783,
+            "input_tokens": 5131,
+            "output_tokens": 1729,
             "unknown_calls": 0,
             "unknown_cost": false
           }

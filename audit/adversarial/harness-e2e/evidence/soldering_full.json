@@ -105,7 +105,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Naming the hazard is what makes the bench rules stick when you are concentrating on the joint.",
-        "learner_explanation_short": "Naming the hazard is what makes the bench rules stick when",
+        "learner_explanation_short": "Naming the hazard is what makes the bench rules stick.",
         "lesson_intent": "Name the hazards before touching the iron.",
         "media": [],
         "parent_notes": null,
@@ -115,13 +115,13 @@
             "body": "Point at the iron, the fume path and your eyes, and name the hazard each one creates.",
             "heading": "The step",
             "kind": "model",
-            "short": "Point at the iron, the fume path and your eyes, and"
+            "short": "Point at the iron, the fume path and your eyes."
           },
           {
             "body": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "The three hazards are the hot iron, the solder fumes"
+            "short": "The three hazards are the hot iron, the solder fumes and flying clippings."
           }
         ],
         "sources": [],
@@ -129,7 +129,7 @@
         "worked_example": {
           "answer": "The step is done and checked. The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
           "prompt": "A worked example of Name the three burn and fume hazards at the bench",
-          "short": "The step is done and checked. The three hazards are the hot iron, the",
+          "short": "The step is done and checked.",
           "steps": [
             "Point at the iron",
             "Point at the fume path",
@@ -162,7 +162,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Temperature is a time control: too cold means a longer touch and a colder joint.",
-        "learner_explanation_short": "Temperature is a time control: too cold means a longer",
+        "learner_explanation_short": "Temperature is a time control.",
         "lesson_intent": "Teach the temperature setting for leaded solder.",
         "media": [],
         "parent_notes": null,
@@ -172,13 +172,13 @@
             "body": "Set the station, wait for the display to settle, and tin the tip before the first joint.",
             "heading": "The step",
             "kind": "model",
-            "short": "Set the station, wait for the display to settle, and tin"
+            "short": "Set the station and wait for the display to settle."
           },
           {
             "body": "Leaded solder wants a moderate setting; hotter burns the flux before the joint forms.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "Leaded solder wants a moderate setting; hotter burns the"
+            "short": "Leaded solder wants a moderate setting."
           }
         ],
         "sources": [],
@@ -186,7 +186,7 @@
         "worked_example": {
           "answer": "The step is done and checked. Leaded solder wants a moderate setting; hotter burns the flux before the joint forms.",
           "prompt": "A worked example of Set an iron to the temperature a leaded joint needs",
-          "short": "The step is done and checked. Leaded solder wants a moderate setting; hotter",
+          "short": "The step is done and checked.",
           "steps": [
             "Set the dial",
             "Wait for the display",
@@ -219,7 +219,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "The code is positional, so reading order matters more than colour memory.",
-        "learner_explanation_short": "The code is positional, so reading order matters",
+        "learner_explanation_short": "The code is positional.",
         "lesson_intent": "Teach the four-band code.",
         "media": [],
         "parent_notes": null,
@@ -229,13 +229,13 @@
             "body": "Read the bands left to right, then multiply by the third band before you trust the value.",
             "heading": "The step",
             "kind": "model",
-            "short": "Read the bands left to right, then multiply by the third"
+            "short": "Read the bands left to right."
           },
           {
             "body": "Brown, black, red, gold is ten times one hundred, so one thousand ohms at five percent.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "Brown, black, red, gold is ten times one hundred, so"
+            "short": "Brown, black, red, gold is ten times one hundred."
           }
         ],
         "sources": [],
@@ -243,7 +243,7 @@
         "worked_example": {
           "answer": "The step is done and checked. Brown, black, red, gold is ten times one hundred, so one thousand ohms at five percent.",
           "prompt": "A worked example of Read a resistor value from its colour bands",
-          "short": "The step is done and checked. Brown, black, red, gold is ten times one",
+          "short": "The step is done and checked.",
           "steps": [
             "Read band one",
             "Read band two",
@@ -276,7 +276,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "A lifted pad turns a one-minute joint into a board repair, so it is checked before heat.",
-        "learner_explanation_short": "A lifted pad turns a one-minute joint into a board repair,",
+        "learner_explanation_short": "A lifted pad turns a one-minute joint into a board repair.",
         "lesson_intent": "Teach pad inspection.",
         "media": [],
         "parent_notes": null,
@@ -286,13 +286,13 @@
             "body": "Look at the pad edge against the board and press gently with a toothpick before you insert anything.",
             "heading": "The step",
             "kind": "model",
-            "short": "Look at the pad edge against the board and press gently with"
+            "short": "Look at the pad edge against the board."
           },
           {
             "body": "A sound pad sits flat on the board; a lifted pad shows a shadow line and gives under light pressure.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "A sound pad sits flat on the board; a lifted pad shows a"
+            "short": "A sound pad sits flat on the board."
           }
         ],
         "sources": [],
@@ -300,7 +300,7 @@
         "worked_example": {
           "answer": "The step is done and checked. A sound pad sits flat on the board; a lifted pad shows a shadow line and gives under light pressure.",
           "prompt": "A worked example of Inspect a pad for lift before inserting a part",
-          "short": "The step is done and checked. A sound pad sits flat on the board; a lifted pad",
+          "short": "The step is done and checked.",
           "steps": [
             "Light the pad edge",
             "Press gently",
@@ -333,7 +333,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "A part that stands off the board strains its joints every time the board flexes.",
-        "learner_explanation_short": "A part that stands off the board strains its joints",
+        "learner_explanation_short": "A part that stands off the board strains its joints.",
         "lesson_intent": "Teach lead forming.",
         "media": [],
         "parent_notes": null,
@@ -343,13 +343,13 @@
             "body": "Bend the lead with pliers at the board thickness and let the part drop flush without pushing it.",
             "heading": "The step",
             "kind": "model",
-            "short": "Bend the lead with pliers at the board thickness and let the"
+            "short": "Bend the lead with pliers at the board thickness."
           },
           {
             "body": "The body sits flat with the lead bent between the body and the pad.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "The body sits flat with the lead bent between"
+            "short": "The body sits flat with the lead bent."
           }
         ],
         "sources": [],
@@ -357,7 +357,7 @@
         "worked_example": {
           "answer": "The step is done and checked. The body sits flat with the lead bent between the body and the pad.",
           "prompt": "A worked example of Form a lead so the part seats flush",
-          "short": "The step is done and checked. The body sits flat with the lead",
+          "short": "The step is done and checked.",
           "steps": [
             "Measure the board",
             "Bend with pliers",
@@ -390,7 +390,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Orientation errors survive soldering and only show up when the circuit does not work.",
-        "learner_explanation_short": "Orientation errors survive soldering and only show up when",
+        "learner_explanation_short": "Orientation errors survive soldering.",
         "lesson_intent": "Teach polarity against the board marking.",
         "media": [],
         "parent_notes": null,
@@ -400,13 +400,13 @@
             "body": "Find the marking on the part and match it to the board's own marking before you bend anything.",
             "heading": "The step",
             "kind": "model",
-            "short": "Find the marking on the part and match it to the board's"
+            "short": "Find the marking on the part and match it to the board's own marking."
           },
           {
             "body": "The part's marking and the board's marking face the same way.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "The part's marking and the board's marking"
+            "short": "Both markings face the same way."
           }
         ],
         "sources": [],
@@ -414,7 +414,7 @@
         "worked_example": {
           "answer": "The step is done and checked. The part's marking and the board's marking face the same way.",
           "prompt": "A worked example of Insert a part in the right orientation",
-          "short": "The step is done and checked. The part's marking and the",
+          "short": "The step is done and checked.",
           "steps": [
             "Read the part",
             "Read the board",
@@ -447,7 +447,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Solder fed onto the tip makes a cold joint that looks finished and fails later.",
-        "learner_explanation_short": "Solder fed onto the tip makes a cold joint that",
+        "learner_explanation_short": "Solder fed onto the tip makes a cold joint.",
         "lesson_intent": "Teach the heat order.",
         "media": [],
         "parent_notes": null,
@@ -457,13 +457,13 @@
             "body": "Touch the tip to the pad and the lead at once, count two seconds, then feed solder into the joint, not the tip.",
             "heading": "The step",
             "kind": "model",
-            "short": "Touch the tip to the pad and the lead at once, count two seconds, then"
+            "short": "Touch the tip to the pad and the lead at once."
           },
           {
             "body": "The joint reaches temperature first; solder follows the heat.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "The joint reaches temperature first; solder"
+            "short": "The joint reaches temperature first."
           }
         ],
         "sources": [],
@@ -471,7 +471,7 @@
         "worked_example": {
           "answer": "The step is done and checked. The joint reaches temperature first; solder follows the heat.",
           "prompt": "A worked example of Heat the pad and lead together before feeding solder",
-          "short": "The step is done and checked. The joint reaches temperature",
+          "short": "The step is done and checked.",
           "steps": [
             "Touch pad and lead",
             "Wait for heat",
@@ -504,7 +504,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Surface is the cheapest inspection you have, and it is read before power is applied.",
-        "learner_explanation_short": "Surface is the cheapest inspection you have, and it is",
+        "learner_explanation_short": "Surface is the cheapest inspection you have.",
         "lesson_intent": "Teach visual discrimination.",
         "media": [],
         "parent_notes": null,
@@ -514,13 +514,13 @@
             "body": "Compare a grainy joint with a bright fillet and say which one moved while it cooled.",
             "heading": "The step",
             "kind": "model",
-            "short": "Compare a grainy joint with a bright fillet and say"
+            "short": "Compare a grainy joint with a bright fillet."
           },
           {
             "body": "A cold joint has a grainy, matte surface; a sound fillet is bright and concave.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "A cold joint has a grainy, matte surface; a sound"
+            "short": "A cold joint has a grainy, matte surface."
           }
         ],
         "sources": [],
@@ -528,7 +528,7 @@
         "worked_example": {
           "answer": "The step is done and checked. A cold joint has a grainy, matte surface; a sound fillet is bright and concave.",
           "prompt": "A worked example of Recognise a cold joint from its surface",
-          "short": "The step is done and checked. A cold joint has a grainy, matte surface;",
+          "short": "The step is done and checked.",
           "steps": [
             "Look at the surface",
             "Compare to a fillet",
@@ -561,7 +561,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Applying one criterion to many joints is the skill; the criterion itself does not change.",
-        "learner_explanation_short": "Applying one criterion to many joints is the skill; the",
+        "learner_explanation_short": "Applying one criterion to many joints is the skill.",
         "lesson_intent": "Apply the criterion to a real joint.",
         "media": [],
         "parent_notes": null,
@@ -571,13 +571,13 @@
             "body": "Judge each joint on the board against the fillet criterion and mark the ones that need rework.",
             "heading": "The step",
             "kind": "model",
-            "short": "Judge each joint on the board against the fillet criterion and"
+            "short": "Judge each joint on the board against the fillet criterion."
           },
           {
             "body": "A sound joint is shiny, concave and covers the pad without a ball.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "A sound joint is shiny, concave and covers"
+            "short": "A sound joint is shiny, concave and covers the pad."
           }
         ],
         "sources": [],
@@ -585,7 +585,7 @@
         "worked_example": {
           "answer": "The step is done and checked. A sound joint is shiny, concave and covers the pad without a ball.",
           "prompt": "A worked example of Inspect a finished joint against the fillet criterion",
-          "short": "The step is done and checked. A sound joint is shiny, concave",
+          "short": "The step is done and checked.",
           "steps": [
             "Pick a joint",
             "Compare to the criterion",
@@ -618,7 +618,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Pulling the wick while the solder is solid is how pads lift.",
-        "learner_explanation_short": "Pulling the wick while the solder is solid",
+        "learner_explanation_short": "Pulling the wick while the solder is solid lifts pads.",
         "lesson_intent": "Teach bridge removal.",
         "media": [],
         "parent_notes": null,
@@ -628,13 +628,13 @@
             "body": "Add flux, lay the wick over the bridge, and heat the wick until the solder flows into it before lifting.",
             "heading": "The step",
             "kind": "model",
-            "short": "Add flux, lay the wick over the bridge, and heat the wick until"
+            "short": "Add flux and lay the wick over the bridge."
           },
           {
             "body": "Heat through the wick and stop as soon as the bridge disappears.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "Heat through the wick and stop as soon"
+            "short": "Heat through the wick and stop."
           }
         ],
         "sources": [],
@@ -642,7 +642,7 @@
         "worked_example": {
           "answer": "The step is done and checked. Heat through the wick and stop as soon as the bridge disappears.",
           "prompt": "A worked example of Wick a solder bridge without lifting the pad",
-          "short": "The step is done and checked. Heat through the wick and stop",
+          "short": "The step is done and checked.",
           "steps": [
             "Add flux",
             "Lay the wick",
@@ -675,7 +675,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "Old solder has lost its flux, so adding fresh solder is what makes removal quick.",
-        "learner_explanation_short": "Old solder has lost its flux, so adding fresh solder",
+        "learner_explanation_short": "Old solder has lost its flux.",
         "lesson_intent": "Teach desoldering a part.",
         "media": [],
         "parent_notes": null,
@@ -685,13 +685,13 @@
             "body": "Add fresh solder to each joint, alternate heat between the leads, and pull gently once both are molten.",
             "heading": "The step",
             "kind": "model",
-            "short": "Add fresh solder to each joint, alternate heat between the leads, and"
+            "short": "Add fresh solder to each joint and alternate heat between the leads."
           },
           {
             "body": "Fresh solder and alternating heat keep the part and the pads alive.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "Fresh solder and alternating heat keep the part"
+            "short": "Fresh solder and alternating heat keep the pads alive."
           }
         ],
         "sources": [],
@@ -699,7 +699,7 @@
         "worked_example": {
           "answer": "The step is done and checked. Fresh solder and alternating heat keep the part and the pads alive.",
           "prompt": "A worked example of Desolder a two-lead part without overheating it",
-          "short": "The step is done and checked. Fresh solder and alternating heat keep",
+          "short": "The step is done and checked.",
           "steps": [
             "Add fresh solder",
             "Alternate the heat",
@@ -732,7 +732,7 @@
         "direction": "ltr",
         "lang": "en-US",
         "learner_explanation": "A joint can look right and still be open; the meter is the check the eye cannot make.",
-        "learner_explanation_short": "A joint can look right and still be open; the meter is",
+        "learner_explanation_short": "A joint can look right and still be open.",
         "lesson_intent": "Teach the final electrical check.",
         "media": [],
         "parent_notes": null,
@@ -742,13 +742,13 @@
             "body": "Set the meter to continuity, probe the two ends of the repaired path, and confirm the beep before power.",
             "heading": "The step",
             "kind": "model",
-            "short": "Set the meter to continuity, probe the two ends of the repaired"
+            "short": "Set the meter to continuity and probe the two ends."
           },
           {
             "body": "Continuity between the intended points proves the repair conducts.",
             "heading": "Do it",
             "kind": "guided",
-            "short": "Continuity between the intended points proves"
+            "short": "Continuity proves the repair conducts."
           }
         ],
         "sources": [],
@@ -756,7 +756,7 @@
         "worked_example": {
           "answer": "The step is done and checked. Continuity between the intended points proves the repair conducts.",
           "prompt": "A worked example of Prove continuity with a meter after rework",
-          "short": "The step is done and checked. Continuity between the intended",
+          "short": "The step is done and checked.",
           "steps": [
             "Set continuity",
             "Probe both ends",
@@ -1380,47 +1380,47 @@
             "check_id": null,
             "deep": "Point at the iron, the fume path and your eyes, and name the hazard each one creates.",
             "headline": "The step",
-            "id": "blk_08493c1a0dd1cf2b8415",
+            "id": "blk_e8352713982c3097bff2",
             "media": [],
             "role": "example",
-            "short": "Point at the iron, the fume path and your eyes, and",
+            "short": "Point at the iron, the fume path and your eyes.",
             "source_ids": []
           },
           {
             "check_id": "0000000000000053",
             "deep": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
             "headline": "Do it",
-            "id": "blk_1e9a311a0425fb12231e",
+            "id": "blk_cccb4749265a6c5f10ef",
             "media": [],
             "role": "practice",
-            "short": "The three hazards are the hot iron, the solder fumes",
+            "short": "The three hazards are the hot iron, the solder fumes and flying clippings.",
             "source_ids": []
           },
           {
             "check_id": null,
             "deep": "Point at the iron\nPoint at the fume path\nName the eye risk\nAnswer: The step is done and checked. The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
             "headline": "A worked example of Name the three burn and fume hazards at the bench",
-            "id": "blk_f5cb633a98dc71d04c42",
+            "id": "blk_f5f0c44a3b3a13dac136",
             "media": [],
             "role": "example",
-            "short": "The step is done and checked. The three hazards are the hot iron, the",
+            "short": "The step is done and checked.",
             "source_ids": []
           },
           {
             "check_id": null,
             "deep": "Naming the hazard is what makes the bench rules stick when you are concentrating on the joint.",
             "headline": "Recap",
-            "id": "blk_55748b1da68cd7089395",
+            "id": "blk_3e5ae9f4f7097a3b541a",
             "media": [],
             "role": "recap",
-            "short": "Naming the hazard is what makes the bench rules stick when",
+            "short": "Naming the hazard is what makes the bench rules stick.",
             "source_ids": []
           }
         ],
         "check_id": "0000000000000053",
-        "content_hash": "sha256:da6af3b8c3b6bae59b70cc1850e3ade7e445384b33bea45514bacac8bfb331fe",
+        "content_hash": "sha256:4d257b0da0bf98e76d34d4f54f7a6cb7ca321a6f2b04c97d1c3062d61925c26f",
         "direction": "ltr",
-        "document_id": "doc_da6af3b8c3b6bae59b70",
+        "document_id": "doc_4d257b0da0bf98e76d34",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -1585,8 +1585,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5170,
-            "output_tokens": 1708,
+            "input_tokens": 5110,
+            "output_tokens": 1678,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1715,8 +1715,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5188,
-            "output_tokens": 1731,
+            "input_tokens": 5094,
+            "output_tokens": 1685,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1845,8 +1845,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5070,
-            "output_tokens": 1686,
+            "input_tokens": 5023,
+            "output_tokens": 1663,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1975,8 +1975,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5068,
-            "output_tokens": 1668,
+            "input_tokens": 5001,
+            "output_tokens": 1636,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2105,8 +2105,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5098,
-            "output_tokens": 1700,
+            "input_tokens": 5060,
+            "output_tokens": 1681,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2235,8 +2235,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5132,
-            "output_tokens": 1711,
+            "input_tokens": 5072,
+            "output_tokens": 1681,
             "unknown_calls": 0,
             "unknown_cost": false
           }

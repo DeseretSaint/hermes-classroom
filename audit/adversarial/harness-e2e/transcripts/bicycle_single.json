@@ -6,12 +6,14 @@
       ],
       "check_prompt": "Tick each step only after you have actually done it.",
       "criterion": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
+      "criterion_short": "Seat the new tube by hand and inflate it in small steps.",
       "example_steps": [
         "Deflate fully",
         "Lift the wheel out",
         "Seat the tube by hand"
       ],
       "explanation": "A tube that is pinched under the bead fails on the first ride; the hand-check of the bead is the step that catches it.",
+      "explanation_short": "A tube that is pinched under the bead fails on the first ride.",
       "intent": "Talk the learner through the repair and confirm each step was done.",
       "items": [
         {
@@ -28,6 +30,7 @@
         }
       ],
       "practice": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead.",
+      "practice_short": "Deflate the tyre fully and lift the wheel out of the dropouts.",
       "reference_answer": "Every listed step performed and checked by hand"
     }
   },
