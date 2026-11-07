@@ -6,6 +6,10 @@ the contest. `docs/SUBMISSION.md` §0 is unchanged and still closed. The 0.1.0 r
 `docs/CB017-RELEASE-VERIFICATION.md` describes the commit `29bede7`; it was not re-run on this tree
 and is not replaced by anything below.
 
+**Read this with `docs/HARNESS-STATUS.md`.** That file carries the claim-by-claim state of the
+harness slice; this file maps the *presentation* phases (M0-M4) only, and where a phase row below
+says a capability is gated, that is the state of the merged tree.
+
 Written on branch `wt/m4-product-docs`, base `master` at `d28e7e3`. The M4 visual gate in the table
 below was carried on `wt/m4-visual-regression` (`2b37b5b`); its evidence has since been regenerated
 on the merged tree at `1fc0542` against `desktop/plugin.js` sha256 `c206e1c9…232463`, and

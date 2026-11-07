@@ -6,8 +6,15 @@ Catalog install is not available yet. Every command below was executed on the CB
 (`97fff42`) in a throwaway `HERMES_HOME`, and the observed result is stated next to it.
 
 Read the status table in `README.md` before installing. The package installs and its backend
-answers, but the Desktop page does not mount on this candidate (CB-QA-09), so the course library,
-course creation, Parent Studio and Activity are not reachable from the UI yet.
+answers. The Desktop page mounts whenever the window reaches a gateway-backed backend, so course
+library, course creation, Parent Studio and Activity are reachable in that window; a window on an
+isolated home with no gateway shows the session home for every hash, which Atlas reclassified
+P3-operational as a host binding rather than a plugin defect (`docs/REVIEW_CB017-FINAL.md` §3.1).
+That sentence replaces an earlier claim on this page that the page "does not mount on this
+candidate (CB-QA-09)" — true of the CB-014 candidate it was measured on, not of this tree.
+
+Installing this tree does **not** install a product. What is build-complete, what is proven only on
+a branch, and what is fixture-only: `docs/HARNESS-STATUS.md`.
 
 ## Requirements
 
