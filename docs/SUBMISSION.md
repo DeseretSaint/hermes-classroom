@@ -230,14 +230,14 @@ is resolved for the recording.
 | Item | Value |
 | --- | --- |
 | Repository | `https://github.com/DeseretSaint/hermes-classroom` (private; source backup only) |
-| Backup branch | `wt/cb-016-harbor` at `eb80a65`, pushed; contains every commit below |
-| Release commit (pinned) | `7f80f35b8dec6bb995469dfb915e870cb35fe6f3` — `validate-plugin.sh --ref` 3/3 on 793 files |
-| Parent gates commit | `e93b8c5` — `validate.sh` exit 0, 674 tests, 31/31 backend expectations |
+| Release branch | `wt/cb-017-harbor-release` (local only; push is operator-gated and did not happen in this run) |
+| Release commit (pinned) | `d142a1e23ceeab6ceec13c457e4f41ac1508cf6c` — `validate-plugin.sh --ref` 3/3 on 803 files |
+| Candidate gated by Atlas | `67d6773` — 685 tests, `validate.sh` exit 0, 31/31 backend expectations, live `cb.rpc` v7 / 52 methods (`docs/REVIEW_CB017-FINAL.md` §2) |
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
-| Verification evidence | `docs/CB016-RELEASE-VERIFICATION.md`, `docs/cb016-verify/` |
-| Catalog draft | `catalog/coursebook.yaml` pinned to `7f80f35`, validator `OK: 1 file(s) valid`; not submitted |
+| Verification evidence | `docs/CB017-RELEASE-VERIFICATION.md`, `docs/cb017-shots/`, `docs/cb016-verify/` |
+| Catalog draft | `catalog/coursebook.yaml` pinned to `d142a1e`, validator `OK: 1 file(s) valid`; not submitted |
 | Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and four partial (`[~]`: 5, 6, 10, 11) |
 
-The pinned commit and the branch head differ by one catalog-only commit (`eb80a65`), because the
-catalog cannot pin itself. The installed tree at `7f80f35` is the one the gates ran on.
+The pinned commit and the branch head differ by one catalog-and-record commit, because the catalog
+cannot pin itself. The installed tree at `d142a1e` is the one the gates ran on.

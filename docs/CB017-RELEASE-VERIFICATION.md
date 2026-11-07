@@ -9,9 +9,10 @@ Candidate: `wt/cb-017-atlas` at `67d6773` — master `b58679d` + `da99d8a` (plan
 `docs/REVIEW_CB017-FINAL.md`; this file re-derives the release half of it and re-pins the catalog.
 Runner: Arch Linux host, Python 3.14.9, Hermes client `v0.23.0`.
 
-The release commit is the commit that carries this file. Its 40-hex sha is pinned in
-`catalog/coursebook.yaml` and recorded in §1.1; a catalog file cannot contain its own sha, so the
-re-pin commit on top of the release commit is where the number is written down.
+The release commit is `d142a1e23ceeab6ceec13c457e4f41ac1508cf6c` (the commit that carries this
+file). Its sha is pinned in `catalog/coursebook.yaml`; a catalog file cannot contain its own sha, so
+the re-pin commit on top of the release commit is where the number is written down. Everything in
+§1 was measured before the commit; §1.1 is the same commit gated and installed afterwards.
 
 ## 1. Gates on this tree
 
@@ -27,6 +28,50 @@ re-pin commit on top of the release commit is where the number is written down.
 `tests/test_desktop_plan_guard.py`). The `--worktree` run is what a pre-commit gate can do: it
 exports the tracked working tree. The `--ref` run on the commit itself, and the clean-export
 install, are in §1.1 and were produced after this file was committed.
+
+## 1.1 The committed tree: release gate and a clean-export install
+
+`bash scripts/validate-plugin.sh --ref d142a1e23ceeab6ceec13c457e4f41ac1508cf6c`, verbatim end:
+
+```
+validate-plugin: gate d142a1e23ceeab6ceec13c457e4f41ac1508cf6c (head, 803 files)
+validate-plugin: export <temp dir> (removed on exit)
+== 1/3 plugin admission: PASS ==
+Validation passed.
+== 2/3 desktop module: PASS ==
+desktop/plugin.js: syntax OK
+== 3/3 desktop contract tests: PASS ==
+Ran 7 tests in 0.004s
+OK
+Release gate passed: 3/3 checks on d142a1e23ceeab6ceec13c457e4f41ac1508cf6c (803 files).
+```
+
+The same commit was exported with `git archive` into a directory with no `.git` and no
+`.worktrees/` (803 files) and installed into a fresh, empty home:
+
+```
+COURSEBOOK_TEST_HOME=<fresh>/home bash <export>/scripts/install-local.sh --home <fresh>/home
+== 6/6 admission gates ==
+Validation passed.
+  manifest: coursebook 0.1.0 (standalone)
+  OK: runtime discovery, manifest parsing, import, and registration passed
+  registrations: 1 tool(s), 3 hook(s)
+Installed.
+```
+
+The backend was started from that home on `127.0.0.1:44778` with the single-home flag the installer
+writes, and answered (with the dashboard session token this run minted):
+
+```
+GET /api/plugins/coursebook/health
+{"ok":true,"contract_version":7,...,"result":{"plugin_version":"0.1.0","contract_version":7,
+ "db":{"ready":true,"schema_version":4},"backend":"python"}}
+GET /api/plugins/coursebook/runtime
+wire_contract cb.rpc   wire_version 7   contract_methods 52   contract_problems []
+plugin_root <export>/src
+```
+
+The install path does not depend on the repository being a git checkout or on any sibling worktree.
 
 ## 2. The route mounts; CB-QA-09 is a host binding (P3-operational)
 
