@@ -6544,6 +6544,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
   const progressLabel = questProgressLabel(progress)
   const checkpoints = missions.filter((mission) => mission.checkpoint).length
   return jsxs('div', {
+    ...lessonTextAttrs(document),
     'data-cb-lesson-view': 'field_quest',
     'data-cb-document': document.document_id,
     'data-cb-motion': motion,
@@ -6991,6 +6992,7 @@ function ProcedureDocument({ document, sources, checkSlot, checkLabels, onSaveBl
   const attachedIndex = checkId ? steps.findIndex((entry) => entry.block.check_id === checkId) : -1
   return jsxs('div', {
     className: 'flex flex-col gap-3',
+    ...lessonTextAttrs(document),
     'data-cb-lesson-view': 'procedure',
     'data-cb-document': document.document_id,
     'data-cb-procedure': '',
@@ -7052,6 +7054,20 @@ function ProcedureDocument({ document, sources, checkSlot, checkLabels, onSaveBl
       jsx(ProcedureSourceCard, { source: procedure.source, sources })
     ]
   })
+}
+
+function lessonTextAttrs(document) {
+  // H-18: lang and direction are properties of the text. Every view renders the same document,
+  // so every view root carries the same two attributes; absence means the page never recorded a
+  // locale and no direction is invented.
+  const attrs = {}
+  if (document && (document.direction === 'rtl' || document.direction === 'ltr')) {
+    attrs.dir = document.direction
+  }
+  if (document && typeof document.lang === 'string' && document.lang) {
+    attrs.lang = document.lang
+  }
+  return attrs
 }
 
 function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock, onSaveBlock, pronunciation }) {
@@ -7122,6 +7138,7 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
     return jsxs('div', {
       ref: rootRef,
       className: 'flex flex-col gap-3',
+      ...lessonTextAttrs(document),
       'data-cb-lesson-view': 'guided',
       'data-cb-document': document.document_id,
       children: [
@@ -7145,6 +7162,7 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
   return jsxs('div', {
     ref: rootRef,
     className: 'flex flex-col gap-3',
+    ...lessonTextAttrs(document),
     'data-cb-lesson-view': 'textbook',
     'data-cb-document': document.document_id,
     children: [

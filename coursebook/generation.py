@@ -51,6 +51,7 @@ from . import research as research_mod
 from . import sources as source_ledger
 from . import artifacts
 from . import lesson_document
+from . import localization
 from . import policy as capability_policy
 from . import prompts
 from . import rubrics
@@ -1411,7 +1412,6 @@ LESSON_SCHEMA: dict[str, Any] = {
                 "rubric",
                 "reference_answer",
                 "assistance_policy",
-                "scaffolds",
             ],
             "properties": {
                 "kind": {"type": "string", "enum": ["quiz", "verification", "observation"]},
@@ -1497,15 +1497,48 @@ LESSON_SCHEMA: dict[str, Any] = {
                         },
                     },
                 },
+                # Locale-aware, bounded scaffold vocabulary (H-18). The legacy
+                # {romaji, furigana, english_meaning} object is still accepted so every page
+                # authored before the change reads unchanged; a new lesson declares only the
+                # kinds its locale/level mandates, as [{kind, script?, gloss?, direction?}].
+                # A French course is never forced to declare a Japanese scaffold.
                 "scaffolds": {
-                    "type": "object",
-                    "additionalProperties": False,
-                    "required": ["romaji", "furigana", "english_meaning"],
-                    "properties": {
-                        "romaji": {"type": "boolean"},
-                        "furigana": {"type": "boolean"},
-                        "english_meaning": {"type": "boolean"},
-                    },
+                    "oneOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": False,
+                            "required": ["romaji", "furigana", "english_meaning"],
+                            "properties": {
+                                "romaji": {"type": "boolean"},
+                                "furigana": {"type": "boolean"},
+                                "english_meaning": {"type": "boolean"},
+                            },
+                        },
+                        {
+                            "type": "array",
+                            "maxItems": 8,
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["kind"],
+                                "properties": {
+                                    "kind": {
+                                        "type": "string",
+                                        "enum": list(localization.SCAFFOLD_KINDS),
+                                    },
+                                    "script": {
+                                        "type": "string",
+                                        "enum": list(localization.SCAFFOLD_SCRIPTS),
+                                    },
+                                    "gloss": {"type": "string", "minLength": 2, "maxLength": 35},
+                                    "direction": {
+                                        "type": "string",
+                                        "enum": list(localization.TEXT_DIRECTIONS),
+                                    },
+                                },
+                            },
+                        },
+                    ],
                 },
             },
         },
@@ -2541,28 +2574,16 @@ def provenance_violations(
 
 
 def _scaffold_policy(recipe: str, dials: dict[str, Any], locale: str | None) -> dict[str, bool]:
-    """Task-mandated scaffolds. This is accessibility, never a learning-style diagnosis."""
-    policy = {"romaji": False, "furigana": False, "english_meaning": False}
-    if not locale:
-        return policy
-    primary = str(locale).split("-")[0].lower()
-    level = str(dials.get("level") or "").upper()
-    if primary == "ja" and level in ("L0", "L1", "BEGINNER"):
-        policy.update({"romaji": True, "furigana": True, "english_meaning": True})
-    if primary == "ja" and dials.get("romaji") is True:
-        policy["romaji"] = True
-    return policy
+    """Task-mandated scaffolds keyed by locale and level.
+
+    Accessibility, never a learning-style diagnosis. A locale with no rule gets ``{}``: it is
+    not handed an all-false Japanese triple.
+    """
+    return localization.scaffold_requirements(locale, dials)
 
 
 def _scaffold_note(policy: dict[str, bool], locale: str | None) -> str:
-    if not locale or not any(policy.values()):
-        return ""
-    required = [name.replace("_", " ") for name, needed in policy.items() if needed]
-    return (
-        "Scaffolds are required for this learner: "
-        + ", ".join(required)
-        + ". Set check.scaffolds accordingly and never treat romaji-only output as script-reading evidence."
-    )
+    return localization.scaffold_note(policy, locale)
 
 
 def _enforce_parent_brief_bounds(
@@ -2886,7 +2907,7 @@ def _enforce_plan_tail(
 
     # Mandated scaffolds for the locale/level (VAULT_LEARNING §2, task-mandated modality).
     policy = _scaffold_policy(recipe, dials, locale)
-    if policy["romaji"]:
+    if policy.get("romaji"):
         needs = {str(item).lower() for item in plan.get("context_needs") or []}
         if not any("romaji" in item for item in needs):
             reasons.append("this learner's context needs must include romaji")
@@ -3256,10 +3277,17 @@ def enforce_lesson_rules(
             reasons.append("this recipe needs a graded check")
 
     policy = _scaffold_policy(recipe, dials, locale)
-    scaffolds = check.get("scaffolds") or {}
+    try:
+        declared = localization.declared_scaffold_kinds(check.get("scaffolds"))
+    except localization.ScaffoldError as exc:
+        declared = set()
+        reasons.append(f"check.scaffolds: {exc}")
     for name, needed in policy.items():
-        if needed and not scaffolds.get(name):
-            reasons.append(f"check.scaffolds.{name} must be true for this learner's locale/level")
+        if needed and name not in declared:
+            reasons.append(
+                f"check.scaffolds must declare {name!r} for this learner's locale/level; "
+                "a scaffold is an accessibility aid, not learning-style diagnosis or evidence"
+            )
 
     # Media has two independent gates and must pass both: the capability policy decides whether
     # this kind/role is permitted at all, and the artifact media policy decides whether the spec
@@ -5878,17 +5906,27 @@ def _section_dict(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources: Sequence[SourceRecord]) -> dict[str, Any]:
+def _build_learner_page(
+    lesson: dict[str, Any],
+    section: dict[str, Any],
+    sources: Sequence[SourceRecord],
+    *,
+    locale: str | None = None,
+) -> dict[str, Any]:
     """Project the authored lesson onto the learner-facing page.
 
     Built from an allowlist, not by deleting keys: a field the author invents can never leak
-    because it is never copied.
+    because it is never copied. ``lang`` and ``direction`` are recorded when the brief declared a
+    locale, so every view renders the same text in the same direction; a page without a locale
+    omits both rather than guessing.
     """
     check = lesson["check"]
     source_index = {source.source_id: source for source in sources}
-    return {
+    page = {
         "section_title": lesson["section_title"],
         "lesson_intent": section.get("lesson_intent"),
+        "lang": localization.normalize_locale(locale),
+        "direction": localization.direction_for_locale(locale),
         "segments": [
             {
                 "kind": segment["kind"],
@@ -5920,7 +5958,7 @@ def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources
             },
             "learner_instructions": check["learner_instructions"],
             "evidence_target": check["evidence_target"],
-            "scaffolds": dict(check["scaffolds"]),
+            "scaffolds": localization.copy_scaffolds(check.get("scaffolds")),
             "assistance_policy": dict(check["assistance_policy"]),
         },
         "sources": [
@@ -5953,6 +5991,7 @@ def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources
         "parent_notes": lesson.get("parent_notes"),
         "supervision_notes": list(lesson.get("supervision_notes") or []),
     }
+    return page
 
 
 def _accepted_forms(check: dict[str, Any]) -> list[str]:
@@ -6022,7 +6061,7 @@ def _check_payloads(lesson: dict[str, Any], *, locale: str | None) -> dict[str, 
             for item in check["stimulus"].get("items") or []
         ],
         "learner_instructions": check["learner_instructions"],
-        "scaffolds": dict(check["scaffolds"]),
+        "scaffolds": localization.copy_scaffolds(check.get("scaffolds")),
         "assistance_policy": dict(check["assistance_policy"]),
     }
     reference = _reference_payload(check)
@@ -6442,7 +6481,7 @@ def _author_section(
             candidate["reuse_objective_ref"] = objective_ordinal
         else:
             candidate["check_mode"] = "new"
-        page = _build_learner_page(candidate, section, sources)
+        page = _build_learner_page(candidate, section, sources, locale=locale)
 
         # Every gate runs before the attempt is judged, so a regeneration carries the whole list of
         # problems instead of hiding a leaked answer behind a rubric complaint.
@@ -6524,7 +6563,7 @@ def _author_section(
             "claim_verdicts": [],
         }
 
-    page = _build_learner_page(lesson, section, sources)
+    page = _build_learner_page(lesson, section, sources, locale=locale)
     state = "validated" if verdict["verdict"] == "pass" else "needs_review"
     check_payloads = _check_payloads(lesson, locale=locale)
     lesson_id = _new_id()

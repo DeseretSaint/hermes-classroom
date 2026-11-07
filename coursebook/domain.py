@@ -2400,6 +2400,12 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         # `document_from_page`, which publishes only shorts the author wrote. Everything else (a
         # pack/composed section, a chat-written transcript, or a page whose stored document no
         # longer validates) keeps the segment projection and therefore stays `textbook_only`.
+        #
+        # H-18: the projection is deliberately *not* handed the course locale. A page authored
+        # after H-18 recorded its own `lang`/`direction` (generation._build_learner_page), and
+        # document_from_page reads them from the page; a page authored before H-18 carries
+        # neither, so handing it the course locale would invent a direction and change a stored
+        # document's bytes, hash and id. Additive means the old document reads exactly as it did.
         active_check = next((row for row in checks if row["state"] == "open"), checks[0] if checks else None)
         check_id = active_check["id"] if active_check is not None else None
         document = None
