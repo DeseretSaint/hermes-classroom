@@ -1,0 +1,122 @@
+{
+  "before": {
+    "pane": false,
+    "hash": "#/coursebook",
+    "route": true
+  },
+  "clicked": {
+    "x": 487.4609375,
+    "y": 357.28125,
+    "visibleCount": 1
+  },
+  "samples": [
+    {
+      "t": 700,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 1400,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 2100,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 2800,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 3500,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 4200,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 4900,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 5600,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 6300,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 7000,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 7700,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 8400,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 9100,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    },
+    {
+      "t": 9800,
+      "pane": true,
+      "hash": "#/",
+      "route": false,
+      "composer": true
+    }
+  ],
+  "after": {
+    "hash": "#/",
+    "routeMounted": false,
+    "bodyText": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nArtifacts\nScheduled jobs\nCoursebook\nPINNED\nHermes Classroom Plugin Feasibility Plan\n4m\nSESSIONS\nRevive Marketing LLC business details\n2h\nLaunch multiple Hermes sessions on Omarchy\n7h\nResume Hermes classroom plugin chat\n7h\n[Message withheld: a pre_llm_call policy hook blocked it.]\n9h\nCasual vs polite Japanese confession\n9h\nEARLIER TODAY\nDiagnose Electron SIGTRAP crash via systemd-coredump\n11h\nDiagnose electron SIGTRAP crash via diagnose-crash skill\n11h\nDiagnose electron SIGTRAP crash via systemd-coredump\n11h\nDiagnose Electron SIGTRAP crash via systemd-coredump #2\n11h\nDiagnose Electron SIGTRAP crash on Omarchy\n11h\nExplain casual vs polite affection\n12h\nCasual vs polite affection difference\n12h\nPractise transfer section\n13h\nIdentify pr",
+    "notice": [
+      "⠋\n⠙\n⠹\n⠸\n⠼\n⠴\n⠦\n⠧\n⠇\n⠏"
+    ]
+  },
+  "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_3589acce/audit/demo-gate-5b0f124/shots/u08-fresh-start.png",
+  "consoleErrors": []
+}

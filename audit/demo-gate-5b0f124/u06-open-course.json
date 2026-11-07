@@ -1,0 +1,159 @@
+{
+  "steps": [
+    {
+      "step": "open",
+      "x": 323.0703125,
+      "y": 275,
+      "label": "Open",
+      "disabled": false
+    },
+    {
+      "step": "textbook-tab",
+      "x": 0,
+      "y": 0,
+      "label": "Textbook",
+      "disabled": false
+    }
+  ],
+  "state1": {
+    "hash": "#/coursebook",
+    "text": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\n\nResume Explain why register changes with the relationship\n\nResume lesson\nOpen this section\nREVIEW\n\nNothing due. The review queue stays quiet until evidence is scheduled.\n\nRECENT EVENT\n\nNo attempt has been recorded on this course yet.\n\nTHIS COURSE\nRecipe\ncasual\nEnrollment\nrevision 0\nactive\nEvidence\n4 objectives · 0 due\n0 independent\nProvenance\njapanese-affection-context-l0 v1.0.0\nLocal pack\n\nExporting the pack is a Library action; it never includes your answers or notes.",
+    "buttons": [
+      {
+        "label": "New course",
+        "disabled": false
+      },
+      {
+        "label": "Courses",
+        "disabled": false
+      },
+      {
+        "label": "Library",
+        "disabled": false
+      },
+      {
+        "label": "Parent Studio",
+        "disabled": false
+      },
+      {
+        "label": "All courses",
+        "disabled": false
+      },
+      {
+        "label": "Resume lesson",
+        "disabled": false
+      },
+      {
+        "label": "Overview",
+        "disabled": false
+      },
+      {
+        "label": "Textbook",
+        "disabled": false
+      },
+      {
+        "label": "Notebook",
+        "disabled": false
+      },
+      {
+        "label": "Quizzes",
+        "disabled": false
+      },
+      {
+        "label": "Plan",
+        "disabled": false
+      },
+      {
+        "label": "Evidence",
+        "disabled": false
+      },
+      {
+        "label": "Sources",
+        "disabled": false
+      },
+      {
+        "label": "Overview",
+        "disabled": false
+      },
+      {
+        "label": "Resume lesson",
+        "disabled": false
+      },
+      {
+        "label": "Open this section",
+        "disabled": false
+      }
+    ]
+  },
+  "state2": {
+    "hash": "#/coursebook",
+    "text": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\n\nResume Explain why register changes with the relationship\n\nResume lesson\nOpen this section\nREVIEW\n\nNothing due. The review queue stays quiet until evidence is scheduled.\n\nRECENT EVENT\n\nNo attempt has been recorded on this course yet.\n\nTHIS COURSE\nRecipe\ncasual\nEnrollment\nrevision 0\nactive\nEvidence\n4 objectives · 0 due\n0 independent\nProvenance\njapanese-affection-context-l0 v1.0.0\nLocal pack\n\nExporting the pack is a Library action; it never includes your answers or notes.",
+    "buttons": [
+      {
+        "label": "New course",
+        "disabled": false
+      },
+      {
+        "label": "Courses",
+        "disabled": false
+      },
+      {
+        "label": "Library",
+        "disabled": false
+      },
+      {
+        "label": "Parent Studio",
+        "disabled": false
+      },
+      {
+        "label": "All courses",
+        "disabled": false
+      },
+      {
+        "label": "Resume lesson",
+        "disabled": false
+      },
+      {
+        "label": "Overview",
+        "disabled": false
+      },
+      {
+        "label": "Textbook",
+        "disabled": false
+      },
+      {
+        "label": "Notebook",
+        "disabled": false
+      },
+      {
+        "label": "Quizzes",
+        "disabled": false
+      },
+      {
+        "label": "Plan",
+        "disabled": false
+      },
+      {
+        "label": "Evidence",
+        "disabled": false
+      },
+      {
+        "label": "Sources",
+        "disabled": false
+      },
+      {
+        "label": "Overview",
+        "disabled": false
+      },
+      {
+        "label": "Resume lesson",
+        "disabled": false
+      },
+      {
+        "label": "Open this section",
+        "disabled": false
+      }
+    ]
+  },
+  "consoleErrors": []
+}

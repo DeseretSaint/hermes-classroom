@@ -1,0 +1,255 @@
+{
+  "scenario": "U03",
+  "name": "keyboard-only route path, focus, names",
+  "sidebarWalkTabs": 5,
+  "sidebarReached": {
+    "tabs": 5,
+    "state": {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Open Coursebook",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    }
+  },
+  "keyboardRoute": {
+    "reached": true,
+    "beforeHash": "#/",
+    "afterHash": "#/coursebook",
+    "mounted": true,
+    "activatedBy": "Enter",
+    "tabs": 5,
+    "focusAfter": {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Open Coursebook",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    }
+  },
+  "focusedFirstRouteControl": true,
+  "routeWalk": [
+    {
+      "tab": 0,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "New course",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Courses",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Library",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 3,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Parent Studio",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 4,
+      "tag": "INPUT",
+      "role": null,
+      "name": "Search courses",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": false,
+      "visible": false
+    },
+    {
+      "tab": 5,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "All",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 6,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "In progress",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 7,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Review due",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 8,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Archived",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 9,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Open",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 10,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Resume lesson",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 11,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Actions for Japanese affection and register — an L0 demonstration classroom",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 12,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Open Coursebook",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 13,
+      "tag": "DIV",
+      "role": "tab",
+      "name": "Terminal",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 14,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Restore",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 15,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 16,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Registered gateways: 127.0.0.1:44317",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 17,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Backend inference unavailable",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    }
+  ],
+  "activation": {
+    "target": "Open",
+    "textBefore": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Tell everyday affection from a direct romantic declara",
+    "hashAfter": "#/coursebook",
+    "route": "/coursebook",
+    "textAfter": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\nResume Tell everyday affection from a direct romantic declaration\nResume lesson\nOpen this section\nREVIEW\nNothing due. The review queue stays quiet until evidence is scheduled.\nRECENT EVENT\nNo attempt has been record"
+  },
+  "ax": {
+    "namedControls": 154,
+    "unnamedControls": 1,
+    "unnamedSample": [
+      {
+        "role": "button",
+        "backend": 140
+      }
+    ]
+  },
+  "consoleErrors": []
+}

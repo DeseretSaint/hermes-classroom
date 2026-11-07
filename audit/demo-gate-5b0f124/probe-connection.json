@@ -1,0 +1,198 @@
+{
+  "status": {
+    "version": "0.23.0",
+    "release_date": "2026.9.24",
+    "config_version": 52,
+    "latest_config_version": 52,
+    "can_update_hermes": true,
+    "gateway_running": true,
+    "gateway_state": "running",
+    "gateway_platforms": {},
+    "gateway_exit_reason": null,
+    "gateway_updated_at": "2026-11-07T02:23:19.188079+00:00",
+    "gateway_heartbeat_stale_s": null,
+    "gateway_shared_with": [
+      "default",
+      "atlas",
+      "cbqa",
+      "cinder",
+      "harbor",
+      "lattice",
+      "quill",
+      "sable",
+      "sentinel",
+      "vellum"
+    ],
+    "active_agents": 3,
+    "gateway_busy": true,
+    "gateway_drainable": true,
+    "restart_drain_timeout": 0,
+    "active_sessions": 1,
+    "auth_required": false,
+    "auth_providers": [
+      "session-token"
+    ],
+    "auth_flows": [],
+    "nous_session_valid": "valid",
+    "install_id": "7920d884528e482f8713ab8e69aeaa43",
+    "shared_profile_warning": false,
+    "components": {
+      "gateway": {
+        "status": "ok",
+        "state": "running"
+      },
+      "dashboard": {
+        "status": "ok",
+        "recent_unhandled_errors": 0,
+        "last_error_at": null,
+        "selftest": "unknown"
+      },
+      "storage": {
+        "status": "ok"
+      },
+      "platforms": {
+        "status": "ok",
+        "configured": 0,
+        "connected": 0
+      }
+    },
+    "overall": "ok",
+    "memory": {
+      "pressure": "ok",
+      "gateway_rss_mb": 675,
+      "system_total_mb": 61917,
+      "system_available_mb": 36693,
+      "swap_used_mb": 844,
+      "sampled_at": "2026-11-07T02:23:28.131429+00:00",
+      "last_boot_unclean": false,
+      "last_boot_suspected_oom": false,
+      "boot_id": "2026-11-06T00:35:30.709956+00:00"
+    },
+    "disk": {
+      "pressure": "ok",
+      "total_mb": 3813381,
+      "free_mb": 3609338,
+      "used_percent": 5.3
+    },
+    "profiles": [
+      "default",
+      "atlas",
+      "cbqa",
+      "cinder",
+      "harbor",
+      "lattice",
+      "quill",
+      "sable",
+      "sentinel",
+      "vellum"
+    ],
+    "parked_profiles": [],
+    "gateway_mode": "multiplex",
+    "multiplex_standalone_reason": null,
+    "hermes_home": "/home/deseretsaint/.hermes",
+    "config_path": "/home/deseretsaint/.hermes/config.yaml",
+    "env_path": "/home/deseretsaint/.hermes/.env",
+    "gateway_pid": 360123,
+    "gateway_health_url": null,
+    "gateways": [
+      {
+        "profile": "default",
+        "ports": {},
+        "served_profiles": [
+          "default",
+          "atlas",
+          "cbqa",
+          "cinder",
+          "harbor",
+          "lattice",
+          "quill",
+          "sable",
+          "sentinel",
+          "vellum"
+        ]
+      }
+    ]
+  },
+  "gateway": {
+    "socket": {},
+    "state": "open",
+    "channel": {
+      "nextId": 35,
+      "pending": {},
+      "transport": {},
+      "heartbeatTimer": 352,
+      "heartbeatSequence": 3,
+      "outstandingPings": {},
+      "lastLivenessAt": 1794018215065,
+      "backendCountsDeclines": true,
+      "backendClarifyBatch": true,
+      "requestHandlers": [
+        null
+      ],
+      "options": {
+        "heartbeatDeadlineMs": 45000,
+        "heartbeatIntervalMs": 15000,
+        "heartbeatLiveness": "any-inbound",
+        "requestIdPrefix": "r",
+        "requestTimeoutMs": 30000,
+        "unrefTimers": false
+      }
+    },
+    "events": {
+      "handlers": {}
+    },
+    "lastSeenSeq": {},
+    "replayGeneration": 0,
+    "replayHold": null,
+    "replayEpoch": "df5f5d3a6be745de9db619dde33764b7",
+    "replayEpochBySession": {},
+    "stateHandlers": {},
+    "options": {
+      "closedErrorMessage": "Hermes gateway connection closed",
+      "connectErrorMessage": "Could not connect to Hermes gateway",
+      "connectTimeoutMs": 15000,
+      "heartbeatDeadlineMs": 45000,
+      "heartbeatIntervalMs": 15000,
+      "notConnectedErrorMessage": "Hermes gateway is not connected",
+      "replay": true,
+      "requestIdPrefix": "r",
+      "requestTimeoutMs": 30000
+    },
+    "canonical": false,
+    "nativeDial": false,
+    "readiness": {
+      "dial": {
+        "generation": 1,
+        "opened": true,
+        "promise": {},
+        "ready": true,
+        "settled": true,
+        "timer": 346
+      },
+      "held": {}
+    },
+    "protocol": {
+      "creates": {},
+      "revisions": {},
+      "mutations": {},
+      "generations": {},
+      "prompts": {},
+      "unknownAdmissions": {},
+      "modelConfirmations": {}
+    },
+    "promptHandlers": {},
+    "deliveredPrompts": {},
+    "sessionProfiles": {},
+    "profileAliases": {},
+    "replayProfiles": {},
+    "displayProfiles": {},
+    "eventRoutes": {},
+    "reconciledEpochs": {},
+    "parkedFrames": {},
+    "connectionGeneration": 1,
+    "attached": {}
+  },
+  "statusError": null,
+  "href": "http://127.0.0.1:5174/#/",
+  "hash": "#/"
+}
