@@ -72,12 +72,12 @@ Correction notes for this revision:
 - **The H-50 base is `54dd2eb`, not `1fc0542`.** Five lines this index called branch-only or
   unmerged became ancestors: H-40 `9f2de53`, H-30b `f92d5f8`, the H-11 docs line `b2233ac` (landed
   again as `097c32c`), H-39 `7404e9c`/`4945061`, and the H-42/H-43/H-44/H-45/H-46/H-46b line ending
-  at `74978ca`. Every row they own was re-verified against `54dd2eb` and is listed in §13. Four rows
-  stay open or partial with a stated reason: P0-7 (the packet's model half is a recorded transcript,
-  so no live provider authoring is proven), P2-3/G-04's media half (no media scenario exists),
-  §6 D-06 (H-11 reconciled the live docs but `README.md` is still stale) and B-2 (the sha in the row
-  is wrong and the `observation.record` RPC half still does not exist). D-04 is deliberately
-  untouched.
+  at `74978ca`. Every row they own was re-verified against `54dd2eb` and is listed in §13. At that
+  revision four rows stayed open or partial with a stated reason: P0-7 (the packet's model half is a
+  recorded transcript, so no live provider authoring is proven), P2-3/G-04's media half (no media
+  scenario exists), §6 D-06 (H-11 reconciled the live docs but `README.md` was still stale; H-52
+  `a044fb4` has since rewritten it, so the row now reads FIXED) and B-2 (the sha in the row is wrong
+  and the `observation.record` RPC half still does not exist). D-04 is deliberately untouched.
 
 ## 1. Report register
 
@@ -445,7 +445,7 @@ status column moves.
 | D-03 the plan job drops contract inputs | **FIXED** | H-13 `t_543c0767` | merge `6779030` (content `ee976ea`) — **yes** | level/subject_domain/scope reach prompt, research and fingerprint |
 | D-04 "adaptation" is a state transition | **OPEN — narrowed** | H-03 (design, merged `54087de`), H-20 (contract `516d161`, merged `d079b4c`), H-21c (`bcd545e`, merged `2252231`) | all three — **yes** | prerequisite sequencing now exists; there is still **no** dynamic re-plan, no choice among remediation/examples/next objective and no attempt-driven content change. Do not market it as adaptive teaching. Re-audit required (H-30b, unmerged). |
 | D-05 validation independence is structural only | **FIXED — implementation merged; no independent probe of the verdict exists** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes**; merge `b75d601` — **yes** | same defect as round-2 P1-3/P1-4. The integration landed. H-30b merged too (`f92d5f8` via `90e1f0d`), but it did not re-probe validator identity, so the "independently validated" claim is still implementation-plus-review, not an independent audit. |
-| D-06 stale CB-QA-10 claim survives in README | **PARTIAL — H-11 docs merged and reconcile the live docs; `README.md` still carries the stale claim** | H-11 `t_6f41e0b0` | `b2233ac` via `097c32c` (H-47) — **yes** | At `54dd2eb` the H-11 deliverable `docs/HARNESS-STATUS.md` resolves, and §4 of it re-derives CB-QA-10 with the `attack_state.py` S07 probe. `docs/PRIVACY_EGRESS.md:167`, `DEFECTS.md:21` and `docs/SUBMISSION.md:220` now say the defect is fixed, with that command. **The row is not closed:** `README.md:99` ("Two backend defects are open… CB-QA-10") and `README.md:204` ("`evidence.inspect` returns an open check's reference in the L2 projection") are unchanged on master, and `docs/ACCEPTANCE.md:32` / `docs/REVIEW_CB014.md:31,114` are historical records at their own commits and are deliberately not rewritten. Code state at `54dd2eb`: `coursebook/evidence.py` projects only `PUBLIC_CRITERION_FIELDS` and `tests/test_review_evidence.py` passes. |
+| D-06 stale CB-QA-10 claim survives in README | **FIXED — both README passages rewritten by H-52 `a044fb4`; the reference is withheld on the wire** | H-11 `t_6f41e0b0`; closure H-52 `t_58ae1236` | `b2233ac` via `097c32c` (H-47) — **yes**; `a044fb4` (H-52) | H-52 rewrote `README.md:98-101` ("two backend defects are open") and `:204-205` (the L2 projection returns the reference): the projection now carries `id`, `description`, `check_id` and a `check_spec_withheld` marker from `PUBLIC_CRITERION_FIELDS`, so the `check_spec` holding the reference never leaves the backend, and CB-QA-11 (auxiliary grader, S13 `BLOCKED`) is named as the one open item. Re-derived by H-52 on `40bd4eb`, not copied: `attack_state.py` S07 reads `open_check_reference_leaks=[] post_submit_reference_leaks=[] secret_present=False` and the run ends `SUMMARY total=22 fail=0 pass=22`; `tests/test_review_evidence.py:378,384` assert `check_spec` is absent. `docs/ACCEPTANCE.md` and `docs/REVIEW_CB014.md` stay as historical records of their own commits and are not rewritten. H-50's status cell, kept verbatim: "**PARTIAL — H-11 docs merged and reconcile the live docs; `README.md` still carries the stale claim**". |
 
 D-06 also covers the `REVIEW_CB014.md` row for CB-QA-10 ("OPEN"). That row is **not** rewritten in
 this file — the index pins status, it does not edit the review — but H-41 did re-derive the code
@@ -453,8 +453,10 @@ claim: at `1fc0542` `coursebook/evidence.py` projects only `PUBLIC_CRITERION_FIE
 `tests/test_review_evidence.py` passes (24 tests OK, including
 `test_evidence_inspect_never_carries_the_reference_answer`). So `README.md`, `docs/ACCEPTANCE.md`,
 `docs/PRIVACY_EGRESS.md` and `docs/REVIEW_CB014.md` now describe a defect the merged code no longer
-has. H-11 owns recanonicalising them; until `b2233ac` merges, a reader must treat those four files
-as stale rather than as evidence about master.
+has. H-11 owned recanonicalising them; `b2233ac` merged via `097c32c`, and H-52 (`a044fb4`) has
+since rewritten the two README passages, so the live docs agree with the code. `docs/ACCEPTANCE.md`
+and `docs/REVIEW_CB014.md` remain historical records at their own commits and are deliberately not
+rewritten (`docs/HARNESS-STATUS.md` §4).
 
 ## 7. Third wave — UX, generic-harness and acceptance findings
 
@@ -730,7 +732,8 @@ Rules enforced:
   double and its research page is a recording, so "generic" here means the contract and pipeline
   accept the three shapes, not that a live model authors them.
 - It does not claim H-09's branch is merged: `111c7e9` is deliberately superseded and stays out.
-  H-11's docs **are** merged (`b2233ac` via `097c32c`) and the D-06 row says what is still stale.
+  H-11's docs **are** merged (`b2233ac` via `097c32c`), and H-52 (`a044fb4`) has since rewritten the
+  two stale README passages, so the D-06 row now reads FIXED.
   H-06, H-08, H-15, H-18, H-22, B-3, H-40 and the H-26 line are merged — being merged is not the
   same as having passed a re-audit, and the rows that need one say so.
 - It does not claim H-15's validator independence has been independently re-audited on master. The
@@ -863,6 +866,9 @@ whether an independent re-audit exists.
 ## 13. Changes in the H-50 revision — every moved row and its commit
 
 Base: `master` = `54dd2eb` (`54dd2eb48f5f3410cb9f591f4a2d9a283e20672c`), the H-49 packet re-run.
+That base is the parent of the merge that carried this revision onto `master`: `40bd4eb` merges
+H-50 (`aaa267a`) and H-51 (`2620c95`), and both of those have `54dd2eb` as their parent — so H-50
+verified these rows at `54dd2eb` and `40bd4eb` is the merge that carried them.
 Compared with the H-41 revision: commit `7163903`, whose parent is `1fc0542`. `be08495` merged it
 without changing the file (`git diff 7163903 be08495 -- docs/AUDIT-INDEX.md` is empty). Every
 verdict below was re-run against `54dd2eb` for this card; do not copy them, re-run them. Rows not
@@ -882,7 +888,7 @@ listed did not change status. §11/§12 are untouched.
 | H-30 D7 packet not byte-reproducible | OPEN — H-40 packet, unmerged | **FIXED — content-addressed manifest; `--verify` reads FRESH** | H-45 `5d251cb` via `5917bfb`; re-verified by H-49 at `54dd2eb` | yes |
 | H-30 D8 validator accepted truncated text | OPEN — H-40 / lesson-validator owner | **FIXED — structural ending gate in the shared lesson validator** | H-46 `cd818fa` via `57dcd97`; evidence by H-46b `74978ca` | yes |
 | §6 D-05 validation independence | FIXED — implementation merged; re-audit required | **FIXED — implementation merged; no independent probe of the verdict exists** | `833e335` via `b75d601`; H-30b `f92d5f8` merged but did not probe identity | yes (fix); re-audit still missing |
-| §6 D-06 stale CB-QA-10 claim in README | OPEN — documentation defect on master; fix branch unmerged | **PARTIAL — live docs reconciled by H-11; `README.md:99` and `:204` still stale** | `b2233ac` via `097c32c` | yes |
+| §6 D-06 stale CB-QA-10 claim in README | OPEN — documentation defect on master; fix branch unmerged | **FIXED — both README passages rewritten by H-52; the reference is withheld on the wire** | `b2233ac` via `097c32c`; closure `a044fb4` (H-52) | yes |
 | G-01 one-off shape rejected | re-audit required, H-30b (unmerged) | **done — 1-objective `single` accepted, 4-objective refused** | `f92d5f8` via `90e1f0d` | yes |
 | G-02 checks saved, not graded | re-audit required, H-30b (unmerged) | **done — every generated check carries `reference.kind`** | `f92d5f8` via `90e1f0d`; fix `ce6c8c1` | yes |
 | G-03 plan shape caps scope | re-audit required, H-30b (unmerged) | **done — 12/24/40 accepted, 41 rejected** | `f92d5f8` via `90e1f0d` | yes |
@@ -921,8 +927,12 @@ the same cells remain readable at `54dd2eb` and in §12.
   /:114 still call CB-QA-10 open. At 1fc0542 coursebook/evidence.py:45/:57 projects only
   PUBLIC_CRITERION_FIELDS … docs/HARNESS-STATUS.md, the H-11 deliverable, does not resolve on
   master.` Two corrections: the README lines are `:99` and `:204` at `54dd2eb` (this card measured
-  them), and `docs/HARNESS-STATUS.md` **does** resolve on master. The claim that the README text is
-  still stale is unchanged and is the reason the row is only PARTIAL.
+  them), and `docs/HARNESS-STATUS.md` **does** resolve on master. The claim that the README text was
+  still stale was the reason the row read PARTIAL until H-52. **Moved to FIXED by H-52**
+  (`a044fb4`, branch `wt/h52-docs-truth`): both README passages were rewritten, so the L2 projection
+  carries `check_spec_withheld` instead of the reference and the row reads FIXED. The H-50 cell
+  quoted in this bullet stays as the record of why it read PARTIAL; the H-50 status cell is quoted
+  verbatim in the §6 row.
 - §7 B-2: `done, unmerged: wt/harness-observation-record @ 423908f — not an ancestor of 1fc0542`. The "not an ancestor" half is still true at `54dd2eb`; the implied "this is the fix"
   reading was never true and is corrected above.
 - §3 H-40 heading: `### H-40 arbitrary-topic packet — branch-only @ 9f2de53`, whose command block
@@ -1005,9 +1015,11 @@ provider call and no harness run.
   `cde58c6` (which introduced the constant long before B-2) would have been the easy fix and would
   have closed a finding that is not closed: there is no `observation.record` RPC method, no handler
   dispatch and no UI at `54dd2eb`.
-- **§6 D-06 — README.** H-11 reconciled `PRIVACY_EGRESS.md`, `DEFECTS.md` and `SUBMISSION.md`
-  and landed `docs/HARNESS-STATUS.md`; `README.md:99` and `:204` still call CB-QA-10 open. Flipping
-  the row to FIXED would require editing README, which is a docs change this card does not own.
+- **§6 D-06 — README (resolved after this revision).** H-11 reconciled `PRIVACY_EGRESS.md`,
+  `DEFECTS.md` and `SUBMISSION.md` and landed `docs/HARNESS-STATUS.md`; `README.md:99` and `:204`
+  still called CB-QA-10 open at the H-50 base. Flipping the row to FIXED would have required editing
+  README, which was a docs change H-50 did not own; H-52 (`a044fb4`) made that edit and the row now
+  reads FIXED.
 - **D-04 — untouched by instruction.** The "do not market it as adaptive teaching" warning and its
   requalification stand exactly as written; nothing in H-30b's shape re-audit, H-42's transactional
   unit stage or H-43's scope copy adds dynamic re-plan or attempt-driven content change.

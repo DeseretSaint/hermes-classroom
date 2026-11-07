@@ -311,13 +311,24 @@ evidence f65e748b04f6c715af579381e0d3b1f7eca5e31a19e5f98065f4aef3e591ff7f  evide
 evidence ea566e9a1f0d195fdfef9f054894820aa640d955d8f46305839003730c687a87  evidence/summary.json
 ```
 
-### Finding raised rather than fixed (P3, gate false positive)
+### Finding raised rather than fixed (P3, gate false positive) — resolved by H-51
 
-`text_completeness._DANGLING_WORDS` contains `to`, so a complete English sentence with preposition
-stranding is refused: **"The home chord is the one the song resolves to."** ends on `to` and is
-rejected as `dangling_terminal_word` even though it is finished. The recorded short for that lesson
+**Current rule (H-51 `2620c95`, 2026-11-07).** `_DANGLING_WORDS` no longer carries prepositions.
+A terminal preposition is judged structurally: it is dangling unless the word immediately before it
+is the finite verb of its clause and at least one token precedes that verb as the clause's subject.
+"The home chord is the one the song resolves to." therefore passes, while "…becomes the reference
+for." and a bare "resolves to." still fail. Verb-hood is decided by shape (`-s`/`-ed`/`-ing`, a
+closed set of auxiliaries and irregular past forms), not by a content-verb lexicon. The rule and
+its accepted false-negative risk (a strand after a bare infinitive is still refused) are the
+*stranded prepositions* paragraph of the `coursebook/text_completeness.py` module docstring. The
+H-49 evidence packet is byte-identical after the change.
+
+*H-46b's note, kept as the record of why the change was made:* on `cd818fa` (2026-11-07)
+`text_completeness._DANGLING_WORDS` contained `to`, so a complete English sentence with preposition
+stranding was refused: **"The home chord is the one the song resolves to."** ended on `to` and was
+rejected as `dangling_terminal_word` even though it was finished. The recorded short for that lesson
 was therefore authored as "Name the home chord before the key." rather than the truer compression.
-This is a false positive in the H-46 signal, not a reason to relax it; it belongs to H-46's owner.
+That was a false positive in the H-46 signal, not a reason to relax it; it belonged to H-46's owner.
 
 Known limitation of the fallback: mechanical prefixing still cannot guarantee a grammatical short
 for a one-clause sentence that offers no boundary (e.g. "Fresh solder and alternating heat keep the
@@ -350,5 +361,6 @@ PYTHONPATH=. python3 -m unittest discover -s tests -t .
   Ran 1524 tests in 145.706s ... OK   (evidence/full-suite.txt)
 ```
 
-The P3 gate false positive above (preposition stranding on `to`) is unchanged and still open — it is
-H-46's signal, not this packet's.
+The P3 gate false positive above (preposition stranding on `to`) was still open at H-49 — it is
+H-46's signal, not this packet's. H-51 `2620c95` has since made the judgement structural, so the
+packet's bytes are unchanged and the false positive is closed; see the H-46b note above.
