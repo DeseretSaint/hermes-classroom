@@ -43,7 +43,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from jsonschema import Draft202012Validator
 
@@ -95,13 +95,26 @@ __all__ = [
     "bind_host_llm",
     "host_llm",
     "PLAN_SCHEMA",
+    "PLAN_SCHEMA_V1",
+    "PLAN_SCHEMA_V2",
+    "PLAN_SCHEMA_V2_NAME",
+    "UNIT_SCHEMA",
+    "find_unit_cycle",
+    "prerequisite_edge_reasons",
+    "UNIT_SECTION_SCHEMA",
+    "UNIT_SECTIONS_SCHEMA",
+    "UNIT_SECTIONS_SCHEMA_NAME",
+    "CHECK_PLAN_SCHEMA_V2",
     "LESSON_SCHEMA",
     "VALIDATION_SCHEMA",
     "PLAN_PROMPT_VERSION",
+    "PLAN_PROMPT_VERSION_V2",
+    "UNIT_SECTIONS_PROMPT_VERSION",
     "LESSON_PROMPT_VERSION",
     "VALIDATION_PROMPT_VERSION",
     "VALIDATION_CRITERIA",
     "run_plan_job",
+    "run_unit_sections_job",
     "run_lesson_job",
     "learner_page",
     "ensure_schema",
@@ -115,6 +128,14 @@ PIPELINE_VERSION = "cb.gen.v1"
 logger = logging.getLogger("coursebook.generation")
 
 PLAN_PROMPT_VERSION = "plan-prompt.v3"
+#: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
+#: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
+#: ``plan-prompt.v3`` (plan-time media needs, H-05), so the next honest number is v4. The frozen
+#: requirement is "a distinct prompt version for the v2 schema", not a literal string that would
+#: collide with a shipped version and invalidate stored validation bindings.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v4"
+#: The unit-sections authoring stage. One unit per call, so its own version.
+UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 LESSON_PROMPT_VERSION = "lesson-prompt.v6"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v2"
 
@@ -147,17 +168,28 @@ SCOPES: tuple[str, ...] = ("single", "short", "full")
 SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
     "single": {
         "max_weeks": 1,
+        # v1 objective range stays what an unscoped/legacy brief authored under. The blueprint
+        # bounds below are the v2 contract (`full` is a product cap, not a provider promise).
         "objectives": (4, 5),
+        "blueprint_objectives": (1, 1),
+        "blueprint_units": (1, 1),
+        "unit_objectives": (1, 1),
         "note": "one sitting: a plan the learner finishes in a single session",
     },
     "short": {
         "max_weeks": 8,
         "objectives": (4, 6),
+        "blueprint_objectives": (3, 6),
+        "blueprint_units": (1, 3),
+        "unit_objectives": (1, 6),
         "note": "a short course of a few weeks, not a term-long syllabus",
     },
     "full": {
         "max_weeks": 104,
         "objectives": (4, 8),
+        "blueprint_objectives": (12, 40),
+        "blueprint_units": (2, 12),
+        "unit_objectives": (2, 6),
         "note": "a full course; the standard objective range stands",
     },
 }
@@ -422,6 +454,9 @@ class CostBudget:
 PROVIDER_TIMEOUT_SECONDS: dict[str, float] = {
     "coursebook.plan.generate": 240.0,
     "coursebook.plan.validate": 180.0,
+    # One unit's sections: the same outer bounds as the blueprint stage, sized to one unit.
+    "coursebook.unit_sections.generate": 240.0,
+    "coursebook.unit_sections.validate": 180.0,
     "coursebook.lesson.generate": 300.0,
     "coursebook.lesson.validate": 240.0,
 }
@@ -430,6 +465,8 @@ PROVIDER_TIMEOUT_SECONDS: dict[str, float] = {
 PROVIDER_TIMEOUT_ENV: dict[str, str] = {
     "coursebook.plan.generate": "COURSEBOOK_PLAN_GENERATE_TIMEOUT_SECONDS",
     "coursebook.plan.validate": "COURSEBOOK_PLAN_VALIDATE_TIMEOUT_SECONDS",
+    "coursebook.unit_sections.generate": "COURSEBOOK_UNIT_SECTIONS_GENERATE_TIMEOUT_SECONDS",
+    "coursebook.unit_sections.validate": "COURSEBOOK_UNIT_SECTIONS_VALIDATE_TIMEOUT_SECONDS",
     "coursebook.lesson.generate": "COURSEBOOK_LESSON_GENERATE_TIMEOUT_SECONDS",
     "coursebook.lesson.validate": "COURSEBOOK_LESSON_VALIDATE_TIMEOUT_SECONDS",
 }
@@ -1007,7 +1044,11 @@ PARENT_SCHEMA: dict[str, Any] = {
     },
 }
 
-PLAN_SCHEMA: dict[str, Any] = {
+#: The pre-blueprint plan exactly as it shipped. It is still the interpretation of every stored
+#: v1 document (``docs/COURSE-BLUEPRINT.md`` §10: a plan with no ``plan_units`` rows is one
+#: implicit unit), and an unscoped brief keeps authoring it. New blueprint generation uses
+#: :data:`PLAN_SCHEMA_V2`; nothing about v1 is silently rewritten.
+PLAN_SCHEMA_V1: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
     "required": [
@@ -1049,6 +1090,195 @@ PLAN_SCHEMA: dict[str, Any] = {
         "parent": PARENT_SCHEMA,
     },
 }
+
+# ── Blueprint schema v2 (docs/COURSE-BLUEPRINT.md §5) ───────────────────────
+
+#: The literal ``plan_schema`` a v2 document carries. A stored document can never be read under
+#: the wrong rules: v1 documents have no such key, v2 documents must carry exactly this string.
+PLAN_SCHEMA_V2_NAME = "coursebook.plan.v2"
+
+#: The unit and section stage schema names, so a stored authored batch is interpretable too.
+UNIT_SECTIONS_SCHEMA_NAME = "coursebook.unit_sections.v1"
+
+#: One ordered group of objectives. Units are the checkpoint, budget and cancel boundary for
+#: authoring; they are also the prerequisite structure (R1-R3).
+UNIT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["ordinal", "title", "goal", "prereq_unit_ordinals", "target_lessons"],
+    "properties": {
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 12},
+        "title": {"type": "string", "minLength": 3, "maxLength": 200},
+        "goal": {"type": "string", "minLength": 10, "maxLength": 400},
+        "prereq_unit_ordinals": {
+            "type": "array",
+            "maxItems": 11,
+            "items": {"type": "integer", "minimum": 1, "maximum": 12},
+        },
+        "target_lessons": {"type": "integer", "minimum": 1, "maximum": 8},
+    },
+}
+
+#: A v2 objective names the unit it belongs to. The evidence vocabulary is unchanged.
+OBJECTIVE_SCHEMA_V2: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": [
+        "ordinal",
+        "unit_ref",
+        "title",
+        "evidence_target",
+        "evidence_criteria",
+        "support",
+    ],
+    "properties": {
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 40},
+        "unit_ref": {"type": "integer", "minimum": 1, "maximum": 12},
+        "title": {"type": "string", "minLength": 3, "maxLength": 200},
+        "evidence_target": {"type": "string", "enum": list(EVIDENCE_TARGETS)},
+        "evidence_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 6,
+            "items": {"type": "string", "minLength": 5, "maxLength": 300},
+        },
+        "support": {"type": "string", "enum": list(SUPPORT_VALUES)},
+        "source_ids": {"type": "array", "maxItems": 8, "items": _identifier},
+    },
+}
+
+#: Check plan v2 removes ``count`` and ``independent_evidence``. Both were decorative: the lesson
+#: pipeline writes exactly one check per owner section and independence is an evidence-class
+#: property, never a plan promise.
+CHECK_PLAN_SCHEMA_V2: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["objective_ref", "kind", "evidence_target"],
+    "properties": {
+        "objective_ref": {"type": "integer", "minimum": 1, "maximum": 40},
+        "kind": {"type": "string", "enum": ["quiz", "verification", "observation"]},
+        "evidence_target": {"type": "string", "enum": list(EVIDENCE_TARGETS)},
+        "notes": {"type": "string", "maxLength": 300},
+    },
+}
+
+PLAN_SCHEMA_V2: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": [
+        "plan_schema",
+        "scope",
+        "title",
+        "learner_outcome",
+        "delivery",
+        "time_estimate",
+        "units",
+        "objectives",
+        "check_plan",
+        "context_needs",
+        "source_ids",
+        "exclusions",
+        "spaced_review",
+    ],
+    "properties": {
+        "plan_schema": {"type": "string", "const": PLAN_SCHEMA_V2_NAME},
+        "scope": {"type": "string", "enum": list(SCOPES)},
+        "title": {"type": "string", "minLength": 3, "maxLength": 200},
+        "learner_outcome": {"type": "string", "minLength": 10, "maxLength": 600},
+        "delivery": {"type": "string", "enum": ["self_study", "parent_led", "instructor_led"]},
+        "time_estimate": TIME_ESTIMATE_SCHEMA,
+        "units": {"type": "array", "minItems": 1, "maxItems": 12, "items": UNIT_SCHEMA},
+        "objectives": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 40,
+            "items": OBJECTIVE_SCHEMA_V2,
+        },
+        "check_plan": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 40,
+            "items": CHECK_PLAN_SCHEMA_V2,
+        },
+        "context_needs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {"type": "string", "minLength": 2, "maxLength": 120},
+        },
+        "source_ids": {"type": "array", "maxItems": 12, "items": _identifier},
+        "exclusions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {"type": "string", "minLength": 3, "maxLength": 300},
+        },
+        "spaced_review": {"type": "boolean"},
+        "evidence_note": {"type": ["string", "null"], "maxLength": 400},
+        "parent": PARENT_SCHEMA,
+    },
+}
+
+#: One section authored by the unit stage. ``objective_refs_json`` keeps its on-disk meaning: an
+#: owner section stores ``[primary_objective_ref]``, a review section stores ``reinforces``. At the
+#: model boundary the two roles are named fields, so a review section cannot claim ownership.
+UNIT_SECTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": [
+        "ordinal",
+        "unit_ref",
+        "role",
+        "primary_objective_ref",
+        "reinforces",
+        "title",
+        "lesson_intent",
+        "context_needs",
+        "media_need",
+    ],
+    "properties": {
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 48},
+        "unit_ref": {"type": "integer", "minimum": 1, "maximum": 12},
+        "role": {"type": "string", "enum": ["owner", "review"]},
+        "primary_objective_ref": {"type": ["integer", "null"], "minimum": 1, "maximum": 40},
+        "reinforces": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {"type": "integer", "minimum": 1, "maximum": 40},
+        },
+        "title": {"type": "string", "minLength": 3, "maxLength": 200},
+        "lesson_intent": {"type": "string", "minLength": 10, "maxLength": 400},
+        "context_needs": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {"type": "string", "maxLength": 120},
+        },
+        "source_ids": {"type": "array", "maxItems": 6, "items": _identifier},
+        "media_need": MEDIA_NEED_SCHEMA,
+    },
+}
+
+#: The unit stage's document: one unit's sections, in authoring order.
+UNIT_SECTIONS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["unit_ref", "sections"],
+    "properties": {
+        "unit_ref": {"type": "integer", "minimum": 1, "maximum": 12},
+        "sections": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": UNIT_SECTION_SCHEMA,
+        },
+    },
+}
+
+#: The legacy (v1) plan document shape. A brief with no declared scope is a pre-blueprint client
+#: whose stored documents must keep being authored and read unchanged (``docs/COURSE-BLUEPRINT.md``
+#: §10), so the public ``PLAN_SCHEMA`` name stays v1. The blueprint schema is
+#: :data:`PLAN_SCHEMA_V2`, selected by :func:`build_plan_request` when the brief declares a scope.
+PLAN_SCHEMA: dict[str, Any] = PLAN_SCHEMA_V1
 
 POLICY_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -1587,6 +1817,26 @@ def parent_plan_schema(parent_brief: dict[str, Any] | None) -> dict[str, Any]:
     return schema
 
 
+def parent_plan_schema_v2(parent_brief: dict[str, Any] | None) -> dict[str, Any]:
+    """``PLAN_SCHEMA_V2`` bounded by the brief's page budget.
+
+    A parent brief still caps authored pages. In v2 an objective is one owner section, so the
+    page budget caps objectives and every unit's ``target_lessons``; a parent plan is one unit.
+    """
+    schema = copy.deepcopy(PLAN_SCHEMA_V2)
+    pages = desired_pages(parent_brief)
+    if pages is None:
+        return schema
+    cap = max(1, min(pages, 8))
+    schema["properties"]["objectives"]["minItems"] = 1
+    schema["properties"]["objectives"]["maxItems"] = cap
+    schema["properties"]["units"]["minItems"] = 1
+    schema["properties"]["units"]["maxItems"] = 1
+    unit = schema["properties"]["units"]["items"]
+    unit["properties"]["target_lessons"]["maximum"] = cap
+    return schema
+
+
 def _policy_dials(
     dials: dict[str, Any], *, level: str | None = None, subject_domain: str | None = None
 ) -> dict[str, Any]:
@@ -1921,6 +2171,115 @@ def _plan_instructions(
     return "\n".join(lines)
 
 
+def _plan_instructions_v2(
+    *,
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    research_status: str,
+    level: str | None = None,
+    subject_domain: str | None = None,
+    scope: str | None = None,
+    capability: capability_policy.LessonCapabilityPlan | None = None,
+    parent_brief: dict[str, Any] | None = None,
+) -> str:
+    """The ``coursebook.plan.v2`` blueprint prompt (``docs/COURSE-BLUEPRINT.md`` §5).
+
+    It asks for units, objectives and the check plan only. Sections are authored after approval
+    by the unit stage, so this prompt must not ask for them and the model has no field for them.
+    """
+    expectation = _scope_expectation(scope)
+    assert expectation is not None
+    unit_low, unit_high = expectation["blueprint_units"]
+    obj_low, obj_high = expectation["blueprint_objectives"]
+    per_low, per_high = expectation["unit_objectives"]
+    lines = [
+        f"Design blueprint plan v2 (plan_schema {PLAN_SCHEMA_V2_NAME!r}) for the goal in the input.",
+        f"Recipe: {recipe}.",
+        f"Research status: {research_status}.",
+        f"Scope: {expectation['scope']} — {expectation['note']}. Produce {unit_low} to {unit_high} "
+        f"unit(s) and {obj_low} to {obj_high} objective(s) across the whole course.",
+        f"Each unit is an ordered group of {per_low} to {per_high} objective(s) for this scope, "
+        "with a title, a goal, its prerequisite unit ordinals and a target lesson count.",
+        "Objective ordinals are contiguous across the whole course; every objective names the "
+        "unit it belongs to with unit_ref and appears in unit order.",
+        "Unit ordinals are contiguous from 1. prereq_unit_ordinals holds only strictly lower "
+        "ordinals, with no duplicates and no self reference; unit 1 has none.",
+        "target_lessons is the number of owner plus review lessons that unit will carry; every "
+        "objective needs its own owner lesson, so target_lessons is at least that unit's "
+        "objective count. The sum of target_lessons must fit the declared sessions per week and "
+        "weeks.",
+        "Do not author sections or lessons. Sections are authored by a separate unit stage after "
+        "approval; a section field is not part of this schema.",
+        "Produce exactly one check plan entry per objective with objective_ref, kind and "
+        "evidence_target, plus optional notes. Do not emit count or independent_evidence: one "
+        "owner lesson writes exactly one check, and independence is an evidence class.",
+        "State explicit exclusions: what this course will not cover or claim.",
+    ]
+    if level:
+        lines.append(
+            f"Learner level: {level}. It is declared by the brief; never infer a level from the "
+            "locale, and do not move objectives outside it."
+        )
+    if subject_domain:
+        domain = capability_policy.normalise_subject_domain(subject_domain, locale)
+        lines.append(
+            f"Subject domain: {domain} (declared as {subject_domain!r}). This is what the course "
+            "is about, not the language it is delivered in."
+        )
+    pages = desired_pages(parent_brief) if recipe == "parent" else None
+    if pages is not None:
+        cap = max(1, min(pages, 8))
+        lines.append(
+            f"The parent asked for {pages} page{'s' if pages != 1 else ''}: one objective authors "
+            f"one owner lesson authors one learner page, so use exactly one unit and 1 to {cap} "
+            "objectives."
+        )
+    if recipe == "one_off":
+        lines.append(
+            "A one-off brief is exactly one unit with exactly one objective, one verification "
+            "check, no quiz, no homework and spaced_review false."
+        )
+    if recipe == "committed":
+        lines.append("Spaced review is required; every objective needs independent evidence.")
+    if recipe == "casual":
+        lines.append("Checks are optional self-checks; state that in evidence_note.")
+    if recipe == "parent":
+        lines.append(
+            "delivery is parent_led; include the parent block with age band, reading level, "
+            "supervision notes, hazards and setting materials. Every check is a parent "
+            "observation of something the child did, never a quiz."
+        )
+        if parent_brief:
+            lines.append(
+                "Honour the parent brief in the input exactly (parent_brief): the goal, starting "
+                "point, age band, reading level, session length, setting, materials, exclusions "
+                "and supervision are the parent's answers, not suggestions."
+            )
+            exclusions = parent_brief.get("exclusions") or []
+            if exclusions:
+                lines.append(
+                    "Exclusions the parent named (state them in the plan's exclusions): "
+                    + "; ".join(str(item) for item in exclusions[:20])
+                )
+    angle, angle_reason = capability_policy.recipe_check_angle(recipe)
+    if angle is not None:
+        lines.append(
+            f"Capability policy: every check is angle {angle!r} ({angle_reason}); do not schedule "
+            "another check kind."
+        )
+    if capability is not None:
+        lines.append(
+            f"Capability policy decision for these inputs: check angle {capability.check_angle!r}, "
+            f"rubric profile {capability.rubric_profile!r}."
+        )
+    if dials:
+        lines.append(f"Learner dials: {canonical_json(dials)}.")
+    if locale:
+        lines.append(f"Content locale: {locale}.")
+    return "\n".join(lines)
+
+
 def _lesson_instructions(
     *,
     recipe: str,
@@ -2229,6 +2588,45 @@ def enforce_plan_rules(
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
 ) -> None:
+    """Dispatch on the document's own schema marker, never on a caller's guess.
+
+    ``plan_schema == "coursebook.plan.v2"`` gets the blueprint rule set. Anything else is a
+    pre-blueprint v1 document (one implicit unit), which keeps exactly the rules it shipped with.
+    The marker is read from the validated document, so a model cannot choose the weaker rule set:
+    the request schema already refused a v2 request answered as v1.
+    """
+    if str(plan.get("plan_schema") or "") == PLAN_SCHEMA_V2_NAME:
+        _enforce_plan_rules_v2(
+            plan,
+            recipe=recipe,
+            dials=dials,
+            locale=locale,
+            ledger=ledger,
+            scope=scope,
+            parent_brief=parent_brief,
+        )
+        return
+    _enforce_plan_rules_v1(
+        plan,
+        recipe=recipe,
+        dials=dials,
+        locale=locale,
+        ledger=ledger,
+        scope=scope,
+        parent_brief=parent_brief,
+    )
+
+
+def _enforce_plan_rules_v1(
+    plan: dict[str, Any],
+    *,
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    ledger: Sequence[SourceRecord],
+    scope: str | None = None,
+    parent_brief: dict[str, Any] | None = None,
+) -> None:
     """Deterministic plan rules. Runs *before* the validator and never replaces it.
 
     ``parent_brief`` is the typed brief the plan was authored for. When present the plan has to
@@ -2297,6 +2695,48 @@ def enforce_plan_rules(
         except capability_policy.CapabilityPolicyError as exc:
             reasons.append(f"section {section_ordinal}: {exc}")
 
+    _enforce_plan_tail(
+        plan,
+        recipe=recipe,
+        dials=dials,
+        locale=locale,
+        ledger=ledger,
+        objectives=objectives,
+        check_plan=plan.get("check_plan") or [],
+        sections=sections,
+        expectation=expectation,
+        parent_brief=parent_brief,
+        reasons=reasons,
+        require_independent_declaration=True,
+    )
+
+    if reasons:
+        raise _RuleViolation(reasons)
+
+
+def _enforce_plan_tail(
+    plan: dict[str, Any],
+    *,
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    ledger: Sequence[SourceRecord],
+    objectives: Sequence[dict[str, Any]],
+    check_plan: Sequence[dict[str, Any]],
+    sections: Sequence[dict[str, Any]],
+    expectation: dict[str, Any] | None,
+    parent_brief: dict[str, Any] | None,
+    reasons: list[str],
+    require_independent_declaration: bool,
+) -> None:
+    """The rules every plan document shares, v1 and v2.
+
+    Time honesty, the declared-scope week cap, provenance, the recipe rules and mandated
+    scaffolds read the same fields in both schemas. Only the parent check declaration differs:
+    v1 checks carried ``independent_evidence``, v2 removed it, so that one branch is gated.
+    """
+    ordinals = [int(obj.get("ordinal", 0)) for obj in objectives]
+
     # Time honesty (AUDIT R9).
     estimate = plan.get("time_estimate") or {}
     basis = estimate.get("basis")
@@ -2341,7 +2781,6 @@ def enforce_plan_rules(
     reasons.extend(provenance_violations(plan, ledger=ledger, what="plan"))
 
     # Recipe rules.
-    check_plan = plan.get("check_plan") or []
     checked = {int(item.get("objective_ref", 0)) for item in check_plan}
     missing = [ordinal for ordinal in ordinals if ordinal not in checked]
     if missing:
@@ -2387,7 +2826,7 @@ def enforce_plan_rules(
                     f"parent plan check for objective {item.get('objective_ref')} is "
                     f"{item.get('kind')!r}; parent checks are observations only"
                 )
-            if item.get("independent_evidence"):
+            if require_independent_declaration and item.get("independent_evidence"):
                 reasons.append(
                     f"parent plan check for objective {item.get('objective_ref')} claims "
                     "independent evidence; parent observation is reported evidence"
@@ -2409,8 +2848,241 @@ def enforce_plan_rules(
         if not any("romaji" in item for item in needs):
             reasons.append("this learner's context needs must include romaji")
 
+
+def find_unit_cycle(edges: Mapping[int, Sequence[int]]) -> list[int] | None:
+    """Return one prerequisite cycle as the node path that closes it, or ``None``.
+
+    ``edges[ordinal]`` is the unit's ``prereq_unit_ordinals``. The writer refuses forward
+    references, so a cycle cannot be authored; a reader still has to refuse one, because a
+    hand-edited or imported document is not bound by the writer's rule (§14.2 R2). The path is
+    deterministic: units are visited in ordinal order and each node's refs in declared order, and
+    the returned list starts and ends at the repeated unit (``[2, 3, 2]``).
+    """
+    colour: dict[int, int] = {}  # 1 = on the current path, 2 = fully explored
+    path: list[int] = []
+
+    def visit(node: int) -> list[int] | None:
+        colour[node] = 1
+        path.append(node)
+        for ref in edges.get(node, ()):  # type: ignore[arg-type]
+            ref = int(ref)
+            if colour.get(ref) == 1:
+                start = path.index(ref)
+                return path[start:] + [ref]
+            if colour.get(ref) is None and ref in edges:
+                found = visit(ref)
+                if found is not None:
+                    return found
+        path.pop()
+        colour[node] = 2
+        return None
+
+    for node in sorted(edges):
+        if colour.get(node) is None:
+            found = visit(node)
+            if found is not None:
+                return found
+    return None
+
+
+def prerequisite_edge_reasons(units: Sequence[dict[str, Any]]) -> list[str]:
+    """§14.2 R1-R3 and §5 rule 6, as reasons a plan document is refused.
+
+    A cycle is named *as a cycle* before the per-reference checks run: the backwards rule below
+    would otherwise report only the forward half of a cycle, and R2 requires the cycle itself.
+    """
+    reasons: list[str] = []
+    edges: dict[int, list[int]] = {}
+    for unit in units:
+        ordinal = int(unit.get("ordinal", 0))
+        edges[ordinal] = [int(value) for value in unit.get("prereq_unit_ordinals") or []]
+    known_units = set(edges)
+    cycle = find_unit_cycle(edges)
+    if cycle is not None:
+        reasons.append(
+            "prerequisite edges form a cycle: " + " -> ".join(str(value) for value in cycle)
+        )
+    for unit in units:
+        ordinal = int(unit.get("ordinal", 0))
+        prereqs = [int(value) for value in unit.get("prereq_unit_ordinals") or []]
+        if len(set(prereqs)) != len(prereqs):
+            reasons.append(f"unit {ordinal} repeats a prerequisite unit")
+        for ref in prereqs:
+            if ref == ordinal:
+                reasons.append(f"unit {ordinal} names itself as a prerequisite")
+            elif ref > ordinal:
+                reasons.append(
+                    f"unit {ordinal} names prerequisite {ref}; every prerequisite must be a "
+                    "strictly lower ordinal"
+                )
+            if ref not in known_units:
+                reasons.append(f"unit {ordinal} names missing prerequisite unit {ref}")
+        if ordinal == 1 and prereqs:
+            reasons.append("unit 1 cannot declare a prerequisite")
+    return reasons
+
+
+def _enforce_plan_rules_v2(
+    plan: dict[str, Any],
+    *,
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    ledger: Sequence[SourceRecord],
+    scope: str | None = None,
+    parent_brief: dict[str, Any] | None = None,
+) -> None:
+    """The §5 blueprint rules. Structure first, then the shared tail.
+
+    Sections are not part of this document: rules 4 and 7 (one owner section per objective and
+    ``target_lessons`` matching the authored sections) are enforced by the unit stage, which is
+    the only stage that sees section rows. Everything that can be decided from the blueprint is
+    decided here, before an independent validator is asked anything.
+    """
+    reasons: list[str] = []
+    if recipe not in RECIPES:
+        raise GenerationRejected(f"unknown recipe {recipe!r}")
+    declared_scope = str(plan.get("scope") or "")
+    expectation = _scope_expectation(scope or declared_scope)
+    if expectation is None:
+        reasons.append("a blueprint plan must declare its scope")
+        expectation = _scope_expectation("short")  # keep later arithmetic total without a scope
+    if scope and declared_scope != str(scope):
+        reasons.append(
+            f"plan scope {declared_scope!r} contradicts the brief's scope {scope!r}"
+        )
+    assert expectation is not None
+
+    units = [unit for unit in plan.get("units") or [] if isinstance(unit, dict)]
+    objectives = [obj for obj in plan.get("objectives") or [] if isinstance(obj, dict)]
+    check_plan = [item for item in plan.get("check_plan") or [] if isinstance(item, dict)]
+    unit_ordinals = [int(unit.get("ordinal", 0)) for unit in units]
+    objective_ordinals = [int(obj.get("ordinal", 0)) for obj in objectives]
+
+    # Rule 1 — scope bounds.
+    lo_units, hi_units = expectation["blueprint_units"]
+    lo_obj, hi_obj = expectation["blueprint_objectives"]
+    if not lo_units <= len(units) <= hi_units:
+        reasons.append(
+            f"scope {expectation['scope']!r} requires {lo_units} to {hi_units} unit(s); "
+            f"the plan has {len(units)}"
+        )
+    if not lo_obj <= len(objectives) <= hi_obj:
+        reasons.append(
+            f"scope {expectation['scope']!r} requires {lo_obj} to {hi_obj} objective(s); "
+            f"the plan has {len(objectives)}"
+        )
+    if recipe == "one_off" and (len(units) != 1 or len(objectives) != 1):
+        reasons.append("a one-off brief is exactly one unit and exactly one objective")
+    if recipe == "one_off" and declared_scope not in ("", "single"):
+        reasons.append("a one-off brief must declare scope 'single'")
+
+    # Rule 2 — contiguous ordinals, every ref names an existing unit.
+    if sorted(unit_ordinals) != list(range(1, len(unit_ordinals) + 1)):
+        reasons.append("unit ordinals must be contiguous starting at 1")
+    if sorted(objective_ordinals) != list(range(1, len(objective_ordinals) + 1)):
+        reasons.append("objective ordinals must be contiguous starting at 1")
+    known_units = set(unit_ordinals)
+    for objective in objectives:
+        ref = int(objective.get("unit_ref", 0))
+        if ref not in known_units:
+            reasons.append(
+                f"objective {objective.get('ordinal')} names missing unit {ref}"
+            )
+    # Objective ordinals are contiguous *across the whole course* and the unit they name must
+    # appear before a later unit's objectives: a plan whose unit membership zig-zags cannot be
+    # authored unit by unit without rewriting ordinals.
+    last_unit = 0
+    for objective in objectives:
+        unit_ref = int(objective.get("unit_ref", 0))
+        if unit_ref and unit_ref < last_unit:
+            reasons.append(
+                f"objective {objective.get('ordinal')} returns to unit {unit_ref} after a later "
+                "unit; unit membership must follow unit order"
+            )
+            break
+        last_unit = max(last_unit, unit_ref)
+
+    # Rule 3 — per-unit objective bounds.
+    by_unit: dict[int, list[dict[str, Any]]] = {}
+    for objective in objectives:
+        by_unit.setdefault(int(objective.get("unit_ref", 0)), []).append(objective)
+    low, high = expectation["unit_objectives"]
+    for unit in units:
+        ordinal = int(unit.get("ordinal", 0))
+        count = len(by_unit.get(ordinal, []))
+        if ordinal in by_unit and not low <= count <= high:
+            reasons.append(
+                f"unit {ordinal} has {count} objective(s); scope "
+                f"{expectation['scope']!r} requires {low} to {high}"
+            )
+        elif ordinal not in by_unit:
+            reasons.append(f"unit {ordinal} has no objectives; a unit must author at least one")
+
+    # Rule 5 — check plan coverage: every objective once, permitted kind.
+    refs = [int(item.get("objective_ref", 0)) for item in check_plan]
+    if sorted(refs) != objective_ordinals:
+        missing = [o for o in objective_ordinals if o not in refs]
+        repeated = sorted({r for r in refs if refs.count(r) > 1})
+        if missing:
+            reasons.append(f"check plan does not cover objectives {missing}")
+        if repeated:
+            reasons.append(f"check plan names objective(s) {repeated} more than once")
+        unknown = [r for r in refs if r not in objective_ordinals]
+        if unknown:
+            reasons.append(f"check plan names missing objective(s) {sorted(set(unknown))}")
+    # The v2 entry has no ``count`` or ``independent_evidence`` key at all; its presence means the
+    # document was authored under the old rules and must not be read as v2.
+    for item in check_plan:
+        if "count" in item or "independent_evidence" in item:
+            reasons.append(
+                f"check for objective {item.get('objective_ref')} carries a removed v1 field; "
+                "count and independent_evidence are not part of a v2 check plan"
+            )
+
+    # Rule 6 — prerequisite edges point backwards, are unique, no self ref. The schema bounds
+    # the values; acyclicity and self-reference are properties of the document a reader must
+    # still refuse (R2). One implementation produces the reasons for both the writer here and
+    # the typed reader refusal in ``domain``.
+    reasons.extend(prerequisite_edge_reasons(units))
+
+    # Rule 7/8 — schedule arithmetic. Each authored lesson is one session at the declared
+    # session length; the sum of target lessons must fit the declared weeks.
+    estimate = plan.get("time_estimate") or {}
+    target = sum(int(unit.get("target_lessons", 0)) for unit in units)
+    sessions = int(estimate.get("sessions_per_week", 0) or 0) * int(estimate.get("weeks", 0) or 0)
+    if sessions and target > sessions:
+        reasons.append(
+            f"the units schedule {target} lesson(s) but the time estimate allows {sessions} "
+            "session(s) at the declared sessions per week and weeks"
+        )
+    for unit in units:
+        ordinal = int(unit.get("ordinal", 0))
+        count = len(by_unit.get(ordinal, []))
+        if int(unit.get("target_lessons", 0)) < count:
+            reasons.append(
+                f"unit {ordinal} targets {unit.get('target_lessons')} lesson(s) for {count} "
+                "objective(s); every objective needs its own owner section"
+            )
+
+    _enforce_plan_tail(
+        plan,
+        recipe=recipe,
+        dials=dials,
+        locale=locale,
+        ledger=ledger,
+        objectives=objectives,
+        check_plan=check_plan,
+        sections=[],
+        expectation=expectation,
+        parent_brief=parent_brief,
+        reasons=reasons,
+        require_independent_declaration=False,
+    )
+
     if reasons:
         raise _RuleViolation(reasons)
+
 
 
 def _media_spec_from_lesson_item(item: dict[str, Any]) -> artifacts.MediaSpec:
@@ -2717,7 +3389,10 @@ def _parse_structured(response: LLMResponse, schema: dict[str, Any], *, what: st
         except json.JSONDecodeError as exc:
             raise GenerationRejected(f"{what} is not valid JSON: {exc.msg} at line {exc.lineno}") from exc
     validate_artifact(schema, parsed, what=what)
-    return parsed
+    # Hand the caller its own document. A caller decorates the parsed artifact (policy, check
+    # mode) before the rule gate; mutating the provider's object would corrupt a reused scripted
+    # response and make the retry validate a document the provider never produced.
+    return copy.deepcopy(parsed)
 
 
 def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None:
@@ -2868,6 +3543,20 @@ def build_plan_request(
         subject_domain=declared_domain,
     )
     pages = desired_pages(parent_brief) if recipe == "parent" else None
+    # The blueprint schema is used when the brief declares a scope: the three-scope contract is
+    # the blueprint's entry condition, and an unscoped brief is a pre-blueprint client whose
+    # stored v1 documents must keep being authored and read unchanged (§10).
+    blueprint = bool(scope)
+    scope_expectation = _scope_expectation(scope) if blueprint else None
+    schema = (
+        parent_plan_schema_v2(parent_brief)
+        if blueprint and pages is not None
+        else parent_plan_schema(parent_brief)
+        if pages is not None
+        else PLAN_SCHEMA_V2
+        if blueprint
+        else PLAN_SCHEMA_V1
+    )
     payload = {
         "goal": goal,
         "recipe": recipe,
@@ -2876,6 +3565,7 @@ def build_plan_request(
         "level": declared_level,
         "subject_domain": declared_domain,
         "scope": scope,
+        "plan_schema": PLAN_SCHEMA_V2_NAME if blueprint else None,
         "capability_policy": capability.to_dict(),
         "research": {
             "status": research_run.status,
@@ -2883,17 +3573,35 @@ def build_plan_request(
             "queries": [entry.get("query") for entry in research_run.queries],
         },
         "sources": _source_brief(research_run.sources),
-        "rules": {
-            "objective_count": [4, 8],
-            "section_count": [2, 8],
-            "source_ids": "use only ids present in sources",
-            "support": "unverified when no supplied source grounds the objective",
-            "media_need": (
-                "every section declares construct/image/audio; image and audio default to level "
-                "none with role none and an empty construct unless the lesson genuinely needs the "
-                "media"
-            ),
-        },
+        "rules": (
+            {
+                "units": "one ordered group of objectives per unit; units are the authoring, "
+                "budget and cancel checkpoint",
+                "objective_count": list(scope_expectation["blueprint_objectives"]),
+                "unit_count": list(scope_expectation["blueprint_units"]),
+                "unit_objective_count": list(scope_expectation["unit_objectives"]),
+                "sections": "do not author sections; a separate unit stage authors them after "
+                "approval",
+                "source_ids": "use only ids present in sources",
+                "support": "unverified when no supplied source grounds the objective",
+                "check_plan": "exactly one entry per objective: objective_ref, kind, "
+                "evidence_target, optional notes. No count and no independent_evidence field.",
+                "prerequisites": "every prereq_unit_ordinals entry is a strictly lower unit "
+                "ordinal; no self refs, no duplicates, unit 1 has none",
+            }
+            if blueprint
+            else {
+                "objective_count": [4, 8],
+                "section_count": [2, 8],
+                "source_ids": "use only ids present in sources",
+                "support": "unverified when no supplied source grounds the objective",
+                "media_need": (
+                    "every section declares construct/image/audio; image and audio default to "
+                    "level none with role none and an empty construct unless the lesson genuinely "
+                    "needs the media"
+                ),
+            }
+        ),
     }
     if parent_brief:
         # The typed brief, verbatim, under one named object. A parent plan is bounded by the
@@ -2908,23 +3616,39 @@ def build_plan_request(
         payload["revision_instructions"] = feedback
     return LLMRequest(
         purpose="coursebook.plan.generate",
-        prompt_version=PLAN_PROMPT_VERSION,
+        prompt_version=PLAN_PROMPT_VERSION_V2 if blueprint else PLAN_PROMPT_VERSION,
         system_prompt=PLAN_SYSTEM_PROMPT,
-        instructions=_plan_instructions(
-            recipe=recipe,
-            dials=dials,
-            locale=locale,
-            research_status=research_run.status,
-            level=declared_level,
-            subject_domain=declared_domain,
-            scope=scope,
-            capability=capability,
-            parent_brief=parent_brief,
+        instructions=(
+            _plan_instructions_v2(
+                recipe=recipe,
+                dials=dials,
+                locale=locale,
+                research_status=research_run.status,
+                level=declared_level,
+                subject_domain=declared_domain,
+                scope=scope,
+                capability=capability,
+                parent_brief=parent_brief,
+            )
+            if blueprint
+            else _plan_instructions(
+                recipe=recipe,
+                dials=dials,
+                locale=locale,
+                research_status=research_run.status,
+                level=declared_level,
+                subject_domain=declared_domain,
+                scope=scope,
+                capability=capability,
+                parent_brief=parent_brief,
+            )
         ),
         input_text=_bounded_input(payload),
-        schema=parent_plan_schema(parent_brief) if pages is not None else PLAN_SCHEMA,
-        schema_name="coursebook_plan_v1",
-        max_tokens=4000,
+        schema=schema,
+        schema_name=(
+            "coursebook_plan_v2" if blueprint else "coursebook_plan_v1"
+        ),
+        max_tokens=12000 if blueprint else 4000,
         timeout_s=_timeout_for("coursebook.plan.generate", timeout_s),
     )
 
@@ -3206,7 +3930,7 @@ _GENERATION_DDL: tuple[str, ...] = (
     """,
     """
     CREATE TABLE IF NOT EXISTS gen_plan_sections (
-        id TEXT PRIMARY KEY,
+        id TEXT NOT NULL PRIMARY KEY,
         plan_id TEXT NOT NULL,
         ordinal INTEGER NOT NULL,
         plan_hash TEXT NOT NULL,
@@ -3216,6 +3940,8 @@ _GENERATION_DDL: tuple[str, ...] = (
         objective_refs_json TEXT NOT NULL DEFAULT '[]',
         context_needs_json TEXT NOT NULL DEFAULT '[]',
         source_ids_json TEXT NOT NULL DEFAULT '[]',
+        unit_id TEXT,
+        section_role TEXT NOT NULL DEFAULT 'owner',
         UNIQUE(plan_id, plan_hash, ordinal)
     )
     """,
@@ -3317,6 +4043,38 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
         }
         if "media_need_json" not in section_columns:
             connection.execute("ALTER TABLE gen_plan_sections ADD COLUMN media_need_json TEXT")
+        # cb.db v7 (H-21): units are child rows of the one approved plan, and an objective /
+        # section names its unit. The migration owns the upgrade; this is the same additive rule
+        # for a database this module created before v7 (an in-memory test, an older install).
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS plan_units ("
+            " id TEXT PRIMARY KEY,"
+            " plan_id TEXT NOT NULL REFERENCES plans (id),"
+            " ordinal INTEGER NOT NULL,"
+            " title TEXT NOT NULL,"
+            " goal TEXT NOT NULL,"
+            " prereq_unit_ordinals_json TEXT NOT NULL DEFAULT '[]',"
+            " target_lessons INTEGER NOT NULL,"
+            " created_at TEXT NOT NULL,"
+            " UNIQUE (plan_id, ordinal))"
+        )
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS idx_plan_units_plan_id ON plan_units (plan_id)"
+        )
+        objective_columns = {
+            str(row[1]) for row in connection.execute("PRAGMA table_info(objectives)").fetchall()
+        }
+        if "unit_id" not in objective_columns:
+            connection.execute("ALTER TABLE objectives ADD COLUMN unit_id TEXT")
+        # H-21: a section may belong to a plan unit and is either the unit's owner section or a
+        # review section. A table created before migration 0007 gains both columns in place;
+        # legacy rows keep NULL unit_id and the 'owner' role, which is the implicit single unit.
+        if "unit_id" not in section_columns:
+            connection.execute("ALTER TABLE gen_plan_sections ADD COLUMN unit_id TEXT")
+        if "section_role" not in section_columns:
+            connection.execute(
+                "ALTER TABLE gen_plan_sections ADD COLUMN section_role TEXT NOT NULL DEFAULT 'owner'"
+            )
 
 
 
@@ -4149,8 +4907,13 @@ def run_plan_job(
         plan_id = _new_id()
         timestamp = _now_iso(now)
         generation_state = "draft" if verdict["verdict"] == "pass" else "needs_review"
-        sections = [dict(section) for section in plan.get("sections") or []]
+        blueprint_plan = str(plan.get("plan_schema") or "") == PLAN_SCHEMA_V2_NAME
+        # A blueprint plan authors no sections: the unit stage does, after approval. A v1 plan
+        # keeps its bundled sections exactly as it shipped.
+        sections = [] if blueprint_plan else [dict(section) for section in plan.get("sections") or []]
+        units = [dict(unit) for unit in plan.get("units") or []] if blueprint_plan else []
         objectives = [dict(obj) for obj in plan.get("objectives") or []]
+
 
         result = {
             "job_id": job_id,
@@ -4165,8 +4928,13 @@ def run_plan_job(
             "reused": False,
             "validation_id": None,
             "validation_verdict": verdict["verdict"],
+            "plan_schema": plan.get("plan_schema"),
             "objectives": len(objectives),
             "sections": len(sections),
+            "units": len(units),
+            # The next step is a user action, never an executor chain. The blueprint ends with
+            # every unit known and no lesson authored; the client offers unit 1 explicitly.
+            "next_unit_ordinal": 1 if blueprint_plan else None,
             "sources": len(research_run.sources),
             "research": {
                 "status": research_run.status,
@@ -4217,10 +4985,31 @@ def run_plan_job(
                     timestamp,
                 ),
             )
+            unit_ids: dict[int, str] = {}
+            for unit in units:
+                unit_id = _new_id()
+                ordinal = int(unit["ordinal"])
+                unit_ids[ordinal] = unit_id
+                connection.execute(
+                    "INSERT INTO plan_units (id, plan_id, ordinal, title, goal, "
+                    "prereq_unit_ordinals_json, target_lessons, created_at) "
+                    "VALUES (?,?,?,?,?,?,?,?)",
+                    (
+                        unit_id,
+                        plan_id,
+                        ordinal,
+                        str(unit["title"]),
+                        str(unit["goal"]),
+                        _json([int(ref) for ref in unit.get("prereq_unit_ordinals") or []]),
+                        int(unit["target_lessons"]),
+                        timestamp,
+                    ),
+                )
             for objective in objectives:
                 connection.execute(
                     "INSERT INTO objectives (id, plan_id, ordinal, title, evidence_target, "
-                    "evidence_criteria_json, state, version, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                    "evidence_criteria_json, state, version, created_at, unit_id) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?)",
                     (
                         _new_id(),
                         plan_id,
@@ -4231,6 +5020,7 @@ def run_plan_job(
                         "not_started",
                         1,
                         timestamp,
+                        unit_ids.get(int(objective.get("unit_ref", 0))),
                     ),
                 )
             # Bind the independent verdict to the exact kernel content hash the approval command
@@ -4354,6 +5144,664 @@ def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, An
     return warnings
 
 
+def unit_sections_cost_budget(*, brief_budget_usd: Any = None) -> CostBudget:
+    """Budget for one unit-sections stage: four calls worst case (§6).
+
+    One generation and one validation, with one retry each. The ceiling is per stage, never per
+    course: a unit job must not inherit a 24-lesson course's ceiling.
+    """
+    worst_legal = 4
+    sized_floor = worst_legal * DECLARED_CALL_COST_USD
+    override, source = _operator_cost_override(brief_budget_usd=brief_budget_usd)
+    return CostBudget(
+        max_calls=worst_legal,
+        max_cost_usd=max(DEFAULT_MAX_COST_USD, sized_floor) if override is None else override,
+        source=source or "declared",
+    )
+
+
+def _unit_row(connection: sqlite3.Connection, plan_id: str, ordinal: int) -> dict[str, Any] | None:
+    """One stored ``plan_units`` row, with its prerequisite list decoded."""
+    row = _row_dict(
+        connection.execute(
+            "SELECT * FROM plan_units WHERE plan_id = ? AND ordinal = ?", (str(plan_id), int(ordinal))
+        ).fetchone()
+    )
+    if row is None:
+        return None
+    row["prereq_unit_ordinals"] = [
+        int(value) for value in _load_json(row.pop("prereq_unit_ordinals_json"), [])
+    ]
+    return row
+
+
+def _plan_units(connection: sqlite3.Connection, plan_id: str) -> list[dict[str, Any]]:
+    return [
+        unit
+        for unit in (
+            _unit_row(connection, plan_id, int(row["ordinal"]))
+            for row in connection.execute(
+                "SELECT ordinal FROM plan_units WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
+            ).fetchall()
+        )
+        if unit is not None
+    ]
+
+
+def _unit_objectives(
+    connection: sqlite3.Connection, plan_id: str, unit_id: str
+) -> list[dict[str, Any]]:
+    rows = connection.execute(
+        "SELECT * FROM objectives WHERE plan_id = ? AND unit_id = ? ORDER BY ordinal",
+        (str(plan_id), str(unit_id)),
+    ).fetchall()
+    objectives: list[dict[str, Any]] = []
+    for row in rows:
+        item = dict(row)
+        item["evidence_criteria"] = _load_json(item.pop("evidence_criteria_json"), [])
+        objectives.append(item)
+    return objectives
+
+
+def _unit_section_rows(
+    connection: sqlite3.Connection, plan_id: str, unit_id: str
+) -> list[dict[str, Any]]:
+    return [
+        _section_dict(dict(row))
+        for row in connection.execute(
+            "SELECT * FROM gen_plan_sections WHERE plan_id = ? AND unit_id = ? ORDER BY ordinal",
+            (str(plan_id), str(unit_id)),
+        ).fetchall()
+    ]
+
+
+def _section_owner_ref(section: dict[str, Any]) -> int | None:
+    """The objective an owner section owns, or ``None`` for a review section."""
+    if str(section.get("section_role") or "owner") != "owner":
+        return None
+    refs = section.get("objective_refs") or []
+    return int(refs[0]) if len(refs) == 1 else None
+
+
+def _unit_sections_instructions(*, unit: dict[str, Any], objectives: Sequence[dict[str, Any]],
+                                recipe: str, locale: str | None, feedback: str | None = None) -> str:
+    lines = [
+        "Design the sections for exactly one unit of an approved blueprint plan.",
+        f"Unit {unit['ordinal']}: {unit['title']!r}. Goal: {unit['goal']}",
+        f"Recipe: {recipe}.",
+        "Author exactly one owner section for each objective listed in objectives, in ordinal "
+        "order. An owner section names its objective in primary_objective_ref, leaves reinforces "
+        "empty, and carries a lesson_intent that names the construct the lesson must teach.",
+    ]
+    review_slots = int(unit.get("target_lessons", 0)) - len(objectives)
+    if review_slots > 0:
+        lines.append(
+            f"Author exactly {review_slots} review section(s) after the owner sections. A review "
+            "section has role 'review', primary_objective_ref null, and reinforces one to four "
+            "earlier objective ordinals from this or an earlier unit. A review lesson reuses an "
+            "existing check; it authors no new check."
+        )
+    else:
+        lines.append("Author no review sections: this unit targets exactly its owner lessons.")
+    lines.append(
+        "Every section declares media_need with construct/image/audio; use level 'none' with role "
+        "'none' and an empty construct when the text already carries the teaching."
+    )
+    lines.append("Context needs are concrete (for example an audio source or a physical object).")
+    lines.append(f"Total sections for this unit: exactly {int(unit.get('target_lessons', 0))}.")
+    if locale:
+        lines.append(f"Content locale: {locale}.")
+    if feedback:
+        lines.append("The previous attempt broke required rules:\n- " + "\n- ".join([feedback]))
+    return "\n".join(lines)
+
+
+def build_unit_sections_request(
+    *,
+    plan: dict[str, Any],
+    unit: dict[str, Any],
+    objectives: Sequence[dict[str, Any]],
+    goal: str,
+    recipe: str,
+    locale: str | None,
+    sources: Sequence[SourceRecord],
+    research_status: str,
+    feedback: str | None = None,
+    timeout_s: float | None = None,
+) -> LLMRequest:
+    """The unit stage request. It carries the unit's objectives and the shared ledger, never the
+    whole course outline (§6: no call grows with course length except the blueprint)."""
+    payload = {
+        "artifact_kind": "unit_sections",
+        "goal": goal,
+        "recipe": recipe,
+        "locale": locale,
+        "plan_title": plan.get("title"),
+        "plan_scope": plan.get("scope"),
+        "unit": {
+            "ordinal": int(unit["ordinal"]),
+            "title": unit["title"],
+            "goal": unit["goal"],
+            "target_lessons": int(unit["target_lessons"]),
+            "prereq_unit_ordinals": list(unit.get("prereq_unit_ordinals") or []),
+        },
+        "objectives": [
+            {
+                "ordinal": int(obj["ordinal"]),
+                "title": obj.get("title"),
+                "evidence_target": obj.get("evidence_target"),
+                "evidence_criteria": list(obj.get("evidence_criteria") or []),
+            }
+            for obj in objectives
+        ],
+        "research_status": research_status,
+        "sources": _source_brief(sources),
+        "rules": {
+            "owner_sections": "exactly one per listed objective",
+            "review_sections": "target_lessons minus the listed objectives",
+            "source_ids": "use only ids present in sources",
+        },
+    }
+    if feedback:
+        payload["revision_instructions"] = feedback
+    return LLMRequest(
+        purpose="coursebook.unit_sections.generate",
+        prompt_version=UNIT_SECTIONS_PROMPT_VERSION,
+        system_prompt=PLAN_SYSTEM_PROMPT,
+        instructions=_unit_sections_instructions(
+            unit=unit, objectives=objectives, recipe=recipe, locale=locale, feedback=feedback
+        ),
+        input_text=_bounded_input(payload),
+        schema=UNIT_SECTIONS_SCHEMA,
+        schema_name="coursebook_unit_sections_v1",
+        max_tokens=6000,
+        timeout_s=_timeout_for("coursebook.unit_sections.generate", timeout_s),
+    )
+
+
+def build_unit_sections_validation_request(
+    *,
+    plan: dict[str, Any],
+    unit: dict[str, Any],
+    objectives: Sequence[dict[str, Any]],
+    sections: Sequence[dict[str, Any]],
+    goal: str,
+    recipe: str,
+    locale: str | None,
+    sources: Sequence[SourceRecord],
+    research_status: str,
+    timeout_s: float | None = None,
+) -> LLMRequest:
+    payload = {
+        "artifact_kind": "unit_sections",
+        "goal": goal,
+        "recipe": recipe,
+        "locale": locale,
+        "plan": plan,
+        "unit": unit,
+        "objectives": list(objectives),
+        "sections": list(sections),
+        "research_status": research_status,
+        "sources": _source_brief(sources),
+        "learner_facing": False,
+    }
+    return LLMRequest(
+        purpose="coursebook.unit_sections.validate",
+        prompt_version=VALIDATION_PROMPT_VERSION,
+        system_prompt=VALIDATION_SYSTEM_PROMPT,
+        instructions=_validation_instructions(subject="unit sections", criteria=VALIDATION_CRITERIA),
+        input_text=_bounded_input(payload),
+        schema=VALIDATION_SCHEMA,
+        schema_name="coursebook_validation_v1",
+        max_tokens=2000,
+        timeout_s=_timeout_for("coursebook.unit_sections.validate", timeout_s),
+    )
+
+
+def enforce_unit_section_rules(
+    sections: Sequence[dict[str, Any]],
+    *,
+    unit: dict[str, Any],
+    objectives: Sequence[dict[str, Any]],
+    plan: dict[str, Any],
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    ledger: Sequence[SourceRecord],
+    existing_owner_refs: Sequence[int] = (),
+) -> None:
+    """§5 rules 4 and 7, on the batch the unit stage just authored.
+
+    The writer assigns global ordinals, so the model's ``ordinal`` is advisory and never trusted
+    for identity. What must hold is role shape, owner coverage, review refs and the target count.
+    """
+    reasons: list[str] = []
+    unit_ordinal = int(unit["ordinal"])
+    objective_ordinals = [int(obj["ordinal"]) for obj in objectives]
+    ledger_ids = {source.source_id for source in ledger}
+    owners: dict[int, int] = {}
+    reviews = 0
+    seen_review = False
+    for index, section in enumerate(sections):
+        if int(section.get("unit_ref", 0)) != unit_ordinal:
+            reasons.append(
+                f"section {index + 1} names unit {section.get('unit_ref')}; this unit is {unit_ordinal}"
+            )
+        role = str(section.get("role") or "")
+        primary = section.get("primary_objective_ref")
+        reinforces = [int(ref) for ref in section.get("reinforces") or []]
+        if role == "owner":
+            if seen_review:
+                reasons.append(
+                    f"owner section {index + 1} appears after a review section; owner sections "
+                    "come first in the unit"
+                )
+            if primary is None:
+                reasons.append(f"owner section {index + 1} has no primary_objective_ref")
+            elif int(primary) not in objective_ordinals:
+                reasons.append(
+                    f"owner section {index + 1} owns objective {primary}, which is not in this unit"
+                )
+            else:
+                owners[int(primary)] = owners.get(int(primary), 0) + 1
+            if reinforces:
+                reasons.append(f"owner section {index + 1} must not carry reinforces")
+        elif role == "review":
+            seen_review = True
+            reviews += 1
+            if primary is not None:
+                reasons.append(f"review section {index + 1} must have a null primary_objective_ref")
+            if not 1 <= len(reinforces) <= 4:
+                reasons.append(
+                    f"review section {index + 1} must reinforce 1 to 4 objectives; it names "
+                    f"{len(reinforces)}"
+                )
+            if len(set(reinforces)) != len(reinforces):
+                reasons.append(f"review section {index + 1} repeats a reinforced objective")
+            for ref in reinforces:
+                if int(ref) not in objective_ordinals and int(ref) > max(objective_ordinals or [0]):
+                    reasons.append(
+                        f"review section {index + 1} reinforces objective {ref}, which is later "
+                        "than this unit and therefore not retrieval of earlier material"
+                    )
+                elif int(ref) not in {
+                    int(obj["ordinal"])
+                    for obj in plan.get("objectives") or []
+                    if isinstance(obj, dict)
+                }:
+                    reasons.append(
+                        f"review section {index + 1} reinforces missing objective {ref}"
+                    )
+        else:
+            reasons.append(f"section {index + 1} has role {role!r}; expected owner or review")
+        if "media_need" not in section:
+            reasons.append(f"section {index + 1} must declare media_need, even when it needs none")
+        else:
+            objective = next(
+                (obj for obj in objectives if int(obj["ordinal"]) == int(primary or 0)), None
+            )
+            try:
+                lesson_capability_plan(
+                    recipe=recipe,
+                    section=section,
+                    objective=objective,
+                    locale=locale,
+                    dials=dials,
+                    plan=plan,
+                )
+            except capability_policy.CapabilityPolicyError as exc:
+                reasons.append(f"section {index + 1}: {exc}")
+        for sid in section.get("source_ids") or []:
+            if sid not in ledger_ids:
+                reasons.append(
+                    f"section {index + 1} cites source {sid}, which was never fetched"
+                )
+        if not str(section.get("title") or "").strip():
+            reasons.append(f"section {index + 1} has no title")
+        if len(str(section.get("lesson_intent") or "")) < 10:
+            reasons.append(f"section {index + 1} has no usable lesson_intent")
+
+    expected = [ref for ref in objective_ordinals if ref not in set(existing_owner_refs)]
+    for ordinal in expected:
+        count = owners.get(ordinal, 0)
+        if count == 0:
+            reasons.append(
+                f"objective {ordinal} has no owner section; author exactly one owner section per "
+                "objective"
+            )
+        elif count > 1:
+            reasons.append(
+                f"objective {ordinal} is owned by {count} sections; author exactly one"
+            )
+
+    target = int(unit.get("target_lessons", 0))
+    total_after = len(set(existing_owner_refs)) + len(sections)
+    if total_after != target:
+        reasons.append(
+            f"unit {unit_ordinal} targets {target} lesson(s); this batch would leave "
+            f"{total_after} section(s)"
+        )
+
+    if reasons:
+        raise _RuleViolation(reasons)
+
+
+def run_unit_sections_job(
+    connection: sqlite3.Connection,
+    job: dict[str, Any],
+    llm: LLM,
+    *,
+    plan_id: str | None = None,
+    unit_ordinal: int | None = None,
+    now: datetime | None = None,
+    budget: CostBudget | None = None,
+) -> dict[str, Any]:
+    """Author one unit's sections against an approved blueprint plan.
+
+    Idempotent per ``(plan_id, unit_ordinal)``: existing section rows are reused, and only owner
+    sections for objectives that have none are asked for. The job is one stage with its own
+    four-call budget and a durable checkpoint; it never enqueues the next unit.
+    """
+    ensure_schema(connection)
+    job = dict(job or {})
+    brief = dict(job.get("brief") or {})
+    plan_id = plan_id or brief.get("plan_id")
+    if not plan_id:
+        raise GenerationRejected("unit_sections job needs a plan_id")
+    requested = unit_ordinal if unit_ordinal is not None else brief.get("unit_ordinal")
+    if requested is None:
+        raise GenerationRejected("unit_sections job needs a unit_ordinal")
+    try:
+        requested_unit = int(requested)
+    except (TypeError, ValueError) as exc:
+        raise GenerationRejected(f"unit_ordinal must be an integer, got {requested!r}") from exc
+    job_id = str(job.get("job_id") or "") or None
+
+    document = _load_plan_document(connection, str(plan_id))
+    if document is None:
+        raise GenerationRejected(f"plan {plan_id!r} has no authored document")
+    plan_row = _row_dict(connection.execute("SELECT * FROM plans WHERE id = ?", (str(plan_id),)).fetchone())
+    if plan_row is None:
+        raise GenerationRejected(f"plan {plan_id!r} does not exist")
+    plan = document["document"].get("plan") or {}
+    if str(plan.get("plan_schema") or "") != PLAN_SCHEMA_V2_NAME:
+        raise GenerationRejected(
+            f"plan {plan_id!r} is a legacy v1 plan; it has no units and its sections were "
+            "authored with the plan. Author lessons directly."
+        )
+    if plan_row["state"] != "approved":
+        raise PlanNotApproved(
+            f"plan {plan_id!r} is {plan_row['state']!r}; unit sections require an approved plan"
+        )
+    unit = _unit_row(connection, str(plan_id), requested_unit)
+    if unit is None:
+        raise GenerationRejected(f"plan {plan_id!r} has no unit {requested_unit}")
+    objectives = _unit_objectives(connection, str(plan_id), str(unit["id"]))
+    if not objectives:
+        raise GenerationRejected(f"unit {requested_unit} has no objectives")
+    digest = str(document["plan_hash"])
+    research_doc = document["research"]
+    sources = [
+        SourceRecord(**{**source, "claim_links": list(source.get("claim_links") or [])})
+        for source in research_doc.get("sources") or []
+    ]
+    research_status = str(research_doc.get("status") or "unavailable")
+    recipe = str(document["document"].get("recipe") or "casual")
+    stored_dials = dict(document["document"].get("dials") or {})
+    level = _plan_input(document["document"], "level")
+    subject_domain = _plan_input(document["document"], "subject_domain")
+    dials = _policy_dials(stored_dials, level=level, subject_domain=subject_domain)
+    locale = document["document"].get("locale")
+    goal = str(
+        document["document"].get("goal")
+        or brief.get("goal")
+        or plan.get("title")
+        or ""
+    )
+
+    existing_sections = _unit_section_rows(connection, str(plan_id), str(unit["id"]))
+    existing_owner_refs = [
+        ref for ref in (_section_owner_ref(section) for section in existing_sections) if ref is not None
+    ]
+    missing_objectives = [
+        objective
+        for objective in objectives
+        if int(objective["ordinal"]) not in set(existing_owner_refs)
+    ]
+    target = int(unit["target_lessons"])
+    if not missing_objectives and len(existing_sections) >= target:
+        return {
+            "job_id": job_id,
+            "job_kind": "unit_sections",
+            "plan_id": str(plan_id),
+            "plan_hash": digest,
+            "stage": "unit_sections",
+            "unit_ordinal": requested_unit,
+            "sections": len(existing_sections),
+            "owners": len(existing_owner_refs),
+            "reviews": len(existing_sections) - len(existing_owner_refs),
+            "reused": True,
+            "next_unit_ordinal": _next_unit_ordinal(connection, str(plan_id), requested_unit),
+        }
+
+    resolved_budget = budget or unit_sections_cost_budget(brief_budget_usd=brief.get("budget_usd"))
+    usage = _Usage(resolved_budget)
+    validation_request: LLMRequest | None = None
+    validation_response: LLMResponse | None = None
+    verdict: dict[str, Any] | None = None
+    feedback: str | None = None
+    rejection_reasons: list[str] = []
+    authored: list[dict[str, Any]] = []
+    request: LLMRequest | None = None
+
+    try:
+        for attempt in (1, 2):
+            validation_request = None
+            validation_response = None
+            verdict = None
+            authored = []
+            request = build_unit_sections_request(
+                plan=plan,
+                unit=unit,
+                objectives=missing_objectives,
+                goal=goal,
+                recipe=recipe,
+                locale=locale,
+                sources=sources,
+                research_status=research_status,
+                feedback=feedback,
+            )
+            response = _call_llm(llm, request, usage)
+            candidate = _parse_structured(
+                response, UNIT_SECTIONS_SCHEMA, what="unit sections", max_bytes=MAX_PLAN_BYTES
+            )
+            batch = [dict(item) for item in candidate.get("sections") or []]
+            try:
+                enforce_unit_section_rules(
+                    batch,
+                    unit=unit,
+                    objectives=missing_objectives,
+                    plan=plan,
+                    recipe=recipe,
+                    dials=dials,
+                    locale=locale,
+                    ledger=sources,
+                    existing_owner_refs=existing_owner_refs,
+                )
+            except _RuleViolation as exc:
+                rejection_reasons = exc.reasons
+                if attempt == 2:
+                    authored = batch
+                    break
+                feedback = "The unit sections broke required rules:\n- " + "\n- ".join(exc.reasons)
+                continue
+            validation_request = build_unit_sections_validation_request(
+                plan=plan,
+                unit=unit,
+                objectives=missing_objectives,
+                sections=batch,
+                goal=goal,
+                recipe=recipe,
+                locale=locale,
+                sources=sources,
+                research_status=research_status,
+            )
+            assert request is not None
+            assert_separate_pass(request, validation_request)
+            validation_response = _call_llm(llm, validation_request, usage)
+            report = _parse_structured(
+                validation_response,
+                VALIDATION_SCHEMA,
+                what="unit sections validation",
+                max_bytes=MAX_VALIDATION_BYTES,
+            )
+            verdict = validation_verdict(
+                report, research_status=research_status, ledger=sources
+            )
+            if verdict["verdict"] == "pass":
+                authored = batch
+                break
+            rejection_reasons = [
+                f"{entry.get('item')}: {entry.get('reason')}" for entry in verdict["rejections"]
+            ] or [f"criteria failed: {', '.join(verdict['failed'])}"]
+            if attempt == 2:
+                authored = batch
+                break
+            feedback = _feedback(verdict["rejections"])
+
+        if verdict is None:
+            verdict = {
+                "verdict": "reject",
+                "declared": "reject",
+                "failed": [],
+                "unknown": [],
+                "rejections": [
+                    {"item": "unit_sections", "criterion": "objective_alignment", "reason": reason}
+                    for reason in rejection_reasons
+                ]
+                or [{"item": "unit_sections", "criterion": "objective_alignment", "reason": "generator broke required rules"}],
+                "criteria": [],
+                "claim_verdicts": [],
+            }
+        if not authored:
+            raise GenerationRejected(
+                f"unit {requested_unit} produced no sections"
+            )
+
+        state = "validated" if verdict["verdict"] == "pass" else "needs_review"
+        timestamp = _now_iso(now)
+        # Global ordinals after the highest already stored for this plan, in unit order. The
+        # writer assigns identity; the model's ordinal is advisory.
+        ordinal_row = connection.execute(
+            "SELECT COALESCE(MAX(ordinal), 0) AS n FROM gen_plan_sections WHERE plan_id = ?",
+            (str(plan_id),),
+        ).fetchone()
+        next_ordinal = int((ordinal_row["n"] if isinstance(ordinal_row, sqlite3.Row) else ordinal_row[0]) or 0) + 1
+        objective_ids = {int(obj["ordinal"]): str(obj["id"]) for obj in objectives}
+        all_objective_ordinals = {
+            int(obj.get("ordinal", 0))
+            for obj in plan.get("objectives") or []
+            if isinstance(obj, dict)
+        }
+        validation_id: str | None = None
+        section_ids: list[str] = []
+        with _transaction(connection):
+            for section in authored:
+                section_id = _new_id()
+                section_ids.append(section_id)
+                role = str(section.get("role") or "owner")
+                primary = section.get("primary_objective_ref")
+                refs = (
+                    [int(primary)]
+                    if role == "owner" and primary is not None
+                    else [int(ref) for ref in section.get("reinforces") or []]
+                )
+                for ref in refs:
+                    if ref not in all_objective_ordinals:
+                        raise GenerationRejected(
+                            f"unit {requested_unit} references objective {ref}, which the plan "
+                            "does not contain"
+                        )
+                connection.execute(
+                    "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title, "
+                    "lesson_intent, media_need_json, objective_refs_json, context_needs_json, "
+                    "source_ids_json, unit_id, section_role) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        section_id,
+                        str(plan_id),
+                        next_ordinal,
+                        digest,
+                        str(section["title"]),
+                        str(section["lesson_intent"]),
+                        _json(section.get("media_need")),
+                        _json(refs),
+                        _json(section.get("context_needs") or []),
+                        _json(section.get("source_ids") or []),
+                        str(unit["id"]),
+                        role,
+                    ),
+                )
+                next_ordinal += 1
+            if validation_request is not None and validation_response is not None:
+                validation_id = _record_validation(
+                    connection,
+                    subject_kind="unit_sections",
+                    subject_id=f"{plan_id}:{requested_unit}",
+                    subject_hash=sha256_of_text(canonical_json(authored)),
+                    generation_request=request,
+                    validation_request=validation_request,
+                    response=validation_response,
+                    verdict=verdict,
+                    now=now,
+                )
+        _record_usage(connection, job_id, usage, now)
+        total_sections = len(existing_sections) + len(authored)
+        return {
+            "job_id": job_id,
+            "job_kind": "unit_sections",
+            "plan_id": str(plan_id),
+            "plan_hash": digest,
+            "stage": "unit_sections",
+            "unit_ordinal": requested_unit,
+            "state": state,
+            "sections": total_sections,
+            "owners": len(existing_owner_refs) + len(
+                [s for s in authored if str(s.get("role") or "owner") == "owner"]
+            ),
+            "reviews": len(
+                [s for s in authored if str(s.get("role") or "owner") == "review"]
+            )
+            + (len(existing_sections) - len(existing_owner_refs)),
+            "section_ids": section_ids,
+            "validation_id": validation_id,
+            "validation_verdict": verdict["verdict"],
+            "reused": False,
+            "next_unit_ordinal": _next_unit_ordinal(connection, str(plan_id), requested_unit),
+            "usage": usage.summary(),
+            "budget": resolved_budget.as_dict(),
+            "rejection_reasons": rejection_reasons if state == "needs_review" else [],
+        }
+    except BaseException:
+        _record_usage(connection, job_id, usage, now)
+        raise
+
+
+def _next_unit_ordinal(
+    connection: sqlite3.Connection, plan_id: str, unit_ordinal: int
+) -> int | None:
+    """The next unit after ``unit_ordinal``, or ``None`` at the end.
+
+    This is a *checkpoint fact* the client offers as an action. The executor never enqueues it:
+    a silent chain would hide cost, hide failure and make cancellation a lie (§7).
+    """
+    row = connection.execute(
+        "SELECT MIN(ordinal) AS n FROM plan_units WHERE plan_id = ? AND ordinal > ?",
+        (str(plan_id), int(unit_ordinal)),
+    ).fetchone()
+    value = row["n"] if isinstance(row, sqlite3.Row) else row[0]
+    return int(value) if value is not None else None
+
+
 # ── Lesson job ──────────────────────────────────────────────────────────────
 
 
@@ -4379,6 +5827,9 @@ def _section_dict(row: dict[str, Any]) -> dict[str, Any]:
         "objective_refs": _load_json(row.get("objective_refs_json"), []),
         "context_needs": _load_json(row.get("context_needs_json"), []),
         "source_ids": _load_json(row.get("source_ids_json"), []),
+        # A legacy row has NULL unit_id and reads as an owner section, exactly as §4 says.
+        "unit_id": row.get("unit_id"),
+        "section_role": row.get("section_role") or "owner",
     }
 
 
@@ -4488,15 +5939,19 @@ def run_lesson_job(
     llm: LLM,
     *,
     plan_id: str | None = None,
+    unit_ordinal: int | None = None,
     now: datetime | None = None,
     budget: CostBudget | None = None,
 ) -> dict[str, Any]:
     """Author one validated lesson per section of an **approved** plan.
 
+    A v1 plan authors every bundled section, exactly as before. A v2 blueprint plan is authored
+    one unit at a time: ``unit_ordinal`` selects the unit, the budget is sized to *that unit's*
+    sections, and a cancelled or partially failed unit leaves its finished lessons durable.
+
     Idempotent per ``(section, plan_hash, version)``: re-running the job reuses existing lessons
-    and never duplicates rows or spend. The budget is sized to the plan and preflighted before the
-    first provider call; a ceiling that cannot pay the minimum raises ``CostPreflightRefused`` and
-    spends nothing.
+    and never duplicates rows or spend. The budget is preflighted before the first provider call;
+    a ceiling that cannot pay the minimum raises ``CostPreflightRefused`` and spends nothing.
     """
     ensure_schema(connection)
     job = dict(job or {})
@@ -4537,39 +5992,105 @@ def run_lesson_job(
     ]
     research_status = str(research_doc.get("status") or "unavailable")
 
-    section_rows = [
-        _section_dict(dict(row))
-        for row in connection.execute(
-            "SELECT * FROM gen_plan_sections WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
-        ).fetchall()
-    ]
+    blueprint_plan = str(plan.get("plan_schema") or "") == PLAN_SCHEMA_V2_NAME
+    unit: dict[str, Any] | None = None
+    if blueprint_plan:
+        requested = unit_ordinal if unit_ordinal is not None else brief.get("unit_ordinal")
+        if requested is None:
+            raise GenerationRejected(
+                f"plan {plan_id!r} is a blueprint plan; a lessons job needs a unit_ordinal"
+            )
+        try:
+            requested_unit = int(requested)
+        except (TypeError, ValueError) as exc:
+            raise GenerationRejected(
+                f"unit_ordinal must be an integer, got {requested!r}"
+            ) from exc
+        unit = _unit_row(connection, str(plan_id), requested_unit)
+        if unit is None:
+            raise GenerationRejected(f"plan {plan_id!r} has no unit {requested_unit}")
+        section_rows = _unit_section_rows(connection, str(plan_id), str(unit["id"]))
+    else:
+        unit = None
+        section_rows = [
+            _section_dict(dict(row))
+            for row in connection.execute(
+                "SELECT * FROM gen_plan_sections WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
+            ).fetchall()
+        ]
     if not section_rows:
+        if blueprint_plan and unit is not None:
+            raise GenerationRejected(
+                f"unit {unit['ordinal']} of plan {plan_id!r} has no sections; author the unit "
+                "sections job first"
+            )
         raise GenerationRejected(f"plan {plan_id!r} has no sections to author")
 
     # A replanned (or draft-edited) plan can carry an outline that no longer covers its objectives —
     # for example an objective added after the carry. Authoring only the covered sections would
     # leave a lesson set that exports with an objective silently missing, so refuse instead.
-    objective_ordinals = sorted(
-        int(row["ordinal"])
-        for row in connection.execute(
-            "SELECT ordinal FROM objectives WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
-        ).fetchall()
-    )
-    section_refs: list[int] = []
-    for section in section_rows:
-        refs = section.get("objective_refs") or []
-        if len(refs) != 1:
-            raise GenerationRejected(
-                f"plan {plan_id!r} section {section.get('ordinal')} must name exactly one objective;"
-                " re-author the plan"
-            )
-        section_refs.append(int(refs[0]))
-    if sorted(section_refs) != objective_ordinals:
-        raise GenerationRejected(
-            f"plan {plan_id!r} outline covers objectives {sorted(section_refs)} but the plan has"
-            f" objectives {objective_ordinals}; the plan structure changed after it was authored."
-            " Re-author the plan before generating lessons."
+    if blueprint_plan and unit is not None:
+        objective_ordinals = sorted(
+            int(row["ordinal"])
+            for row in connection.execute(
+                "SELECT ordinal FROM objectives WHERE plan_id = ? AND unit_id = ? ORDER BY ordinal",
+                (str(plan_id), str(unit["id"])),
+            ).fetchall()
         )
+        owner_refs: list[int] = []
+        for section in section_rows:
+            role = str(section.get("section_role") or "owner")
+            refs = section.get("objective_refs") or []
+            if role == "owner":
+                if len(refs) != 1:
+                    raise GenerationRejected(
+                        f"plan {plan_id!r} owner section {section.get('ordinal')} must name "
+                        "exactly one objective; re-author the unit sections"
+                    )
+                owner_refs.append(int(refs[0]))
+            elif role == "review":
+                if not refs:
+                    raise GenerationRejected(
+                        f"plan {plan_id!r} review section {section.get('ordinal')} reinforces no "
+                        "objective; re-author the unit sections"
+                    )
+            else:
+                raise GenerationRejected(
+                    f"plan {plan_id!r} section {section.get('ordinal')} has unknown role {role!r}"
+                )
+        if sorted(owner_refs) != objective_ordinals:
+            raise GenerationRejected(
+                f"unit {unit['ordinal']} owner sections cover objectives {sorted(owner_refs)} but "
+                f"the unit has objectives {objective_ordinals}; re-author the unit sections."
+            )
+        target = int(unit.get("target_lessons", 0))
+        if len(section_rows) != target:
+            raise GenerationRejected(
+                f"unit {unit['ordinal']} targets {target} lesson(s) but has "
+                f"{len(section_rows)} section(s); re-author the unit sections."
+            )
+    else:
+        objective_ordinals = sorted(
+            int(row["ordinal"])
+            for row in connection.execute(
+                "SELECT ordinal FROM objectives WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
+            ).fetchall()
+        )
+        section_refs: list[int] = []
+        for section in section_rows:
+            refs = section.get("objective_refs") or []
+            if len(refs) != 1:
+                raise GenerationRejected(
+                    f"plan {plan_id!r} section {section.get('ordinal')} must name exactly one objective;"
+                    " re-author the plan"
+                )
+            section_refs.append(int(refs[0]))
+        if sorted(section_refs) != objective_ordinals:
+            raise GenerationRejected(
+                f"plan {plan_id!r} outline covers objectives {sorted(section_refs)} but the plan has"
+                f" objectives {objective_ordinals}; the plan structure changed after it was authored."
+                " Re-author the plan before generating lessons."
+            )
 
     # Budget sized to *this* plan: every section gets two attempts of generate + validate, and the
     # dollar ceiling scales with the calls. Never start a job whose *minimum* (one generate + one
@@ -4598,6 +6119,9 @@ def run_lesson_job(
                     }
                 )
                 continue
+            review_target = None
+            if blueprint_plan and str(section.get("section_role") or "owner") == "review":
+                review_target = _resolve_review_target(connection, str(plan_id), section)
             lesson_summaries.append(
                 _author_section(
                     connection,
@@ -4618,6 +6142,7 @@ def run_lesson_job(
                     job_id=job_id,
                     now=now,
                     parent_brief=lesson_parent_brief,
+                    review_target=review_target,
                 )
             )
     except BaseException as exc:
@@ -4656,12 +6181,80 @@ def run_lesson_job(
         "job_kind": "lesson",
         "plan_id": str(plan_id),
         "plan_hash": digest,
+        "stage": "lessons",
+        "plan_schema": plan.get("plan_schema"),
+        "unit_ordinal": int(unit["ordinal"]) if unit is not None else None,
+        "next_unit_ordinal": (
+            _next_unit_ordinal(connection, str(plan_id), int(unit["ordinal"]))
+            if unit is not None
+            else None
+        ),
+        "sections_total": len(section_rows),
         "lessons": lesson_summaries,
         "needs_review": [item["section_id"] for item in lesson_summaries if item["state"] == "needs_review"],
         "usage": usage.summary(),
         "preflight": preflight.to_dict(),
         "budget": resolved_budget.as_dict(),
     }
+
+
+def _resolve_review_target(
+    connection: sqlite3.Connection, plan_id: str, section: dict[str, Any]
+) -> dict[str, Any]:
+    """The owner check a review section presents, or a typed refusal.
+
+    A review lesson authors **no new check** (§5). It presents the existing owner check of the
+    objective it reinforces. Choosing the first reinforced ref that already has an open check is
+    deterministic; the caller stores the link and never inserts a ``checks`` row.
+    """
+    refs = [int(ref) for ref in section.get("objective_refs") or []]
+    for ref in refs:
+        objective = _objective_for(connection, plan_id, ref)
+        if objective is None:
+            continue
+        row = _row_dict(
+            connection.execute(
+                "SELECT * FROM checks WHERE objective_id = ? AND state = 'open' "
+                "ORDER BY version DESC LIMIT 1",
+                (str(objective["id"]),),
+            ).fetchone()
+        )
+        if row is None:
+            continue
+        stimulus = _load_json(row["stimulus_json"], {})
+        reference = _load_json(row["reference_json"], {})
+        rubric = _load_json(row["rubric_json"], {})
+        kind_row = _row_dict(
+            connection.execute(
+                "SELECT l.page_json FROM gen_lessons l JOIN gen_lesson_checks g ON g.lesson_id = l.id "
+                "WHERE g.check_id = ? LIMIT 1",
+                (str(row["id"]),),
+            ).fetchone()
+        )
+        page = _load_json(kind_row["page_json"], {}) if kind_row is not None else {}
+        kind = (page.get("check") or {}).get("kind") or "quiz"
+        check = {
+            "kind": kind,
+            "evidence_target": row["evidence_target"],
+            "stimulus": dict(stimulus),
+            "learner_instructions": stimulus.get("learner_instructions") or "",
+            "scaffolds": dict(stimulus.get("scaffolds") or {}),
+            "assistance_policy": dict(stimulus.get("assistance_policy") or {}),
+            "reference_answer": reference.get("reference_answer"),
+            "accepted_answers": list(reference.get("accepted_answers") or []),
+            "accepted_alternatives": [list(group) for group in reference.get("accepted_alternatives") or []],
+            "rubric": [dict(item) for item in rubric.get("criteria") or []],
+        }
+        return {
+            "check_id": str(row["id"]),
+            "objective": objective,
+            "objective_ordinal": ref,
+            "check": check,
+        }
+    raise GenerationRejected(
+        f"review section {section.get('ordinal')} reinforces objectives {refs} but none has an "
+        "open owner check; author the owner lessons for those objectives first"
+    )
 
 
 def _author_section(
@@ -4684,9 +6277,18 @@ def _author_section(
     level: str | None = None,
     subject_domain: str | None = None,
     parent_brief: dict[str, Any] | None = None,
+    review_target: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    objective_ordinal = int((section.get("objective_refs") or [1])[0])
-    objective = _objective_for(connection, plan_id, objective_ordinal)
+    objective_ordinal = int(
+        review_target["objective_ordinal"]
+        if review_target is not None
+        else (section.get("objective_refs") or [1])[0]
+    )
+    objective = (
+        review_target["objective"]
+        if review_target is not None
+        else _objective_for(connection, plan_id, objective_ordinal)
+    )
     # The requests carry the closed contract dials; ``dials`` here is the in-memory policy view.
     request_dials = dict(stored_dials if stored_dials is not None else dials)
     # Decide the capability plan once per section: the prompt gets exactly its permissions, the
@@ -4735,6 +6337,14 @@ def _author_section(
         # The harness owns the policy: a model echo is accepted by the schema but overwritten, so
         # the stored and validated lesson can only carry the deterministic decision.
         candidate["policy"] = capability.to_dict()
+        if review_target is not None:
+            # A review lesson presents the owner check. The drafted check is discarded before any
+            # rule or page is built, so the learner can never receive a second check authority.
+            candidate["check"] = dict(review_target["check"])
+            candidate["check_mode"] = "reuse"
+            candidate["reuse_objective_ref"] = objective_ordinal
+        else:
+            candidate["check_mode"] = "new"
         page = _build_learner_page(candidate, section, sources)
 
         # Every gate runs before the attempt is judged, so a regeneration carries the whole list of
@@ -4821,7 +6431,7 @@ def _author_section(
     state = "validated" if verdict["verdict"] == "pass" else "needs_review"
     check_payloads = _check_payloads(lesson, locale=locale)
     lesson_id = _new_id()
-    check_id = _new_id()
+    check_id = str(review_target["check_id"]) if review_target is not None else _new_id()
     timestamp = _now_iso(now)
     objective_id = str(objective["id"]) if objective else plan_id
 
@@ -4854,23 +6464,25 @@ def _author_section(
             "SELECT COALESCE(MAX(version), 0) AS v FROM checks WHERE objective_id = ?", (objective_id,)
         ).fetchone()
         check_version = int((version_row["v"] if isinstance(version_row, sqlite3.Row) else version_row[0]) or 0) + 1
-        connection.execute(
-            "INSERT INTO checks (id, objective_id, version, evidence_target, stimulus_json, rubric_json, "
-            "reference_json, locale, audit_state, state, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-            (
-                check_id,
-                objective_id,
-                check_version,
-                str(lesson["check"]["evidence_target"]),
-                _json(check_payloads["stimulus"]),
-                _json(check_payloads["rubric"]),
-                _json(check_payloads["reference"]),
-                locale,
-                "passed" if state == "validated" else "failed",
-                "open" if state == "validated" else "closed",
-                timestamp,
-            ),
-        )
+        if review_target is None:
+            connection.execute(
+                "INSERT INTO checks (id, objective_id, version, evidence_target, stimulus_json, rubric_json, "
+                "reference_json, locale, audit_state, state, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    check_id,
+                    objective_id,
+                    check_version,
+                    str(lesson["check"]["evidence_target"]),
+                    _json(check_payloads["stimulus"]),
+                    _json(check_payloads["rubric"]),
+                    _json(check_payloads["reference"]),
+                    locale,
+                    "passed" if state == "validated" else "failed",
+                    "open" if state == "validated" else "closed",
+                    timestamp,
+                ),
+            )
+        # A review lesson links the existing owner check and writes no ``checks`` row (§5).
         connection.execute(
             "INSERT INTO gen_lesson_checks (lesson_id, check_id, objective_ref) VALUES (?,?,?)",
             (lesson_id, check_id, objective_ordinal),

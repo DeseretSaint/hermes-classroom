@@ -23,6 +23,12 @@ import unittest
 
 from coursebook import db, domain, generation, job_service
 
+from tests.blueprint_support import (
+    blueprint_plan,
+    response as blueprint_response,
+    unit_sections_document,
+    validation_pass,
+)
 from tests.kernel_support import KernelCase
 from tests.test_generation import (
     FakeLLM,
@@ -30,7 +36,6 @@ from tests.test_generation import (
     NOW,
     lesson_from_request,
     plan_job,
-    plan_from_fixture,
     validation_from_fixture,
 )
 
@@ -38,6 +43,11 @@ GOAL = "Order coffee and ask for the bill in Kyoto, politely."
 TITLE = "Coffee in Kyoto"
 RECIPE = "committed"
 DIALS = {"pace": "steady", "depth": "working", "assessment": "graded", "autonomy": "guided"}
+
+
+def learner_plan() -> dict:
+    """A schema-valid blueprint plan for the learner's short, committed course."""
+    return blueprint_plan(scope="short", units=1, objectives_per_unit=3, recipe="committed")
 
 
 def learner_course_payload() -> dict:
@@ -167,8 +177,8 @@ class LearnerPlanFlowTest(KernelCase):
                 job,
                 FakeLLM(
                     {
-                        "coursebook.plan.generate": plan_from_fixture("plan_ja"),
-                        "coursebook.plan.validate": validation_from_fixture("validation_pass"),
+                        "coursebook.plan.generate": blueprint_response(learner_plan()),
+                        "coursebook.plan.validate": blueprint_response(validation_pass()),
                     }
                 ),
                 FakeSearch(),
@@ -197,8 +207,8 @@ class LearnerPlanFlowTest(KernelCase):
                 job,
                 FakeLLM(
                     {
-                        "coursebook.plan.generate": plan_from_fixture("plan_ja"),
-                        "coursebook.plan.validate": validation_from_fixture("validation_pass"),
+                        "coursebook.plan.generate": blueprint_response(learner_plan()),
+                        "coursebook.plan.validate": blueprint_response(validation_pass()),
                     }
                 ),
                 FakeSearch(),
@@ -273,6 +283,7 @@ class LearnerPlanFlowTest(KernelCase):
             "stage": "lessons",
             "plan_id": plan_id,
             "enrollment_id": flow["enrollment_id"],
+            "unit_ordinal": 1,
         }
         job = self.ok(
             "jobs.create",
@@ -287,8 +298,27 @@ class LearnerPlanFlowTest(KernelCase):
             )["result"]["job_id"],
             job["job_id"],
         )
+        plan = learner_plan()
+        unit = plan["units"][0]
+        objectives = [item for item in plan["objectives"] if int(item["unit_ref"]) == 1]
         connection = db.connect()
         try:
+            # A blueprint plan has no sections until the unit stage authors them.
+            generation.run_unit_sections_job(
+                connection,
+                {"job_id": None, "brief": {"plan_id": plan_id, "unit_ordinal": 1}},
+                FakeLLM(
+                    {
+                        "coursebook.unit_sections.generate": blueprint_response(
+                            unit_sections_document(unit=unit, objectives=objectives)
+                        ),
+                        "coursebook.unit_sections.validate": blueprint_response(validation_pass()),
+                    }
+                ),
+                plan_id=plan_id,
+                unit_ordinal=1,
+                now=NOW,
+            )
             result = generation.run_lesson_job(
                 connection,
                 {"job_id": job["job_id"], "brief": lessons_brief},
@@ -299,12 +329,14 @@ class LearnerPlanFlowTest(KernelCase):
                     }
                 ),
                 plan_id=plan_id,
+                unit_ordinal=1,
                 now=NOW,
                 budget=generation.CostBudget(max_calls=32),
             )
         finally:
             connection.close()
         self.assertEqual(result["plan_id"], plan_id)
+        self.assertEqual(result["unit_ordinal"], 1)
         self.assertGreater(len(result.get("lessons") or []), 0)
 
 

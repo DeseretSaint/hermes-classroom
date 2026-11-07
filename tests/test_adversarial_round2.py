@@ -304,7 +304,8 @@ class ValidatorIndependenceTest(unittest.TestCase):
 
 
 class PedagogyTest(unittest.TestCase):
-    """Finding H10-5: no prerequisite graph or sequencing beyond objective state."""
+    """Finding H10-5 was "no prerequisite graph". H-21 added unit edges (v2), but they are a
+    disclosure over the same objective labels — no learner model, score or adaptive claim."""
 
     def test_schema_cannot_express_a_prerequisite(self) -> None:
         plan = plan_fixture()
@@ -315,19 +316,60 @@ class PedagogyTest(unittest.TestCase):
         self.assertNotIn("prerequisite", gen.OBJECTIVE_SCHEMA["properties"])
 
     def test_adaptation_is_a_state_transition_only(self) -> None:
-        from coursebook import domain
+        """R5/R7: prerequisite facts are objective labels, never a score, vector or readiness.
 
-        # Six objective states and one review flag; no learner-model vector, no mastery estimate.
-        # The only learner-model state is a per-objective label from a closed set, plus one
-        # scheduled review flag. There is no mastery score, prerequisite edge or sequencing.
+        This body used to compare the seven-state set with itself, which proved nothing. It now
+        pins the two facts the design depends on: the outline unit carries exactly the R9 key
+        set (no derived boolean a client could read as "ready" or "mastered"), and the only
+        prerequisite vocabulary is the same seven objective labels the kernel already stores.
+        """
+        from coursebook import domain
+        from coursebook.contracts import contract
+
+        unit = contract("cb.rpc")["$defs"]["outline_unit"]
         self.assertEqual(
-            {"not_started", "introduced", "independent_evidence", "delayed_evidence",
-             "review_due", "needs_review", "overridden"},
+            set(unit["properties"]),
+            {
+                "ordinal",
+                "title",
+                "goal",
+                "prereq_unit_ordinals",
+                "prerequisite_state",
+                "unmet",
+                "objectives",
+            },
+        )
+        # R7: no number and no derived flag. `independent` stays the objective's own label.
+        self.assertFalse(
+            {"score", "probability", "mastery", "readiness", "ready", "vector"}
+            & set(unit["properties"])
+        )
+        # R5: the projection exposes exactly three disclosure states.
+        self.assertEqual(
+            set(unit["properties"]["prerequisite_state"]["enum"]),
+            {"no_edges", "satisfied", "unmet"},
+        )
+        # The only learner-model state is the closed per-objective label set; it has not grown.
+        self.assertEqual(
+            set(contract("cb.vocabulary")["$defs"]["objective_state"]["enum"]),
             {"not_started", "introduced", "independent_evidence", "delayed_evidence",
              "review_due", "needs_review", "overridden"},
         )
+        # R5a: only these three states satisfy access. `overridden` grants access only.
+        self.assertEqual(
+            domain._PREREQUISITE_SATISFIED,
+            ("independent_evidence", "delayed_evidence", "overridden"),
+        )
+        # R8: `prerequisite_policy` is reserved, not shipped. Neither gating command accepts it,
+        # and no alias carries it, so a later strict mode has one name to add.
+        rpc = contract("cb.rpc")["$defs"]["methods"]["properties"]
+        for method in ("lesson.begin", "check.open"):
+            self.assertNotIn("prerequisite_policy", rpc[method]["request"]["properties"])
+        # A transition is a mapping over labels, not an estimate.
         self.assertEqual(domain._objective_state_after("pass", "cold", "review_due"),
                          "delayed_evidence")
+        self.assertEqual(domain._objective_state_after("pass", "hinted", "not_started"),
+                         "introduced")
         self.assertEqual(domain._objective_state_after("partial", "cold", "introduced"),
                          "needs_review")
 
