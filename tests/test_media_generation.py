@@ -160,6 +160,21 @@ class MediaGenerationTest(KernelCase):
         self.assertTrue(preview["data_url"].startswith("data:image/png;base64,"))
         self.assertEqual(media.preview_artifact("art_missing")["code"], "NOT_FOUND")
 
+    def test_preview_passes_the_artifacts_permission_and_sources_to_the_reader(self) -> None:
+        self.generate(FakeHost())
+        visual = next(item for item in self.stored_media() if item["kind"] == "visual")
+        provenance = json.loads(
+            str(
+                self.scalar(
+                    "SELECT provenance_json FROM artifacts WHERE id = ?", (visual["artifact_id"],)
+                )
+            )
+        )
+        preview = media.preview_artifact(visual["artifact_id"])
+        self.assertEqual(preview["permission"], provenance["permission"])
+        self.assertEqual(preview["source_ids"], provenance["source_ids"])
+        self.assertIn("permission", preview)
+
 
 class MediaSpecTest(unittest.TestCase):
     def test_audio_spec_defaults_voice_and_language_from_locale(self) -> None:

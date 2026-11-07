@@ -609,5 +609,9 @@ def preview_artifact(artifact_id: str) -> dict[str, Any]:
         "bytes": size,
         "label": provenance.get("label") or "Coursebook media",
         "text_equivalent": provenance.get("text_equivalent") or "",
+        # Provenance the reader needs to judge a technical reference: the declared rights and the
+        # cited sources, exactly as the artifact store recorded them at generation time.
+        "permission": provenance.get("permission"),
+        "source_ids": list(provenance.get("source_ids") or []),
         "data_url": f"data:{mime};base64," + base64.b64encode(data).decode("ascii"),
     }
