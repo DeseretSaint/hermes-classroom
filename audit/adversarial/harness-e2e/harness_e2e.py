@@ -41,6 +41,7 @@ from pathlib import Path
 
 from coursebook import generation as gen
 from coursebook import rubrics
+from coursebook import text_completeness
 
 HERE = Path(__file__).resolve().parent
 TRANSCRIPTS = HERE / "transcripts"
@@ -61,14 +62,76 @@ def _has_japanese(text: str) -> bool:
     )
 
 
+#: Marks that end a sentence; the short may only ever end on one of these.
+_TERMINAL_MARKS = ".!?\u2026\u3002\uff01\uff1f"
+#: Marks that separate clauses, so a sentence's own boundary can be kept when it has no full stop.
+_CLAUSE_MARKS = ",;:\u2014\u2013"
+_TRAILING_SEPARATORS = " ,;:\u2014\u2013"
+#: The lesson schema's floor for an authored short; a candidate below it is not schema-valid.
+_MIN_SHORT = 8
+
+
+def _complete(candidate: str) -> bool:
+    """True when the product's own completeness gate reads ``candidate`` as finished text.
+
+    The harness imports the predicate rather than re-spelling it: a short it authors can never
+    drift away from the shape the lesson validator reads, which is exactly the bit-rot that made
+    D8's recorded evidence stale when H-46 landed.
+    """
+    return not text_completeness.completeness_problems(candidate, where="short")
+
+
+def _terminated(fragment: str, terminal: str) -> str:
+    return fragment.rstrip(_TRAILING_SEPARATORS).rstrip() + terminal
+
+
 def _shorten(text: str) -> str:
-    """A strictly shorter prefix of ``text`` at a word boundary: drops detail, adds no claim."""
-    words = text.split()
-    keep = max(2, (len(words) * 2) // 3)
-    candidate = " ".join(words[:keep])
-    if len(candidate) >= len(text):
-        candidate = " ".join(words[: max(1, keep - 1)])
-    return candidate
+    """A strictly shorter, complete-sentence prefix of ``text``: drops detail, adds no claim.
+
+    The H-46 gate refuses a short that stops mid-sentence, so the old 2/3 word-boundary prefix is
+    no longer an authored short — D8 recorded precisely those clipped endings, and the gate is
+    right to refuse them. The contract is otherwise unchanged: the result is a strict prefix, so
+    every claim atom it carries already occurs in the deep text. It now lands on a sentence or
+    clause boundary and keeps the terminal mark, so it reads as a sentence on its own.
+    """
+    stripped = text.strip()
+    if not stripped:
+        return stripped
+    terminal = stripped[-1] if stripped[-1] in _TERMINAL_MARKS else "."
+
+    # 1. A complete first sentence, when the text holds more than one.
+    for index, char in enumerate(stripped[:-1]):
+        if char not in _TERMINAL_MARKS:
+            continue
+        candidate = stripped[: index + 1]
+        if _MIN_SHORT <= len(candidate) < len(stripped) and _complete(candidate):
+            return candidate
+
+    target = (len(stripped) * 2) // 3
+
+    # 2. The clause boundary closest to two thirds of the text, re-terminated as a sentence.
+    clauses: list[str] = []
+    for index, char in enumerate(stripped[:-1]):
+        if char not in _CLAUSE_MARKS:
+            continue
+        candidate = _terminated(stripped[:index], terminal)
+        if _MIN_SHORT <= len(candidate) < len(stripped) and _complete(candidate):
+            clauses.append(candidate)
+    if clauses:
+        return min(clauses, key=lambda candidate: abs(len(candidate) - target))
+
+    # 3. No sentence or clause boundary: the last whole-word prefix near two thirds that still
+    #    ends a sentence (never on a function word the gate would call dangling).
+    words = stripped.split()
+    start = max(2, (len(words) * 2) // 3)
+    for keep in range(min(start, len(words) - 1), 1, -1):
+        candidate = _terminated(" ".join(words[:keep]), terminal)
+        if _MIN_SHORT <= len(candidate) < len(stripped) and _complete(candidate):
+            return candidate
+
+    # 4. Nothing structural survives: keep the text whole rather than author a clipped sentence.
+    dropped_word = _terminated(" ".join(words[:-1]), terminal)
+    return dropped_word if len(dropped_word) < len(stripped) else stripped
 
 
 class RecordedSearch:
