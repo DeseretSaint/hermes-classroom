@@ -1,0 +1,1153 @@
+{
+  "card": "t_0a030589 — live Guided frame",
+  "captured_at": "2026-11-07T04:43:49.000Z",
+  "plugin_sha256": "6934b8330aecd6b51ed8de8646b664525626ea3302a7a0238bc7623e06522924",
+  "window": {
+    "cdp_port": "9361",
+    "target_url": "http://127.0.0.1:5174/#/coursebook",
+    "backend": "http://127.0.0.1:44331 (isolated, checkout under test)",
+    "course_opened": "Order coffee in Japanese"
+  },
+  "document": {
+    "lesson_view_at_entry": "textbook",
+    "document_id": "doc_cb0c0af423236b90835b",
+    "document_state": null,
+    "switcher": "available",
+    "textbook_blocks": [
+      {
+        "id": "blk_67ba9aca342d2441107c",
+        "role": "example",
+        "headline": "Two phrases you will hear",
+        "textLength": 181,
+        "media": 0,
+        "sources": 0,
+        "hasCheck": false
+      },
+      {
+        "id": "blk_c5d7613219fb4446e2cb",
+        "role": "explain",
+        "headline": "Why register matters",
+        "textLength": 150,
+        "media": 0,
+        "sources": 0,
+        "hasCheck": false
+      },
+      {
+        "id": "blk_d6ef2699b153539b9dd2",
+        "role": "practice",
+        "headline": "Say it with romaji visible",
+        "textLength": 462,
+        "media": 0,
+        "sources": 0,
+        "hasCheck": true
+      },
+      {
+        "id": "blk_f3d8a06515ffb69c6a37",
+        "role": "example",
+        "headline": "You want to ask for a menu politely.",
+        "textLength": 168,
+        "media": 0,
+        "sources": 0,
+        "hasCheck": false
+      },
+      {
+        "id": "blk_9482f1d2ed07f33d8878",
+        "role": "recap",
+        "headline": "Recap",
+        "textLength": 176,
+        "media": 0,
+        "sources": 0,
+        "hasCheck": false
+      }
+    ],
+    "textbook_text_length": 600,
+    "guided_blocks": [
+      {
+        "id": "blk_67ba9aca342d2441107c",
+        "role": "example",
+        "headline": "Two phrases you will hear",
+        "textLength": 143,
+        "media": 0,
+        "sources": 0,
+        "hasCheck": false
+      }
+    ],
+    "guided_text": "Example\nTwo phrases you will hear\nStep 1 of 5\n\nお願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.\n\nBack\nContinue",
+    "guided_step": "Step 1 of 5",
+    "guided_check_frame": "13-guided-practice-check-dark.png",
+    "check_nodes": 0
+  },
+  "switcher_transitions": [
+    {
+      "from": "textbook",
+      "to": "guided",
+      "pressed": [
+        [
+          "Textbook",
+          "false"
+        ],
+        [
+          "Guided",
+          "true"
+        ]
+      ],
+      "at": "2026-11-07T04:43:28.289Z"
+    },
+    {
+      "from": "guided",
+      "to": "textbook",
+      "pressed": [
+        [
+          "Textbook",
+          "true"
+        ],
+        [
+          "Guided",
+          "false"
+        ]
+      ],
+      "at": "2026-11-07T04:43:34.153Z"
+    },
+    {
+      "from": "textbook",
+      "to": "guided",
+      "pressed": [
+        [
+          "Textbook",
+          "false"
+        ],
+        [
+          "Guided",
+          "true"
+        ]
+      ],
+      "at": "2026-11-07T04:43:39.328Z"
+    }
+  ],
+  "appearance": {
+    "path": "appearance.toggleMode keybind (Shift+X) -> setMode -> modePref.assign -> applyTheme; no classList writes",
+    "initial_mode": "dark",
+    "restored_mode": "dark",
+    "light_gate": "dataset.hermesMode === \"light\" AND computed body relative luminance >= 0.8 before a light file is written",
+    "dark_gate": "dataset.hermesMode === \"dark\" AND computed body relative luminance <= 0.2 before a dark file is written"
+  },
+  "frames": [
+    {
+      "name": "01-textbook-dark",
+      "theme": "dark",
+      "width": 1280,
+      "textScale": 1,
+      "view": "textbook",
+      "file": "01-textbook-dark.png",
+      "bytes": 132469,
+      "routeTextLength": 1620,
+      "lessonView": "textbook",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "true"
+        ],
+        [
+          "Guided",
+          "false"
+        ]
+      ],
+      "step": null,
+      "viewText": "Example\nTwo phrases you will hear\n\nお願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms.\n\nExplain\nWhy register matters\n\nStandard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met.\n\nPractice\nSay it with romaji visible\n\nRepeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading.\n\nCheck v1\nproduction\nYour answer\n\nThe question and any choices are shown above; this field records",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 181,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_c5d7613219fb4446e2cb",
+          "role": "explain",
+          "headline": "Why register matters",
+          "textLength": 150,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_d6ef2699b153539b9dd2",
+          "role": "practice",
+          "headline": "Say it with romaji visible",
+          "textLength": 462,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        },
+        {
+          "id": "blk_f3d8a06515ffb69c6a37",
+          "role": "example",
+          "headline": "You want to ask for a menu politely.",
+          "textLength": 168,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_9482f1d2ed07f33d8878",
+          "role": "recap",
+          "headline": "Recap",
+          "textLength": 176,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 1,
+      "routeWidth": 912,
+      "viewWidth": 802,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
+      "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    },
+    {
+      "name": "02-textbook-light",
+      "theme": "light",
+      "width": 1280,
+      "textScale": 1,
+      "view": "textbook",
+      "file": "02-textbook-light.png",
+      "bytes": 126160,
+      "routeTextLength": 1620,
+      "lessonView": "textbook",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "true"
+        ],
+        [
+          "Guided",
+          "false"
+        ]
+      ],
+      "step": null,
+      "viewText": "Example\nTwo phrases you will hear\n\nお願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms.\n\nExplain\nWhy register matters\n\nStandard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met.\n\nPractice\nSay it with romaji visible\n\nRepeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading.\n\nCheck v1\nproduction\nYour answer\n\nThe question and any choices are shown above; this field records",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 181,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_c5d7613219fb4446e2cb",
+          "role": "explain",
+          "headline": "Why register matters",
+          "textLength": 150,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_d6ef2699b153539b9dd2",
+          "role": "practice",
+          "headline": "Say it with romaji visible",
+          "textLength": 462,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        },
+        {
+          "id": "blk_f3d8a06515ffb69c6a37",
+          "role": "example",
+          "headline": "You want to ask for a menu politely.",
+          "textLength": 168,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_9482f1d2ed07f33d8878",
+          "role": "recap",
+          "headline": "Recap",
+          "textLength": 176,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 1,
+      "routeWidth": 912,
+      "viewWidth": 802,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "hermesMode": "light",
+      "hermesTheme": "nous",
+      "colorScheme": "light",
+      "themeClass": "",
+      "backgroundSeed": "#ffffff",
+      "bodyBackground": "color(srgb 0.996235 0.996235 0.996235)",
+      "bodyLuminance": 0.991,
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    },
+    {
+      "name": "03-textbook-dark-200pct",
+      "theme": "dark",
+      "width": 1280,
+      "textScale": 2,
+      "view": "textbook",
+      "file": "03-textbook-dark-200pct.png",
+      "bytes": 183133,
+      "routeTextLength": 1620,
+      "lessonView": "textbook",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "true"
+        ],
+        [
+          "Guided",
+          "false"
+        ]
+      ],
+      "step": null,
+      "viewText": "Example\nTwo phrases you will hear\n\nお願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms.\n\nExplain\nWhy register matters\n\nStandard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met.\n\nPractice\nSay it with romaji visible\n\nRepeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading.\n\nCheck v1\nproduction\nYour answer\n\nThe question and any choices are shown above; this field records",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 181,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_c5d7613219fb4446e2cb",
+          "role": "explain",
+          "headline": "Why register matters",
+          "textLength": 150,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_d6ef2699b153539b9dd2",
+          "role": "practice",
+          "headline": "Say it with romaji visible",
+          "textLength": 462,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        },
+        {
+          "id": "blk_f3d8a06515ffb69c6a37",
+          "role": "example",
+          "headline": "You want to ask for a menu politely.",
+          "textLength": 168,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_9482f1d2ed07f33d8878",
+          "role": "recap",
+          "headline": "Recap",
+          "textLength": 176,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 1,
+      "routeWidth": 884,
+      "viewWidth": 766,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
+      "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
+      "rootFontSize": "32px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    },
+    {
+      "name": "04-guided-dark",
+      "theme": "dark",
+      "width": 1280,
+      "textScale": 1,
+      "view": "guided",
+      "file": "04-guided-dark.png",
+      "bytes": 98312,
+      "routeTextLength": 617,
+      "lessonView": "guided",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "false"
+        ],
+        [
+          "Guided",
+          "true"
+        ]
+      ],
+      "step": "Step 1 of 5",
+      "viewText": "Example\nTwo phrases you will hear\nStep 1 of 5\n\nお願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.\n\nBack\nContinue",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 143,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 0,
+      "routeWidth": 912,
+      "viewWidth": 810,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
+      "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    },
+    {
+      "name": "05-guided-light",
+      "theme": "light",
+      "width": 1280,
+      "textScale": 1,
+      "view": "guided",
+      "file": "05-guided-light.png",
+      "bytes": 78840,
+      "routeTextLength": 617,
+      "lessonView": "guided",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "false"
+        ],
+        [
+          "Guided",
+          "true"
+        ]
+      ],
+      "step": "Step 1 of 5",
+      "viewText": "Example\nTwo phrases you will hear\nStep 1 of 5\n\nお願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.\n\nBack\nContinue",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 143,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 0,
+      "routeWidth": 912,
+      "viewWidth": 810,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "hermesMode": "light",
+      "hermesTheme": "nous",
+      "colorScheme": "light",
+      "themeClass": "",
+      "backgroundSeed": "#ffffff",
+      "bodyBackground": "color(srgb 0.996235 0.996235 0.996235)",
+      "bodyLuminance": 0.991,
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    },
+    {
+      "name": "06-guided-dark-200pct",
+      "theme": "dark",
+      "width": 1280,
+      "textScale": 2,
+      "view": "guided",
+      "file": "06-guided-dark-200pct.png",
+      "bytes": 153125,
+      "routeTextLength": 617,
+      "lessonView": "guided",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "false"
+        ],
+        [
+          "Guided",
+          "true"
+        ]
+      ],
+      "step": "Step 1 of 5",
+      "viewText": "Example\nTwo phrases you will hear\nStep 1 of 5\n\nお願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.\n\nBack\nContinue",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 143,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 0,
+      "routeWidth": 884,
+      "viewWidth": 766,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
+      "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
+      "rootFontSize": "32px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    },
+    {
+      "name": "07-textbook-dark-460px",
+      "theme": "dark",
+      "width": 460,
+      "textScale": 1,
+      "view": "textbook",
+      "file": "07-textbook-dark-460px.png",
+      "bytes": 58776,
+      "routeTextLength": 1620,
+      "lessonView": "textbook",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "true"
+        ],
+        [
+          "Guided",
+          "false"
+        ]
+      ],
+      "step": null,
+      "viewText": "Example\nTwo phrases you will hear\n\nお願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms.\n\nExplain\nWhy register matters\n\nStandard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met.\n\nPractice\nSay it with romaji visible\n\nRepeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading.\n\nCheck v1\nproduction\nYour answer\n\nThe question and any choices are shown above; this field records",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 181,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_c5d7613219fb4446e2cb",
+          "role": "explain",
+          "headline": "Why register matters",
+          "textLength": 150,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_d6ef2699b153539b9dd2",
+          "role": "practice",
+          "headline": "Say it with romaji visible",
+          "textLength": 462,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        },
+        {
+          "id": "blk_f3d8a06515ffb69c6a37",
+          "role": "example",
+          "headline": "You want to ask for a menu politely.",
+          "textLength": 168,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_9482f1d2ed07f33d8878",
+          "role": "recap",
+          "headline": "Recap",
+          "textLength": 176,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 1,
+      "routeWidth": 101,
+      "viewWidth": 53,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
+      "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 460,
+      "focused": "BODY"
+    },
+    {
+      "name": "08-textbook-light-460px",
+      "theme": "light",
+      "width": 460,
+      "textScale": 1,
+      "view": "textbook",
+      "file": "08-textbook-light-460px.png",
+      "bytes": 54123,
+      "routeTextLength": 1620,
+      "lessonView": "textbook",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "true"
+        ],
+        [
+          "Guided",
+          "false"
+        ]
+      ],
+      "step": null,
+      "viewText": "Example\nTwo phrases you will hear\n\nお願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms.\n\nExplain\nWhy register matters\n\nStandard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met.\n\nPractice\nSay it with romaji visible\n\nRepeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading.\n\nCheck v1\nproduction\nYour answer\n\nThe question and any choices are shown above; this field records",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 181,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_c5d7613219fb4446e2cb",
+          "role": "explain",
+          "headline": "Why register matters",
+          "textLength": 150,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_d6ef2699b153539b9dd2",
+          "role": "practice",
+          "headline": "Say it with romaji visible",
+          "textLength": 462,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        },
+        {
+          "id": "blk_f3d8a06515ffb69c6a37",
+          "role": "example",
+          "headline": "You want to ask for a menu politely.",
+          "textLength": 168,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_9482f1d2ed07f33d8878",
+          "role": "recap",
+          "headline": "Recap",
+          "textLength": 176,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 1,
+      "routeWidth": 120,
+      "viewWidth": 72,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "hermesMode": "light",
+      "hermesTheme": "nous",
+      "colorScheme": "light",
+      "themeClass": "",
+      "backgroundSeed": "#ffffff",
+      "bodyBackground": "color(srgb 0.996235 0.996235 0.996235)",
+      "bodyLuminance": 0.991,
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 460,
+      "focused": "BODY"
+    },
+    {
+      "name": "09-textbook-dark-460px-200pct",
+      "theme": "dark",
+      "width": 460,
+      "textScale": 2,
+      "view": "textbook",
+      "file": "09-textbook-dark-460px-200pct.png",
+      "bytes": 63874,
+      "routeTextLength": 1620,
+      "lessonView": "textbook",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "true"
+        ],
+        [
+          "Guided",
+          "false"
+        ]
+      ],
+      "step": null,
+      "viewText": "Example\nTwo phrases you will hear\n\nお願いします (onegaishimasu) is used when making a request. ありがとうございます (arigatou gozaimasu) is used when thanking staff. Both are standard polite forms.\n\nExplain\nWhy register matters\n\nStandard polite forms are the safe default in a shop. Casual forms belong with friends, not with staff you have not met.\n\nPractice\nSay it with romaji visible\n\nRepeat お願いします with romaji visible. Then cover the romaji and repeat once more; the romaji is a scaffold, not evidence of reading.\n\nCheck v1\nproduction\nYour answer\n\nThe question and any choices are shown above; this field records",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 181,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_c5d7613219fb4446e2cb",
+          "role": "explain",
+          "headline": "Why register matters",
+          "textLength": 150,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_d6ef2699b153539b9dd2",
+          "role": "practice",
+          "headline": "Say it with romaji visible",
+          "textLength": 462,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        },
+        {
+          "id": "blk_f3d8a06515ffb69c6a37",
+          "role": "example",
+          "headline": "You want to ask for a menu politely.",
+          "textLength": 168,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        },
+        {
+          "id": "blk_9482f1d2ed07f33d8878",
+          "role": "recap",
+          "headline": "Recap",
+          "textLength": 176,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 1,
+      "routeWidth": 120,
+      "viewWidth": 24,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
+      "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
+      "rootFontSize": "32px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 460,
+      "focused": "BODY"
+    },
+    {
+      "name": "10-guided-dark-460px",
+      "theme": "dark",
+      "width": 460,
+      "textScale": 1,
+      "view": "guided",
+      "file": "10-guided-dark-460px.png",
+      "bytes": 53636,
+      "routeTextLength": 617,
+      "lessonView": "guided",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "false"
+        ],
+        [
+          "Guided",
+          "true"
+        ]
+      ],
+      "step": "Step 1 of 5",
+      "viewText": "Example\nTwo phrases you will hear\nStep 1 of 5\n\nお願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.\n\nBack\nContinue",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 143,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 0,
+      "routeWidth": 120,
+      "viewWidth": 72,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
+      "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 460,
+      "focused": "BODY"
+    },
+    {
+      "name": "11-guided-light-460px",
+      "theme": "light",
+      "width": 460,
+      "textScale": 1,
+      "view": "guided",
+      "file": "11-guided-light-460px.png",
+      "bytes": 49372,
+      "routeTextLength": 617,
+      "lessonView": "guided",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "false"
+        ],
+        [
+          "Guided",
+          "true"
+        ]
+      ],
+      "step": "Step 1 of 5",
+      "viewText": "Example\nTwo phrases you will hear\nStep 1 of 5\n\nお願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.\n\nBack\nContinue",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 143,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 0,
+      "routeWidth": 120,
+      "viewWidth": 72,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "hermesMode": "light",
+      "hermesTheme": "nous",
+      "colorScheme": "light",
+      "themeClass": "",
+      "backgroundSeed": "#ffffff",
+      "bodyBackground": "color(srgb 0.996235 0.996235 0.996235)",
+      "bodyLuminance": 0.991,
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 460,
+      "focused": "BODY"
+    },
+    {
+      "name": "12-guided-dark-460px-200pct",
+      "theme": "dark",
+      "width": 460,
+      "textScale": 2,
+      "view": "guided",
+      "file": "12-guided-dark-460px-200pct.png",
+      "bytes": 64117,
+      "routeTextLength": 617,
+      "lessonView": "guided",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "false"
+        ],
+        [
+          "Guided",
+          "true"
+        ]
+      ],
+      "step": "Step 1 of 5",
+      "viewText": "Example\nTwo phrases you will hear\nStep 1 of 5\n\nお願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.\n\nBack\nContinue",
+      "blocks": [
+        {
+          "id": "blk_67ba9aca342d2441107c",
+          "role": "example",
+          "headline": "Two phrases you will hear",
+          "textLength": 143,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": false
+        }
+      ],
+      "checkNodes": 0,
+      "routeWidth": 120,
+      "viewWidth": 24,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 460,
+      "innerWidth": 460,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
+      "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
+      "rootFontSize": "32px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 460,
+      "focused": "BODY"
+    },
+    {
+      "name": "13-guided-practice-check-dark",
+      "theme": "dark",
+      "width": 1280,
+      "textScale": 1,
+      "view": "guided",
+      "file": "13-guided-practice-check-dark.png",
+      "bytes": 107314,
+      "routeTextLength": 895,
+      "lessonView": "guided",
+      "documentId": "doc_cb0c0af423236b90835b",
+      "documentState": null,
+      "switcher": "available",
+      "switcherPressed": [
+        [
+          "Textbook",
+          "false"
+        ],
+        [
+          "Guided",
+          "true"
+        ]
+      ],
+      "step": "Step 3 of 5",
+      "viewText": "Practice\nSay it with romaji visible\nStep 3 of 5\n\nRepeat お願いします with romaji visible, then once more without it.\n\nCheck v1\nproduction\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\n\nSubmit answer\nEdit answer\n\nHints and shown answers are recorded against the next attempt.\n\nBack\nContinue",
+      "blocks": [
+        {
+          "id": "blk_d6ef2699b153539b9dd2",
+          "role": "practice",
+          "headline": "Say it with romaji visible",
+          "textLength": 421,
+          "media": 0,
+          "sources": 0,
+          "hasCheck": true
+        }
+      ],
+      "checkNodes": 1,
+      "routeWidth": 912,
+      "viewWidth": 810,
+      "paneVisible": true,
+      "horizontalOverflow": false,
+      "scrollWidth": 1280,
+      "innerWidth": 1280,
+      "hermesMode": "dark",
+      "hermesTheme": "nous",
+      "colorScheme": "dark",
+      "themeClass": "dark",
+      "backgroundSeed": "#0d1117",
+      "bodyBackground": "color(srgb 0.0509804 0.0625882 0.0810196)",
+      "bodyLuminance": 0.005,
+      "rootFontSize": "16px",
+      "mediaNodes": 0,
+      "mediaStates": [],
+      "viewportWidth": 1280,
+      "focused": "BODY"
+    }
+  ],
+  "guided_steps": [
+    {
+      "step": "Step 1 of 5",
+      "heading": "Two phrases you will hear",
+      "body": "Example\nTwo phrases you will hear\nStep 1 of 5\n\nお願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.\n\nBack\nContinue",
+      "nextLabel": "Continue",
+      "hasNext": true,
+      "hasCheck": false,
+      "inputs": 0
+    },
+    {
+      "step": "Step 2 of 5",
+      "heading": "Why register matters",
+      "body": "Explain\nWhy register matters\nStep 2 of 5\n\nStandard polite forms are the safe default in a shop; casual forms belong with friends.\n\nBack\nContinue",
+      "nextLabel": "Continue",
+      "hasNext": true,
+      "hasCheck": false,
+      "inputs": 0
+    },
+    {
+      "step": "Step 3 of 5",
+      "heading": "Say it with romaji visible",
+      "body": "Practice\nSay it with romaji visible\nStep 3 of 5\n\nRepeat お願いします with romaji visible, then once more without it.\n\nCheck v1\nproduction\nYour answer\n\nThe question and any choices are shown above; this field records what you answered.\n\nThis lesson’s chat binding is detached, so Submit is disabled until it is reconciled.\n\nSubmit answer\nEdit answer\n\nHints and shown answers are recorded against the next at",
+      "nextLabel": "Continue",
+      "hasNext": true,
+      "hasCheck": true,
+      "inputs": 1
+    },
+    {
+      "step": "Step 4 of 5",
+      "heading": "You want to ask for a menu politely.",
+      "body": "Example\nYou want to ask for a menu politely.\nStep 4 of 5\n\nWait for the staff member to respond, then thank them with ありがとうございます.\n\nBack\nContinue",
+      "nextLabel": "Continue",
+      "hasNext": true,
+      "hasCheck": false,
+      "inputs": 0
+    },
+    {
+      "step": "Step 5 of 5",
+      "heading": "Recap",
+      "body": "Recap\nRecap\nStep 5 of 5\n\nPick the phrase that fits entering a shop and speaking to staff for the first time.\n\nBack\nContinue\nEnd of the guided pass. The Textbook view keeps the full text.",
+      "nextLabel": "Continue",
+      "hasNext": true,
+      "hasCheck": false,
+      "inputs": 0
+    },
+    {
+      "stuckAt": "Step 5 of 5"
+    }
+  ],
+  "keyboard": {
+    "focusableCount": 14,
+    "firstTen": [
+      "New course",
+      "Courses",
+      "Library",
+      "Parent Studio",
+      "All courses",
+      "Start lesson",
+      "Textbook",
+      "Textbook",
+      "Guided",
+      "Resume this section"
+    ],
+    "hasSwitcher": true,
+    "focusedAfterSwitchFocus": "Guided"
+  },
+  "limits": [
+    "The lesson rendered here was authored by the deterministic offline adapter (tests.test_generation.FakeLLM / FakeSearch) and served over the real plugin RPC by an isolated hermes serve. No provider was called and no spend occurred; the pre-existing demo course still reports textbook_only because re-authoring it with a real provider run requires owner approval and was not run.",
+    "No media segments exist for this section, so the degraded media text-equivalent block is not exercised.",
+    "The 460 px frames emulate the viewport with the host chat zone still open. The host gives the route its 22vw floor (~101 px at 460 px) and the chat zone keeps the rest, so plugin labels truncate. Each frame records routeWidth/viewWidth and horizontalOverflow=false: the plugin itself never overflows its box; the truncation is host width allocation and is the same on Textbook and Guided.",
+    "Text scale is emulated by setting the root font size to 200%, which is how the plugin consumes rem tokens; it is not OS-level display scaling."
+  ]
+}
