@@ -1,0 +1,162 @@
+diff --git i/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx w/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx
+index 31928ec5ce..5c634df3ca 100644
+--- i/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx
++++ w/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx
+@@ -29,7 +29,7 @@ import { allPaneIds, findGroupOfPane, type LayoutNode } from '../model'
+ import { $hiddenTreePanes, $layoutTree, $narrowViewport } from '../store'
+ 
+ import { KeepAlivePaneSlot, useStablePaneHosts } from './keep-alive-panes'
+-import { fixedTrackSize, paneChrome, type TrackContext } from './track-model'
++import { fixedTrackSize, narrowLeavesGrid, paneChrome, type TrackContext } from './track-model'
+ 
+ /** The width a revealed narrow overlay sizes itself to: the SAME resolution
+  *  the pane's zone uses while docked — declared max() refined by the live
+@@ -91,7 +91,9 @@ export function NarrowOverlays() {
+   const collapsibles = useMemo(
+     // Solo adopts sidebar panes without their surrounding sidebar chrome.
+     // Suppress every reveal path while those panes are intentionally hidden.
+-    () => (solo ? [] : panes.filter(p => paneChrome(p).collapsible && inTree.has(p.id) && !hiddenPanes.has(p.id))),
++    // Matches the grid's own narrow test (`narrowLeavesGrid`): every pane that
++    // leaves the grid must be REACHABLE here, or the collapse is a hide.
++    () => (solo ? [] : panes.filter(p => narrowLeavesGrid(paneChrome(p)) && inTree.has(p.id) && !hiddenPanes.has(p.id))),
+     [solo, panes, inTree, hiddenPanes]
+   )
+ 
+diff --git i/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts w/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts
+index d49b5040b4..6f86be7c6a 100644
+--- i/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts
++++ w/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts
+@@ -55,7 +55,7 @@ export interface PaneSizing {
+ }
+ 
+ /** Chrome behavior flags a pane contributes. Read via `paneChrome`. */
+-interface PaneChrome extends PaneSizing {
++export interface PaneChrome extends PaneSizing {
+   /** Leaves the grid on narrow viewports; revealed as an edge overlay. */
+   collapsible?: boolean
+   /** Arrive minimized — a rail tab rather than an open zone. For a pane that
+@@ -140,6 +140,41 @@ interface PaneChrome extends PaneSizing {
+ 
+ export const paneChrome = (c: Contribution | undefined) => (c?.data ?? {}) as PaneChrome
+ 
++/**
++ * Does this pane LEAVE THE GRID on a narrow viewport?
++ *
++ * `collapsible: true` has always meant yes. But a pane that declares a
++ * horizontal `width` docks as a SIDE RAIL — its zone resolves to a FIXED
++ * track, so the row spends the rail's declared px FIRST and the flex main
++ * zone absorbs only the remainder. Below the dock floor
++ * (`SIDEBAR_DOCK_MIN_WIDTH_PX`) that arithmetic is not survivable: the row
++ * hands the rail its 340px and the route/page the app is FOR collapses to the
++ * main zone's 22vw floor. A 460px window with a 340px companion pane is a
++ * 120px lesson — and 24px of it at 200% text.
++ *
++ * So the rule is the host's, not the pane's: at narrow width a fixed side rail
++ * cannot coexist with the main zone, and it leaves the grid to be revealed as
++ * an edge overlay exactly like an opting-in collapsible. A plugin cannot make
++ * this call for itself — it does not know the window width, and the width at
++ * which its own rail stops paying for itself is a property of the host's
++ * breakpoint, not of the plugin's layout.
++ *
++ * MAIN and FLOATING panes keep their place: main IS the content, and a
++ * floating pane takes no track. A pane with only a `height` (the terminal
++ * deck) is a column track — it never competes for the row.
++ */
++export function narrowLeavesGrid(chrome: PaneChrome): boolean {
++  if (chrome.collapsible) {
++    return true
++  }
++
++  if (chrome.placement === 'main' || chrome.placement === 'floating') {
++    return false
++  }
++
++  return Boolean(chrome.width)
++}
++
+ /** Resolve a computed style length ("237px" / "none" / "auto") to px. */
+ export function computedPx(value: string, fallback: number): number {
+   const n = Number.parseFloat(value)
+diff --git i/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx w/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx
+index 02c63f8508..2da3dd9a87 100644
+--- i/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx
++++ w/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx
+@@ -103,7 +103,7 @@ import { PaneBody } from './pane-body'
+ import { usePanelTitlebar } from './panel-titlebar'
+ import { tabStripVisibleForZone } from './strip-visibility'
+ import { useActiveTabVisible } from './tab-strip-scroll'
+-import { paneChrome } from './track-model'
++import { narrowLeavesGrid, paneChrome } from './track-model'
+ import { useZoneHeaderLayout } from './zone-header-layout'
+ 
+ /** Right-click zone menu: the tab verbs (close this / others / to the right /
+@@ -449,7 +449,7 @@ export function TreeGroup({
+   // Edit mode (in Advanced) forces toggle-hidden panes visible so they can be
+   // rearranged (mirrors tree-split's paneGone) — restores itself on exit.
+   const paneShown = (id: string) =>
+-    Boolean(paneFor(id)) && (revealsHidden || !hiddenPanes.has(id)) && !(narrow && paneChrome(paneFor(id)).collapsible)
++    Boolean(paneFor(id)) && (revealsHidden || !hiddenPanes.has(id)) && !(narrow && narrowLeavesGrid(paneChrome(paneFor(id))))
+ 
+   const shown = node.panes.filter(paneShown)
+   const memoryKey = workspaceScopeKey(workspaceMode, workspaceOwnerKey)
+diff --git i/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx w/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx
+index d55e600149..9c7965245d 100644
+--- i/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx
++++ w/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx
+@@ -40,6 +40,7 @@ import {
+   fixedTrackSize,
+   MIN_PANE_PX,
+   MINIMIZED_TRACK,
++  narrowLeavesGrid,
+   paneChrome,
+   type PaneSizing,
+   resolveCssPx,
+@@ -134,7 +135,7 @@ export function TreeSplit({
+   // A pane leaves the grid when its contribution isn't registered (yet) — a
+   // runtime plugin's pane collapses until the plugin loads, then appears; no
+   // placeholder flash — when a chrome toggle hides it, or when the viewport
+-  // is narrow and the pane is collapsible (edge overlay instead).
++  // is narrow and the pane is a side rail (edge overlay instead).
+   const paneFor = (id: string) => panes.find(p => p.id === id)
+ 
+   // Layout-edit mode (in Advanced) forces toggle-hidden panes (terminal off,
+@@ -142,7 +143,9 @@ export function TreeSplit({
+   // (unregistered) or narrow-collapsed panes stay gone. Restores itself on exit
+   // (render-only).
+   const paneGone = (id: string) =>
+-    !paneFor(id) || (!revealsHidden && hiddenPanes.has(id)) || (narrow && Boolean(paneChrome(paneFor(id)).collapsible))
++    !paneFor(id) ||
++    (!revealsHidden && hiddenPanes.has(id)) ||
++    (narrow && narrowLeavesGrid(paneChrome(paneFor(id))))
+ 
+   const trackCtx: TrackContext = { paneFor, paneGone, overrides }
+ 
+diff --git i/apps/desktop/src/components/pane-shell/tree/store.ts w/apps/desktop/src/components/pane-shell/tree/store.ts
+index 3ed5e4815c..99f1c98d89 100644
+--- i/apps/desktop/src/components/pane-shell/tree/store.ts
++++ w/apps/desktop/src/components/pane-shell/tree/store.ts
+@@ -48,6 +48,7 @@ import {
+ import { isTreePaneParked } from './parked-panes'
+ import { FLOATING_PLACEMENT } from './renderer/floating-rect'
+ import { tabStripVisibleForZone } from './renderer/strip-visibility'
++import { narrowLeavesGrid, type PaneChrome } from './renderer/track-model'
+ 
+ // v2: v1 trees were saved against placeholder panes with index-order zone
+ // assignment (chat could land in a corner cell). Retire them wholesale.
+@@ -833,12 +834,13 @@ export function shownPanesInGroup(group: { panes: readonly string[] }): string[]
+       return false
+     }
+ 
+-    // Match TreeGroup's paneShown for the narrow breakpoint — collapsible
+-    // panes drop out of the strip when the viewport collapses them.
++    // Match TreeGroup's paneShown for the narrow breakpoint — a side rail
++    // (collapsible, or a pane that declares a width) drops out of the strip
++    // when the viewport collapses it out of the grid.
+     if (
+       typeof window !== 'undefined' &&
+       window.matchMedia?.(SIDEBAR_COLLAPSE_MEDIA_QUERY).matches &&
+-      Boolean((pane.data as { collapsible?: boolean } | undefined)?.collapsible)
++      narrowLeavesGrid(pane.data as PaneChrome)
+     ) {
+       return false
+     }

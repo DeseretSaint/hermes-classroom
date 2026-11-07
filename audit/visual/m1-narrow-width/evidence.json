@@ -18,7 +18,11 @@
   "commit": "5900b6e7a0f9404e993c30b79cee5756f0b02a9d",
   "base": "94ade5ab22aca85860750571ea28634f4a30127b",
   "patch": "host-narrow-rail.patch",
-  "patch_sha256": "745f26fc22026158f59b3ae090c41fe68981d8024b54b8891a781d5a29d7aff1",
+  "patch_sha256": "63102adaa2dda3c8dee5e4d810abcc01658ec351505ef013f457e101114943eb",
+  "patch_basis": "canonical diff 94ade5ab22..5900b6e7a0 (includes the new test file); verified to apply with `git apply --check` on a clean worktree at 94ade5ab22",
+  "installed_checkout_patch": "host-narrow-rail.installed-checkout.patch",
+  "installed_checkout_patch_sha256": "745f26fc22026158f59b3ae090c41fe68981d8024b54b8891a781d5a29d7aff1",
+  "installed_checkout_patch_basis": "same change rebased onto the installed checkout (HEAD 2bd378ed1b); this is the variant applied for the frame capture",
   "files": [
    "apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts",
    "apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx",

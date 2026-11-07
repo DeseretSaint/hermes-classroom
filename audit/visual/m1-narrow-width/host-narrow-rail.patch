@@ -1,8 +1,8 @@
-diff --git i/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx w/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx
-index 31928ec5ce..5c634df3ca 100644
---- i/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx
-+++ w/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx
-@@ -29,7 +29,7 @@ import { allPaneIds, findGroupOfPane, type LayoutNode } from '../model'
+diff --git a/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx b/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx
+index df98f5e9c4..d9c01684c6 100644
+--- a/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx
++++ b/apps/desktop/src/components/pane-shell/tree/renderer/narrow-overlays.tsx
+@@ -25,7 +25,7 @@ import { allPaneIds, findGroupOfPane, type LayoutNode } from '../model'
  import { $hiddenTreePanes, $layoutTree, $narrowViewport } from '../store'
  
  import { KeepAlivePaneSlot, useStablePaneHosts } from './keep-alive-panes'
@@ -11,7 +11,7 @@ index 31928ec5ce..5c634df3ca 100644
  
  /** The width a revealed narrow overlay sizes itself to: the SAME resolution
   *  the pane's zone uses while docked — declared max() refined by the live
-@@ -91,7 +91,9 @@ export function NarrowOverlays() {
+@@ -85,7 +85,9 @@ export function NarrowOverlays() {
    const collapsibles = useMemo(
      // Solo adopts sidebar panes without their surrounding sidebar chrome.
      // Suppress every reveal path while those panes are intentionally hidden.
@@ -22,11 +22,160 @@ index 31928ec5ce..5c634df3ca 100644
      [solo, panes, inTree, hiddenPanes]
    )
  
-diff --git i/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts w/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts
-index d49b5040b4..6f86be7c6a 100644
---- i/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts
-+++ w/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts
-@@ -55,7 +55,7 @@ export interface PaneSizing {
+diff --git a/apps/desktop/src/components/pane-shell/tree/renderer/narrow-rail-collapse.test.tsx b/apps/desktop/src/components/pane-shell/tree/renderer/narrow-rail-collapse.test.tsx
+new file mode 100644
+index 0000000000..3dab54d6ed
+--- /dev/null
++++ b/apps/desktop/src/components/pane-shell/tree/renderer/narrow-rail-collapse.test.tsx
+@@ -0,0 +1,143 @@
++import { act, cleanup, render } from '@testing-library/react'
++import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
++
++import { PANE_TOGGLE_REVEAL_EVENT } from '@/components/pane-shell'
++import { registry } from '@/contrib/registry'
++import { $connection } from '@/store/session'
++import { stubResizeObserver } from '@/test/jsdom'
++
++import { group, split } from '../model'
++import { $hiddenTreePanes, $layoutTree, $narrowViewport, declareDefaultTree, shownPanesInGroup } from '../store'
++
++import { NarrowOverlays, narrowOverlayWidth } from './narrow-overlays'
++import { narrowLeavesGrid, paneChrome } from './track-model'
++
++// The report: a plugin route (the Coursebook lesson) sat in the workspace while
++// a plugin-declared 340px companion pane kept its pane. At a 460px window the
++// row spent the rail's 340px first and left the main zone its 22vw floor —
++// 120px of lesson, 24px at 200% text. `collapsible` is the pane's OPT-IN; a
++// pane that declares a horizontal width is a fixed side track whether it opted
++// in or not, and below the host's dock floor that track starves the only
++// uncloseable zone. So the host collapses side rails by rule, not by opt-in,
++// and every pane it collapses must be reachable through the narrow overlay.
++
++beforeAll(() => {
++  stubResizeObserver()
++})
++
++const disposers: (() => void)[] = []
++
++const registerPane = (id: string, title: string, data: Record<string, unknown>, body: string) => {
++  disposers.push(
++    registry.register({
++      area: 'panes',
++      data,
++      id,
++      render: () => <div data-testid={`${id}-body`}>{body}</div>,
++      title
++    })
++  )
++}
++
++/** jsdom's matchMedia always reports `matches: false`; the store's narrow
++ *  reader samples it directly, so the breakpoint has to be stubbed. */
++const stubNarrowMatchMedia = (narrow: boolean) => {
++  vi.stubGlobal(
++    'matchMedia',
++    vi.fn(() => ({ addEventListener: () => undefined, matches: narrow, media: '', removeEventListener: () => undefined }))
++  )
++}
++
++beforeEach(() => {
++  window.localStorage.clear()
++  $hiddenTreePanes.set(new Set())
++
++  // The shape under test: a plugin rail that declares a width and does NOT
++  // declare `collapsible`, beside the main workspace that holds the route.
++  registerPane('workspace', 'workspace', { placement: 'main', uncloseable: true }, 'lesson')
++  registerPane('coursebook:pane', 'coursebook', { placement: 'right', width: '340px' }, 'companion chat')
++
++  declareDefaultTree(split('row', [group(['workspace']), group(['coursebook:pane'])]))
++})
++
++afterEach(() => {
++  cleanup()
++  $narrowViewport.set(false)
++  $layoutTree.set(null)
++  $connection.set(null)
++  vi.restoreAllMocks()
++  vi.unstubAllGlobals()
++  disposers.splice(0).forEach(dispose => dispose())
++})
++
++describe('narrowLeavesGrid', () => {
++  it('collapses a width-declaring side pane even without the collapsible opt-in', () => {
++    expect(narrowLeavesGrid(paneChrome({ area: 'panes', data: { placement: 'right', width: '340px' } } as never))).toBe(
++      true
++    )
++  })
++
++  it('keeps the main zone and floating panes in place', () => {
++    expect(
++      narrowLeavesGrid(paneChrome({ area: 'panes', data: { placement: 'main', width: '340px' } } as never))
++    ).toBe(false)
++    expect(
++      narrowLeavesGrid(paneChrome({ area: 'panes', data: { placement: 'floating', width: '340px' } } as never))
++    ).toBe(false)
++  })
++
++  it('does not mistake a height-only deck for a row track', () => {
++    expect(
++      narrowLeavesGrid(paneChrome({ area: 'panes', data: { placement: 'bottom', height: '20vh' } } as never))
++    ).toBe(false)
++  })
++
++  it('still honours the explicit collapsible opt-in', () => {
++    expect(
++      narrowLeavesGrid(paneChrome({ area: 'panes', data: { collapsible: true, placement: 'left' } } as never))
++    ).toBe(true)
++  })
++})
++
++describe('a width-declaring side pane on a narrow viewport', () => {
++  it('is no longer a shown pane of its zone, so it takes no grid width', () => {
++    stubNarrowMatchMedia(true)
++    $narrowViewport.set(true)
++
++    expect(shownPanesInGroup(group(['workspace', 'coursebook:pane']))).toEqual(['workspace'])
++  })
++
++  it('stays a shown pane when the viewport is wide', () => {
++    stubNarrowMatchMedia(false)
++
++    expect(shownPanesInGroup(group(['workspace', 'coursebook:pane']))).toEqual(['workspace', 'coursebook:pane'])
++  })
++
++  it('is reachable: the right edge strip reveals it as an overlay at its declared width', () => {
++    act(() => $narrowViewport.set(true))
++
++    const { container } = render(<NarrowOverlays />)
++
++    act(() => {
++      window.dispatchEvent(
++        new CustomEvent(PANE_TOGGLE_REVEAL_EVENT, { detail: { id: 'coursebook:pane', mode: 'open' } })
++      )
++    })
++
++    const overlay = container.querySelector<HTMLElement>('[data-narrow-overlay="coursebook:pane"]')
++    expect(overlay).toBeTruthy()
++    expect(overlay?.textContent ?? '').toContain('companion chat')
++
++    // Sized to the rail's declared width so the overlay and the docked zone
++    // can never disagree about how wide the pane is. Asserted on the pure
++    // resolver: jsdom's CSSOM drops the `min()` wrapper from style.width.
++    const contribution = registry.getArea('panes').find(p => p.id === 'coursebook:pane')!
++    expect(
++      narrowOverlayWidth(
++        { paneFor: id => registry.getArea('panes').find(p => p.id === id), paneGone: () => false, overrides: {} },
++        $layoutTree.get(),
++        contribution
++      )
++    ).toBe('340px')
++  })
++})
+diff --git a/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts b/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts
+index 2e5a97b168..1118522f59 100644
+--- a/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts
++++ b/apps/desktop/src/components/pane-shell/tree/renderer/track-model.ts
+@@ -44,7 +44,7 @@ export interface PaneSizing {
  }
  
  /** Chrome behavior flags a pane contributes. Read via `paneChrome`. */
@@ -35,7 +184,7 @@ index d49b5040b4..6f86be7c6a 100644
    /** Leaves the grid on narrow viewports; revealed as an edge overlay. */
    collapsible?: boolean
    /** Arrive minimized — a rail tab rather than an open zone. For a pane that
-@@ -140,6 +140,41 @@ interface PaneChrome extends PaneSizing {
+@@ -124,6 +124,41 @@ interface PaneChrome extends PaneSizing {
  
  export const paneChrome = (c: Contribution | undefined) => (c?.data ?? {}) as PaneChrome
  
@@ -77,20 +226,20 @@ index d49b5040b4..6f86be7c6a 100644
  /** Resolve a computed style length ("237px" / "none" / "auto") to px. */
  export function computedPx(value: string, fallback: number): number {
    const n = Number.parseFloat(value)
-diff --git i/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx w/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx
-index 02c63f8508..2da3dd9a87 100644
---- i/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx
-+++ w/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx
-@@ -103,7 +103,7 @@ import { PaneBody } from './pane-body'
+diff --git a/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx b/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx
+index e874ed66ab..7c2656b6df 100644
+--- a/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx
++++ b/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx
+@@ -90,7 +90,7 @@ import { PaneBody } from './pane-body'
  import { usePanelTitlebar } from './panel-titlebar'
  import { tabStripVisibleForZone } from './strip-visibility'
  import { useActiveTabVisible } from './tab-strip-scroll'
 -import { paneChrome } from './track-model'
 +import { narrowLeavesGrid, paneChrome } from './track-model'
- import { useZoneHeaderLayout } from './zone-header-layout'
  
  /** Right-click zone menu: the tab verbs (close this / others / to the right /
-@@ -449,7 +449,7 @@ export function TreeGroup({
+  *  all) plus the strip's own chrome toggles. Same items and icons as a session
+@@ -297,7 +297,7 @@ export function TreeGroup({
    // Edit mode (in Advanced) forces toggle-hidden panes visible so they can be
    // rearranged (mirrors tree-split's paneGone) — restores itself on exit.
    const paneShown = (id: string) =>
@@ -99,10 +248,10 @@ index 02c63f8508..2da3dd9a87 100644
  
    const shown = node.panes.filter(paneShown)
    const memoryKey = workspaceScopeKey(workspaceMode, workspaceOwnerKey)
-diff --git i/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx w/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx
+diff --git a/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx b/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx
 index d55e600149..9c7965245d 100644
---- i/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx
-+++ w/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx
+--- a/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx
++++ b/apps/desktop/src/components/pane-shell/tree/renderer/tree-split.tsx
 @@ -40,6 +40,7 @@ import {
    fixedTrackSize,
    MIN_PANE_PX,
@@ -131,10 +280,10 @@ index d55e600149..9c7965245d 100644
  
    const trackCtx: TrackContext = { paneFor, paneGone, overrides }
  
-diff --git i/apps/desktop/src/components/pane-shell/tree/store.ts w/apps/desktop/src/components/pane-shell/tree/store.ts
-index 3ed5e4815c..99f1c98d89 100644
---- i/apps/desktop/src/components/pane-shell/tree/store.ts
-+++ w/apps/desktop/src/components/pane-shell/tree/store.ts
+diff --git a/apps/desktop/src/components/pane-shell/tree/store.ts b/apps/desktop/src/components/pane-shell/tree/store.ts
+index d838c96cb8..f95d3b3ecd 100644
+--- a/apps/desktop/src/components/pane-shell/tree/store.ts
++++ b/apps/desktop/src/components/pane-shell/tree/store.ts
 @@ -48,6 +48,7 @@ import {
  import { isTreePaneParked } from './parked-panes'
  import { FLOATING_PLACEMENT } from './renderer/floating-rect'

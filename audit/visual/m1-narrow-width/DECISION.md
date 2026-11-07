@@ -67,7 +67,12 @@ and through `NarrowOverlays`' reveal list, so a pane the host collapses is alway
 reachable. A height-only deck (the terminal) is a column track and is unaffected.
 
 Host repo: `DeseretSaint/hermes-agent`, branch `wt/host-narrow-rail`, commit
-`5900b6e7a0` (not pushed). Patch: `host-narrow-rail.patch` in this directory.
+`5900b6e7a0` (not pushed). `host-narrow-rail.patch` in this directory is the
+canonical diff `94ade5ab22..5900b6e7a0` (six files, including the test) and
+`git apply --check` passes on a clean worktree at `94ade5ab22`.
+`host-narrow-rail.installed-checkout.patch` is the same change rebased onto the
+installed checkout (`2bd378ed1b`), which is what the capture applied; the two
+differ only in `tree-group.tsx` context line numbers.
 
 Tests, run in the installed checkout with this patch applied (the same tree the
 frames were captured from — the fork has no `node_modules`, so it cannot run
