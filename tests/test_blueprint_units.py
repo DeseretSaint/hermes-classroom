@@ -11,7 +11,7 @@ import json
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from coursebook import db, executor, generation as gen, job_service
+from coursebook import db, domain, executor, generation as gen, job_service
 
 from tests.blueprint_support import (
     NOW,
@@ -480,13 +480,18 @@ class UnitScopedLessonsTest(UnitStageCase):
 
 class OutlineProjectionTest(UnitStageCase):
     def outline(self, plan_id: str, enrollment_id: str = "enr_test") -> dict:
-        from coursebook import domain
-
         status, result = domain.course_outline(
             {"enrollment_id": enrollment_id}, {"contract": "cb.rpc", "contract_version": 11}
         )
         self.assertEqual(status, 0)
         return result
+
+    def library_item(self, enrollment_id: str) -> dict:
+        status, result = domain.library_list({}, {"contract": "cb.rpc", "contract_version": 11})
+        self.assertEqual(status, 0)
+        return next(
+            item for item in result["items"] if item["enrollment_id"] == enrollment_id
+        )
 
     def seed_enrollment(self, course_id: str) -> str:
         with db.transaction() as connection:
@@ -529,6 +534,10 @@ class OutlineProjectionTest(UnitStageCase):
                 "objectives",
             },
         )
+        # The library card names the unit the learner is currently on.
+        label = self.library_item(enrollment_id)["subtitle"]
+        self.assertTrue(label.startswith("Unit 1 of 2"), label)
+        self.assertIn(plan["units"][0]["title"], label)
 
     def test_a_legacy_plan_projects_one_implicit_unit(self) -> None:
         stamp = T0.isoformat()
@@ -571,6 +580,8 @@ class OutlineProjectionTest(UnitStageCase):
         self.assertEqual(units[0]["title"], "Legacy course")
         self.assertEqual(units[0]["prerequisite_state"], "no_edges")
         self.assertEqual(len(units[0]["objectives"]), 2)
+        # No unit rows: the library card keeps the learner label it already had.
+        self.assertEqual(self.library_item("enr_legacy")["subtitle"], "Learner")
 
 
 if __name__ == "__main__":
