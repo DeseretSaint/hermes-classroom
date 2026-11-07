@@ -94,12 +94,14 @@ honesty notes:
 ### H-19 — this card, docs-only
 
 ```
-python3 -m unittest discover -s tests -t .               # Ran 1040 tests, OK (152.0 s)
-bash scripts/validate-plugin.sh --worktree               # 3/3 checks, 1217 files
+python3 -m unittest discover -s tests -t .               # Ran 1040 tests, OK (156.7 s) at HEAD 90f338f
+bash scripts/validate-plugin.sh --worktree               # 3/3 checks, 1217 files (pre-commit tree)
+bash scripts/validate-plugin.sh                          # 3/3 checks on 90f338f, 1218 files (HEAD mode)
 ```
 
 The 1040/1217 difference from the round-2 record is the docs files this card adds plus the absence
-of the 14 probe tests; no product code changed in either card.
+of the 14 probe tests; no product code changed in either card. The integrator re-runs the gate on
+the merged tree — this record is a measurement on the branch, not a merge approval.
 
 ### Pre-harness release gate — `docs/REVIEW_CB014.md` @ `f4a42f3`, `docs/ACCEPTANCE.md` @ `e5b9686`
 
