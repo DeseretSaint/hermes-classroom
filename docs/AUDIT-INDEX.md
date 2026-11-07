@@ -1,8 +1,10 @@
 # AUDIT-INDEX — Coursebook audit evidence register
 
 Owner: quill (H-19, board card `t_ec1d2c15`).
-Created: 2026-11-07. Branch: `wt/harness-audit-index`, base `master` at `b4da6d9`
-(`200e6d3` + the three harness-doc commits `2e3508f`, `a8d93b8`, `b4da6d9`).
+Created: 2026-11-07. Branch: `wt/harness-audit-index`, base `origin/master` at
+`7af3bbd` (`200e6d3` + harness docs `2e3508f`, `a8d93b8`, `b4da6d9` + the merge of the round-2
+audit `9357c00`). Board card states were read from the `coursebook` board on 2026-11-07 at that
+base; they are volatile, so re-read the board before acting on a status column.
 
 Purpose: make every audit claim reproducible from a **commit hash**, not from a working-tree path.
 A report is evidence only if the file it lives in resolves to a commit, the probes that produced it
@@ -18,7 +20,7 @@ Every file below is tracked on this branch and resolves to a commit.
 | report | what it is | introduced in | current content sha256 | verification |
 |---|---|---|---|---|
 | `docs/ADVERSARIAL-HARNESS-REVIEW.md` | audit round 1 — harness capability verdict (NO-GO as a general harness) | `2e3508f6007684951f81a66960e565e014171a78` | `405e552459f0ca8c993c9c2bde78cbc7fd7ba0988d9bdb621c5f31970e76b7bd` | `git cat-file -e 2e3508f:docs/ADVERSARIAL-HARNESS-REVIEW.md` |
-| `docs/ADVERSARIAL-AUDIT-ROUND2.md` | audit round 2 — 14 deterministic probes, 10 findings | content from audit commit `9357c00d2631384728d1dc34f904b028653b0ec7`; imported verbatim in `23d1504e1d9302828807952885ba850e14a625a9` | `5cd5df77e4b5988c544385dfe6875b1aee02524814018fc65e6cf3a9f8bbe029` | `git cat-file -e 9357c00:docs/ADVERSARIAL-AUDIT-ROUND2.md`; `git cat-file -e 23d1504:docs/ADVERSARIAL-AUDIT-ROUND2.md` |
+| `docs/ADVERSARIAL-AUDIT-ROUND2.md` | audit round 2 — 14 deterministic probes, 10 findings | master via merge `7af3bbd` (audit commit `9357c00`); provenance corrected on this branch | `5cd5df77e4b5988c544385dfe6875b1aee02524814018fc65e6cf3a9f8bbe029` | `git cat-file -e 7af3bbd:docs/ADVERSARIAL-AUDIT-ROUND2.md`; `git cat-file -e 9357c00:docs/ADVERSARIAL-AUDIT-ROUND2.md` |
 | `docs/HARNESS-NEXT-CARDS.md` | board card index / DAG, card-to-finding mapping | `2e3508f` | `8846ffe641882a9ff66f99c31eda5e362e783041b9078d9464bf9c702be40f50` | `git cat-file -e 2e3508f:docs/HARNESS-NEXT-CARDS.md` (also amended in `a8d93b8`, `b4da6d9`, and this card) |
 | `docs/REVIEW_CB014.md` | pre-harness adversarial security/state/a11y release review (cb.rpc v6) | `270edae6e7fd8e23a438e590860aa858316a5751` | `4a3b00205761eae6e298cc34c3197c868518a0e6ff98ea922ab4c02449c2a91b` | `git cat-file -e 270edae:docs/REVIEW_CB014.md` (amended in `8e11bd2`) |
 | `docs/REVIEW_CB014-telemetry.md` | CB-014 tool-telemetry scope note | `51406ee5381e1725d7fb7be6d398e5acb8964e1c` | — | `git cat-file -e 51406ee:docs/REVIEW_CB014-telemetry.md` |
@@ -81,27 +83,23 @@ python3 -m unittest discover -s tests -t .               # Ran 1054 tests, OK (1
 bash scripts/validate-plugin.sh                          # 3/3 checks, 1216 files, clean export
 ```
 
-These results are recorded in the H-10 card handoff (`t_1efc158a`), not re-run by H-19. Two
-honesty notes:
-
-1. `tests/test_adversarial_round2.py` exists **only** at `9357c00` on `wt/harness-adversarial-2`
-   (1 commit ahead of `200e6d3`; not merged to master). It resolves to a commit — it is not a
-   working-tree file — but it is not in the master tree. Reproduce it with
-   `git show 9357c00:tests/test_adversarial_round2.py > /tmp/test_adversarial_round2.py` or by
-   checking out the branch. On this branch the suite is therefore 1040 tests, not 1054.
-2. The 1054 count includes those 14 probes; 1040 is the master-tree count at `b4da6d9`.
+These results are recorded in the H-10 card handoff (`t_1efc158a`). The report and its probe file
+are now in master: merge `7af3bbd` brings `9357c00`'s `tests/test_adversarial_round2.py` (14 tests)
+and `docs/ADVERSARIAL-AUDIT-ROUND2.md` onto `origin/master`. H-19 re-ran the probe file on its
+rebased branch (`python3 -m unittest tests.test_adversarial_round2` -> 14 tests, OK) and the full
+suite (1054 tests, OK). H-19's first run reported 1040 tests because it started from `b4da6d9`,
+before that merge landed; the 1054 count supersedes it.
 
 ### H-19 — this card, docs-only
 
 ```
-python3 -m unittest discover -s tests -t .               # Ran 1040 tests, OK (156.7 s) at HEAD 90f338f
-bash scripts/validate-plugin.sh --worktree               # 3/3 checks, 1217 files (pre-commit tree)
-bash scripts/validate-plugin.sh                          # 3/3 checks on 90f338f, 1218 files (HEAD mode)
+python3 -m unittest tests.test_adversarial_round2       # 14 tests, OK
+python3 -m unittest discover -s tests -t .              # Ran 1054 tests, OK (156.1 s)
+bash scripts/validate-plugin.sh                         # 3/3 checks on 215e35f, 1219 files
 ```
 
-The 1040/1217 difference from the round-2 record is the docs files this card adds plus the absence
-of the 14 probe tests; no product code changed in either card. The integrator re-runs the gate on
-the merged tree — this record is a measurement on the branch, not a merge approval.
+No product code changed in this card. The integrator re-runs the gate on the merged tree — this
+record is a measurement on the branch, not a merge approval.
 
 ### Pre-harness release gate — `docs/REVIEW_CB014.md` @ `f4a42f3`, `docs/ACCEPTANCE.md` @ `e5b9686`
 
@@ -118,25 +116,26 @@ These prove the kernel at cb.rpc v6, not the harness loop.
 ## 4. Finding ledger — round 1
 
 Status is the state of the **merged** evidence, not of a branch or a running worker. Card state was
-read from the `coursebook` board database on 2026-11-07.
+read from the `coursebook` board on 2026-11-07 at base `7af3bbd`. A `done` card means its worker
+finished; it does **not** mean the branch merged.
 
 | finding | severity | status | owning card | card state |
 |---|---|---|---|---|
-| P0-1 learner create flow never starts generation | P0 | OPEN | H-02 `t_867d3b52` | todo |
-| P0-2 plan schema caps at 8 sections / forces 4 objectives; no `scope` | P0 | OPEN | H-03 `t_577ed286` | todo |
-| P0-3 capability-policy inputs unreachable; locale mistaken for subject | P0 | OPEN | H-01 `t_f4f5b26a` (contract) + H-13 `t_543c0767` (threading) | running / todo |
-| P0-4 deep research is a no-op; demo-sized budget | P0 | OPEN | H-04 `t_161d467f` | todo |
+| P0-1 learner create flow never starts generation | P0 | OPEN | H-02 `t_867d3b52` | running |
+| P0-2 plan schema caps at 8 sections / forces 4 objectives; no `scope` | P0 | OPEN | H-03 `t_577ed286` | running |
+| P0-3 capability-policy inputs unreachable; locale mistaken for subject | P0 | OPEN | H-01 `t_f4f5b26a` (contract) + H-13 `t_543c0767` (threading) | done, unmerged (`8cbaab3`) / ready |
+| P0-4 deep research is a no-op; demo-sized budget | P0 | OPEN | H-04 `t_161d467f` | running |
 | P0-5 a normal course cannot export itself | P0 | OPEN | H-08 `t_901c8310` | todo |
 | P0-6 a technical procedure lesson cannot carry the procedure lens | P0 | OPEN | H-06 `t_7a320d2f` | todo |
 | P0-7 no live arbitrary-topic generation | P0 | OPEN | H-09 `t_ebc196db` | todo |
-| P1-1 parent brief stored but mostly ignored by the planner | P1 | OPEN | H-07 `t_2f3cc647` | todo |
+| P1-1 parent brief stored but mostly ignored by the planner | P1 | OPEN | H-07 `t_2f3cc647` | running |
 | P1-2 planner does not plan media; policy guesses from prose | P1 | OPEN | H-05 `t_7baa29e2` | todo |
 | P1-3 check `count` / `independent_evidence` are decorative | P1 | **OPEN — UNMAPPED** | none of H-01…H-20 owns it | — |
 | P1-4 authoring schemas are Japanese-shaped | P1 | OPEN | H-18 `t_8407ea22` (same defect as round-2 P2-7) | todo |
 | P1-5 assessment breadth is narrow | P1 | OPEN | H-16 `t_3c5d969c` | todo |
 | P1-6 rubric registry is static | P1 | **OPEN — PARTIAL** | H-16 `t_3c5d969c` decides breadth; rubric synthesis is in no card body | todo |
 | P2-1 test matrix proves policy, not generation | P2 | OPEN | H-09 `t_ebc196db` | todo |
-| P2-2 depth/locale not tested through the product surface | P2 | OPEN | H-04 `t_161d467f` + H-13 `t_543c0767` | todo |
+| P2-2 depth/locale not tested through the product surface | P2 | OPEN | H-04 `t_161d467f` + H-13 `t_543c0767` | running / ready |
 | P2-3 procedure/media evidence is static or fixture | P2 | OPEN | H-09 `t_ebc196db` | todo |
 
 Two round-1 findings have no owning card. They are recorded as open, and neither is allowed to be
@@ -152,7 +151,7 @@ board keys are authoritative and are the only ids used here (mapping kept in
 
 | finding | severity | status | owning card | card state |
 |---|---|---|---|---|
-| P0-1 validator-rejected plan is stored as an approvable `draft` | P0 | **OPEN** | H-12 `t_dba06898` | running; **no merged evidence** |
+| P0-1 validator-rejected plan is stored as an approvable `draft` | P0 | **OPEN** | H-12 `t_dba06898` | board `done`; branch `4b5f3b1` **unmerged** |
 | P0-2 fetched excerpt is raw prompt content; invented prose URLs pass | P0 | OPEN | H-14 `t_031e287f` | running |
 | P1-3 "independent validation" is prompt separation; same model upgrades support | P1 | OPEN | H-15 `t_d519643b` | running |
 | P1-4 factual gate auto-waives when research is unavailable | P1 | OPEN | H-15 `t_d519643b` | running |
@@ -160,22 +159,28 @@ board keys are authoritative and are the only ids used here (mapping kept in
 | P1-6 flat `$0.75` ceiling, no cost-abort recovery | P1 | OPEN | H-17 `t_9a8543ae` | running |
 | P2-7 Japanese-only scaffold triple; no direction field | P2 | OPEN | H-18 `t_8407ea22` | todo |
 | P2-8 no prerequisite edges; adaptation is a state label | P2 | OPEN | H-20 `t_43ca17b8` | todo (conditional on H-03) |
-| P2-9 green policy matrix supplies contract-rejected dials | P2 | OPEN | H-01 `t_f4f5b26a` + H-13 `t_543c0767` | running / todo |
+| P2-9 green policy matrix supplies contract-rejected dials | P2 | OPEN | H-01 `t_f4f5b26a` + H-13 `t_543c0767` | done, unmerged (`8cbaab3`) / ready |
 | P2-10 round-1 review uncommitted at audit time | P2 | **FIXED** | H-19 `t_ec1d2c15` | this card |
 
 ### Why P0-1 is still open
 
 The card is explicit: mark the plan-gate finding fixed by H-12 **only after its merged evidence
-exists**. On 2026-11-07 the evidence does not exist:
+exists**. Observed on 2026-11-07 at base `7af3bbd`:
 
 ```
-git rev-list --count 200e6d3..wt/harness-plan-approval   -> 0
+git rev-list --count origin/master..wt/harness-plan-approval          -> 1
+git log -1 --format='%h %s' wt/harness-plan-approval                  -> 4b5f3b1 H-12: fail-closed plan approval
+git merge-base --is-ancestor wt/harness-plan-approval origin/master   -> exit 1 (NOT an ancestor)
 ```
 
-The H-12 branch is at the unmodified `master` merge base; the board card is `running`. A running
-worker is not merged evidence. The finding therefore stays OPEN and continues to link to
-`t_dba06898`. `docs/HARNESS-NEXT-CARDS.md` D-01/D-02/D-02b describe the same defect and its two
-plan digests; they are covered by the same card and inherit the same OPEN status.
+The board card `t_dba06898` is now `done`, and its branch carries one commit, `4b5f3b1` (6 files,
++743/−6: `coursebook/domain.py`, `coursebook/generation.py`, `docs/PLAN-APPROVAL.md`, three test
+files). None of that is merged into `origin/master`. A card marked done and a commit on a branch
+are **not** merged evidence, so the finding stays OPEN and continues to link to `t_dba06898`.
+When H-12's merge commit is on `origin/master` and the merged tree passes the gate, this row flips
+to FIXED with that merge hash recorded here. `docs/HARNESS-NEXT-CARDS.md` D-01/D-02/D-02b describe
+the same defect and its two plan digests; they are covered by the same card and inherit the same
+OPEN status.
 
 ### P2-10 closure, precisely
 
@@ -212,26 +217,30 @@ Run on this branch; each must stay true or the index is stale.
 git ls-files docs/ADVERSARIAL-HARNESS-REVIEW.md docs/ADVERSARIAL-AUDIT-ROUND2.md \
                docs/HARNESS-NEXT-CARDS.md docs/REVIEW_CB014.md docs/ACCEPTANCE.md
 git log --format='%H %ad %s' --date=short -1 -- docs/ADVERSARIAL-HARNESS-REVIEW.md
-git rev-list --count 200e6d3..wt/harness-plan-approval
+git rev-list --count origin/master..wt/harness-plan-approval
+git merge-base --is-ancestor wt/harness-plan-approval origin/master; echo $?
 git status --porcelain docs/
 ```
 
 Rules enforced:
 
-- **No claim cites a file that exists only in a worktree.** Every report above is tracked. The two
-  branch-only artifacts this index names — `tests/test_adversarial_round2.py` and the audit-time
-  base of `docs/ADVERSARIAL-AUDIT-ROUND2.md` — both resolve to `9357c00`, a commit on
-  `wt/harness-adversarial-2`.
-- **A branch is not a merge.** `wt/harness-plan-approval` at zero commits ahead is why H-12 is
-  listed OPEN.
+- **No claim cites a file that exists only in a worktree.** Every report above is tracked, and the
+  round-1 and round-2 reports plus the round-2 probe file now resolve to commits on `origin/master`
+  (`2e3508f`, `7af3bbd` / `9357c00`). The only branch-only commits this index names are the two
+  unmerged product commits H-12 (`4b5f3b1`) and H-01 (`8cbaab3`), cited solely to show why their
+  findings are still OPEN.
+- **A branch is not a merge, and a done card is not a merge.** `wt/harness-plan-approval` carries
+  `4b5f3b1` but is not an ancestor of `origin/master`; that is why H-12 is listed OPEN even though
+  its board card reads `done`. The same holds for H-01 (`8cbaab3`).
 - **A prepared pack is not a topic proof.** No row above derives a harness claim from
   `bundled/packs/japanese-affection-context-l0`.
-- **A green suite is not a gate.** 1040 tests pass with the empty-plan approvals asserted as
-  success (D-02); the index therefore reports the count and the defect together.
+- **A green suite is not a gate.** 1054 tests pass at `7af3bbd` with the empty-plan approvals
+  asserted as success (D-02); the index therefore reports the count and the defect together.
 
 ## 8. What this index does not claim
 
-- It does not claim any finding is fixed except P2-10, and it does not claim H-12 has landed.
+- It does not claim any finding is fixed except P2-10, and it does not claim H-12 or H-01 has
+  been merged.
 - It does not re-run, re-grade or extend either audit; probe results are attributed to the card
   that produced them.
 - It does not claim the harness is installable, demo-ready, or proven on an arbitrary topic. H-09
