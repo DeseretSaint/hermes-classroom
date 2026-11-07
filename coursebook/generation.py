@@ -138,7 +138,12 @@ PLAN_PROMPT_VERSION = "plan-prompt.v3"
 PLAN_PROMPT_VERSION_V2 = "plan-prompt.v4"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
-LESSON_PROMPT_VERSION = "lesson-prompt.v7"
+#: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
+#: ``lesson-prompt.v7`` (the rubric-profile fix) shipped a *different* instruction text under the
+#: same label, and the label is recorded in stored validation bindings and the idempotency
+#: fingerprint. Merging the two v7 texts must not reuse a label another prompt already wore, so the
+#: merged line advances to v8 rather than claiming v7 for a third, different prompt.
+LESSON_PROMPT_VERSION = "lesson-prompt.v8"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v2"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
@@ -1332,6 +1337,113 @@ LESSON_SHORT_MAX = 600
 #: with itemised feedback and one regeneration, instead of the whole job dying on a schema error.
 LESSON_SHORT_SCHEMA_MAX = 1200
 
+#: Authored bounds for the optional procedure header. They are wider than the renderer's hard
+#: ceilings in ``lesson_document`` so an over-long value is refused with an itemised rule reason
+#: and one regeneration, instead of the whole lesson dying on a schema error.
+PROCEDURE_MAX_ITEMS = 12
+PROCEDURE_MAX_HAZARDS = 8
+PROCEDURE_MAX_STEPS = 12
+PROCEDURE_MAX_ROWS = 12
+PROCEDURE_MAX_ITEM = 120
+PROCEDURE_MAX_HAZARD = 200
+PROCEDURE_MAX_STOP = 300
+PROCEDURE_MAX_STEP_CHECK = 200
+PROCEDURE_MAX_ROW_LABEL = 80
+PROCEDURE_MAX_ROW_VALUE = 120
+PROCEDURE_PERMISSIONS = ("public_domain", "licensed", "linked")
+
+#: The authored shape of the optional ``procedure`` header.
+#:
+#: A step names a **segment ordinal** (1-based, into ``segments``), never prose and never a block
+#: id: block ids are content-derived by the projector, so only the ordinal is knowable at
+#: authoring time. ``lesson_document`` resolves each ordinal to the projected block's id when the
+#: page is read, which keeps the stored page stable and the served document contract-shaped.
+PROCEDURE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["tools", "parts", "hazards", "stop_condition", "steps", "schematic", "source"],
+    "properties": {
+        "tools": {
+            "type": "array",
+            "maxItems": PROCEDURE_MAX_ITEMS,
+            "items": {"type": "string", "minLength": 1, "maxLength": PROCEDURE_MAX_ITEM},
+        },
+        "parts": {
+            "type": "array",
+            "maxItems": PROCEDURE_MAX_ITEMS,
+            "items": {"type": "string", "minLength": 1, "maxLength": PROCEDURE_MAX_ITEM},
+        },
+        "hazards": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": PROCEDURE_MAX_HAZARDS,
+            "items": {"type": "string", "minLength": 5, "maxLength": PROCEDURE_MAX_HAZARD},
+        },
+        "stop_condition": {"type": "string", "minLength": 5, "maxLength": PROCEDURE_MAX_STOP},
+        "steps": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": PROCEDURE_MAX_STEPS,
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["segment"],
+                "properties": {
+                    "segment": {"type": "integer", "minimum": 1, "maximum": 6},
+                    "check": {"type": "string", "minLength": 5, "maxLength": PROCEDURE_MAX_STEP_CHECK},
+                },
+            },
+        },
+        "schematic": {
+            "oneOf": [
+                {"type": "null"},
+                {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["title", "text_equivalent", "source_id", "rows"],
+                    "properties": {
+                        "title": {"type": "string", "minLength": 3, "maxLength": 200},
+                        "text_equivalent": {"type": "string", "minLength": 5, "maxLength": 1200},
+                        "source_id": _identifier,
+                        "rows": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": PROCEDURE_MAX_ROWS,
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["label", "value"],
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": PROCEDURE_MAX_ROW_LABEL,
+                                    },
+                                    "value": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": PROCEDURE_MAX_ROW_VALUE,
+                                    },
+                                    "row": {"type": "integer", "minimum": 0, "maximum": 99},
+                                },
+                            },
+                        },
+                    },
+                },
+            ]
+        },
+        "source": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["source_id", "permission"],
+            "properties": {
+                "source_id": _identifier,
+                "permission": {"type": "string", "enum": list(PROCEDURE_PERMISSIONS)},
+            },
+        },
+    },
+}
+
 LESSON_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -1549,6 +1661,10 @@ LESSON_SCHEMA: dict[str, Any] = {
             "maxItems": 10,
             "items": {"type": "string", "minLength": 5, "maxLength": 300},
         },
+        # Optional and additive: an ordinary lesson never carries it, so every existing lesson
+        # projection is byte-identical. Required only when the check's evidence target is
+        # ``procedure``; refused when the lesson is not a technical procedure.
+        "procedure": PROCEDURE_SCHEMA,
         "policy": POLICY_SCHEMA,
     },
 }
@@ -1680,7 +1796,10 @@ LESSON_SYSTEM_PROMPT = (
     "text equivalent; the harness generates the image or audio, and you never claim that a "
     "generated illustration is a measurement or procedure authority. For a technical procedure, "
     "use a schematic with structured facts and cite the source; for language pronunciation, use "
-    "narration with the exact transcript, language and voice. Return only the JSON object."
+    "narration with the exact transcript, language and voice. A technical procedure lesson also "
+    "carries the typed 'procedure' header: its steps are references to the lesson's own segments, "
+    "never a second copy of the prose, and its schematic rows restate only facts the cited source "
+    "actually contains. Return only the JSON object."
     + UNTRUSTED_SOURCE_RULE
 )
 
@@ -2379,6 +2498,26 @@ def _lesson_instructions(
     # Frozen chat directive (docs/ASSESSMENT-BREADTH.md §7.4): the lesson page is read inside a
     # teaching chat, so it must not promise a capability this build does not have.
     lines.append(prompts.CHAT_CAPABILITY_RULE)
+    if _procedure_is_expected(capability, capability.evidence_target):
+        lines.append(
+            "This lesson teaches a technical procedure: include the optional 'procedure' header "
+            "whenever the lesson teaches an ordered procedure (it is expected here). "
+            "It has tools[] and parts[] (may be empty), hazards[] (name them or state explicitly "
+            "that none apply), a stop_condition, steps[], a schematic and a source. A step is "
+            "{segment: the 1-based index of the segment that carries that action, check: an "
+            "optional short verification cue}; never restate a step in prose and never add a "
+            "second check to the header. schematic is either null or {title, text_equivalent, "
+            "source_id, rows: [{label, value, row}]}; every row value must appear verbatim in the "
+            "cited source's supplied text, and the source must be one you listed in 'sources'. "
+            "source is {source_id, permission} with permission public_domain, licensed or linked. "
+            "If no supplied source carries the measurement or sequence, set schematic to null "
+            "rather than invent one; an illustration is never the authority."
+        )
+    else:
+        lines.append(
+            "Do not include a 'procedure' header: this lesson is not a technical procedure, and "
+            "the header is rejected deterministically when it appears."
+        )
     return "\n".join(lines)
 
 
@@ -3206,6 +3345,252 @@ def _check_item_problems(check: dict[str, Any]) -> list[str]:
     return problems
 
 
+def _procedure_is_expected(capability: "capability_policy.LessonCapabilityPlan", declared_target: str) -> bool:
+    """True when this lesson legitimately teaches a technical procedure.
+
+    Three declared facts can make a lesson technical: the check measures a procedure evidence
+    target, the recipe/check angle is procedure, or the subject domain is a technical procedure.
+    Nothing here reads the authored prose: a model cannot talk its way into a procedure header.
+    """
+    return (
+        declared_target == "procedure"
+        or capability.check_angle == "procedure"
+        or capability.subject_domain == "technical_procedure"
+    )
+
+
+def _procedure_reference_id(value: Any) -> bool:
+    return isinstance(value, str) and bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{3,63}", value))
+
+
+def _procedure_key(text: Any) -> str:
+    """Case/whitespace/punctuation-folded key, so a source's prose and a row value can compare."""
+    folded = " ".join(str(text or "").casefold().split())
+    return re.sub(r"[\s.,;:!?()\[\]{}\"'“”‘’]+", " ", folded).strip()
+
+
+def lesson_procedure_problems(
+    lesson: dict[str, Any],
+    *,
+    capability: "capability_policy.LessonCapabilityPlan",
+    declared_target: str,
+    sources: Sequence[SourceRecord] | None,
+) -> list[str]:
+    """Deterministic rules for the optional ``procedure`` header.
+
+    The header is never a second text authority: ``steps`` are ordered references to the lesson's
+    own segments plus a short verification cue, the schematic's rows are the only place a number
+    may appear, and every row has to be present in the cited source's recorded text. An
+    illustration is never accepted as the authority for either.
+    """
+    problems: list[str] = []
+    procedure = lesson.get("procedure")
+    technical = _procedure_is_expected(capability, declared_target)
+    if procedure is None:
+        # Optional in the schema: an ordinary lesson and a technical lesson that teaches no ordered
+        # procedure both omit it. The prompt asks the author for it; nothing is invented here.
+        return problems
+    if not technical:
+        problems.append(
+            "a 'procedure' header is only valid for a technical procedure lesson; this lesson's "
+            f"construct is {capability.subject_domain or 'general'} with evidence target "
+            f"{declared_target or capability.evidence_target!r}"
+        )
+        return problems
+    if not isinstance(procedure, dict):
+        return problems + ["procedure is not an object"]
+
+    segments = [segment for segment in lesson.get("segments") or [] if isinstance(segment, dict)]
+    # ── steps: ordered references to real segments, never copied prose ──
+    raw_steps = procedure.get("steps")
+    if not isinstance(raw_steps, list) or not raw_steps:
+        problems.append("procedure.steps must be a non-empty array of segment references")
+        raw_steps = []
+    seen_segments: set[int] = set()
+    for index, step in enumerate(raw_steps):
+        if not isinstance(step, dict):
+            problems.append(f"procedure.steps[{index}] is not an object")
+            continue
+        segment_ref = step.get("segment")
+        if isinstance(segment_ref, bool) or not isinstance(segment_ref, (int, str)):
+            problems.append(f"procedure.steps[{index}].segment is not an integer")
+            continue
+        try:
+            ordinal = int(segment_ref)
+        except (TypeError, ValueError):
+            problems.append(f"procedure.steps[{index}].segment is not an integer")
+            continue
+        if ordinal < 1 or ordinal > len(segments):
+            problems.append(
+                f"procedure.steps[{index}].segment {ordinal} refers to no lesson segment "
+                f"(this lesson has {len(segments)})"
+            )
+            continue
+        if ordinal in seen_segments:
+            problems.append(f"procedure.steps[{index}] repeats segment {ordinal}")
+            continue
+        seen_segments.add(ordinal)
+        cue = step.get("check")
+        if cue is None:
+            continue
+        if not isinstance(cue, str) or not cue.strip():
+            problems.append(f"procedure.steps[{index}].check is empty")
+            continue
+        if len(cue) > PROCEDURE_MAX_STEP_CHECK:
+            problems.append(
+                f"procedure.steps[{index}].check exceeds {PROCEDURE_MAX_STEP_CHECK} characters; "
+                "a step cue is a short verification cue, not the action text"
+            )
+            continue
+        cue_key = _procedure_key(cue)
+        target = segments[ordinal - 1]
+        for field in ("body", "short"):
+            segment_key = _procedure_key(target.get(field))
+            if segment_key and cue_key and (
+                cue_key == segment_key or (len(cue_key) >= 40 and cue_key in segment_key)
+            ):
+                problems.append(
+                    f"procedure.steps[{index}].check repeats segments[{ordinal}].{field}; the step "
+                    "action is the referenced block's own text and must not be copied into the header"
+                )
+                break
+
+    # ── hazards and the stop condition are required, never silent ──
+    hazards = procedure.get("hazards")
+    if not isinstance(hazards, list) or not hazards:
+        problems.append("procedure.hazards must name the hazards or state explicitly that none apply")
+    stop = procedure.get("stop_condition")
+    if not isinstance(stop, str) or not stop.strip():
+        problems.append("procedure.stop_condition is empty")
+
+    # ── the cited reference: present, cited by this lesson, and priced ──
+    source_entry = procedure.get("source")
+    ledger = {source.source_id: source for source in sources or []}
+    lesson_source_ids = {str(entry) for entry in lesson.get("sources") or [] if isinstance(entry, str)}
+    if not isinstance(source_entry, dict):
+        problems.append("procedure.source is missing; a procedure carries a cited reference")
+        source_id = None
+    else:
+        source_id = source_entry.get("source_id")
+        if not _procedure_reference_id(source_id):
+            problems.append("procedure.source.source_id is not an identifier")
+            source_id = None
+        elif str(source_id) not in lesson_source_ids:
+            problems.append(
+                f"procedure.source.source_id {source_id!r} is not in lesson.sources; a procedure "
+                "source must be one this lesson actually cites"
+            )
+        elif sources is not None and str(source_id) not in ledger:
+            problems.append(
+                f"procedure.source.source_id {source_id!r} is not in the supplied source ledger"
+            )
+        permission = source_entry.get("permission")
+        if permission not in PROCEDURE_PERMISSIONS:
+            problems.append(
+                "procedure.source.permission "
+                f"{permission!r} is not one of {', '.join(PROCEDURE_PERMISSIONS)}; an unlicensed "
+                "reference cannot stand beside a technical procedure"
+            )
+
+    # ── the schematic: typed facts only, every row backed by the cited source ──
+    schematic = procedure.get("schematic")
+    if schematic is not None:
+        if not isinstance(schematic, dict):
+            problems.append("procedure.schematic is not an object")
+            schematic = None
+        else:
+            for field, limit in (
+                ("title", 200),
+                ("text_equivalent", 1200),
+                ("source_id", 64),
+            ):
+                value = schematic.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    problems.append(f"procedure.schematic.{field} is empty")
+                elif len(value) > limit:
+                    problems.append(f"procedure.schematic.{field} exceeds {limit} characters")
+            schematic_source = schematic.get("source_id")
+            if _procedure_reference_id(schematic_source) and str(schematic_source) not in lesson_source_ids:
+                problems.append(
+                    f"procedure.schematic.source_id {schematic_source!r} is not in lesson.sources; "
+                    "a schematic row may only restate a fact from a source this lesson cites"
+                )
+            rows = schematic.get("rows")
+            if not isinstance(rows, list) or not rows:
+                problems.append("procedure.schematic.rows must be a non-empty array of typed facts")
+                rows = []
+            cited = ledger.get(str(schematic_source)) if _procedure_reference_id(schematic_source) else None
+            excerpt_key = _procedure_key(cited.excerpt) if cited is not None else ""
+            seen_rows: set[tuple[str, str]] = set()
+            for index, row in enumerate(rows):
+                if not isinstance(row, dict):
+                    problems.append(f"procedure.schematic.rows[{index}] is not an object")
+                    continue
+                label = row.get("label")
+                value = row.get("value")
+                if not isinstance(label, str) or not label.strip():
+                    problems.append(f"procedure.schematic.rows[{index}].label is empty")
+                    continue
+                if not isinstance(value, str) or not value.strip():
+                    problems.append(f"procedure.schematic.rows[{index}].value is empty")
+                    continue
+                key = (label.strip().casefold(), value.strip().casefold())
+                if key in seen_rows:
+                    problems.append(f"procedure.schematic.rows[{index}] repeats an earlier row")
+                seen_rows.add(key)
+                if sources is not None and isinstance(schematic_source, str) and _procedure_reference_id(schematic_source):
+                    if cited is None:
+                        problems.append(
+                            f"procedure.schematic.rows[{index}] cites {schematic_source!r}, which the "
+                            "supplied ledger does not contain; the row is unsourced"
+                        )
+                    elif not excerpt_key:
+                        problems.append(
+                            f"procedure.schematic.rows[{index}] cites {schematic_source!r}, which has "
+                            "no recorded source text; the row cannot be verified"
+                        )
+                    elif _procedure_key(value) not in excerpt_key:
+                        problems.append(
+                            f"procedure.schematic.rows[{index}].value {value!r} does not appear in the "
+                            f"recorded text of source {schematic_source!r}; an unsourced measurement or "
+                            "sequence value is never published"
+                        )
+
+    # ── one copy of the facts: when a procedure table exists, the drawn schematic restates it ──
+    schematic_media = [
+        item
+        for item in lesson.get("media") or []
+        if isinstance(item, dict) and item.get("role") == "schematic"
+    ]
+    if schematic_media and schematic is not None:
+        procedure_rows = {
+            (str(row.get("label") or "").strip().casefold(), str(row.get("value") or "").strip().casefold())
+            for row in schematic.get("rows") or []
+            if isinstance(row, dict)
+        }
+        for index, item in enumerate(schematic_media, start=1):
+            facts = item.get("facts") if isinstance(item.get("facts"), dict) else {}
+            media_rows = facts.get("rows") if isinstance(facts, dict) else None
+            media_keys = {
+                (str(row.get("label") or "").strip().casefold(), str(row.get("value") or "").strip().casefold())
+                for row in media_rows or []
+                if isinstance(row, dict)
+            } if isinstance(media_rows, list) else set()
+            if media_keys != procedure_rows:
+                problems.append(
+                    f"schematic media item {index} carries different rows than procedure.schematic; "
+                    "the table is the authority and the drawing restates it"
+                )
+            if isinstance(schematic.get("source_id"), str) and schematic.get("source_id") not in (
+                item.get("source_ids") or []
+            ):
+                problems.append(
+                    f"schematic media item {index} does not cite procedure.schematic.source_id "
+                    f"{schematic.get('source_id')!r}"
+                )
+    return problems
+
+
 def enforce_lesson_rules(
     lesson: dict[str, Any],
     *,
@@ -3278,6 +3663,17 @@ def enforce_lesson_rules(
             reasons.append("every media spec requires a complete text equivalent")
         for problem in artifacts.media_problems(_media_spec_from_lesson_item(media)):
             reasons.append(problem)
+
+    # The optional procedure header: refused unless this lesson is a technical procedure, and
+    # its steps and schematic rows are checked against the lesson's own segments and the ledger.
+    reasons.extend(
+        lesson_procedure_problems(
+            lesson,
+            capability=capability,
+            declared_target=declared_target,
+            sources=ledger,
+        )
+    )
 
     # Claim-level provenance in the lesson prose and its media specs. Only enforced when the
     # caller supplies the ledger; a direct unit caller with no ledger gets the structural rules.
@@ -3798,6 +4194,9 @@ def build_lesson_request(
             "media": "declarative spec with a complete text equivalent; only the roles the "
             "capability policy permits; the harness generates it and never treats an "
             "illustration as technical authority",
+            "procedure": "optional; required when the check's evidence target is 'procedure', "
+            "rejected on a non-technical lesson. steps reference segments by 1-based ordinal; "
+            "schematic rows must restate values present in the cited source's supplied text",
         },
     }
     if feedback:
@@ -5878,6 +6277,58 @@ def _section_dict(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _page_procedure(lesson: dict[str, Any]) -> dict[str, Any] | None:
+    """Copy an authored procedure header onto the page, field by field.
+
+    Steps keep their authored **segment ordinals**: the stored page must not embed block ids,
+    because ``lesson_document`` mints those deterministically at read time. The projector resolves
+    each ordinal to the id of the block it produces, so the stored page stays stable and the served
+    document keeps the contract's ``{block_id, check}`` step shape.
+    """
+    raw = lesson.get("procedure")
+    if not isinstance(raw, dict):
+        return None
+    steps = [
+        {
+            "segment": int(step["segment"]),
+            **({"check": step["check"]} if step.get("check") else {}),
+        }
+        for step in raw.get("steps") or []
+        if isinstance(step, dict) and isinstance(step.get("segment"), int)
+    ]
+    raw_schematic = raw.get("schematic")
+    schematic: dict[str, Any] | None = None
+    if isinstance(raw_schematic, dict):
+        rows: list[dict[str, Any]] = []
+        for index, row in enumerate(raw_schematic.get("rows") or []):
+            if not isinstance(row, dict):
+                continue
+            rows.append(
+                {
+                    "label": str(row.get("label") or ""),
+                    "value": str(row.get("value") or ""),
+                    "row": int(row["row"]) if isinstance(row.get("row"), int) else index,
+                }
+            )
+        schematic = {
+            "title": str(raw_schematic.get("title") or ""),
+            "text_equivalent": str(raw_schematic.get("text_equivalent") or ""),
+            "source_id": raw_schematic.get("source_id"),
+            "rows": rows,
+        }
+    raw_source = raw.get("source")
+    source: dict[str, Any] = raw_source if isinstance(raw_source, dict) else {}
+    return {
+        "tools": list(raw.get("tools") or []),
+        "parts": list(raw.get("parts") or []),
+        "hazards": list(raw.get("hazards") or []),
+        "stop_condition": raw.get("stop_condition"),
+        "steps": steps,
+        "schematic": schematic,
+        "source": {"source_id": source.get("source_id"), "permission": source.get("permission")},
+    }
+
+
 def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources: Sequence[SourceRecord]) -> dict[str, Any]:
     """Project the authored lesson onto the learner-facing page.
 
@@ -5886,7 +6337,7 @@ def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources
     """
     check = lesson["check"]
     source_index = {source.source_id: source for source in sources}
-    return {
+    page = {
         "section_title": lesson["section_title"],
         "lesson_intent": section.get("lesson_intent"),
         "segments": [
@@ -5953,6 +6404,10 @@ def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources
         "parent_notes": lesson.get("parent_notes"),
         "supervision_notes": list(lesson.get("supervision_notes") or []),
     }
+    procedure = _page_procedure(lesson)
+    if procedure is not None:
+        page["procedure"] = procedure
+    return page
 
 
 def _accepted_forms(check: dict[str, Any]) -> list[str]:
