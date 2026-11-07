@@ -1,0 +1,32 @@
+{
+  "steps": [
+    {
+      "startFresh": {
+        "found": true,
+        "x": 468.7526969909668,
+        "y": 420.9300537109375,
+        "disabled": false
+      }
+    },
+    {
+      "typed": false
+    },
+    {
+      "submit": {
+        "found": false
+      }
+    }
+  ],
+  "afterStart": {
+    "hash": "#/",
+    "mounted": false,
+    "text": "",
+    "submitDisabled": null
+  },
+  "afterSubmit": {
+    "hash": "#/",
+    "mounted": false,
+    "text": ""
+  },
+  "consoleErrors": []
+}

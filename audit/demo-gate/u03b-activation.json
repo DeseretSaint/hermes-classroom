@@ -1,0 +1,45 @@
+{
+  "trials": [
+    {
+      "name": "Coursebook",
+      "key": "Enter",
+      "found": true,
+      "focused": {
+        "tag": "BUTTON",
+        "role": null,
+        "hash": "#/"
+      },
+      "after": {
+        "hash": "#/",
+        "mounted": false,
+        "route": null,
+        "active": "Coursebook",
+        "hash2": "#/"
+      }
+    },
+    {
+      "name": "Coursebook",
+      "key": "Space",
+      "found": true,
+      "focused": {
+        "tag": "BUTTON",
+        "role": null,
+        "hash": "#/"
+      },
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "route": "/coursebook",
+        "active": "Coursebook",
+        "hash2": "#/coursebook"
+      }
+    }
+  ],
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    }
+  ]
+}

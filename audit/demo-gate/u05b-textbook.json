@@ -1,0 +1,54 @@
+{
+  "steps": [
+    {
+      "open": true
+    },
+    {
+      "textbook": true
+    },
+    {
+      "textbookText": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nOverview\nCURRENT OBJECTIVE\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\nResume Explain why register changes with the relationship\nResume lesson\nOpen this section\nREVIEW\nNothing due. The review queue stays quiet until evidence is scheduled.\nRECENT EVENT\nNo attempt has been recorded on this course yet.\nTHIS COURSE\nRecipe\ncasual\nEnrollment\nrevision 0\nactive\nEvidence\n4 objectives · 0 due\n0 independent\nProvenance\njapanese-affection-context-l0 v1.0.0\nLocal pack\nExporting the pack is a Library action; it never includes your answers or notes."
+    },
+    {
+      "openSection": true
+    }
+  ],
+  "after": {
+    "hash": "#/coursebook",
+    "mounted": true,
+    "text": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\nLast opened just now\nmissing\nThis section’s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\nLesson 1 — two ways of saying it\nThis is a demonstration lesson for an adult beginner (L0). Every Japanese line is followed by\nromaji and an English meaning. Romaji is a scaffold: it helps you hear the shape of the line, and\nit is not evidence that you can read Japanese.\nDialogue A — two friends, after a film\nMika: たのしかったね。 (tanoshikatta ne.) — \"That was fun, wasn't it?\"\nJun: うん。また行こう。 (un. mata ikou.) — \"Yeah. Let's go again.\"\nMika: うん、好きだよ。 (un, suki da yo.) — \"Yeah, I like you.\"\n好き (suki) is a na-adjective: it describes the person or thing that is liked, not an action\nthe speaker performs. 好きだよ (suki da yo) is the casual form, used with friends and people you\nare already close to. The final よ (yo) softens the statement and offers it as new information.\nDialogue B — a confession\nAoi: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"\nThis is the shape of a 告白 (kokuhaku), a romantic confession. The polite form 好きです\n(suki desu) carries the seriousness of the moment, and 付き合ってください (tsukiatte kudasai)\nis the request to start seeing each other.\nです (desu) is the polite copula; it marks that the addressee is being addressed politely\n(丁寧語, teineigo). It does not by itself make a sentence romantic. The romantic reading comes\nfrom the situation and from the request that follows.\nWhat changes between A and B?\n\t\nDialogue A\n\t\nDialogue B\nWho is speaking\tfriends\ttwo people not yet a couple\nSetting\tcasual, after an outing\tprivate, deliberate\nForm\t好きだよ (suki da yo)\t好きです — polite (suki desu)\nWhat it does\tstates affection\tmakes a romantic confession\nThe words are close; the relationship and the setting decide how the line is heard. A literal\ntranslation of English \"I love you\" is not enough to choose between them.\nNote on the sources\nThe A1 curriculum reference us",
+    "inputs": [
+      {
+        "tag": "TEXTAREA",
+        "type": "textarea",
+        "label": null,
+        "ph": "Type the answer you would give in the lesson."
+      }
+    ],
+    "buttons": [
+      "New course",
+      "Courses",
+      "Library",
+      "Parent Studio",
+      "All courses",
+      "Resume lesson",
+      "Overview",
+      "Textbook",
+      "Notebook",
+      "Quizzes",
+      "Plan",
+      "Evidence",
+      "Sources",
+      "Textbook",
+      "Reattach",
+      "Resume this section",
+      "Start a fresh run",
+      "All sections",
+      "Save to notebook",
+      "Save to notebook",
+      "Submit answer",
+      "Edit answer"
+    ]
+  },
+  "consoleErrors": []
+}

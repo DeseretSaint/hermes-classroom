@@ -1,0 +1,22 @@
+{
+  "after": {
+    "routeText": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport a pack\nClose\nChoose a pack archive\nPick the folder that holds the .zip a pack arrived in. Coursebook reads it in a staging area, checks every file and hash, and shows the review below before anything is adopted.\nChoose folder…\nCancel",
+    "dialogCount": 0,
+    "dialogs": [],
+    "buttons": [
+      "Choose line for first confession",
+      "Import profile…",
+      "Choose folder…",
+      "Cancel",
+      "Collapse all folders"
+    ],
+    "fileTree": false
+  },
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    }
+  ]
+}

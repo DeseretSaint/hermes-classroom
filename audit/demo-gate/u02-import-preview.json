@@ -1,0 +1,39 @@
+{
+  "steps": [
+    {
+      "step": "click-review",
+      "x": 592.5059185028076,
+      "y": 287.79010009765625,
+      "disabled": false
+    },
+    {
+      "step": "preview-wait",
+      "error": "timed out waiting for preview after 30000ms"
+    }
+  ],
+  "previewOk": false,
+  "preview": {
+    "text": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport a pack\nClose\nChoose a different file\nJapanese affection and register — an L0 demonstration classroom\nFour lines, three addressees, one decision: who is listening, how close, and where.\njapanese-affection-context-l0\nv1.0.0\nCasual self-study\nneeds Coursebook 0.1.0\nAUTHOR AND RIGHTS\nAuthor / attribution\nCoursebook demo pack (author) — Original teaching text and schematic: Coursebook demo pack. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.\nLicense\nunspecified · redistribution local_only · Bundled demonstration fixture. The teaching text is original Coursebook-authored material; the operator has not chosen a redistribution license. Linked sources are cited, not bundled.\nLocale / level\nja-JP · CEFR A1 · ab initio (L0)\nINTEGRITY AND SIZE\nContent hash\nsha256:638ce371db6bf2340a7b6a37a75a9762e0e9e6c3f723e55b0a0a5103a8376d7f\nFiles\n5 file(s) · 16.4 KB expanded\nHashes match the manifest\nyes\nTRUST, KEPT SEPARATE\nintegrity verified\nIntegrity only: each file matches the hash in the manifest. Says nothing about the teaching.\nautomated checks passed\nAutomated checks passed: structure, minima and content audit. No human read it for this label.\nmodel assessed support\nAt least one source support status was assessed by a model, not by a document.\nNo human review is recorded for this pack. Passing automated checks is not a claim that the content is true.\nCONTENT NOTES\nFresh verification: every Japanese wording and usage claim was re-read against the linked sources on 2026-11-06. No native-speaker review is recorded, and none is claimed.\nL0 script policy: Japanese script is always paired with romaji and an English meaning. Romaji is a scaffold that fades; a romaji-only answer is not evidence of reading Japanese.\nRegister is taught as a function of addressee, relationship and setting, not as one correct translation of the English phrase 'I love you'.\nCulture claims are kept narrow and attributed; regional, generational and personal variation is stated in the lesson rather than smoothed away.\nSAFETY NOTES\nNo audio is bundled, so no listening evidence is claimed and no voice is certified.\nThe topic is affection and confession, written for adult self-study; there is no explicit material.\nOUTCOMES (4)\n1. Tell everyday affection from a direct romantic declaration\ndiscrimination\n1 check(s)\nNames which line is the romantic confession · Names which line is affection between friends · Points at the cue (form or request) that changes the reading\n2. Choose the polite expression for a first confession\ncomprehension\n1 check(s)\nSelects the polite line for a first confession · Relates the choice to the addressee and setting\n3. Recall the intimate declaration in a new context\nrecall\n1 check(s)\nProduces the intimate line in a new, non-identical context · Does not reuse the first-confession line for a settled partnership\n4. Explain why register changes with the",
+    "buttons": [
+      {
+        "label": "Close",
+        "disabled": false
+      },
+      {
+        "label": "Choose a different file",
+        "disabled": false
+      },
+      {
+        "label": "Continue",
+        "disabled": false
+      }
+    ]
+  },
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    }
+  ]
+}

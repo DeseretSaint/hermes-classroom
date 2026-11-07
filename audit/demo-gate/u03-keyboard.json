@@ -1,0 +1,261 @@
+{
+  "scenario": "U03",
+  "name": "keyboard-only route path, focus, names",
+  "sidebarWalkTabs": 5,
+  "sidebarReached": {
+    "tabs": 5,
+    "state": {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Open Coursebook",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    }
+  },
+  "keyboardRoute": {
+    "reached": true,
+    "beforeHash": "#/",
+    "afterHash": "#/coursebook",
+    "mounted": true,
+    "activatedBy": "Enter",
+    "tabs": 5,
+    "focusAfter": {
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Open Coursebook",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    }
+  },
+  "focusedFirstRouteControl": true,
+  "routeWalk": [
+    {
+      "tab": 0,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Close",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Choose folder…",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Cancel",
+      "inRoute": true,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 3,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Open Coursebook",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 4,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Show gitignored files",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 5,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Refresh tree",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 6,
+      "tag": "DIV",
+      "role": "treeitem",
+      "name": ".agents",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 7,
+      "tag": "DIV",
+      "role": "tab",
+      "name": "Terminal",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 8,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Restore",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 9,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 10,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Registered gateways: 127.0.0.1:44297",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 11,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Backend inference unavailable",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 12,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "deseretsaint",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 13,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Smart",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 14,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "client v0.23.0",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 15,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "backend v0.23.0",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": true,
+      "shadow": false,
+      "visible": true
+    },
+    {
+      "tab": 16,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Hide sidebar · 1 unread session",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    },
+    {
+      "tab": 17,
+      "tag": "BUTTON",
+      "role": null,
+      "name": "Open settings",
+      "inRoute": false,
+      "focusVisible": true,
+      "outline": false,
+      "shadow": true,
+      "visible": true
+    }
+  ],
+  "activation": {
+    "target": null,
+    "textBefore": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport a pack\nClose\nChoose a pack archive\nPick the folder that holds the .zip a pack arrived in. Coursebook reads it in a staging area, checks every file and hash, and shows the review below before anything is adopted.\nCh",
+    "hashAfter": "#/coursebook",
+    "route": "/coursebook",
+    "textAfter": "Coursebook\nPacks you can teach from, with the provenance the backend recorded.\nImport a pack\nClose\nChoose a pack archive\nPick the folder that holds the .zip a pack arrived in. Coursebook reads it in a staging area, checks every file and hash, and shows the review below before anything is adopted.\nChoose folder…\nCancel"
+  },
+  "ax": {
+    "namedControls": 163,
+    "unnamedControls": 1,
+    "unnamedSample": [
+      {
+        "role": "button",
+        "backend": 79
+      }
+    ]
+  },
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `FirstRun`. "
+    }
+  ]
+}
