@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T12:19:41.610Z",
+  "generated_at": "2026-11-07T12:31:09.319Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
   "frames": [
@@ -4922,11 +4922,19 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 7,
+      "keyboard_count": 8,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 7
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-textonly-dark-1280-32",
@@ -6335,19 +6343,11 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Artifact details",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 10,
+      "keyboard_count": 9,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 10
+      "keyboard_visible_ring": 9
     },
     {
       "id": "textbook-unavailable-light-1280-32",
@@ -9066,11 +9066,19 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 6,
+      "keyboard_count": 7,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 6
+      "keyboard_visible_ring": 7
     },
     {
       "id": "guided-light-1280-32",
@@ -9854,19 +9862,11 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 7,
+      "keyboard_count": 6,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 7
+      "keyboard_visible_ring": 6
     },
     {
       "id": "guided-dark-1280-32",
@@ -22873,11 +22873,19 @@
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "tag": "button",
+          "text": "Open the section",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 11,
+      "keyboard_count": 12,
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_visible_ring": 12
     },
     {
       "id": "field-desk-dark-1280-32",
@@ -35846,7 +35854,7 @@
     "hex_literals_outside_token_table": 0,
     "sample": [],
     "tertiary_text_utility_uses": 0,
-    "contract_file": "/home/deseretsaint/.hermes/cache/scratch/cb-merge-h18/contracts/cb.tokens.v1.json",
+    "contract_file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_492cf9ad/contracts/cb.tokens.v1.json",
     "contract_present": true,
     "contract_matches_shipped_table": true,
     "contract_gates": {
@@ -35867,7 +35875,7 @@
           "hex_literals_outside_token_table": 0,
           "sample": [],
           "tertiary_text_utility_uses": 0,
-          "contract_file": "/home/deseretsaint/.hermes/cache/scratch/cb-merge-h18/contracts/cb.tokens.v1.json",
+          "contract_file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_492cf9ad/contracts/cb.tokens.v1.json",
           "contract_present": true,
           "contract_matches_shipped_table": true,
           "contract_gates": {
@@ -36177,8 +36185,8 @@
         "owner": "desktop specialist (product code)"
       }
     ],
-    "plugin_sha256": "959d48142f8419a0ade2ec9c2b93b9a9a28b8eaf9f6a7da28b71b0fcb838436b",
-    "branch": "HEAD",
+    "plugin_sha256": "f62264e85e127de55e80a93c3715deb7f15273dab9e004e77e0e32ab288d189b",
+    "branch": "wt/harness-h27-h26b-union",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }
