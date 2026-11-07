@@ -2042,7 +2042,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
           jsx(sdk.Button, {
             variant: 'secondary',
             disabled: !current,
-            onClick: onOpenSection,
+            onClick: () => onOpenSection(current ? current.objective_id : null),
             children: 'Open the section'
           })
         ]
@@ -2275,9 +2275,216 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
   })
 }
 
+/**
+ * The strip is a glance surface, not the notebook: the saved excerpt is summarised to plain text
+ * and clipped here only. Plain text means the authored markdown syntax is removed for this one
+ * line, not re-rendered — the strip does not grow a second markdown surface. The saved row keeps
+ * its whole excerpt and the Notebook renders it unfiltered.
+ */
+const STRIP_EXCERPT_CHARS = 240
+function stripExcerpt(entry) {
+  const raw = String(entry.excerpt || entry.note || entry.kind || '')
+  const plain = raw
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^>\s?/gm, '')
+    .replace(/^\s*\|/gm, '')
+    .replace(/\|\s*$/gm, '')
+    .replace(/\|/g, ' · ')
+    .replace(/[*_`~]{1,3}/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return plain.length > STRIP_EXCERPT_CHARS ? `${plain.slice(0, STRIP_EXCERPT_CHARS - 1).trimEnd()}…` : plain
+}
+
+/**
+ * The Field Notes strip on the Field Desk.
+ *
+ * A saved moment is a first-class learning surface, not a settings side list: the desk shows the
+ * last few things this course saved, each one able to return to its exact block. It reads only
+ * `notebook.list`; it never writes, never invents an empty row and never hides a failed read.
+ */
+function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenSection, onShowNotebook, onRetry }) {
+  const status = notes && notes.status ? notes.status : 'idle'
+  const entries = notes && notes.data && Array.isArray(notes.data.entries) ? notes.data.entries : []
+  const recent = entries.slice(0, 4)
+  const error = notes ? notes.error : null
+  const reload = notes && notes.reload ? notes.reload : onRetry
+  const sectionTitles = {}
+  ;(sections || []).forEach((entry) => {
+    if (entry && entry.objective_id && entry.title) sectionTitles[entry.objective_id] = entry.title
+  })
+
+  if (!notes) return null
+
+  const action = current
+    ? jsx(sdk.Button, {
+        variant: 'secondary',
+        size: 'sm',
+        onClick: () => onOpenSection(current.objective_id),
+        children: 'Go to the current lesson'
+      })
+    : null
+
+  const quietText = { margin: 0, fontSize: '0.75rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' }
+
+  return jsxs('section', {
+    'data-cb-field-notes': status === 'ready' && recent.length > 0 ? 'ready' : status,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.45rem',
+      maxWidth: '46rem',
+      borderTop: '1px solid var(--cb-rule)',
+      paddingTop: '0.7rem'
+    },
+    children: [
+      jsxs('div', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: '0.25rem 0.75rem'
+        },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem' },
+            children: [
+              jsx(DeskLabel, { children: 'Field Notes' }),
+              entries.length > 0
+                ? jsx('span', {
+                    style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+                    children: `${entries.length} saved${entries.length > recent.length ? ` · showing the last ${recent.length}` : ''}`
+                  })
+                : null
+            ]
+          }),
+          jsx(sdk.Button, {
+            variant: 'text',
+            size: 'sm',
+            onClick: onShowNotebook,
+            children: 'All field notes'
+          })
+        ]
+      }),
+      stale
+        ? jsx('p', {
+            style: { ...quietText, fontSize: '0.72rem' },
+            children: 'These are the notes last read. A save or an edit is paused until the desk reconnects.'
+          })
+        : null,
+      status === 'error' && !notes.data
+        ? jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },
+            children: [
+              jsx('span', {
+                style: quietText,
+                children: `${error && error.code ? error.code + ': ' : ''}${describeError(error)} Saved moments are still stored; this strip just could not read them.`
+              }),
+              jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: reload, children: 'Try again' })
+            ]
+          })
+        : status === 'loading' && !notes.data
+          ? jsx('div', { style: { padding: '0.35rem 0' }, children: jsx(sdk.Loader, { label: 'Reading your field notes' }) })
+          : recent.length === 0
+            ? jsxs('div', {
+                style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' },
+                children: [
+                  jsx('p', {
+                    style: { ...quietText, maxWidth: '34rem' },
+                    children: 'Save an explanation, visual or quiz moment and it will appear here.'
+                  }),
+                  action
+                ]
+              })
+            : jsx('div', {
+                style: { display: 'flex', flexDirection: 'column' },
+                children: recent.map((entry) => {
+                  const ref = readNotebookRef(entry.source_ref)
+                  return jsxs(
+                    'div',
+                    {
+                      'data-cb-field-note': entry.entry_id,
+                      style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.2rem',
+                        borderTop: '1px solid var(--cb-rule)',
+                        padding: '0.5rem 0 0.55rem'
+                      },
+                      children: [
+                        jsx('p', {
+                          style: {
+                            margin: 0,
+                            fontSize: '0.9rem',
+                            lineHeight: 1.55,
+                            color: 'var(--cb-ink)',
+                            whiteSpace: 'pre-wrap',
+                            overflowWrap: 'anywhere'
+                          },
+                          children: stripExcerpt(entry)
+                        }),
+                        entry.note && entry.excerpt
+                          ? jsx('p', {
+                              style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                              children: entry.note
+                            })
+                          : null,
+                        jsxs('div', {
+                          style: {
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            alignItems: 'baseline',
+                            gap: '0.25rem 0.8rem',
+                            fontSize: '0.72rem',
+                            color: 'var(--cb-ink-soft)'
+                          },
+                          children: [
+                            jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: entry.kind }),
+                            (entry.tags || []).map((item) =>
+                              jsx(
+                                'span',
+                                {
+                                  style: {
+                                    border: '1px solid var(--cb-rule)',
+                                    padding: '0 0.3rem',
+                                    fontSize: '0.68rem',
+                                    color: 'var(--cb-ink-soft)'
+                                  },
+                                  children: item
+                                },
+                                item
+                              )
+                            ),
+                            sectionTitles[entry.objective_id]
+                              ? jsx('span', { children: `Section · ${sectionTitles[entry.objective_id]}` })
+                              : null,
+                            courseTitle ? jsx('span', { children: courseTitle }) : null,
+                            jsx('span', { children: `saved ${whenLabel(entry.created_at)}` }),
+                            jsx(sdk.Button, {
+                              variant: 'text',
+                              size: 'sm',
+                              'aria-label': `Open the saved moment “${(entry.excerpt || entry.kind).slice(0, 60)}” in Textbook`,
+                              onClick: () => onOpenSection(entry.objective_id, ref.block_id),
+                              children: 'Open in textbook'
+                            })
+                          ]
+                        })
+                      ]
+                    },
+                    entry.entry_id
+                  )
+                })
+              })
+    ]
+  })
+}
+
 /** The pure desk view. The container below owns the reads; this owns the geometry. */
 function FieldDeskHome({
   desk,
+  notes,
+  onShowNotebook,
   libraryStatus,
   libraryError,
   stale,
@@ -2344,6 +2551,16 @@ function FieldDeskHome({
         : null,
       notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
       jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection }),
+      jsx(FieldNotesStrip, {
+        notes,
+        courseTitle: desk.row && desk.row.title ? desk.row.title : null,
+        current: desk.current || null,
+        sections: desk.objectives || [],
+        stale,
+        onOpenSection,
+        onShowNotebook,
+        onRetry
+      }),
       jsx(PathPreview, { desk, onOpenSection }),
       jsx(SourcesDrawer, {
         open: sourcesOpen,
@@ -2461,6 +2678,13 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, profile }) {
     sourcesOpen && Boolean(row) && Boolean(current) && supports('lesson.page')
   )
 
+  const notes = useRpcQuery(
+    'notebook.list',
+    { enrollment_id: row ? row.enrollment_id : null },
+    `desk-notes-${row ? row.enrollment_id : 'none'}`,
+    Boolean(row) && supports('notebook.list')
+  )
+
   const onPrimary = useCallback(async () => {
     if (!desk.row || !desk.current) return
     const kind = desk.primaryKind
@@ -2492,7 +2716,9 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, profile }) {
     onRetry: library.reload,
     onCreate: onStartCreate,
     onPrimary,
-    onOpenSection: (objectiveId) => onOpen(desk.row, objectiveId),
+    onOpenSection: (objectiveId, blockId) => onOpen(desk.row, objectiveId, blockId),
+    notes,
+    onShowNotebook: () => onOpen(desk.row, null, null, 'notebook'),
     onOpen,
     onShowAll,
     sourcesOpen,
@@ -4026,7 +4252,52 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
   })
 }
 
-/** Save one moment into the notebook: excerpt preview, note, tags, destination. */
+/**
+ * The notebook's provenance ref.
+ *
+ * `notebook.save` has a course/objective column pair and one opaque `source_ref` string (≤500
+ * chars). A saved moment can point at a block, its artifact, several source ids and the check it
+ * came from, so those refs travel as one compact JSON object in that column. A caller that only
+ * has a bare id keeps passing the bare id; `readNotebookRef` reads both, so older rows still
+ * resolve and the backend schema is untouched.
+ */
+function notebookSourceRef(seed) {
+  if (!seed) return null
+  const ref = {}
+  if (seed.block_id) ref.block = String(seed.block_id).slice(0, 120)
+  if (seed.artifact_id) ref.artifact = String(seed.artifact_id).slice(0, 120)
+  if (Array.isArray(seed.source_ids) && seed.source_ids.length > 0) {
+    ref.sources = seed.source_ids.filter(Boolean).slice(0, 8).map((id) => String(id).slice(0, 80))
+  }
+  if (seed.check_id) ref.check = String(seed.check_id).slice(0, 120)
+  if (Object.keys(ref).length === 0) return seed.source_ref ? String(seed.source_ref).slice(0, 500) : null
+  return JSON.stringify(ref).slice(0, 500)
+}
+
+/** Read a `source_ref` written by `notebookSourceRef`, or an older bare id. Never guesses one. */
+function readNotebookRef(value) {
+  const ref = { block_id: null, artifact_id: null, source_ids: [], check_id: null, legacy: null }
+  if (!value) return ref
+  const text = String(value)
+  if (text.charAt(0) === '{') {
+    try {
+      const parsed = JSON.parse(text)
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        ref.block_id = typeof parsed.block === 'string' ? parsed.block : null
+        ref.artifact_id = typeof parsed.artifact === 'string' ? parsed.artifact : null
+        ref.source_ids = Array.isArray(parsed.sources) ? parsed.sources.filter((id) => typeof id === 'string') : []
+        ref.check_id = typeof parsed.check === 'string' ? parsed.check : null
+        return ref
+      }
+    } catch (error) {
+      // A hand-written or truncated value is still a reference, just not a structured one.
+    }
+  }
+  ref.legacy = text
+  return ref
+}
+
+/** Save one moment into the notebook: excerpt preview, note, tags, provenance. */
 function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRunId, seed, implemented, onSaved }) {
   const [note, setNote] = useState('')
   const [tags, setTags] = useState('')
@@ -4044,6 +4315,16 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
     setBusy(false)
   }, [open, seed])
 
+  const provenance = []
+  if (seed && seed.course_title) provenance.push({ label: 'Course', value: seed.course_title })
+  if (seed && seed.objective_title) provenance.push({ label: 'Objective', value: seed.objective_title })
+  if (seed && seed.block_headline) provenance.push({ label: 'Saved from', value: seed.block_headline })
+  const sourceNames = (seed && (seed.source_titles || seed.source_ids)) || []
+  if (sourceNames.length > 0) {
+    provenance.push({ label: sourceNames.length === 1 ? 'Source' : 'Sources', value: sourceNames.join(', ') })
+  }
+  if (seed && seed.artifact_id) provenance.push({ label: 'Media', value: seed.artifact_id })
+
   const save = useCallback(async () => {
     setBusy(true)
     setError(null)
@@ -4060,7 +4341,7 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
       excerpt: excerpt.trim() || null,
       note: note.trim() || null,
       tags: tagList,
-      source_ref: (seed && seed.source_ref) || null
+      source_ref: notebookSourceRef(seed)
     })
     setBusy(false)
     if (!response.ok) {
@@ -4082,6 +4363,29 @@ function NotebookSaveDialog({ open, onClose, enrollmentId, objectiveId, lessonRu
     children: jsxs('div', {
       className: 'flex flex-col gap-3',
       children: [
+        provenance.length > 0
+          ? jsxs('div', {
+              className: 'flex flex-col gap-0.5',
+              'data-cb-save-provenance': 'ready',
+              children: provenance.map((item) =>
+                jsxs(
+                  'div',
+                  {
+                    className: 'flex flex-wrap items-baseline gap-1 text-xs',
+                    children: [
+                      jsx('span', { className: 'text-(--ui-text-secondary)', children: `${item.label} ·` }),
+                      jsx('span', { className: 'min-w-0 break-words', children: item.value })
+                    ]
+                  },
+                  item.label
+                )
+              )
+            })
+          : jsx('div', {
+              className: 'text-xs text-(--ui-text-secondary)',
+              'data-cb-save-provenance': 'none',
+              children: 'This moment has no block or source attached; it is saved under the section you are reading.'
+            }),
         jsx('label', {
           htmlFor: 'cb-note-excerpt',
           className: 'text-xs font-medium text-(--ui-text-secondary)',
@@ -4793,7 +5097,49 @@ function withoutCheckLabels(text, checkLabels) {
   return kept.join('\n').trim()
 }
 
-function BlockBody({ block, sources, checkSlot, checkLabels }) {
+/**
+ * One save affordance per teaching block and per media child.
+ *
+ * The excerpt is the backend-owned structured segment: the block's own `deep` prose (or its
+ * `text_equivalent` for a media child). There is no transcript selection API behind this, and the
+ * Desktop does not ask the chat for text — it saves the document it was served.
+ */
+function BlockSaveActions({ block, checkLabels, onSaveBlock, className }) {
+  if (!onSaveBlock) return null
+  const buttons = [
+    jsx(sdk.Button, {
+      variant: 'text',
+      size: 'sm',
+      'aria-label': `Save ${block.headline || 'this block'} to the notebook`,
+      onClick: () => onSaveBlock(block, null),
+      children: 'Save to notebook'
+    })
+  ]
+  ;(block.media || []).forEach((media, index) => {
+    buttons.push(
+      jsx(sdk.Button, {
+        variant: 'text',
+        size: 'sm',
+        'aria-label': `Save ${media.label || 'this media'} from ${block.headline || 'this block'} to the notebook`,
+        onClick: () => onSaveBlock(block, media),
+        children: media.kind === 'audio' ? 'Save audio' : 'Save visual'
+      })
+    )
+  })
+  return jsx('div', {
+    className: className || 'flex flex-wrap items-center gap-1',
+    'data-cb-block-save': block.id || 'block',
+    children: buttons
+  })
+}
+
+/** The excerpt a save will carry: the block's own prose, never a re-summarised one. */
+function blockSaveExcerpt(block, checkLabels, media) {
+  if (media) return media.text_equivalent || media.purpose || block.headline || ''
+  return withoutCheckLabels(block.deep, checkLabels) || block.short || block.headline || ''
+}
+
+function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock }) {
   const body = withoutCheckLabels(block.deep, checkLabels)
   return jsxs('div', {
     className: 'flex flex-col gap-2',
@@ -4805,6 +5151,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels }) {
         jsx(BlockMedia, { media, blockId: block.id, ordinal: index }, `${block.id}-media-${index}`)
       ),
       jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+      jsx(BlockSaveActions, { block, checkLabels, onSaveBlock }),
       checkSlot
         ? jsx('div', { className: 'flex flex-col gap-2 pt-1', 'data-cb-block-check': block.id, children: checkSlot })
         : null
@@ -4813,7 +5160,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels }) {
 }
 
 /** Textbook: every block in authored order, the full `deep` prose, inline figures. */
-function TextbookBlock({ block, sources, checkSlot, checkLabels }) {
+function TextbookBlock({ block, sources, checkSlot, checkLabels, onSaveBlock }) {
   return jsxs('article', {
     className: 'flex flex-col gap-2 border-b border-(--ui-stroke-tertiary) py-3 first:pt-0 last:border-b-0 last:pb-0',
     'data-cb-block': block.id,
@@ -4827,13 +5174,13 @@ function TextbookBlock({ block, sources, checkSlot, checkLabels }) {
           jsx('h3', { className: 'min-w-0 text-base font-semibold leading-snug', children: block.headline })
         ]
       }),
-      BlockBody({ block, sources, checkSlot, checkLabels })
+      BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock })
     ]
   })
 }
 
 /** Guided: one block at a time, the authored `short` prose, progress and a check on its block. */
-function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onBack, onNext }) {
+function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onBack, onNext, onSaveBlock }) {
   const last = index >= total - 1
   const body = withoutCheckLabels(block.short || block.deep, checkLabels)
   return jsxs('section', {
@@ -4875,6 +5222,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
         jsx(BlockMedia, { media, blockId: block.id, ordinal }, `${block.id}-media-${ordinal}`)
       ),
       jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+      jsx(BlockSaveActions, { block, checkLabels, onSaveBlock }),
       checkSlot ? jsx('div', { className: 'flex flex-col gap-2', 'data-cb-block-check': block.id, children: checkSlot }) : null,
       jsxs('div', {
         className: 'flex flex-wrap items-center gap-2',
@@ -4939,7 +5287,7 @@ function questProgressLabel(summary) {
 }
 
 /** One mission: the block's short prose, its media, its sources and — on a checkpoint — its check. */
-function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbook }) {
+function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbook, onSaveBlock }) {
   const block = mission.block
   const body = withoutCheckLabels(block.short || block.deep, checkLabels)
   const stateWord = mission.checkpoint ? 'Checkpoint' : 'Mission'
@@ -5021,6 +5369,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
         jsx(BlockMedia, { media, blockId: block.id, ordinal }, `${block.id}-media-${ordinal}`)
       ),
       jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+      jsx(BlockSaveActions, { block, checkLabels, onSaveBlock, className: 'flex flex-wrap items-center gap-1 self-start' }),
       mission.checkpoint
         ? jsxs('div', {
             'data-cb-mission-gate': block.check_id || 'unattached',
@@ -5062,7 +5411,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
  * every block, check and source id is the document's, and nothing is locked. There is no XP, no
  * streak, no badge that stands in for evidence and no second grading path.
  */
-function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, unattached, onOpenBlock }) {
+function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, unattached, onOpenBlock, onSaveBlock }) {
   const missions = questMissions(document)
   const motion = useCbMotion()
   const progressLabel = questProgressLabel(progress)
@@ -5109,6 +5458,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
               sources,
               checkLabels,
               checkSlot: mission.checkpoint ? checkSlot : null,
+              onSaveBlock,
               onReadInTextbook: (blockId) => onOpenBlock && onOpenBlock(blockId)
             },
             mission.block.id
@@ -5126,7 +5476,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
  * The document is server-owned; this component decides placement, never content. A view switch
  * re-renders the same blocks, the same ids and the same single check.
  */
-function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock }) {
+function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock, onSaveBlock }) {
   const blocks = (document && document.blocks) || []
   const labels = Array.isArray(checkLabels) ? checkLabels : []
   const [step, setStep] = useState(0)
@@ -5171,7 +5521,8 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
       checkLabels: labels,
       progress,
       unattached,
-      onOpenBlock
+      onOpenBlock,
+      onSaveBlock
     })
   }
 
@@ -5192,7 +5543,8 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
           checkLabels: labels,
           checkSlot: block.check_id && block.check_id === checkId ? checkSlot : null,
           onBack: () => setStep(Math.max(0, current - 1)),
-          onNext: () => setStep(Math.min(blocks.length - 1, current + 1))
+          onNext: () => setStep(Math.min(blocks.length - 1, current + 1)),
+          onSaveBlock
         }),
         unattached
       ]
@@ -5214,7 +5566,8 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
               block,
               sources,
               checkLabels: labels,
-              checkSlot: attached >= 0 && block.check_id === checkId ? checkSlot : null
+              checkSlot: attached >= 0 && block.check_id === checkId ? checkSlot : null,
+              onSaveBlock
             },
             block.id
           )
@@ -5225,7 +5578,7 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
   })
 }
 
-function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review }) {
+function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review, targetBlockId }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const section = page && page.section
   const runtime = page && page.runtime
@@ -5234,9 +5587,10 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
   const [lessonView, setLessonView] = useState('textbook')
-  // A mission hands the reader to the same block in Textbook. The target is a block id, so the
-  // handoff survives the view switch and lands on the document's own block, not an offset.
-  const [focusBlockId, setFocusBlockId] = useState(null)
+  // A mission or a saved moment hands the reader to the same block in Textbook. The target is a
+  // block id, so the handoff survives the view switch and lands on the document's own block, not
+  // an offset. A target from outside the section (Notebook, Field Desk) arrives the same way.
+  const [focusBlockId, setFocusBlockId] = useState(targetBlockId || null)
   // The document is a v8 read projection. A backend that predates it answers with segments only,
   // so the segment list below stays as the fallback rather than becoming dead code.
   const document = page && page.document ? page.document : null
@@ -5248,8 +5602,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   // step and the legacy segment list. It is never rendered twice in one view.
   useEffect(() => {
     setLessonView('textbook')
-    setFocusBlockId(null)
-  }, [objectiveId])
+    setFocusBlockId(targetBlockId || null)
+  }, [objectiveId, targetBlockId])
   const check = useOpenCheck({
     enrollmentId: row.enrollment_id,
     objectiveId,
@@ -5323,8 +5677,39 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   )
 
   const saveSegment = useCallback((segment) => {
-    setSaveSeed({ excerpt: segment.text, kind: segment.artifact_id ? 'artifact' : 'lesson_segment', source_ref: segment.source_id || null })
-  }, [])
+    setSaveSeed({
+      course_title: row.title || null,
+      objective_title: section ? section.title : null,
+      excerpt: segment.text,
+      kind: segment.artifact_id ? 'artifact' : 'lesson_segment',
+      artifact_id: segment.artifact_id || null,
+      source_ids: segment.source_id ? [segment.source_id] : [],
+      source_titles: segment.source_id ? [(sourceIndex[segment.source_id] && sourceIndex[segment.source_id].title) || segment.source_id] : []
+    })
+  }, [row, section, sourceIndex])
+
+  /**
+   * Seed the notebook editor from the document's own block.
+   *
+   * `block` and `media` are exactly what the backend served: no excerpt is fetched from the chat,
+   * no selection API is invented. The block id, its source ids and the artifact id travel with the
+   * save so `Open in textbook` can return to this block and `Play/view media` to this artifact.
+   */
+  const saveBlock = useCallback((block, media) => {
+    const sourceIds = (block.source_ids || []).slice(0, 8)
+    setSaveSeed({
+      course_title: row.title || null,
+      objective_title: section ? section.title : null,
+      block_id: block.id,
+      block_headline: block.headline,
+      artifact_id: media ? media.artifact_id || null : null,
+      source_ids: sourceIds,
+      source_titles: sourceIds.map((id) => (sourceIndex[id] && sourceIndex[id].title) || id),
+      excerpt: blockSaveExcerpt(block, checkLabels, media),
+      kind: media ? 'artifact' : 'lesson_segment',
+      check_id: block.check_id || null
+    })
+  }, [row, section, checkLabels, sourceIndex])
 
   /**
    * Hand a mission to another view by block id.
@@ -5412,7 +5797,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 checkLabels,
                 progress: row.evidence_summary || null,
                 focusBlockId,
-                onOpenBlock: openBlock
+                onOpenBlock: openBlock,
+                onSaveBlock: supports('notebook.save') ? saveBlock : null
               },
               objectiveId
             )
@@ -5723,7 +6109,7 @@ function OverviewView({ row, page, review, quizzes, implemented, onOpenSection, 
 }
 
 /** Textbook — a scannable section list, not one endless thread. */
-function TextbookView({ row, page, pageState, review, notebooks, outline, implemented, openSectionId, onOpenSection, onCloseSection, onChanged }) {
+function TextbookView({ row, page, pageState, review, notebooks, outline, implemented, openSectionId, onOpenSection, onCloseSection, onChanged, targetBlockId }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const rows = sectionRows({ row, review, notebooks, outline, page })
   const hasOutline = Boolean(outline && Array.isArray(outline.objectives))
@@ -5742,7 +6128,8 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
       implemented,
       review,
       onBack: onCloseSection,
-      onChanged
+      onChanged,
+      targetBlockId: targetBlockId || null
     })
   }
 
@@ -5821,7 +6208,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
 }
 
 /** Notebook — saved moments, searchable, editable, with a route back to the exact section. */
-function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged }) {
+function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, sections }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const [searchInput, setSearchInput] = useState('')
   const [query, setQuery] = useState('')
@@ -5842,6 +6229,11 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
   }, [searchInput])
 
   const entries = notebooks && Array.isArray(notebooks.entries) ? notebooks.entries : []
+  const sectionTitles = {}
+  ;(sections || []).forEach((entry) => {
+    if (entry && entry.objective_id && entry.title) sectionTitles[entry.objective_id] = entry.title
+  })
+  const [mediaOpen, setMediaOpen] = useState(null)
   const tags = Array.from(new Set(entries.flatMap((entry) => entry.tags || []))).sort()
   const filtered = entries
     .filter((entry) => {
@@ -6022,10 +6414,33 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
                     entry.note && entry.excerpt
                       ? jsx('p', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: entry.note })
                       : null,
+                    mediaOpen === entry.entry_id
+                      ? jsx(MediaSegment, {
+                          segment: {
+                            artifact_id: readNotebookRef(entry.source_ref).artifact_id,
+                            text: entry.excerpt
+                          }
+                        })
+                      : null,
                     jsxs('div', {
                       className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
                       children: [
                         jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: entry.kind }),
+                        jsx('span', {
+                          'data-cb-note-section': entry.objective_id,
+                          children: `Section · ${sectionTitles[entry.objective_id] || entry.objective_id}`
+                        }),
+                        readNotebookRef(entry.source_ref).source_ids.length > 0
+                          ? jsx('span', {
+                              children: `Source · ${readNotebookRef(entry.source_ref).source_ids.join(', ')}`
+                            })
+                          : null,
+                        row.title ? jsx('span', { children: `Course · ${row.title}` }) : null
+                      ]
+                    }),
+                    jsxs('div', {
+                      className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
+                      children: [
                         (entry.tags || []).map((item) => jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: item }, item)),
                         jsx('span', { children: `saved ${whenLabel(entry.created_at)}` })
                       ]
@@ -6036,15 +6451,24 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged })
                         jsx(sdk.Button, {
                           variant: 'text',
                           size: 'sm',
-                          onClick: () => onOpenSection(entry.objective_id),
+                          onClick: () => onOpenSection(entry.objective_id, readNotebookRef(entry.source_ref).block_id),
                           children: 'Open in textbook'
                         }),
                         jsx(sdk.Button, {
                           variant: 'text',
                           size: 'sm',
-                          onClick: () => onOpenSection(entry.objective_id),
+                          onClick: () => onOpenSection(entry.objective_id, readNotebookRef(entry.source_ref).block_id),
                           children: 'Continue from here'
                         }),
+                        readNotebookRef(entry.source_ref).artifact_id
+                          ? jsx(sdk.Button, {
+                              variant: 'text',
+                              size: 'sm',
+                              'aria-expanded': mediaOpen === entry.entry_id ? 'true' : 'false',
+                              onClick: () => setMediaOpen(mediaOpen === entry.entry_id ? null : entry.entry_id),
+                              children: 'Play/view media'
+                            })
+                          : null,
                         supports('notebook.update')
                           ? jsx(sdk.Button, {
                               variant: 'text',
@@ -6345,7 +6769,9 @@ function QuizzesView({ row, quizzes, implemented, onOpenSection, onChanged }) {
                                         setSaveSeed({
                                           excerpt: attempt.answer && attempt.answer.text ? attempt.answer.text : 'Quiz moment',
                                           kind: 'quiz_moment',
-                                          source_ref: attempt.check_id
+                                          course_title: row.title || null,
+                                          objective_title: attempt.title || null,
+                                          check_id: attempt.check_id
                                         }),
                                       children: 'Save to notebook'
                                     })
@@ -6665,15 +7091,17 @@ function SourcesView({ page }) {
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
  * control; below ~47.5rem it collapses into one labelled picker so the strip can never clip.
  */
-function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId }) {
+function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   // A route in from the Field Desk names the section to open; otherwise the course opens on its
   // overview with the backend's own current objective already selected.
-  const [view, setView] = useState(focusObjectiveId ? 'textbook' : 'overview')
+  const [view, setView] = useState(focusView || (focusObjectiveId ? 'textbook' : 'overview'))
   const [objectiveId, setObjectiveId] = useState(
     focusObjectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id) || null
   )
   const [openSectionId, setOpenSectionId] = useState(focusObjectiveId || null)
+  // A saved moment carries the block it came from; the section opens on that block, not its top.
+  const [targetBlockId, setTargetBlockId] = useState(focusBlockId || null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
 
@@ -6724,13 +7152,18 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     if (onChanged) onChanged()
   }, [review, notebooks, quizzes, evidence, page, outline, onChanged])
 
-  const openSection = useCallback((nextObjectiveId) => {
+  const openSection = useCallback((nextObjectiveId, blockId) => {
     if (nextObjectiveId) setObjectiveId(nextObjectiveId)
     setOpenSectionId(nextObjectiveId || null)
+    // Only a call that names a block aims at one; a plain "Open section" lands at the top.
+    setTargetBlockId(blockId || null)
     setView('textbook')
   }, [])
 
-  const closeSection = useCallback(() => setOpenSectionId(null), [])
+  const closeSection = useCallback(() => {
+    setOpenSectionId(null)
+    setTargetBlockId(null)
+  }, [])
 
   const selectView = useCallback((nextView) => {
     setView(nextView)
@@ -6790,7 +7223,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       openSectionId,
       onOpenSection: openSection,
       onCloseSection: closeSection,
-      onChanged: refresh
+      onChanged: refresh,
+      targetBlockId
     })
   } else if (view === 'notebook') {
     body = notebooks.status === 'error' && !notebooks.data
@@ -6804,7 +7238,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
           notebooks: notebooks.data,
           implemented,
           onOpenSection: openSection,
-          onChanged: refresh
+          onChanged: refresh,
+          sections: rows
         })
   } else if (view === 'quizzes') {
     body = jsx(QuizzesView, {
@@ -9506,6 +9941,8 @@ function CoursebookPage() {
     body = jsx(CourseDetail, {
       row: openCourse.row,
       focusObjectiveId: openCourse.objectiveId,
+      focusBlockId: openCourse.blockId || null,
+      focusView: openCourse.view || null,
       implemented,
       profile: currentScope().profile,
       onBack: () => setOpenCourse(null),
@@ -9523,7 +9960,8 @@ function CoursebookPage() {
     body = jsx(FieldDesk, {
       implemented,
       profile: currentScope().profile,
-      onOpen: (row, objectiveId) => setOpenCourse({ row, objectiveId: objectiveId || null }),
+      onOpen: (row, objectiveId, blockId, view) =>
+        setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null }),
       onShowAll: () => setCoursesMode('list'),
       onStartCreate: () => setCreating(true)
     })
@@ -9893,13 +10331,16 @@ export {
   CB_TOKEN_NAMES,
   FieldRail,
   FieldDeskHome,
+  FieldNotesStrip,
   FieldQuestView,
   LESSON_VIEWS,
   LessonDocumentView,
   MediaFrame,
+  NotebookView,
   QuestMission,
   SectionPage,
   WorkspaceShell,
+  blockSaveExcerpt,
   buildDeskModel,
   cbLayoutFor,
   cbModeFromTheme,
@@ -9908,8 +10349,11 @@ export {
   deskEstimateLabel,
   lessonViewOptions,
   mainlineObjective,
+  notebookSourceRef,
   questMissions,
-  questProgressLabel
+  questProgressLabel,
+  readNotebookRef,
+  stripExcerpt
 }
 
 export default {
