@@ -15,6 +15,13 @@ credential, and uploaded nothing.
 
 **BLOCKED — no documented plugin seam reaches the host's configured speech-to-text.**
 
+**Decision 2026-11-06:** the product line will use the **plugin-owned local fallback** for the
+first slice. The host seam remains the preferred upstreaming target, but no pronunciation
+feature will wait on a core change. `M3-B1` now builds an optional `faster-whisper` adapter
+inside Coursebook: local-only, no provider key, no `stt.provider` hijack, model cached under the
+plugin data directory, and an explicit practice-only state when the dependency or model is
+unavailable. The adapter is never labelled as the host's STT.
+
 A plugin can *be* an STT backend; it cannot *use* the host's STT. The three plausible seams were
 each tested and each fails:
 

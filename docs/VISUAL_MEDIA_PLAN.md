@@ -459,8 +459,11 @@ The product line is ready only when all of these are true on one recorded commit
    candidate; keep M1–M4 on the product line. Do not stuff the visual rewrite into the RC.
 2. **Technical visuals.** Recommend deterministic schematics first, AI illustrations second.
    A generated illustration is never a procedure authority.
-3. **Pronunciation provider.** Use the host's configured STT provider; if no provider is
-   configured, ship practice-only. Do not add a plugin credential path.
+3. **Pronunciation provider.** Host seam is not available in the current host. Use the
+   plugin-owned local `faster-whisper` fallback for the first slice: local-only, optional
+   dependency, no provider key, never registered as the host's `stt.provider`. If the local model
+   is not installed, ship practice-only; never a fake score. The host `ctx.transcribe_audio`
+   seam remains the preferred upstreaming target.
 4. **Pack audio.** Ship audio in packs only when the artifact is real, licensed and has a
    transcript; otherwise keep the narration tab textual.
 5. **Demo.** The 73–82 s shot needs a bundled audio asset; M0 generates it, so the demo can use
