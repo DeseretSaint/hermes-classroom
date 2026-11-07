@@ -30,7 +30,7 @@ import threading
 from datetime import datetime
 from typing import Any, Callable, Sequence
 
-from . import db, generation, job_service, research
+from . import db, generation, job_service, media as media_mod, research
 
 logger = logging.getLogger("coursebook.executor")
 
@@ -144,17 +144,56 @@ class _Resolvers:
                     plan_id=brief.get("plan_id"),
                     now=self.now,
                 )
+                lesson_ids = [
+                    str(item.get("lesson_id"))
+                    for item in result.get("lessons") or []
+                    if isinstance(item, dict) and item.get("lesson_id")
+                ]
+                # Media is optional: the complete text lesson exists before this runs. A media
+                # failure is recorded on the lesson item and never rolls back authored content.
+                try:
+                    media_result = media_mod.generate_for_lessons(
+                        connection,
+                        lesson_ids=lesson_ids,
+                        job_id=lease.job_id,
+                        now=self.now,
+                    )
+                except Exception as exc:  # noqa: BLE001 - media must not erase the lesson
+                    logger.warning("coursebook: lesson media generation failed: %s", exc)
+                    media_result = media_mod.MediaGenerationSummary(
+                        artifact_ids=[], usage=[], skipped=len(lesson_ids)
+                    )
+                    media_error = f"{type(exc).__name__}: {exc}"
+                else:
+                    media_error = None
             finally:
                 connection.close()
+            media_usage = [
+                job_service.UsageRecord(
+                    provider=str(item.get("provider") or "media"),
+                    model=item.get("model"),
+                    tokens={},
+                    duration_ms=int(item.get("duration_ms") or 0),
+                    artifact_count=1,
+                )
+                for item in media_result.usage
+            ]
+            checkpoint = {
+                "plan_id": result.get("plan_id"),
+                "plan_hash": result.get("plan_hash"),
+                "lessons": len(result.get("lessons") or []),
+                "media": media_result.as_checkpoint(),
+            }
+            if media_error:
+                checkpoint["media"]["error"] = media_error
             return job_service.StageResult(
-                artifacts=[],
-                usage=[],
-                checkpoint={
-                    "plan_id": result.get("plan_id"),
-                    "plan_hash": result.get("plan_hash"),
-                    "lessons": len(result.get("lessons") or []),
-                },
-                message=f"{len(result.get('lessons') or [])} lessons authored",
+                artifacts=list(media_result.artifact_ids),
+                usage=media_usage,
+                checkpoint=checkpoint,
+                message=(
+                    f"{len(result.get('lessons') or [])} lessons authored; "
+                    f"{media_result.generated} media artifacts generated"
+                ),
             )
 
         return run

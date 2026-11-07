@@ -3380,6 +3380,114 @@ function sectionRows({ row, review, notebooks, outline, page }) {
     .sort((left, right) => (left.ordinal || 0) - (right.ordinal || 0))
 }
 
+function MediaSegment({ segment }) {
+  const [preview, setPreview] = useState({ state: 'loading' })
+  useEffect(() => {
+    let live = true
+    if (!segment.artifact_id) {
+      setPreview({ state: 'text', message: 'No generated artifact is attached; the text equivalent is shown.' })
+      return () => {
+        live = false
+      }
+    }
+    setPreview({ state: 'loading' })
+    rest(`/media/${encodeURIComponent(segment.artifact_id)}`)
+      .then((response) => {
+        if (!live) return
+        if (!response || response.ok !== true || typeof response.data_url !== 'string') {
+          setPreview({
+            state: 'text',
+            message: (response && response.message) || 'This media could not be previewed; the text equivalent remains.'
+          })
+          return
+        }
+        setPreview({ state: 'ready', ...response })
+      })
+      .catch((error) => {
+        if (live) {
+          setPreview({
+            state: 'text',
+            message: `This media could not be previewed (${describeError(error)}); the text equivalent remains.`
+          })
+        }
+      })
+    return () => {
+      live = false
+    }
+  }, [segment.artifact_id])
+
+  const caption = segment.text || preview.text_equivalent || ''
+  const label = preview.label || (preview.mime && preview.mime.startsWith('audio/') ? 'Narration' : 'Illustration')
+  return jsxs('figure', {
+    className: 'my-2 flex max-w-3xl flex-col gap-1.5 border-l-2 border-(--ui-stroke-secondary) pl-3',
+    'data-cb-media': segment.artifact_id || 'text-only',
+    children: [
+      preview.state === 'ready' && preview.mime === 'image/svg+xml'
+        ? jsx('img', {
+            alt: caption,
+            className: 'max-h-[380px] w-full object-contain',
+            loading: 'lazy',
+            src: preview.data_url
+          })
+        : null,
+      preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.mime !== 'image/svg+xml'
+        ? jsx('img', {
+            alt: caption,
+            className: 'max-h-[380px] w-full rounded-sm object-contain',
+            loading: 'lazy',
+            src: preview.data_url
+          })
+        : null,
+      preview.state === 'ready' && preview.mime && preview.mime.startsWith('audio/')
+        ? jsx('audio', {
+            'aria-label': caption || 'Coursebook narration',
+            className: 'w-full',
+            controls: true,
+            preload: 'metadata',
+            src: preview.data_url
+          })
+        : null,
+      preview.state === 'loading'
+        ? jsx('div', { className: 'py-2 text-xs text-(--ui-text-secondary)', children: 'Loading media' })
+        : null,
+      preview.state === 'text'
+        ? jsx('div', { className: 'py-1 text-xs leading-relaxed text-(--ui-text-secondary)', children: preview.message })
+        : null,
+      caption
+        ? jsx('figcaption', {
+            className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+            children: caption
+          })
+        : null,
+      jsx('div', {
+        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
+        children: [
+          jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: label }),
+          segment.artifact_id && supportsArtifactGet()
+            ? jsx(sdk.Button, {
+                variant: 'text',
+                size: 'sm',
+                onClick: async () => {
+                  const response = await rpc('artifact.get', { artifact_id: segment.artifact_id })
+                  if (!response.ok) {
+                    host.notify({ kind: 'warning', message: `${response.error.code}: ${describeError(response.error)}` })
+                    return
+                  }
+                  host.notify({ kind: 'info', message: `Artifact ready: ${response.result.mime}, ${response.result.bytes} bytes.` })
+                },
+                children: 'Artifact details'
+              })
+            : null
+        ]
+      })
+    ]
+  })
+}
+
+function supportsArtifactGet() {
+  return backendSupports('artifact.get')
+}
+
 function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const section = page && page.section
@@ -3565,10 +3673,12 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                           })
                         ]
                       }),
-                      jsx('div', {
-                        className: 'max-w-3xl',
-                        children: jsx(sdk.MessageTextContent, { text: segment.text })
-                      }),
+                      segment.kind === 'media'
+                        ? jsx(MediaSegment, { segment })
+                        : jsx('div', {
+                            className: 'max-w-3xl',
+                            children: jsx(sdk.MessageTextContent, { text: segment.text })
+                          }),
                       segment.source_id
                         ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `Source ${segment.source_id}` })
                         : null

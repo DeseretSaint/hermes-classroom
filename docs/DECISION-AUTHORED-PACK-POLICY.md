@@ -49,7 +49,7 @@ Consequences:
 * `enforce_lesson_rules` (`:945`) rejects fewer than three with a typed reason, so attempt 1 is
   retried with targeted feedback and attempt 2 parks the lesson (`needs_review`). Criteria are
   never synthesised to reach the floor.
-* `LESSON_PROMPT_VERSION` → `lesson-prompt.v2`; the validation row records the prompt version, so
+* `LESSON_PROMPT_VERSION` → `lesson-prompt.v3`; the validation row records the prompt version, so
   the provenance of a changed prompt is visible.
 * The exported `checks[].rubric` is composed from **assessment** criteria only: the check's own
   criteria plus the plan's `evidence_criteria`. Supervision notes are safety instructions, already

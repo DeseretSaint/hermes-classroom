@@ -203,10 +203,8 @@ to `1` after `ensure_schema()`, and stays `1` after a second call.
 
 ## 7. What this build deliberately does not contain
 
-- Image and speech generation. Media policy, the content-addressed artifact store and the
-  text-fallback path ship, and lesson generation emits declarative media specs with text
-  equivalents, but no image or text-to-speech provider is wired and no production caller reaches
-  the media job path.
+- Pronunciation scoring. The host STT adapter and the `model_assessed` evidence path are planned
+  in `docs/VISUAL_MEDIA_PLAN.md`; without a configured scorer the lesson offers practice only.
 - Reminders. No RPC, no job kind and no storage.
 - A standalone research command. Research runs inside plan jobs only, bounded and ledgered through
   the host `web_search`/`web_extract` seam.
