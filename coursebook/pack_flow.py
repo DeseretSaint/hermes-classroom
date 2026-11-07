@@ -43,7 +43,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from . import PACKAGE_ID, __version__, api, db
-from . import archive, packs, segments
+from . import archive, packs, segments, validators
 from . import parent_authoring as authoring
 from .api import RpcError
 from .archive import PackRejected, PackLibrary, StagingArea
@@ -251,11 +251,15 @@ def check_spec_from_pack_check(
     alternatives = [str(item) for item in check.get("accepted_alternatives") or []]
     evidence_target = str(check.get("evidence_target") or "recall")
     open_targets = {"production", "transfer"}
+    # Every imported check declares its lane here, explicitly. A production or transfer check is
+    # not assumed closed-form: its reference answer is one model answer, not the accepted set a
+    # deterministic comparison needs, so it declares the open lane and waits behind the same gate
+    # as any other model assessment (docs/GRADING-LANES.md, CB-QA-11).
     if evidence_target in open_targets:
-        reference: dict[str, Any] = {"kind": "rubric_only"}
+        reference = validators.seal_reference({"kind": "rubric_only"})
     else:
         answers = [reference_answer] + [item for item in alternatives if item not in (reference_answer,)]
-        reference = {"kind": "exact", "answers": answers}
+        reference = validators.seal_reference({"kind": "exact", "answers": answers})
     rubric_items = [
         {"id": f"c{index}", "description": str(text)}
         for index, text in enumerate(check.get("rubric") or [], start=1)

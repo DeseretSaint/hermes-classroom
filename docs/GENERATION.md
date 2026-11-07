@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author | `coursebook.plan.generate` | `plan-prompt.v3` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v6` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v7` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
@@ -286,6 +286,12 @@ The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and 
 enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
 page against the linked checks before serving.
 
+The stored reference also declares its **grading lane** (`validators.seal_reference`): a quiz is
+`{"kind": "exact", "answers": [...]}` over the union of the declared correct forms, and a
+verification checklist or parent observation is `{"kind": "rubric_only"}`. A reference without a
+kind cannot be written by generation or pack import, and `check.open` refuses one. See
+`docs/GRADING-LANES.md` for the frozen decision and the open-lane gate.
+
 **Structured checklist.** A verification check is a checklist, not a prompt asking the learner to
 remember one. `LESSON_SCHEMA` accepts an optional `check.stimulus.items[]` with exactly the shape
 `contracts/rpc.v8.json#/$defs/check_stimulus.items` freezes (1–24 entries of `{id, label}`, ids
@@ -298,10 +304,10 @@ whose labels read the same once case, spacing and punctuation are ignored are re
 read seam's own normalisation (`domain._check_label_key`, imported rather than reimplemented).
 Both raise `_RuleViolation`: attempt 1 is retried with the reasons, attempt 2 parks the lesson
 `needs_review` with the check closed, and `check.get` would refuse the same duplicate anyway. The
-prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v6` is
+prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v7` is
 the current label.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v6`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v7`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
@@ -315,7 +321,7 @@ construct. `enforce_plan_rules` refuses a missing declaration and hands each dec
 (a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
 The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
 the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
-section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v6`
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v7`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
@@ -383,7 +389,7 @@ Two stored shapes project into the same `$defs/lesson_document`:
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v6`)
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v7`)
   authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
   projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
   runs before the independent validator: it builds the document, re-runs `validate_blocks`

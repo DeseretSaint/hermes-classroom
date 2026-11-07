@@ -28,6 +28,15 @@ from typing import Any
 #: Reference kinds this module can grade without a model.
 CLOSED_KINDS = ("exact", "numeric", "selection")
 
+#: Every kind a stored reference may declare. ``rubric_only`` names the open lane explicitly, so
+#: an authoring mistake cannot masquerade as an open-response check by omitting ``kind``.
+REFERENCE_KINDS = CLOSED_KINDS + ("rubric_only",)
+
+
+class ReferenceSpecError(ValueError):
+    """A reference spec does not declare a lane, or declares one it cannot satisfy."""
+
+
 _DASHES = "\u2010\u2011\u2012\u2013\u2014\u2015\u2212"
 _QUOTES = {
     "\u2018": "'", "\u2019": "'", "\u201a": "'", "\u201b": "'",
@@ -167,6 +176,50 @@ def _tolerance(reference: dict[str, Any], expected: Decimal) -> Decimal:
         if parsed is not None:
             limits.append(abs(expected * parsed))
     return max(limits) if limits else Decimal("0")
+
+
+def reference_kind(reference: dict[str, Any] | None) -> str:
+    """Return the grading lane a stored reference declares.
+
+    A **missing** or unknown ``kind`` is an error, not an open-response check. Routing an absent
+    declaration to the open lane made every generated lesson ungradeable while looking like a
+    deliberate open response; :mod:`coursebook.grading` turns this error into a fail-closed
+    ``GradingUnavailable``, and writers never persist a reference they could not seal.
+    """
+    kind = (reference or {}).get("kind")
+    if not isinstance(kind, str) or kind not in REFERENCE_KINDS:
+        raise ReferenceSpecError(f"reference declares no known grading lane: kind={kind!r}")
+    return kind
+
+
+def seal_reference(spec: dict[str, Any] | None) -> dict[str, Any]:
+    """The only sanctioned constructor for a stored reference.
+
+    Validates that the spec declares a lane and that the lane's required fields are usable, then
+    returns a copy. Every writer of ``checks.reference_json`` calls this, so a reference without a
+    ``kind`` cannot be produced by construction rather than by convention.
+    """
+    reference = dict(spec or {})
+    kind = reference_kind(reference)
+    if kind == "exact":
+        answers = reference.get("answers")
+        if (
+            not isinstance(answers, list)
+            or not answers
+            or not all(isinstance(item, str) and item.strip() for item in answers)
+        ):
+            raise ReferenceSpecError("an exact reference needs a non-empty list of answer strings")
+    elif kind == "numeric":
+        if parse_number(reference.get("value")) is None:
+            raise ReferenceSpecError("a numeric reference needs a readable value")
+    elif kind == "selection":
+        answers = reference.get("answers")
+        if not isinstance(answers, list) or not answers:
+            raise ReferenceSpecError("a selection reference needs accepted combinations")
+        for group in answers:
+            if not isinstance(group, list) or not group:
+                raise ReferenceSpecError("each accepted selection must be a non-empty list")
+    return reference
 
 
 def grade_exact(reference: dict[str, Any], text: str) -> tuple[bool, str]:
