@@ -1,0 +1,82 @@
+{
+  "card": "H-63F",
+  "author": "cinder",
+  "date": "2026-11-07",
+  "source": "wt/h63f-serve-seam (base master 57b49ac)",
+  "isolated_home": "/home/deseretsaint/.hermes/cinder-h63f-1794083187/home",
+  "provider_calls_are_live": true,
+  "findings": {
+    "D-H63-1": {
+      "root_cause": "hermes serve loads plugins but never runs the agent's tool setup, so tools.registry has no web_search handler there. ctx.dispatch_tool('web_search', ...) returns the registry body {\"error\": \"Unknown tool: web_search\"}. coursebook.research.HermesToolSearch only treated {\"success\": false, ...} as failure, so that body was read as a successful empty search: queries with result_count 0 and no error, and run_research ended at status 'unavailable' with reason 'no source could be fetched' (the exact topic4 evidence).",
+      "fix": [
+        "research._tool_error() treats the registry error body (error set, no data/results) as a real failure, so the ledger records the reason instead of an empty result set.",
+        "research.ensure_host_tools() imports the host's own tools.web_tools in the serving process, registering the same web_search/web_extract handlers the agent would dispatch; HermesToolSearch._dispatch retries once after it.",
+        "No provider key is read by the plugin and no source is invented: a host that cannot provide the tools still records the unknown-tool failure."
+      ],
+      "probe": {
+        "process": "in-process plugin discovery (discover_plugins) with the isolated home, same surface hermes serve uses",
+        "before": "dispatch_tool -> {\"error\": \"Unknown tool: web_search\"}; seam rows: 0",
+        "after": "seam rows: 3 (real web results); fetched chars: 3200",
+        "host_tools_registered": true
+      }
+    },
+    "D-H63-2": {
+      "root_cause": "The provider enforces JSON-schema maxLength by cutting the value. The plan prompts asked for prose without naming a length, so learner_outcome/evidence_note/parent.reading_level landed exactly on their caps with mid-word/mid-codepoint endings and the independent validator rejected the plans.",
+      "fix": [
+        "Both plan prompts now state bounded lengths below the caps (learner_outcome <=450, evidence_note <=300, time_estimate.rationale <=450, parent.reading_level <=30, parent.parent_facing_summary <=450).",
+        "generation._prose_cap_reasons() walks the document's own schema and refuses any prose value at its maxLength before the validator is called; the reason carries the field path and the safe bound into the retry instruction.",
+        "A second attempt still at cap is stored as needs_review/reject, never drafted."
+      ]
+    },
+    "D-H63-3 (new, host-side blocker)": {
+      "symptom": "Inside `hermes serve --isolated` the multiplexed gateway cannot read this profile's provider keys: search via perplexity failed with 'could not read this profile's PERPLEXITY_API_KEY', and after switching the isolated home to the keyless brave-free search backend, web_extract still failed with 'could not read this profile's FIRECRAWL_API_KEY'. The same calls succeed in a plain CLI process against the same home.",
+      "effect": "The serve process now performs real web_search (5 results per query) and records the extract failure honestly, but cannot produce fetched sources, so no live plan reaches draft over the RPC path yet.",
+      "owner": "Hermes host (gateway profile-scoped secret resolution), not coursebook"
+    }
+  },
+  "runs": [
+    {
+      "tag": "topic1-serve",
+      "transport": "live HTTP cb.rpc",
+      "job_id": "job_280a970c4e664c08b822b2d69d87e117",
+      "executor": "the serve process itself (agent-side pump not involved)",
+      "terminal_state": "completed",
+      "research_status": "unavailable",
+      "research_queries": 2,
+      "research_sources": 0,
+      "research_reason": "search failed: Error searching web: Hermes could not read this profile's PERPLEXITY_API_KEY (internal profile-scoping bug on the multiplexed gateway)",
+      "validation_independence": "independent",
+      "validation_verdict": "reject",
+      "truncation_at_cap": "none measured on this run; the new prose-cap rule did not fire"
+    },
+    {
+      "tag": "topic1-serve2",
+      "transport": "live HTTP cb.rpc",
+      "job_id": "job_2cd5c3a239814dbc91b0e2274fdf9a00",
+      "executor": "the serve process itself",
+      "terminal_state": "completed",
+      "search_backend": "brave-free (keyless)",
+      "research_status": "unavailable",
+      "research_queries": 2,
+      "research_query_result_counts": [5, 5],
+      "research_sources": 0,
+      "research_failures": 4,
+      "research_reason": "no source could be fetched; 4 fetch failure(s), first: extension.umaine.edu: Error extracting content: Hermes could not read this profile's FIRECRAWL_API_KEY (internal profile-scoping bug on the multiplexed gateway)",
+      "validation_independence": "independent",
+      "validation_verdict": "reject"
+    }
+  ],
+  "acceptance": {
+    "serve_process_executes_with_research_grounded": "PARTIAL — the serving process now performs real searches through the host seam (search grounded); extract is blocked by the host profile-scoping bug above, so no fetched sources",
+    "arbitrary_topic_reaches_draft_over_rpc": "NOT MET — blocked on the same host-side extract defect",
+    "no_japanese_demo_used": true,
+    "worker_py_rerun": "worker.py is the agent-side pump; the P1 proof here is the serving process, captured from the live HTTP jobs instead"
+  },
+  "tests": {
+    "new": [
+      "tests/test_host_seam_serve.py (4): registry error body is a recorded failure; run_research records the reason; one retry after host tools register; bare error body without success flag is a failure",
+      "tests/test_plan_prose_caps.py (7): prompt bounds; v2 and parent at-cap refusals; under-cap pass; regeneration carries the bound; second at-cap attempt is never drafted"
+    ],
+    "suite": "1601 tests, 4 failures — all pre-existing in tests.test_contracts.V3AmendmentTest on master 57b49ac (INTERNAL_ERROR vs NOT_FOUND), unchanged by this branch"
+  }
+}
