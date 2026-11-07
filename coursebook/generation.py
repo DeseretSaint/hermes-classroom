@@ -47,6 +47,7 @@ from jsonschema import Draft202012Validator
 
 from . import research as research_mod
 from . import sources as source_ledger
+from . import rubrics
 from .packs import MIN_RUBRIC_CRITERIA
 from .research import (
     ResearchBudget,
@@ -974,7 +975,9 @@ def _plan_instructions(*, recipe: str, dials: dict[str, Any], locale: str | None
     return "\n".join(lines)
 
 
-def _lesson_instructions(*, recipe: str, locale: str | None, scaffold_note: str) -> str:
+def _lesson_instructions(
+    *, recipe: str, locale: str | None, scaffold_note: str, rubric_profile: str | None = None
+) -> str:
     lines = [
         "Write the lesson page for the section in the input.",
         f"Recipe: {recipe}.",
@@ -989,6 +992,14 @@ def _lesson_instructions(*, recipe: str, locale: str | None, scaffold_note: str)
         "the exact transcript, language and voice, and keep the transcript equal to the text "
         "equivalent. For a schematic, put the structured facts in facts.rows as label/value pairs.",
     ]
+    if rubric_profile:
+        entry = rubrics.RUBRICS.get(rubric_profile)
+        if entry is not None:
+            lines.append(
+                f"Rubric profile: {rubric_profile} ({entry.construct}). Score only these "
+                f"observable aspects: {', '.join(entry.labels)}. A criterion that says the learner "
+                "'understands' something is not observable and will be rejected."
+            )
     if locale:
         lines.append(f"Content locale: {locale}.")
     if scaffold_note:
@@ -1167,15 +1178,24 @@ def enforce_lesson_rules(
     recipe: str,
     locale: str | None,
     dials: dict[str, Any],
+    rubric_profile: str | None = None,
 ) -> None:
     reasons: list[str] = []
     check = lesson.get("check") or {}
-    rubric_criteria = [item for item in check.get("rubric") or [] if isinstance(item, dict)]
-    if len(rubric_criteria) < MIN_RUBRIC_CRITERIA:
-        reasons.append(
-            f"check.rubric declares {len(rubric_criteria)} criteria; at least "
-            f"{MIN_RUBRIC_CRITERIA} distinct observable criteria are required"
-        )
+    declared_target = str(
+        check.get("evidence_target") or (objective or {}).get("evidence_target") or ""
+    )
+    # The rubric angle is selected by construct, not by a generic template. The declared
+    # evidence target is the authority; the capability policy's advice about the construct is
+    # kept only when it can actually score that target.
+    profile = rubric_profile or rubrics.profile_for_lesson(
+        recipe=recipe,
+        evidence_target=declared_target,
+        lesson_intent=str(section.get("lesson_intent") or ""),
+        locale=locale,
+    )
+    for problem in rubrics.validate_rubric(profile, check.get("rubric") or [], declared_target):
+        reasons.append(problem)
     if objective is not None and check.get("evidence_target") != objective.get("evidence_target"):
         reasons.append(
             f"check targets {check.get('evidence_target')!r} but the objective requires "
@@ -1438,6 +1458,7 @@ def build_lesson_request(
     sources: Sequence[SourceRecord],
     feedback: str | None = None,
     timeout_s: float | None = None,
+    rubric_profile: str | None = None,
 ) -> LLMRequest:
     policy = _scaffold_policy(recipe, dials, locale)
     payload = {
@@ -1465,7 +1486,12 @@ def build_lesson_request(
         purpose="coursebook.lesson.generate",
         prompt_version=LESSON_PROMPT_VERSION,
         system_prompt=LESSON_SYSTEM_PROMPT,
-        instructions=_lesson_instructions(recipe=recipe, locale=locale, scaffold_note=_scaffold_note(policy, locale)),
+        instructions=_lesson_instructions(
+            recipe=recipe,
+            locale=locale,
+            scaffold_note=_scaffold_note(policy, locale),
+            rubric_profile=rubric_profile,
+        ),
         input_text=_bounded_input(payload),
         schema=LESSON_SCHEMA,
         schema_name="coursebook_lesson_v1",
@@ -2807,6 +2833,14 @@ def _author_section(
 ) -> dict[str, Any]:
     objective_ordinal = int((section.get("objective_refs") or [1])[0])
     objective = _objective_for(connection, plan_id, objective_ordinal)
+    # Select the rubric angle once per section: the prompt names the aspects, and the same
+    # profile is handed to the deterministic rule check so the author and the scorer agree.
+    rubric_profile = rubrics.profile_for_lesson(
+        recipe=recipe,
+        evidence_target=str((objective or {}).get("evidence_target") or "comprehension"),
+        lesson_intent=str(section.get("lesson_intent") or ""),
+        locale=locale,
+    )
     lesson: dict[str, Any] | None = None
     request: LLMRequest | None = None
     validation_request: LLMRequest | None = None
@@ -2829,6 +2863,7 @@ def _author_section(
             locale=locale,
             sources=sources,
             feedback=feedback,
+            rubric_profile=rubric_profile,
         )
         response = _call_llm(llm, request, usage)
         candidate = _parse_structured(response, LESSON_SCHEMA, what="lesson", max_bytes=MAX_LESSON_BYTES)
@@ -2836,7 +2871,13 @@ def _author_section(
 
         try:
             enforce_lesson_rules(
-                candidate, section=section, objective=objective, recipe=recipe, locale=locale, dials=dials
+                candidate,
+                section=section,
+                objective=objective,
+                recipe=recipe,
+                locale=locale,
+                dials=dials,
+                rubric_profile=rubric_profile,
             )
             assert_no_answer_leak(page, candidate)
         except _RuleViolation as exc:
