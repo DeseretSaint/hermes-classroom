@@ -34,7 +34,7 @@ from datetime import datetime, timezone
 from typing import Any, Iterable, Protocol
 from urllib.parse import urlparse
 
-from . import policy
+from . import curriculum, policy
 from .deadline import (
     CallCapacityExhausted,
     DeadlineExceeded,
@@ -587,6 +587,16 @@ def derive_queries(
             queries.append(f"{base} lesson plan for children")
         else:
             queries.append(f"{base} beginner guide")
+        # A course is not a list of topics. Ask how the subject is sequenced and what has
+        # to come first, before the generic reference/glossary questions can consume the
+        # bounded budget. Survey depth stays deliberately one query, and a one-off brief
+        # keeps its bounded speed rather than paying for a full curriculum pass.
+        if recipe != "one_off":
+            queries.extend(
+                curriculum.curriculum_queries(
+                    base, domain=domain, level=level, locale=locale
+                )
+            )
     if depth == "deep":
         # A declared non-language domain is never researched as a language question, even
         # when the delivery locale is set. The language query is kept early so a bounded

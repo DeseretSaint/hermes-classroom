@@ -334,7 +334,7 @@
     "plan_scope": "short",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v4",
+    "prompt_version": "plan-prompt.v5",
     "schema_name": "coursebook_plan_v2",
     "sections": 4,
     "units": 2,
@@ -1110,7 +1110,7 @@
           3,
           6
         ],
-        "prompt_version": "plan-prompt.v4",
+        "prompt_version": "plan-prompt.v5",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -1123,7 +1123,7 @@
       },
       "research": {
         "fetches": 1,
-        "queries": 2,
+        "queries": 4,
         "status": "ok"
       },
       "result": {
@@ -1156,7 +1156,9 @@
         "research": {
           "queries": [
             "Understand intervals, triads and the circle of fifths well enough to analyse a pop song.",
-            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. syllabus learning objectives"
+            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. syllabus learning objectives",
+            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. how to teach curriculum sequence",
+            "Understand intervals, triads and the circle of fifths well enough to analyse a pop song. prerequisite knowledge learning progression"
           ],
           "reason": null,
           "status": "ok"
@@ -1192,7 +1194,7 @@
           "calls": 2,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 1650,
+          "input_tokens": 2203,
           "output_tokens": 904,
           "unknown_calls": 0,
           "unknown_cost": false

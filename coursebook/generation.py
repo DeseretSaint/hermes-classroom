@@ -52,6 +52,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 from jsonschema import Draft202012Validator
 
 from . import research as research_mod
+from . import curriculum
 from . import sources as source_ledger
 from . import artifacts
 from . import deadline as deadline_mod
@@ -150,13 +151,13 @@ PIPELINE_VERSION = "cb.gen.v1"
 
 logger = logging.getLogger("coursebook.generation")
 
-PLAN_PROMPT_VERSION = "plan-prompt.v3"
+PLAN_PROMPT_VERSION = "plan-prompt.v4"
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
 #: ``plan-prompt.v3`` (plan-time media needs, H-05), so the next honest number is v4. The frozen
 #: requirement is "a distinct prompt version for the v2 schema", not a literal string that would
 #: collide with a shipped version and invalidate stored validation bindings.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v4"
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v5"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
@@ -165,7 +166,7 @@ UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: fingerprint. Merging the two v7 texts must not reuse a label another prompt already wore, so the
 #: merged line advances to v8 rather than claiming v7 for a third, different prompt.
 LESSON_PROMPT_VERSION = "lesson-prompt.v8"
-VALIDATION_PROMPT_VERSION = "validation-prompt.v2"
+VALIDATION_PROMPT_VERSION = "validation-prompt.v3"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
 #: malformed output, not a pass.
@@ -2661,6 +2662,21 @@ def _plan_instructions(
         "or listened to. The capability policy re-checks every declaration and rejects a role "
         "this lesson cannot carry."
     )
+    curriculum_domain = (
+        capability_policy.normalise_subject_domain(subject_domain, locale)
+        if subject_domain and str(subject_domain).strip()
+        else None
+    )
+    lines.extend(
+        curriculum.curriculum_prompt_lines(
+            curriculum.curriculum_brief(
+                domain=curriculum_domain,
+                locale=locale,
+                level=level,
+                recipe=recipe,
+            )
+        )
+    )
     lines.append(_plan_length_rule())
 
     if dials:
@@ -2800,6 +2816,21 @@ def _plan_instructions_v2(
                     + ", ".join(str(item) for item in materials[:20])
                     + ". Do not require a material the brief did not list."
                 )
+    curriculum_domain = (
+        capability_policy.normalise_subject_domain(subject_domain, locale)
+        if subject_domain and str(subject_domain).strip()
+        else None
+    )
+    lines.extend(
+        curriculum.curriculum_prompt_lines(
+            curriculum.curriculum_brief(
+                domain=curriculum_domain,
+                locale=locale,
+                level=level,
+                recipe=recipe,
+            )
+        )
+    )
     angle, angle_reason = capability_policy.recipe_check_angle(recipe)
     if angle is not None:
         lines.append(
@@ -2902,7 +2933,7 @@ def _lesson_instructions(
 
 
 def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
-    return (
+    text = (
         f"Independently validate this {subject}. Check every one of these criteria and return one "
         f"entry per criterion: {', '.join(criteria)}. Reject any item that must not reach a "
         "learner, with the item reference and a concrete reason. For each claim in the artifact, "
@@ -2913,6 +2944,15 @@ def _validation_instructions(*, subject: str, criteria: Sequence[str]) -> str:
         "keeps the claim 'unverified', and a title, publisher, URL, DOI or ISBN you cite must "
         "appear in the ledger or the verdict is flagged."
     )
+    if subject == "plan":
+        text += (
+            " Also judge curriculum sequence under objective_alignment: every unit after the "
+            "first must name the earlier unit(s) it builds on and explain why it comes at that "
+            "point; no unit may require a concept taught later. Reject a plan whose order is "
+            "arbitrary, whose prerequisite edges do not match the stated dependencies, or whose "
+            "language-coverage claim is unsourced or treats coverage as comprehension."
+        )
+    return text
 
 
 # ── Deterministic rule enforcement (generation-side, not validation) ────────
@@ -4478,9 +4518,20 @@ def build_plan_request(
     # dict is honoured here without ever writing them back into ``dials``.
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
-    # The plan-time capability decision: the same deterministic function the lesson stage calls,
-    # computed for the plan's own declared inputs. At plan time no lesson intent exists yet, so
-    # the decision refuses media; its reasons are what tell the author what the domain permits.
+    normal_domain = (
+        capability_policy.normalise_subject_domain(declared_domain, locale)
+        if declared_domain and str(declared_domain).strip()
+        else None
+    )
+    curriculum_brief = curriculum.curriculum_brief(
+        domain=normal_domain,
+        locale=locale,
+        level=declared_level,
+        recipe=recipe,
+    )
+    # The plan-time capability decision: the same deterministic function the lesson stage
+    # calls, computed for the plan's own declared inputs. At plan time no lesson intent exists
+    # yet, so the decision refuses media; its reasons tell the author what the domain permits.
     capability = capability_policy.plan_lesson_capability(
         recipe=recipe,
         evidence_target="comprehension",
@@ -4514,6 +4565,7 @@ def build_plan_request(
         "scope": scope,
         "plan_schema": PLAN_SCHEMA_V2_NAME if blueprint else None,
         "capability_policy": capability.to_dict(),
+        "curriculum": curriculum_brief,
         "research": {
             "status": research_run.status,
             "reason": research_run.reason,
@@ -4616,15 +4668,28 @@ def build_plan_validation_request(
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
 ) -> LLMRequest:
+    declared_level = level or _dial_text(dials, "level")
+    declared_domain = subject_domain or _dial_text(dials, "subject_domain")
+    normal_domain = (
+        capability_policy.normalise_subject_domain(declared_domain, locale)
+        if declared_domain and str(declared_domain).strip()
+        else None
+    )
     payload = {
         "artifact_kind": "plan",
         "goal": goal,
         "recipe": recipe,
         "dials": dict(dials or {}),
         "locale": locale,
-        "level": level or _dial_text(dials, "level"),
-        "subject_domain": subject_domain or _dial_text(dials, "subject_domain"),
+        "level": declared_level,
+        "subject_domain": declared_domain,
         "scope": scope,
+        "curriculum": curriculum.curriculum_brief(
+            domain=normal_domain,
+            locale=locale,
+            level=declared_level,
+            recipe=recipe,
+        ),
         "research_status": research_run.status,
         "sources": _source_brief(research_run.sources),
         "plan": plan,

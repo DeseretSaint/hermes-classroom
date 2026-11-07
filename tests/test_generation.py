@@ -509,7 +509,8 @@ class ResearchTest(GenerationTestBase):
             "order coffee", recipe="committed", dials={"depth": "deep"}, locale="ja-JP", max_queries=12
         )
         self.assertEqual(survey, ["order coffee"])
-        self.assertEqual(len(working), 2)
+        self.assertGreaterEqual(len(working), 4)
+        self.assertTrue(any("how to teach curriculum sequence" in query for query in working))
         self.assertLess(len(working), len(deep))
         self.assertTrue(any("reference" in query for query in deep))
         self.assertTrue(any("Japanese" in query for query in deep))
