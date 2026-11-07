@@ -415,6 +415,19 @@ A pack's own `audit_state` can refuse a check (`failed`) and can never grant one
 declares `passed` on a check whose reference answer is in the stimulus is still withheld, because
 the deterministic audit is the only gate.
 
+### `cb.projection` v1 carries no checklist, and this card did not change that
+
+A `cb.pack` manifest check's `stimulus` is a prose string; there is no `items` key in the manifest.
+The frozen projection emits `stimulus: {prompt: trim(stimulus)}` and states that every listed field
+is always present, with no optional field. So an imported pack check reaches the kernel as a
+prompt-only stimulus and `pack_flow.check_spec_from_pack_check` keeps writing `{"prompt": ...}`.
+Carrying a checklist through import would need two coordinated changes that are deliberately **not**
+made here: a `cb.pack` v2 that can declare `items[]` in a manifest check, and a `cb.projection` v2
+whose `stimulus` field is no longer a single key. A structured checklist therefore arrives only
+through authored generation (`generation.LESSON_SCHEMA` → `checks.stimulus_json`), which is the path
+`check.get` already projects. Nothing in `cb.projection` v1 changed and no imported check's stored
+spec changed.
+
 ### Divergence record: both entries closed by CB-025
 
 The freeze found two places where `coursebook/pack_flow.py` did not implement the frozen rules. Both

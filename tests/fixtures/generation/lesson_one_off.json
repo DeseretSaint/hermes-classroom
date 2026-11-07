@@ -27,10 +27,20 @@
     "stimulus": {
       "prompt": "Tick each step only after you have done it with the manual open.",
       "format": "verification",
-      "choices": [
-        "Pad model matched to the manual",
-        "Worn pad removed with the listed tool",
-        "Caliper undamaged"
+      "choices": [],
+      "items": [
+        {
+          "id": "item_1",
+          "label": "Pad model matched to the manual"
+        },
+        {
+          "id": "item_2",
+          "label": "Worn pad removed with the listed tool"
+        },
+        {
+          "id": "item_3",
+          "label": "Caliper undamaged"
+        }
       ]
     },
     "learner_instructions": "Tick what is true. Completion is self-reported and is never presented as independently verified.",

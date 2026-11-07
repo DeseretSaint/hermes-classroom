@@ -1,7 +1,7 @@
 # Lesson capability policy
 
 **Status:** M1-P1 implemented the pure policy on `wt/m1-capability-policy`; M1-P3 binds it into
-generation (`lesson-prompt.v4`) and validation on `wt/m1-policy-integration`. Authority:
+generation (`lesson-prompt.v5`) and validation on `wt/m1-policy-integration`. Authority:
 `coursebook/policy.py`.
 Plan: `docs/VISUAL_MEDIA_PLAN.md` §4 (capability policy and rubric angles) and §8 (technical
 visuals), `docs/VISUAL_MEDIA_PLAN.md` §5.2 (generation policy), §5.3 (rubrics).
@@ -150,7 +150,7 @@ lesson_capability_plan(recipe=..., section=..., objective=..., locale=..., dials
 The subject domain is advisory and read from the section, then the plan, then the dials. Nothing
 else is inferred: the construct must be named by the authored intent.
 
-**Prompt.** `lesson-prompt.v4` receives only the resulting permissions and angles. For a lesson
+**Prompt.** `lesson-prompt.v5` receives only the resulting permissions and angles. For a lesson
 whose policy says image `none`, the instruction is literally "emit no visual media item" plus the
 plan's reason; it is never offered a menu of media kinds. The same is true of audio. The payload
 also carries `capability_policy` (the plan projection) so the model sees the same decision the

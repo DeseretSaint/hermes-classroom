@@ -197,6 +197,17 @@ def _objective_for_ordinal(connection, plan_id: str, ordinal: int | None) -> Any
 # ── text composition ────────────────────────────────────────────────────────
 
 
+def _label_key(value: str) -> str:
+    """The read seam's label normalisation, imported rather than reimplemented.
+
+    ``domain`` imports this module, so the import is local. Using the same function is the point:
+    a choice that merely repeats a checklist item's label must not be printed a second time.
+    """
+    from .domain import _check_label_key
+
+    return _check_label_key(value)
+
+
 def _learner_page_text(page: Mapping[str, Any]) -> str:
     lines = [f"# {page.get('section_title') or 'Lesson'}", ""]
     for segment in page.get("segments") or []:
@@ -221,8 +232,22 @@ def _learner_page_text(page: Mapping[str, Any]) -> str:
     stimulus = check.get("stimulus") or {}
     if stimulus.get("prompt"):
         lines.extend(["## Your turn", str(stimulus["prompt"])])
+        # A structured checklist prints one numbered line per authored item: the parent reviews
+        # exactly the steps the learner will be asked to confirm, in the authored order, and no
+        # label is invented or paraphrased.
+        items = [
+            str(item.get("label") or "").strip()
+            for item in (stimulus.get("items") or [])
+            if isinstance(item, dict) and str(item.get("label") or "").strip()
+        ]
+        printed = {_label_key(label) for label in items}
+        for number, label in enumerate(items, start=1):
+            lines.append(f"{number}. {label}")
         choices = list(stimulus.get("choices") or [])
-        for index, choice in enumerate(choices, start=1):
+        for choice in choices:
+            # A choice that only restates an item label is the same step printed twice.
+            if _label_key(str(choice)) in printed:
+                continue
             lines.append(f"- {choice}")
         if check.get("learner_instructions"):
             lines.extend(["", str(check["learner_instructions"])])

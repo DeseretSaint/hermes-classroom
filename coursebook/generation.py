@@ -104,7 +104,7 @@ PIPELINE_VERSION = "cb.gen.v1"
 logger = logging.getLogger("coursebook.generation")
 
 PLAN_PROMPT_VERSION = "plan-prompt.v1"
-LESSON_PROMPT_VERSION = "lesson-prompt.v4"
+LESSON_PROMPT_VERSION = "lesson-prompt.v5"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v1"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
@@ -776,6 +776,28 @@ LESSON_SCHEMA: dict[str, Any] = {
                             "maxItems": 8,
                             "items": {"type": "string", "minLength": 1, "maxLength": 200},
                         },
+                        # The structured checklist, identical in shape to
+                        # `contracts/rpc.v8.json#/$defs/check_stimulus.items` and to
+                        # `domain.STIMULUS_ITEM_*`. Optional here because a text or selection
+                        # check carries no items; a verification check is refused without them by
+                        # `_check_item_problems` (not by the schema, so the refusal names a reason).
+                        "items": {
+                            "type": "array",
+                            "maxItems": 24,
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["id", "label"],
+                                "properties": {
+                                    "id": {
+                                        "type": "string",
+                                        "pattern": r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+                                        "maxLength": 64,
+                                    },
+                                    "label": {"type": "string", "minLength": 1, "maxLength": 200},
+                                },
+                            },
+                        },
                     },
                 },
                 "learner_instructions": {"type": "string", "minLength": 3, "maxLength": 400},
@@ -1147,6 +1169,10 @@ def _lesson_instructions(
         "Include exactly one check.",
         "Write 3-6 rubric criteria in check.rubric, each a distinct observable aspect of the "
         "response; never restate one aspect in two criteria.",
+        "If check.stimulus.format is 'verification', enumerate the steps it asks the learner to "
+        "confirm in check.stimulus.items as {id, label} objects (1-24; ids like item_1, unique; "
+        "labels 1-200 characters, distinct once case, spacing and punctuation are ignored). Never "
+        "split the prompt into items and never restate the prompt as an item.",
     ]
     lines.extend(_capability_prompt_lines(capability))
     entry = rubrics.RUBRICS.get(profile)
@@ -1161,7 +1187,10 @@ def _lesson_instructions(
     if scaffold_note:
         lines.append(scaffold_note)
     if recipe == "one_off":
-        lines.append("The check is a verification checklist (kind 'verification', format 'verification').")
+        lines.append(
+            "The check is a verification checklist (kind 'verification', format 'verification'); "
+            "its steps live in check.stimulus.items, one entry per step the learner confirms."
+        )
     if recipe == "parent":
         lines.append("The check is a parent observation (kind 'observation'); include parent_notes and "
                      "supervision_notes.")
@@ -1350,6 +1379,60 @@ def _media_spec_from_lesson_item(item: dict[str, Any]) -> artifacts.MediaSpec:
     )
 
 
+def _check_item_label_key(label: str) -> str:
+    """The read seam's one normalisation rule, not a copy of it.
+
+    ``domain._check_label_key`` is imported lazily because ``domain`` imports this module; the
+    rule itself lives in exactly one place so the generation-time refusal and the read-time
+    projection can never disagree about what "the same label" means.
+    """
+    from .domain import _check_label_key
+
+    return _check_label_key(label)
+
+
+def _check_item_problems(check: dict[str, Any]) -> list[str]:
+    """Deterministic generation-side refusals for a structured checklist.
+
+    The JSON schema already bounds the shape (24 items, id pattern, label length). What a schema
+    cannot say is that two items which read the same are one instruction printed twice, or that a
+    verification checklist with no items is not a checklist at all. Those are refused here, at
+    authoring time, so a broken checklist is regenerated rather than stored and rejected on read.
+    """
+    stimulus = check.get("stimulus") or {}
+    items = stimulus.get("items")
+    if items is None:
+        items = []
+    if not isinstance(items, list):
+        return ["check.stimulus.items must be a list of {id, label} objects"]
+    problems: list[str] = []
+    if stimulus.get("format") == "verification" and not items:
+        problems.append(
+            "a verification checklist must enumerate its steps in check.stimulus.items"
+            " (at least one {id, label}); the prompt alone is not a checklist"
+        )
+    seen_ids: set[str] = set()
+    seen_labels: set[str] = set()
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            continue
+        item_id = item.get("id")
+        label = item.get("label")
+        if isinstance(item_id, str):
+            if item_id in seen_ids:
+                problems.append(f"check.stimulus.items[{index}].id repeats {item_id!r}")
+            seen_ids.add(item_id)
+        if isinstance(label, str):
+            key = _check_item_label_key(label)
+            if key and key in seen_labels:
+                problems.append(
+                    f"check.stimulus.items[{index}].label reads the same as an earlier item once"
+                    f" case, spacing and punctuation are ignored: {label!r}"
+                )
+            seen_labels.add(key)
+    return problems
+
+
 def enforce_lesson_rules(
     lesson: dict[str, Any],
     *,
@@ -1363,6 +1446,7 @@ def enforce_lesson_rules(
 ) -> None:
     reasons: list[str] = []
     check = lesson.get("check") or {}
+    reasons.extend(_check_item_problems(check))
     declared_target = str(
         check.get("evidence_target") or (objective or {}).get("evidence_target") or ""
     )
@@ -2836,6 +2920,11 @@ def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources
                 "prompt": check["stimulus"]["prompt"],
                 "format": check["stimulus"]["format"],
                 "choices": list(check["stimulus"].get("choices") or []),
+                # The checklist is copied as authored: id and label, in order, nothing invented.
+                "items": [
+                    {"id": item["id"], "label": item["label"]}
+                    for item in check["stimulus"].get("items") or []
+                ],
             },
             "learner_instructions": check["learner_instructions"],
             "evidence_target": check["evidence_target"],
@@ -2880,6 +2969,10 @@ def _check_payloads(lesson: dict[str, Any], *, locale: str | None) -> dict[str, 
         "prompt": check["stimulus"]["prompt"],
         "format": check["stimulus"]["format"],
         "choices": list(check["stimulus"].get("choices") or []),
+        "items": [
+            {"id": item["id"], "label": item["label"]}
+            for item in check["stimulus"].get("items") or []
+        ],
         "learner_instructions": check["learner_instructions"],
         "scaffolds": dict(check["scaffolds"]),
         "assistance_policy": dict(check["assistance_policy"]),

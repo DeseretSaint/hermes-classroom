@@ -59,6 +59,13 @@ def lesson_body(
     scaffolds: dict | None = None,
     parent: bool = False,
 ) -> dict:
+    stimulus: dict = {"prompt": "Do the thing", "format": stimulus_format, "choices": []}
+    if stimulus_format == "verification":
+        # A verification checklist enumerates its steps; generation refuses one without items.
+        stimulus["items"] = [
+            {"id": "item_1", "label": "First step confirmed"},
+            {"id": "item_2", "label": "Second step confirmed"},
+        ]
     return {
         "section_title": "A durable section",
         "segments": [
@@ -73,7 +80,7 @@ def lesson_body(
         "learner_explanation": "A learner explanation that does not announce the check answer.",
         "check": {
             "kind": check_kind,
-            "stimulus": {"prompt": "Do the thing", "format": stimulus_format, "choices": []},
+            "stimulus": stimulus,
             "learner_instructions": "Respond honestly and in your own words.",
             "evidence_target": target,
             "accepted_answers": ["the expected response"],
@@ -268,7 +275,7 @@ class PromptPolicyTest(unittest.TestCase):
                 self.assertEqual(plan.audio, row["audio"])
 
                 instructions = request_for(row).instructions
-                self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v4")
+                self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v5")
                 self.assertIn("Capability policy", instructions)
                 self.assertIn(f"check angle: {row['angle']}", instructions)
                 self.assertIn(f"rubric profile: {row['profile']}", instructions)

@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author | `coursebook.plan.generate` | `plan-prompt.v1` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v4` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v5` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
@@ -146,7 +146,7 @@ The learner page is built from an allowlist, never by deleting keys:
 
 ```
 section_title, lesson_intent, segments, worked_example, learner_explanation,
-check{kind, stimulus{prompt,format,choices}, learner_instructions, evidence_target,
+check{kind, stimulus{prompt,format,choices,items}, learner_instructions, evidence_target,
       scaffolds, assistance_policy}, sources, media, parent_notes, supervision_notes
 ```
 
@@ -155,7 +155,21 @@ The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and 
 enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
 page against the linked checks before serving.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v4`) asks for 3–6 criteria, each a distinct
+**Structured checklist.** A verification check is a checklist, not a prompt asking the learner to
+remember one. `LESSON_SCHEMA` accepts an optional `check.stimulus.items[]` with exactly the shape
+`contracts/rpc.v8.json#/$defs/check_stimulus.items` freezes (1–24 entries of `{id, label}`, ids
+`^[A-Za-z0-9][A-Za-z0-9_.:-]*$` up to 64 characters, labels 1–200 characters, no other keys), the
+prompt asks the author for one entry per step, and `_check_payloads` copies the list as authored
+into `checks.stimulus_json`, so `check.get` serves the same ids and labels in the same order.
+Two refusals happen while authoring, before any learner or validator sees the draft:
+`format: verification` with no items is refused (a prompt alone is not a checklist), and two items
+whose labels read the same once case, spacing and punctuation are ignored are refused with the
+read seam's own normalisation (`domain._check_label_key`, imported rather than reimplemented).
+Both raise `_RuleViolation`: attempt 1 is retried with the reasons, attempt 2 parks the lesson
+`needs_review` with the check closed, and `check.get` would refuse the same duplicate anyway. The
+prompt change is why `LESSON_PROMPT_VERSION` moved to `lesson-prompt.v5`.
+
+**Rubric floor.** The lesson prompt (`lesson-prompt.v5`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
@@ -163,7 +177,7 @@ synthesised to reach the floor: a pack is exportable only when the author actual
 
 **Capability policy reaches the model.** Before the lesson prompt is built, the pipeline computes
 one immutable plan from the recipe, the objective's evidence target, the authored section intent,
-the locale/level and an advisory subject domain (`coursebook/policy.py`). `lesson-prompt.v4`
+the locale/level and an advisory subject domain (`coursebook/policy.py`). `lesson-prompt.v5`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all. The same plan is stamped on the authored lesson under
