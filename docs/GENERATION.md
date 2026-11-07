@@ -153,7 +153,7 @@ The learner page is built from an allowlist, never by deleting keys:
 ```
 section_title, lesson_intent, segments[{kind, heading, body, short}],
 worked_example{prompt, steps, answer, short}, learner_explanation, learner_explanation_short,
-check{kind, stimulus{prompt,format,choices}, learner_instructions, evidence_target,
+check{kind, stimulus{prompt,format,choices,items}, learner_instructions, evidence_target,
       scaffolds, assistance_policy}, sources, media, parent_notes, supervision_notes
 ```
 
@@ -161,6 +161,20 @@ The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and 
 `checks.reference_json` / `checks.rubric_json` and never to `gen_lessons.page_json`. Two guards
 enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
 page against the linked checks before serving.
+
+**Structured checklist.** A verification check is a checklist, not a prompt asking the learner to
+remember one. `LESSON_SCHEMA` accepts an optional `check.stimulus.items[]` with exactly the shape
+`contracts/rpc.v8.json#/$defs/check_stimulus.items` freezes (1–24 entries of `{id, label}`, ids
+`^[A-Za-z0-9][A-Za-z0-9_.:-]*$` up to 64 characters, labels 1–200 characters, no other keys), the
+prompt asks the author for one entry per step, and `_check_payloads` copies the list as authored
+into `checks.stimulus_json`, so `check.get` serves the same ids and labels in the same order.
+Two refusals happen while authoring, before any learner or validator sees the draft:
+`format: verification` with no items is refused (a prompt alone is not a checklist), and two items
+whose labels read the same once case, spacing and punctuation are ignored are refused with the
+read seam's own normalisation (`domain._check_label_key`, imported rather than reimplemented).
+Both raise `_RuleViolation`: attempt 1 is retried with the reasons, attempt 2 parks the lesson
+`needs_review` with the check closed, and `check.get` would refuse the same duplicate anyway. The
+prompt change is why `LESSON_PROMPT_VERSION` moved to `lesson-prompt.v5`.
 
 **Rubric floor.** The lesson prompt (`lesson-prompt.v5`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than

@@ -1335,6 +1335,14 @@ class V5AmendmentTest(unittest.TestCase):
         self.assertEqual(set(stimulus["properties"]["format"]["enum"]),
                          {"text", "selection", "verification"})
         self.assertLessEqual(stimulus["properties"]["choices"]["maxItems"], 8)
+        # `items` is the structured checklist: optional on the wire (an older check has none) but
+        # bounded and closed, so a label cannot be served as an unbounded blob or carry a key.
+        self.assertNotIn("items", stimulus["required"])
+        items = stimulus["properties"]["items"]
+        self.assertEqual(items["maxItems"], 24)
+        self.assertFalse(items["items"]["additionalProperties"])
+        self.assertEqual(set(items["items"]["required"]), {"id", "label"})
+        self.assertLessEqual(items["items"]["properties"]["label"]["maxLength"], 200)
         # The prompt bound must cover what storage can hold: a pack check's stimulus is up to 8000
         # characters in cb.pack, and it is copied into checks.stimulus_json verbatim. A tighter
         # bound would make a legitimate imported check unrenderable.

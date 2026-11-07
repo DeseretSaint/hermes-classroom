@@ -1,6 +1,6 @@
 {
   "attempt_state": {
-    "check_id": "chk_2e02c1a79d864be9b187c5efc438100f",
+    "check_id": "chk_6e848c6ebed94edca2cd2ecb2ccabb0b",
     "check_version": 1,
     "state": "closed",
     "attempt_count_before": 1,
@@ -15,11 +15,11 @@
     ]
   },
   "parity": {
-    "objective_id": "obj_0dc667c80a6148f6a318c359192f055a",
-    "check_id": "chk_a21c39778c8e4588877d85220af17ff7",
-    "lesson_page_document_id": "doc_6fb38202ff07343d8bcc",
+    "objective_id": "obj_e5d5383ac0d342e3ba2751f32f4ab13c",
+    "check_id": "chk_573718b95c234b1eb42c4847e9bcd9b3",
+    "lesson_page_document_id": "doc_6403ff6b9f83769dc655",
     "lesson_page_state": "textbook_only",
-    "authored_document_id": "doc_2ffa3f4cae40e2fe6697",
+    "authored_document_id": "doc_b88f012ef395065df286",
     "authored_state": "complete",
     "block_ids": [
       "blk_practice0001",
@@ -38,7 +38,7 @@
     ],
     "textbook": {
       "view": "textbook",
-      "document_id": "doc_2ffa3f4cae40e2fe6697",
+      "document_id": "doc_b88f012ef395065df286",
       "block_ids": [
         "blk_practice0001",
         "blk_orient000001",
@@ -51,7 +51,7 @@
     },
     "guided": {
       "view": "guided",
-      "document_id": "doc_2ffa3f4cae40e2fe6697",
+      "document_id": "doc_b88f012ef395065df286",
       "block_ids": [
         "blk_practice0001"
       ],
@@ -68,11 +68,17 @@
   "duplicate_checklist": {
     "fixture": "teaching segment + check_prompt segment + check surface",
     "view": "textbook",
-    "label_counts": {
+    "label_counts_before": {
       "Check the heat": 3,
       "Check sharp objects": 3,
       "Check small parts": 3,
       "Check allergies": 3
+    },
+    "label_counts": {
+      "Check the heat": 1,
+      "Check sharp objects": 1,
+      "Check small parts": 1,
+      "Check allergies": 1
     },
     "expected": {
       "Check the heat": 1,
@@ -80,7 +86,7 @@
       "Check small parts": 1,
       "Check allergies": 1
     },
-    "verdict": "FAIL"
+    "verdict": "PASS"
   },
   "structured_items_seam": {
     "stored_keys": [
@@ -91,10 +97,28 @@
     "served_keys": [
       "choices",
       "format",
+      "items",
       "learner_instructions",
       "prompt"
     ],
-    "items_served": null,
+    "items_served": [
+      {
+        "id": "item_1",
+        "label": "Check the heat"
+      },
+      {
+        "id": "item_2",
+        "label": "Check sharp objects"
+      },
+      {
+        "id": "item_3",
+        "label": "Check small parts"
+      },
+      {
+        "id": "item_4",
+        "label": "Check allergies"
+      }
+    ],
     "expected_served_keys": [
       "choices",
       "format",
@@ -102,6 +126,17 @@
       "learner_instructions",
       "prompt"
     ],
-    "verdict": "FAIL: contract v8 check_stimulus has no items[] and _stimulus_view drops it"
+    "verdict": "PASS: items[] projected, unknown keys still dropped"
+  },
+  "check_surface_items": {
+    "label_counts": {
+      "Check the heat": 1,
+      "Check sharp objects": 1,
+      "Check small parts": 1,
+      "Check allergies": 1
+    },
+    "item_markers": 4,
+    "prompt_rendered": true,
+    "verdict": "PASS"
   }
 }
