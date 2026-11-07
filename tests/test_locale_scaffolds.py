@@ -12,11 +12,23 @@ These tests pin the decision the Japanese-only scaffold triple could not express
 from __future__ import annotations
 
 import json
+import shutil
 import sqlite3
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
 from coursebook import contracts, generation as gen, lesson_document, localization
+from tests.test_desktop_lesson_views import (
+    HARNESS,
+    PLUGIN_JS,
+    SDK_STUB,
+    _desktop_node_modules,
+    block as view_block,
+    document as view_document,
+)
+from tests.test_procedure_document import head_gasket_document
 
 FIXTURES = Path(__file__).parent / "fixtures" / "generation"
 BLOCK = {
@@ -274,3 +286,107 @@ class ReviewTargetScaffoldTest(unittest.TestCase):
             target["check"]["scaffolds"],
             [{"kind": "romaji"}, {"kind": "furigana"}, {"kind": "gloss"}],
         )
+
+
+class _PluginHarness(unittest.TestCase):
+    """The lesson-view render plumbing, reused without re-running its tests.
+
+    ``tests.test_desktop_lesson_views`` owns the harness; subclassing its test case would run its
+    twelve view tests a second time, so the setup is written out here against the same constants.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        if shutil.which("node") is None:
+            raise unittest.SkipTest("node is required to render a runtime desktop plugin")
+        modules = _desktop_node_modules()
+        if modules is None:
+            raise unittest.SkipTest("react/react-dom are not installed beside the desktop app")
+        cls.tmp = tempfile.TemporaryDirectory(prefix="coursebook-locale-direction-")
+        root = Path(cls.tmp.name)
+        (root / "plugin.js").write_text(PLUGIN_JS.read_text(encoding="utf-8"), encoding="utf-8")
+        (root / "harness.mjs").write_text(HARNESS, encoding="utf-8")
+        node_modules = root / "node_modules"
+        node_modules.mkdir()
+        for name in ("react", "react-dom", "scheduler"):
+            source = modules / name
+            if source.is_dir():
+                (node_modules / name).symlink_to(source, target_is_directory=True)
+        sdk = node_modules / "@hermes" / "plugin-sdk"
+        sdk.mkdir(parents=True)
+        (sdk / "package.json").write_text(
+            json.dumps({"name": "@hermes/plugin-sdk", "type": "module", "main": "index.js"}),
+            encoding="utf-8",
+        )
+        (sdk / "index.js").write_text(SDK_STUB, encoding="utf-8")
+        cls.root = root
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if hasattr(cls, "tmp"):
+            cls.tmp.cleanup()
+
+    def render(self, payload: dict) -> str:
+        case = self.root / "case.json"
+        case.write_text(json.dumps(payload), encoding="utf-8")
+        result = subprocess.run(
+            ["node", str(self.root / "harness.mjs"), str(case)],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        return result.stdout
+
+    def payload(self, doc: dict, view: str, *, with_check: bool = True) -> dict:
+        return {
+            "kind": "document",
+            "document": doc,
+            "view": view,
+            "withCheck": with_check,
+            "sources": [
+                {"source_id": "src_affection01", "title": "Affection and register — field notes"}
+            ],
+        }
+
+
+class DirectionRenderTest(_PluginHarness):
+    """Every view root renders the one document in the direction it recorded.
+
+    The harness renders the shipped ``desktop/plugin.js`` in React, so this is the real module,
+    not a copy of its attribute logic. A document without ``lang``/``direction`` (any page authored
+    before H-18) must render exactly as it did: no ``dir`` and no ``lang`` attribute.
+    """
+
+    AR_BLOCKS = [
+        view_block("blk_orient0001", "orient", "مرحبا", short="تحية قصيرة.", deep="تحية قصيرة عند الدخول."),
+        view_block("blk_recap00001", "recap", "الخلاصة", short="خلاصة.", deep="خلاصة الدرس."),
+    ]
+
+    def _document(self, **overrides):
+        doc = view_document(guided=True, blocks=self.AR_BLOCKS, check_id=None)
+        doc.update({"views": {"textbook": True, "guided": True, "field_quest": True, "field_notes": False}})
+        doc.update(overrides)
+        return doc
+
+    def test_every_view_root_carries_dir_and_lang(self) -> None:
+        document = self._document(lang="ar-SA", direction="rtl")
+        procedure = dict(head_gasket_document(), lang="ar-SA", direction="rtl")
+        cases = {
+            "textbook": self.render(self.payload(document, "textbook")),
+            "guided": self.render(self.payload(document, "guided")),
+            "field_quest": self.render(self.payload(document, "field_quest")),
+            "procedure": self.render(self.payload(procedure, "textbook")),
+        }
+        for view, html in cases.items():
+            with self.subTest(view=view):
+                self.assertIn('dir="rtl"', html)
+                self.assertIn('lang="ar-SA"', html)
+                self.assertIn(f'data-cb-lesson-view="{view}"', html)
+
+    def test_a_legacy_document_renders_without_a_direction(self) -> None:
+        html = self.render(self.payload(self._document(), "textbook"))
+        self.assertNotIn('dir="', html)
+        self.assertNotIn('lang="', html)
+        self.assertIn('data-cb-lesson-view="textbook"', html)
