@@ -1,0 +1,24 @@
+{
+  "label": "Resume lesson",
+  "clicked": {
+    "x": 403.109375,
+    "y": 275,
+    "label": "Resume lesson",
+    "disabled": false
+  },
+  "before": {
+    "hash": "#/coursebook",
+    "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson"
+  },
+  "after": {
+    "hash": "#/coursebook",
+    "routeMounted": true,
+    "text": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+    "pane": false,
+    "notices": [
+      "This lesson has no durable chat to resume yet."
+    ],
+    "bodySnippet": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nArtifacts\nScheduled jobs\nCoursebook\nPINNED\nHermes Classroom Plugin Feasibility Plan\n3m\nSESSIONS\nRevive Marketing LLC business details\n2h\nLaunch multiple Hermes sessions on Omarchy\n7h\nResume Hermes classroom plugin chat\n7h\n[Message withheld: a"
+  },
+  "consoleErrors": []
+}

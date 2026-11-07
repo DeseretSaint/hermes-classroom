@@ -87,3 +87,78 @@ hermes gateway restart
 The alternative, recording from this isolated rig, gives a window that reaches the backend remotely
 (proven here on 44297) but its chat is still the host's, so the pair is only honest when both halves
 run on the same profile. That choice is DeseretSaint's, not the gate's.
+
+## 6. Re-measurement on the pane-reveal build `5b0f124` (supersedes §2-§5 for this commit)
+
+Author: Sentinel. Fresh isolated rig, this run, this machine. The §1-§5 measurement stays as the
+record for `29bede7`; this section is the status on the build that carries the D1 fix.
+
+| Item | Value |
+| --- | --- |
+| Commit | `5b0f124630fab9154aef9be5751919eeb8911255` (`origin/master`), merging `13d4a75` (t_d587a007) |
+| Worktree | `.worktrees/t_3589acce` (`wt/cb017-demo-gate-5b0f124`) |
+| Install | `scripts/install-local.sh --home ~/.hermes/coursebook-demo-gate-5b0f124/home --source <worktree>` (fresh home) |
+| Backend | `hermes serve --isolated --port 44317`, `HERMES_HOME` = fresh home, `HERMES_COURSEBOOK_SINGLE_HOME=1` |
+| Backend proof | `GET /api/plugins/coursebook/runtime` → `plugin_root` = this worktree, `wire_version` 7, `contract_problems: []` |
+| Desktop half | `desktop-plugins/coursebook/plugin.js` sha256 `c151974a7de0fed2662e977a001127327b3c3cf96d19a54cd49b819433f935fc` = the file in this commit |
+| Window | Electron `--remote-debugging-port=9377`, own userdata, remote connection `127.0.0.1:44317` |
+| Artifacts | `audit/demo-gate-5b0f124/` |
+
+Rig note, stated so the measurement can be reproduced: in remote mode the Desktop shell resolves
+desktop plugins through `GET /api/desktop-plugins/root`, which `hermes serve` does not mount, so the
+shell's plugin roster was empty until the rig's own persisted enable decision
+(`hermes.desktop.pluginDecisions.v2 = {"coursebook":true}` in that userdata's localStorage) was set.
+That is a rig-setup step, not a product change. The course was created through the same
+grant → preview → import path a learner uses (`scripts/seed-demo-course.py`): course
+`crs_407fde6a258640aebce9475254904c2e`, enrollment `enr_c9011c8809ef457195a443cc3c5501ef`.
+
+### D1 on this commit — fixed
+
+`13d4a75` adds `revealCoursebookPane()` (feature-detects `host.revealPane`, calls it with
+`coursebook:pane`) after `host.newChat` and after `host.openSession`. Measured: section
+"Start a fresh run" leaves the route for `#/`, opens a chat, and reveals the pane;
+`paneVisibility('coursebook:pane').get()` = `true` across 14 samples over 9.8 s, and
+`shots/u08-fresh-start.png` shows the chat column and the Coursebook pane side by side
+("No durable chat yet"). That is the product half of D1 closed on `5b0f124`.
+
+### Scenario verdicts on `5b0f124`
+
+| id | verdict | evidence |
+| --- | --- | --- |
+| U01 | **PASS** | sidebar "Coursebook" pointer click → `#/coursebook`, `[data-cb-destination="courses"]`, course card rendered (`u01-route.json`) |
+| U02 | not re-driven this pass | prior pass on `29bede7` (`u02*`); this pass created the course via the same backend grant/preview/import path and the UI renders it (`u01-route.json`) |
+| U03 | **PASS** | keyboard-only: 5 tabs to "Open Coursebook", Enter mounts the route; 18 in-route stops all `:focus-visible` and named; AX 154 named, 1 unnamed outside the route (`u03-keyboard.json`) |
+| U04 | **PASS at 1440 (100%/200%) and reduced motion; narrow rows not conclusively re-measured** | 1440/16 and 1440/32: overflowX 0, 0 unnamed, 0 clipped, max transition/animation 0 s with `prefers-reduced-motion: reduce` (`u04-layout.json`). The 460 px rows aborted when the Vite dev server failed a dynamic module import (`/src/main.tsx`) and the renderer dropped the route; those rows are reported as not measured, not as a pass |
+
+### Demo-shot verdicts on `5b0f124`
+
+The pane surface is drivable; the chat beside it is not, because this rig has no inference provider.
+
+| shot | verdict | evidence |
+| --- | --- | --- |
+| 0-8s library / pack / enroll | **yes** | U01 run; course + enrollment from the real import path |
+| 8-25s chat + pane, typed check, graded attempt | **no** | chat + pane appear together (`u08-fresh-start.json`, `shots/u08-fresh-start.png`) but the shell reports `Backend: inference unavailable` and the thread stays on `Waking up default…`; with no first turn there is no stored session id, so `Submit answer` is disabled ("This section's chat binding is detached", `u09-u10-notebook-quiz.json`) |
+| 25-34s correct attempt → transition → evidence | **no** | same: no bound chat, no attempt can be submitted (`u09-u10-notebook-quiz.json`) |
+| 34-40s notebook save / reopen | **no** | section states "No teaching segments yet. Segments appear here after a teaching turn in the bound chat", so there is nothing to save (`u09-u10-notebook-quiz.json`) |
+| 40-47s restart → identical pending objective | **no** | depends on an active binding; none can exist on this rig |
+| 47-62s Parent Studio | not measured | needs generated pages and approval; not run this pass |
+| 62-73s export | not measured | depends on 47-62 |
+| 73-82s media / audio | **no audio asset** | the named pack declares "No audio is bundled" |
+
+### Verdict for this section
+
+**D1's product half is fixed on `5b0f124`; the DEMO gate remains NOT MET.** The route and the pane
+surface pass, but the four learning shots are still undrivable, now because the isolated rig cannot
+run inference and therefore cannot create the binding those shots require. No recording exists and
+none is claimed.
+
+### What remains for t_6a32ffe9
+
+1. Run the same U01-U04 on the exact build installed in the default profile (the profile that owns
+   the gateway), with inference available, so the chat half is real.
+2. Create one active binding through the product path (fresh start + first chat turn), then drive the
+   8-25 s, 25-34 s, 34-40 s and 40-47 s shots on the bound-resume path and capture DOM text,
+   `paneVisibility('coursebook:pane').get()` and stills for each.
+3. Re-confirm the 73-82 s row's audio asset or cut the "spoken" claim.
+4. Only then update the gate to MET; recording and publishing still need DeseretSaint's approval.
+

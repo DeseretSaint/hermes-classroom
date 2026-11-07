@@ -1,0 +1,104 @@
+{
+  "label": "Resume lesson",
+  "tag": "resume",
+  "clicked": {
+    "x": 403.109375,
+    "y": 275,
+    "label": "Resume lesson",
+    "disabled": false
+  },
+  "before": {
+    "pane": false,
+    "state": {
+      "hash": "#/coursebook",
+      "routeMounted": true,
+      "paneText": null,
+      "bodyHasComposer": false,
+      "bodyText": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nArtifacts\nScheduled jobs\nCoursebook\nPINNED\nHermes Classroom Plugin Feasibility Plan\n3m\nSESSIONS\nRevive Marketing LLC business details\n2h\nLaunch multiple Hermes sessions on Omarchy\n7h\nResume Hermes classroom plugin chat\n7h\n[Message withheld: a pre_llm_call policy hook blocked it.]\n9h\nCasual vs polite Japanese confession\n9h\nEARLIER TODAY\nDiagnose Electron SIGTRAP crash via systemd-coredump\n11h\nDiagnose electron SIGTRAP crash via diagnose-cr"
+    }
+  },
+  "after": {
+    "pane": false,
+    "state": {
+      "hash": "#/coursebook",
+      "routeMounted": true,
+      "paneText": null,
+      "bodyHasComposer": false,
+      "bodyText": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nArtifacts\nScheduled jobs\nCoursebook\nPINNED\nHermes Classroom Plugin Feasibility Plan\n3m\nSESSIONS\nRevive Marketing LLC business details\n2h\nLaunch multiple Hermes sessions on Omarchy\n7h\nResume Hermes classroom plugin chat\n7h\n[Message withheld: a pre_llm_call policy hook blocked it.]\n9h\nCasual vs polite Japanese confession\n9h\nEARLIER TODAY\nDiagnose Electron SIGTRAP crash via systemd-coredump\n11h\nDiagnose electron SIGTRAP crash via diagnose-cr"
+    }
+  },
+  "samples": [
+    {
+      "t": 700,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 1400,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 2100,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 2800,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 3500,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 4200,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 4900,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 5600,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 6300,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 7000,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 7700,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    },
+    {
+      "t": 8400,
+      "pane": false,
+      "hash": "#/coursebook",
+      "route": true
+    }
+  ]
+}

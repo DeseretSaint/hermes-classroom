@@ -1,0 +1,120 @@
+{
+  "scenario": "U04",
+  "name": "200% text / narrow layout / reduced motion / no-media",
+  "mount": {
+    "mounted": false,
+    "error": "timed out waiting for route after 20000ms"
+  },
+  "remount": {
+    "mounted": false,
+    "error": "timed out waiting for route after 20000ms"
+  },
+  "rows": [
+    {
+      "id": "desktop-100",
+      "width": 1440,
+      "height": 900,
+      "font": "16px",
+      "rootFontPx": 16,
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflowX": 0,
+      "routeWidth": null,
+      "routeText": "",
+      "controls": 0,
+      "unnamedControls": 0,
+      "clippedNodes": null,
+      "maxTransitionS": 0,
+      "maxAnimationS": 0,
+      "animationNames": [],
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_3589acce/audit/demo-gate-5b0f124/shots/u04-desktop-100.png"
+    },
+    {
+      "id": "text-200",
+      "width": 1440,
+      "height": 900,
+      "font": "32px",
+      "rootFontPx": 32,
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflowX": 0,
+      "routeWidth": null,
+      "routeText": "",
+      "controls": 0,
+      "unnamedControls": 0,
+      "clippedNodes": null,
+      "maxTransitionS": 0,
+      "maxAnimationS": 0,
+      "animationNames": [],
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_3589acce/audit/demo-gate-5b0f124/shots/u04-text-200.png"
+    },
+    {
+      "id": "narrow-460",
+      "width": 460,
+      "height": 900,
+      "font": "16px",
+      "rootFontPx": 16,
+      "viewport": [
+        460,
+        900
+      ],
+      "overflowX": 0,
+      "routeWidth": null,
+      "routeText": "",
+      "controls": 0,
+      "unnamedControls": 0,
+      "clippedNodes": null,
+      "maxTransitionS": 0,
+      "maxAnimationS": 0,
+      "animationNames": [],
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_3589acce/audit/demo-gate-5b0f124/shots/u04-narrow-460.png"
+    },
+    {
+      "id": "narrow-text-200",
+      "width": 460,
+      "height": 900,
+      "font": "32px",
+      "rootFontPx": 32,
+      "viewport": [
+        460,
+        900
+      ],
+      "overflowX": 0,
+      "routeWidth": null,
+      "routeText": "",
+      "controls": 0,
+      "unnamedControls": 0,
+      "clippedNodes": null,
+      "maxTransitionS": 0,
+      "maxAnimationS": 0,
+      "animationNames": [],
+      "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_3589acce/audit/demo-gate-5b0f124/shots/u04-narrow-text-200.png"
+    }
+  ],
+  "motion": {
+    "mediaMatchesReduce": true,
+    "maxTransitionS": 0,
+    "maxAnimationS": 0,
+    "nodesWithTransition": 0,
+    "nodesWithAnimation": 0,
+    "animationNames": []
+  },
+  "noMedia": {
+    "hash": "#/coursebook",
+    "route": null,
+    "text": "",
+    "images": []
+  },
+  "noMediaShot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_3589acce/audit/demo-gate-5b0f124/shots/u04-no-media.png",
+  "consoleErrors": [
+    {
+      "kind": "console",
+      "level": "error",
+      "text": "Hermes failed to load TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:5174/src/main.tsx?t=1793998910974"
+    }
+  ]
+}

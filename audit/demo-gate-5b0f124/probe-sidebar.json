@@ -1,0 +1,164 @@
+{
+  "width": 960,
+  "height": 1020,
+  "buttons": [
+    {
+      "label": "",
+      "aria": "Hide sidebar",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Open settings",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Layout editor",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "HUD mode",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Swap sidebar sides",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Show right sidebar",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Minimize",
+      "title": null
+    },
+    {
+      "label": "New session\nCtrl\nN",
+      "aria": null,
+      "title": null
+    },
+    {
+      "label": "Capabilities",
+      "aria": null,
+      "title": null
+    },
+    {
+      "label": "Messaging",
+      "aria": null,
+      "title": null
+    },
+    {
+      "label": "Artifacts",
+      "aria": null,
+      "title": null
+    },
+    {
+      "label": "Scheduled jobs",
+      "aria": null,
+      "title": null
+    },
+    {
+      "label": "PINNED",
+      "aria": null,
+      "title": null
+    },
+    {
+      "label": "SESSIONS",
+      "aria": null,
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "New session",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Filters",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "New profile",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Import profile…",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Manage profiles…",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Manage gateways…",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Close",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "New session tab",
+      "title": null
+    },
+    {
+      "label": "Scroll to bottom",
+      "aria": "Scroll to bottom",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Hide status stack",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Add context",
+      "title": null
+    },
+    {
+      "label": "⠋\n⠙\n⠹\n⠸\n⠼\n⠴\n⠦\n⠧\n⠇\n⠏",
+      "aria": "Open model picker",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Voice dictation",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Start voice conversation",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Close",
+      "title": null
+    },
+    {
+      "label": "",
+      "aria": "Restore",
+      "title": null
+    },
+    {
+      "label": "Backend\noffline",
+      "aria": null,
+      "title": null
+    }
+  ],
+  "navTexts": [],
+  "pluginNav": 0,
+  "hash": ""
+}

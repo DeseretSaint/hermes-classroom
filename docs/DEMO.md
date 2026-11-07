@@ -1,36 +1,52 @@
 # Demo script (0.1.0 candidate)
 
-Status: measured, not recordable. Sentinel ran the demo gate on the release commit
-`29bede7643403cd9d608499232125e6347c680dd` (`origin/master`) on 2026-11-07, in a fresh isolated rig:
-home `~/.hermes/coursebook-demo-gate-29bede7/home`, backend `127.0.0.1:44297` serving that worktree,
-Desktop window on CDP 9367. The backend reported `cb.rpc` v7, 52/52 implemented,
-`contract_problems: []`, and the installed `desktop/plugin.js` sha256 is
-`c59ebc3c937385f1119787a5522acda09fb852f8180c06e3d3f4615e3c8281fb`, the file in that commit.
+Status: measured on the pane-reveal build `5b0f124`, not recordable. Sentinel re-ran the gate on
+`2026-11-07` in a fresh isolated rig at `5b0f124630fab9154aef9be5751919eeb8911255` (the merge of
+`13d4a75`, t_d587a007): home `~/.hermes/coursebook-demo-gate-5b0f124/home`, backend
+`hermes serve --isolated` on `127.0.0.1:44317` serving that worktree, Desktop window on CDP 9377.
+The backend reported `cb.rpc` v7 with `contract_problems: []` and `plugin_root` = that worktree; the
+installed `desktop/plugin.js` sha256 is
+`c151974a7de0fed2662e977a001127327b3c3cf96d19a54cd49b819433f935fc`, the file in that commit.
 
-The four scenarios U01-U04 pass on that commit: the `#/coursebook` route mounts from a real sidebar
-click (U01); a bundled Japanese pack previews, imports and creates a course and enrollment through
-the UI (U02); the route is reachable and operable by keyboard with visible focus and named controls
-(U03); and 200% text, 460 px narrow, reduced motion and no-media all hold, with 8 clipped nodes only
-at 460 px plus 200% (U04). Raw captures: `audit/demo-gate/`.
+D1's product half is fixed on `5b0f124`. `13d4a75` adds `revealCoursebookPane()` in
+`desktop/plugin.js`, which feature-detects `host.revealPane` and fronts the `coursebook:pane`
+contribution after `host.newChat` (fresh start) and after `host.openSession` (bound resume). Measured
+on the rig: a section "Start a fresh run" now leaves the route for `#/`, opens a chat **and** reveals
+the Coursebook pane beside it; `paneVisibility('coursebook:pane').get()` returned `true` and the still
+`audit/demo-gate-5b0f124/shots/u08-fresh-start.png` shows the chat column and the Coursebook pane
+together. That is the 8-25 s surface, and it is no longer the blocker it was on `29bede7`.
 
-The demo is still not recordable, and the blocker is now the lesson surface rather than the route.
-On `29bede7`, every lesson-start action ("Resume lesson" on the card or overview, "Start a fresh
-run" in the textbook) moves the window to `#/`, unmounts `[data-cb-route]`, and opens no chat and no
-Coursebook pane. That is the 8-25 s, 25-34 s, 34-40 s and 40-47 s surface, so those shots cannot be
-driven, and D1 in `docs/REVIEW_CB017-demo-gate.md` is a P1 on the recorded build. Separately, the
-Japanese pack the script names states "No audio is bundled", so the 73-82 s narration line "spoken"
-has no asset on this pack. The Library empty state also still says this build has no pack import
-(`desktop/plugin.js:2271`) while import works (D2).
+U01 and U03 pass on `5b0f124`: the `#/coursebook` route mounts from a real sidebar click (U01), and
+the route is reachable and operable by keyboard with visible focus and named controls (U03: 5 tabs to
+"Open Coursebook", Enter mounts the route, 18 in-route stops all `:focus-visible` and named). U04
+holds at 1440 px with 100% and 200% text (document overflow 0, 0 unnamed controls, 0 clipped nodes,
+reduced-motion max transition and animation 0 s). Raw captures: `audit/demo-gate-5b0f124/`.
 
-Gate status: NOT MET on `29bede7`. Recording starts only after Sentinel passes U01-U04 on the exact
-build being recorded, and the shots themselves must be drivable; both are re-run after D1 is fixed.
-Nothing is recorded before that, and no recording is labeled as having passed this gate. Recording
-and publishing also need DeseretSaint's approval.
+The demo is still not recordable, and the remaining blocker is reachability on the rig rather than the
+route or the pane. The isolated backend has no inference provider: the shell reports
+`Backend: inference unavailable` and a fresh thread stays on `Waking up default…`. With no first turn
+there is no durable stored session id, so no active chat binding can be created, `Submit answer` stays
+disabled (the section states "This section's chat binding is detached"), and the notebook has no
+teaching segments to save ("Segments appear here after a teaching turn in the bound chat"). Therefore
+the 8-25 s graded attempt, the 25-34 s evidence transition, the 34-40 s notebook save and the 40-47 s
+bound restart/resume cannot be driven on this rig, and the 73-82 s narration line still has no asset
+because the named Japanese pack declares "No audio is bundled". Separately, the Library empty state
+still says this build has no pack import (`desktop/plugin.js:2271`) while import works (D2).
 
-The one operator action left, beyond the D1 fix, is profile choice: this host runs one gateway,
-owned by profile `default`, and a second gateway is refused. To record chat and pane together,
-install the recorded commit into that profile and restart its gateway
-(`scripts/install-local.sh --home ~/.hermes/profiles/default`, then `hermes gateway restart`).
+Gate status: NOT MET on `5b0f124`. D1's product half is fixed, but U01-U04 and the four learning shots
+have not been measured on the exact build that would be recorded in the default profile, and the
+shots above remain undrivable until a profile with inference plus an active binding is in place.
+Recording starts only after Sentinel passes U01-U04 on the exact build being recorded, and the shots
+themselves must be drivable; both are re-run after that profile is chosen. Nothing is recorded before
+that, and no recording is labeled as having passed this gate. Recording and publishing also need
+DeseretSaint's approval.
+
+The one operator action that remains is profile choice and inference: this host runs one gateway,
+owned by profile `default`, and a second gateway is refused. To record chat and pane together, install
+the recorded commit into that profile and restart its gateway
+(`scripts/install-local.sh --home ~/.hermes/profiles/default`, then `hermes gateway restart`), so the
+chat runs on a profile that can actually answer. Until then the pane surface is proven but the chat
+beside it is not.
 
 ## Rules
 
@@ -61,12 +77,13 @@ Times are targets. Total must stay under 90 seconds.
 | 73-82s | Lesson media | Show the sourced visual and audio, then the text alternative and the next review date | "A sourced visual, spoken, with the text right here. The next review is scheduled." | Media precomputed and disclosed; navigation live | Media, scheduling |
 | 82-86s | Closing card | Static end card | "A chat answers. Coursebook makes the next step depend on what you did." | Static | None |
 
-The route itself mounts on `29bede7` (U01), so no row is excluded for an unmounted surface. The rows
-that cannot be captured today are 8-25 s, 25-34 s, 34-40 s and 40-47 s: starting a lesson leaves the
-route for `#/` (D1), so the chat-and-pane, attempt, notebook and restart shots have no surface to
-show. The 73-82 s row has a visual and a text alternative but no audio in the named pack. Those rows
-stay in the script as targets, not as shots that can be captured today. A partial cut that drops them
-is a different video with different claims, not this script.
+The route and the pane surface mount on `5b0f124` (U01, U03), so no row is excluded for an unmounted
+surface. The rows that cannot be captured today are 8-25 s, 25-34 s, 34-40 s and 40-47 s: the chat on
+the isolated rig cannot answer (`Backend: inference unavailable`, `Waking up default…`), so there is no
+first turn, no stored session id, no active binding, a disabled Submit and no teaching segment to save.
+The 73-82 s row has a visual and a text alternative but no audio in the named pack. Those rows stay in
+the script as targets, not as shots that can be captured today. A partial cut that drops them is a
+different video with different claims, not this script.
 
 ## Precomputed and live split
 

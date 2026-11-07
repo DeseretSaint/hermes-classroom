@@ -1,0 +1,128 @@
+{
+  "steps": [
+    {
+      "label": "Open this section",
+      "x": 465.46875,
+      "y": 359.171875,
+      "visibleCount": 1,
+      "total": 1
+    }
+  ],
+  "state": {
+    "hash": "#/coursebook",
+    "text": "Coursebook\nOne objective, its evidence and the next permitted action.\nNew course\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nCasual\nTell everyday affection from a direct romantic declaration\nResume lesson\nView\nTextbook\nTell everyday affection from a direct romantic declaration\nNot started\ndiscrimination\nLast opened just now\nmissing\nThis section’s chat binding is detached. Submit stays disabled until it is reconciled.\nReattach\nResume this section\nStart a fresh run\nAll sections\nTEACHING SEGMENTS\nteaching\nSave to notebook\nLesson 1 — two ways of saying it\n\nThis is a demonstration lesson for an adult beginner (L0). Every Japanese line is followed by\nromaji and an English meaning. Romaji is a scaffold: it helps you hear the shape of the line, and\nit is not evidence that you can read Japanese.\n\nDialogue A — two friends, after a film\n\nMika: たのしかったね。 (tanoshikatta ne.) — \"That was fun, wasn't it?\"\nJun: うん。また行こう。 (un. mata ikou.) — \"Yeah. Let's go again.\"\nMika: うん、好きだよ。 (un, suki da yo.) — \"Yeah, I like you.\"\n\n好き (suki) is a na-adjective: it describes the person or thing that is liked, not an action\nthe speaker performs. 好きだよ (suki da yo) is the casual form, used with friends and people you\nare already close to. The final よ (yo) softens the statement and offers it as new information.\n\nDialogue B — a confession\n\nAoi: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"\n\nThis is the shape of a 告白 (kokuhaku), a romantic confession. The polite form 好きです\n(suki desu) carries the seriousness of the moment, and 付き合ってください (tsukiatte kudasai)\nis the request to start seeing each other.\n\nです (desu) is the polite copula; it marks that the addressee is being addressed politely\n(丁寧語, teineigo). It does not by itself make a sentence romantic. The romantic reading comes\nfrom the situation and from the request that follows.\n\nWhat changes between A and B?\n\t\nDialogue A\n\t\nDialogue B\n\nWho is speaking\tfriends\ttwo people not yet a couple\nSetting\tcasual, after an outing\tprivate, deliberate\nForm\t好きだよ (suki da yo)\t好きです — polite (suki desu)\nWhat it does\tstates affection\tmakes a romantic confession\n\nThe words are close; the relationship and the setting decide how the line is heard. A literal\ntranslation of English \"I love you\" is not enough to choose between them.\n\nNote on the sources\n\nThe A1 curriculum reference used here teaches すきです (suki desu) as a basic sentence pattern,\nand it presents beginner Japanese with romaji alongside kana. That is a curriculum fact, not a\nclaim that any one phrase is t",
+    "buttons": [
+      {
+        "label": "New course",
+        "disabled": false,
+        "w": 83
+      },
+      {
+        "label": "Courses",
+        "disabled": false,
+        "w": 61
+      },
+      {
+        "label": "Library",
+        "disabled": false,
+        "w": 54
+      },
+      {
+        "label": "Parent Studio",
+        "disabled": false,
+        "w": 87
+      },
+      {
+        "label": "All courses",
+        "disabled": false,
+        "w": 79
+      },
+      {
+        "label": "Resume lesson",
+        "disabled": false,
+        "w": 103
+      },
+      {
+        "label": "Overview",
+        "disabled": false,
+        "w": 0
+      },
+      {
+        "label": "Textbook",
+        "disabled": false,
+        "w": 0
+      },
+      {
+        "label": "Notebook",
+        "disabled": false,
+        "w": 0
+      },
+      {
+        "label": "Quizzes",
+        "disabled": false,
+        "w": 0
+      },
+      {
+        "label": "Plan",
+        "disabled": false,
+        "w": 0
+      },
+      {
+        "label": "Evidence",
+        "disabled": false,
+        "w": 0
+      },
+      {
+        "label": "Sources",
+        "disabled": false,
+        "w": 0
+      },
+      {
+        "label": "Textbook",
+        "disabled": false,
+        "w": 176
+      },
+      {
+        "label": "Reattach",
+        "disabled": false,
+        "w": 68
+      },
+      {
+        "label": "Resume this section",
+        "disabled": false,
+        "w": 128
+      },
+      {
+        "label": "Start a fresh run",
+        "disabled": false,
+        "w": 106
+      },
+      {
+        "label": "All sections",
+        "disabled": false,
+        "w": 81
+      },
+      {
+        "label": "Save to notebook",
+        "disabled": false,
+        "w": 113
+      },
+      {
+        "label": "Save to notebook",
+        "disabled": false,
+        "w": 113
+      },
+      {
+        "label": "Submit answer",
+        "disabled": true,
+        "w": 99
+      },
+      {
+        "label": "Edit answer",
+        "disabled": true,
+        "w": 83
+      }
+    ]
+  },
+  "consoleErrors": []
+}

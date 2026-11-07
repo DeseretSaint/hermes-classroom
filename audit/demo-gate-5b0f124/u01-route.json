@@ -1,0 +1,84 @@
+{
+  "scenario": "U01",
+  "name": "/coursebook route live",
+  "startedAt": "2026-11-07T02:28:47.304Z",
+  "mounted": true,
+  "waitedMs": 51,
+  "steps": [
+    {
+      "step": "start",
+      "hash": "#/capabilities",
+      "route": null
+    },
+    {
+      "step": "click-sidebar-coursebook",
+      "x": 130,
+      "y": 227,
+      "label": "Coursebook",
+      "disabled": false
+    }
+  ],
+  "state": {
+    "hash": "#/coursebook",
+    "route": "/coursebook",
+    "destination": "courses",
+    "routeText": "Coursebook\nA governed learning workspace: one objective, real evidence, honest next steps.\nNew course\nCourses\nLibrary\nParent Studio\nAll\nIn progress\nReview due\nArchived\nJapanese affection and register — an L0 demonstration classroom\nCasual\nResume Explain why register changes with the relationship\n0 independent · 4 objectives\nFrom a local pack · v1.0.0\nOpen\nResume lesson",
+    "headings": [],
+    "buttons": [
+      {
+        "label": "New course",
+        "disabled": false
+      },
+      {
+        "label": "Courses",
+        "disabled": false
+      },
+      {
+        "label": "Library",
+        "disabled": false
+      },
+      {
+        "label": "Parent Studio",
+        "disabled": false
+      },
+      {
+        "label": "All",
+        "disabled": false
+      },
+      {
+        "label": "In progress",
+        "disabled": false
+      },
+      {
+        "label": "Review due",
+        "disabled": false
+      },
+      {
+        "label": "Archived",
+        "disabled": false
+      },
+      {
+        "label": "Open",
+        "disabled": false
+      },
+      {
+        "label": "Resume lesson",
+        "disabled": false
+      },
+      {
+        "label": "Actions for Japanese affection and register — an L0 demonstration classroom",
+        "disabled": false
+      }
+    ],
+    "cards": [],
+    "emptyCopy": null,
+    "routeBox": {
+      "w": 700,
+      "h": 966,
+      "x": 260,
+      "y": 34
+    },
+    "bodyHasCoursebookWords": true
+  },
+  "consoleErrors": []
+}

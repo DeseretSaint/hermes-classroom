@@ -1,0 +1,312 @@
+{
+  "hash": "#/capabilities?tab=plugins",
+  "clicked": {
+    "x": 367.2890625,
+    "y": 72,
+    "label": "Plugins",
+    "disabled": false
+  },
+  "mainText": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nArtifacts\nScheduled jobs\nPINNED\nHermes Classroom Plugin Feasibility Plan\nnow\nSESSIONS\nRevive Marketing LLC business details\n2h\nLaunch multiple Hermes sessions on Omarchy\n7h\nResume Hermes classroom plugin chat\n7h\n[Message withheld: a pre_llm_call policy hook blocked it.]\n9h\nCasual vs polite Japanese confession\n9h\nEARLIER TODAY\nDiagnose Electron SIGTRAP crash via systemd-coredump\n11h\nDiagnose electron SIGTRAP crash via diagnose-crash skill\n11h\nDiagnose electron SIGTRAP crash via systemd-coredump\n11h\nDiagnose Electron SIGTRAP crash via systemd-coredump #2\n11h\nDiagnose Electron SIGTRAP crash on Omarchy\n11h\nExplain casual vs polite affection\n12h\nCasual vs polite affection difference\n12h\nPractise transfer section\n13h\nIdentify practice focus for section\n13h\nChoose line for first confession\n13h\nLearn two lines, lesson 1\n13h\nYESTERDAY\nFix broken Hermes update from last session\n18h\nOur last session was trying to update Hermes and broke. Can ...\n18h\nCan you make sure Hermes is updated to the most current vers...\n18h\nOmarchy audio output labels inconsistent\n22h\nFix flipped Smart monitor arrangement\n22h\nOmarchy Animated Backgrounds Version Check\n1d\nSecondary Monitor Dashboard Ideas for Deseret Marketing\n1d\nDiagnosing PortAudio JACK Python crash\n1d\nFixing Omarchy screen bar misconfiguration\n1d\nLAST WEEK\nHigh fan speed due to power profile\n6d\nPipeWire swapped monitor audio labels\n6d\nKimi K3.1 Pro fails to load in the desktop.\n6d\nI asked for deepseek 1017 to be the defualt model last chat ...\n6d\nSetting DeepSeek V4.1 as Default Agent\n6d\nReply with exactly: DEEPSEEK_OK\n6d\nCRON JOBS\nA\nC\nC\nH\nL\nQ\nS\nS\nV\nSkills\n84\nPlugins\nConnectors\nTools\n25\nPlugins\nAuto-update\nOff\nUpdate all\nInstall from Git\nCategory\nTier\nAll\n/\nAutomation\nDesktop\nGeneral\n+6\nFILTERS\nDiscover Plugins\nNousResearch\nHermes Memory Wiki\nMemory Wiki dashboard tab and opt-in native Desktop page: browsable subject pages and daily logs derived from local session history, plus a read-only Persistent Memory (MEMORY.md / USER.md) audit panel.\nOfficial\n609\nInstall\nNousResearch\nBlender\nOfficial Blender Lab MCP server over stdio, pinned to upstream v1.0.3, with a Blender workflow skill. Needs Git and uv; Blender 5.1+ is not needed at install. The skill opens Blender itself when a task needs it and, after you agree, installs Blender and Blender Lab's MCP add-on. First startup downloads Python dependencies; prepare the uv environment before connecting. Disclosure — tools execute arbitrary Python in Blender with your privileges; the skill starts Blender with online access for that session only (your saved preference is unchanged), and the add-on's local server on port 9876 has no password, so any program on this computer can use it while Blender is open; only after you agree does the skill download Blender from download.blender.org (about 400 MB, about 1.5 GB unpacked), check it against blender.org's sha256 list and install it in your own folder without administr",
+  "buttons": [
+    {
+      "label": "1",
+      "aria": "Hide sidebar · 1 unread session",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Open settings",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Layout editor",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "HUD mode",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Swap sidebar sides",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Show right sidebar",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Minimize",
+      "disabled": false
+    },
+    {
+      "label": "New session\nCtrl\nN",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "Capabilities",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "Messaging",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "Artifacts",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "Scheduled jobs",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "PINNED",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "Hermes Classroom Plugin Feasibility Plan",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "SESSIONS",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Mark all as read",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "New session",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Filters",
+      "disabled": false
+    },
+    {
+      "label": "Revive Marketing LLC business details",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Launch multiple Hermes sessions on Omarchy",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Resume Hermes classroom plugin chat",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "[Message withheld: a pre_llm_call policy hook blocked it.]",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Casual vs polite Japanese confession",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "EARLIER TODAY",
+      "aria": "Hide Earlier today sessions",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "New session",
+      "disabled": false
+    },
+    {
+      "label": "Diagnose Electron SIGTRAP crash via systemd-coredump",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Diagnose electron SIGTRAP crash via diagnose-crash skill",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Diagnose electron SIGTRAP crash via systemd-coredump",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Diagnose Electron SIGTRAP crash via systemd-coredump #2",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Diagnose Electron SIGTRAP crash on Omarchy",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Explain casual vs polite affection",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Casual vs polite affection difference",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Practise transfer section",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Identify practice focus for section",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Choose line for first confession",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Learn two lines, lesson 1",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "YESTERDAY",
+      "aria": "Hide Yesterday sessions",
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "New session",
+      "disabled": false
+    },
+    {
+      "label": "Fix broken Hermes update from last session",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Our last session was trying to update Hermes and broke. Can ",
+      "aria": null,
+      "disabled": false
+    },
+    {
+      "label": "",
+      "aria": "Session actions",
+      "disabled": false
+    },
+    {
+      "label": "Can you make sure Hermes is updated to the most current vers",
+      "aria": null,
+      "disabled": false
+    }
+  ]
+}
