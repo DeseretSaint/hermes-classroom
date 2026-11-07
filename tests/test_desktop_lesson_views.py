@@ -94,6 +94,10 @@ export const KEYBINDS_AREA = 'keybinds'
 export const SETTINGS_PLUGINS_AREA = 'settings.plugins'
 export const TOOL_MEDIA_RENDERER_AREA = 'tool.media'
 export const useValue = (a) => a.get()
+export const useTheme = () => ({
+  renderedMode: globalThis.__CB_TEST_MODE__ === 'dark' ? 'dark' : 'light',
+  resolvedMode: globalThis.__CB_TEST_MODE__ === 'dark' ? 'dark' : 'light'
+})
 
 export const Button = (props) =>
   el('button', {
@@ -148,7 +152,8 @@ export const host = {
     focusedSessionId: atom(null),
     focusedStoredSessionId: atom(null),
     focusedSessionProfile: atom('default'),
-    profile: atom('default')
+    profile: atom('default'),
+    viewport: atom({ width: Number(globalThis.__CB_TEST_WIDTH__ || 1280), height: 900, narrow: false })
   },
   profileRoutes: async () => [{ connectionId: 'local', mode: 'local', profile: 'default', targetProfile: 'default' }],
   navigate: () => {},
