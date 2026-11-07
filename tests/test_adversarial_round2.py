@@ -390,41 +390,116 @@ class BreadthTest(unittest.TestCase):
 
 
 class LocalizationTest(unittest.TestCase):
-    """Finding H10-7: scaffolds are Japanese-shaped and required for every locale."""
+    """H-18: scaffolds are locale-aware and every document can carry lang/direction."""
 
-    def test_scaffold_object_is_required_even_for_french(self) -> None:
-        lesson = fixture("lesson_ja")
-        lesson["check"].pop("scaffolds", None)
-        with self.assertRaises(gen.GenerationRejected):
-            gen.validate_artifact(gen.LESSON_SCHEMA, lesson, what="lesson")
-        self.assertEqual(set(gen.LESSON_SCHEMA["properties"]["check"]["properties"]["scaffolds"]["properties"]),
-                         {"romaji", "furigana", "english_meaning"})
-        self.assertEqual(gen._scaffold_policy("committed", {"level": "A1"}, "fr-FR"),
-                         {"romaji": False, "furigana": False, "english_meaning": False})
+    AR_BLOCKS = [
+        {
+            "id": "blk_ar00001",
+            "role": "orient",
+            "headline": "مرحبا",
+            "short": "تحية عند الدخول.",
+            "deep": "تحية عربية عند الدخول إلى متجر.",
+            "check_id": None,
+            "media": [],
+            "source_ids": [],
+        }
+    ]
 
-    def test_non_japanese_locale_has_no_scaffold_or_direction_path(self) -> None:
-        # There is no scaffold vocabulary for a non-Japanese language: the policy silently
-        # returns an all-false Japanese scaffold triple, and the prompt note is empty.
-        self.assertEqual(gen._scaffold_note(gen._scaffold_policy("committed", {"level": "A1"}, "ar-SA"),
-                                            "ar-SA"), "")
+    def test_french_does_not_need_a_japanese_scaffold(self) -> None:
+        # A French A1 lesson declares no scaffold at all and still satisfies the schema. The
+        # policy no longer hands it an all-false Japanese triple.
+        gen.validate_artifact(gen.LESSON_SCHEMA, fixture("lesson_fr"), what="lesson")
+        self.assertEqual(gen._scaffold_policy("committed", {"level": "A1"}, "fr-FR"), {})
+        self.assertEqual(
+            gen._scaffold_note(gen._scaffold_policy("committed", {"level": "A1"}, "fr-FR"), "fr-FR"),
+            "",
+        )
+
+    def test_scaffold_vocabulary_is_open_and_bounded(self) -> None:
+        from coursebook import localization
+
+        # A non-Japanese locale declares the kinds its own rule names.
+        lesson = fixture("lesson_fr")
+        lesson["check"]["scaffolds"] = [{"kind": "gloss", "gloss": "en", "direction": "ltr"}]
+        gen.validate_artifact(gen.LESSON_SCHEMA, lesson, what="lesson")
+        # The legacy Japanese triple still reads, so old pages are not rewritten.
+        gen.validate_artifact(gen.LESSON_SCHEMA, fixture("lesson_ja"), what="lesson")
+        self.assertIn("english_meaning", gen.LESSON_SCHEMA["properties"]["check"]["properties"]["scaffolds"]["oneOf"][0]["properties"])
+        # Unknown values are refused: kind, field, script and direction are all bounded.
+        for bad in (
+            [{"kind": "romaji_squared"}],
+            [{"kind": "gloss", "colour": "red"}],
+            [{"kind": "gloss", "script": "klingon"}],
+            [{"kind": "gloss", "direction": "up"}],
+        ):
+            candidate = dict(lesson)
+            candidate["check"] = dict(lesson["check"], scaffolds=bad)
+            with self.assertRaises(gen.GenerationRejected):
+                gen.validate_artifact(gen.LESSON_SCHEMA, candidate, what="lesson")
+        self.assertEqual(localization.SCAFFOLD_KINDS[0], "romaji")
+
+    def test_arabic_carries_rtl_and_a_locale_scaffold(self) -> None:
+        from coursebook import contracts, lesson_document
+
+        policy = gen._scaffold_policy("committed", {"level": "A1"}, "ar-SA")
+        self.assertEqual(policy, {"diacritics": True})
+        note = gen._scaffold_note(policy, "ar-SA")
+        self.assertIn("diacritics", note)
+        self.assertIn("right-to-left", note)
+
+        document = lesson_document.document_from_blocks(
+            self.AR_BLOCKS, section_title="تحية", locale="ar-SA"
+        )
+        self.assertEqual(document["lang"], "ar-SA")
+        self.assertEqual(document["direction"], "rtl")
+        lesson_document.validate_document(document)
+        contracts.validate_definition("cb.rpc", "lesson_document", document)
+
+        # No locale, no direction claim: the projection does not invent one.
+        plain = lesson_document.document_from_blocks(self.AR_BLOCKS, section_title="Greeting")
+        self.assertNotIn("direction", plain)
+        self.assertNotIn("lang", plain)
+        lesson_document.validate_document(plain)
+
+    def test_japanese_l0_still_requires_romaji(self) -> None:
         from coursebook import lesson_document
 
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
-            json.dump({"schema_version": 1, "blocks": []}, handle)
-            path = handle.name
-        try:
-            document = json.loads(Path(path).read_text(encoding="utf-8"))
-            for field in ("direction", "bidi", "rtl", "lang"):
-                self.assertNotIn(field, canonical_json(document))
-            # A document with no text direction is rejected only for its missing required fields;
-            # direction/language are not among the contract's required document fields.
-            with self.assertRaises(lesson_document.LessonDocumentError) as caught:
-                lesson_document.validate_document({"schema_version": 1, "blocks": []})
-            message = str(caught.exception).lower()
-            for field in ("direction", "bidi", "rtl", "lang"):
-                self.assertNotIn(field, message.split("missing", 1)[-1])
-        finally:
-            os.unlink(path)
+        policy = gen._scaffold_policy("committed", {"level": "L0"}, "ja-JP")
+        self.assertEqual(policy, {"romaji": True, "furigana": True, "gloss": True})
+
+        lesson = fixture("lesson_ja")
+        lesson["check"]["scaffolds"] = []
+        with self.assertRaises(gen._RuleViolation) as caught:
+            gen.enforce_lesson_rules(
+                lesson,
+                section={},
+                objective=None,
+                recipe="committed",
+                locale="ja-JP",
+                dials={"level": "L0"},
+            )
+        self.assertTrue(any("romaji" in reason for reason in caught.exception.reasons))
+
+        # The legacy triple declares romaji, so the same lesson passes the scaffold gate.
+        gen.enforce_lesson_rules(
+            fixture("lesson_ja"),
+            section={},
+            objective=None,
+            recipe="committed",
+            locale="ja-JP",
+            dials={"level": "L0"},
+        )
+
+        # An old page records no locale, so its document omits lang/direction and still reads.
+        document = lesson_document.document_from_page(fixture("lesson_ja"))
+        for field in ("direction", "bidi", "rtl", "lang"):
+            self.assertNotIn(field, document)
+        lesson_document.validate_document(document)
+
+        # When the course locale is known, the projection adds it without touching evidence.
+        with_locale = lesson_document.document_from_page(fixture("lesson_ja"), locale="ja-JP")
+        self.assertEqual((with_locale["lang"], with_locale["direction"]), ("ja-JP", "ltr"))
+        lesson_document.validate_document(with_locale)
 
 
 class HostSeamTest(unittest.TestCase):

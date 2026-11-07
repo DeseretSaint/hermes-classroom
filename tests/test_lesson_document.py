@@ -422,6 +422,7 @@ class ContractSurfaceTest(unittest.TestCase):
             {
                 "schema_version", "document_id", "content_hash", "section_title", "objective_id",
                 "state", "view_note", "views", "blocks", "check_id", "source_ids", "procedure",
+                "lang", "direction",
             },
         )
         self.assertNotIn("transcript", json.dumps(document))

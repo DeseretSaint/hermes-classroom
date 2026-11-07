@@ -5925,8 +5925,6 @@ def _build_learner_page(
     page = {
         "section_title": lesson["section_title"],
         "lesson_intent": section.get("lesson_intent"),
-        "lang": localization.normalize_locale(locale),
-        "direction": localization.direction_for_locale(locale),
         "segments": [
             {
                 "kind": segment["kind"],
@@ -5991,6 +5989,12 @@ def _build_learner_page(
         "parent_notes": lesson.get("parent_notes"),
         "supervision_notes": list(lesson.get("supervision_notes") or []),
     }
+    lang = localization.normalize_locale(locale)
+    direction = localization.direction_for_locale(lang)
+    if lang is not None:
+        page["lang"] = lang
+    if direction is not None:
+        page["direction"] = direction
     return page
 
 

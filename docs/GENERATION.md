@@ -190,9 +190,18 @@ call and can never look validated:
   `committed` requires spaced review and graded checks; `casual` must label what its evidence shows;
   `parent` must be `parent_led`, carry a parent block with supervision notes and hazards, and use
   observations rather than graded quizzes.
-* Locale scaffolds are task-mandated, never a learning-style diagnosis: Japanese at declared L0
-  requires romaji in the plan's context needs and in every check's scaffold flags. Romaji is
-  recorded as a scaffold and never as reading evidence.
+* Locale scaffolds are task-mandated accessibility aids, never a learning-style diagnosis and
+  never evidence of unaided skill. The mandate is keyed by primary locale **and** declared level:
+  Japanese at L0/L1 requires `romaji`, `furigana` and a `gloss` (the legacy `english_meaning`)
+  in the plan's context needs and in every check's scaffold list; Arabic at beginner level
+  requires `diacritics` (harakat); French requires none. A locale with no rule declares no
+  scaffold rather than an all-false Japanese triple. The bounded vocabulary is
+  `romaji`, `furigana`, `gloss`, `transliteration`, `diacritics`, `pinyin`, `script_guide`.
+  Romaji is recorded as a scaffold and never as reading evidence.
+* Text direction is a property of the script, not of the learner. `ar`, `fa`, `he`, `ur` and the
+  other right-to-left primary languages produce `direction: rtl`; every recorded locale is
+  `ltr` otherwise. The direction is carried on the document/page so every view renders the same
+  text the same way, and it changes no evidence semantics.
 * **Claim-level provenance.** `provenance_violations` walks every string in the plan (and, when the
   ledger is supplied, the lesson) and refuses any URL, DOI, ISBN, or cued title/publisher/
   attribution the ledger cannot account for. A cited source id is no longer the only citation
@@ -275,11 +284,19 @@ that deep text does not contain. The writer never slices or summarises `deep` in
 The learner page is built from an allowlist, never by deleting keys:
 
 ```
-section_title, lesson_intent, segments[{kind, heading, body, short}],
+section_title, lesson_intent, lang, direction, segments[{kind, heading, body, short}],
 worked_example{prompt, steps, answer, short}, learner_explanation, learner_explanation_short,
 check{kind, stimulus{prompt,format,choices,items}, learner_instructions, evidence_target,
       scaffolds, assistance_policy}, sources, media, parent_notes, supervision_notes
 ```
+
+`lang` and `direction` are recorded only when the brief declared a locale: the page that authored
+after H-18 carries them, an older page omits both and keeps its hash and id. `check.scaffolds` is
+the open bounded list `[{kind, script?, gloss?, direction?}]`; the legacy
+`{romaji, furigana, english_meaning}` object is still accepted on read and normalised to
+`[{kind: romaji}, {kind: furigana}, {kind: gloss}]`. Unknown kinds, scripts, directions, fields
+and duplicate kinds are refused. A French lesson may declare `[]`; Japanese L0 must declare
+`romaji`, `furigana` and `gloss`.
 
 The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and `rubric` go to
 `checks.reference_json` / `checks.rubric_json` and never to `gen_lessons.page_json`. Two guards
@@ -514,7 +531,9 @@ failed one, and the hard ceiling is never weakened by the recovery path.
 with a fake LLM and fake search seam. Covered: malformed JSON, empty and oversized plans,
 fabricated citations, contradictory sources, research unavailable, one-off quiz suppression,
 parent hazard rejection, rejected check regeneration and second-failure parking, accepted
-alternatives, Japanese L0 romaji/furigana scaffolds, reference-answer leakage, provider timeout,
+alternatives, Japanese L0 romaji/furigana/gloss scaffolds, a non-Japanese (French A1) lesson that
+declares no scaffold, Arabic RTL document direction, legacy scaffold and document reading,
+reference-answer leakage, provider timeout,
 retry idempotency, cost ceilings, unknown cost staying null, structural separation of the two
 passes, web text not becoming policy, configured deadlines and their env overrides, a successful
 115 s call not being declared late, the sized lesson budget above the pipeline floor, and a

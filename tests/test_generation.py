@@ -1432,7 +1432,7 @@ class LessonJobTest(GenerationTestBase):
         self.assertEqual(reference["accepted_alternatives"], [["konnichiwa"]])
         stimulus = json.loads(check["stimulus_json"])
         self.assertIn("choices", stimulus)
-        self.assertTrue(stimulus["scaffolds"]["romaji"])
+        self.assertIn({"kind": "romaji"}, stimulus["scaffolds"])
 
     # ── CB-011-D1: completability on a real provider ──────────────────────
 
