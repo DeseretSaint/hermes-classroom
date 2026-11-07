@@ -369,12 +369,28 @@ No new values may be added to these in 0.1.0, for any construct in this document
 - `evidence_target` stays the six labels (`generation.py:127`).
 - `evidence_class` stays the six labels (`contracts/vocabulary.v1.json:18`). `model_assessed` is
   **not** an evidence class and must never be promoted into one.
-- No `artifact.submit`, `code.run`, `performance.submit` or `observation.record` method.
+- No `artifact.submit`, `code.run` or `performance.submit` method.
 - No learner-upload path in the artifact store; `artifact.get` stays read-only.
 - No retention of learner audio, video or files.
 
 If a later implementation needs any of these, it needs a contract revision, a migration, a new
 lane, and the gate evidence in §10 — in that order.
+
+**2026-11-07 — `observation.record` is authorised at `cb.rpc` v14 (H-53, `t_6646238d`); the other
+three stay frozen.** The bullet above originally grouped `observation.record` with the three
+construct widenings, and that grouping was a drafting over-reach. §11 records **B-2** as a High
+defect — `domain.record_observation` has no RPC method, handler or UI, so `self_reported` and
+`parent_reported` are declared contract classes that no learner can produce — and the supervisor's
+decision is that **B-2 wins**. H-53 appends one method that writes exactly one layer-1 `evidence`
+row, and it adds no check kind, no answer kind, no evidence-class value (both classes were already
+frozen vocabulary in `contracts/vocabulary.v1.json`), no learner upload and no learner-media
+retention; it exposes an existing kernel call under existing vocabulary. `cb.db` v9 adds the
+nullable `evidence.note` column the call had been accepting and dropping. This is a repair of a
+reachability defect, not a fourth construct. The §9 bullet is amended accordingly: the item is
+removed from the list, and `artifact.submit`, `code.run` and `performance.submit` remain
+unauthorised — each still needs its own gate evidence in §10 and a later contract revision. B-2's
+remaining half (a handler and a surface) is the H-16 follow-up cards, not a license to widen a
+construct.
 
 ---
 
