@@ -13,8 +13,12 @@ export async function waitRoute(cdp, timeout = 20000) {
 }
 
 export async function reset(cdp) {
-  await cdp.eval(`location.hash = '#/coursebook'`)
+  // The skill's rule: a reload alone can restore a deep route. Go to the shell root first, then
+  // back into the plugin, so a course detail or an open create flow cannot survive the reset.
+  await cdp.eval(`location.hash = '#/'`)
   await cdp.wait(400)
+  await cdp.eval(`location.hash = '#/coursebook'`)
+  await cdp.wait(700)
   await waitRoute(cdp).catch(() => {})
   await cdp.wait(600)
   // Leave a course detail / create flow if one is open.

@@ -114,7 +114,12 @@ const SURFACES = [
     setup: async (cdp) => { await reset(cdp) },
     valid: async (cdp) => {
       const s = await snapshot(cdp)
-      return s.mounted && s.destination === 'courses' && /CONTINUE|Pick up where you left off/.test(s.text)
+      return (
+        s.mounted &&
+        s.destination === 'courses' &&
+        /CONTINUE|Pick up where you left off/.test(s.text) &&
+        !/STEP \d OF 3/.test(s.text)
+      )
     },
     reset: async (cdp) => { await reset(cdp) }
   },
@@ -124,7 +129,11 @@ const SURFACES = [
     setup: async (cdp) => { await reset(cdp); await click(cdp, 'Search and manage courses', { exact: false, wait: 2200 }) },
     valid: async (cdp) => {
       const s = await snapshot(cdp)
-      return s.mounted && /Search courses/.test(s.text) && /Back to the Field Desk/.test(s.text)
+      return (
+        s.mounted &&
+        /Back to the Field Desk/.test(s.text) &&
+        (s.controls || []).some((c) => c.label === 'Search courses')
+      )
     },
     reset: async (cdp) => { await reset(cdp) }
   },
@@ -134,7 +143,11 @@ const SURFACES = [
     setup: openCourse,
     valid: async (cdp) => {
       const s = await snapshot(cdp)
-      return s.mounted && /All courses/.test(s.text) && /Course view:/.test(s.text)
+      return (
+        s.mounted &&
+        /All courses/.test(s.text) &&
+        (s.controls || []).some((c) => /^Course view:/.test(c.label))
+      )
     },
     reset: openCourse
   },
@@ -237,9 +250,39 @@ const SURFACES = [
   }
 ]
 
+async function locate(cdp, control) {
+  // Resolve the control by label + occurrence and scroll it into the viewport before reading its
+  // center. Snapshot coordinates are viewport-relative and go stale off-screen: without this, a
+  // control below the fold is "clicked" at a point outside the window and records a false no-op.
+  return cdp.json(`(() => {
+    const root = document.querySelector('${ROUTE}') || document.body
+    const nodes = [...root.querySelectorAll('button,a[href],[role="tab"],[role="option"],[role="menuitem"],[role="switch"],summary,label[for],input,select,textarea')]
+    const vis = (e) => { const b = e.getBoundingClientRect(); return b.width > 1 && b.height > 1 }
+    const norm = (e) => (e.getAttribute('aria-label') || e.innerText || e.value || e.getAttribute('placeholder') || '').replace(/\\s+/g, ' ').trim().slice(0, 120)
+    const wanted = ${JSON.stringify(control.label)}
+    const matches = nodes.filter((e) => vis(e) && norm(e) === wanted)
+    const el = matches[${Math.max(0, (control.occurrence || 1) - 1)}] || matches[0]
+    if (!el) return null
+    el.scrollIntoView({ block: 'center' })
+    const b = el.getBoundingClientRect()
+    return {
+      x: b.x + b.width / 2,
+      y: b.y + b.height / 2,
+      w: Math.round(b.width),
+      h: Math.round(b.height),
+      disabled: !!el.disabled || el.getAttribute('aria-disabled') === 'true'
+    }
+  })()`)
+}
+
 async function inventorySurface(cdp, surface, index) {
   const before = await snapshot(cdp)
   if (!before.mounted) throw new Error(`[${surface.name}] route did not mount`)
+  // A surface that did not reach its own definition is not evidence of anything. H-64R's walker
+  // skipped this check and inventoried whatever was on screen (course-detail once recorded Parent
+  // Studio as "reached"), which turns a setup failure into a false green.
+  const reached = await surface.valid(cdp).catch(() => false)
+  if (!reached) throw new Error(`[${surface.name}] setup did not reach the surface definition`)
   const surfaceShot = await shot(cdp, resolve(OUT_DIR, `${String(index).padStart(2, '0')}-${surface.name}.png`))
   const controls = []
   const seen = new Map()
@@ -271,6 +314,24 @@ async function inventorySurface(cdp, surface, index) {
       controls.push(row)
       continue
     }
+    // A control already in its active state (the current nav segment, the chosen option) has no
+    // state left to change. This is not a dead control: record it as `current-state`, not `noop`,
+    // and say why, so the inventory's noop count stays a claim about controls that claim to act.
+    if (control.pressed === 'true' || control.selected === 'true') {
+      row.outcome = 'current-state'
+      row.detail = 'already pressed/selected; a click has no state left to change'
+      controls.push(row)
+      continue
+    }
+    // A text-entry field is not a click action: its contract is that typing focuses and edits it,
+    // and the steps that host fields (new-course step 3) exercise that by typing. Recording a
+    // clicked input as `noop` measures the wrong thing.
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(control.tag)) {
+      row.outcome = 'field'
+      row.detail = 'text-entry field; proven by typing in the surface setup, not by a click'
+      controls.push(row)
+      continue
+    }
     if (verdict) {
       row.outcome = verdict.skip
       row.detail = verdict.why
@@ -280,7 +341,7 @@ async function inventorySurface(cdp, surface, index) {
     if (exercised.has(key)) {
       const first = exercised.get(key)
       row.outcome = 'same-handler'
-      row.detail = `same handler as index ${first} / occurrence ${first.occurrence} on this surface (exercised once)`
+      row.detail = `same handler as index ${first.index} / occurrence ${first.occurrence} on this surface (exercised once)`
       controls.push(row)
       continue
     }
@@ -288,21 +349,40 @@ async function inventorySurface(cdp, surface, index) {
     // Re-validate the surface before every click: a previous click may have navigated.
     const valid = await surface.valid(cdp).catch(() => false)
     if (!valid) {
-      await surface.reset(cdp)
+      // Re-enter the surface, not just leave the current one: `reset` returns to the route root,
+      // which is the wrong place for a deep surface (scope step, a course view).
+      await surface.setup(cdp)
       await cdp.wait(1200)
     }
     const fresh = await snapshot(cdp)
-    const target = fresh.controls.find((c) => c.index === control.index && c.label === control.label) ||
-      fresh.controls.find((c) => c.label === control.label)
+    let target = await locate(cdp, control)
+    if (!target) {
+      // The surface re-rendered into a state that no longer carries this control (an opened
+      // flow, a menu): re-enter the surface and try once more before calling it drifted.
+      await surface.setup(cdp)
+      await cdp.wait(1200)
+      target = await locate(cdp, control)
+    }
     if (!target) {
       row.outcome = 'drifted'
       row.detail = 'control no longer present after the surface re-rendered'
       controls.push(row)
       continue
     }
+    // `scrollIntoView` moved the page; read the center again once layout has settled.
+    await cdp.wait(150)
+    target = (await locate(cdp, control)) || target
+    if (target.disabled) {
+      row.outcome = 'disabled'
+      row.detail = 'became disabled after the surface re-rendered'
+      controls.push(row)
+      continue
+    }
     const base = { hash: fresh.hash, text: digest(fresh.text), dialogs: fresh.dialogs.length, notices: fresh.notices.join('|'), controls: JSON.stringify(fresh.controls.map((c) => [c.label, c.pressed, c.selected, c.disabled])) }
     await cdp.click(target.x, target.y)
-    await cdp.wait(1400)
+    // A section/page render can take well over a second; measuring at 1.4 s read a real
+    // navigation as a no-op (H-64R's "Open this section").
+    await cdp.wait(2400)
     const afterClick = await snapshot(cdp)
     const shotPath = await shot(cdp, resolve(SHOT_DIR, `${String(index).padStart(2, '0')}-${surface.name}-${String(control.index).padStart(3, '0')}.png`))
     row.screenshot = shotPath.replace(`${resolve(HERE, '..')}/`, '')
@@ -397,14 +477,17 @@ async function main() {
     }
   }
   report.deadControls = dead
-  report.ok = dead.length === 0
+  const errored = report.surfaces.filter((surface) => surface.error)
+  report.erroredSurfaces = errored.map((surface) => `${surface.name}: ${surface.error}`)
+  // A surface that never reached its definition proves nothing and must not read as green.
+  report.ok = dead.length === 0 && errored.length === 0
   if (!only) writeFileSync(resolve(OUT_DIR, 'inventory.json'), `${JSON.stringify(report, null, 2)}\n`)
   const total = report.surfaces.reduce((n, s) => n + (s.controls ? s.controls.length : 0), 0)
   const counts = {}
   for (const surface of report.surfaces) {
     for (const control of surface.controls || []) counts[control.outcome] = (counts[control.outcome] || 0) + 1
   }
-  console.log(JSON.stringify({ surfaces: report.surfaces.length, controls: total, outcomes: counts, deadControls: dead, ok: report.ok }, null, 2))
+  console.log(JSON.stringify({ surfaces: report.surfaces.length, controls: total, outcomes: counts, deadControls: dead, erroredSurfaces: report.erroredSurfaces, ok: report.ok }, null, 2))
   cdp.close()
   if (!report.ok) process.exitCode = 1
 }

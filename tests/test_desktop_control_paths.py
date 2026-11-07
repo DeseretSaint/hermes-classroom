@@ -218,6 +218,29 @@ class LessonStartHasAVisibleResultTest(unittest.TestCase):
         self.assertIn("armed: true", body)
         self.assertIn("objectiveTitle", body)
 
+    def test_begin_lesson_never_reaches_new_chat(self) -> None:
+        # The exact seam that broke H-64 is `host.newChat`: it swaps the route to `#/`. Assert on
+        # the seam itself, not only on the helper that wraps it, so a future inline call fails.
+        body = _function_body(self.source, "async function beginLessonFor(")
+        self.assertNotIn("host.newChat(", body)
+        self.assertNotIn("newChat(", body)
+        # And the helper is not quietly re-exported into this path under another name.
+        self.assertNotIn("revealCoursebookPane(", body)
+
+    def test_the_armed_bind_carries_the_returned_lesson_run_id(self) -> None:
+        body = _function_body(self.source, "async function beginLessonFor(")
+        armed = re.search(r"armPendingBind\(\{([\s\S]*?)\n  \}\)", body)
+        if armed is None:
+            self.fail("beginLessonFor no longer arms a bind")
+        self.assertIn("lessonRunId: outcome.lesson_run_id", armed.group(1))
+        # The returned contract names the same run so each surface can show what it armed.
+        self.assertEqual(body.count("lessonRunId: outcome.lesson_run_id"), 2)
+        self.assertIn("lessonRunId: outcome.lesson_run_id,", body)
+        # pendingBindFor only returns a bind that carries a run id: no armed state without one.
+        bind = _function_body(self.source, "function armPendingBind(")
+        self.assertIn("lessonRunId,", bind)
+        self.assertIn("if (!enrollmentId || !objectiveId || !lessonRunId)", bind)
+
     def test_course_detail_start_opens_the_section(self) -> None:
         body = _function_body(self.source, "const startLesson = useCallback(")
         self.assertIn("openSection(target)", body)
