@@ -17,6 +17,12 @@ contest vertical slice. Owners are the specialists who fix; I do not patch produ
 | CB-QA-10 | P2 | Cinder (domain/evidence) | `evidence.inspect` returns `l2.objectives[].criteria[].check_spec.reference` (the answer key) while the check is still open. Evidence: `tests/adversarial/evidence/attack-state.json` (`results.S07`) |
 | CB-QA-11 | P2 (lane disabled) | Cinder (grader) | With the aux grader enabled, learner text reaches the grader and a "pass" carrying instructor-style injection is accepted; no structural cross-check exists for open responses. Evidence: `attack-state.json` (`results.S13`, BLOCKED while the lane is disabled) |
 
+Status note (H-11, 2026-11-07). This table is the record of the first report, at the commit it was
+written on. One row is no longer true of the current tree: **CB-QA-10 is fixed** — on `master` at
+`498b1da` the S07 probe passes (`open_check_reference_leaks=[]`, `secret_present=False`) and
+`coursebook/evidence.py` projects criteria through `PUBLIC_CRITERION_FIELDS`. No card claims the fix;
+the derivation is recorded in `docs/HARNESS-STATUS.md` §4. Every other row stands as written.
+
 ---
 
 ## CB-QA-01 — injected context persists and replays

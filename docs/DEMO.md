@@ -164,3 +164,24 @@ The visual build does not unblock recording. The preconditions in this file are 
 passes U01-U04 on the exact build being recorded, every shot is drivable on that build, and
 DeseretSaint approves the cut. No catalog submission, tag or pull request was made from this branch.
 
+## H-11 truth pass — what this file may and may not be read as (2026-11-07)
+
+Nothing above was re-measured by this pass, and no gate moved.
+
+- **The gate is NOT MET, and no video exists.** The last measurement is on `5b0f124`. It is not a
+  measurement of the merged tree `498b1da`, whose `desktop/plugin.js` (sha256 `5beed347…79b25`) was
+  changed by H-02's learner create flow (`5b74233`) after that measurement. Do not quote `5b0f124`
+  numbers as this build's.
+- **The prepared Japanese pack is a fixture.** It proves a governed loop over one prepared pack. It
+  is not proof that a goal produces a comparable course; the only run that speaks to that is H-09 on
+  `wt/harness-e2e-proof` (`111c7e9`), with recorded transcripts, and the export command its scenarios
+  used (`course.export`, cb.rpc v11) is on H-08's unmerged branch. On `master`, `pack.export` still
+  refuses a course with no `pack_id`.
+- **The 62-73 s export row and the 47-62 s Parent Studio row** describe `parent.export`, which is
+  unchanged on this tree. A learner-created course cannot be exported here, so nothing in this script
+  should be read as demonstrating a learner-course archive.
+- **Operator-only blocker, unchanged:** `t_6a32ffe9` is `blocked` on a gateway restart by the
+  operator on profile `default` (PID 360123, started 2026-11-05 17:35:27, RPC `127.0.0.1:43829`),
+  then a normal Desktop launch on that profile. No agent in this slice restarted it.
+- Status vocabulary and the per-class evidence: `docs/HARNESS-STATUS.md`.
+
