@@ -47,6 +47,8 @@ from jsonschema import Draft202012Validator
 
 from . import research as research_mod
 from . import sources as source_ledger
+from . import artifacts
+from . import policy as capability_policy
 from . import rubrics
 from .packs import MIN_RUBRIC_CRITERIA
 from .research import (
@@ -101,7 +103,7 @@ PIPELINE_VERSION = "cb.gen.v1"
 logger = logging.getLogger("coursebook.generation")
 
 PLAN_PROMPT_VERSION = "plan-prompt.v1"
-LESSON_PROMPT_VERSION = "lesson-prompt.v3"
+LESSON_PROMPT_VERSION = "lesson-prompt.v4"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v1"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
@@ -660,6 +662,46 @@ PLAN_SCHEMA: dict[str, Any] = {
     },
 }
 
+POLICY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "description": "The deterministic capability decision the harness stamped on this lesson.",
+    "required": [
+        "recipe",
+        "evidence_target",
+        "check_angle",
+        "rubric_profile",
+        "image",
+        "image_role",
+        "audio",
+        "audio_role",
+    ],
+    "properties": {
+        "recipe": {"type": "string", "enum": list(RECIPES)},
+        "evidence_target": {"type": "string", "enum": list(EVIDENCE_TARGETS)},
+        "check_angle": {"type": "string", "enum": list(capability_policy.CHECK_ANGLES)},
+        "rubric_profile": {"type": "string", "enum": list(capability_policy.RUBRIC_PROFILES)},
+        "image": {"type": "string", "enum": list(capability_policy.MEDIA_LEVELS)},
+        "image_role": {
+            "type": ["string", "null"],
+            "enum": [*capability_policy.IMAGE_ROLES, None],
+        },
+        "audio": {"type": "string", "enum": list(capability_policy.MEDIA_LEVELS)},
+        "audio_role": {
+            "type": ["string", "null"],
+            "enum": [*capability_policy.AUDIO_ROLES, None],
+        },
+        "locale": {"type": ["string", "null"], "maxLength": 35},
+        "level": {"type": ["string", "null"], "maxLength": 35},
+        "subject_domain": {"type": ["string", "null"], "maxLength": 60},
+        "reasons": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {"type": "string", "minLength": 5, "maxLength": 600},
+        },
+    },
+}
+
 LESSON_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -833,6 +875,7 @@ LESSON_SCHEMA: dict[str, Any] = {
             "maxItems": 10,
             "items": {"type": "string", "minLength": 5, "maxLength": 300},
         },
+        "policy": POLICY_SCHEMA,
     },
 }
 
@@ -946,6 +989,99 @@ VALIDATION_SYSTEM_PROMPT = (
 )
 
 
+def _subject_domain(
+    *,
+    plan: dict[str, Any] | None = None,
+    section: dict[str, Any] | None = None,
+    dials: dict[str, Any] | None = None,
+) -> str | None:
+    """The advisory subject domain, in precedence order: the section, the plan, the dials.
+
+    Advisory only: ``policy.py`` may tighten a decision with it but can never invent a construct
+    the authored intent did not name.
+    """
+    for holder, keys in (
+        (section, ("subject_domain", "domain", "subject")),
+        (plan, ("subject_domain", "domain", "subject")),
+        (dials, ("subject_domain", "domain", "subject")),
+    ):
+        if not holder:
+            continue
+        for key in keys:
+            value = holder.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    return None
+
+
+def lesson_capability_plan(
+    *,
+    recipe: str,
+    section: dict[str, Any] | None,
+    objective: dict[str, Any] | None,
+    locale: str | None,
+    dials: dict[str, Any],
+    plan: dict[str, Any] | None = None,
+) -> capability_policy.LessonCapabilityPlan:
+    """Compute the one capability decision this section is authored under.
+
+    The plan (recipe), the objective (evidence target), the authored section intent, the
+    learner's locale/level and the advisory subject domain are the only inputs. The result is
+    immutable and deterministic; nothing here reads a provider, a clock or the database.
+    """
+    section = section or {}
+    evidence_target = str(
+        (objective or {}).get("evidence_target")
+        or section.get("evidence_target")
+        or "comprehension"
+    )
+    level = dials.get("level")
+    return capability_policy.plan_lesson_capability(
+        recipe=str(recipe),
+        evidence_target=evidence_target,
+        lesson_intent=str(section.get("lesson_intent") or ""),
+        locale=locale,
+        level=str(level) if level else None,
+        subject_domain=_subject_domain(plan=plan, section=section, dials=dials),
+    )
+
+
+def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan) -> list[str]:
+    """The policy exactly as the author needs it: permissions and angles, never a wish list."""
+    image_roles = capability_policy.permitted_image_roles(capability)
+    audio_roles = capability_policy.permitted_audio_roles(capability)
+    lines = [
+        "Capability policy (decided before authoring; you may not override it):",
+        f"- check angle: {capability.check_angle}.",
+        f"- rubric profile: {capability.rubric_profile}.",
+    ]
+    image_reason = capability.reasons[1] if len(capability.reasons) > 1 else ""
+    audio_reason = capability.reasons[2] if len(capability.reasons) > 2 else ""
+    if not image_roles:
+        lines.append(f"- image: none. Emit no visual media item. {image_reason}".rstrip())
+    else:
+        required = "at least one" if capability.image == "required" else "at most one optional"
+        lines.append(
+            f"- image: {capability.image}; {required} visual item with role "
+            f"{image_roles[0]!r}. {image_reason}".rstrip()
+        )
+    if not audio_roles:
+        lines.append(f"- audio: none. Emit no audio media item. {audio_reason}".rstrip())
+    else:
+        required = "at least one" if capability.audio == "required" else "at most one optional"
+        lines.append(
+            f"- audio: {capability.audio}; {required} audio item with role {audio_roles[0]!r}. "
+            f"{audio_reason}".rstrip()
+        )
+    lines.append(
+        "Any media item outside these permissions is rejected deterministically, and every item "
+        "must also pass the media store: complete text equivalent, facts.rows for a schematic, "
+        "source_ids plus permission for a sourced technical reference, transcript/language/voice "
+        "for narration. An illustration may never claim technical authority."
+    )
+    return lines
+
+
 def _plan_instructions(*, recipe: str, dials: dict[str, Any], locale: str | None, research_status: str) -> str:
     lines = [
         "Design plan v1 for the goal in the input.",
@@ -968,6 +1104,17 @@ def _plan_instructions(*, recipe: str, dials: dict[str, Any], locale: str | None
     if recipe == "parent":
         lines.append("delivery is parent_led; include the parent block with age band, reading level, "
                      "supervision notes, hazards and setting materials.")
+    angle, angle_reason = capability_policy.recipe_check_angle(recipe)
+    if angle is not None:
+        lines.append(
+            f"Capability policy: every check is angle {angle!r} ({angle_reason}); do not schedule "
+            "another check kind."
+        )
+    lines.append(
+        "Capability policy for media: media is not the default and this plan does not assign any. "
+        "A lesson may carry media only where its authored intent names the construct the media "
+        "has to carry; the lesson author decides the role under the same policy."
+    )
     if dials:
         lines.append(f"Learner dials: {canonical_json(dials)}.")
     if locale:
@@ -976,8 +1123,22 @@ def _plan_instructions(*, recipe: str, dials: dict[str, Any], locale: str | None
 
 
 def _lesson_instructions(
-    *, recipe: str, locale: str | None, scaffold_note: str, rubric_profile: str | None = None
+    *,
+    recipe: str,
+    locale: str | None,
+    scaffold_note: str,
+    rubric_profile: str | None = None,
+    capability: capability_policy.LessonCapabilityPlan | None = None,
 ) -> str:
+    if capability is None:
+        # A direct caller still gets a real policy decision rather than a hand-written wish list.
+        capability = capability_policy.plan_lesson_capability(
+            recipe=recipe,
+            evidence_target="comprehension",
+            lesson_intent="",
+            locale=locale,
+        )
+    profile = rubric_profile or capability.rubric_profile
     lines = [
         "Write the lesson page for the section in the input.",
         f"Recipe: {recipe}.",
@@ -985,21 +1146,15 @@ def _lesson_instructions(
         "Include exactly one check.",
         "Write 3-6 rubric criteria in check.rubric, each a distinct observable aspect of the "
         "response; never restate one aspect in two criteria.",
-        "Media items are declarative specs, each with a complete text equivalent. Add media when "
-        "it carries teaching meaning: a labelled schematic for a technical sequence, an "
-        "illustration for context, or a narration for a language phrase. Never use an illustration "
-        "as a measurement, procedure or safety authority. For audio, set role='narration', include "
-        "the exact transcript, language and voice, and keep the transcript equal to the text "
-        "equivalent. For a schematic, put the structured facts in facts.rows as label/value pairs.",
     ]
-    if rubric_profile:
-        entry = rubrics.RUBRICS.get(rubric_profile)
-        if entry is not None:
-            lines.append(
-                f"Rubric profile: {rubric_profile} ({entry.construct}). Score only these "
-                f"observable aspects: {', '.join(entry.labels)}. A criterion that says the learner "
-                "'understands' something is not observable and will be rejected."
-            )
+    lines.extend(_capability_prompt_lines(capability))
+    entry = rubrics.RUBRICS.get(profile)
+    if entry is not None:
+        lines.append(
+            f"Rubric profile: {profile} ({entry.construct}). Score only these "
+            f"observable aspects: {', '.join(entry.labels)}. A criterion that says the learner "
+            "'understands' something is not observable and will be rejected."
+        )
     if locale:
         lines.append(f"Content locale: {locale}.")
     if scaffold_note:
@@ -1170,6 +1325,30 @@ def enforce_plan_rules(
         raise _RuleViolation(reasons)
 
 
+def _media_spec_from_lesson_item(item: dict[str, Any]) -> artifacts.MediaSpec:
+    """Project a generated media item onto the artifact layer's spec.
+
+    The two vocabularies are intentionally close but not identical: the lesson schema stores the
+    cited-reference role as ``sourced_technical`` and a pronunciation reference as narration.
+    """
+    facts = item.get("facts")
+    return artifacts.MediaSpec(
+        kind=str(item.get("kind") or ""),
+        role=str(item.get("role") or ""),
+        text_equivalent=str(item.get("text_equivalent") or ""),
+        prompt=str(item.get("spec") or "").strip() or None,
+        source_ids=tuple(
+            str(value) for value in (item.get("source_ids") or []) if str(value).strip()
+        ),
+        permission=item.get("permission"),
+        voice=str(item.get("voice") or "") or None,
+        language=str(item.get("language") or "") or None,
+        transcript=str(item.get("transcript") or "") or None,
+        technical=bool(item.get("technical")),
+        facts=dict(facts) if isinstance(facts, dict) else {},
+    )
+
+
 def enforce_lesson_rules(
     lesson: dict[str, Any],
     *,
@@ -1179,21 +1358,25 @@ def enforce_lesson_rules(
     locale: str | None,
     dials: dict[str, Any],
     rubric_profile: str | None = None,
+    capability: capability_policy.LessonCapabilityPlan | None = None,
 ) -> None:
     reasons: list[str] = []
     check = lesson.get("check") or {}
     declared_target = str(
         check.get("evidence_target") or (objective or {}).get("evidence_target") or ""
     )
+    if capability is None:
+        capability = lesson_capability_plan(
+            recipe=recipe,
+            section=section,
+            objective=objective,
+            locale=locale,
+            dials=dials,
+        )
     # The rubric angle is selected by construct, not by a generic template. The declared
     # evidence target is the authority; the capability policy's advice about the construct is
     # kept only when it can actually score that target.
-    profile = rubric_profile or rubrics.profile_for_lesson(
-        recipe=recipe,
-        evidence_target=declared_target,
-        lesson_intent=str(section.get("lesson_intent") or ""),
-        locale=locale,
-    )
+    profile = rubric_profile or rubrics.resolve_profile(capability.rubric_profile, declared_target)
     for problem in rubrics.validate_rubric(profile, check.get("rubric") or [], declared_target):
         reasons.append(problem)
     if objective is not None and check.get("evidence_target") != objective.get("evidence_target"):
@@ -1219,9 +1402,20 @@ def enforce_lesson_rules(
         if needed and not scaffolds.get(name):
             reasons.append(f"check.scaffolds.{name} must be true for this learner's locale/level")
 
-    for media in lesson.get("media") or []:
+    # Media has two independent gates and must pass both: the capability policy decides whether
+    # this kind/role is permitted at all, and the artifact media policy decides whether the spec
+    # is complete and honest (text equivalent, transcript, cited permission, structured facts, an
+    # illustration never claiming technical authority).
+    media_items = lesson.get("media") or []
+    for problem in capability_policy.media_policy_problems(capability, media_items):
+        reasons.append(problem)
+    for media in media_items:
+        if not isinstance(media, dict):
+            continue
         if not str(media.get("text_equivalent") or "").strip():
             reasons.append("every media spec requires a complete text equivalent")
+        for problem in artifacts.media_problems(_media_spec_from_lesson_item(media)):
+            reasons.append(problem)
 
     if reasons:
         raise _RuleViolation(reasons)
@@ -1459,8 +1653,17 @@ def build_lesson_request(
     feedback: str | None = None,
     timeout_s: float | None = None,
     rubric_profile: str | None = None,
+    capability: capability_policy.LessonCapabilityPlan | None = None,
 ) -> LLMRequest:
     policy = _scaffold_policy(recipe, dials, locale)
+    capability = capability or lesson_capability_plan(
+        recipe=recipe,
+        section=section,
+        objective=objective,
+        locale=locale,
+        dials=dials,
+        plan=plan,
+    )
     payload = {
         "plan_title": plan.get("title"),
         "learner_outcome": plan.get("learner_outcome"),
@@ -1470,6 +1673,7 @@ def build_lesson_request(
         "recipe": recipe,
         "dials": dials,
         "locale": locale,
+        "capability_policy": capability.to_dict(),
         "sources": [brief for brief in _source_brief(sources) if brief["source_id"] in set(section.get("source_ids") or [])]
         or _source_brief(sources)[:4],
         "rules": {
@@ -1477,7 +1681,9 @@ def build_lesson_request(
             "checks": 1,
             "rubric_criteria": [3, 6],
             "reference_answer": "stored separately; never inside segments, explanation or worked example",
-            "media": "declarative spec with complete text equivalent; the harness generates it and never treats an illustration as technical authority",
+            "media": "declarative spec with a complete text equivalent; only the roles the "
+            "capability policy permits; the harness generates it and never treats an "
+            "illustration as technical authority",
         },
     }
     if feedback:
@@ -1491,6 +1697,7 @@ def build_lesson_request(
             locale=locale,
             scaffold_note=_scaffold_note(policy, locale),
             rubric_profile=rubric_profile,
+            capability=capability,
         ),
         input_text=_bounded_input(payload),
         schema=LESSON_SCHEMA,
@@ -1672,6 +1879,7 @@ _GENERATION_DDL: tuple[str, ...] = (
         parent_notes_json TEXT,
         rejection_reasons_json TEXT NOT NULL DEFAULT '[]',
         validation_id TEXT,
+        policy_json TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         UNIQUE(section_id, plan_hash, version)
@@ -1723,6 +1931,13 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
     with _transaction(connection):
         for statement in _GENERATION_DDL:
             connection.execute(statement)
+        # Additive, in-place migration for a database created before the capability plan was
+        # recorded. ``CREATE TABLE IF NOT EXISTS`` cannot add a column to an existing table.
+        columns = {
+            str(row[1]) for row in connection.execute("PRAGMA table_info(gen_lessons)").fetchall()
+        }
+        if "policy_json" not in columns:
+            connection.execute("ALTER TABLE gen_lessons ADD COLUMN policy_json TEXT")
 
 
 # ── Persistence helpers ─────────────────────────────────────────────────────
@@ -2833,14 +3048,17 @@ def _author_section(
 ) -> dict[str, Any]:
     objective_ordinal = int((section.get("objective_refs") or [1])[0])
     objective = _objective_for(connection, plan_id, objective_ordinal)
-    # Select the rubric angle once per section: the prompt names the aspects, and the same
-    # profile is handed to the deterministic rule check so the author and the scorer agree.
-    rubric_profile = rubrics.profile_for_lesson(
+    # Decide the capability plan once per section: the prompt gets exactly its permissions, the
+    # deterministic rules score the same rubric angle, and the lesson row records the same plan.
+    capability = lesson_capability_plan(
         recipe=recipe,
-        evidence_target=str((objective or {}).get("evidence_target") or "comprehension"),
-        lesson_intent=str(section.get("lesson_intent") or ""),
+        section=section,
+        objective=objective,
         locale=locale,
+        dials=dials,
+        plan=plan,
     )
+    rubric_profile = rubrics.resolve_profile(capability.rubric_profile, capability.evidence_target)
     lesson: dict[str, Any] | None = None
     request: LLMRequest | None = None
     validation_request: LLMRequest | None = None
@@ -2864,9 +3082,13 @@ def _author_section(
             sources=sources,
             feedback=feedback,
             rubric_profile=rubric_profile,
+            capability=capability,
         )
         response = _call_llm(llm, request, usage)
         candidate = _parse_structured(response, LESSON_SCHEMA, what="lesson", max_bytes=MAX_LESSON_BYTES)
+        # The harness owns the policy: a model echo is accepted by the schema but overwritten, so
+        # the stored and validated lesson can only carry the deterministic decision.
+        candidate["policy"] = capability.to_dict()
         page = _build_learner_page(candidate, section, sources)
 
         try:
@@ -2878,6 +3100,7 @@ def _author_section(
                 locale=locale,
                 dials=dials,
                 rubric_profile=rubric_profile,
+                capability=capability,
             )
             assert_no_answer_leak(page, candidate)
         except _RuleViolation as exc:
@@ -2943,8 +3166,8 @@ def _author_section(
     with _transaction(connection):
         connection.execute(
             "INSERT INTO gen_lessons (id, plan_id, section_id, plan_hash, version, state, page_json, media_json, "
-            "parent_notes_json, rejection_reasons_json, validation_id, created_at, updated_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "parent_notes_json, rejection_reasons_json, validation_id, policy_json, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 lesson_id,
                 plan_id,
@@ -2957,6 +3180,7 @@ def _author_section(
                 _json({"parent_notes": lesson.get("parent_notes"), "supervision_notes": lesson.get("supervision_notes")}),
                 _json(rejection_reasons),
                 None,
+                _json(capability.to_dict()),
                 timestamp,
                 timestamp,
             ),

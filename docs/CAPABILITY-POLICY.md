@@ -1,12 +1,14 @@
 # Lesson capability policy
 
-**Status:** M1-P1 implemented on `wt/m1-capability-policy`. Authority: `coursebook/policy.py`.
+**Status:** M1-P1 implemented the pure policy on `wt/m1-capability-policy`; M1-P3 binds it into
+generation (`lesson-prompt.v4`) and validation on `wt/m1-policy-integration`. Authority:
+`coursebook/policy.py`.
 Plan: `docs/VISUAL_MEDIA_PLAN.md` §4 (capability policy and rubric angles) and §8 (technical
 visuals), `docs/VISUAL_MEDIA_PLAN.md` §5.2 (generation policy), §5.3 (rubrics).
 
-This card adds one pure module and its tests. It does not change the plan or lesson prompts, the
-contracts or the Desktop UI; P2/P3 integrate the policy into authoring, validation and export.
-Nothing here publishes, tags, opens a catalog PR or claims Coursebook is installable.
+The module itself adds no prompt, contract or UI dependency. P3 (below) is where the policy reaches
+the model and the validator. Nothing here publishes, tags, opens a catalog PR or claims Coursebook
+is installable.
 
 ## 1. Why this exists
 
@@ -134,20 +136,69 @@ Rubrics are selected by construct. Every profile covers at least three distinct 
 the construct, not a fill-in-the-blank template: the criteria still have to describe this response.
 The pack floor (`packs.MIN_RUBRIC_CRITERIA = 3`) is unchanged.
 
-## 6. What this card does not do
+## 6. Integration: how the plan reaches the model and the validator (M1-P3)
 
-- No prompt change: `_plan_instructions` and `_lesson_instructions` are untouched. P2 asks the model
-  for media only where the plan permits it.
-- No contract change: no `cb.rpc` or `cb.db` revision. The plan is not persisted yet.
-- No validator change: P3 rejects lesson media the policy does not justify. The validator must not
-  invent a media requirement after the fact.
-- No platform binding: the policy is not yet bound into `coursebook/generation.py`. That is the
-  next card, and it will import `plan_lesson_capability` rather than duplicate its rules.
+`coursebook/generation.py` computes the plan with `lesson_capability_plan(...)` once per section,
+before any prompt is built:
 
-## 7. Verify
+```
+lesson_capability_plan(recipe=..., section=..., objective=..., locale=..., dials=..., plan=...)
+    -> policy.plan_lesson_capability(recipe, objective.evidence_target, section.lesson_intent,
+                                     locale, dials.level, subject_domain)
+```
+
+The subject domain is advisory and read from the section, then the plan, then the dials. Nothing
+else is inferred: the construct must be named by the authored intent.
+
+**Prompt.** `lesson-prompt.v4` receives only the resulting permissions and angles. For a lesson
+whose policy says image `none`, the instruction is literally "emit no visual media item" plus the
+plan's reason; it is never offered a menu of media kinds. The same is true of audio. The payload
+also carries `capability_policy` (the plan projection) so the model sees the same decision the
+validator will apply. The plan prompt names the recipe's forced check angle (`verification` for
+one-off, `observation` for parent) and states that media is not the default.
+
+**Schema and record.** `LESSON_SCHEMA` accepts a `policy` object internally (never learner-facing).
+The harness overwrites whatever the model echoed with the computed plan, stores it in
+`gen_lessons.policy_json`, and gives the same object to `enforce_lesson_rules`.
+
+**Two gates, no bypass.** Media must pass both:
+
+1. `policy.media_policy_problems(plan, media)` — is this kind/role permitted at all? A visual item
+   in an image-`none` lesson (algebra derivation, one-off brief, parent reading, language
+   reading-only) or an audio item in an audio-`none` lesson is rejected with the plan's reason. A
+   permitted kind still has to use the permitted role (`illustration`, `schematic` or
+   `sourced_technical` for images; `narration` for audio — a pronunciation reference is narration
+   whose transcript is authoritative).
+2. `artifacts.media_problems(spec)` — is the spec complete and honest? Text equivalent, narration
+   transcript/voice/language, a sourced technical reference with `source_ids` and an explicit
+   permission, a schematic with structured `facts.rows`, and an illustration that never claims
+   technical authority.
+
+Neither gate is advisory and neither can be satisfied by the validator's silence: a failure is a
+`_RuleViolation` before the independent validator is called, so attempt 1 retries with the itemised
+reasons and attempt 2 parks the lesson `needs_review`.
+
+**Rubric angle.** The profile is resolved with `rubrics.resolve_profile(plan.rubric_profile,
+declared_target)` so the check's declared evidence target stays authoritative; the profile's
+criteria are validated as before. Media never counts as evidence and a clean rubric is never a
+mastery claim.
+
+## 7. What this line still does not do
+
+- No `cb.rpc`/`cb.db` contract revision. `policy_json` is an additive internal column on the
+  generation-owned `gen_lessons` table, migrated in place when absent.
+- No UI change: the Desktop renders whatever the learner page already carries.
+- Required-media *presence* is not enforced here. P3 refuses forbidden and dishonest media; making
+  a required schematic/narration appear is the media job's production path, and a missing item
+  degrades to the text equivalent rather than being fabricated.
+- A schema-valid pack that declares its own media is still governed by the pack contract and
+  `artifacts.media_problems`; the capability plan applies to **generated** lessons.
+
+## 8. Verify
 
 ```
 python3 -m unittest tests.test_capability_policy -v
+python3 -m unittest tests.test_policy_integration -v
 python3 -m unittest discover -s tests -t .
 bash scripts/validate-plugin.sh
 ```
@@ -155,3 +206,6 @@ bash scripts/validate-plugin.sh
 `tests/test_capability_policy.py` also asserts that the mirrored enums cannot drift from
 `generation.RECIPES`, `generation.EVIDENCE_TARGETS` and `packs.MIN_RUBRIC_CRITERIA`, and that
 `coursebook/policy.py` imports only `__future__`, `re`, `dataclasses` and `typing`.
+`tests/test_policy_integration.py` covers the six matrix lessons for both prompt and validator:
+the decision is named, forbidden media is never offered, permitted media passes both gates, and
+policy-inappropriate media is rejected deterministically.
