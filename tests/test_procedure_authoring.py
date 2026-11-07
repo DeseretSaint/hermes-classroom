@@ -12,7 +12,8 @@ These tests drive the real lesson job with a fake (recorded) model and prove:
 3. an unsourced schematic row (no cited source, no recorded source text, or a value the source
    does not contain) is refused;
 4. pages written before the header existed still project unchanged;
-5. the prompt asks for the header only where it belongs, and the version is bumped.
+5. the prompt asks for the header only where it belongs, and the version is bumped;
+6. a schematic media item beside the header carries the same rows and cites the same source.
 """
 
 from __future__ import annotations
@@ -410,6 +411,69 @@ class UnsourcedSchematicTest(unittest.TestCase):
                 lesson, technical_capability(), declared_target="procedure", ledger=self.ledger()
             ),
             [],
+        )
+
+
+class SchematicMediaCrossCheckTest(unittest.TestCase):
+    """The table is the authority and the drawn schematic restates it, or it is refused.
+
+    H-05's media plan can require a ``schematic`` media item beside the header. Two authorities
+    for one sequence is exactly the failure this rule exists to stop: the rendered table and the
+    drawn schematic must carry the same rows and cite the same source.
+    """
+
+    def lesson(self) -> dict:
+        request = build_request()
+        return parsed_lesson(request)
+
+    def schematic_media(self, lesson: dict, **overrides) -> dict:
+        item = {
+            "kind": "image",
+            "role": "schematic",
+            "text_equivalent": "The mounting fastener is tightened to 40 Nm in a star pattern.",
+            "source_ids": [lesson["sources"][0]],
+            "facts": {
+                "rows": [
+                    {"label": "Mounting fastener", "value": "40 Nm"},
+                    {"label": "Pad model", "value": "BR-42"},
+                ]
+            },
+        }
+        item.update(overrides)
+        return item
+
+    def test_a_schematic_media_item_with_the_same_rows_is_accepted(self) -> None:
+        lesson = self.lesson()
+        lesson["media"] = [self.schematic_media(lesson)]
+        self.assertEqual(
+            procedure_problems(
+                lesson, technical_capability(), declared_target="procedure", ledger=pad_ledger()
+            ),
+            [],
+        )
+
+    def test_a_media_item_with_different_rows_is_rejected(self) -> None:
+        lesson = self.lesson()
+        lesson["media"] = [
+            self.schematic_media(
+                lesson,
+                facts={"rows": [{"label": "Mounting fastener", "value": "55 Nm"}]},
+            )
+        ]
+        reasons = procedure_problems(
+            lesson, technical_capability(), declared_target="procedure", ledger=pad_ledger()
+        )
+        self.assertTrue(any("carries different rows" in reason for reason in reasons), reasons)
+
+    def test_a_media_item_that_cites_another_source_is_rejected(self) -> None:
+        lesson = self.lesson()
+        lesson["media"] = [self.schematic_media(lesson, source_ids=["src_other00001"])]
+        reasons = procedure_problems(
+            lesson, technical_capability(), declared_target="procedure", ledger=pad_ledger()
+        )
+        self.assertTrue(
+            any("does not cite procedure.schematic.source_id" in reason for reason in reasons),
+            reasons,
         )
 
 
