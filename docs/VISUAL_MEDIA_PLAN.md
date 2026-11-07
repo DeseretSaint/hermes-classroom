@@ -4,9 +4,8 @@ Status: planning draft for the post-CB-017 product line. This document freezes t
 before implementation. It does not change the release gate in `docs/SUBMISSION.md` §0.
 
 **M0 implementation status:** the host media adapter, lesson-post media generation, cache/fallback,
-lesson-run media projection and the inline Desktop preview are implemented on
-`feat/media-truth`; they are not part of the fetched release branch until that branch is merged.
-M1–M4 below remain the product plan.
+lesson-run media projection and the inline Desktop preview are merged on `master` at `3cead45`
+(698 tests, `node --check`, validate 3/3 on 924 files). M1–M4 below remain the product plan.
 
 ## 1. The problem this plan solves
 
