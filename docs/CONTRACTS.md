@@ -956,12 +956,17 @@ rewriting the document snapshot. Request/response shapes, error codes and file f
 — this is a behaviour note for a frozen v6 method, not a version bump. `require_revision`,
 idempotency replay and `plan.approve`'s hash fence are untouched.
 
-### Cost ceilings and the `CostCeilingExceeded` recovery checkpoint (behaviour note, no wire change)
+### Cost ceilings and the `CostCeilingExceeded` recovery checkpoint (behaviour note + one additive brief field)
 
 The dollar ceiling is now sized from the plan, not flat, and a mid-course abort is a recoverable
-state rather than a dead end. No contract version moves: everything below fits inside the existing
-`jobs.checkpoint` (`type: object`, `maxProperties: 40`), `cb.errors#details`
-(`maxProperties: 32`), and the already-frozen `POLICY_VIOLATION` code.
+state rather than a dead end. No contract *version* moves: the checkpoint and `cb.errors#details`
+facts fit inside the existing `jobs.checkpoint` (`type: object`, `maxProperties: 40`),
+`cb.errors#details` (`maxProperties: 32`) and the already-frozen `POLICY_VIOLATION` code. One
+additive byte change lands inside v10: the closed `$defs/plan_brief` now names the optional
+`budget_usd` (positive number, ≤1000) that the `raise_budget` action passes. Without that property
+the brief's `additionalProperties: false` refused the field, so the documented override was
+unreachable on the wire. Every earlier v10 payload still validates; no method, table, error code,
+job kind or vocabulary value moves.
 
 * **`jobs.create` preflight.** When `kind = plan` and `brief.stage = lessons`, the handler counts
   `gen_plan_sections` for `brief.plan_id` and resolves the ceiling
@@ -1259,7 +1264,7 @@ new field is optional.
 | Surface | Added | Notes |
 |---|---|---|
 | `course.create.request` | `level` (string ≤35 or null), `subject_domain` (string ≤60 or null), `scope` (`single`/`short`/`full` or null) | Optional; `locale` stays optional as before. The four dials are unchanged and stay closed — a level or domain is **not** smuggled into `dials`. |
-| `jobs.create.request` | one typed `plan` brief (`$defs/plan_brief`) applied when `kind = "plan"` | Carries `goal`, `brief`, `title`, `recipe`, `dials`, `locale`, `level`, `subject_domain`, `scope`, `course_id`, `enrollment_id`, `plan_id`, `stage`, plus the Parent Studio authoring fields (a `parent.brief.create` job is re-queued through `jobs.create` from the brief its own `jobs.get` returned). `additionalProperties: false`, so an unknown field is `VALIDATION_FAILED` rather than a silent no-op. Other job families keep the bounded open `brief` object. |
+| `jobs.create.request` | one typed `plan` brief (`$defs/plan_brief`) applied when `kind = "plan"` | Carries `goal`, `brief`, `title`, `recipe`, `dials`, `locale`, `level`, `subject_domain`, `scope`, `course_id`, `enrollment_id`, `plan_id`, `stage`, plus the Parent Studio authoring fields (a `parent.brief.create` job is re-queued through `jobs.create` from the brief its own `jobs.get` returned). `additionalProperties: false`, so an unknown field is `VALIDATION_FAILED` rather than a silent no-op. Other job families keep the bounded open `brief` object. H-17 adds the optional `budget_usd` (positive number ≤1000): it is named inside the closed brief because the `CostCeilingExceeded` recovery action tells an operator to pass `brief.budget_usd`, and a closed brief would otherwise refuse it. |
 | `cb.db` v6 | nullable `courses.level`, `courses.subject_domain`, `courses.scope` via migration `0006_courses_plan_brief_inputs.sql` | Stored once on the course so `course.get` and the plan job read the same values. `scope` is CHECK-constrained to `single`/`short`/`full` or NULL. No backfill: an existing row keeps NULL, which means "the brief did not name it". |
 
 **What reads them.** `coursebook.domain.course_create` stores the three values (blank collapses to
@@ -1301,6 +1306,7 @@ it does not claim the planner uses them yet.
 | v8 | 2026-11-06 | M1-P4 additive amendment. One new response field, `lesson.page.document` (the §5 block document), with `$defs/lesson_document`, `$defs/lesson_block` and `$defs/lesson_document_media`. 52 RPC methods unchanged; no cb.db table, column, migration, error code, job kind or vocabulary value; every v7 `lesson.page` field stays required and unchanged. The document is projected at read time from the same durable rows, so old rows are never rewritten; a page authored before v8 reports `state = "textbook_only"` with `views.guided = false` and a human note rather than a broken toggle. One check attaches to exactly one block, media is a child of a block, and the document can contain no reference answer or rubric text. `rpc.v7.json` is pinned by sha256. |
 | v9 | 2026-11-06 | M3-B1 additive amendment. 54 RPC methods (+`pronunciation.attempt`, `pronunciation.dispute`) and cb.db **v5** `pronunciation_attempts` via migration 0005. A pronunciation result is `model_assessed`, never a grade: it cannot close a check, advance an objective or write a transition, and no audio is stored. No new error code, job kind or vocabulary value. `rpc.v8.json` is pinned by sha256. |
 | v10 | 2026-11-07 | H-01 additive amendment. `course.create` gains optional `level`, `subject_domain` and `scope`; `jobs.create` gains one closed `$defs/plan_brief` for `kind = "plan"` so unknown fields are refused instead of silently ignored. cb.db **v6** adds nullable `courses.level`/`subject_domain`/`scope` via migration 0006, with no backfill. 54 RPC methods unchanged; no error code, job kind, vocabulary value or dial changes. `rpc.v9.json` and `db.v5.json` are pinned by sha256. |
+| v10 (H-17) | 2026-11-07 | Additive inside v10: `$defs/plan_brief` names the optional `budget_usd` (positive number ≤1000), the per-job cost-ceiling override the `CostCeilingExceeded` recovery checkpoint's `raise_budget` action passes. The H-17 behaviour note was written as "no wire change", but a closed brief refuses an unnamed property, so the field had to be declared for the documented override to be reachable. Every earlier v10 payload still validates; no method, table, migration, error code, job kind or vocabulary value changes, and `additionalProperties: false` stays. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
