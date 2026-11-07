@@ -73,6 +73,12 @@ V7_NEW_METHODS = (
     "source.revalidate",
 )
 
+#: Added in cb.rpc v9 (M3-B1): the bounded pronunciation practice loop. Two commands, no grade.
+V9_NEW_METHODS = (
+    "pronunciation.attempt",
+    "pronunciation.dispute",
+)
+
 
 def _document(filename: str) -> dict:
     return json.loads((contracts.CONTRACT_DIR / filename).read_text(encoding="utf-8"))
@@ -198,9 +204,9 @@ class ContractSetTest(unittest.TestCase):
 
     def test_wire_contract_is_current(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 8)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 9)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v8"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v9"))
         # Every place the wire version is echoed (both response envelopes, health.get) must agree.
         # A missed constant is an envelope the plugin itself produces and cannot validate.
         echo = _wire_echoes(contracts.contract("cb.rpc"))
@@ -1190,6 +1196,7 @@ FROZEN_RPC_SHA256 = {
     "rpc.v5.json": "sha256:e4dfea0e031b32698e9e354f640b25acfcdf68244ec819a3cedc375e8bd8b156",
     "rpc.v6.json": "sha256:7fa0ccfe5553c43b249ea370d87fd993e32047092f5be5471b9ddd0dc2bf3397",
     "rpc.v7.json": "sha256:3862b55e6853a93e064f8ee9475b5dd464ae32e9221d04e527f498fc6cc41f64",
+    "rpc.v8.json": "sha256:f1cb00c2ebf0fbf80fd2b59c2fc7456a8387f864e3f8f77c1c91b96f885fc418",
 }
 
 #: The superseded storage snapshots stay on disk and stay byte-identical: a later amendment is a
@@ -1198,6 +1205,7 @@ FROZEN_DB_SHA256 = {
     "db.v1.json": "sha256:e4ad371ba64a8dc76a3055a46c7a127160028d17c36ec07413e542d0f9a8d53a",
     "db.v2.json": "sha256:873fd56c4ea0a7229721ce9eb6065dd2a9370cc5563099852c88858e0413c0d7",
     "db.v3.json": "sha256:4c0569e4505f12e5862db6d63effe7363da64c1e0e0c837a49ed278b08ab48b6",
+    "db.v4.json": "sha256:ef243b2db653c49e90b35b08746e2283409b609cb310e9b2185f8fa898cebcde",
 }
 
 
@@ -1215,10 +1223,10 @@ class V5AmendmentTest(unittest.TestCase):
             with self.subTest(filename=filename):
                 digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
                 self.assertEqual(f"sha256:{digest}", expected)
-        for version in (1, 2, 3, 4, 5, 6, 7):
+        for version in (1, 2, 3, 4, 5, 6, 7, 8):
             # Not in the inventory, and not silently repurposed: history stays history.
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v8.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v9.json")
 
     def test_v5_adds_only_the_outline_check_and_assist_surface(self) -> None:
         # The v5 snapshot, not the live inventory: v6 appended the Parent Studio family afterwards.
@@ -1601,12 +1609,12 @@ class V6AmendmentTest(unittest.TestCase):
             with self.subTest(filename=filename):
                 digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
                 self.assertEqual(f"sha256:{digest}", expected)
-        for version in (1, 2, 3, 4, 5, 6, 7):
+        for version in (1, 2, 3, 4, 5, 6, 7, 8):
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        for version in (1, 2, 3):
+        for version in (1, 2, 3, 4):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v8.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v4.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v9.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v5.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
         v5 = _document("rpc.v5.json")
@@ -1720,8 +1728,8 @@ class V6AmendmentTest(unittest.TestCase):
     def test_final_approval_invalidation_is_storable_and_gates_export(self) -> None:
         db = _document("db.v3.json")
         self.assertEqual(db["schema_version"], 3)
-        self.assertEqual(contracts.contract_version("cb.db"), 4)
-        self.assertEqual(contracts.contract("cb.db")["schema_version"], 4)
+        self.assertEqual(contracts.contract_version("cb.db"), 5)
+        self.assertEqual(contracts.contract("cb.db")["schema_version"], 5)
         migration = [entry for entry in db["migration_plan"] if entry["version"] == 3]
         self.assertEqual(len(migration), 1)
         self.assertEqual(migration[0]["migration"],
@@ -2004,9 +2012,12 @@ class V7AmendmentTest(unittest.TestCase):
         v6_methods = list(v6["$defs"]["method"]["enum"])
         self.assertEqual(len(v6_methods), 51)
         current = list(contracts.method_names())
-        self.assertEqual(len(current), 52)
+        self.assertEqual(len(current), 54)
         self.assertEqual(current[: len(v6_methods)], v6_methods)
-        self.assertEqual(sorted(set(current) - set(v6_methods)), sorted(V7_NEW_METHODS))
+        self.assertEqual(
+            sorted(set(current) - set(v6_methods)),
+            sorted(set(V7_NEW_METHODS) | set(V9_NEW_METHODS)),
+        )
 
     def test_every_v6_method_payload_is_carried_over_verbatim(self) -> None:
         v6 = _document("rpc.v6.json")
@@ -2021,11 +2032,14 @@ class V7AmendmentTest(unittest.TestCase):
                         original["response"]["properties"]["contract_version"]["const"], 6
                     )
                     self.assertEqual(
-                        carried["response"]["properties"]["contract_version"]["const"], 8
+                        carried["response"]["properties"]["contract_version"]["const"],
+                        contracts.WIRE_CONTRACT_VERSION,
                     )
                     original = json.loads(json.dumps(original))
                     carried = json.loads(json.dumps(carried))
-                    original["response"]["properties"]["contract_version"] = {"const": 8}
+                    original["response"]["properties"]["contract_version"] = {
+                        "const": contracts.WIRE_CONTRACT_VERSION
+                    }
                 if method == "lesson.page":
                     # v8 adds exactly one response field to the read method and removes nothing.
                     self.assertIn("document", carried["response"]["properties"])
@@ -2081,9 +2095,10 @@ class V7AmendmentTest(unittest.TestCase):
         self.assertNotIn("revision", response["properties"])
 
     def test_db_v4_adds_only_a_nullable_content_hash_column(self) -> None:
-        db4 = contracts.contract("cb.db")
+        # The v4 snapshot, not the live inventory: v5 appended the pronunciation table afterwards.
+        db4 = _document("db.v4.json")
         db3 = _document("db.v3.json")
-        self.assertEqual(contracts.contract_version("cb.db"), 4)
+        self.assertEqual(db4["x-contract-version"], 4)
         self.assertEqual(db4["schema_version"], 4)
         self.assertEqual(set(db4["tables"]), set(db3["tables"]), "v4 adds no table and drops none")
         column = db4["tables"]["sources"]["columns"]["content_hash"]
@@ -2118,6 +2133,91 @@ class V7AmendmentTest(unittest.TestCase):
             "stale_source",
         ):
             self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+
+class V9AmendmentTest(unittest.TestCase):
+    """M3-B1: pronunciation practice gets two commands and one separate storage table.
+
+    The point of the amendment is what it does *not* add: no grade, no objective transition, no
+    audio column and no error code. A missing recogniser must remain expressible without a score.
+    """
+
+    def test_v9_adds_only_the_two_pronunciation_commands(self) -> None:
+        v8 = _document("rpc.v8.json")
+        v8_methods = list(v8["$defs"]["method"]["enum"])
+        self.assertEqual(len(v8_methods), 52)
+        current = list(contracts.method_names())
+        self.assertEqual(len(current), 54)
+        self.assertEqual(current[: len(v8_methods)], v8_methods, "append-only enum")
+        self.assertEqual(sorted(set(current) - set(v8_methods)), sorted(V9_NEW_METHODS))
+
+    def test_pronunciation_attempt_request_is_bounded(self) -> None:
+        schema = contracts.method_schema("pronunciation.attempt")
+        request, response = schema["request"], schema["response"]
+        self.assertEqual(
+            set(request["required"]),
+            {"enrollment_id", "objective_id", "attempt_nonce", "target", "locale", "audio_data_url"},
+        )
+        self.assertIs(request["additionalProperties"], False)
+        self.assertEqual(request["properties"]["audio_data_url"]["maxLength"], 5_000_000)
+        self.assertEqual(request["properties"]["target"]["maxLength"], 200)
+        self.assertEqual(set(response["required"]),
+                         {"status", "recorded", "attempt_id", "revision", "assessment", "reason"})
+        self.assertEqual(set(response["properties"]["status"]["enum"]),
+                         {"assessed", "empty", "unavailable"})
+        self.assertEqual(response["properties"]["recorded"]["type"], "boolean")
+        self.assertEqual(
+            response["properties"]["assessment"], {"$ref": "#/$defs/pronunciation_assessment"}
+        )
+        # The unusable outcome is representable without inventing a transcript or an accuracy.
+        assessment = contracts.contract("cb.rpc")["$defs"]["pronunciation_assessment"]
+        self.assertEqual(assessment["properties"]["evidence_class"], {"const": "model_assessed"})
+        self.assertEqual(
+            set(assessment["properties"]["verdict"]["enum"]),
+            {"meets_target", "close", "needs_practice", "unavailable"},
+        )
+        for nullable in ("word_accuracy", "phoneme_accuracy", "confidence"):
+            self.assertIn({"type": "null"}, assessment["properties"][nullable]["oneOf"])
+        self.assertLessEqual(assessment["properties"]["words"]["maxItems"], 200)
+        for side in (request, response, assessment):
+            self.assertEqual(_schema_problems(side), [])
+
+    def test_pronunciation_dispute_is_note_only_and_cannot_rewrite_a_score(self) -> None:
+        schema = contracts.method_schema("pronunciation.dispute")
+        request, response = schema["request"], schema["response"]
+        self.assertEqual(set(request["required"]), {"enrollment_id", "attempt_id", "note"})
+        self.assertEqual(request["properties"]["note"]["maxLength"], 1_000)
+        self.assertNotIn("verdict", response["properties"])
+        self.assertNotIn("evidence_class", response["properties"])
+        self.assertEqual(response["properties"]["state"], {"const": "open"})
+
+    def test_db_v5_adds_only_the_pronunciation_attempts_table(self) -> None:
+        v4 = _document("db.v4.json")
+        current = contracts.contract("cb.db")
+        self.assertEqual(contracts.contract_version("cb.db"), 5)
+        self.assertEqual(current["schema_version"], 5)
+        self.assertEqual(set(current["tables"]), set(v4["tables"]) | {"pronunciation_attempts"})
+        for table, spec in v4["tables"].items():
+            self.assertEqual(current["tables"][table], spec, f"v4 table {table} changed")
+        columns = current["tables"]["pronunciation_attempts"]["columns"]
+        self.assertEqual(columns["verdict"]["enum"], ["meets_target", "close", "needs_practice"])
+        self.assertEqual(columns["evidence_class"]["enum"], ["model_assessed"])
+        for forbidden in ("audio", "audio_bytes", "audio_path", "path", "api_key", "model_path"):
+            self.assertNotIn(forbidden, columns)
+        migration = [entry for entry in current["migration_plan"] if entry["version"] == 5]
+        self.assertEqual(len(migration), 1)
+        self.assertEqual(migration[0]["migration"], "0005_pronunciation_attempts.sql")
+        self.assertTrue(any("Additive only" in line for line in migration[0]["impact"]))
+        self.assertTrue(any("No backfill" in line for line in migration[0]["impact"]))
+        sql = (contracts.CONTRACT_DIR.parent / "coursebook" / "migrations"
+               / migration[0]["migration"]).read_text(encoding="utf-8")
+        self.assertIn("CREATE TABLE pronunciation_attempts", sql)
+        self.assertIn("UNIQUE (enrollment_id, attempt_nonce)", sql)
+
+    def test_v9_adds_no_error_code_and_no_job_kind(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.errors"), 2)
+        self.assertEqual(contracts.contract_version("cb.jobs"), 2)
+        self.assertEqual(contracts.audit_contracts(), [])
 
 
 def _outline_result(*, plan: dict | None | str = "default", objectives: list | None = None) -> dict:
