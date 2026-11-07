@@ -67,7 +67,15 @@ CHECKLIST = ["Check the heat", "Check sharp objects", "Check small parts", "Chec
 
 
 def record(**facts) -> None:
-    """Merge measured facts into the evidence JSON so the artifact is written by the run."""
+    """Merge measured facts into the evidence JSON so the artifact is written by the run.
+
+    Off by default: the ids in the facts are minted per run, so rewriting the tracked
+    artifact on every suite run dirtied the working tree and made
+    ``scripts/validate-plugin.sh`` refuse to gate (tracked files differ from HEAD).
+    Re-record deliberately with ``CB_RECORD_EVIDENCE=1``.
+    """
+    if os.environ.get("CB_RECORD_EVIDENCE") != "1":
+        return
     EVIDENCE.parent.mkdir(parents=True, exist_ok=True)
     current = {}
     if EVIDENCE.is_file():
