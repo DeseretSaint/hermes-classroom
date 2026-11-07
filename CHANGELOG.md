@@ -81,3 +81,10 @@ into a fresh home (`6/6` admission, `Installed.`) and answered `cb.rpc` v7 with 
 `contract_problems []`, schema 4. `docs/CB017-RELEASE-VERIFICATION.md` carries the commands, the
 commit, the verbatim output and the install transcript. 685 = 674 on master before CB-017 + 11 from
 the two replan branches.
+
+## After 0.1.0 — product line (not a release)
+
+M0-M4 of `docs/VISUAL_MEDIA_PLAN.md` are implemented and measured across master and product-line
+branches. They are **not** a version bump, not a release, and not a catalog entry: no tag, no pull
+request, no submission, and the gate in `docs/SUBMISSION.md` §0 is unchanged. The phase-to-commit
+map with per-phase evidence and the gated remainder is `docs/PRODUCT-LINE-RELEASE-NOTES.md`.

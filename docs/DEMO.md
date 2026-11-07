@@ -129,3 +129,38 @@ tell which seconds were generated earlier without reading the post.
 Recorded, this script proves a governed loop on one prepared pack. It does not prove learning
 efficacy, does not prove behavior with other packs, and does not prove a public community index.
 Those are not in the video and not in the submission text.
+
+## Product-line measurement on the post-0.1.0 tree (not a recording)
+
+This section records what the visual build measured. It does not replace the script above and it
+does not change the gate.
+
+- The script and every verdict above were measured on `5b0f124`, the pane-reveal build. That record
+  stands as written. This tree (M0-M4, `docs/PRODUCT-LINE-RELEASE-NOTES.md`) was **not** recorded,
+  and the demo gate remains **NOT MET**.
+- **No video exists.** No shot in this file was captured as video on any commit, and no frame below
+  is presented as a recording.
+
+What exists is a still-frame audit of the shipped Desktop module, run by M4-QA at `2b37b5b`:
+62 painted frames over Textbook, Guided, Field Quest, Field Desk, Procedure, text-only and
+media-unavailable, at light/dark, 1280 and 460 CSS px, 100 % and 200 % text, forced colors and
+reduced motion. The host transport was stubbed (it served the real M0 PNG and MP3 and a deterministic
+schematic); the module, the paint, the layout and the Chromium accessibility tree were real. Every
+number is in `audit/visual/m4-visual/audit.json`; the report is `docs/M4-VISUAL-MEDIA-AUDIT.md`.
+
+| Script row | Product-line still frames available | What they can and cannot carry |
+| --- | --- | --- |
+| 0-8 s library, pack preview, enroll | Field Desk first-run/empty and backend-off frames (`audit/visual/m2-field-desk/`) | First-run state and real actions. No import run on this tree. |
+| 8-25 s chat and pane, wrong answer, retry | None | Requires a bound chat and a live grader. Nothing in the visual build produces this shot. |
+| 25-34 s correct attempt, transition, evidence | None | Same; a still of a view cannot show a transition. |
+| 34-40 s notebook save, reopen the exact section | Field Notes live frames: save dialog, search, return to the exact block (`audit/visual/m2-field-notes/live-evidence.json`) | The save/search/exact-block behaviour is live-proven on an isolated backend, but not inside the demo's bound-chat loop. Do not splice these into the 34-40 s row. |
+| 40-47 s restart, identical pending objective | None | Resume depends on a binding that no isolated rig here can create. |
+| 47-62 s Parent Studio review and approve | Not measured in the product line | The 0.1.0 rows in this file are the only record. |
+| 62-73 s export file list and rights | Not measured in the product line | Same. |
+| 73-82 s media, text alternative | Textbook light/dark, 460 px, 200 % and text-only frames with the real generated PNG and the real MP3, each with caption and text equivalent (`audit/visual/m4-visual/`) | A **still** proves the image renders, the transcript is present and no audio autoplays. It cannot prove audible playback, and it cannot be narrated as "spoken". The named Japanese pack still declares "No audio is bundled", so the shot as scripted still needs a generated narration artifact — provider spend this card did not authorise. |
+| 82-86 s closing card | None | Static end card; nothing to measure. |
+
+The visual build does not unblock recording. The preconditions in this file are unchanged: Sentinel
+passes U01-U04 on the exact build being recorded, every shot is drivable on that build, and
+DeseretSaint approves the cut. No catalog submission, tag or pull request was made from this branch.
+
