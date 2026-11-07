@@ -696,6 +696,64 @@ def _finish(
     return document
 
 
+def _page_segment_block_count(page: Mapping[str, Any]) -> int:
+    """How many blocks ``_page_segment_blocks`` will mint from this page's segments.
+
+    Segment blocks are projected first and in order, so this count is exactly the prefix of the
+    block list that a page-level procedure step may reference.
+    """
+    count = 0
+    for segment in page.get("segments") or []:
+        if not isinstance(segment, Mapping):
+            continue
+        if _clean(segment.get("kind")) not in _PAGE_SEGMENT_ROLE:
+            continue
+        if not _clean(segment.get("body")):
+            continue
+        count += 1
+    return count
+
+
+def _resolve_page_procedure(
+    raw: Any, blocks: Sequence[Mapping[str, Any]], segment_count: int
+) -> dict[str, Any] | None:
+    """Turn a page-level procedure's segment ordinals into the document's block references.
+
+    The authored lesson knows segment positions, never block ids: ids are content-derived by the
+    projector. Resolution is positional and deterministic, and an ordinal that does not name a
+    projected teaching block is refused rather than silently dropped.
+    """
+    if raw is None:
+        return None
+    if not isinstance(raw, Mapping):
+        raise LessonDocumentError(["procedure is not an object"])
+    steps = raw.get("steps")
+    if not isinstance(steps, list):
+        return dict(raw)
+    resolved: list[Any] = []
+    for index, entry in enumerate(steps):
+        if not isinstance(entry, Mapping) or "block_id" in entry or "segment" not in entry:
+            resolved.append(dict(entry) if isinstance(entry, Mapping) else entry)
+            continue
+        segment = entry.get("segment")
+        if isinstance(segment, bool) or not isinstance(segment, int):
+            raise LessonDocumentError([f"procedure.steps[{index}].segment is not an integer"])
+        if segment < 1 or segment > segment_count or segment > len(blocks):
+            raise LessonDocumentError(
+                [
+                    f"procedure.steps[{index}].segment {segment} refers to no projected block"
+                    f" (the page projects {segment_count} teaching block(s))"
+                ]
+            )
+        converted: dict[str, Any] = {"block_id": str(blocks[segment - 1]["id"])}
+        if entry.get("check") is not None:
+            converted["check"] = entry.get("check")
+        resolved.append(converted)
+    procedure = dict(raw)
+    procedure["steps"] = resolved
+    return procedure
+
+
 def document_from_page(page: Mapping[str, Any], *, check_id: str | None = None) -> dict[str, Any]:
     """Project a stored ``gen_lessons.page_json`` into a document.
 
@@ -727,6 +785,11 @@ def document_from_page(page: Mapping[str, Any], *, check_id: str | None = None) 
     else:
         blocks = _page_segment_blocks(page)
         objective_id = page.get("objective_id")
+        # A page written by authoring carries segment ordinals; resolve them against the blocks
+        # just projected. An older page has no ``procedure`` key and is unchanged.
+        procedure = _resolve_page_procedure(
+            page.get("procedure"), blocks, _page_segment_block_count(page)
+        )
     return _finish(
         section_title=section_title,
         objective_id=objective_id,
