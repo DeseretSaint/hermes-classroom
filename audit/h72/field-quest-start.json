@@ -1,0 +1,63 @@
+{
+  "card": "H-72",
+  "title": "Make lesson start and Field Quest mission briefs act where the learner clicked",
+  "status": "fixed",
+  "observed": {
+    "surface": "Hermes Desktop CDP 9338",
+    "hermes_home": "/home/deseretsaint/.hermes/coursebook-test-h64/home",
+    "course": "Order coffee in Japanese",
+    "section": "Greet café staff and open the interaction politely",
+    "plugin_sha256": "c01eebc942baaef738e1716093004d6332109203467368973d2a98a1d2a73008"
+  },
+  "root_cause": {
+    "start": "beginLessonFor called startBoundLessonChat first. On this host session.create plus host.openSession focused a just-created session before it had a stored id, so the learner landed on a blank new-session screen with 'No durable chat yet'. The fresh run was armed, but no surface showed it.",
+    "resume": "The section offered a disabled Resume this section button and a Reattach button that called begin('resume') even when there was no durable chat. Both were dead ends.",
+    "brief": "Field Quest mission cards were read-only li elements. The authored brief was present, but clicking its heading or prose did nothing, so the cards read as decorative."
+  },
+  "fixes": [
+    "A fresh run now arms the exact lesson run first, then opens a new chat through the named openArmedLessonChat helper. CoursebookPane consumes the pending binder and names the exact run, objective and first-message action.",
+    "Removed the dead disabled Resume this section and Reattach controls. When no binding is active the section shows one Start a fresh run button plus a plain explanation; an active binding shows Continue here.",
+    "The Field Quest mission card is a role=link pointer and keyboard target. Clicking its heading or prose opens the same block in Textbook; nested Save to notebook and Read in Textbook controls keep their own behaviour.",
+    "Replaced detached-binding jargon and 'No durable chat yet' with plain next-step copy and an Open Coursebook action.",
+    "Field Quest intro now tells the learner that opening a mission shows its teaching in Textbook and that nothing is locked."
+  ],
+  "live_evidence": {
+    "field_quest": {
+      "view": "field_quest",
+      "missions": 5,
+      "checkpoints": 1,
+      "mission_role": "link",
+      "mission_tabindex": 0,
+      "mission_click_result": "view became textbook, hash remained #/coursebook"
+    },
+    "start": {
+      "button": "Start a fresh run",
+      "after_click_hash": "#/",
+      "pane": "Lesson run ready: Greet café staff and open the interaction politely",
+      "pane_action": "Open the section",
+      "composer_visible": true
+    },
+    "controls_when_no_binding": [
+      "Start lesson",
+      "Start a fresh run"
+    ],
+    "dead_controls_removed": [
+      "Resume this section (disabled)",
+      "Reattach (no-op)"
+    ]
+  },
+  "screenshots": [
+    "audit/h72/field-quest-clean.png",
+    "audit/h72/fresh-lesson-chat.png"
+  ],
+  "test": {
+    "command": "python3 -m unittest discover -s tests -t .",
+    "result": "1645 tests OK (skipped=1)",
+    "m4": "15 PASS, 0 not PASS",
+    "m4_plugin_sha256": "c01eebc942baaef738e1716093004d6332109203467368973d2a98a1d2a73008"
+  },
+  "repair_context": {
+    "h64_home_library": "The h64 test home was repaired and its café course re-authored before this live check; its lessons were seeded through gen.run_lesson_job with the repository fixtures. H-71 records the matching test-home repair.",
+    "note": "This card fixes the interaction and copy; it does not add a semantic topic-identity validator. A generated plan can still be structurally valid while off-topic, which is a separate product decision."
+  }
+}

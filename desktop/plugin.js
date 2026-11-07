@@ -515,6 +515,16 @@ function startLessonChat(profile) {
 }
 
 /**
+ * Open the new chat that an armed run belongs to. Kept behind a named helper because the arming
+ * path is deliberately separate from the chat-opening seam: `beginLessonFor` records the exact
+ * run, then the surface the learner clicked decides to show the chat. A host without `newChat`
+ * keeps the course page and the explicit "Open the lesson chat" action.
+ */
+function openArmedLessonChat(profile) {
+  return startLessonChat(profile)
+}
+
+/**
  * Start a lesson chat that is bound BEFORE its first turn.
  *
  * Why this exists: a fresh draft has no stored session id until its first turn, so the binding
@@ -618,22 +628,10 @@ async function beginLessonFor({ row, objectiveId, objectiveTitle, mode, profile 
         'There is no saved lesson chat for this section yet. Read the section below, then start a new lesson when you are ready.'
     }
   }
-  const boundChat = await startBoundLessonChat({
-    enrollmentId: row.enrollment_id,
-    objectiveId: target,
-    lessonRunId: outcome.lesson_run_id,
-    title: row.title || row.course_title || 'Coursebook lesson',
-    profile: profile || currentScope().profile
-  })
-  if (boundChat.ok) {
-    return {
-      ok: true,
-      started: true,
-      bound: true,
-      storedSessionId: boundChat.storedSessionId,
-      message: 'A governed run is ready in this chat. Its first message is already the lesson chat.'
-    }
-  }
+  // A fresh run is opened as a new chat with an armed binder, not through
+  // `session.create`/`host.openSession`: that seam can focus a just-created session before the
+  // host has a stored id for it, which leaves the learner on a blank "No durable chat yet"
+  // screen. The pending binder names this exact run and is consumed by the chat's first stored id.
   armPendingBind({
     enrollmentId: row.enrollment_id,
     objectiveId: target,
@@ -3093,9 +3091,10 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
       setNotice(outcome.message)
       if (outcome.ok) library.reload()
       if (outcome.ok && outcome.armed) {
-        // Stay on the route and open the section the run is armed to: the desk's Continue card is
-        // a next step, not a door out of Coursebook into a blank draft (H-64).
-        onOpen(desk.row, desk.current.objective_id)
+        // The desk is a start surface too: arm the exact run, then open the new chat that carries
+        // the pending binder. A host without newChat keeps the section/drawer open instead.
+        const opened = openArmedLessonChat(profile || currentScope().profile)
+        if (!opened) onOpen(desk.row, desk.current.objective_id)
         return
       }
       if (!outcome.ok && outcome.reason === 'no-binding') onOpen(desk.row, desk.current.objective_id)
@@ -6515,7 +6514,13 @@ function NoticeLine({ notice, busy }) {
   const action = typeof notice === 'string' ? null : notice.action
   return jsxs('div', {
     role: 'status',
+    'data-cb-lesson-notice': '',
     className: 'flex flex-wrap items-center justify-between gap-2 text-xs leading-relaxed text-(--ui-text-secondary)',
+    style: {
+      padding: '0.6rem 0.75rem',
+      borderLeft: '2px solid var(--cb-accent)',
+      background: 'var(--cb-accent-soft)'
+    },
     children: [
       jsx('span', { className: 'max-w-prose min-w-0', children: text }),
       action
@@ -9261,12 +9266,39 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
   const stateWord = mission.checkpoint ? 'Checkpoint' : 'Mission'
   const tone = mission.checkpoint ? 'var(--cb-accent)' : 'var(--cb-ink-soft)'
   const headingId = `cb-mission-headline-${block.id}`
+  // The mission's heading and prose are the brief. Clicking anywhere outside an actual control
+  // hands the same block to Textbook, so a learner who taps the brief is not left wondering
+  // whether the card is decorative. Nested controls keep their own behaviour.
+  const openMission = (event) => {
+    const target = event && event.target
+    if (
+      target &&
+      typeof target.closest === 'function' &&
+      target.closest('button, a, input, textarea, select, [role="button"], [role="checkbox"], [role="radio"]')
+    ) {
+      return
+    }
+    if (onReadInTextbook) onReadInTextbook(block.id)
+  }
+  const openMissionOnKey = (event) => {
+    if (event.target !== event.currentTarget) return
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      if (onReadInTextbook) onReadInTextbook(block.id)
+    }
+  }
   return jsxs('li', {
     'data-cb-mission': block.id,
     'data-cb-mission-index': String(mission.index + 1),
     'data-cb-mission-role': block.role,
     'data-cb-mission-checkpoint': mission.checkpoint ? 'true' : 'false',
     'data-cb-mission-check': mission.checkpoint && block.check_id ? block.check_id : '',
+    tabIndex: 0,
+    role: 'link',
+    'aria-label': `Open mission ${mission.index + 1}, ${block.headline}, in Textbook`,
+    title: 'Open this mission in Textbook',
+    onClick: openMission,
+    onKeyDown: openMissionOnKey,
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -9274,7 +9306,8 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
       listStyle: 'none',
       padding: '0.65rem 0 0.75rem 0.85rem',
       borderLeft: `2px solid ${mission.checkpoint ? 'var(--cb-accent)' : 'var(--cb-rule)'}`,
-      maxWidth: '46rem'
+      maxWidth: '46rem',
+      cursor: 'pointer'
     },
     children: [
       jsxs('div', {
@@ -9415,7 +9448,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
         'data-cb-quest-note': '',
         style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
         children:
-          'Counts describe evidence the backend already recorded; they are not a score. Every mission is open — a checkpoint is the section’s existing check, not a lock.'
+          'Counts describe evidence the backend already recorded; they are not a score. Open any mission to read its teaching in Textbook; nothing is locked, and the checkpoint is the section’s existing check.'
       }),
       jsx('ol', {
         'data-cb-quest-path': '',
@@ -10124,8 +10157,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
     async (mode) => {
       setBusy(true)
       setNotice(null)
-      // One shared path with the course detail: a fresh run arms the exact run and leaves this
-      // section on screen (H-64). It never opens a blank chat over the learner's page.
+      // One shared path with the course detail: a fresh run arms the exact run, then this surface
+      // opens the new chat that carries that binder. It never leaves the learner on a blank chat
+      // with no indication of which run it belongs to.
       const outcome = await beginLessonFor({
         row,
         objectiveId,
@@ -10135,14 +10169,31 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
       })
       setBusy(false)
       if (outcome.ok && outcome.armed) {
+        // A fresh run is only useful once the learner can type into it. The run is armed first;
+        // opening the new chat then lets CoursebookPane name that exact run (never a recency
+        // guess). If the host cannot open a chat, the explicit action remains on this page.
+        const opened = openArmedLessonChat(row.profile || currentScope().profile)
+        setNotice(
+          opened
+            ? { text: 'A new lesson chat is open. Send its first message to bind it to this run.' }
+            : {
+                text: outcome.message,
+                action: {
+                  label: 'Open the lesson chat',
+                  run: () => startLessonChat(row.profile || currentScope().profile)
+                }
+              }
+        )
+        if (onChanged) onChanged()
+        return
+      }
+      if (!outcome.ok && outcome.reason === 'no-binding') {
+        // Resume is impossible without a saved chat. Do not leave the learner with a sentence and
+        // no way forward: the same arm path the fresh button uses is the honest next action.
         setNotice({
           text: outcome.message,
-          action: {
-            label: 'Open the lesson chat',
-            run: () => startLessonChat(row.profile || currentScope().profile)
-          }
+          action: { label: 'Start a fresh run', run: () => begin('fresh') }
         })
-        if (onChanged) onChanged()
         return
       }
       setNotice(outcome.message)
@@ -10243,36 +10294,27 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
           : null,
 
         runtime && !bindingActive
-          ? jsxs('div', {
-              className: 'flex flex-wrap items-center justify-between gap-2 border-l border-(--ui-stroke-secondary) pl-3',
-              children: [
-                jsx('div', {
-                  className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-                  children: `This section’s chat binding is ${runtime.binding_status}. Submit stays disabled until it is reconciled.`
-                }),
-                jsx(sdk.Button, {
-                  variant: 'secondary',
-                  size: 'sm',
-                  disabled: busy,
-                  onClick: () => begin('resume'),
-                  children: 'Reattach'
-                })
-              ]
+          ? jsx('div', {
+              className: 'border-l border-(--ui-stroke-secondary) pl-3 text-xs leading-relaxed text-(--ui-text-secondary)',
+              children:
+                'This section has no lesson chat yet. Start a fresh run to open one; its first message binds the chat to this section.'
             })
           : null,
 
         jsxs('div', {
           className: 'flex flex-wrap items-center gap-2',
           children: [
+            bindingActive
+              ? jsx(sdk.Button, {
+                  variant: 'default',
+                  size: 'sm',
+                  disabled: busy,
+                  onClick: () => begin('resume'),
+                  children: 'Continue here'
+                })
+              : null,
             jsx(sdk.Button, {
-              variant: 'default',
-              size: 'sm',
-              disabled: busy,
-              onClick: () => begin('resume'),
-              children: runtime && bindingActive ? 'Continue here' : 'Resume this section'
-            }),
-            jsx(sdk.Button, {
-              variant: 'secondary',
+              variant: bindingActive ? 'secondary' : 'default',
               size: 'sm',
               disabled: busy,
               onClick: () => begin('fresh'),
@@ -12371,16 +12413,32 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       setBusy(false)
       if (outcome.ok && outcome.armed) {
         refresh()
-        // The run is armed to this exact objective. Stay on the course and open the section: the
-        // page is the teaching-bearing result, and the chat is an explicit next action.
+        // Arm first, then open the chat that the pending binder names. The old ordering opened a
+        // session before a durable id existed and left the learner on a blank chat.
+        const opened = openArmedLessonChat(profile || currentScope().profile)
         openSection(target)
+        setNotice(
+          opened
+            ? { text: 'A new lesson chat is open. Send its first message to bind it to this run.' }
+            : {
+                text: outcome.message,
+                action: {
+                  label: 'Open the lesson chat',
+                  run: () => startLessonChat(profile || currentScope().profile)
+                }
+              }
+        )
+        return
+      }
+      if (!outcome.ok && outcome.reason === 'no-binding') {
         setNotice({
           text: outcome.message,
           action: {
-            label: 'Open the lesson chat',
-            run: () => startLessonChat(profile || currentScope().profile)
+            label: 'Start a fresh run',
+            run: () => startLesson('fresh', target)
           }
         })
+        openSection(target)
         return
       }
       setNotice(outcome.message)
@@ -12471,6 +12529,9 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
   }
 
   const nextKind = (row.next_step && row.next_step.kind) || 'start_lesson'
+  const topCanResume = Boolean(
+    page.data && page.data.runtime && page.data.runtime.binding_status === 'active'
+  )
 
   return jsxs('div', {
     className: 'flex flex-col gap-3',
@@ -12510,8 +12571,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
                 variant: 'default',
                 size: 'sm',
                 disabled: busy,
-                onClick: () => startLesson(nextKind === 'resume_lesson' ? 'resume' : 'fresh'),
-                children: busy ? 'Opening' : nextKind === 'resume_lesson' ? 'Resume lesson' : 'Start lesson'
+                onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
+                children: busy ? 'Opening' : nextKind === 'resume_lesson' && topCanResume ? 'Resume lesson' : 'Start lesson'
               })
             ]
           })
@@ -12729,17 +12790,15 @@ function LessonPaneBody({ binding, storedId }) {
             children: [
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-                children: `This lesson’s chat binding is ${bindingStatus}. Submit is disabled until it is reconciled.`
+                children:
+                  'This chat is not attached to a lesson yet. Open Coursebook and start a run; the first message in its new chat binds the lesson.'
               }),
-              jsxs('div', {
-                className: 'flex flex-wrap items-center gap-1',
-                children: [
-                  jsx(sdk.Button, { variant: 'secondary', size: 'sm', disabled: busy, onClick: resume, children: 'Reattach' }),
-                  jsx(sdk.Button, { variant: 'text', size: 'sm', disabled: busy, onClick: freshRun, children: 'Start a new run' }),
-                  runtime && runtime.binding_id && backendSupports('binding.abandon')
-                    ? jsx(sdk.Button, { variant: 'text', size: 'sm', disabled: busy, onClick: abandon, children: 'Abandon binding' })
-                    : null
-                ]
+              jsx(sdk.Button, {
+                variant: 'secondary',
+                size: 'sm',
+                disabled: busy,
+                onClick: () => host.navigate(ROUTE_PATH),
+                children: 'Open Coursebook'
               })
             ]
           })
@@ -15558,8 +15617,6 @@ function CoursebookPane() {
   // The pane is part of the same scoped surface as the route: same token table, same mode.
   const cbMode = useCbMode()
   const cbMotion = useCbMotion()
-  const paneWidth = useCbViewportWidth()
-  const narrowPane = paneWidth > 0 && paneWidth < 620
   const scopeProfile = currentScope().profile
   const [bindNote, setBindNote] = useState(null)
   const attemptedBind = useRef(null)
@@ -15639,11 +15696,9 @@ function CoursebookPane() {
   } else if (state.status === 'no-session' || state.status === 'idle') {
     body = jsx(sdk.PanelEmpty, {
       icon: 'book',
-      title: 'No durable chat yet',
-      description: narrowPane
-        ? 'Coursebook binds this chat after its first message. Open Coursebook to start or resume a lesson.'
-        : 'A new chat gets its stored session id after its first turn. Coursebook binds a lesson to that ' +
-          'stored id — never to the live runtime id and never to "the most recent chat".',
+      title: 'No lesson chat open',
+      description:
+        'A lesson runs in a chat. Open Coursebook, pick a course and start a run; the teaching stays beside the chat once it begins.',
       action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
     })
   } else if (state.status === 'loading') {

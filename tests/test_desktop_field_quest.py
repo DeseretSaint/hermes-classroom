@@ -473,6 +473,14 @@ class FieldQuestModelTest(FieldQuestRenderTest):
             ],
         }))
 
+    def test_mission_brief_is_a_pointer_and_keyboard_target(self) -> None:
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        mission = source.split("function QuestMission(", 1)[1].split("\nfunction FieldQuestView(", 1)[0]
+        self.assertIn("onClick: openMission", mission)
+        self.assertIn("onKeyDown: openMissionOnKey", mission)
+        self.assertIn("role: 'link'", mission)
+        self.assertIn("target.closest('button, a, input, textarea, select", mission)
+
     def test_model_lists_one_mission_per_block(self) -> None:
         model = self.model()
         self.assertEqual([mission["id"] for mission in model["missions"]],

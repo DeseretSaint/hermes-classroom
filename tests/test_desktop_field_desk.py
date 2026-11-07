@@ -578,12 +578,15 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertNotIn("Back to the Field Desk", library)
         self.assertNotIn("onShowDesk", library)
 
-    def test_the_desk_introduces_no_second_chat_or_markdown_surface(self) -> None:
+    def test_the_desk_arms_the_exact_run_before_opening_a_chat(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
         desk = source.split("// ══ M2 — the Field Desk home", 1)[1].split("function CoursesView(", 1)[0]
         self.assertNotIn("MessageTextContent", desk)
         self.assertNotIn("Composer", desk)
-        self.assertNotIn("newChat", desk)
+        # The desk arms the run first, then delegates the new-chat seam to the named helper. It
+        # still never calls host.newChat inline, so the Field Desk itself has no second chat.
+        self.assertIn("openArmedLessonChat(", desk)
+        self.assertNotIn("host.newChat(", desk)
 
     def test_the_desk_paints_only_from_the_token_layer(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
