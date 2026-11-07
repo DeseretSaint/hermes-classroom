@@ -1519,8 +1519,9 @@ class ParentBriefPolicyThreadingConflictTest(unittest.TestCase):
         self.assertEqual(payload["parent_brief"], generation.parent_brief_view(NON_DEFAULT_BRIEF))
         self.assertEqual(payload["rules"]["page_budget"], NON_DEFAULT_BRIEF["desired_pages"])
         self.assertEqual(
-            payload["rules"]["section_count"], [1, NON_DEFAULT_BRIEF["desired_pages"]]
+            payload["rules"]["objective_count"], [1, NON_DEFAULT_BRIEF["desired_pages"]]
         )
+        self.assertEqual(payload["rules"]["unit_count"], [1, 1])
 
         # H-13: the declared inputs travel as siblings in the same payload.
         self.assertEqual(payload["level"], "B1")
@@ -1545,7 +1546,10 @@ class ParentBriefPolicyThreadingConflictTest(unittest.TestCase):
         self.assertIn("never a child-facing chat", instructions)
         self.assertIn(NON_DEFAULT_BRIEF["supervision"], instructions)
         self.assertEqual(
-            request.schema["properties"]["sections"]["maxItems"],
+            request.schema["properties"]["units"]["maxItems"], 1
+        )
+        self.assertEqual(
+            request.schema["properties"]["objectives"]["maxItems"],
             NON_DEFAULT_BRIEF["desired_pages"],
         )
 

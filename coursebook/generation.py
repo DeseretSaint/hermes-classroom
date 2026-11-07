@@ -2252,6 +2252,10 @@ def _plan_instructions_v2(
             "supervision notes, hazards and setting materials. Every check is a parent "
             "observation of something the child did, never a quiz."
         )
+        lines.append(
+            "This is parent-led material, never a child-facing chat: there is no child persona, "
+            "no child-facing page and no grading of the child."
+        )
         if parent_brief:
             lines.append(
                 "Honour the parent brief in the input exactly (parent_brief): the goal, starting "
@@ -2263,6 +2267,41 @@ def _plan_instructions_v2(
                 lines.append(
                     "Exclusions the parent named (state them in the plan's exclusions): "
                     + "; ".join(str(item) for item in exclusions[:20])
+                )
+            visuals = parent_brief.get("desired_visuals")
+            if visuals == "none":
+                lines.append(
+                    "The parent asked for no visuals: do not plan image media for any unit."
+                )
+            elif visuals in ("diagrams", "illustrations"):
+                lines.append(
+                    f"The parent asked for {visuals}: where a unit's lesson intent genuinely "
+                    "names a construct that media has to carry, the authored intent may name it. "
+                    "This is a permission, not a request to decorate; never plan media a lesson "
+                    "does not need."
+                )
+            narration = parent_brief.get("narration")
+            if narration == "none":
+                lines.append(
+                    "The parent asked for no narration: do not plan an audio or read-aloud script."
+                )
+            elif narration == "script":
+                lines.append(
+                    "The parent asked for a narration script: plan a read-aloud script only where "
+                    "the unit's intent genuinely carries an oral construct."
+                )
+            supervision = str(parent_brief.get("supervision") or "").strip()
+            if supervision:
+                lines.append(
+                    "Supervision the parent declared (repeat it as a hazard or supervision note, "
+                    "never contradict it): " + supervision[:600]
+                )
+            materials = parent_brief.get("materials") or []
+            if materials:
+                lines.append(
+                    "Materials the parent has: "
+                    + ", ".join(str(item) for item in materials[:20])
+                    + ". Do not require a material the brief did not list."
                 )
     angle, angle_reason = capability_policy.recipe_check_angle(recipe)
     if angle is not None:
@@ -3616,6 +3655,8 @@ def build_plan_request(
             cap = max(1, min(pages, 8))
             payload["rules"]["objective_count"] = [1, cap]
             payload["rules"]["section_count"] = [1, cap]
+            payload["rules"]["unit_count"] = [1, 1]
+            payload["rules"]["unit_objective_count"] = [1, cap]
             payload["rules"]["page_budget"] = pages
     if feedback:
         payload["revision_instructions"] = feedback
