@@ -2160,7 +2160,13 @@ function PathPreview({ desk, onOpenSection }) {
                       children: String(objective.ordinal).padStart(2, '0')
                     }),
                     jsx('span', {
-                      style: { flex: '1 1 auto', minWidth: 0, overflowWrap: 'anywhere' },
+                      style: {
+                        flex: '1 1 8rem',
+                        minWidth: 0,
+                        overflowWrap: 'anywhere',
+                        whiteSpace: 'normal',
+                        lineHeight: 1.35
+                      },
                       children: objective.title
                     }),
                     jsx('span', {
@@ -3027,6 +3033,15 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
   return jsxs('div', {
     className: 'flex flex-col',
     children: [
+      onShowDesk
+        ? jsx(sdk.Button, {
+            className: 'mb-2 self-start',
+            variant: 'text',
+            size: 'sm',
+            onClick: onShowDesk,
+            children: 'Back to the Field Desk'
+          })
+        : null,
       jsxs('div', {
         className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
         children: [
@@ -3397,15 +3412,6 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
   return jsxs('div', {
     className: 'flex flex-col',
     children: [
-      onShowDesk
-        ? jsx(sdk.Button, {
-            className: 'mb-2 self-start',
-            variant: 'text',
-            size: 'sm',
-            onClick: onShowDesk,
-            children: 'Back to the Field Desk'
-          })
-        : null,
       // Two import paths, side by side and named plainly. A syllabus is not a pack, so it is
       // never nested behind the pack flow.
       jsx(SyllabusEntry, { onStartSyllabus, onStartImport }),

@@ -530,6 +530,20 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn("+2 more courses on this profile", html)
 
     # -- the module's shape -----------------------------------------------------------------
+    def test_path_titles_wrap_without_colliding_with_the_state_label(self) -> None:
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        path = source.split("function PathPreview(", 1)[1].split("function SourcesDrawer(", 1)[0]
+        self.assertIn("whiteSpace: 'normal'", path)
+        self.assertIn("flex: '1 1 8rem'", path)
+
+    def test_the_field_desk_return_is_on_the_courses_list_not_the_library(self) -> None:
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        courses = source.split("function CoursesView(", 1)[1].split("\nfunction sourceLabel(", 1)[0]
+        library = source.split("function LibraryView(", 1)[1].split("\nfunction planTimingCopy(", 1)[0]
+        self.assertIn("Back to the Field Desk", courses)
+        self.assertNotIn("Back to the Field Desk", library)
+        self.assertNotIn("onShowDesk", library)
+
     def test_the_desk_introduces_no_second_chat_or_markdown_surface(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
         desk = source.split("// ══ M2 — the Field Desk home", 1)[1].split("function CoursesView(", 1)[0]
