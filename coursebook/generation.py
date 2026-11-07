@@ -22,6 +22,10 @@ Rules this module will not bend:
 * reference answers and rubrics never enter a learner-facing payload;
 * a validator can reject; a rejected item regenerates **once** with the validator's reasons, and a
   second failure marks the lesson ``needs_review`` with no learner-facing check enabled;
+* a unit-authoring stage is **transactional over its unit**: a batch that breaks the unit's own
+  rules or that the validator rejects is discarded and the job fails with those reasons, so a
+  partial unit is never durable. Only a pass that is merely *not independent* is stored and
+  parked ``needs_review``;
 * unsupported or absent research downgrades claims to ``unverified`` and says so — it never
   fabricates a citation;
 * retries are idempotent per request fingerprint / ``plan_hash`` / section / version.
@@ -6451,6 +6455,16 @@ def run_unit_sections_job(
     Idempotent per ``(plan_id, unit_ordinal)``: existing section rows are reused, and only owner
     sections for objectives that have none are asked for. The job is one stage with its own
     four-call budget and a durable checkpoint; it never enqueues the next unit.
+
+    **Transactional over the unit.** A batch is written only after it is cleared for use. A batch
+    that breaks the unit's own rules (on either attempt) or that the validator rejects is
+    discarded: no ``gen_plan_sections`` row from that attempt survives, and the job fails with
+    the rejection reasons. Persisting a partial unit as ``needs_review`` was the alternative, but
+    it is neither honest (a half-covered unit) nor resumable (the reuse branch treated the
+    leftover rows as done), so an operator had to reason about a half-written unit. Re-running the
+    same brief starts the unit clean. A *pass that is not independent* is different: it is usable
+    content, so it is stored and parked as ``needs_review`` with its provenance, exactly as the
+    plan stage does.
     """
     ensure_schema(connection)
     job = dict(job or {})
@@ -6585,7 +6599,8 @@ def run_unit_sections_job(
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
                 if attempt == 2:
-                    authored = batch
+                    # A batch that breaks the unit's own rules is not persisted, not even as a
+                    # ``needs_review`` partial: see the transactional note above.
                     break
                 feedback = "The unit sections broke required rules:\n- " + "\n- ".join(exc.reasons)
                 continue
@@ -6625,40 +6640,23 @@ def run_unit_sections_job(
                 f"{entry.get('item')}: {entry.get('reason')}" for entry in verdict["rejections"]
             ] or [f"criteria failed: {', '.join(verdict['failed'])}"]
             if attempt == 2:
-                authored = batch
+                # A rejected batch is not a partial unit to finish later: the validator refused
+                # it, so it is discarded and the job fails with its reasons (transactional unit).
                 break
             feedback = _feedback(verdict["rejections"])
 
-        if verdict is None:
-            verdict = {
-                "verdict": "reject",
-                "declared": "reject",
-                "failed": [],
-                "unknown": [],
-                "rejections": [
-                    {"item": "unit_sections", "criterion": "objective_alignment", "reason": reason}
-                    for reason in rejection_reasons
-                ]
-                or [{"item": "unit_sections", "criterion": "objective_alignment", "reason": "generator broke required rules"}],
-                "criteria": [],
-                "claim_verdicts": [],
-                "waived_unknown": [],
-                "independence": INDEPENDENCE_UNIDENTIFIED,
-                "independent": False,
-                "research_status": research_status,
-                "facts_unverified": research_status == "unavailable",
-                "outcome": OUTCOME_REJECTED,
-            }
-        if not authored:
+        if verdict is None or verdict["verdict"] != "pass":
+            # Deterministic rule violations, malformed batches and validator rejections all take
+            # this exit. Nothing from the attempt reached ``gen_plan_sections``; the durable
+            # failure record carries every reason, and a retry starts the unit clean.
+            detail = "; ".join(rejection_reasons) or "the unit batch was not cleared for use"
             raise GenerationRejected(
-                f"unit {requested_unit} produced no sections"
+                f"unit {requested_unit} sections failed validation: {detail}"
             )
-
-        # Only an independent pass with grounded facts certifies the authored sections. Everything
-        # else is parked for review with its provenance attached, exactly as the plan stage does.
-        outcome = verdict.get("outcome") or (
-            OUTCOME_REJECTED if verdict["verdict"] != "pass" else OUTCOME_MODEL_ASSESSED
-        )
+        # Only an independent pass with grounded facts certifies the authored sections. A pass
+        # that is not independent is still usable and is parked as ``needs_review`` with its
+        # provenance attached, exactly as the plan stage does.
+        outcome = verdict.get("outcome") or OUTCOME_MODEL_ASSESSED
         state = "validated" if outcome == OUTCOME_INDEPENDENT else "needs_review"
         timestamp = _now_iso(now)
         # Global ordinals after the highest already stored for this plan, in unit order. The
