@@ -50,6 +50,7 @@ __all__ = [
     "BLOCK_ROLES",
     "MEDIA_KINDS",
     "MEDIA_ROLES",
+    "PROCEDURE_PERMISSIONS",
     "DOCUMENT_STATES",
     "LessonDocumentError",
     "canonical",
@@ -90,6 +91,33 @@ MAX_REASON = 300
 
 BLOCK_FIELDS = ("id", "role", "headline", "short", "deep", "check_id", "media", "source_ids")
 MEDIA_FIELDS = ("kind", "role", "artifact_id", "purpose", "text_equivalent", "label", "degraded", "reason")
+
+#: Optional, additive document field (docs/VISUAL_MEDIA_PLAN.md §8). A procedure is a *layout*
+#: over the same blocks: it adds a header and an ordered step list that references block ids, so
+#: it can never become a second copy of the teaching text or a second check.
+PROCEDURE_FIELDS = ("tools", "parts", "hazards", "stop_condition", "steps", "schematic", "source")
+PROCEDURE_STEP_FIELDS = ("block_id", "check")
+PROCEDURE_SCHEMATIC_FIELDS = ("title", "text_equivalent", "artifact_id", "source_id", "rows")
+PROCEDURE_SOURCE_FIELDS = ("source_id", "permission")
+PROCEDURE_ROW_FIELDS = ("label", "value", "row")
+
+#: Permission statuses a procedure source card may print. ``unknown`` is refused: a technical
+#: procedure is never presented beside a reference whose rights are not established.
+PROCEDURE_PERMISSIONS = ("public_domain", "licensed", "linked")
+
+MAX_PROCEDURE_ITEMS = 20
+MAX_PROCEDURE_ITEM = 200
+MAX_PROCEDURE_HAZARD = 300
+MAX_PROCEDURE_STOP = 400
+MAX_PROCEDURE_STEPS = 40
+MAX_PROCEDURE_CHECK = 300
+MAX_PROCEDURE_ROWS = 40
+MAX_PROCEDURE_ROW_LABEL = 120
+MAX_PROCEDURE_ROW_VALUE = 80
+
+#: Document keys that are optional. They are absent on every non-procedure document, so the
+#: procedure layout changes no existing document, its content hash or its id.
+OPTIONAL_DOCUMENT_FIELDS = ("procedure",)
 
 DOCUMENT_FIELDS = (
     "schema_version",
@@ -431,6 +459,194 @@ def _authored_media_child(item: Mapping[str, Any], index: int) -> dict[str, Any]
     )
 
 
+def _procedure_items(value: Any, field: str, *, max_len: int, problems: list[str]) -> list[str]:
+    if not isinstance(value, list):
+        problems.append(f"procedure.{field} is not an array")
+        return []
+    if len(value) > MAX_PROCEDURE_ITEMS:
+        problems.append(f"procedure.{field} exceeds {MAX_PROCEDURE_ITEMS} items")
+    items: list[str] = []
+    for index, entry in enumerate(value[:MAX_PROCEDURE_ITEMS]):
+        text = _clean(entry)
+        if not text:
+            problems.append(f"procedure.{field}[{index}] is empty")
+            continue
+        if len(text) > max_len:
+            problems.append(f"procedure.{field}[{index}] exceeds {max_len} characters")
+            continue
+        if text not in items:
+            items.append(text)
+    return items
+
+
+def _procedure_schematic(value: Any, source_ids: Sequence[str], problems: list[str]) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        problems.append("procedure.schematic is not an object")
+        return None
+    unknown = set(value) - set(PROCEDURE_SCHEMATIC_FIELDS)
+    if unknown:
+        problems.append("procedure.schematic has unknown field(s): " + ", ".join(sorted(unknown)))
+    title = _clean(value.get("title"))
+    if not title:
+        problems.append("procedure.schematic.title is empty")
+    elif len(title) > MAX_PROCEDURE_ITEM:
+        problems.append(f"procedure.schematic.title exceeds {MAX_PROCEDURE_ITEM} characters")
+    equivalent = _clean(value.get("text_equivalent"))
+    if not equivalent:
+        problems.append("procedure.schematic.text_equivalent is empty")
+    elif len(equivalent) > MAX_TEXT_EQUIVALENT:
+        problems.append(f"procedure.schematic.text_equivalent exceeds {MAX_TEXT_EQUIVALENT} characters")
+    artifact_id = value.get("artifact_id")
+    if artifact_id is not None and not _identifier(artifact_id):
+        problems.append("procedure.schematic.artifact_id is not an identifier")
+    source_id = _clean(value.get("source_id"))
+    # The structured facts are checked against the source ledger: a schematic may only be shown
+    # beside a source the document already cites.
+    if not _identifier(source_id):
+        problems.append("procedure.schematic.source_id is not an identifier")
+    elif source_id not in source_ids:
+        problems.append(f"procedure.schematic.source_id {source_id!r} is not a document source")
+    raw_rows = value.get("rows")
+    if not isinstance(raw_rows, list) or not raw_rows:
+        problems.append("procedure.schematic.rows must be a non-empty array of structured facts")
+        raw_rows = []
+    elif len(raw_rows) > MAX_PROCEDURE_ROWS:
+        problems.append(f"procedure.schematic.rows exceeds {MAX_PROCEDURE_ROWS} rows")
+    rows: list[dict[str, Any]] = []
+    for index, entry in enumerate(raw_rows[:MAX_PROCEDURE_ROWS]):
+        if not isinstance(entry, Mapping):
+            problems.append(f"procedure.schematic.rows[{index}] is not an object")
+            continue
+        unknown_row = set(entry) - set(PROCEDURE_ROW_FIELDS)
+        if unknown_row:
+            problems.append(
+                f"procedure.schematic.rows[{index}] has unknown field(s): "
+                + ", ".join(sorted(unknown_row))
+            )
+        label = _clean(entry.get("label"))
+        val = _clean(entry.get("value"))
+        if not label or len(label) > MAX_PROCEDURE_ROW_LABEL:
+            problems.append(f"procedure.schematic.rows[{index}].label is empty or too long")
+        if not val or len(val) > MAX_PROCEDURE_ROW_VALUE:
+            problems.append(f"procedure.schematic.rows[{index}].value is empty or too long")
+        try:
+            row_number = int(entry.get("row", index))
+        except (TypeError, ValueError):
+            problems.append(f"procedure.schematic.rows[{index}].row is not an integer")
+            row_number = index
+        if label and val:
+            rows.append({"label": label, "value": val, "row": row_number})
+    return {
+        "title": title,
+        "text_equivalent": equivalent,
+        "artifact_id": artifact_id if _identifier(artifact_id) else None,
+        "source_id": source_id if _identifier(source_id) else None,
+        "rows": rows,
+    }
+
+
+def _procedure(raw: Any, blocks: Sequence[Mapping[str, Any]], source_ids: Sequence[str]) -> dict[str, Any] | None:
+    """Normalise an authored procedure header; ``None`` when the document has none.
+
+    A procedure never carries teaching prose or a second check: ``steps`` are ordered references
+    to the document's own blocks plus an optional per-step verification cue. The header is the
+    only new content, and every fact in it is typed.
+    """
+    if raw is None:
+        return None
+    problems: list[str] = []
+    if not isinstance(raw, Mapping):
+        raise LessonDocumentError(["procedure is not an object"])
+    unknown = set(raw) - set(PROCEDURE_FIELDS)
+    if unknown:
+        problems.append("procedure has unknown field(s): " + ", ".join(sorted(unknown)))
+    missing = [field for field in PROCEDURE_FIELDS if field not in raw]
+    if missing:
+        raise LessonDocumentError(problems + ["procedure is missing " + ", ".join(missing)])
+    tools = _procedure_items(raw.get("tools"), "tools", max_len=MAX_PROCEDURE_ITEM, problems=problems)
+    parts = _procedure_items(raw.get("parts"), "parts", max_len=MAX_PROCEDURE_ITEM, problems=problems)
+    hazards = _procedure_items(raw.get("hazards"), "hazards", max_len=MAX_PROCEDURE_HAZARD, problems=problems)
+    if not hazards:
+        # The header must name hazards or state explicitly that none apply; silence is not a
+        # safety statement.
+        problems.append("procedure.hazards must name the hazards or state that none apply")
+    stop = _clean(raw.get("stop_condition"))
+    if not stop:
+        problems.append("procedure.stop_condition is empty")
+    elif len(stop) > MAX_PROCEDURE_STOP:
+        problems.append(f"procedure.stop_condition exceeds {MAX_PROCEDURE_STOP} characters")
+
+    block_ids = [str(block.get("id")) for block in blocks if isinstance(block, Mapping)]
+    raw_steps = raw.get("steps")
+    if not isinstance(raw_steps, list) or not raw_steps:
+        problems.append("procedure.steps must be a non-empty array")
+        raw_steps = []
+    elif len(raw_steps) > MAX_PROCEDURE_STEPS:
+        problems.append(f"procedure.steps exceeds {MAX_PROCEDURE_STEPS} steps")
+    steps: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index, entry in enumerate(raw_steps[:MAX_PROCEDURE_STEPS]):
+        if not isinstance(entry, Mapping):
+            problems.append(f"procedure.steps[{index}] is not an object")
+            continue
+        unknown_step = set(entry) - set(PROCEDURE_STEP_FIELDS)
+        if unknown_step:
+            problems.append(
+                f"procedure.steps[{index}] has unknown field(s): " + ", ".join(sorted(unknown_step))
+            )
+        block_id = _clean(entry.get("block_id"))
+        if not _identifier(block_id):
+            problems.append(f"procedure.steps[{index}].block_id is not an identifier")
+            continue
+        if block_id not in block_ids:
+            problems.append(f"procedure.steps[{index}].block_id {block_id!r} is not a document block")
+            continue
+        if block_id in seen:
+            problems.append(f"procedure.steps[{index}] repeats block {block_id!r}")
+            continue
+        seen.add(block_id)
+        check = _clean(entry.get("check")) or None
+        if check is not None and len(check) > MAX_PROCEDURE_CHECK:
+            problems.append(f"procedure.steps[{index}].check exceeds {MAX_PROCEDURE_CHECK} characters")
+        steps.append({"block_id": block_id, "check": check})
+
+    schematic = _procedure_schematic(raw.get("schematic"), source_ids, problems)
+
+    raw_source = raw.get("source")
+    source: dict[str, Any] | None = None
+    if not isinstance(raw_source, Mapping):
+        problems.append("procedure.source is missing; a procedure carries a cited reference")
+    else:
+        unknown_source = set(raw_source) - set(PROCEDURE_SOURCE_FIELDS)
+        if unknown_source:
+            problems.append("procedure.source has unknown field(s): " + ", ".join(sorted(unknown_source)))
+        source_id = _clean(raw_source.get("source_id"))
+        permission = _clean(raw_source.get("permission"))
+        if not _identifier(source_id):
+            problems.append("procedure.source.source_id is not an identifier")
+        elif source_id not in source_ids:
+            problems.append(f"procedure.source.source_id {source_id!r} is not a document source")
+        if permission not in PROCEDURE_PERMISSIONS:
+            problems.append(
+                "procedure.source.permission "
+                f"{permission!r} is not one of {', '.join(PROCEDURE_PERMISSIONS)}"
+            )
+        source = {"source_id": source_id, "permission": permission}
+    if problems:
+        raise LessonDocumentError(problems)
+    return {
+        "tools": tools,
+        "parts": parts,
+        "hazards": hazards,
+        "stop_condition": stop,
+        "steps": steps,
+        "schematic": schematic,
+        "source": source,
+    }
+
+
 def _finish(
     *,
     section_title: str,
@@ -438,6 +654,7 @@ def _finish(
     blocks: list[dict[str, Any]],
     check_id: str | None,
     source_ids: Sequence[Any],
+    procedure: Any = None,
 ) -> dict[str, Any]:
     attached = _attach_check(blocks, check_id)
     document_source_ids = _unique(source_ids, limit=MAX_DOCUMENT_SOURCE_IDS)
@@ -445,6 +662,7 @@ def _finish(
         for source_id in block["source_ids"]:
             if source_id not in document_source_ids and len(document_source_ids) < MAX_DOCUMENT_SOURCE_IDS:
                 document_source_ids.append(source_id)
+    normalised_procedure = _procedure(procedure, blocks, document_source_ids)
     state, views, note = _state_and_views(blocks, attached)
     core = {
         "schema_version": SCHEMA_VERSION,
@@ -454,6 +672,8 @@ def _finish(
         "source_ids": document_source_ids,
         "blocks": blocks,
     }
+    if normalised_procedure is not None:
+        core["procedure"] = normalised_procedure
     digest = hashlib.sha256(canonical(core).encode("utf-8")).hexdigest()
     document = {
         "schema_version": SCHEMA_VERSION,
@@ -468,6 +688,8 @@ def _finish(
         "check_id": attached,
         "source_ids": document_source_ids,
     }
+    if normalised_procedure is not None:
+        document["procedure"] = normalised_procedure
     problems = _document_problems(document)
     if problems:
         raise LessonDocumentError(problems)
@@ -491,11 +713,14 @@ def document_from_page(page: Mapping[str, Any], *, check_id: str | None = None) 
     )
     authored = page.get("document")
     raw_blocks = None
+    procedure = None
     if isinstance(authored, Mapping):
         raw_blocks = authored.get("blocks")
+        procedure = authored.get("procedure")
         source_ids = _unique(list(authored.get("source_ids") or []) + source_ids)
     elif isinstance(page.get("blocks"), list):
         raw_blocks = page.get("blocks")
+        procedure = page.get("procedure")
     if raw_blocks is not None:
         blocks = _authored_blocks(raw_blocks)
         objective_id = authored.get("objective_id") if isinstance(authored, Mapping) else page.get("objective_id")
@@ -508,6 +733,7 @@ def document_from_page(page: Mapping[str, Any], *, check_id: str | None = None) 
         blocks=blocks,
         check_id=check_id,
         source_ids=source_ids,
+        procedure=procedure,
     )
 
 
@@ -638,6 +864,7 @@ def document_from_blocks(
     objective_id: str | None = None,
     check_id: str | None = None,
     source_ids: Sequence[Any] | None = None,
+    procedure: Any = None,
 ) -> dict[str, Any]:
     """Validate and build a document from blocks authored directly (the v8 path)."""
     return _finish(
@@ -646,6 +873,7 @@ def document_from_blocks(
         blocks=_authored_blocks(blocks),
         check_id=check_id,
         source_ids=list(source_ids or []),
+        procedure=procedure,
     )
 
 
@@ -663,6 +891,21 @@ def narrative_text(document: Mapping[str, Any]) -> str:
                 parts.append(str(item.get("purpose") or ""))
                 parts.append(str(item.get("text_equivalent") or ""))
                 parts.append(str(item.get("label") or ""))
+    procedure = document.get("procedure")
+    if isinstance(procedure, Mapping):
+        # Every typed procedure string is learner-facing, so answer leakage is checked against it
+        # exactly as it is against the prose.
+        for field in ("tools", "parts", "hazards"):
+            parts.extend(str(item) for item in procedure.get(field) or [])
+        parts.append(str(procedure.get("stop_condition") or ""))
+        schematic = procedure.get("schematic")
+        if isinstance(schematic, Mapping):
+            parts.append(str(schematic.get("title") or ""))
+            parts.append(str(schematic.get("text_equivalent") or ""))
+            for row in schematic.get("rows") or []:
+                if isinstance(row, Mapping):
+                    parts.append(str(row.get("label") or ""))
+                    parts.append(str(row.get("value") or ""))
     return _normalize("\n".join(parts))
 
 
@@ -831,7 +1074,7 @@ def _document_problems(document: Any) -> list[str]:
     if not isinstance(document, Mapping):
         return ["document is not an object"]
     problems: list[str] = []
-    unknown = set(document) - set(DOCUMENT_FIELDS)
+    unknown = set(document) - set(DOCUMENT_FIELDS) - set(OPTIONAL_DOCUMENT_FIELDS)
     if unknown:
         problems.append(f"document has unknown field(s): {', '.join(sorted(unknown))}")
     missing = [field for field in DOCUMENT_FIELDS if field not in document]
@@ -888,6 +1131,11 @@ def _document_problems(document: Any) -> list[str]:
     note = document.get("view_note")
     if note is not None and not isinstance(note, str):
         problems.append("view_note must be null or text")
+    if document.get("procedure") is not None and isinstance(blocks, list):
+        try:
+            _procedure(document.get("procedure"), blocks, document.get("source_ids") or [])
+        except LessonDocumentError as exc:
+            problems.extend(exc.problems)
     if isinstance(blocks, list) and all(isinstance(block, Mapping) for block in blocks):
         expected_hash = _document_hash(document)
         if document.get("content_hash") != expected_hash:
@@ -906,6 +1154,8 @@ def _document_hash(document: Mapping[str, Any]) -> str:
         "source_ids": list(document.get("source_ids") or []),
         "blocks": list(document.get("blocks") or []),
     }
+    if document.get("procedure") is not None:
+        core["procedure"] = document.get("procedure")
     return "sha256:" + hashlib.sha256(canonical(core).encode("utf-8")).hexdigest()
 
 

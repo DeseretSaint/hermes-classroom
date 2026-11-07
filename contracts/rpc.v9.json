@@ -4750,6 +4750,52 @@
           "items": {
             "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
           }
+        },
+        "procedure": {
+          "type": "object",
+          "description": "Optional procedure layout (docs/VISUAL_MEDIA_PLAN.md §8). It is a header over the same blocks: steps are ordered references to this document's blocks plus an optional per-step verification cue, never a second copy of the teaching text and never a second check. Schematic rows are typed facts rendered deterministically; an illustration can never stand in for them.",
+          "additionalProperties": false,
+          "properties": {
+            "tools": {
+              "type": "array",
+              "maxItems": 20,
+              "items": {"type": "string", "minLength": 1, "maxLength": 200}
+            },
+            "parts": {
+              "type": "array",
+              "maxItems": 20,
+              "items": {"type": "string", "minLength": 1, "maxLength": 200}
+            },
+            "hazards": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 20,
+              "items": {"type": "string", "minLength": 1, "maxLength": 300}
+            },
+            "stop_condition": {"type": "string", "minLength": 1, "maxLength": 400},
+            "steps": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 40,
+              "items": {"$ref": "#/$defs/lesson_procedure_step"}
+            },
+            "schematic": {
+              "oneOf": [
+                {"$ref": "#/$defs/lesson_procedure_schematic"},
+                {"type": "null"}
+              ]
+            },
+            "source": {"$ref": "#/$defs/lesson_procedure_source"}
+          },
+          "required": [
+            "tools",
+            "parts",
+            "hazards",
+            "stop_condition",
+            "steps",
+            "schematic",
+            "source"
+          ]
         }
       },
       "required": [
@@ -4765,6 +4811,72 @@
         "check_id",
         "source_ids"
       ]
+    },
+    "lesson_procedure_step": {
+      "type": "object",
+      "description": "One numbered step. The action is the referenced block's own authored prose, so a step can never become a second text authority; check is an optional verification cue for that step, not the section check.",
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+        },
+        "check": {
+          "oneOf": [
+            {"type": "string", "minLength": 1, "maxLength": 300},
+            {"type": "null"}
+          ]
+        }
+      },
+      "required": ["block_id", "check"]
+    },
+    "lesson_procedure_schematic": {
+      "type": "object",
+      "description": "Typed facts for a deterministic schematic. The renderer draws only these rows; a generated illustration is labelled context and can never carry a torque value, clearance or sequence.",
+      "additionalProperties": false,
+      "properties": {
+        "title": {"type": "string", "minLength": 1, "maxLength": 200},
+        "text_equivalent": {"type": "string", "minLength": 1, "maxLength": 1200},
+        "artifact_id": {
+          "oneOf": [
+            {"$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"},
+            {"type": "null"}
+          ]
+        },
+        "source_id": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 40,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "label": {"type": "string", "minLength": 1, "maxLength": 120},
+              "value": {"type": "string", "minLength": 1, "maxLength": 80},
+              "row": {"type": "integer", "minimum": 0, "maximum": 10000}
+            },
+            "required": ["label", "value", "row"]
+          }
+        }
+      },
+      "required": ["title", "text_equivalent", "artifact_id", "source_id", "rows"]
+    },
+    "lesson_procedure_source": {
+      "type": "object",
+      "description": "The manual or reference the procedure is taught from, with its permission status. unknown rights are refused, so a technical procedure is never presented beside an unlicensed reference.",
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+        },
+        "permission": {
+          "type": "string",
+          "enum": ["public_domain", "licensed", "linked"]
+        }
+      },
+      "required": ["source_id", "permission"]
     },
     "lesson_block": {
       "type": "object",

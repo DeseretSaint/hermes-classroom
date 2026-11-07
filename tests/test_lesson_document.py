@@ -415,14 +415,19 @@ class ContractSurfaceTest(unittest.TestCase):
 
     def test_the_document_contract_has_no_answer_or_transcript_field(self) -> None:
         document = contracts.contract("cb.rpc")["$defs"]["lesson_document"]
+        # `procedure` is the typed §8 header (tools/parts/hazards/stop condition/steps/source);
+        # it is not answer material. Every other field is the v8 block document.
         self.assertEqual(
             set(document["properties"]),
             {
                 "schema_version", "document_id", "content_hash", "section_title", "objective_id",
-                "state", "view_note", "views", "blocks", "check_id", "source_ids",
+                "state", "view_note", "views", "blocks", "check_id", "source_ids", "procedure",
             },
         )
         self.assertNotIn("transcript", json.dumps(document))
+        procedure = json.dumps(document["properties"]["procedure"])
+        for forbidden in ("reference_answer", "accepted_answers", "rubric"):
+            self.assertNotIn(forbidden, procedure)
 
 
 if __name__ == "__main__":

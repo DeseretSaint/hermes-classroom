@@ -6099,7 +6099,457 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
  *
  * The document is server-owned; this component decides placement, never content. A view switch
  * re-renders the same blocks, the same ids and the same single check.
+ *
+ * A procedure document takes the procedure lens in Textbook: the typed header, the numbered step
+ * references, the deterministic schematic and the source card. Guided and Field Quest keep their
+ * existing single-block lenses over the same document.
  */
+/* ── Procedure layout ───────────────────────────────────────────────────────────────────────
+ * docs/VISUAL_MEDIA_PLAN.md §8. A procedure is a lens over the section's existing blocks: the
+ * header is typed facts, each numbered step references one block the document already carries,
+ * and the section's one check is printed once as a verification checklist. Nothing here reads
+ * prose to recover a torque value, and nothing here mints a second check or a second schematic.
+ *
+ * The honesty rules this layout exists to keep:
+ *   - a generated illustration is labelled context, never a specification, measurement, sequence
+ *     or safety authority;
+ *   - the only torque/clearance values on screen are the typed schematic rows and the source card
+ *     they cite; the deterministic schematic is drawn from those rows, not from an image;
+ *   - the stop condition is a distinct "do not proceed" callout, not decoration and never inside
+ *     an illustration;
+ *   - a procedure always shows its source and that source's permission status.
+ */
+const PROCEDURE_PERMISSION_COPY = {
+  public_domain: 'Public domain',
+  licensed: 'Licensed for this course',
+  linked: 'Linked source — not reproduced'
+}
+
+const PROCEDURE_MEDIA_NOTE = {
+  illustration: 'Context illustration — not a specification, measurement, sequence or safety authority.',
+  schematic: 'Deterministic schematic drawn from the structured facts below.',
+  sourced_technical: 'Sourced reference — check the cited source and its permission status.',
+  narration: 'Narration — the transcript is the authoritative text.'
+}
+
+function procedureSourceMeta(sourceId, sources) {
+  return (sources && sources[sourceId]) || null
+}
+
+/** Tools and parts: typed header lists, printed as written, never inferred from the prose. */
+function ProcedureHeader({ procedure, sectionTitle }) {
+  const tools = Array.isArray(procedure.tools) ? procedure.tools : []
+  const parts = Array.isArray(procedure.parts) ? procedure.parts : []
+  const columns = []
+  if (tools.length > 0) {
+    columns.push(
+      jsxs('div', {
+        key: 'tools',
+        'data-cb-procedure-tools': String(tools.length),
+        style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: '12rem', flex: '1 1 12rem' },
+        children: [
+          jsx(DeskLabel, { children: 'Tools' }),
+          jsx('ul', {
+            style: { margin: 0, paddingLeft: '1.1rem', fontSize: '0.85rem', lineHeight: 1.55, color: 'var(--cb-ink)' },
+            children: tools.map((item, index) => jsx('li', { children: item }, `${sectionTitle}-tool-${index}`))
+          })
+        ]
+      })
+    )
+  }
+  if (parts.length > 0) {
+    columns.push(
+      jsxs('div', {
+        key: 'parts',
+        'data-cb-procedure-parts': String(parts.length),
+        style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: '12rem', flex: '1 1 12rem' },
+        children: [
+          jsx(DeskLabel, { children: 'Parts' }),
+          jsx('ul', {
+            style: { margin: 0, paddingLeft: '1.1rem', fontSize: '0.85rem', lineHeight: 1.55, color: 'var(--cb-ink)' },
+            children: parts.map((item, index) => jsx('li', { children: item }, `${sectionTitle}-part-${index}`))
+          })
+        ]
+      })
+    )
+  }
+  return jsxs('section', {
+    'data-cb-procedure-header': '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.6rem',
+      padding: '0.85rem 1rem 0.95rem',
+      background: 'var(--cb-paper-raised)',
+      border: '1px solid var(--cb-rule)',
+      maxWidth: '48rem'
+    },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
+        children: [
+          jsx(DeskLabel, { children: 'Procedure' }),
+          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: 'Ordered steps' })
+        ]
+      }),
+      columns.length > 0
+        ? jsx('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '1rem' }, children: columns })
+        : jsx('p', {
+            style: { margin: 0, fontSize: '0.85rem', color: 'var(--cb-ink-soft)' },
+            children: 'The author listed no tools or parts for this procedure.'
+          })
+    ]
+  })
+}
+
+/**
+ * The stop condition, as a callout that cannot be mistaken for a step or a generated image.
+ *
+ * `role="note"` and the coral rule are the signal; the hazards are the author's own strings. The
+ * callout is not an illustration and carries no image.
+ */
+function ProcedureHazardCallout({ hazards, stopCondition }) {
+  const list = Array.isArray(hazards) ? hazards : []
+  return jsxs('section', {
+    role: 'note',
+    'aria-label': 'Do not proceed',
+    'data-cb-procedure-hazard': '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.35rem',
+      margin: '0 0 0.25rem',
+      padding: '0.7rem 0.85rem 0.75rem 0.9rem',
+      borderLeft: '3px solid var(--cb-coral)',
+      background: 'var(--cb-paper-raised)',
+      maxWidth: '48rem'
+    },
+    children: [
+      jsx('div', {
+        style: {
+          fontSize: '0.7rem',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: 'var(--cb-coral)'
+        },
+        children: 'Do not proceed'
+      }),
+      list.length > 0
+        ? jsx('ul', {
+            style: { margin: 0, paddingLeft: '1.1rem', fontSize: '0.9rem', lineHeight: 1.55, color: 'var(--cb-ink)' },
+            children: list.map((item, index) => jsx('li', { children: item }, `hazard-${index}`))
+          })
+        : null,
+      jsxs('p', {
+        'data-cb-procedure-stop': '',
+        style: { margin: 0, fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--cb-ink)' },
+        children: [jsx('strong', { children: 'Stop if: ' }), stopCondition]
+      })
+    ]
+  })
+}
+
+/**
+ * A torque or sequence schematic, deterministic from typed rows.
+ *
+ * The rows are the authority and are always printed, sorted by the backend's own `row` then
+ * label rule. An attached SVG artifact is this same drawing and is shown through the one
+ * `MediaSegment` preview; when that artifact cannot be reached the rows remain, so the value is
+ * never lost behind an image.
+ */
+function ProcedureSchematic({ schematic, sources, blockId }) {
+  if (!schematic) return null
+  const rows = (Array.isArray(schematic.rows) ? schematic.rows : [])
+    .slice()
+    .sort((left, right) => (Number(left.row) || 0) - (Number(right.row) || 0) || String(left.label).localeCompare(String(right.label)))
+  const source = procedureSourceMeta(schematic.source_id, sources)
+  return jsxs('section', {
+    'data-cb-procedure-schematic': '',
+    'aria-labelledby': `cb-procedure-schematic-${blockId || 'document'}`,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.4rem',
+      padding: '0.7rem 0.85rem',
+      border: '1px solid var(--cb-rule)',
+      background: 'var(--cb-paper)',
+      maxWidth: '48rem'
+    },
+    children: [
+      jsx('h3', {
+        id: `cb-procedure-schematic-${blockId || 'document'}`,
+        style: { margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--cb-ink)' },
+        children: schematic.title
+      }),
+      jsx('div', {
+        style: { fontSize: '0.7rem', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--cb-ink-soft)' },
+        children: 'Deterministic schematic · structured facts'
+      }),
+      jsx('table', {
+        'data-cb-procedure-rows': String(rows.length),
+        style: { borderCollapse: 'collapse', width: '100%', fontSize: '0.85rem', color: 'var(--cb-ink)' },
+        children: jsxs('tbody', {
+          children: rows.map((row, index) =>
+            jsxs(
+              'tr',
+              {
+                style: { borderTop: index === 0 ? 'none' : '1px solid var(--cb-rule)' },
+                children: [
+                  jsx('th', {
+                    scope: 'row',
+                    style: { textAlign: 'left', padding: '0.25rem 0.5rem 0.25rem 0', fontWeight: 500 },
+                    children: row.label
+                  }),
+                  jsx('td', {
+                    style: { textAlign: 'right', padding: '0.25rem 0', fontVariantNumeric: 'tabular-nums' },
+                    children: row.value
+                  })
+                ]
+              },
+              `${blockId || 'schematic'}-row-${index}`
+            )
+          )
+        })
+      }),
+      jsx('p', {
+        style: { margin: 0, fontSize: '0.8rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+        children: schematic.text_equivalent
+      }),
+      schematic.source_id
+        ? jsx('p', {
+            'data-cb-procedure-schematic-source': schematic.source_id,
+            style: { margin: 0, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            children: `Facts from ${(source && source.title) || schematic.source_id}`
+          })
+        : null,
+      schematic.artifact_id
+        ? jsx(BlockMedia, {
+            media: {
+              artifact_id: schematic.artifact_id,
+              role: 'schematic',
+              label: 'Deterministic schematic rendered from structured facts.',
+              text_equivalent: schematic.text_equivalent,
+              purpose: schematic.title
+            },
+            blockId: blockId || 'procedure',
+            ordinal: 'schematic'
+          })
+        : null
+    ]
+  })
+}
+
+/** The cited manual with its permission status; never an unlabelled link. */
+function ProcedureSourceCard({ source, sources }) {
+  const meta = procedureSourceMeta(source.source_id, sources)
+  const permission = PROCEDURE_PERMISSION_COPY[source.permission] || source.permission
+  return jsxs('section', {
+    'data-cb-procedure-source': source.source_id,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.25rem',
+      padding: '0.65rem 0.85rem',
+      borderLeft: '2px solid var(--cb-rule)',
+      background: 'var(--cb-paper-raised)',
+      maxWidth: '48rem'
+    },
+    children: [
+      jsx(DeskLabel, { children: 'Source' }),
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
+        children: [
+          jsx('span', { style: { fontSize: '0.9rem', fontWeight: 600, color: 'var(--cb-ink)' }, children: (meta && meta.title) || source.source_id }),
+          jsx(sdk.Badge, { size: 'xs', variant: source.permission === 'licensed' ? 'muted' : 'outline', children: permission })
+        ]
+      }),
+      meta && meta.url
+        ? jsx('a', {
+            href: meta.url,
+            rel: 'noreferrer noopener',
+            target: '_blank',
+            style: { fontSize: '0.8rem', color: 'var(--cb-accent)', overflowWrap: 'anywhere' },
+            children: meta.url
+          })
+        : null,
+      jsx('p', {
+        style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        children: 'Torque values and sequence come from this reference and the structured schematic; the illustration is context only.'
+      })
+    ]
+  })
+}
+
+/** One numbered step. The action is the referenced block's own prose; the check is the author's step cue. */
+function ProcedureStepCard({ step, index, block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation }) {
+  const body = withoutCheckLabels(block.deep, checkLabels)
+  const media = (block.media || []).map((item, ordinal) => {
+    const note = PROCEDURE_MEDIA_NOTE[item.role]
+    return jsxs(
+      'div',
+      {
+        key: `${block.id}-procedure-media-${ordinal}`,
+        'data-cb-procedure-media': item.role || 'media',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
+        children: [
+          note
+            ? jsx('p', {
+                'data-cb-procedure-media-note': item.role || '',
+                style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: item.role === 'illustration' ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)' },
+                children: note
+              })
+            : null,
+          jsx(BlockMedia, { media: item, blockId: block.id, ordinal })
+        ]
+      }
+    )
+  })
+  return jsxs('li', {
+    'data-cb-procedure-step': String(index + 1),
+    'data-cb-block': block.id,
+    'data-cb-role': block.role,
+    tabIndex: -1,
+    style: {
+      display: 'flex',
+      gap: '0.7rem',
+      padding: '0.7rem 0 0.7rem 0.85rem',
+      borderLeft: '2px solid var(--cb-rule)',
+      listStyle: 'none'
+    },
+    children: [
+      jsx('span', {
+        'aria-hidden': 'true',
+        style: {
+          fontSize: '0.8rem',
+          fontWeight: 700,
+          fontVariantNumeric: 'tabular-nums',
+          color: 'var(--cb-accent)',
+          minWidth: '1.4rem'
+        },
+        children: String(index + 1).padStart(2, '0')
+      }),
+      jsxs('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0, flex: '1 1 auto' },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.4rem' },
+            children: [
+              jsx('span', { className: 'sr-only', children: `Step ${index + 1}` }),
+              jsx('h3', {
+                style: { margin: 0, fontSize: '1rem', fontWeight: 600, lineHeight: 1.35, color: 'var(--cb-ink)' },
+                children: block.headline
+              })
+            ]
+          }),
+          body
+            ? jsx('div', { style: { maxWidth: '44rem' }, children: jsx(sdk.MessageTextContent, { text: body }) })
+            : null,
+          step.check
+            ? jsxs('p', {
+                'data-cb-procedure-step-check': block.id,
+                style: { margin: 0, fontSize: '0.82rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+                children: [jsx('strong', { children: 'Check: ' }), step.check]
+              })
+            : null,
+          media.length > 0 ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.4rem' }, children: media }) : null,
+          jsx(PronunciationSeat, { block, pronunciation }),
+          jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+          jsx(BlockSaveActions, { block, checkLabels, onSaveBlock }),
+          checkSlot
+            ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingTop: '0.15rem' }, 'data-cb-block-check': block.id, children: checkSlot })
+            : null
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * The procedure lens: header, hazard callout, numbered steps, one verification checklist, source.
+ *
+ * Blocks the author did not place in `steps` are still taught: they render after the numbered
+ * list in the ordinary textbook frame, so a procedure can never silently hide authored material.
+ */
+function ProcedureDocument({ document, sources, checkSlot, checkLabels, onSaveBlock, pronunciation }) {
+  const procedure = document.procedure
+  const blocks = document.blocks || []
+  const byId = {}
+  blocks.forEach((block) => {
+    byId[block.id] = block
+  })
+  const steps = (procedure.steps || [])
+    .map((step, index) => ({ step, index, block: byId[step.block_id] }))
+    .filter((entry) => Boolean(entry.block))
+  const placed = new Set(steps.map((entry) => entry.block.id))
+  const leftover = blocks.filter((block) => !placed.has(block.id))
+  const checkId = document.check_id
+  const attachedIndex = checkId ? steps.findIndex((entry) => entry.block.check_id === checkId) : -1
+  return jsxs('div', {
+    className: 'flex flex-col gap-3',
+    'data-cb-lesson-view': 'procedure',
+    'data-cb-document': document.document_id,
+    'data-cb-procedure': '',
+    children: [
+      jsx(ProcedureHeader, { procedure, sectionTitle: document.section_title }),
+      jsx(ProcedureHazardCallout, { hazards: procedure.hazards, stopCondition: procedure.stop_condition }),
+      jsx(ProcedureSchematic, { schematic: procedure.schematic, sources, blockId: document.document_id }),
+      jsx('ol', {
+        'data-cb-procedure-steps': String(steps.length),
+        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.2rem', maxWidth: '48rem' },
+        children: steps.map((entry) =>
+          jsx(
+            ProcedureStepCard,
+            {
+              step: entry.step,
+              index: entry.index,
+              block: entry.block,
+              sources,
+              checkLabels,
+              onSaveBlock,
+              pronunciation,
+              checkSlot: attachedIndex === entry.index ? checkSlot : null
+            },
+            entry.block.id
+          )
+        )
+      }),
+      checkId && checkSlot && attachedIndex < 0
+        ? jsxs('section', {
+            'data-cb-procedure-verification': '',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', maxWidth: '48rem' },
+            children: [jsx(DeskLabel, { children: 'Verification checklist' }), checkSlot]
+          })
+        : attachedIndex >= 0
+          ? jsxs('section', {
+              'data-cb-procedure-verification': 'attached',
+              style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', maxWidth: '48rem' },
+              children: [
+                jsx(DeskLabel, { children: 'Verification checklist' }),
+                jsx('p', {
+                  style: { margin: 0, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                  children: 'The checklist is on the step above. It is the section’s one check, not an extra quiz.'
+                })
+              ]
+            })
+          : null,
+      leftover.length > 0
+        ? jsxs('div', {
+            'data-cb-procedure-unplaced': String(leftover.length),
+            style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '48rem' },
+            children: [
+              jsx(DeskLabel, { children: 'Also in this lesson' }),
+              ...leftover.map((block) =>
+                jsx(TextbookBlock, { block, sources, checkSlot: null, checkLabels, onSaveBlock, pronunciation }, block.id)
+              )
+            ]
+          })
+        : null,
+      jsx(ProcedureSourceCard, { source: procedure.source, sources })
+    ]
+  })
+}
+
 function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock, onSaveBlock, pronunciation }) {
   const blocks = (document && document.blocks) || []
   const labels = Array.isArray(checkLabels) ? checkLabels : []
@@ -6136,6 +6586,17 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
         children: [jsx(sdk.PanelSectionLabel, { children: 'CHECK' }), checkSlot]
       })
     : null
+
+  if (document.procedure && view === 'textbook') {
+    return jsx(ProcedureDocument, {
+      document,
+      sources,
+      checkSlot,
+      checkLabels: labels,
+      onSaveBlock,
+      pronunciation
+    })
+  }
 
   if (view === 'field_quest' && document.views && document.views.field_quest) {
     return jsx(FieldQuestView, {
