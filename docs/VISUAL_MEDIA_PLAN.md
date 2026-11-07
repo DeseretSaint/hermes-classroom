@@ -44,6 +44,21 @@ A learner can switch views without changing what counts as evidence:
 Gamification changes presentation, not evidence. There are no locked core lessons, no cosmetic
 badges that imply mastery, and no second grading path.
 
+**Text direction and locale.** The document carries an optional `lang` and `direction`
+(`ltr`/`rtl`) beside its blocks. Direction is derived from the script of the declared locale
+(`ar`, `fa`, `he`, `ur` and other right-to-left primary languages → `rtl`), not from any claim
+about the learner, and it is rendered identically by Textbook, Guided, Field Quest and the
+procedure view: each view root gets the same `dir`/`lang` attributes. A page that recorded no
+locale omits both fields rather than guessing, so older documents keep their bytes and hash.
+Because the fields change no block, check or media semantics, they cannot make one view more
+authoritative than another.
+
+Locale scaffolds follow the same rule: a check declares only the kinds its locale and level
+mandate (`romaji`, `furigana`, `gloss`, `transliteration`, `diacritics`, `pinyin`,
+`script_guide`). Japanese L0/L1 declares romaji, furigana and a gloss; Arabic beginner material
+declares harakat diacritics; a French lesson declares none. A scaffold is an accessibility aid
+inside the document, never a learning-style diagnosis and never evidence of unaided skill.
+
 ## 3. Visual direction: "Ink & Field Notes"
 
 Coursebook should look like a specialist instrument inside Hermes, not a second generic chat
@@ -308,8 +323,9 @@ The language-audio path is:
 
 1. **Model phrase**: TTS generates a reference audio artifact from the authored transcript,
    with locale, voice and transcript metadata.
-2. **Listen**: learner plays the reference; the text equivalent and romaji/furigana scaffolds
-   are visible according to the lesson policy.
+2. **Listen**: learner plays the reference; the text equivalent and the lesson's authored
+   scaffolds (e.g. Japanese romaji/furigana at L0, Arabic diacritics) are visible according to
+   the lesson policy, in the document's recorded `lang` and `direction`.
 3. **Record**: learner records a short take in the Desktop with `MediaRecorder`; the take is
    uploaded to the plugin backend as a bounded audio blob.
 4. **Transcribe**: the backend sends the take through the host STT adapter (configured

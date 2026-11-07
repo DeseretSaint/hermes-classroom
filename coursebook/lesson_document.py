@@ -45,6 +45,8 @@ import json
 import re
 from typing import Any, Iterable, Mapping, Sequence
 
+from . import localization
+
 __all__ = [
     "SCHEMA_VERSION",
     "BLOCK_ROLES",
@@ -88,6 +90,7 @@ MAX_PURPOSE = 200
 MAX_TEXT_EQUIVALENT = 1200
 MAX_LABEL = 200
 MAX_REASON = 300
+MAX_LANG = 35
 
 BLOCK_FIELDS = ("id", "role", "headline", "short", "deep", "check_id", "media", "source_ids")
 MEDIA_FIELDS = ("kind", "role", "artifact_id", "purpose", "text_equivalent", "label", "degraded", "reason")
@@ -117,7 +120,12 @@ MAX_PROCEDURE_ROW_VALUE = 80
 
 #: Document keys that are optional. They are absent on every non-procedure document, so the
 #: procedure layout changes no existing document, its content hash or its id.
-OPTIONAL_DOCUMENT_FIELDS = ("procedure",)
+#:
+#: ``lang`` and ``direction`` are additive (H-18): a document projected from a page that recorded
+#: a locale carries a text language and ltr/rtl direction; a page that never recorded one omits
+#: both and keeps its old bytes, hash and id. Direction is a property of the text, never of the
+#: learner, and it never changes evidence semantics.
+OPTIONAL_DOCUMENT_FIELDS = ("procedure", "lang", "direction")
 
 DOCUMENT_FIELDS = (
     "schema_version",
@@ -141,6 +149,7 @@ FORBIDDEN_DOCUMENT_KEYS = frozenset(
 )
 
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$")
+_LANG_TAG = re.compile(r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$")
 
 #: ``lesson.page`` segment kinds that carry authored teaching prose, and the block role each one
 #: projects to. ``teaching`` is the pack/chat/turn kind; the other four are lesson-prompt kinds.
@@ -655,6 +664,8 @@ def _finish(
     check_id: str | None,
     source_ids: Sequence[Any],
     procedure: Any = None,
+    lang: Any = None,
+    direction: Any = None,
 ) -> dict[str, Any]:
     attached = _attach_check(blocks, check_id)
     document_source_ids = _unique(source_ids, limit=MAX_DOCUMENT_SOURCE_IDS)
@@ -664,6 +675,14 @@ def _finish(
                 document_source_ids.append(source_id)
     normalised_procedure = _procedure(procedure, blocks, document_source_ids)
     state, views, note = _state_and_views(blocks, attached)
+    lang_value = localization.normalize_locale(lang)
+    direction_value = localization.direction_for_locale(lang_value)
+    if direction is not None:
+        if direction not in localization.TEXT_DIRECTIONS:
+            raise LessonDocumentError(
+                [f"direction {direction!r} is not one of {', '.join(localization.TEXT_DIRECTIONS)}"]
+            )
+        direction_value = str(direction)
     core = {
         "schema_version": SCHEMA_VERSION,
         "section_title": section_title,
@@ -672,6 +691,10 @@ def _finish(
         "source_ids": document_source_ids,
         "blocks": blocks,
     }
+    if lang_value is not None:
+        core["lang"] = lang_value
+    if direction_value is not None:
+        core["direction"] = direction_value
     if normalised_procedure is not None:
         core["procedure"] = normalised_procedure
     digest = hashlib.sha256(canonical(core).encode("utf-8")).hexdigest()
@@ -688,6 +711,10 @@ def _finish(
         "check_id": attached,
         "source_ids": document_source_ids,
     }
+    if lang_value is not None:
+        document["lang"] = lang_value
+    if direction_value is not None:
+        document["direction"] = direction_value
     if normalised_procedure is not None:
         document["procedure"] = normalised_procedure
     problems = _document_problems(document)
@@ -754,7 +781,12 @@ def _resolve_page_procedure(
     return procedure
 
 
-def document_from_page(page: Mapping[str, Any], *, check_id: str | None = None) -> dict[str, Any]:
+def document_from_page(
+    page: Mapping[str, Any],
+    *,
+    check_id: str | None = None,
+    locale: str | None = None,
+) -> dict[str, Any]:
     """Project a stored ``gen_lessons.page_json`` into a document.
 
     Deterministic and read-only: the same page and check id always produce the same document id
@@ -762,6 +794,11 @@ def document_from_page(page: Mapping[str, Any], *, check_id: str | None = None) 
     validated and used; a page that carries authored ``short`` text beside its segments is
     projected from its segments **with** that text; every older page is projected without it and
     reports ``textbook_only``.
+
+    ``locale`` is the course/brief locale when the caller has it. A page authored after H-18
+    records ``lang`` and ``direction`` itself; an older page has neither, so the projection omits
+    both (keeping its old hash and id) unless the caller supplies the locale. ``direction`` is
+    derived from the text's script, never from a claim about the learner.
     """
     if not isinstance(page, Mapping):
         raise LessonDocumentError(["page must be an object"])
@@ -772,9 +809,13 @@ def document_from_page(page: Mapping[str, Any], *, check_id: str | None = None) 
     authored = page.get("document")
     raw_blocks = None
     procedure = None
+    lang = page.get("lang")
+    direction = page.get("direction")
     if isinstance(authored, Mapping):
         raw_blocks = authored.get("blocks")
         procedure = authored.get("procedure")
+        lang = authored.get("lang") or lang
+        direction = authored.get("direction") or direction
         source_ids = _unique(list(authored.get("source_ids") or []) + source_ids)
     elif isinstance(page.get("blocks"), list):
         raw_blocks = page.get("blocks")
@@ -797,6 +838,8 @@ def document_from_page(page: Mapping[str, Any], *, check_id: str | None = None) 
         check_id=check_id,
         source_ids=source_ids,
         procedure=procedure,
+        lang=locale or lang,
+        direction=direction,
     )
 
 
@@ -808,6 +851,7 @@ def document_from_segments(
     check_id: str | None = None,
     artifacts: Mapping[str, Mapping[str, Any]] | None = None,
     source_ids: Sequence[Any] | None = None,
+    locale: str | None = None,
 ) -> dict[str, Any]:
     """Project durable ``lesson_segments`` rows (the ``lesson.page`` shape) into a document.
 
@@ -917,6 +961,7 @@ def document_from_segments(
         blocks=blocks,
         check_id=check_id,
         source_ids=list(source_ids or []),
+        lang=locale,
     )
 
 
@@ -928,6 +973,7 @@ def document_from_blocks(
     check_id: str | None = None,
     source_ids: Sequence[Any] | None = None,
     procedure: Any = None,
+    locale: str | None = None,
 ) -> dict[str, Any]:
     """Validate and build a document from blocks authored directly (the v8 path)."""
     return _finish(
@@ -937,6 +983,7 @@ def document_from_blocks(
         check_id=check_id,
         source_ids=list(source_ids or []),
         procedure=procedure,
+        lang=locale,
     )
 
 
@@ -1194,6 +1241,15 @@ def _document_problems(document: Any) -> list[str]:
     note = document.get("view_note")
     if note is not None and not isinstance(note, str):
         problems.append("view_note must be null or text")
+    lang = document.get("lang")
+    if lang is not None:
+        if not isinstance(lang, str) or len(lang) > MAX_LANG or not _LANG_TAG.match(lang):
+            problems.append("lang must be a bounded text language tag or absent")
+    direction = document.get("direction")
+    if direction is not None and direction not in localization.TEXT_DIRECTIONS:
+        problems.append(
+            f"direction {direction!r} is not one of {', '.join(localization.TEXT_DIRECTIONS)}"
+        )
     if document.get("procedure") is not None and isinstance(blocks, list):
         try:
             _procedure(document.get("procedure"), blocks, document.get("source_ids") or [])
@@ -1217,6 +1273,10 @@ def _document_hash(document: Mapping[str, Any]) -> str:
         "source_ids": list(document.get("source_ids") or []),
         "blocks": list(document.get("blocks") or []),
     }
+    if document.get("lang") is not None:
+        core["lang"] = document.get("lang")
+    if document.get("direction") is not None:
+        core["direction"] = document.get("direction")
     if document.get("procedure") is not None:
         core["procedure"] = document.get("procedure")
     return "sha256:" + hashlib.sha256(canonical(core).encode("utf-8")).hexdigest()

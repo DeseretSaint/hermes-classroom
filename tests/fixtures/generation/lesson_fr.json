@@ -1,0 +1,84 @@
+{
+  "section_title": "Saluer et ouvrir la conversation",
+  "segments": [
+    {
+      "kind": "model",
+      "heading": "Deux formules que vous entendrez",
+      "body": "« Bonjour » ouvre une interaction avec un commerçant. « Merci » la referme poliment. Les deux sont des formules standard au niveau A1.",
+      "short": "« Bonjour » ouvre l'échange ; « Merci » le referme poliment."
+    },
+    {
+      "kind": "explain",
+      "heading": "Pourquoi le registre compte",
+      "body": "Les formules standard sont le choix sûr dans un commerce. Le tutoiement s'emploie avec des amis, pas avec un commerçant que vous ne connaissez pas.",
+      "short": "Les formules standard sont le choix sûr ; le tutoiement s'emploie avec des amis."
+    },
+    {
+      "kind": "guided",
+      "heading": "Répétez la formule",
+      "body": "Répétez « Bonjour » à voix haute, puis « Merci ». Aucun sinogramme ni romaji n'est nécessaire : le français s'écrit avec l'alphabet latin.",
+      "short": "Répétez « Bonjour », puis « Merci »."
+    }
+  ],
+  "worked_example": {
+    "prompt": "Vous voulez demander la carte poliment.",
+    "steps": [
+      "Dites « Bonjour » en regardant le commerçant",
+      "Attendez sa réponse",
+      "Demandez « La carte, s'il vous plaît »"
+    ],
+    "answer": "Bonjour, la carte s'il vous plaît.",
+    "short": "Dites « Bonjour », attendez la réponse, puis demandez la carte."
+  },
+  "learner_explanation": "Choisissez la formule qui convient en entrant dans un commerce pour la première fois. Le français s'écrit avec l'alphabet latin ; aucun scaffold japonais n'est déclaré.",
+  "check": {
+    "kind": "quiz",
+    "stimulus": {
+      "prompt": "Vous entrez dans un café et le personnel lève les yeux. Quelle formule ouvre poliment l'interaction ?",
+      "format": "selection",
+      "choices": [
+        "Bonjour",
+        "Salut",
+        "Au revoir"
+      ]
+    },
+    "learner_instructions": "Choisissez une formule. Aucun indice n'est affiché avant votre première tentative.",
+    "evidence_target": "production",
+    "accepted_answers": [
+      "Bonjour"
+    ],
+    "accepted_alternatives": [
+      [
+        "Bonjour."
+      ]
+    ],
+    "rubric": [
+      {
+        "criterion": "formule d'ouverture",
+        "weight": 1.0,
+        "description": "Choisit une formule employée en entrant dans un commerce"
+      },
+      {
+        "criterion": "registre",
+        "weight": 1.0,
+        "description": "Conserve le registre standard attendu avec le personnel"
+      },
+      {
+        "criterion": "orthographe",
+        "weight": 1.0,
+        "description": "Écrit la formule en alphabet latin sans faute"
+      }
+    ],
+    "reference_answer": "Bonjour",
+    "assistance_policy": {
+      "hint": "after_attempt",
+      "answer_marks_evidence_class": "hinted"
+    },
+    "scaffolds": []
+  },
+  "sources": [],
+  "media": [],
+  "parent_notes": null,
+  "supervision_notes": [],
+  "learner_explanation_short": "Choisissez la formule qui convient en entrant dans un commerce pour la première fois."
+}
