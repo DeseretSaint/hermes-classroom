@@ -4681,11 +4681,24 @@ function supportsArtifactGet() {
   return backendSupports('artifact.get')
 }
 
-/** The two presentation views this build implements (docs/VISUAL_MEDIA_PLAN.md §3.3, §5). */
+/** The three presentation views this build implements (docs/VISUAL_MEDIA_PLAN.md §3.3, §5). */
 const LESSON_VIEWS = [
   { id: 'textbook', label: 'Textbook' },
-  { id: 'guided', label: 'Guided' }
+  { id: 'guided', label: 'Guided' },
+  { id: 'field_quest', label: 'Field Quest' }
 ]
+
+/**
+ * The views *this document* can render.
+ *
+ * Textbook is the floor. Guided needs authored `short` prose on every block. Field Quest needs the
+ * same and exactly one attachable check, because its checkpoints are the document's existing
+ * checks and nothing else. The switcher never offers a view that would render as a broken toggle.
+ */
+function lessonViewOptions(document) {
+  const views = (document && document.views) || {}
+  return LESSON_VIEWS.filter((view) => (view.id === 'textbook' ? true : Boolean(views[view.id])))
+}
 
 /** A role is where the block sits in the teaching sequence, never a skin or a difficulty claim. */
 const BLOCK_ROLE_COPY = {
@@ -4805,6 +4818,7 @@ function TextbookBlock({ block, sources, checkSlot, checkLabels }) {
     className: 'flex flex-col gap-2 border-b border-(--ui-stroke-tertiary) py-3 first:pt-0 last:border-b-0 last:pb-0',
     'data-cb-block': block.id,
     'data-cb-role': block.role,
+    tabIndex: -1,
     children: [
       jsxs('div', {
         className: 'flex flex-wrap items-baseline gap-2',
@@ -4827,6 +4841,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
     'aria-labelledby': `cb-guided-headline-${block.id}`,
     'data-cb-block': block.id,
     'data-cb-role': block.role,
+    tabIndex: -1,
     children: [
       jsxs('div', {
         className: 'flex flex-wrap items-baseline justify-between gap-2',
@@ -4891,15 +4906,246 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
 }
 
 /**
+ * A mission is one block of the same document, in authored order.
+ *
+ * There is no second lesson here: `block` is the document's own block, `checkpoint` is a label on
+ * the block that already carries the document's single check, and nothing is generated.
+ */
+function questMissions(document) {
+  const blocks = (document && document.blocks) || []
+  const checkId = document ? document.check_id : null
+  return blocks.map((block, index) => ({
+    index,
+    total: blocks.length,
+    block,
+    checkpoint: Boolean(checkId && block.check_id === checkId)
+  }))
+}
+
+/**
+ * Progress is descriptive, never a score.
+ *
+ * "2 independent · 1 due" counts objectives the backend has already recorded as independent and
+ * objectives it has already flagged as due. It is not a streak, an XP total or a mastery claim; a
+ * course with nothing recorded says so instead of showing a zero that looks like a grade.
+ */
+function questProgressLabel(summary) {
+  if (!summary || typeof summary !== 'object') return 'Progress not recorded'
+  const total = Number(summary.total_objectives) || 0
+  if (total === 0) return 'No objectives recorded yet'
+  const independent = Number(summary.independent) || 0
+  const due = Number(summary.review_due) || 0
+  return `${independent} independent · ${due} due`
+}
+
+/** One mission: the block's short prose, its media, its sources and — on a checkpoint — its check. */
+function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbook }) {
+  const block = mission.block
+  const body = withoutCheckLabels(block.short || block.deep, checkLabels)
+  const stateWord = mission.checkpoint ? 'Checkpoint' : 'Mission'
+  const tone = mission.checkpoint ? 'var(--cb-accent)' : 'var(--cb-ink-soft)'
+  const headingId = `cb-mission-headline-${block.id}`
+  return jsxs('li', {
+    'data-cb-mission': block.id,
+    'data-cb-mission-index': String(mission.index + 1),
+    'data-cb-mission-role': block.role,
+    'data-cb-mission-checkpoint': mission.checkpoint ? 'true' : 'false',
+    'data-cb-mission-check': mission.checkpoint && block.check_id ? block.check_id : '',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.4rem',
+      listStyle: 'none',
+      padding: '0.65rem 0 0.75rem 0.85rem',
+      borderLeft: `2px solid ${mission.checkpoint ? 'var(--cb-accent)' : 'var(--cb-rule)'}`,
+      maxWidth: '46rem'
+    },
+    children: [
+      jsxs('div', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: '0.2rem 0.75rem'
+        },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem', minWidth: 0 },
+            children: [
+              jsx('span', {
+                'data-cb-mission-number': '',
+                style: {
+                  flex: '0 0 auto',
+                  fontVariantNumeric: 'tabular-nums',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: tone
+                },
+                children: String(mission.index + 1).padStart(2, '0')
+              }),
+              jsx(sdk.Badge, {
+                size: 'xs',
+                variant: 'muted',
+                children: BLOCK_ROLE_COPY[block.role] || block.role
+              }),
+              jsx('h3', {
+                id: headingId,
+                style: {
+                  margin: 0,
+                  minWidth: 0,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  lineHeight: 1.35,
+                  color: 'var(--cb-ink)',
+                  overflowWrap: 'anywhere'
+                },
+                children: block.headline
+              })
+            ]
+          }),
+          jsx('span', {
+            'data-cb-mission-state': mission.checkpoint ? 'checkpoint' : 'mission',
+            style: { flex: '0 0 auto', fontSize: '0.7rem', fontWeight: 500, color: tone },
+            children: stateWord
+          })
+        ]
+      }),
+      body
+        ? jsx('div', {
+            style: { maxWidth: '46rem' },
+            children: jsx(sdk.MessageTextContent, { text: body })
+          })
+        : null,
+      (block.media || []).map((media, ordinal) =>
+        jsx(BlockMedia, { media, blockId: block.id, ordinal }, `${block.id}-media-${ordinal}`)
+      ),
+      jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+      mission.checkpoint
+        ? jsxs('div', {
+            'data-cb-mission-gate': block.check_id || 'unattached',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingTop: '0.15rem' },
+            children: [
+              jsx(DeskLabel, { children: 'Checkpoint' }),
+              jsx('div', {
+                style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+                children: 'This is the section’s existing check — the same one Textbook and Guided use. Finishing it is not required to read anything here.'
+              }),
+              checkSlot
+                ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' }, children: checkSlot })
+                : jsx('div', {
+                    style: { fontSize: '0.8rem', color: 'var(--cb-ink-soft)' },
+                    children: 'No check could be attached to this checkpoint, so the mission stays readable and ungated.'
+                  })
+            ]
+          })
+        : null,
+      jsx(sdk.Button, {
+        variant: 'text',
+        size: 'sm',
+        className: 'self-start',
+        'data-cb-mission-read': block.id,
+        'aria-label': `Read mission ${mission.index + 1}, ${block.headline}, in Textbook`,
+        onClick: () => onReadInTextbook(block.id),
+        children: 'Read in Textbook'
+      })
+    ]
+  })
+}
+
+/**
+ * Field Quest: the same block sequence drawn as a path of small missions.
+ *
+ * What changes is the frame — numbering, the `Mission`/`Checkpoint` word and the course's
+ * descriptive evidence counts. What does not change is the teaching truth (§2, §5): every mission
+ * prints the authored `short` prose, every checkpoint holds the document's own single check node,
+ * every block, check and source id is the document's, and nothing is locked. There is no XP, no
+ * streak, no badge that stands in for evidence and no second grading path.
+ */
+function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, unattached, onOpenBlock }) {
+  const missions = questMissions(document)
+  const motion = useCbMotion()
+  const progressLabel = questProgressLabel(progress)
+  const checkpoints = missions.filter((mission) => mission.checkpoint).length
+  return jsxs('div', {
+    'data-cb-lesson-view': 'field_quest',
+    'data-cb-document': document.document_id,
+    'data-cb-motion': motion,
+    'data-cb-quest-progress': progressLabel,
+    'data-cb-quest-missions': String(missions.length),
+    'data-cb-quest-checkpoints': String(checkpoints),
+    style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+    children: [
+      jsxs('div', {
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: '0.2rem 0.75rem'
+        },
+        children: [
+          jsx(DeskLabel, { children: 'Field Quest' }),
+          jsx('span', {
+            style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+            children: `${progressLabel} · ${missions.length} mission${missions.length === 1 ? '' : 's'}, ${checkpoints} checkpoint${checkpoints === 1 ? '' : 's'}`
+          })
+        ]
+      }),
+      jsx('p', {
+        'data-cb-quest-note': '',
+        style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+        children:
+          'Counts describe evidence the backend already recorded; they are not a score. Every mission is open — a checkpoint is the section’s existing check, not a lock.'
+      }),
+      jsx('ol', {
+        'data-cb-quest-path': '',
+        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.1rem' },
+        children: missions.map((mission) =>
+          jsx(
+            QuestMission,
+            {
+              mission,
+              sources,
+              checkLabels,
+              checkSlot: mission.checkpoint ? checkSlot : null,
+              onReadInTextbook: (blockId) => onOpenBlock && onOpenBlock(blockId)
+            },
+            mission.block.id
+          )
+        )
+      }),
+      unattached
+    ]
+  })
+}
+
+/**
  * The lesson document, rendered as one of its views.
  *
  * The document is server-owned; this component decides placement, never content. A view switch
  * re-renders the same blocks, the same ids and the same single check.
  */
-function LessonDocumentView({ document, view, sources, checkSlot, checkLabels }) {
+function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock }) {
   const blocks = (document && document.blocks) || []
   const labels = Array.isArray(checkLabels) ? checkLabels : []
   const [step, setStep] = useState(0)
+  const rootRef = useRef(null)
+  const focusIndex = focusBlockId ? blocks.findIndex((block) => block.id === focusBlockId) : -1
+  // A mission can hand the reader to the same block in another view. The ids are the document's,
+  // so the handoff sets Guided's step by id and moves focus to that block rather than guessing an
+  // offset; nothing about the block, its check or its sources is re-created by the switch.
+  useEffect(() => {
+    if (focusIndex < 0) return
+    if (view === 'guided' && focusIndex !== step) {
+      setStep(focusIndex)
+      return
+    }
+    const root = rootRef.current
+    if (!root || typeof root.querySelector !== 'function') return
+    const target = root.querySelector(`[data-cb-block="${focusBlockId}"]`)
+    if (target && typeof target.focus === 'function') target.focus()
+  }, [focusBlockId, focusIndex, view, step])
   if (blocks.length === 0) {
     return jsx(EmptyState, {
       title: 'This section has no teaching content yet',
@@ -4917,10 +5163,23 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels })
       })
     : null
 
+  if (view === 'field_quest' && document.views && document.views.field_quest) {
+    return jsx(FieldQuestView, {
+      document,
+      sources,
+      checkSlot,
+      checkLabels: labels,
+      progress,
+      unattached,
+      onOpenBlock
+    })
+  }
+
   if (view === 'guided' && document.views && document.views.guided) {
     const current = Math.min(step, blocks.length - 1)
     const block = blocks[current]
     return jsxs('div', {
+      ref: rootRef,
       className: 'flex flex-col gap-3',
       'data-cb-lesson-view': 'guided',
       'data-cb-document': document.document_id,
@@ -4941,6 +5200,7 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels })
   }
 
   return jsxs('div', {
+    ref: rootRef,
     className: 'flex flex-col gap-3',
     'data-cb-lesson-view': 'textbook',
     'data-cb-document': document.document_id,
@@ -4974,6 +5234,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
   const [lessonView, setLessonView] = useState('textbook')
+  // A mission hands the reader to the same block in Textbook. The target is a block id, so the
+  // handoff survives the view switch and lands on the document's own block, not an offset.
+  const [focusBlockId, setFocusBlockId] = useState(null)
   // The document is a v8 read projection. A backend that predates it answers with segments only,
   // so the segment list below stays as the fallback rather than becoming dead code.
   const document = page && page.document ? page.document : null
@@ -4985,6 +5248,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   // step and the legacy segment list. It is never rendered twice in one view.
   useEffect(() => {
     setLessonView('textbook')
+    setFocusBlockId(null)
   }, [objectiveId])
   const check = useOpenCheck({
     enrollmentId: row.enrollment_id,
@@ -5062,6 +5326,17 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
     setSaveSeed({ excerpt: segment.text, kind: segment.artifact_id ? 'artifact' : 'lesson_segment', source_ref: segment.source_id || null })
   }, [])
 
+  /**
+   * Hand a mission to another view by block id.
+   *
+   * The check node is not re-created by this: it is the same `check.get` read and the same
+   * `AttemptControls` node, mounted once in whichever view is on screen.
+   */
+  const openBlock = useCallback((blockId, targetView) => {
+    setFocusBlockId(blockId || null)
+    setLessonView(targetView || 'textbook')
+  }, [])
+
   let body
   if (!page) {
     body =
@@ -5134,7 +5409,10 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 view: lessonView,
                 sources: sourceIndex,
                 checkSlot: checkNode,
-                checkLabels
+                checkLabels,
+                progress: row.evidence_summary || null,
+                focusBlockId,
+                onOpenBlock: openBlock
               },
               objectiveId
             )
@@ -5258,18 +5536,24 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         { label: 'Attempts', value: String((page && page.attempts ? page.attempts.length : 0)) }
       ]
     : []
+  const viewOptions = document ? lessonViewOptions(document) : []
+  const activeView = viewOptions.some((option) => option.id === lessonView) ? lessonView : 'textbook'
   const switcher = document
     ? jsxs('div', {
         className: 'flex flex-wrap items-center gap-2',
-        'data-cb-view-switcher': document.views && document.views.guided ? 'available' : 'textbook-only',
+        'data-cb-view-switcher': viewOptions.length > 1 ? 'available' : 'textbook-only',
+        'data-cb-view-options': viewOptions.map((option) => option.id).join(' '),
         children: [
           jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: 'Lesson view' }),
-          document.views && document.views.guided
+          viewOptions.length > 1
             ? jsx(sdk.SegmentedControl, {
-                onChange: setLessonView,
-                options: LESSON_VIEWS,
+                onChange: (next) => {
+                  setFocusBlockId(null)
+                  setLessonView(next)
+                },
+                options: viewOptions,
                 sizing: 'content',
-                value: lessonView
+                value: activeView
               })
             : jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: 'Textbook only' })
         ]
@@ -9599,9 +9883,9 @@ function CoursebookSettings() {
   })
 }
 
-// Named seam for tests/test_desktop_lesson_views.py. The block views and the section page are pure
-// components over a server-owned document, so a Node test can render them without a backend, a
-// chat or a window.
+// Named seam for tests/test_desktop_lesson_views.py and tests/test_desktop_field_quest.py. The
+// block views, the section page and the quest projection are pure components/functions over a
+// server-owned document, so a Node test can render them without a backend, a chat or a window.
 export {
   AttemptControls,
   BackendUnavailable,
@@ -9609,9 +9893,11 @@ export {
   CB_TOKEN_NAMES,
   FieldRail,
   FieldDeskHome,
+  FieldQuestView,
   LESSON_VIEWS,
   LessonDocumentView,
   MediaFrame,
+  QuestMission,
   SectionPage,
   WorkspaceShell,
   buildDeskModel,
@@ -9620,7 +9906,10 @@ export {
   cbMotionPreference,
   cbScopeStyle,
   deskEstimateLabel,
-  mainlineObjective
+  lessonViewOptions,
+  mainlineObjective,
+  questMissions,
+  questProgressLabel
 }
 
 export default {
