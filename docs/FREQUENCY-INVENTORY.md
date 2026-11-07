@@ -148,6 +148,24 @@ python3 -m unittest discover -s tests -t .          # full suite
 python3 audit/adversarial/harness-e2e/harness_e2e.py # only after a plan-prompt version bump
 ```
 
+## Verification record (2026-11-07, branch `wt/h89-frequency-inventory`)
+
+```
+$ python3 -m unittest tests.test_frequency -v
+Ran 25 tests ... OK
+
+$ python3 -m unittest discover -s tests -t .
+Ran 1682 tests in 217.073s
+OK (skipped=1)
+
+$ python3 audit/adversarial/harness-e2e/harness_e2e.py
+overall: PASS  (3/3 scenarios)
+packet: 8 evidence file(s) content-addressed in manifest.json; 3 transcript input(s)
+```
+
+`desktop/plugin.js` is untouched by this branch (`git diff master -- desktop/plugin.js` is
+empty), so the M4 visual pin does not move.
+
 ## Not in this card
 
 No desktop UI row for source/licence (H-84/H-86 own the plugin surface; a plan-review row
