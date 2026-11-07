@@ -1,0 +1,75 @@
+{
+  "checks_after_refusal": 0,
+  "lesson_page_check_id": null,
+  "lesson_page_error": null,
+  "lesson_page_ok": true,
+  "lesson_page_state": "not_started",
+  "lesson_page_view_note": null,
+  "lesson_stage_refusal": {
+    "message": "unit 2 owner sections cover objectives [3] but the unit has objectives [3, 4]; re-author the unit sections.",
+    "type": "GenerationRejected"
+  },
+  "lessons_after_refusal": 0,
+  "outline_missing_objective": {
+    "check_state": "none",
+    "ordinal": 4,
+    "state": "not_started",
+    "title": "Use the circle of fifths to name the chords in a pop song"
+  },
+  "persisted_sections": [
+    {
+      "objective_refs_json": "[3]",
+      "ordinal": 1,
+      "section_role": "owner"
+    }
+  ],
+  "unit_result": {
+    "budget": {
+      "max_calls": 400,
+      "max_cost_usd": 100.0,
+      "source": "caller"
+    },
+    "job_id": "job_d0a193514e6b47ff9c08d22e7deb1f32",
+    "job_kind": "unit_sections",
+    "next_unit_ordinal": null,
+    "owners": 1,
+    "plan_hash": "sha256:4e36453758294148d4a488527a44de63b9f0b35a1170dbbbc0ddaafc225ca40f",
+    "plan_id": "a30d10a04cc4e250",
+    "rejection_reasons": [
+      "objective 4 has no owner section; author exactly one owner section per objective",
+      "unit 2 targets 2 lesson(s); this batch would leave 1 section(s)"
+    ],
+    "reused": false,
+    "reviews": 0,
+    "section_ids": [
+      "3b308b197b332a4f"
+    ],
+    "sections": 1,
+    "stage": "unit_sections",
+    "state": "needs_review",
+    "unit_ordinal": 2,
+    "usage": {
+      "budget": {
+        "max_calls": 400,
+        "max_cost_usd": 100.0,
+        "source": "caller"
+      },
+      "by_purpose": {
+        "coursebook.unit_sections.generate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": false
+        }
+      },
+      "calls": 2,
+      "cost_usd": 0.0,
+      "estimated_cost_usd": 0.0,
+      "input_tokens": 911,
+      "output_tokens": 206,
+      "unknown_calls": 0,
+      "unknown_cost": false
+    },
+    "validation_id": null,
+    "validation_verdict": "reject"
+  }
+}

@@ -1,0 +1,463 @@
+{
+  "lessons": {
+    "Desolder a two-lead part without overheating it": {
+      "accepted_answers": [
+        "fresh flux",
+        "it restores flux"
+      ],
+      "check_prompt": "Why add fresh solder before desoldering?",
+      "criterion": "Fresh solder and alternating heat keep the part and the pads alive.",
+      "example_steps": [
+        "Add fresh solder",
+        "Alternate the heat",
+        "Pull gently"
+      ],
+      "explanation": "Old solder has lost its flux, so adding fresh solder is what makes removal quick.",
+      "intent": "Teach desoldering a part.",
+      "items": null,
+      "practice": "Add fresh solder to each joint, alternate heat between the leads, and pull gently once both are molten.",
+      "reference_answer": "to restore the flux"
+    },
+    "Form a lead so the part seats flush": {
+      "accepted_answers": [
+        "the underside"
+      ],
+      "check_prompt": "Which side of the board should the bent lead sit on?",
+      "criterion": "The body sits flat with the lead bent between the body and the pad.",
+      "example_steps": [
+        "Measure the board",
+        "Bend with pliers",
+        "Drop the part"
+      ],
+      "explanation": "A part that stands off the board strains its joints every time the board flexes.",
+      "intent": "Teach lead forming.",
+      "items": null,
+      "practice": "Bend the lead with pliers at the board thickness and let the part drop flush without pushing it.",
+      "reference_answer": "the solder side"
+    },
+    "Heat the pad and lead together before feeding solder": {
+      "accepted_answers": [
+        "heated joint"
+      ],
+      "check_prompt": "Where does the solder go?",
+      "criterion": "The joint reaches temperature first; solder follows the heat.",
+      "example_steps": [
+        "Touch pad and lead",
+        "Wait for heat",
+        "Feed into the joint"
+      ],
+      "explanation": "Solder fed onto the tip makes a cold joint that looks finished and fails later.",
+      "intent": "Teach the heat order.",
+      "items": null,
+      "practice": "Touch the tip to the pad and the lead at once, count two seconds, then feed solder into the joint, not the tip.",
+      "reference_answer": "into the heated joint"
+    },
+    "Insert a part in the right orientation": {
+      "accepted_answers": [
+        "the part's own stripe"
+      ],
+      "check_prompt": "Which feature decides the part's orientation?",
+      "criterion": "The part's marking and the board's marking face the same way.",
+      "example_steps": [
+        "Read the part",
+        "Read the board",
+        "Align them"
+      ],
+      "explanation": "Orientation errors survive soldering and only show up when the circuit does not work.",
+      "intent": "Teach polarity against the board marking.",
+      "items": null,
+      "practice": "Find the marking on the part and match it to the board's own marking before you bend anything.",
+      "reference_answer": "the stripe on the part"
+    },
+    "Inspect a finished joint against the fillet criterion": {
+      "accepted_answers": [
+        "the one with a ball",
+        "the ball"
+      ],
+      "check_prompt": "Which joint needs rework?",
+      "criterion": "A sound joint is shiny, concave and covers the pad without a ball.",
+      "example_steps": [
+        "Pick a joint",
+        "Compare to the criterion",
+        "Mark rework"
+      ],
+      "explanation": "Applying one criterion to many joints is the skill; the criterion itself does not change.",
+      "intent": "Apply the criterion to a real joint.",
+      "items": null,
+      "practice": "Judge each joint on the board against the fillet criterion and mark the ones that need rework.",
+      "reference_answer": "the balled joint"
+    },
+    "Inspect a pad for lift before inserting a part": {
+      "accepted_answers": [
+        "moves",
+        "it shifts"
+      ],
+      "check_prompt": "What does a lifted pad do under light pressure?",
+      "criterion": "A sound pad sits flat on the board; a lifted pad shows a shadow line and gives under light pressure.",
+      "example_steps": [
+        "Light the pad edge",
+        "Press gently",
+        "Compare to a sound pad"
+      ],
+      "explanation": "A lifted pad turns a one-minute joint into a board repair, so it is checked before heat.",
+      "intent": "Teach pad inspection.",
+      "items": null,
+      "practice": "Look at the pad edge against the board and press gently with a toothpick before you insert anything.",
+      "reference_answer": "it moves"
+    },
+    "Name the three burn and fume hazards at the bench": {
+      "accepted_answers": [
+        "breathing irritation",
+        "lung irritation"
+      ],
+      "check_prompt": "Which hazard do solder fumes mainly create?",
+      "criterion": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
+      "example_steps": [
+        "Point at the iron",
+        "Point at the fume path",
+        "Name the eye risk"
+      ],
+      "explanation": "Naming the hazard is what makes the bench rules stick when you are concentrating on the joint.",
+      "intent": "Name the hazards before touching the iron.",
+      "items": null,
+      "practice": "Point at the iron, the fume path and your eyes, and name the hazard each one creates.",
+      "reference_answer": "respiratory irritation"
+    },
+    "Prove continuity with a meter after rework": {
+      "accepted_answers": [
+        "continuity mode"
+      ],
+      "check_prompt": "Which meter setting proves the repair conducts?",
+      "criterion": "Continuity between the intended points proves the repair conducts.",
+      "example_steps": [
+        "Set continuity",
+        "Probe both ends",
+        "Confirm the beep"
+      ],
+      "explanation": "A joint can look right and still be open; the meter is the check the eye cannot make.",
+      "intent": "Teach the final electrical check.",
+      "items": null,
+      "practice": "Set the meter to continuity, probe the two ends of the repaired path, and confirm the beep before power.",
+      "reference_answer": "the continuity setting"
+    },
+    "Read a resistor value from its colour bands": {
+      "accepted_answers": [
+        "1000 ohm",
+        "1 kOhm"
+      ],
+      "check_prompt": "What is brown-black-red-gold?",
+      "criterion": "Brown, black, red, gold is ten times one hundred, so one thousand ohms at five percent.",
+      "example_steps": [
+        "Read band one",
+        "Read band two",
+        "Apply the multiplier"
+      ],
+      "explanation": "The code is positional, so reading order matters more than colour memory.",
+      "intent": "Teach the four-band code.",
+      "items": null,
+      "practice": "Read the bands left to right, then multiply by the third band before you trust the value.",
+      "reference_answer": "1k ohm at 5 percent"
+    },
+    "Recognise a cold joint from its surface": {
+      "accepted_answers": [
+        "dull",
+        "lumpy and dull"
+      ],
+      "check_prompt": "What does a cold joint look like?",
+      "criterion": "A cold joint has a grainy, matte surface; a sound fillet is bright and concave.",
+      "example_steps": [
+        "Look at the surface",
+        "Compare to a fillet",
+        "Name the cold one"
+      ],
+      "explanation": "Surface is the cheapest inspection you have, and it is read before power is applied.",
+      "intent": "Teach visual discrimination.",
+      "items": null,
+      "practice": "Compare a grainy joint with a bright fillet and say which one moved while it cooled.",
+      "reference_answer": "dull and lumpy"
+    },
+    "Set an iron to the temperature a leaded joint needs": {
+      "accepted_answers": [
+        "320-350 C",
+        "320 to 350 C"
+      ],
+      "check_prompt": "What temperature range suits leaded solder?",
+      "criterion": "Leaded solder wants a moderate setting; hotter burns the flux before the joint forms.",
+      "example_steps": [
+        "Set the dial",
+        "Wait for the display",
+        "Tin the tip"
+      ],
+      "explanation": "Temperature is a time control: too cold means a longer touch and a colder joint.",
+      "intent": "Teach the temperature setting for leaded solder.",
+      "items": null,
+      "practice": "Set the station, wait for the display to settle, and tin the tip before the first joint.",
+      "reference_answer": "320 to 350 degrees Celsius"
+    },
+    "Wick a solder bridge without lifting the pad": {
+      "accepted_answers": [
+        "after the bridge disappears",
+        "once the solder flows"
+      ],
+      "check_prompt": "When do you lift the wick?",
+      "criterion": "Heat through the wick and stop as soon as the bridge disappears.",
+      "example_steps": [
+        "Add flux",
+        "Lay the wick",
+        "Heat until the bridge flows"
+      ],
+      "explanation": "Pulling the wick while the solder is solid is how pads lift.",
+      "intent": "Teach bridge removal.",
+      "items": null,
+      "practice": "Add flux, lay the wick over the bridge, and heat the wick until the solder flows into it before lifting.",
+      "reference_answer": "after the solder flows into it"
+    }
+  },
+  "research": {
+    "content": "A recorded page used only so the research seam returns a source. It states that joints are heated pad and lead together, solder is fed in after the joint reaches temperature, and a shiny fillet is the inspection criterion.",
+    "title": "Recorded page: through-hole soldering",
+    "url": "https://example.invalid/recorded/through-hole-soldering"
+  },
+  "scenario": {
+    "goal": "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering.",
+    "level": "beginner",
+    "locale": "en-US",
+    "name": "soldering_full",
+    "recipe": "committed",
+    "scope": "full",
+    "subject_domain": "technical_procedure",
+    "title": "Through-hole soldering for a first repair"
+  },
+  "shape": {
+    "check_plan": [
+      {
+        "evidence_target": "recall",
+        "kind": "quiz",
+        "objective_ref": 1
+      },
+      {
+        "evidence_target": "procedure",
+        "kind": "quiz",
+        "objective_ref": 2
+      },
+      {
+        "evidence_target": "comprehension",
+        "kind": "quiz",
+        "objective_ref": 3
+      },
+      {
+        "evidence_target": "discrimination",
+        "kind": "quiz",
+        "objective_ref": 4
+      },
+      {
+        "evidence_target": "procedure",
+        "kind": "quiz",
+        "objective_ref": 5
+      },
+      {
+        "evidence_target": "comprehension",
+        "kind": "quiz",
+        "objective_ref": 6
+      },
+      {
+        "evidence_target": "procedure",
+        "kind": "quiz",
+        "objective_ref": 7
+      },
+      {
+        "evidence_target": "discrimination",
+        "kind": "quiz",
+        "objective_ref": 8
+      },
+      {
+        "evidence_target": "transfer",
+        "kind": "quiz",
+        "objective_ref": 9
+      },
+      {
+        "evidence_target": "procedure",
+        "kind": "quiz",
+        "objective_ref": 10
+      },
+      {
+        "evidence_target": "procedure",
+        "kind": "quiz",
+        "objective_ref": 11
+      },
+      {
+        "evidence_target": "transfer",
+        "kind": "quiz",
+        "objective_ref": 12
+      }
+    ],
+    "learner_outcome": "The learner solders, inspects and reworks a through-hole board without lifting a pad.",
+    "objectives": [
+      {
+        "evidence_criteria": [
+          "Names iron, fume and eye hazards"
+        ],
+        "evidence_target": "recall",
+        "ordinal": 1,
+        "title": "Name the three burn and fume hazards at the bench",
+        "unit_ref": 1
+      },
+      {
+        "evidence_criteria": [
+          "States the setting and why"
+        ],
+        "evidence_target": "procedure",
+        "ordinal": 2,
+        "title": "Set an iron to the temperature a leaded joint needs",
+        "unit_ref": 1
+      },
+      {
+        "evidence_criteria": [
+          "Decodes a four-band value"
+        ],
+        "evidence_target": "comprehension",
+        "ordinal": 3,
+        "title": "Read a resistor value from its colour bands",
+        "unit_ref": 2
+      },
+      {
+        "evidence_criteria": [
+          "Tells a sound pad from a lifted one"
+        ],
+        "evidence_target": "discrimination",
+        "ordinal": 4,
+        "title": "Inspect a pad for lift before inserting a part",
+        "unit_ref": 2
+      },
+      {
+        "evidence_criteria": [
+          "Bends and seats without forcing"
+        ],
+        "evidence_target": "procedure",
+        "ordinal": 5,
+        "title": "Form a lead so the part seats flush",
+        "unit_ref": 3
+      },
+      {
+        "evidence_criteria": [
+          "Matches polarity marking to the board"
+        ],
+        "evidence_target": "comprehension",
+        "ordinal": 6,
+        "title": "Insert a part in the right orientation",
+        "unit_ref": 3
+      },
+      {
+        "evidence_criteria": [
+          "Describes the heat order"
+        ],
+        "evidence_target": "procedure",
+        "ordinal": 7,
+        "title": "Heat the pad and lead together before feeding solder",
+        "unit_ref": 4
+      },
+      {
+        "evidence_criteria": [
+          "Contrasts dull and shiny fillets"
+        ],
+        "evidence_target": "discrimination",
+        "ordinal": 8,
+        "title": "Recognise a cold joint from its surface",
+        "unit_ref": 4
+      },
+      {
+        "evidence_criteria": [
+          "Applies the criterion to a photo"
+        ],
+        "evidence_target": "transfer",
+        "ordinal": 9,
+        "title": "Inspect a finished joint against the fillet criterion",
+        "unit_ref": 5
+      },
+      {
+        "evidence_criteria": [
+          "States the wick and heat order"
+        ],
+        "evidence_target": "procedure",
+        "ordinal": 10,
+        "title": "Wick a solder bridge without lifting the pad",
+        "unit_ref": 5
+      },
+      {
+        "evidence_criteria": [
+          "Alternates heat and adds fresh solder"
+        ],
+        "evidence_target": "procedure",
+        "ordinal": 11,
+        "title": "Desolder a two-lead part without overheating it",
+        "unit_ref": 6
+      },
+      {
+        "evidence_criteria": [
+          "Chooses the continuity setting and reads it"
+        ],
+        "evidence_target": "transfer",
+        "ordinal": 12,
+        "title": "Prove continuity with a meter after rework",
+        "unit_ref": 6
+      }
+    ],
+    "sessions_per_week": 2,
+    "units": [
+      {
+        "goal": "Set up a safe bench and a controlled iron.",
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "target_lessons": 2,
+        "title": "Safety and the iron"
+      },
+      {
+        "goal": "Read component values and inspect pads.",
+        "ordinal": 2,
+        "prereq_unit_ordinals": [
+          1
+        ],
+        "target_lessons": 2,
+        "title": "Components and the board"
+      },
+      {
+        "goal": "Form leads and seat a part flush.",
+        "ordinal": 3,
+        "prereq_unit_ordinals": [
+          2
+        ],
+        "target_lessons": 2,
+        "title": "Through-hole insertion"
+      },
+      {
+        "goal": "Heat and feed solder into a sound joint.",
+        "ordinal": 4,
+        "prereq_unit_ordinals": [
+          3
+        ],
+        "target_lessons": 2,
+        "title": "Soldering a joint"
+      },
+      {
+        "goal": "Judge a joint and fix a bridge.",
+        "ordinal": 5,
+        "prereq_unit_ordinals": [
+          4
+        ],
+        "target_lessons": 2,
+        "title": "Inspection and rework"
+      },
+      {
+        "goal": "Remove a part without damage and prove continuity.",
+        "ordinal": 6,
+        "prereq_unit_ordinals": [
+          5
+        ],
+        "target_lessons": 2,
+        "title": "Desoldering and final check"
+      }
+    ],
+    "weeks": 12
+  },
+  "transcript_version": "h40/blueprint-v2"
+}

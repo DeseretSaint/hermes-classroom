@@ -1,0 +1,83 @@
+{
+  "lessons": {
+    "Remove the rear wheel, replace the inner tube and check the brakes": {
+      "accepted_answers": [
+        "all listed steps ticked honestly"
+      ],
+      "check_prompt": "Tick each step only after you have actually done it.",
+      "criterion": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
+      "example_steps": [
+        "Deflate fully",
+        "Lift the wheel out",
+        "Seat the tube by hand"
+      ],
+      "explanation": "A tube that is pinched under the bead fails on the first ride; the hand-check of the bead is the step that catches it.",
+      "intent": "Talk the learner through the repair and confirm each step was done.",
+      "items": [
+        {
+          "id": "item_1",
+          "label": "Deflated the tyre and released the brake"
+        },
+        {
+          "id": "item_2",
+          "label": "Refitted the wheel without forcing the bead"
+        },
+        {
+          "id": "item_3",
+          "label": "Checked the brakes by hand before riding"
+        }
+      ],
+      "practice": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead.",
+      "reference_answer": "Every listed step performed and checked by hand"
+    }
+  },
+  "research": {
+    "content": "A recorded page used only so the research seam returns a source. It states that the tyre must be fully deflated, the bead seated by hand, and the brake quick-release closed before riding.",
+    "title": "Recorded page: replacing a clincher inner tube",
+    "url": "https://example.invalid/recorded/bicycle-inner-tube"
+  },
+  "scenario": {
+    "goal": "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today.",
+    "level": "beginner",
+    "locale": "en-US",
+    "name": "bicycle_single",
+    "recipe": "one_off",
+    "scope": "single",
+    "subject_domain": "repair",
+    "title": "Replace a bicycle inner tube"
+  },
+  "shape": {
+    "check_plan": [
+      {
+        "evidence_target": "procedure",
+        "kind": "verification",
+        "objective_ref": 1
+      }
+    ],
+    "learner_outcome": "The learner replaces the inner tube and confirms the brakes by hand.",
+    "objectives": [
+      {
+        "evidence_criteria": [
+          "Removes and refits the wheel without forcing the bead",
+          "States the one condition that makes the repair unsafe to ride"
+        ],
+        "evidence_target": "procedure",
+        "ordinal": 1,
+        "title": "Remove the rear wheel, replace the inner tube and check the brakes",
+        "unit_ref": 1
+      }
+    ],
+    "sessions_per_week": 1,
+    "units": [
+      {
+        "goal": "Get the rear wheel off, fit a sound tube, and prove the brakes work.",
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "target_lessons": 1,
+        "title": "Remove the wheel, replace the tube, check the brakes"
+      }
+    ],
+    "weeks": 1
+  },
+  "transcript_version": "h40/blueprint-v2"
+}
