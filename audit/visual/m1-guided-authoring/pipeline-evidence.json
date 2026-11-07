@@ -1,0 +1,63 @@
+{
+  "rig_home": "/home/deseretsaint/.hermes/coursebook-m1-guided-211852/home",
+  "plugin_root": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_7890cf1f",
+  "authoring": {
+    "adapter": "tests.test_generation.FakeLLM / FakeSearch (deterministic, offline)",
+    "provider_call": false,
+    "spend": "none: no provider was called and no cost was recorded",
+    "plan_id": "7dd82b12bc457ce6",
+    "plan_validation": "pass",
+    "lesson_states": [
+      "validated",
+      "validated",
+      "validated",
+      "validated"
+    ],
+    "lesson_validations": [
+      "pass",
+      "pass",
+      "pass",
+      "pass"
+    ],
+    "prompt_version": "lesson-prompt.v5"
+  },
+  "lesson_page": {
+    "enrollment_id": "enr_4edc11e37dff47c4aa1e0200e00a3813",
+    "objective_id": "59a186e978db31bf",
+    "state": "complete",
+    "views": {
+      "textbook": true,
+      "guided": true,
+      "field_quest": true,
+      "field_notes": true
+    },
+    "view_note": null,
+    "block_roles": [
+      "example",
+      "explain",
+      "practice",
+      "example",
+      "recap"
+    ],
+    "block_shorts": [
+      "お願いします (onegaishimasu) for a request; ありがとうございます (arigatou gozaimasu) for thanks.",
+      "Standard polite forms are the safe default in a shop; casual forms belong with friends.",
+      "Repeat お願いします with romaji visible, then once more without it.",
+      "Wait for the staff member to respond, then thank them with ありがとうございます.",
+      "Pick the phrase that fits entering a shop and speaking to staff for the first time."
+    ],
+    "block_headlines": [
+      "Two phrases you will hear",
+      "Why register matters",
+      "Say it with romaji visible",
+      "You want to ask for a menu politely.",
+      "Recap"
+    ],
+    "check_id": "b1bfc1425f9b9f64",
+    "blocks_claiming_the_check": [
+      2
+    ],
+    "content_hash": "sha256:cb0c0af423236b90835bcfff38aabb238203b4f535d0ced859d8d3cb4013d76f",
+    "segment_kinds": []
+  }
+}
