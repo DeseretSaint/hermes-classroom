@@ -39,6 +39,13 @@ started; the board dispatcher enforces that.
 | H-11 | `t_6f41e0b0` | Truth pass — docs/status after the harness slice | quill | H-09 | `wt/harness-docs` |
 | H-12 | `t_dba06898` | Fail-closed plan approval — empty, rejected, or edited plans cannot approve | cinder | — (hotfix) | `wt/harness-plan-approval` |
 | H-13 | `t_543c0767` | Thread level, subject_domain and scope into the plan runtime | atlas | H-01 | `wt/harness-policy-threading` |
+| H-14 | `t_031e287f` | Source-trust boundary and claim-level provenance lint | sable | H-10 | `wt/harness-source-trust` |
+| H-15 | `t_d519643b` | Validator independence and the no-research factual waiver | atlas | H-10 | `wt/harness-validator-independence` |
+| H-16 | `t_3c5d969c` | Assessment construct breadth decision (code/performance/artifact) | atlas | H-03 | `wt/harness-assessment-breadth` |
+| H-17 | `t_9a8543ae` | Sized cost ceilings and CostCeilingExceeded recovery | cinder | H-10 | `wt/harness-cost-ceilings` |
+| H-18 | `t_8407ea22` | Locale-aware scaffolds, direction/RTL, non-Japanese fixture | cinder | H-13 | `wt/harness-locale-scaffolds` |
+| H-19 | `t_ec1d2c15` | Audit evidence index and reproducible provenance | quill | H-10 | `wt/harness-audit-index` |
+| H-20 | `t_43ca17b8` | Prerequisite edges — conditional implementation from H-03 | atlas | H-03 | `wt/harness-prereq-edges` |
 
 H-12 is a root card because the defect is live on the current master and does not need the
 contract work. It touches plan approval, not the course-create fields. If it collides with H-01 in
@@ -172,6 +179,29 @@ and a sycophantic validator, then propose a concrete guard and its cost.
 closing its public record, or the current code does not match the claim. H-11 must reconcile the
 README, `docs/PRIVACY_EGRESS.md`, `docs/ACCEPTANCE.md` and `REVIEW_CB014` rather than repeating a
 stale defect. This is a truth pass, not a code change.
+
+## Second wave — what the round-2 audit added
+
+H-10 (`docs/ADVERSARIAL-AUDIT-ROUND2.md`, 14 deterministic probes) found the next class of
+failures. The report proposed its own H-11…H-18 labels; the board keys below are authoritative and
+avoid those collisions:
+
+| finding | severity | card | what it changes |
+|---|---|---|---|
+| P0-1 rejected plan is an approvable draft | P0 | **H-12** (already running) | validation binds approval; empty/rejected/edited plans fail closed |
+| P0-2 fetched excerpt is raw prompt content; invented prose URLs pass | P0 | **H-14** | untrusted-data envelope + claim-level provenance lint |
+| P1-3 same model writes and validates; support self-upgrades | P1 | **H-15** | record/compare validator identity, cross-model path, no self-upgrade |
+| P1-4 factual gate waives when research is unavailable | P1 | **H-15** | no-research is a visible approval/provenance state, not a silent pass |
+| P1-5 code/performance/artifact cannot be collected or graded | P1 | **H-16** | decide in/out of scope; no fake check kind |
+| P1-6 flat $0.75 ceiling fails mid-course with no recovery | P1 | **H-17** | plan-sized ceiling + preflight + resumable cost abort |
+| P2-7 Japanese-only scaffold triple; no RTL/direction | P2 | **H-18** | locale-aware scaffolds + document direction + non-Japanese fixture |
+| P2-8 no prerequisite edges; adaptation is a state label | P2 | **H-20** (conditional on H-03) | add real sequencing only if the blueprint puts it in mission |
+| P2-10 round-1 review was untracked at audit time | P2 | **H-19** | committed audit index and hashes; correct the stale provenance line |
+
+H-10's report is an audit artifact, not a fix. It explicitly says it changes no product policy. The
+round-1 review was committed after H-10's snapshot (`2e3508f`), so H-19 must record "untracked at
+audit time; committed in `2e3508f`" rather than repeating a present-tense defect.
+
 
 ## Execution rules
 
