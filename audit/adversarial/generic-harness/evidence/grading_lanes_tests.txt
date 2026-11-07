@@ -1,0 +1,22 @@
+test_continuation_prompt_carries_the_rule (tests.test_grading_lanes.FrozenChatDirectiveTest.test_continuation_prompt_carries_the_rule) ... ok
+test_lesson_author_instructions_carry_the_rule (tests.test_grading_lanes.FrozenChatDirectiveTest.test_lesson_author_instructions_carry_the_rule) ... ok
+test_an_accepted_alternative_also_passes (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_an_accepted_alternative_also_passes) ... ok
+test_every_generated_check_declares_a_known_lane (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_every_generated_check_declares_a_known_lane) ... ok
+test_selection_quiz_grades_the_typed_choice (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_selection_quiz_grades_the_typed_choice)
+The pane shows choices as text and submits what was typed; exact grades that. ... ok
+test_text_quiz_right_answer_passes_cold_and_completes (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_text_quiz_right_answer_passes_cold_and_completes) ... ok
+test_text_quiz_wrong_answer_is_not_yet_and_advances_nothing (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_text_quiz_wrong_answer_is_not_yet_and_advances_nothing) ... ok
+test_check_open_refuses_a_spec_without_a_lane (tests.test_grading_lanes.MissingKindIsImpossibleTest.test_check_open_refuses_a_spec_without_a_lane) ... ok
+test_generated_writer_seals_every_reference (tests.test_grading_lanes.MissingKindIsImpossibleTest.test_generated_writer_seals_every_reference)
+The generated write path always emits a sealed reference, even for a minimal check. ... ok
+test_grading_a_reference_without_a_kind_is_a_grader_failure (tests.test_grading_lanes.MissingKindIsImpossibleTest.test_grading_a_reference_without_a_kind_is_a_grader_failure) ... ok
+test_seal_reference_requires_a_declared_lane (tests.test_grading_lanes.MissingKindIsImpossibleTest.test_seal_reference_requires_a_declared_lane) ... ok
+test_closed_target_gets_an_exact_reference (tests.test_grading_lanes.PackImportLaneTest.test_closed_target_gets_an_exact_reference) ... ok
+test_production_and_transfer_declare_the_open_lane_explicitly (tests.test_grading_lanes.PackImportLaneTest.test_production_and_transfer_declare_the_open_lane_explicitly) ... ok
+test_a_self_report_answer_is_not_graded_and_advances_nothing (tests.test_grading_lanes.VerificationCheckIsSelfReportedTest.test_a_self_report_answer_is_not_graded_and_advances_nothing) ... ok
+test_verification_reference_declares_rubric_only (tests.test_grading_lanes.VerificationCheckIsSelfReportedTest.test_verification_reference_declares_rubric_only) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 4.885s
+
+OK

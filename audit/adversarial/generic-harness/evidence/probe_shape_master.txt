@@ -1,0 +1,41 @@
+## scope contract
+SCOPE_EXPECTATIONS['single']: {'max_weeks': 1, 'objectives': (4, 5), 'note': 'one sitting: a plan the learner finishes in a single session'}
+SCOPE_EXPECTATIONS['short']: {'max_weeks': 8, 'objectives': (4, 6), 'note': 'a short course of a few weeks, not a term-long syllabus'}
+SCOPE_EXPECTATIONS['full']: {'max_weeks': 104, 'objectives': (4, 8), 'note': 'a full course; the standard objective range stands'}
+PLAN_SCHEMA.objectives.minItems: 4
+PLAN_SCHEMA.objectives.maxItems: 8
+PLAN_SCHEMA.check_plan.objective_ref.maximum: 8
+PLAN_SCHEMA has 'units': False
+PLAN_SCHEMA has 'plan_schema': False
+prompt[single]: Produce 4 to 5 objectives, each with a stable ordinal, an evidence target and 1-3 observable evidence criteria.
+prompt[short]: Produce 4 to 6 objectives, each with a stable ordinal, an evidence target and 1-3 observable evidence criteria.
+prompt[full]: Produce 4 to 8 objectives, each with a stable ordinal, an evidence target and 1-3 observable evidence criteria.
+prompt[unscoped]: Produce 4 to 8 objectives, each with a stable ordinal, an evidence target and 1-3 observable evidence criteria.
+
+## artifact validator
+1-objective plan: REJECTED — /objectives: [{'ordinal': 1, 'title': 'Remove the rear wheel with the correct quick-release or axle tool', 'evidence_target': 'procedure', 'evidence_criteria': ['Wheel released without forcing the frame'], 'support': 'unverified', 'source_ids': []}] is too short | /sections: [{'ordinal': 1, 'title': 'Remove the rear wheel', 'lesson_intent': 'Release the rear wheel using the quick-release or the axle nuts the bike actually has.', 'media_need': {'construct': '', 'image': {'level': 'none', 'role': 'none'}, 'audio': {'level': 'none', 'role': 'none'}}, 'objective_refs': [1], 'context_needs': [], 'source_ids': []}] is too short
+4-objective plan: ACCEPTED
+8-objective plan: ACCEPTED
+12-objective plan: REJECTED — /check_plan/8/objective_ref: 9 is greater than the maximum of 8 | /check_plan/9/objective_ref: 10 is greater than the maximum of 8 | /check_plan/10/objective_ref: 11 is greater than the maximum of 8
+
+## rule layer (does it enforce the count itself?)
+enforce_plan_rules[1, single]: ACCEPTED
+enforce_plan_rules[12, full]: ACCEPTED
+
+## subject-domain routing
+normalise(None, None): general
+normalise(None, 'es-MX'): language
+normalise('music', 'es-MX'): music
+normalise('language', None): language
+normalise('technical_procedure', 'ja-JP'): technical_procedure
+non-language topic + locale: {'domain': 'music', 'image': 'none', 'image_role': None, 'audio': 'none', 'audio_role': None, 'rubric_profile': 'concept_explanation'}
+language topic, no locale, no domain: {'domain': 'general', 'image': 'none', 'image_role': None, 'audio': 'none', 'audio_role': None, 'rubric_profile': 'concept_explanation'}
+language topic + locale: {'domain': 'language', 'image': 'none', 'image_role': None, 'audio': 'none', 'audio_role': None, 'rubric_profile': 'language_production'}
+technical procedure + locale: {'domain': 'technical_procedure', 'image': 'none', 'image_role': None, 'audio': 'none', 'audio_role': None, 'rubric_profile': 'procedural'}
+language, pronunciation earned: {'domain': 'language', 'image': 'none', 'image_role': None, 'audio': 'required', 'audio_role': 'pronunciation_reference', 'rubric_profile': 'language_production'}
+technical, labelled diagram earned: {'domain': 'technical_procedure', 'image': 'optional', 'image_role': 'schematic', 'audio': 'none', 'audio_role': None, 'rubric_profile': 'concept_explanation'}
+
+## media declaration authority (illustration vs schematic)
+illustration (grip) on a technical procedure: REFUSED — an AI illustration is context only and can never be a required visual need
+schematic (wiring) on a technical procedure: {'image': 'required', 'role': 'schematic', 'reason': "the plan declared a required schematic need for 'wiring'; the policy accepts that role for technical_procedure"}
+schematic (grip) on a technical procedure: REFUSED — the declared schematic need 'grip' names no sequence, wiring, measurement, labelling or graph construct

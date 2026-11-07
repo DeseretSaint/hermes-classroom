@@ -1,0 +1,53 @@
+.............F............................................................................................................................................................................FF..............................ss........sssss.......ss......s.........................................................coursebook: ignoring COURSEBOOK_LESSON_VALIDATE_TIMEOUT_SECONDS='nonsense' (not a number); using 240.00s
+..........................................................................................................................................................................................................................................................................sssss................./home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environments/01a8232f45b041799dff0b7dc6c09a44/workspace/hermes_cli/plugins_manifest.py:475: DeprecationWarning: 'maxsplit' is passed as positional argument
+  parts = re.split(r"[-+]", str(v).strip().lstrip("v"), 1)[0].split(".")
+................................../home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/h30/h09/coursebook/pack_flow.py:570: PackAuthoringWarning: section file 'content/chapter-one.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
+  manifest = validate_and_audit(staged)
+..................................................................................................................................................................................................................................................................................................................................................................../home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/h30/h09/coursebook/pack_flow.py:542: PackAuthoringWarning: section file 'content/too-long.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
+  manifest = validate_and_audit(staged)
+/home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/h30/h09/coursebook/pack_flow.py:570: PackAuthoringWarning: section file 'content/too-long.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
+  manifest = validate_and_audit(staged)
+.................................../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:212: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f3f59d87e20>
+  def _keep_alive(x, memo):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................
+======================================================================
+FAIL: test_cost_ceiling_is_flat_while_call_ceiling_scales (tests.test_adversarial_round2.ScaleTest.test_cost_ceiling_is_flat_while_call_ceiling_scales)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/h30/h09/tests/test_adversarial_round2.py", line 437, in test_cost_ceiling_is_flat_while_call_ceiling_scales
+    self.assertEqual(small.max_cost_usd, large.max_cost_usd)  # both 0.75 by default
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.75 != 1.28
+
+======================================================================
+FAIL: test_a_failed_cost_job_exposes_completed_sections_spend_and_actions (tests.test_cost_ceilings.JobViewRecoveryTest.test_a_failed_cost_job_exposes_completed_sections_spend_and_actions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/h30/h09/tests/test_cost_ceilings.py", line 310, in test_a_failed_cost_job_exposes_completed_sections_spend_and_actions
+    job_id = self._job()
+  File "/home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/h30/h09/tests/test_cost_ceilings.py", line 275, in _job
+    created = self.ok("jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": "plan-x"}})
+  File "/home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/h30/h09/tests/kernel_support.py", line 85, in ok
+    self.assertTrue(response["ok"], f"{method} failed: {response.get('error')}")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : jobs.create failed: {'code': 'VALIDATION_FAILED', 'category': 'validation', 'message': "jobs.create request payload invalid at brief/plan_id: 'plan-x' is too short", 'retryable': False, 'details': {'path': 'brief/plan_id'}}
+
+======================================================================
+FAIL: test_jobs_create_refuses_a_lessons_job_that_cannot_pay_its_minimum (tests.test_cost_ceilings.JobViewRecoveryTest.test_jobs_create_refuses_a_lessons_job_that_cannot_pay_its_minimum)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/h30/h09/tests/test_cost_ceilings.py", line 303, in test_jobs_create_refuses_a_lessons_job_that_cannot_pay_its_minimum
+    created = self.ok(
+        "jobs.create",
+        {"kind": "plan", "brief": {"stage": "lessons", "plan_id": plan_id, "budget_usd": 2.0}},
+    )
+  File "/home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/h30/h09/tests/kernel_support.py", line 85, in ok
+    self.assertTrue(response["ok"], f"{method} failed: {response.get('error')}")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : jobs.create failed: {'code': 'VALIDATION_FAILED', 'category': 'validation', 'message': "jobs.create request payload invalid at brief: Additional properties are not allowed ('budget_usd' was unexpected)", 'retryable': False, 'details': {'path': 'brief'}}
+
+----------------------------------------------------------------------
+Ran 1052 tests in 275.064s
+
+FAILED (failures=3, skipped=15)
