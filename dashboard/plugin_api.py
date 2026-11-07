@@ -302,6 +302,11 @@ def _bindings() -> Any:
     return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.bindings")
 
 
+def _lesson_skills() -> Any:
+    _load_backend()
+    return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.lesson_skills")
+
+
 def _refusal_types() -> tuple[type[BaseException], ...]:
     """Exception types that mean "refused by policy", as opposed to a bug in this process."""
     _load_backend()
@@ -323,6 +328,18 @@ def _message(exc: BaseException) -> str:
     if isinstance(error, dict) and error.get("message"):
         return str(error["message"])
     return str(exc)
+
+
+@router.get("/sessions/skill")
+async def sessions_skill(session_id: str = "") -> dict[str, Any]:
+    """Which bundled learner skill this chat's next turn will load.
+
+    The pane shows this so a reviewer can tell a lesson chat loaded the tutor (or the coach)
+    without reading the transcript. It is a pure read of ``cb.db`` and deliberately the *same*
+    function the ``pre_llm_call`` hook calls, so the note cannot drift from what the turn does.
+    A chat the store never recorded answers ``{"skill": null, "reason": "unrelated_session"}``.
+    """
+    return _lesson_skills().skill_for_session(session_id)
 
 
 @router.post("/sessions/bind")
