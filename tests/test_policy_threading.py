@@ -25,12 +25,13 @@ import unittest
 
 from coursebook import db, generation as gen, policy, research
 
+from tests.blueprint_support import blueprint_plan, response as blueprint_response, validation_pass
 from tests.kernel_support import KernelCase
 from tests.test_generation import (
     FakeLLM,
     FakeSearch,
     NOW,
-    plan_from_fixture,
+    lesson_from_request,
     validation_from_fixture,
 )
 
@@ -60,11 +61,17 @@ def plan_job(
     return {"job_id": job_id, "kind": "plan", "attempt_id": "attempt-1", "brief": brief}
 
 
-def plan_script(plan_fixture: str = "plan_one_off") -> FakeLLM:
+def blueprint() -> dict:
+    """A schema-valid blueprint plan for the default one-off, single-scope brief."""
+    return blueprint_plan(scope="single", units=1, objectives_per_unit=1, recipe="one_off")
+
+
+def plan_script(plan: dict | None = None) -> FakeLLM:
+    plan = plan if plan is not None else blueprint()
     return FakeLLM(
         {
-            "coursebook.plan.generate": plan_from_fixture(plan_fixture),
-            "coursebook.plan.validate": validation_from_fixture(),
+            "coursebook.plan.generate": blueprint_response(plan),
+            "coursebook.plan.validate": blueprint_response(validation_pass()),
         }
     )
 
@@ -86,8 +93,8 @@ class PolicyThreadingTest(KernelCase):
         payload.update(overrides)
         return self.ok("course.create", payload)["result"]["course_id"]
 
-    def run_plan(self, job: dict, *, plan_fixture: str = "plan_one_off") -> tuple[dict, FakeLLM]:
-        llm = plan_script(plan_fixture)
+    def run_plan(self, job: dict) -> tuple[dict, FakeLLM]:
+        llm = plan_script()
         connection = db.connect()
         try:
             return gen.run_plan_job(connection, job, llm, FakeSearch(), now=NOW), llm
@@ -150,7 +157,7 @@ class PolicyThreadingTest(KernelCase):
         self.assertIn("not the language it is delivered in", text)
         self.assertIn("Scope: single", text)
         self.assertIn("Content locale: es-MX", text)
-        self.assertIn("Produce 4 to 5 objectives", text)
+        self.assertIn("Produce 1 to 1 unit(s) and 1 to 1 objective(s)", text)
         self.assertIn("Capability policy decision for these inputs", text)
 
         # The validator sees the same declared inputs.
@@ -312,15 +319,34 @@ class PolicyThreadingTest(KernelCase):
     # ── 4. the lesson stage reads the same declared inputs ─────────────────
 
     def test_lesson_stage_inherits_the_plan_document_inputs(self) -> None:
-        from tests.test_generation import lesson_from_request
+        from tests.blueprint_support import unit_sections_document
 
         course_id = self.create_course()
+        plan = blueprint()
         plan_result, _ = self.run_plan(plan_job(course_id=course_id))
+        unit = plan["units"][0]
+        objectives = [item for item in plan["objectives"] if int(item["unit_ref"]) == 1]
         connection = db.connect()
         try:
             connection.execute(
                 "UPDATE plans SET state = 'approved', approved_at = ? WHERE id = ?",
                 ("2026-11-06T12:05:00Z", plan_result["plan_id"]),
+            )
+            # The blueprint authors sections in the unit stage, after approval.
+            gen.run_unit_sections_job(
+                connection,
+                {"job_id": "job-h13-sections", "brief": {"plan_id": plan_result["plan_id"], "unit_ordinal": 1}},
+                FakeLLM(
+                    {
+                        "coursebook.unit_sections.generate": blueprint_response(
+                            unit_sections_document(unit=unit, objectives=objectives)
+                        ),
+                        "coursebook.unit_sections.validate": blueprint_response(validation_pass()),
+                    }
+                ),
+                plan_id=plan_result["plan_id"],
+                unit_ordinal=1,
+                now=NOW,
             )
             lesson_llm = FakeLLM(
                 {
@@ -330,7 +356,10 @@ class PolicyThreadingTest(KernelCase):
             )
             gen.run_lesson_job(
                 connection,
-                {"job_id": "job-h13-lessons", "brief": {"plan_id": plan_result["plan_id"]}},
+                {
+                    "job_id": "job-h13-lessons",
+                    "brief": {"plan_id": plan_result["plan_id"], "unit_ordinal": 1},
+                },
                 lesson_llm,
                 now=NOW,
                 budget=gen.CostBudget(max_calls=32),

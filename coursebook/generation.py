@@ -1272,10 +1272,11 @@ UNIT_SECTIONS_SCHEMA: dict[str, Any] = {
     },
 }
 
-#: The schema the executor and the pipeline use for a new generation. ``PLAN_SCHEMA`` remains the
-#: public name because every caller asks "what schema does the plan stage author under"; the v1
-#: document shape is available as :data:`PLAN_SCHEMA_V1` for legacy interpretation.
-PLAN_SCHEMA: dict[str, Any] = PLAN_SCHEMA_V2
+#: The legacy (v1) plan document shape. A brief with no declared scope is a pre-blueprint client
+#: whose stored documents must keep being authored and read unchanged (``docs/COURSE-BLUEPRINT.md``
+#: §10), so the public ``PLAN_SCHEMA`` name stays v1. The blueprint schema is
+#: :data:`PLAN_SCHEMA_V2`, selected by :func:`build_plan_request` when the brief declares a scope.
+PLAN_SCHEMA: dict[str, Any] = PLAN_SCHEMA_V1
 
 POLICY_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -3326,7 +3327,10 @@ def _parse_structured(response: LLMResponse, schema: dict[str, Any], *, what: st
         except json.JSONDecodeError as exc:
             raise GenerationRejected(f"{what} is not valid JSON: {exc.msg} at line {exc.lineno}") from exc
     validate_artifact(schema, parsed, what=what)
-    return parsed
+    # Hand the caller its own document. A caller decorates the parsed artifact (policy, check
+    # mode) before the rule gate; mutating the provider's object would corrupt a reused scripted
+    # response and make the retry validate a document the provider never produced.
+    return copy.deepcopy(parsed)
 
 
 def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None:

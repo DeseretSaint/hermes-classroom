@@ -1498,6 +1498,21 @@ class ProviderDeadlineTest(unittest.TestCase):
                 plan={}, goal="g", recipe="casual", dials={}, locale=None,
                 research_run=research.ResearchRun("unavailable", [], [], "none"), timeout_s=timeout_s,
             ),
+            "coursebook.unit_sections.generate": lambda: gen.build_unit_sections_request(
+                plan={"title": "t", "scope": "single"},
+                unit={"ordinal": 1, "title": "u", "goal": "g", "target_lessons": 1},
+                objectives=[{"ordinal": 1, "title": "o", "evidence_target": "comprehension"}],
+                goal="g", recipe="casual", locale=None, sources=[],
+                research_status="unavailable", timeout_s=timeout_s,
+            ),
+            "coursebook.unit_sections.validate": lambda: gen.build_unit_sections_validation_request(
+                plan={"title": "t", "scope": "single"},
+                unit={"ordinal": 1, "title": "u", "goal": "g", "target_lessons": 1},
+                objectives=[],
+                sections=[],
+                goal="g", recipe="casual", locale=None, sources=[],
+                research_status="unavailable", timeout_s=timeout_s,
+            ),
         }
         return builders[purpose]()
 
