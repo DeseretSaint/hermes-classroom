@@ -83,8 +83,10 @@ slogan, or a generic animation is a defect even if it looks polished.
 
 - The shipped colour contract is `contracts/cb.tokens.v2.json` (Atlas Lamp, 15 tokens); v1 is
   history and must not be mutated. No raw hex outside the single `CB_TOKENS_JSON` literal.
-- One font family; 4–6 sizes on a body-first ramp (steps roughly 1.14–1.25). Body line-height
-  ~1.5; display ~1.12. Prose measure 50–75ch, hard cap 80ch.
+- One type system, not a font buffet: one UI family plus at most one deliberate display/reading
+  face, both tokenized and used consistently. No per-component font stacks. 4–6 sizes on a
+  body-first ramp (steps roughly 1.14–1.25). Body line-height ~1.5; display ~1.12. Prose measure
+  50–75ch, hard cap 80ch.
 - No gradients, glass/blur, gradient text, thick decorative left borders (>1px), hard offset
   shadows, or emoji as icons. Emphasis comes from weight, size, space and one accent.
 - Spacing ladder: 4px inside components, 8pt between components/sections; 8px in-list,
