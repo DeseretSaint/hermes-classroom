@@ -178,7 +178,7 @@ let pendingIntent = null
 const PENDING_BIND_TTL_MS = 15 * 60 * 1000
 let pendingBind = null
 
-function armPendingBind({ enrollmentId, objectiveId, lessonRunId, profile }) {
+function armPendingBind({ enrollmentId, objectiveId, objectiveTitle, lessonRunId, profile }) {
   if (!enrollmentId || !objectiveId || !lessonRunId) {
     pendingBind = null
     return null
@@ -186,6 +186,7 @@ function armPendingBind({ enrollmentId, objectiveId, lessonRunId, profile }) {
   pendingBind = {
     enrollmentId,
     objectiveId,
+    objectiveTitle: objectiveTitle || null,
     lessonRunId,
     profile: profile || null,
     armedAt: Date.now()
@@ -518,10 +519,12 @@ function startLessonChat(profile) {
  *
  * Shared by the course detail and the Field Desk so both next-step buttons take exactly the same
  * path: `lesson.begin` under an idempotency key, the bound chat when the backend says a resume is
- * available, otherwise an armed pending bind plus a fresh chat draft. It returns a message rather
- * than notifying, so each surface can place it where it belongs.
+ * available, otherwise an armed pending bind and the section left on screen. It returns a message
+ * rather than notifying, so each surface can place it where it belongs. It never calls
+ * `host.newChat` on the learner's behalf: that seam swaps the route to `#/` and would leave the
+ * learner on a blank draft (H-64).
  */
-async function beginLessonFor({ row, objectiveId, mode, profile }) {
+async function beginLessonFor({ row, objectiveId, objectiveTitle, mode, profile }) {
   if (!row || !row.enrollment_id) return { ok: false, message: 'No course was read for this action.' }
   const target = objectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id)
   if (!target) {
@@ -555,19 +558,24 @@ async function beginLessonFor({ row, objectiveId, mode, profile }) {
         'There is no saved lesson chat for this section yet. Read the section below, then start a new lesson when you are ready.'
     }
   }
+  // A fresh run does NOT open a chat. `host.newChat` swaps the route to `#/` by SDK design, which
+  // unmounted this page and left the learner on a blank draft with no way back (H-64). The run is
+  // armed to this exact id; the surface stays on the section, which is the teaching-bearing
+  // result, and the chat door is an explicit next action.
   armPendingBind({
     enrollmentId: row.enrollment_id,
     objectiveId: target,
+    objectiveTitle: objectiveTitle || (row.next_step && row.next_step.label) || null,
     lessonRunId: outcome.lesson_run_id,
     profile: profile || currentScope().profile
   })
-  const started = startLessonChat(profile || currentScope().profile)
   return {
     ok: true,
-    started,
-    message: started
-      ? 'A governed run is ready. Its chat binds after your first message.'
-      : 'This Desktop build cannot open a new chat. Start one from the sidebar, then resume this section.'
+    armed: true,
+    started: false,
+    lessonRunId: outcome.lesson_run_id,
+    objectiveId: target,
+    message: `Lesson run ready. The section is open below; the lesson chat binds to the first message you send in it.`
   }
 }
 
@@ -2999,13 +3007,20 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
       const outcome = await beginLessonFor({
         row: desk.row,
         objectiveId: desk.current.objective_id,
+        objectiveTitle: desk.current.title || (desk.current.section ? desk.current.section.title : null),
         mode: kind === 'resume_lesson' ? 'resume' : 'fresh',
         profile: profile || currentScope().profile
       })
       setBusy(false)
       setNotice(outcome.message)
       if (outcome.ok) library.reload()
-      else if (outcome.reason === 'no-binding') onOpen(desk.row, desk.current.objective_id)
+      if (outcome.ok && outcome.armed) {
+        // Stay on the route and open the section the run is armed to: the desk's Continue card is
+        // a next step, not a door out of Coursebook into a blank draft (H-64).
+        onOpen(desk.row, desk.current.objective_id)
+        return
+      }
+      if (!outcome.ok && outcome.reason === 'no-binding') onOpen(desk.row, desk.current.objective_id)
       return
     }
     // Review, plan and pack states are course-detail actions, not a second lesson path.
@@ -4125,24 +4140,49 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                 children: 'Pick how much course you want. You can change this before anything is created.'
               }),
               jsx('div', {
-                className: 'flex flex-col',
-                children: COURSE_SCOPES.map((option) =>
-                  jsx(
-                    sdk.ListRow,
+                role: 'listbox',
+                'aria-label': 'How much course you want',
+                className: 'flex flex-col gap-1.5',
+                children: COURSE_SCOPES.map((option) => {
+                  const selected = scope === option.id
+                  // H-64: the whole card is the hit target and carries the selected state in words
+                  // as well as in `aria-selected`. The small "Choose" button left most of the card
+                  // dead to a click and made the state hard to see.
+                  return jsx(
+                    'button',
                     {
-                      action: jsx(sdk.Button, {
-                        'aria-pressed': scope === option.id,
-                        onClick: () => chooseScope(option.id),
-                        size: 'sm',
-                        variant: scope === option.id ? 'secondary' : 'outline',
-                        children: scope === option.id ? 'Selected' : 'Choose'
-                      }),
-                      description: option.consequence,
-                      title: option.label
+                      type: 'button',
+                      role: 'option',
+                      'aria-selected': selected,
+                      'data-cb-scope-option': option.id,
+                      onClick: () => chooseScope(option.id),
+                      className: `flex w-full items-start justify-between gap-3 rounded-[2.5px] border px-3 py-2.5 text-left transition-colors ${
+                        selected
+                          ? 'border-(--cb-accent) bg-(--cb-accent-soft)'
+                          : 'border-(--cb-rule) hover:border-(--cb-accent)'
+                      }`,
+                      children: [
+                        jsxs('span', {
+                          className: 'flex min-w-0 flex-col gap-0.5',
+                          children: [
+                            jsx('span', { className: 'text-xs font-medium', children: option.label }),
+                            jsx('span', {
+                              className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                              children: option.consequence
+                            })
+                          ]
+                        }),
+                        jsx('span', {
+                          className: selected
+                            ? 'shrink-0 text-xs font-medium'
+                            : 'shrink-0 text-xs text-(--ui-text-secondary)',
+                          children: selected ? 'Selected' : 'Choose'
+                        })
+                      ]
                     },
                     option.id
                   )
-                )
+                })
               }),
               jsx('div', {
                 'aria-live': 'polite',
@@ -4150,7 +4190,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                 id: 'cb-scope-time',
                 children: scope
                   ? planTimingCopy(scope)
-                  : 'Nothing is generated until you review the plan on the last step.'
+                  : 'Choose one option above to continue. Nothing is generated until you review the plan on the last step.'
               })
             ]
           })
@@ -4351,6 +4391,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
             : null,
           step < 3
             ? jsx(sdk.Button, {
+                'aria-describedby': step === 1 && !canAdvance ? 'cb-scope-time' : undefined,
                 disabled: step === 1 ? !canAdvance : false,
                 onClick: () => setStep(step + 1),
                 size: 'sm',
@@ -6381,6 +6422,35 @@ function Hairline() {
 
 function QuietNote({ children }) {
   return jsx('p', { className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)', children })
+}
+
+/**
+ * A lesson-start notice is text, or text plus one real next action.
+ *
+ * H-64: the old fresh-run path reported what it had done nowhere and navigated away; every
+ * lesson-start outcome now renders here, and when a run is armed the action opens the chat it is
+ * armed to. A notice is never a dead label with no way forward.
+ */
+function NoticeLine({ notice, busy }) {
+  if (!notice) return null
+  const text = typeof notice === 'string' ? notice : notice.text
+  const action = typeof notice === 'string' ? null : notice.action
+  return jsxs('div', {
+    role: 'status',
+    className: 'flex flex-wrap items-center justify-between gap-2 text-xs leading-relaxed text-(--ui-text-secondary)',
+    children: [
+      jsx('span', { className: 'max-w-prose min-w-0', children: text }),
+      action
+        ? jsx(sdk.Button, {
+            size: 'sm',
+            variant: 'secondary',
+            disabled: busy,
+            onClick: action.run,
+            children: action.label
+          })
+        : null
+    ]
+  })
 }
 
 function whenLabel(value) {
@@ -9941,45 +10011,31 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
     async (mode) => {
       setBusy(true)
       setNotice(null)
-      const response = await rpc(
-        'lesson.begin',
-        { enrollment_id: row.enrollment_id, objective_id: objectiveId, mode },
-        { idempotencyKey: `cb-lesson-${objectiveId}-${mode}-${mode === 'fresh' ? newOperationId('run') : 'resume'}` }
-      )
-      setBusy(false)
-      if (!response.ok) {
-        setNotice(`${response.error.code}: ${describeError(response.error)}`)
-        return
-      }
-      const outcome = response.result
-      if (mode === 'resume') {
-        if (outcome.resume && outcome.resume.available && outcome.binding) {
-          const opened = await resumeBoundSession(outcome.binding)
-          setNotice(opened.ok ? 'Resumed the existing bound chat.' : opened.message)
-          return
-        }
-        setNotice(
-          'There is no saved lesson chat for this section yet. Read the section, then start a new lesson when you are ready.'
-        )
-        return
-      }
-      // The chat that is about to open has no stored id yet: arm the exact run and let the pane
-      // bind it on the first turn. A resume path already had a binding, so it never arms.
-      armPendingBind({
-        enrollmentId: row.enrollment_id,
+      // One shared path with the course detail: a fresh run arms the exact run and leaves this
+      // section on screen (H-64). It never opens a blank chat over the learner's page.
+      const outcome = await beginLessonFor({
+        row,
         objectiveId,
-        lessonRunId: outcome.lesson_run_id,
+        objectiveTitle: section ? section.title : null,
+        mode,
         profile: row.profile || currentScope().profile
       })
-      const started = startLessonChat(row.profile || currentScope().profile)
-      setNotice(
-        started
-          ? 'A fresh governed run is ready. Its chat binds after your first message.'
-          : 'This Desktop build cannot open a new chat; start one from the sidebar, then resume this section.'
-      )
-      if (onChanged) onChanged()
+      setBusy(false)
+      if (outcome.ok && outcome.armed) {
+        setNotice({
+          text: outcome.message,
+          action: {
+            label: 'Open the lesson chat',
+            run: () => startLessonChat(row.profile || currentScope().profile)
+          }
+        })
+        if (onChanged) onChanged()
+        return
+      }
+      setNotice(outcome.message)
+      if (outcome.ok && onChanged) onChanged()
     },
-    [row, objectiveId, onChanged]
+    [row, objectiveId, section, onChanged]
   )
 
   const saveSegment = useCallback((segment) => {
@@ -10112,7 +10168,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
             jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onBack, children: 'All sections' })
           ]
         }),
-        notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
+        jsx(NoticeLine, { notice, busy }),
 
         document
           ? jsx(
@@ -12195,15 +12251,30 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       const outcome = await beginLessonFor({
         row,
         objectiveId: target,
+        objectiveTitle: page.data && page.data.section ? page.data.section.title : null,
         mode,
         profile: profile || currentScope().profile
       })
       setBusy(false)
+      if (outcome.ok && outcome.armed) {
+        refresh()
+        // The run is armed to this exact objective. Stay on the course and open the section: the
+        // page is the teaching-bearing result, and the chat is an explicit next action.
+        openSection(target)
+        setNotice({
+          text: outcome.message,
+          action: {
+            label: 'Open the lesson chat',
+            run: () => startLessonChat(profile || currentScope().profile)
+          }
+        })
+        return
+      }
       setNotice(outcome.message)
       if (outcome.ok) refresh()
       else if (outcome.reason === 'no-binding') openSection(target)
     },
-    [objectiveId, row, profile, refresh, openSection]
+    [objectiveId, row, page.data, profile, refresh, openSection]
   )
 
   const rows = sectionRows({ row, review: review.data, notebooks: notebooks.data, outline: outline.data, page: page.data })
@@ -12333,7 +12404,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
           })
         ]
       }),
-      notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
+      jsx(NoticeLine, { notice, busy }),
 
       jsx('div', {
         className: 'hidden min-[47.5rem]:block',
@@ -12473,6 +12544,7 @@ function LessonPaneBody({ binding, storedId }) {
     armPendingBind({
       enrollmentId: binding.enrollment_id,
       objectiveId,
+      objectiveTitle: section ? section.title : null,
       lessonRunId: outcome.lesson_run_id,
       profile
     })
@@ -15413,7 +15485,20 @@ function CoursebookPane() {
   }, [state.binding])
 
   let body
-  if (state.status === 'no-session' || state.status === 'idle') {
+  const armedRun = pendingBindFor(scopeProfile)
+  if (armedRun && (state.status === 'no-session' || state.status === 'idle')) {
+    // H-64: a fresh run this Desktop just started is armed to this exact chat. A blank "no durable
+    // chat yet" panel here is where the old Start lesson dead end ended up; this state names the
+    // run, the objective and the one action that turns this chat into a lesson.
+    body = jsx(sdk.PanelEmpty, {
+      icon: 'book',
+      title: armedRun.objectiveTitle ? `Lesson run ready: ${armedRun.objectiveTitle}` : 'Lesson run ready',
+      description:
+        'This chat is the lesson chat for that run. Send the first message and Coursebook binds it to the run; ' +
+        'the section stays open beside it with the teaching, the sources and the check.',
+      action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open the section' })
+    })
+  } else if (state.status === 'no-session' || state.status === 'idle') {
     body = jsx(sdk.PanelEmpty, {
       icon: 'book',
       title: 'No durable chat yet',
