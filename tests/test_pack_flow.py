@@ -328,6 +328,41 @@ class ExportTest(PackFlowCase):
         self.assertEqual(reimported["pack_id"], manifest["pack_id"])
         self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM courses")), 2)
 
+    def test_export_never_carries_a_saved_field_note(self) -> None:
+        """A personal excerpt/note/tags stays on this profile; the archive is teaching truth only."""
+        staged_id, manifest = self.grant()
+        imported = self.import_pack(staged_id)["result"]
+        objective = self.scalar(
+            "SELECT id FROM objectives WHERE plan_id = (SELECT id FROM plans WHERE course_id = ?)",
+            (imported["course_id"],),
+        )
+        excerpt = "FIELD-NOTE-EXCERPT-marker-42"
+        note = "PRIVATE-NOTE-marker-77"
+        self.ok(
+            "notebook.save",
+            {
+                "enrollment_id": imported["enrollment_id"],
+                "objective_id": objective,
+                "kind": "artifact",
+                "excerpt": excerpt,
+                "note": note,
+                "tags": ["private-tag-marker"],
+                "source_ref": json.dumps({"block": "blk_private_marker", "sources": ["src_private_marker"]}),
+            },
+            idempotency_key="notebook-private-0001",
+        )
+        result = self.ok("pack.export", {"enrollment_id": imported["enrollment_id"]})["result"]
+        artifact = self.ok("artifact.get", {"artifact_id": result["artifact_id"]})["result"]
+        path, _mime, _size = pack_flow.open_artifact(artifact["download"]["handle"])
+        with zipfile.ZipFile(path) as bundle:
+            blob = b"".join(bundle.read(name) for name in bundle.namelist())
+        text = blob.decode("utf-8", "ignore")
+        for forbidden in (excerpt, note, "private-tag-marker", "blk_private_marker", "src_private_marker"):
+            self.assertNotIn(forbidden, text)
+        # The exclusion is from the export, not a delete: the moment is still on this profile.
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM notebook_entries")), 1)
+        self.assertEqual(result["content_hash"], manifest["content_hash"])
+
     def test_repeat_export_of_unchanged_content_reuses_the_artifact(self) -> None:
         """Clicking Export twice must return the first artifact, not an IntegrityError."""
         imported = self.import_pack(self.grant()[0])["result"]

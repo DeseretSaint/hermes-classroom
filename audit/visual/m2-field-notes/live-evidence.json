@@ -1,0 +1,160 @@
+{
+  "markers": {
+    "strip": "cb-strip-note-mw5zenx1",
+    "block": "cb-block-note-mw5zenx1"
+  },
+  "steps": [
+    {
+      "step": "A1-strip-before",
+      "expected": "The Field Desk shows a Field Notes strip with no dummy rows",
+      "actual": "strip ready, 2 rows",
+      "stripBefore": {
+        "state": "ready",
+        "notes": 2,
+        "text": "FIELD NOTES\n2 saved\nAll field notes\n\nLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…\n\ncb-strip-note-mw5z7x4y — why register shifts with the relationship.\n\nlesson_segment\nstrip-proof-z7x4y\nSection · Choose the polite expression for a first confession\nJapanese affection and register — an L0 demonstration classroom\nsaved 5 min ago\nOpen in textbook\n\nLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…\n\ncb-strip-note-mw5z78ib — why register shifts with the relationship.\n\nlesson_segment\nstrip-proof-z78ib\nSection · Choose the polite expression for a first confession\nJapanese affection and register — an L0 demonstration classroom\nsaved 6 min ago\nOpen in textbook"
+      },
+      "at": "2026-11-07T05:47:29.647Z"
+    },
+    {
+      "step": "A2-section-open",
+      "expected": "The continued section offers a Save to notebook action on its own structured segment",
+      "actual": "{\"document\":\"doc_bfaca167e49ce9cbddb3\",\"blockSaves\":2,\"segmentSaves\":2}",
+      "document": "doc_bfaca167e49ce9cbddb3",
+      "blockSaves": 2,
+      "segmentSaves": 2,
+      "at": "2026-11-07T05:47:33.926Z"
+    },
+    {
+      "step": "A3-saved",
+      "expected": "The editor is prefilled from the served segment and the save commits",
+      "actual": "dialog closed",
+      "excerptChars": 2456,
+      "excerptHead": "# Lesson 2 — choosing by addressee, relationship and setting\n\nThere is no single",
+      "provenance": "Course ·\nJapanese affection and register — an L0 demonstration classroom\nObjective ·\nChoose the polite expression for a first confession\nSaved from ·\nLesson",
+      "at": "2026-11-07T05:47:35.995Z"
+    },
+    {
+      "step": "A4-backend-readback",
+      "expected": "The saved row is on the backend with its course/objective provenance",
+      "actual": "row found",
+      "entryId": "nbt_0b556a5c292a48a9981efb12201f3c3a",
+      "enrollmentId": "enr_36266a77f6024e4da1130d6bd2404bbf",
+      "objectiveId": "obj_94aa0b6004d740cab7057e8484982a49",
+      "kind": "lesson_segment",
+      "tags": [
+        "strip-proof-zenx1"
+      ],
+      "at": "2026-11-07T05:47:36.034Z"
+    },
+    {
+      "step": "A5-fresh-run-strip",
+      "expected": "After a fresh route mount the strip still shows the saved moment",
+      "actual": "strip shows the marker",
+      "stripAfter": {
+        "state": "ready",
+        "notes": 3,
+        "text": "FIELD NOTES\n3 saved\nAll field notes\n\nLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…\n\ncb-strip-note-mw5zenx1 — why register shifts with the relationship.\n\nlesson_segment\nstrip-proof-zenx1\nSection · Choose the polite expression for a first confession\nJapanese affection and register — an L0 demonstration classroom\nsaved just now\nOpen in textbook\n\nLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…\n\ncb-strip-note-mw5z7x4y — why register shifts with the relationship.\n\nlesson_segment\nstrip-proof-z7x4y\nSection · Choose the polite expression for a first confession\nJapanese affection and register — an L0 demonstration classroom\nsaved 5 min ago\nOpen in textbook\n\nLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…\n\ncb-strip-note-mw5z78ib — why register shifts with the relationship.\n\nlesson_segment\nstrip-proof-z78ib\nSection · Choose the polite expression for a first confession\nJapanese affection and register — an L0 demonstration classroom\nsaved 6 min ago\nOpen in textbook"
+      },
+      "at": "2026-11-07T05:47:39.148Z"
+    },
+    {
+      "step": "A6-strip-exact-section",
+      "expected": "The strip returns to the exact block the moment was saved from",
+      "actual": "focused block matches",
+      "expectedBlock": "blk_f36dfe1cee3b6f590096",
+      "active": {
+        "tag": "article",
+        "block": "blk_f36dfe1cee3b6f590096",
+        "document": "doc_bfaca167e49ce9cbddb3",
+        "outline": "none 3px"
+      },
+      "at": "2026-11-07T05:47:41.835Z"
+    },
+    {
+      "step": "A6-search",
+      "expected": "Search narrows this course's notebook to the saved moment",
+      "actual": "3 → 1",
+      "markerVisible": true,
+      "sectionProvenance": true,
+      "courseProvenance": true,
+      "at": "2026-11-07T05:47:47.307Z"
+    },
+    {
+      "step": "B1-section-open",
+      "expected": "The block document renders one save action per block",
+      "actual": "block save controls present",
+      "blockId": "blk_f36dfe1cee3b6f590096",
+      "headline": "Lesson",
+      "saveActions": 2,
+      "at": "2026-11-07T05:48:00.440Z"
+    },
+    {
+      "step": "B2-saved",
+      "expected": "The block editor is prefilled with the block's own text and provenance",
+      "actual": "dialog closed",
+      "excerptChars": 2456,
+      "provenance": "Course ·\nJapanese affection and register — an L0 demonstration classroom\nObjective ·\nChoose the polite expression for a first confession\nSaved from ·\nLesson",
+      "at": "2026-11-07T05:48:02.196Z"
+    },
+    {
+      "step": "B3-backend-readback",
+      "expected": "The saved row carries the exact block id and source ids",
+      "actual": "row found",
+      "entryId": "nbt_fad7f1b5bd2948fa8dca6cde6de29e41",
+      "enrollmentId": "enr_544f0aba033e4fc0a2f50fb61aceda25",
+      "objectiveId": "obj_2d909e4f37014c14bb216f1b35cc3753",
+      "kind": "lesson_segment",
+      "refBlock": "blk_f36dfe1cee3b6f590096",
+      "refSources": [],
+      "refArtifact": null,
+      "at": "2026-11-07T05:48:02.233Z"
+    },
+    {
+      "step": "B4-search",
+      "expected": "Search narrows the notebook to the saved block moment",
+      "actual": "14 → 1",
+      "markerVisible": true,
+      "sectionProvenance": true,
+      "sourceProvenance": false,
+      "at": "2026-11-07T05:48:07.135Z"
+    },
+    {
+      "step": "B5-exact-section",
+      "expected": "Open in textbook returns to the block the moment was saved from",
+      "actual": "focused block matches",
+      "expectedBlock": "blk_f36dfe1cee3b6f590096",
+      "active": {
+        "tag": "article",
+        "block": "blk_f36dfe1cee3b6f590096",
+        "document": "doc_a1a4958c6d9d21aaf2bb",
+        "outline": "none 3px"
+      },
+      "at": "2026-11-07T05:48:11.327Z"
+    },
+    {
+      "step": "B6-narrow-460",
+      "expected": "The section and its save actions fit 460 px without horizontal overflow",
+      "actual": "no overflow",
+      "overflow": false,
+      "scroll": 460,
+      "client": 460,
+      "at": "2026-11-07T05:48:12.100Z"
+    }
+  ],
+  "screenshots": [
+    "live-01-desk-strip-before",
+    "live-02-save-dialog",
+    "live-03-desk-strip-after-reload",
+    "live-04-strip-exact-block",
+    "live-04-strip-note-search",
+    "live-05-section-blocks",
+    "live-06-block-save-dialog",
+    "live-07-block-note-search",
+    "live-08-exact-block",
+    "live-09-narrow-460"
+  ],
+  "kind": "live isolated Desktop capture (real backend, real plugin, no provider calls)",
+  "plugin_sha256": "ff3868f733db5b5d5f8fae5bc808d2574a279fef9b593ce557538549fd08af12",
+  "finished_at": "2026-11-07T05:48:12.114Z",
+  "backend": "http://127.0.0.1:44281"
+}

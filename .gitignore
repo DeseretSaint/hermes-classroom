@@ -10,3 +10,6 @@ plugin-data/
 
 # Task orchestration
 .worktrees/
+
+# Chromium profiles written by the frame scripts
+audit/visual/**/.chromium/
