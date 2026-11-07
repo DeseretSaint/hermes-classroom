@@ -223,3 +223,148 @@ Shots `row9r-01..05` were not re-captured; their sha256 values still match §8 e
 lessons job start → lessons complete → lesson-set approve → export — with the UI and the backend
 agreeing on the approved content hash. The remaining pre-submission items are the other rows, the
 demo path and the re-pin, not this row.
+
+# Appended after the fan-in.
+
+## 11. Re-verdict on the re-pinned commit (t_45b4dcfe)
+
+Candidate measured: `wt/cb-017-reverdict` at merge `bb6a0d8` — master `29bede7` plus the two CB-017
+follow-ups, `wt/cb-017-lattice-bound` `8e05178` (the 4,000,000-character authoring bound) and
+`wt/cb-017-harbor-release` `6eb93c2` (the release record re-derived and the catalog re-pinned to
+`29bede7`). Both merges were clean; nothing was rewritten by hand.
+
+`master` is still `29bede7`: neither follow-up has been merged or pushed, so this verdict is on a
+local integration candidate, not on a published commit. Every number below was produced in this
+pass on that candidate.
+
+**Verdict: NO-GO for submission, with one bullet fewer than §1.** Row 9 is no longer a reason to
+hold. The demo recording is now the only acceptance line that fails, and it fails on a host binding
+plus an unrun measurement, not on code. §1 is left exactly as it was issued; this section is the
+verdict it makes now.
+
+### 11.1 The §1 bullet that is now satisfied
+
+§1, bullet 1 — "row 9 of the 19-row contest matrix has no completed end-to-end artifact … the export
+half is unproven" — **satisfied**. I re-read the artifact and re-hashed its evidence on disk rather
+than taking the producing card's word:
+
+* `docs/REVIEW_CB017-row9-ui.json`, sha256
+  `61dcb47c4f55b803a5acc5bd741fc129f8e99b46ffc1350d18ca578934c1906b`. Its `verdicts` block records
+  the three states in order: `gateBlockedBeforeApproval` (approved hash `22dae2d0…`, current hash
+  `ccf69462…`, `exportDisabled: true`), `afterLessonSetApproval` (approved hash = current hash
+  `ccf69462…`, `exportDisabled: false`), `afterExport` (`exportedFiles: true`) with the export
+  sentence `Export exp_2e068c56b9a04ced96b872aaccb98ad0 · just now · content hash
+  sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5`.
+* Its `corroboration` block is backend state, not screen-scraping: `approval.state = active`,
+  `invalidated_reason = null`, `export.ready = true`, `blocked_reason = null`, plan
+  `pln_d25b00bbebd442089f31e00c97e3f353` v10 `approved`; and the lessons job
+  `job_2390ab7ac33d4bff9e62d8eae5649ee7` `state: completed`, `progress.message: "4 lessons authored"`,
+  `error: null`.
+* All four new stills hash to the values the artifact records and to the sizes it records, checked
+  byte-for-byte in this pass:
+
+| shot | bytes | sha256 |
+| --- | --- | --- |
+| `docs/cb017-shots/row9r-06-export-gate-blocked.png` | 199335 | `e674b02f36a521cea95d3e40d56ef7460309a47d543cc24bb7a6a9cea7bf2e6c` |
+| `docs/cb017-shots/row9r-07-lesson-set-approved.png` | 193049 | `ce933e643b7c0f5803692e4e31bccde50dceda8c178f29edbe96bec60ed8689a` |
+| `docs/cb017-shots/row9r-08-exported-files.png` | 215056 | `3fe3e227f142b2b58e5b83a4027b3283623dd5d3764b7aa7b50a8fb2f3bdb117` |
+| `docs/cb017-shots/row9r-09-exported-files-detail.png` | 236786 | `e8e1194b3605088e7d9bc5b62905b443fe92b2210ea4b824107e85ad60def592` |
+
+* `row9r-01..05` were not re-captured and still match §8 exactly (`eb007e5c…`, `91a45bd9…`,
+  `4afbf273…`, `61a2e7df…`, `c31ad5af…`), so §8's pre-export chain is intact.
+* The export itself is on disk in the rig home, and its bytes match the artifact's `export_files`
+  block: `parent-crs-3ea89399…-1.0.0-9fb8dda5e750c34c.zip` 17,843 B sha256 `90cf9d20…` and
+  `…9fb8dda5e750c34c.pdf` 11,776 B sha256 `638080b9…`.
+
+§1, bullet 2 — "no demo can be recorded on this host … and a contest entry without a recording is
+not an entry" — **not satisfied.** See 11.3.
+
+### 11.2 Gates on the re-pinned candidate `bb6a0d8`
+
+| gate | command | result |
+| --- | --- | --- |
+| unit/integration | `python3 -m unittest discover -s tests` | **Ran 691 tests in 69.468s — OK** |
+| pre-merge gate | `bash scripts/validate.sh` | **exit 0**, `All 31 backend expectations passed against an isolated HERMES_HOME.`, `Validation passed.` |
+| ESM parse | `node --check desktop/plugin.js` | `node: syntax OK` |
+| release gate | `bash scripts/validate-plugin.sh` (HEAD, clean `git archive`) | **`Release gate passed: 3/3 checks on bb6a0d8a232025c4c8abfd6b2f7f87e79ad8af64 (811 files).`** |
+
+691 = 685 at `29bede7` + 6 in `tests/test_pack_authoring_bound.py`. `desktop/plugin.js` is unchanged
+by both follow-ups and still hashes `c59ebc3c937385f1119787a5522acda09fb852f8180c06e3d3f4615e3c8281fb`,
+the file installed at `~/.hermes/desktop-plugins/coursebook/plugin.js`. Lattice's claimed hashes
+verify on this tree: `coursebook/segments.py` `ab64b176…`, `coursebook/packs.py` `57f20f84…`,
+`coursebook/pack_flow.py` `fb41741f…`, `contracts/pack-manifest.v1.json` `ca0c5e44…`.
+
+### 11.3 What still blocks GO
+
+**1 — the demo recording (the remaining §1 bullet).** This is not a guess about the gateway table:
+the host runs exactly one gateway, owned by profile `default` — pid 360123,
+`python3 -m hermes_cli.main --profile default gateway run --quiet`,
+`HERMES_HOME=/home/deseretsaint/.hermes`, listening on `127.0.0.1:43829`; `hermes gateway status`
+reports "✓ Gateway is running via the default-profile multiplexer" with `✓ default — PID 360123`. On this
+machine `default` **is** the root home `~/.hermes`; there is no `~/.hermes/profiles/default`.
+
+The isolated rig cannot stand in for it, and the demo card's D1 is re-attributed here rather than
+accepted as written. `desktop/plugin.js` never writes `location.hash` (no occurrence in 8,061 lines);
+both lesson-start paths hand the shell `host.newChat` / `host.openSession`, and the Desktop SDK
+navigates by design (`apps/desktop/src/sdk/index.ts:1271` `window.location.hash = '#/'` for
+`newChat`; the `openSession` navigate helper sets the hash at `:646` / `:993`). So the jump from
+`#/coursebook` to `#/` is SDK behaviour, not a plugin route bug. What follows it — `mounted: false`,
+`text: ""` in `audit/demo-gate/u05-resume-trace.json` — is a shell with no reachable gateway, the
+same host condition §3.1 reclassified, and the demo-gate doc says so itself in its rig table
+("Gateway inaccessible (runtime_exited)"). The plugin does register the lesson pane that the demo's
+8-34 s shots need (`desktop/plugin.js:7991`, id `pane`, area `panes`), scoped to the focused chat's
+stored id.
+
+What is **not** measured: whether chat and pane render together on the gateway-owning profile.
+Nobody has run U01-U04 or the demo shots there. So the demo gate stays **NOT MET**, and it will stay
+NOT MET until that run exists on the recorded commit.
+
+Coursebook is already installed and enabled in the gateway's home — `~/.hermes/plugins/coursebook` →
+`/home/deseretsaint/Projects/hermes-classroom` (at `29bede7`) and the Desktop half at sha
+`c59ebc3c…`, with `coursebook` in that `config.yaml`'s `plugins.enabled`. The demo card's operator
+line (`scripts/install-local.sh --home ~/.hermes/profiles/default`) points at a directory this host
+does not have and would create a second, ungated profile instead of touching the gateway owner. The
+correct one-line action is:
+
+```
+hermes gateway restart
+```
+
+…followed by launching Desktop normally (the `default` profile, not the isolated rig) and driving
+`docs/DEMO.md`'s shots there, with the demo gate re-run on that profile and that commit. That is
+DeseretSaint's call, not the gate's.
+
+**2 — release mechanics.** `catalog/coursebook.yaml` pins `29bede7` while the record that describes
+it is one commit above; the figures in `README.md` / `docs/SUBMISSION.md` / `docs/INSTALL.md` /
+`docs/CB017-RELEASE-VERIFICATION.md` (685 tests, 802 files) are true of `29bede7` and will not be
+true of the final pin (691 / 811). The pin and those figures must move in the same change that lands
+this record, or the catalog advertises a tree it does not describe. No push, tag or catalog PR is
+made or claimed here.
+
+**3 — license.** No license file is present. That is a legal blocker on redistribution and it is
+DeseretSaint's decision, unchanged from §6 risk 3.
+
+§6 risk 1 ("row 9 export half unproven") is **closed** by 11.1; §6 risk 2 (demo/gateway binding)
+stands as item 1 above.
+
+### 11.4 Release-note limitations, verbatim from §9
+
+These are quoted, not paraphrased. They are the four bullets of §9 and they are what the release
+notes must print:
+
+> * A window with no reachable gateway renders no route page; the plugin's own degraded states are
+>   separate and proven.
+> * A structural objective `add` after a plan is authored yields a version with no covering outline:
+>   lessons are deliberately withheld, and the course must be started from a new brief.
+> * A lesson section above 4,000,000 characters cannot render in one page; imports refuse it pre-write.
+> * Rows 1/3/4/5/7/8/10/13 of the contest matrix are partial or open, as tabulated in
+>   `docs/REVIEW_CB015.md` §12. Row 9's export half was driven after this gate (§10).
+
+The third bullet is the bound Lattice implemented in this candidate: `8,000` characters per segment
+× `500` segments per `lesson.page` = **4,000,000** characters per lesson section, read from the
+contract through `coursebook.segments.lesson_section_char_bound()` and never stored as a second
+constant; documented in `docs/PACK-AUTHORING.md` and in the `cb.pack` description (text only — no
+schema change, `max_single_file_bytes: 33554432` unchanged, `cb.rpc` v7 untouched); surfaced as a
+`PackAuthoringWarning` naming file and measured length from the pack validator and the export
+paths; import still refuses pre-write. `691` tests and the 31/31 backend expectations above are the
+proof it holds.

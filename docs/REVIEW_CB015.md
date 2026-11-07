@@ -436,12 +436,17 @@ The packet downgraded these four rows from `live@other` after re-reading the art
 this pass either re-drove the decisive half or re-scoped the row with the exact gap. Nothing here
 is inferred from the earlier worktrees.
 
+Row status as of this section: rows 3, 7 and 8 are unchanged. Row 9 is **closed** on the CB-017
+tree, on evidence recorded after this pass (pointer under the table). §7 of this document is the
+matrix as measured during CB-015 and is deliberately not rewritten; where it and this section
+disagree on row 9, this section is the later reading.
+
 | Row | Driven this pass | Missing half, named |
 |---|---|---|
 | 3 | `Cancel generation` → job `cancelled`; leave/reopen the course and the cancelled job and its brief are still shown; `Run this stage again` re-queues the job's own brief (`job_40849e53…`, completed, 5 objectives). `docs/REVIEW_CB015-row3a.json`, stills `row3-03..06` | `Edit plan` never rendered for the requeued draft (`scripts/cb015r-row3b.mjs` timed out at 20 s on the Plan view), so no edited-plan approval was recorded |
 | 7 | Answer typed in the pane, submitted, right sidebar hidden in the same tick, committed `Not yet` verdict read back after reopening. `docs/REVIEW_CB015-row7.json`, stills `row7-01..03` | **Split** pane during the attempt was not driven (the layout editor exposed no split at this width), and the attempt count/id before and after is **not** in the artifact — the harness regex is double-escaped so `attemptsBlock` is `null`; the `att_8ff275dc…` id quoted in earlier prose is withdrawn |
 | 8 | Backend cycled at **awaiting input**, **graded** and **overridden**; each returned the same objective, check version, verdict/override copy and an identical attempts block. `docs/REVIEW_CB015-row8.json`, stills `row8-*` | **submitting** (mid-flight), standalone **needs_retry**, and **detached** were not restarted in this pass |
-| 9 | After an active approval, replan + edit supersede it; the Export screen shows `Changes need review`, the blocked sentence and a **disabled** export; the RPC refuses `plan_not_approved`. `docs/REVIEW_CB015-row9-rpc.json`, `docs/REVIEW_CB015-row9-ui.json`, stills `row9-01..03` | Reapproval → export could not run: the replanned plan has no authored document, so `Generate lessons` fails `INTERNAL_ERROR` and no lesson set exists to re-approve (`docs/REVIEW_CB015-row9-ui2.json`) |
+| 9 | After an active approval, replan + edit supersede it; the Export screen shows `Changes need review`, the blocked sentence and a **disabled** export; the RPC refuses `plan_not_approved`. `docs/REVIEW_CB015-row9-rpc.json`, `docs/REVIEW_CB015-row9-ui.json`, stills `row9-01..03` | **Closed — no missing half remains on the CB-017 tree.** The reapproval → export half was driven on the isolated rig and is recorded in `docs/REVIEW_CB017-FINAL.md` §10 (chain, backend corroboration, export bytes) and re-verified in §11.1 (artifact `docs/REVIEW_CB017-row9-ui.json`, sha256 `61dcb47c4f55b803a5acc5bd741fc129f8e99b46ffc1350d18ca578934c1906b`; stills `row9r-06..09`). The CB-015 gap it replaces — the replanned plan having no authored document — was fixed by `t_fc758da8` and is measured through lesson-job completion, lesson-set approval and a real export. This line is the only row promoted in this section; rows 3, 7 and 8 keep their recorded gaps |
 
 **Defect this pass found (backend authoring, for Atlas).** `plan.replan` writes a new `plans` row but
 no `gen_plan_documents` row, so the lesson job fails closed with
