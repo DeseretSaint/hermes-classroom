@@ -1,0 +1,17 @@
+test_approval_is_fail_closed_and_happens_after_validation (tests.test_harness_e2e.HarnessEndToEndTest.test_approval_is_fail_closed_and_happens_after_validation) ... ok
+test_every_scenario_passes_its_own_assertions (tests.test_harness_e2e.HarnessEndToEndTest.test_every_scenario_passes_its_own_assertions) ... ok
+test_every_scenario_was_generated_from_a_non_japanese_goal (tests.test_harness_e2e.HarnessEndToEndTest.test_every_scenario_was_generated_from_a_non_japanese_goal) ... ok
+test_full_declares_prerequisites_and_honours_the_plan_bound (tests.test_harness_e2e.HarnessEndToEndTest.test_full_declares_prerequisites_and_honours_the_plan_bound) ... ok
+test_short_grades_correct_and_wrong_on_the_exact_lane (tests.test_harness_e2e.HarnessEndToEndTest.test_short_grades_correct_and_wrong_on_the_exact_lane) ... ok
+test_single_is_exactly_one_unit_and_one_verification (tests.test_harness_e2e.HarnessEndToEndTest.test_single_is_exactly_one_unit_and_one_verification) ... ok
+test_the_checked_in_evidence_packet_is_current (tests.test_harness_e2e.HarnessEndToEndTest.test_the_checked_in_evidence_packet_is_current)
+The committed JSON must describe the same verdict this run produced. ... ok
+test_the_run_is_labelled_as_a_recorded_transcript (tests.test_harness_e2e.HarnessEndToEndTest.test_the_run_is_labelled_as_a_recorded_transcript) ... ok
+test_the_served_lesson_never_announces_the_answer_key (tests.test_harness_e2e.HarnessEndToEndTest.test_the_served_lesson_never_announces_the_answer_key) ... ok
+test_the_three_scopes_are_the_ones_the_card_named (tests.test_harness_e2e.HarnessEndToEndTest.test_the_three_scopes_are_the_ones_the_card_named) ... ok
+test_units_are_user_enqueued_not_executor_chained (tests.test_harness_e2e.HarnessEndToEndTest.test_units_are_user_enqueued_not_executor_chained) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 3.994s
+
+OK

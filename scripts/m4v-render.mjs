@@ -51,6 +51,13 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 const React = (await import('react')).default
 const { act } = await import('react')
 const { createRoot } = await import('react-dom/client')
+// The module's `whenLabel` turns a timestamp into "17 hr ago" during render, and the markup below
+// is baked from that render. On the wall clock that copy changes every hour and rewrites evidence
+// unrelated to the product, so the audit pins the fixture clock (`referenceTime` in the payload).
+// Only the render sees the frozen clock; timers and the DOM keep real time.
+const referenceNow = payload.referenceTime ? Date.parse(payload.referenceTime) : null
+const realNow = Date.now
+if (referenceNow) Date.now = () => referenceNow
 // The SDK stub reads these at import time: the host viewport atom and the painted theme mode.
 globalThis.__CB_TEST_WIDTH__ = String(payload.width || 1280)
 globalThis.__CB_TEST_MODE__ = (payload.frames && payload.frames[0] && payload.frames[0].mode) || 'light'
@@ -222,6 +229,8 @@ for (const frame of payload.frames) {
     root.unmount()
   })
 }
+
+Date.now = realNow
 
 writeFileSync(resolve(outDir, 'manifest.json'), JSON.stringify({ frames: manifest, rest_calls: calls.slice(0, 40) }, null, 2))
 process.stdout.write(JSON.stringify({ frames: manifest.length, path: resolve(outDir, 'manifest.json') }))

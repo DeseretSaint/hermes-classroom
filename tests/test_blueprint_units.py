@@ -308,6 +308,122 @@ class UnitSectionsStageTest(UnitStageCase):
             ).fetchone()["n"]
         self.assertEqual(int(count), 1)
 
+    def test_a_rule_failing_unit_batch_writes_no_rows_and_fails_the_job(self) -> None:
+        """D1/H-42: the unit stage is transactional over its unit.
+
+        The fixture is H-40's partial-batch shape: unit 2 needs two owner sections and the model
+        returns one, twice. The batch is discarded, the job fails with the same reasons, and the
+        untouched objective still reads ``not_started`` with no check on both learner surfaces.
+        """
+        plan = blueprint_plan(scope="short", units=2, objectives_per_unit=2)
+        course_id, plan_id = self.seed(plan)
+        stamp = T0.isoformat()
+        with db.transaction() as connection:
+            connection.execute(
+                "INSERT INTO enrollments (id, course_id, learner_label, status, revision,"
+                " created_at, updated_at) VALUES (?,?,?,?,?,?,?)",
+                ("enr_d1", course_id, "Learner", "active", 0, stamp, stamp),
+            )
+        unit_two = next(item for item in plan["units"] if int(item["ordinal"]) == 2)
+        authored = [
+            objective for objective in plan["objectives"] if int(objective["unit_ref"]) == 2
+        ][:1]  # 1 of 2 owner sections: the failing batch
+        incomplete = unit_sections_document(unit=unit_two, objectives=authored)
+        llm = FakeLLM({"coursebook.unit_sections.generate": response(incomplete)})
+        brief = {"stage": "unit_sections", "plan_id": plan_id, "unit_ordinal": 2}
+        job_id = job_service.create("plan", brief, now=T0)["job_id"]
+        stages = executor.resolvers(llm=llm, search=None, now=T0)["plan"](brief)
+        view = job_service.execute(job_id, stages, now=T0)
+
+        self.assertEqual(view["state"], "failed")
+        message = view["error"]["message"]
+        self.assertIn("objective 4 has no owner section", message)
+        self.assertIn("unit 2 targets 2 lesson(s); this batch would leave 1 section(s)", message)
+        self.assertEqual(llm.calls_for("coursebook.unit_sections.generate"), 2)
+        with db.read() as connection:
+            rows = connection.execute(
+                "SELECT COUNT(*) AS n FROM gen_plan_sections WHERE unit_id = 'unt_2'"
+            ).fetchone()["n"]
+        self.assertEqual(int(rows), 0, "a failed unit batch must leave no durable section row")
+
+        status, outline = domain.course_outline(
+            {"enrollment_id": "enr_d1"}, {"contract": "cb.rpc", "contract_version": 11}
+        )
+        self.assertEqual(status, 0)
+        objective = next(item for item in outline["objectives"] if int(item["ordinal"]) == 4)
+        self.assertEqual(objective["state"], "not_started")
+        self.assertEqual(objective["check_state"], "none")
+        status, page = domain.lesson_page(
+            {"enrollment_id": "enr_d1", "objective_id": objective["objective_id"]},
+            {"contract": "cb.rpc", "contract_version": 11},
+        )
+        self.assertEqual(status, 0)
+        self.assertEqual(page["state"], "not_started")
+        self.assertIsNone(page["document"]["check_id"])
+        self.assertEqual(page["checks"], [])
+
+        # Cleanly resumable: the same brief run with a complete batch authors the whole unit,
+        # because the failed attempt left nothing to be mistaken for finished work.
+        retry = gen.run_unit_sections_job(
+            db.connect(),
+            {"job_id": None, "brief": {"plan_id": plan_id, "unit_ordinal": 2}},
+            self.section_llm(plan, unit_ordinal=2),
+            plan_id=plan_id,
+            unit_ordinal=2,
+            now=T0,
+        )
+        self.assertEqual(retry["sections"], 2)
+        self.assertEqual(retry["owners"], 2)
+        with db.read() as connection:
+            rows = connection.execute(
+                "SELECT COUNT(*) AS n FROM gen_plan_sections WHERE unit_id = 'unt_2'"
+            ).fetchone()["n"]
+        self.assertEqual(int(rows), 2)
+
+    def test_a_validator_rejected_unit_batch_is_discarded_not_parked(self) -> None:
+        """The same transactional rule covers a validator rejection, not just rule violations."""
+        plan = blueprint_plan(scope="single", units=1, objectives_per_unit=1)
+        _course_id, plan_id = self.seed(plan)
+        document = unit_sections_document(
+            unit=plan["units"][0], objectives=plan["objectives"]
+        )
+        rejected = validation_pass()
+        rejected["verdict"] = "reject"
+        rejected["rejections"] = [
+            {
+                "item": "unit_sections",
+                "criterion": "objective_alignment",
+                "reason": "the lesson intent does not carry the construct",
+            }
+        ]
+        llm = FakeLLM(
+            {
+                "coursebook.unit_sections.generate": response(document),
+                "coursebook.unit_sections.validate": response(rejected),
+            }
+        )
+        with self.assertRaises(gen.GenerationRejected) as caught:
+            gen.run_unit_sections_job(
+                db.connect(),
+                {"job_id": None, "brief": {"plan_id": plan_id, "unit_ordinal": 1}},
+                llm,
+                plan_id=plan_id,
+                unit_ordinal=1,
+                now=T0,
+            )
+        self.assertIn("does not carry the construct", str(caught.exception))
+        self.assertEqual(llm.calls_for("coursebook.unit_sections.generate"), 2)
+        with db.read() as connection:
+            rows = connection.execute(
+                "SELECT COUNT(*) AS n FROM gen_plan_sections WHERE plan_id = ?", (plan_id,)
+            ).fetchone()["n"]
+            validations = connection.execute(
+                "SELECT COUNT(*) AS n FROM gen_validation_records"
+                " WHERE subject_kind = 'unit_sections'"
+            ).fetchone()["n"]
+        self.assertEqual(int(rows), 0)
+        self.assertEqual(int(validations), 0, "a discarded batch records no validation")
+
 
 class BlueprintPlanJobTest(UnitStageCase):
     def plan_llm(self, plan: dict) -> FakeLLM:

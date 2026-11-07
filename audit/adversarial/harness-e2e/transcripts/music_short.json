@@ -1,0 +1,172 @@
+{
+  "lessons": {
+    "Build a major and a minor triad from a root note": {
+      "accepted_answers": [
+        "Eb",
+        "E-flat"
+      ],
+      "check_prompt": "Which note is the third of a C minor triad?",
+      "criterion": "Both triads share the root and fifth; lowering the middle note is the whole difference.",
+      "example_steps": [
+        "Stack root, third, fifth",
+        "Lower the third",
+        "Compare the two"
+      ],
+      "explanation": "Both triads share the root and fifth; only the third moves, which is why the third carries the quality.",
+      "intent": "Teach the triad recipes and check both spellings.",
+      "items": null,
+      "practice": "From C, stack a major third and a perfect fifth for the major triad, then lower the middle note for the minor.",
+      "reference_answer": "E flat"
+    },
+    "Count the semitones in a major third and a perfect fifth": {
+      "accepted_answers": [
+        "7"
+      ],
+      "check_prompt": "How many semitones are in a perfect fifth?",
+      "criterion": "From C, the fifth note arrives after the same four-semitone step plus three more.",
+      "example_steps": [
+        "Start on C",
+        "Count four semitones",
+        "Name the interval"
+      ],
+      "explanation": "Counting semitones turns an interval from a feeling into a number you can check at the keyboard.",
+      "intent": "Teach the semitone count and check recall of the two numbers.",
+      "items": null,
+      "practice": "Start on C, count four semitones to E, and say the interval name out loud before you play it.",
+      "reference_answer": "seven"
+    },
+    "Distinguish the two common thirds by sound": {
+      "accepted_answers": [
+        "a minor third"
+      ],
+      "check_prompt": "Which interval is three semitones wide?",
+      "criterion": "The darker, lower interval is the one whose middle note is flattened; name it before checking the keys.",
+      "example_steps": [
+        "Play C to E",
+        "Play C to E flat",
+        "Name each third"
+      ],
+      "explanation": "The third decides whether a triad sounds major or minor, so the ear has to hear the difference before the theory helps.",
+      "intent": "Teach the sound difference and check the learner can name it.",
+      "items": null,
+      "practice": "Play C to E, then C to E flat, and hum each interval back before naming it.",
+      "reference_answer": "minor third"
+    },
+    "Use the circle of fifths to name the chords in a pop song": {
+      "accepted_answers": [
+        "the key of C major"
+      ],
+      "check_prompt": "A song uses C, G, A minor and F. Which key is it in?",
+      "criterion": "The home chord is the one the song resolves to; name it before the key.",
+      "example_steps": [
+        "List the chords",
+        "Place the roots",
+        "Name the key"
+      ],
+      "explanation": "The circle shows which chords belong together, so a song's chord list becomes a key and a set of functions.",
+      "intent": "Teach the circle as a song-analysis tool and check one mapping.",
+      "items": null,
+      "practice": "Write the song's chords, find each root on the circle, and mark the home chord before naming the key.",
+      "reference_answer": "C major"
+    }
+  },
+  "research": {
+    "content": "A recorded page used only so the research seam returns a source. It names the semitone counts of the common intervals and the major/minor triad recipes.",
+    "title": "Recorded page: intervals and triads",
+    "url": "https://example.invalid/recorded/music-intervals"
+  },
+  "scenario": {
+    "goal": "Understand intervals, triads and the circle of fifths well enough to analyse a pop song.",
+    "level": "beginner",
+    "locale": "en-US",
+    "name": "music_short",
+    "recipe": "committed",
+    "scope": "short",
+    "subject_domain": "general",
+    "title": "Intervals, triads and the circle of fifths"
+  },
+  "shape": {
+    "check_plan": [
+      {
+        "evidence_target": "recall",
+        "kind": "quiz",
+        "objective_ref": 1
+      },
+      {
+        "evidence_target": "discrimination",
+        "kind": "quiz",
+        "objective_ref": 2
+      },
+      {
+        "evidence_target": "comprehension",
+        "kind": "quiz",
+        "objective_ref": 3
+      },
+      {
+        "evidence_target": "transfer",
+        "kind": "quiz",
+        "objective_ref": 4
+      }
+    ],
+    "learner_outcome": "The learner names intervals and triads and uses the circle of fifths to analyse a pop song.",
+    "objectives": [
+      {
+        "evidence_criteria": [
+          "States the semitone count for each interval"
+        ],
+        "evidence_target": "recall",
+        "ordinal": 1,
+        "title": "Count the semitones in a major third and a perfect fifth",
+        "unit_ref": 1
+      },
+      {
+        "evidence_criteria": [
+          "Names which third was played and why"
+        ],
+        "evidence_target": "discrimination",
+        "ordinal": 2,
+        "title": "Distinguish the two common thirds by sound",
+        "unit_ref": 1
+      },
+      {
+        "evidence_criteria": [
+          "Spells both triads from one root"
+        ],
+        "evidence_target": "comprehension",
+        "ordinal": 3,
+        "title": "Build a major and a minor triad from a root note",
+        "unit_ref": 2
+      },
+      {
+        "evidence_criteria": [
+          "Maps the song's chords onto the circle and names the key"
+        ],
+        "evidence_target": "transfer",
+        "ordinal": 4,
+        "title": "Use the circle of fifths to name the chords in a pop song",
+        "unit_ref": 2
+      }
+    ],
+    "sessions_per_week": 2,
+    "units": [
+      {
+        "goal": "Name an interval from its semitone count and sound.",
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "target_lessons": 2,
+        "title": "Intervals on the keyboard"
+      },
+      {
+        "goal": "Build a triad from the circle and use it on a real song.",
+        "ordinal": 2,
+        "prereq_unit_ordinals": [
+          1
+        ],
+        "target_lessons": 2,
+        "title": "Triads and the circle of fifths"
+      }
+    ],
+    "weeks": 3
+  },
+  "transcript_version": "h40/blueprint-v2"
+}

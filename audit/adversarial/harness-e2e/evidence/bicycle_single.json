@@ -1,0 +1,722 @@
+{
+  "assertions": {
+    "approval_after_validation_succeeded": true,
+    "approval_refused_before_and_on_stale_hash": true,
+    "every_lesson_validated": true,
+    "exactly_one_check": true,
+    "exactly_one_objective": true,
+    "exactly_one_unit": true,
+    "no_answer_key_in_served_lesson": true,
+    "no_japanese_content_in_lessons": true,
+    "no_japanese_content_in_plan": true,
+    "no_japanese_content_in_run": true,
+    "no_quiz_lane_present": true,
+    "one_section_per_objective": true,
+    "outline_projects_prerequisite_state": true,
+    "plan_independently_validated": true,
+    "plan_validated_before_approval": true,
+    "prerequisite_edges_point_backwards": true,
+    "the_check_is_verification": true,
+    "units_user_enqueued_not_chained": true,
+    "verification_is_graded_as_self_reported": true
+  },
+  "labels": {
+    "model": "RECORDED TRANSCRIPT (hand-authored, replayed through the real pipeline)",
+    "provider_calls": 0,
+    "provider_spend_usd": 0.0,
+    "research": "RECORDED PAGE (fetched through the real search seam, bytes are a recording)",
+    "validator": "RECORDED TRANSCRIPT, distinct recorded model identity (H-36)"
+  },
+  "lesson_rows": [
+    {
+      "lesson_id": "21baca99682d5314",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "procedure",
+          "kind": "verification",
+          "learner_instructions": "Tick only what you actually did.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "verification",
+            "items": [
+              {
+                "id": "item_1",
+                "label": "Deflated the tyre and released the brake"
+              },
+              {
+                "id": "item_2",
+                "label": "Refitted the wheel without forcing the bead"
+              },
+              {
+                "id": "item_3",
+                "label": "Checked the brakes by hand before riding"
+              }
+            ],
+            "prompt": "Tick each step only after you have actually done it."
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "A tube that is pinched under the bead fails on the first ride; the hand-check of the bead is the step that catches it.",
+        "learner_explanation_short": "A tube that is pinched under the bead fails on the first ride; the hand-check of",
+        "lesson_intent": "Talk the learner through the repair and confirm each step was done.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Remove the rear wheel, replace the inner tube and check the brakes",
+        "segments": [
+          {
+            "body": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out"
+          },
+          {
+            "body": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "Seat the new tube by hand, inflate in small steps, and close"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
+          "prompt": "A worked example of Remove the rear wheel, replace the inner tube and check the brakes",
+          "short": "The step is done and checked. Seat the new tube by hand, inflate in small steps,",
+          "steps": [
+            "Deflate fully",
+            "Lift the wheel out",
+            "Seat the tube by hand"
+          ]
+        }
+      },
+      "section_id": "2a6fe13061c9f376",
+      "state": "validated"
+    }
+  ],
+  "observations": {
+    "approval_provenance": {
+      "facts_unverified": false,
+      "independent": true,
+      "needs_review": false,
+      "outcome": "independently_validated",
+      "warning": null
+    },
+    "attempt_rows": [
+      {
+        "check_id": "d33bb76d6e4441cf",
+        "evidence_class": "self_reported",
+        "grading_provenance_json": "{\"confirmed_items\":3,\"declared_items\":3,\"grader\":\"provider-free:confirmation\",\"reference_sha256\":\"sha256:c9f28941ee122f56fd10f7feabd55f3e9e7dd93b9578ffa9ce14457718805d39\"}",
+        "id": "att_65146774170542e2b25c9c82bb9f4320",
+        "state": "committed",
+        "verdict": "pass"
+      }
+    ],
+    "check_lanes": [
+      {
+        "objective_id": "a4c48818eeaaf46f",
+        "reference_kind": "rubric_only",
+        "state": "closed",
+        "stimulus_format": "verification"
+      }
+    ],
+    "checks": 1,
+    "lessons": 1,
+    "objectives": 1,
+    "outline_units": [
+      {
+        "objectives": 1,
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "prerequisite_state": "no_edges",
+        "unmet": 0
+      }
+    ],
+    "plan_scope": "single",
+    "plan_state_after_approval": "approved",
+    "plan_state_before_approval": "draft",
+    "prompt_version": "plan-prompt.v4",
+    "schema_name": "coursebook_plan_v2",
+    "sections": 1,
+    "units": 1,
+    "validation_independence": "independent",
+    "validation_outcome": "independently_validated",
+    "validation_verdict": "pass"
+  },
+  "plan_document": {
+    "check_plan": [
+      {
+        "evidence_target": "procedure",
+        "kind": "verification",
+        "objective_ref": 1
+      }
+    ],
+    "context_needs": [
+      "the actual equipment or a quiet keyboard"
+    ],
+    "delivery": "self_study",
+    "evidence_note": null,
+    "exclusions": [
+      "Does not certify competence; a supervisor checks the first attempt."
+    ],
+    "learner_outcome": "The learner replaces the inner tube and confirms the brakes by hand.",
+    "objectives": [
+      {
+        "evidence_criteria": [
+          "Removes and refits the wheel without forcing the bead",
+          "States the one condition that makes the repair unsafe to ride"
+        ],
+        "evidence_target": "procedure",
+        "ordinal": 1,
+        "source_ids": [],
+        "support": "unverified",
+        "title": "Remove the rear wheel, replace the inner tube and check the brakes",
+        "unit_ref": 1
+      }
+    ],
+    "plan_schema": "coursebook.plan.v2",
+    "scope": "single",
+    "source_ids": [],
+    "spaced_review": false,
+    "time_estimate": {
+      "attainment_hours": null,
+      "basis": "none",
+      "benchmark": null,
+      "confidence": "low",
+      "minutes_per_session": 60,
+      "rationale": "Authored estimate from the recorded transcript; no transfer claim.",
+      "sessions_per_week": 1,
+      "weeks": 1
+    },
+    "title": "Replace a bicycle inner tube",
+    "units": [
+      {
+        "goal": "Get the rear wheel off, fit a sound tube, and prove the brakes work.",
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "target_lessons": 1,
+        "title": "Remove the wheel, replace the tube, check the brakes"
+      }
+    ]
+  },
+  "scenario": {
+    "goal": "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today.",
+    "level": "beginner",
+    "locale": "en-US",
+    "name": "bicycle_single",
+    "recipe": "one_off",
+    "scope": "single",
+    "subject_domain": "repair",
+    "title": "Replace a bicycle inner tube"
+  },
+  "steps": {
+    "approval_refusals": [
+      {
+        "error_code": "VALIDATION_FAILED",
+        "ok": false,
+        "probe": "before_validation_wrong_revision",
+        "state_after": "draft"
+      },
+      {
+        "error_code": "VALIDATION_FAILED",
+        "ok": false,
+        "probe": "stale_hash",
+        "state_after": "draft"
+      }
+    ],
+    "approve": {
+      "approval_provenance": null,
+      "plan_hash": "sha256:33b964d417b243cb0b11440a8b965f9bb522737f7cfbdfbb750938cd2021e721",
+      "revision": 1,
+      "state_after": "approved"
+    },
+    "grading": [
+      {
+        "check_id": "d33bb76d6e4441cf",
+        "label": "correct",
+        "objective_ordinal": 1,
+        "open": {
+          "ok": true,
+          "revision": 1
+        },
+        "stimulus_format": null,
+        "submit": {
+          "contract_version": 13,
+          "ok": true,
+          "operation_id": "op-h40-attempt-submit-f32635",
+          "result": {
+            "attempt_id": "att_65146774170542e2b25c9c82bb9f4320",
+            "criteria": [
+              {
+                "id": "item_1",
+                "met": true,
+                "observed": "Deflated the tyre and released the brake"
+              },
+              {
+                "id": "item_2",
+                "met": true,
+                "observed": "Refitted the wheel without forcing the bead"
+              },
+              {
+                "id": "item_3",
+                "met": true,
+                "observed": "Checked the brakes by hand before riding"
+              }
+            ],
+            "evidence_class": "self_reported",
+            "next_action": "review_objective",
+            "revision": 2,
+            "verdict": "pass"
+          },
+          "revision": 2
+        }
+      }
+    ],
+    "lesson_page": {
+      "artifacts": [],
+      "attempts": [],
+      "checks": [
+        {
+          "attempt_count": 0,
+          "audit_state": "passed",
+          "check_id": "d33bb76d6e4441cf",
+          "evidence_target": "procedure",
+          "state": "open",
+          "version": 1
+        }
+      ],
+      "course": {
+        "course_id": "crs_abab43aaec2a43eb8a6d0d05eb3db7e6",
+        "title": "Replace a bicycle inner tube"
+      },
+      "document": {
+        "blocks": [
+          {
+            "check_id": null,
+            "deep": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead.",
+            "headline": "The step",
+            "id": "blk_20ffee7a94224a6a55db",
+            "media": [],
+            "role": "example",
+            "short": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out",
+            "source_ids": []
+          },
+          {
+            "check_id": "d33bb76d6e4441cf",
+            "deep": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
+            "headline": "Do it",
+            "id": "blk_656e77780b5513e8a8d3",
+            "media": [],
+            "role": "practice",
+            "short": "Seat the new tube by hand, inflate in small steps, and close",
+            "source_ids": []
+          },
+          {
+            "check_id": null,
+            "deep": "Deflate fully\nLift the wheel out\nSeat the tube by hand\nAnswer: The step is done and checked. Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
+            "headline": "A worked example of Remove the rear wheel, replace the inner tube and check the brakes",
+            "id": "blk_dc5758cae5a9766ff1eb",
+            "media": [],
+            "role": "example",
+            "short": "The step is done and checked. Seat the new tube by hand, inflate in small steps,",
+            "source_ids": []
+          },
+          {
+            "check_id": null,
+            "deep": "A tube that is pinched under the bead fails on the first ride; the hand-check of the bead is the step that catches it.",
+            "headline": "Recap",
+            "id": "blk_df0da7251fedcc53c104",
+            "media": [],
+            "role": "recap",
+            "short": "A tube that is pinched under the bead fails on the first ride; the hand-check of",
+            "source_ids": []
+          }
+        ],
+        "check_id": "d33bb76d6e4441cf",
+        "content_hash": "sha256:1486ee65b608dd3e0bad31fdf45168b4b2b57d83c455b0d5d5bc54c833bebf1f",
+        "direction": "ltr",
+        "document_id": "doc_1486ee65b608dd3e0bad",
+        "lang": "en-US",
+        "objective_id": null,
+        "schema_version": 1,
+        "section_title": "Remove the rear wheel, replace the inner tube and check the brakes",
+        "source_ids": [],
+        "state": "complete",
+        "view_note": null,
+        "views": {
+          "field_notes": true,
+          "field_quest": true,
+          "guided": true,
+          "textbook": true
+        }
+      },
+      "enrollment_id": "enr_e302048cdc92417d8bd64c0c36b8683c",
+      "notebook_entries": [],
+      "revision": 1,
+      "runtime": null,
+      "section": {
+        "evidence_target": "procedure",
+        "last_opened_at": null,
+        "objective_id": "a4c48818eeaaf46f",
+        "ordinal": 1,
+        "state": "not_started",
+        "title": "Remove the rear wheel, replace the inner tube and check the brakes"
+      },
+      "segments": [],
+      "sources": [
+        {
+          "fetched_at": "2026-11-07T12:00:00Z",
+          "published_at": null,
+          "publisher": null,
+          "source_id": "1d589ea20736deef",
+          "source_type": "web_page",
+          "support_status": "unassessed",
+          "title": "Recorded page: replacing a clincher inner tube",
+          "url": "https://example.invalid/recorded/bicycle-inner-tube"
+        }
+      ],
+      "state": "not_started"
+    },
+    "lesson_stages": [
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 3,
+        "jobs_before_run": 3,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_c37db22a69144a7db78c14fe9b54725e",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "d33bb76d6e4441cf",
+              "lesson_id": "21baca99682d5314",
+              "reused": false,
+              "section_id": "2a6fe13061c9f376",
+              "state": "validated",
+              "validation": {
+                "cost_usd": null,
+                "facts_unverified": false,
+                "generator": {
+                  "known": true,
+                  "model": "recorded-transcript-h40",
+                  "provider": "recorded"
+                },
+                "independence": "independent",
+                "independent": true,
+                "outcome": "independently_validated",
+                "research_status": "ok",
+                "validator": {
+                  "known": true,
+                  "model": "recorded-validator-h40",
+                  "provider": "recorded"
+                },
+                "verdict": "pass",
+                "waived_unknown": [],
+                "warning": null
+              },
+              "validation_id": "514c148fb7e55069",
+              "validation_model": "recorded-validator-h40",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": null,
+          "plan_hash": "sha256:0ed49b16a0035111db2c0c4ed99683b29e201837671556a54ebe2c9c5de29993",
+          "plan_id": "1b9b399c0ca03c5e",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 4,
+            "maximum_cost_usd": 0.16,
+            "minimum_calls": 2,
+            "minimum_cost_usd": 0.08,
+            "section_count": 1
+          },
+          "sections_total": 1,
+          "stage": "lessons",
+          "unit_ordinal": 1,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "by_purpose": {
+              "coursebook.lesson.generate": {
+                "calls": 1,
+                "cost_usd": 0.0,
+                "unknown_cost": false
+              },
+              "coursebook.lesson.validate": {
+                "calls": 1,
+                "cost_usd": 0.0,
+                "unknown_cost": false
+              }
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 2885,
+            "output_tokens": 967,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 1
+      }
+    ],
+    "outline": {
+      "enrollment_id": "enr_e302048cdc92417d8bd64c0c36b8683c",
+      "objectives": [
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "procedure",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "a4c48818eeaaf46f",
+          "ordinal": 1,
+          "state": "not_started",
+          "title": "Remove the rear wheel, replace the inner tube and check the brakes"
+        }
+      ],
+      "plan": {
+        "plan_hash": "sha256:33b964d417b243cb0b11440a8b965f9bb522737f7cfbdfbb750938cd2021e721",
+        "plan_id": "1b9b399c0ca03c5e",
+        "state": "approved",
+        "units": [
+          {
+            "goal": "Get the rear wheel off, fit a sound tube, and prove the brakes work.",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "procedure",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "a4c48818eeaaf46f",
+                "ordinal": 1,
+                "state": "not_started",
+                "title": "Remove the rear wheel, replace the inner tube and check the brakes"
+              }
+            ],
+            "ordinal": 1,
+            "prereq_unit_ordinals": [],
+            "prerequisite_state": "no_edges",
+            "title": "Remove the wheel, replace the tube, check the brakes",
+            "unmet": []
+          }
+        ],
+        "version": 2
+      },
+      "total": 1,
+      "truncated": false
+    },
+    "plan_job": {
+      "request": {
+        "objective_count_rule": [
+          1,
+          1
+        ],
+        "prompt_version": "plan-prompt.v4",
+        "schema_name": "coursebook_plan_v2",
+        "unit_count_rule": [
+          1,
+          1
+        ],
+        "unit_objective_count_rule": [
+          1,
+          1
+        ]
+      },
+      "research": {
+        "fetches": 1,
+        "queries": 2,
+        "status": "ok"
+      },
+      "result": {
+        "approval_provenance": {
+          "facts_unverified": false,
+          "independent": true,
+          "needs_review": false,
+          "outcome": "independently_validated",
+          "warning": null
+        },
+        "course_id": "crs_abab43aaec2a43eb8a6d0d05eb3db7e6",
+        "job_id": "job_5a3ddd5e23a847c6b1594a1a32d55679",
+        "job_kind": "plan",
+        "level": "beginner",
+        "next_unit_ordinal": 1,
+        "objectives": 1,
+        "plan_content_hash": "sha256:33b964d417b243cb0b11440a8b965f9bb522737f7cfbdfbb750938cd2021e721",
+        "plan_hash": "sha256:0ed49b16a0035111db2c0c4ed99683b29e201837671556a54ebe2c9c5de29993",
+        "plan_id": "1b9b399c0ca03c5e",
+        "plan_schema": "coursebook.plan.v2",
+        "plan_version": 2,
+        "research": {
+          "queries": [
+            "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today.",
+            "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today. official procedure steps safety limits"
+          ],
+          "reason": null,
+          "status": "ok"
+        },
+        "research_id": "e349c4c521ec4105",
+        "reused": false,
+        "scope": "single",
+        "scope_cap_weeks": 1,
+        "sections": 0,
+        "sources": 1,
+        "status": "draft",
+        "subject_domain": "repair",
+        "units": 1,
+        "usage": {
+          "budget": {
+            "max_calls": 32,
+            "max_cost_usd": 0.75,
+            "source": "declared"
+          },
+          "by_purpose": {
+            "coursebook.plan.generate": {
+              "calls": 1,
+              "cost_usd": 0.0,
+              "unknown_cost": false
+            },
+            "coursebook.plan.validate": {
+              "calls": 1,
+              "cost_usd": 0.0,
+              "unknown_cost": false
+            }
+          },
+          "calls": 2,
+          "cost_usd": 0.0,
+          "estimated_cost_usd": 0.0,
+          "input_tokens": 1397,
+          "output_tokens": 653,
+          "unknown_calls": 0,
+          "unknown_cost": false
+        },
+        "validation": {
+          "cost": {
+            "calls": 1,
+            "cost_usd": 0.0,
+            "unknown_cost": false
+          },
+          "cost_usd": 0.0,
+          "facts_unverified": false,
+          "generator": {
+            "known": true,
+            "model": "recorded-transcript-h40",
+            "provider": "recorded"
+          },
+          "independence": "independent",
+          "independent": true,
+          "outcome": "independently_validated",
+          "research_status": "ok",
+          "validator": {
+            "known": true,
+            "model": "recorded-validator-h40",
+            "provider": "recorded"
+          },
+          "verdict": "pass",
+          "waived_unknown": [],
+          "warning": null
+        },
+        "validation_id": "b1a006ee15040971",
+        "validation_verdict": "pass",
+        "warnings": [
+          "one-off brief: completion is instruction_complete plus a self-reported checklist"
+        ]
+      }
+    },
+    "stored_plan": {
+      "generation_state": "draft",
+      "unit_rows": [
+        {
+          "ordinal": 1,
+          "prereq_unit_ordinals_json": "[]",
+          "target_lessons": 1,
+          "title": "Remove the wheel, replace the tube, check the brakes"
+        }
+      ],
+      "validation_id_present": true
+    },
+    "unit_stages": [
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 2,
+        "jobs_before_run": 2,
+        "next_unit_ordinal": null,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_594b3c61b22945b6abd31422557f130d",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": null,
+          "owners": 1,
+          "plan_hash": "sha256:0ed49b16a0035111db2c0c4ed99683b29e201837671556a54ebe2c9c5de29993",
+          "plan_id": "1b9b399c0ca03c5e",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "2a6fe13061c9f376"
+          ],
+          "sections": 1,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 1,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "by_purpose": {
+              "coursebook.unit_sections.generate": {
+                "calls": 1,
+                "cost_usd": 0.0,
+                "unknown_cost": false
+              },
+              "coursebook.unit_sections.validate": {
+                "calls": 1,
+                "cost_usd": 0.0,
+                "unknown_cost": false
+              }
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 1343,
+            "output_tokens": 431,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "fe6a92ae9fbd78fb",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 1
+      }
+    ]
+  },
+  "verdict": "PASS"
+}
