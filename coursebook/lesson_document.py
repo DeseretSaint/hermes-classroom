@@ -45,7 +45,7 @@ import json
 import re
 from typing import Any, Iterable, Mapping, Sequence
 
-from . import localization
+from . import localization, text_completeness
 
 __all__ = [
     "SCHEMA_VERSION",
@@ -666,6 +666,7 @@ def _finish(
     procedure: Any = None,
     lang: Any = None,
     direction: Any = None,
+    completeness: bool = True,
 ) -> dict[str, Any]:
     attached = _attach_check(blocks, check_id)
     document_source_ids = _unique(source_ids, limit=MAX_DOCUMENT_SOURCE_IDS)
@@ -717,7 +718,7 @@ def _finish(
         document["direction"] = direction_value
     if normalised_procedure is not None:
         document["procedure"] = normalised_procedure
-    problems = _document_problems(document)
+    problems = _document_problems(document, completeness=completeness)
     if problems:
         raise LessonDocumentError(problems)
     return document
@@ -786,6 +787,7 @@ def document_from_page(
     *,
     check_id: str | None = None,
     locale: str | None = None,
+    completeness: bool = False,
 ) -> dict[str, Any]:
     """Project a stored ``gen_lessons.page_json`` into a document.
 
@@ -840,6 +842,7 @@ def document_from_page(
         procedure=procedure,
         lang=locale or lang,
         direction=direction,
+        completeness=completeness,
     )
 
 
@@ -852,6 +855,7 @@ def document_from_segments(
     artifacts: Mapping[str, Mapping[str, Any]] | None = None,
     source_ids: Sequence[Any] | None = None,
     locale: str | None = None,
+    completeness: bool = False,
 ) -> dict[str, Any]:
     """Project durable ``lesson_segments`` rows (the ``lesson.page`` shape) into a document.
 
@@ -962,6 +966,7 @@ def document_from_segments(
         check_id=check_id,
         source_ids=list(source_ids or []),
         lang=locale,
+        completeness=completeness,
     )
 
 
@@ -1042,7 +1047,7 @@ def answer_material(value: Any) -> list[str]:
 # ── validation ──────────────────────────────────────────────────────────────
 
 
-def _block_problems(block: Any, index: int) -> list[str]:
+def _block_problems(block: Any, index: int, *, completeness: bool = True) -> list[str]:
     where = f"blocks[{index}]"
     if not isinstance(block, Mapping):
         return [f"{where} is not an object"]
@@ -1063,17 +1068,36 @@ def _block_problems(block: Any, index: int) -> list[str]:
         problems.append(f"{where}.headline is empty")
     elif len(headline) > MAX_HEADLINE:
         problems.append(f"{where}.headline exceeds {MAX_HEADLINE} characters")
+    elif completeness:
+        # A headline is a label, not a sentence: only the structural shapes apply to it.
+        problems.extend(
+            text_completeness.completeness_problems(
+                headline, where=f"{where}.headline", prose=False
+            )
+        )
     deep = block.get("deep")
     if not isinstance(deep, str) or not _clean(deep):
         problems.append(f"{where}.deep is empty")
     elif len(deep) > MAX_DEEP:
         problems.append(f"{where}.deep exceeds {MAX_DEEP} characters")
+    elif completeness:
+        # The deep text is the authored body a learner reads. A body that stops mid-sentence is a
+        # truncation, not a short lesson: the rule judges the ending, never the size.
+        problems.extend(
+            text_completeness.completeness_problems(deep, where=f"{where}.deep")
+        )
     short = block.get("short")
     if short is not None:
         if not isinstance(short, str) or not _clean(short):
             problems.append(f"{where}.short must be null or non-empty text")
         elif len(short) > MAX_SHORT:
             problems.append(f"{where}.short exceeds {MAX_SHORT} characters")
+        elif completeness:
+            # The Guided view serves the short on its own, so a clipped short is the same defect
+            # in a second surface: D8 recorded exactly this shape.
+            problems.extend(
+                text_completeness.completeness_problems(short, where=f"{where}.short")
+            )
     check_id = block.get("check_id")
     if check_id is not None and not _identifier(check_id):
         problems.append(f"{where}.check_id is not an identifier")
@@ -1142,7 +1166,7 @@ def _media_problems(item: Any, where: str) -> list[str]:
     return problems
 
 
-def _block_list_problems(blocks: Any, check_id: str | None) -> list[str]:
+def _block_list_problems(blocks: Any, check_id: str | None, *, completeness: bool = True) -> list[str]:
     if not isinstance(blocks, list):
         return ["blocks is not an array"]
     problems: list[str] = []
@@ -1151,7 +1175,7 @@ def _block_list_problems(blocks: Any, check_id: str | None) -> list[str]:
     seen: set[str] = set()
     claimed = 0
     for index, block in enumerate(blocks):
-        problems.extend(_block_problems(block, index))
+        problems.extend(_block_problems(block, index, completeness=completeness))
         if not isinstance(block, Mapping):
             continue
         block_id = block.get("id")
@@ -1173,14 +1197,21 @@ def _block_list_problems(blocks: Any, check_id: str | None) -> list[str]:
     return problems
 
 
-def validate_blocks(blocks: Any, *, check_id: str | None = None) -> None:
-    """Raise :class:`LessonDocumentError` when a block list is not a valid document body."""
-    problems = _block_list_problems(blocks, check_id)
+def validate_blocks(blocks: Any, *, check_id: str | None = None, completeness: bool = True) -> None:
+    """Raise :class:`LessonDocumentError` when a block list is not a valid document body.
+
+    ``completeness`` runs :mod:`coursebook.text_completeness` over the authored ``headline``,
+    ``deep`` and ``short``. It is on by default: this is the gate the lesson author calls before
+    storing a page, and a body that stops mid-sentence is a provider truncation, not a lesson.
+    A caller projecting rows that were written before this rule passes ``completeness=False`` so
+    a historical page is never newly refused for text it already stored.
+    """
+    problems = _block_list_problems(blocks, check_id, completeness=completeness)
     if problems:
         raise LessonDocumentError(problems)
 
 
-def _document_problems(document: Any) -> list[str]:
+def _document_problems(document: Any, *, completeness: bool = True) -> list[str]:
     if not isinstance(document, Mapping):
         return ["document is not an object"]
     problems: list[str] = []
@@ -1203,7 +1234,7 @@ def _document_problems(document: Any) -> list[str]:
     if check_id is not None and not _identifier(check_id):
         problems.append("check_id is not an identifier")
     blocks = document.get("blocks")
-    problems.extend(_block_list_problems(blocks, check_id))
+    problems.extend(_block_list_problems(blocks, check_id, completeness=completeness))
     source_ids = document.get("source_ids")
     if not isinstance(source_ids, list) or len(source_ids) > MAX_DOCUMENT_SOURCE_IDS:
         problems.append("source_ids is not a bounded array")
@@ -1282,8 +1313,8 @@ def _document_hash(document: Mapping[str, Any]) -> str:
     return "sha256:" + hashlib.sha256(canonical(core).encode("utf-8")).hexdigest()
 
 
-def validate_document(document: Any) -> None:
+def validate_document(document: Any, *, completeness: bool = True) -> None:
     """Raise :class:`LessonDocumentError` when a document breaks the v8 shape or honesty rules."""
-    problems = _document_problems(document)
+    problems = _document_problems(document, completeness=completeness)
     if problems:
         raise LessonDocumentError(problems)

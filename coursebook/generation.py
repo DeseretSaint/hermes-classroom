@@ -59,6 +59,7 @@ from . import localization
 from . import policy as capability_policy
 from . import prompts
 from . import rubrics
+from . import text_completeness
 from . import validators
 from .packs import MIN_RUBRIC_CRITERIA
 from .research import (
@@ -4001,13 +4002,16 @@ def _enforce_lesson_document(page: dict[str, Any]) -> dict[str, Any]:
     authored shorts, ``validate_blocks`` re-checks the resulting block list (ids, lengths, roles,
     the single-check rule) and the state check refuses a page whose Guided view would be
     unreachable. Nothing here slices or summarises ``deep``.
+
+    ``validate_blocks`` also runs the H-46 completeness gate (:mod:`coursebook.text_completeness`)
+    over every block's ``headline``, ``deep`` and ``short``: a body that ends mid-sentence, on a
+    dangling word, inside an unclosed fence or on an unfinished checklist is a provider
+    truncation, and it is refused here rather than stored and served as if complete. A rejection
+    routes through the ordinary attempt loop — one regeneration with these reasons, then a
+    ``needs_review`` lesson with every check closed.
     """
     try:
         document = lesson_document.document_from_page(page)
-    except lesson_document.LessonDocumentError as exc:
-        raise _RuleViolation([f"lesson document: {problem}" for problem in exc.problems]) from exc
-    try:
-        lesson_document.validate_blocks(document["blocks"])
     except lesson_document.LessonDocumentError as exc:
         raise _RuleViolation([f"lesson document: {problem}" for problem in exc.problems]) from exc
     problems: list[str] = []
@@ -4019,6 +4023,13 @@ def _enforce_lesson_document(page: dict[str, Any]) -> dict[str, Any]:
             + " have none, so the Guided view would be unreachable"
         )
     problems.extend(f"lesson document: {problem}" for problem in _short_problems(document["blocks"]))
+    # The validator runs last so a regeneration carries *every* reason: a short that is over the
+    # authored bound is reported beside whatever truncation the completeness gate found, instead
+    # of the earlier failure hiding it.
+    try:
+        lesson_document.validate_blocks(document["blocks"])
+    except lesson_document.LessonDocumentError as exc:
+        problems.extend(f"lesson document: {problem}" for problem in exc.problems)
     if problems:
         raise _RuleViolation(problems)
     return document
@@ -6336,6 +6347,13 @@ def enforce_unit_section_rules(
 
     The writer assigns global ordinals, so the model's ``ordinal`` is advisory and never trusted
     for identity. What must hold is role shape, owner coverage, review refs and the target count.
+
+    **Completeness (H-46).** A section's ``lesson_intent`` is authored prose, and a provider
+    truncation leaves it as a well-formed string that stops mid-sentence — the schema cannot see
+    it. The batch is therefore also judged by :mod:`coursebook.text_completeness`, whose signals
+    are structural (unclosed fence, dangling function word, no terminal punctuation and no
+    continuation marker) and never a length threshold. A ``title`` is a label, so only the
+    block-structure signals apply to it.
     """
     reasons: list[str] = []
     unit_ordinal = int(unit["ordinal"])
@@ -6345,6 +6363,20 @@ def enforce_unit_section_rules(
     reviews = 0
     seen_review = False
     for index, section in enumerate(sections):
+        intent = section.get("lesson_intent")
+        if isinstance(intent, str):
+            reasons.extend(
+                text_completeness.completeness_problems(
+                    intent, where=f"section {index + 1} lesson_intent"
+                )
+            )
+        title = section.get("title")
+        if isinstance(title, str):
+            reasons.extend(
+                text_completeness.completeness_problems(
+                    title, where=f"section {index + 1} title", prose=False
+                )
+            )
         if int(section.get("unit_ref", 0)) != unit_ordinal:
             reasons.append(
                 f"section {index + 1} names unit {section.get('unit_ref')}; this unit is {unit_ordinal}"
