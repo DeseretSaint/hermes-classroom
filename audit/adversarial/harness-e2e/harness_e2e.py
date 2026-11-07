@@ -31,21 +31,29 @@ Run from the product checkout:
 
 from __future__ import annotations
 
+import contextlib
+import hashlib
+import itertools
 import json
 import os
+import secrets
 import shutil
 import sys
 import tempfile
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 from coursebook import generation as gen
+from coursebook import job_service as _job_service  # noqa: F401 - mints WORKER_ID at import
 from coursebook import rubrics
 from coursebook import text_completeness
 
 HERE = Path(__file__).resolve().parent
 TRANSCRIPTS = HERE / "transcripts"
 EVIDENCE = HERE / "evidence"
+MANIFEST = HERE / "manifest.json"
+CONTRACT = HERE.parents[2] / "contracts" / "rpc.v13.json"
 NOW = datetime(2026, 11, 7, 12, 0, tzinfo=timezone.utc)
 
 #: Two distinct recorded identities: a validator that reports the author's own model name is
@@ -459,8 +467,56 @@ def _plan_brief(scenario: dict, course_id: str, enrollment_id: str) -> dict:
     }
 
 
+@contextlib.contextmanager
+def deterministic_ids():
+    """Mint every generated identifier from a counter so two runs write identical bytes.
+
+    The products of this harness are evidence *files*: the packet is only reproducible if the
+    ids (and, through them, the ordering of ``ORDER BY created_at, id`` reads and the plan hash)
+    are deterministic. Ids are not a claim about uniqueness — each run writes a throwaway DB.
+    """
+    counter = itertools.count(1)
+
+    def next_hex(chars: int) -> str:
+        return format(next(counter), f"0{chars}x")[-chars:]
+
+    original_uuid4 = uuid.uuid4
+    original_token_hex = secrets.token_hex
+    original_token_bytes = secrets.token_bytes
+    original_urandom = os.urandom
+
+    def token_hex(nbytes: int | None = None) -> str:
+        return next_hex(2 * (16 if nbytes is None else nbytes))
+
+    def token_bytes(nbytes: int | None = None) -> bytes:
+        return bytes.fromhex(next_hex(2 * (32 if nbytes is None else nbytes)))
+
+    def urandom(n: int) -> bytes:
+        return bytes.fromhex(next_hex(2 * n))
+
+    def uuid4():
+        return uuid.UUID(int=next(counter))
+
+    uuid.uuid4 = uuid4
+    secrets.token_hex = token_hex
+    secrets.token_bytes = token_bytes
+    os.urandom = urandom
+    try:
+        yield
+    finally:
+        uuid.uuid4 = original_uuid4
+        secrets.token_hex = original_token_hex
+        secrets.token_bytes = original_token_bytes
+        os.urandom = original_urandom
+
+
 def run_scenario(name: str, *, home: Path) -> dict:
     """Drive one arbitrary-topic course end to end and return its evidence record."""
+    with deterministic_ids():
+        return _run_scenario(name, home=home)
+
+
+def _run_scenario(name: str, *, home: Path) -> dict:
     from coursebook import db
 
     _prepare(home)
@@ -761,6 +817,27 @@ def _assert_scenario(name: str, scenario: dict, evidence: dict) -> dict[str, boo
         ),
     }
 
+    # D6 — the plan's own shape must sit inside the published contract, not inside the table the
+    # generator reads. Violations are recorded so a failure names the broken declaration.
+    declared = declared_scope_bounds()
+    violations = scope_bound_violations(
+        str(scenario["scope"]), evidence.get("plan_document") or {}, declared=declared
+    )
+    evidence["scope_bounds"] = {
+        "brief_scope": str(scenario["scope"]),
+        "contract": declared["contract"],
+        "contract_scopes": list(declared["contract_scopes"]),
+        "schema": {"objectives": list(declared["schema_objectives"]),
+                   "units": list(declared["schema_units"])},
+        "declared": {
+            scope: {"objectives": list(band["objectives"]), "units": list(band["units"])}
+            for scope, band in declared["expectations"].items()
+        },
+        "violations": violations,
+    }
+    assertions["scope_matches_documented_bounds"] = not violations
+    assertions["scope_contract_is_coherent"] = not declared["problems"]
+
     if name == "bicycle_single":
         assertions.update({
             "exactly_one_unit": obs["units"] == 1,
@@ -855,6 +932,11 @@ class CeilingLLM(RecordedLLM):
 
 def run_ceiling_probe(home: Path) -> dict:
     """The full-scope plan bound is accepted at the declared ceiling and refused above it."""
+    with deterministic_ids():
+        return _run_ceiling_probe(home)
+
+
+def _run_ceiling_probe(home: Path) -> dict:
     from coursebook import db
 
     _prepare(home)
@@ -931,6 +1013,11 @@ class DropSectionLLM(RecordedLLM):
 
 def run_partial_unit_probe(home: Path) -> dict:
     """What a unit stage that cannot author every owner section actually persists."""
+    with deterministic_ids():
+        return _run_partial_unit_probe(home)
+
+
+def _run_partial_unit_probe(home: Path) -> dict:
     from coursebook import db
 
     _prepare(home)
@@ -957,11 +1044,17 @@ def run_partial_unit_probe(home: Path) -> dict:
                   "enrollment_id": enrollment_id, "unit_ordinal": 2}
     unit_job = _ok("jobs.create", {"kind": "plan", "brief": unit_brief}, key="h40-partial-unit")
     connection = db.connect()
+    unit_refusal = None
     try:
         unit_result = gen.run_unit_sections_job(
             connection, {"job_id": unit_job["job_id"], "brief": unit_brief}, llm,
             plan_id=plan_id, unit_ordinal=2, now=NOW, budget=BUDGET,
         )
+    except gen.GenerationRejected as exc:
+        # H-42 made the unit stage transactional: a batch that cannot author every owner
+        # section is discarded and the job fails, so the probe records the refusal itself.
+        unit_result = None
+        unit_refusal = {"type": type(exc).__name__, "message": str(exc)}
     finally:
         connection.close()
     with db.read() as connection:
@@ -992,6 +1085,7 @@ def run_partial_unit_probe(home: Path) -> dict:
                                 "objective_id": missing_objective["objective_id"]})
     return {
         "unit_result": unit_result,
+        "unit_stage_refusal": unit_refusal,
         "persisted_sections": sections,
         "lessons_after_refusal": lessons,
         "checks_after_refusal": checks,
@@ -1012,6 +1106,275 @@ def _json_dump(value) -> str:
     return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False, default=str)
 
 
+# ── D6: scope bounds, read from the declared contract ───────────────────────
+
+
+def _contract_scope_enums(node) -> list[tuple[str, ...]]:
+    """Every enum in the RPC contract that publishes the course scope vocabulary."""
+    found: list[tuple[str, ...]] = []
+
+    def walk(value) -> None:
+        if isinstance(value, dict):
+            enum = value.get("enum")
+            if isinstance(enum, list) and {"single", "short", "full"} <= set(enum):
+                found.append(tuple(str(item) for item in enum if item is not None))
+            for child in value.values():
+                walk(child)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child)
+
+    walk(node)
+    return sorted(set(found))
+
+
+def declared_scope_bounds() -> dict:
+    """The three declarations a plan's shape must satisfy, and their disagreements.
+
+    The bound is not read from the table that generated the plan; it is read from the frozen
+    RPC contract (the scope vocabulary), ``PLAN_SCHEMA_V2`` (the envelope every plan must fit)
+    and the published per-scope expectation. ``problems`` is non-empty when those three
+    declarations contradict each other, so editing one of them cannot silently loosen the check.
+    """
+    contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+    problems: list[str] = []
+    enums = _contract_scope_enums(contract)
+    if len(enums) != 1:
+        problems.append(
+            f"{CONTRACT.name} publishes {len(enums)} distinct scope enums: {enums}"
+        )
+    contract_scopes = enums[0] if enums else ()
+    schema_objectives = (
+        int(gen.PLAN_SCHEMA_V2["properties"]["objectives"]["minItems"]),
+        int(gen.PLAN_SCHEMA_V2["properties"]["objectives"]["maxItems"]),
+    )
+    schema_units = (
+        int(gen.PLAN_SCHEMA_V2["properties"]["units"]["minItems"]),
+        int(gen.PLAN_SCHEMA_V2["properties"]["units"]["maxItems"]),
+    )
+    expectations = {
+        str(scope): {
+            "objectives": tuple(int(value) for value in expectation["blueprint_objectives"]),
+            "units": tuple(int(value) for value in expectation["blueprint_units"]),
+        }
+        for scope, expectation in gen.SCOPE_EXPECTATIONS.items()
+    }
+    if tuple(contract_scopes) != tuple(gen.SCOPES):
+        problems.append(
+            f"{CONTRACT.name} scopes {contract_scopes} differ from the generator's {gen.SCOPES}"
+        )
+    if set(expectations) != set(gen.SCOPES):
+        problems.append(
+            f"SCOPE_EXPECTATIONS covers {sorted(expectations)}, the product scopes are {gen.SCOPES}"
+        )
+    for scope, band in expectations.items():
+        low, high = band["objectives"]
+        if not schema_objectives[0] <= low <= high <= schema_objectives[1]:
+            problems.append(
+                f"{scope} objective band {band['objectives']} is not inside the plan schema's "
+                f"{schema_objectives}"
+            )
+        unit_low, unit_high = band["units"]
+        if not schema_units[0] <= unit_low <= unit_high <= schema_units[1]:
+            problems.append(
+                f"{scope} unit band {band['units']} is not inside the plan schema's {schema_units}"
+            )
+    return {
+        "contract": str(CONTRACT.relative_to(HERE.parents[2])),
+        "contract_scopes": contract_scopes,
+        "schema_objectives": schema_objectives,
+        "schema_units": schema_units,
+        "expectations": expectations,
+        "problems": problems,
+    }
+
+
+def scope_bound_violations(scope: str, plan_document: dict, *,
+                           declared: dict | None = None) -> list[str]:
+    """Every way ``plan_document`` leaves the band the declared contract publishes.
+
+    Returns reasons rather than a verdict so a failure names *which* declaration was broken.
+    An empty list is the only pass.
+    """
+    declared = declared or declared_scope_bounds()
+    reasons: list[str] = list(declared["problems"])
+    if scope not in declared["contract_scopes"]:
+        return reasons + [f"scope {scope!r} is not published by {declared['contract']}"]
+    if not isinstance(plan_document, dict):
+        return reasons + ["the plan document is missing or not an object"]
+    plan_scope = str(plan_document.get("scope") or "")
+    if plan_scope != scope:
+        reasons.append(
+            f"the plan declares scope {plan_scope!r}, the brief declared {scope!r}"
+        )
+    objectives = plan_document.get("objectives") or []
+    units = plan_document.get("units") or []
+    check_plan = plan_document.get("check_plan") or []
+    objective_count = len(objectives)
+    unit_count = len(units)
+    low, high = declared["expectations"][scope]["objectives"]
+    if not low <= objective_count <= high:
+        reasons.append(
+            f"scope {scope!r} requires {low} to {high} objective(s); the plan has {objective_count}"
+        )
+    unit_low, unit_high = declared["expectations"][scope]["units"]
+    if not unit_low <= unit_count <= unit_high:
+        reasons.append(
+            f"scope {scope!r} requires {unit_low} to {unit_high} unit(s); the plan has {unit_count}"
+        )
+    schema_low, schema_high = declared["schema_objectives"]
+    if not schema_low <= objective_count <= schema_high:
+        reasons.append(
+            f"{declared['contract']}/PLAN_SCHEMA_V2 allows {schema_low} to {schema_high} "
+            f"objective(s); the plan has {objective_count}"
+        )
+    schema_unit_low, schema_unit_high = declared["schema_units"]
+    if not schema_unit_low <= unit_count <= schema_unit_high:
+        reasons.append(
+            f"PLAN_SCHEMA_V2 allows {schema_unit_low} to {schema_unit_high} unit(s); "
+            f"the plan has {unit_count}"
+        )
+    if len(check_plan) != objective_count:
+        reasons.append(
+            f"the plan has {objective_count} objective(s) but {len(check_plan)} check_plan "
+            "entry/entries; the contract is exactly one check per objective"
+        )
+    return reasons
+
+
+def scope_matches_documented_bounds(scope: str, plan_document: dict, *,
+                                    declared: dict | None = None) -> bool:
+    """True only when the plan sits inside every declaration, not inside the generator's table."""
+    return not scope_bound_violations(scope, plan_document, declared=declared)
+
+
+# ── D7: the packet is content-addressed ─────────────────────────────────────
+
+
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    return sha256_bytes(Path(path).read_bytes())
+
+
+def _scenario_brief(scenario: dict) -> dict:
+    return {key: scenario[key] for key in
+            ("title", "goal", "recipe", "scope", "locale", "level", "subject_domain")}
+
+
+def packet_inputs() -> dict:
+    """The harness inputs a fresh run consumes, each content-addressed."""
+    inputs: dict[str, dict] = {}
+    for path in sorted(TRANSCRIPTS.glob("*.json")):
+        transcript = json.loads(path.read_text(encoding="utf-8"))
+        scenario = transcript["scenario"]
+        brief = _scenario_brief(scenario)
+        inputs[path.stem] = {
+            "transcript": f"transcripts/{path.name}",
+            "transcript_sha256": sha256_file(path),
+            "brief": brief,
+            "brief_sha256": sha256_bytes(_json_dump(brief).encode("utf-8")),
+            "scope": scenario["scope"],
+            "model_transcript_id": AUTHOR_MODEL,
+            "validator_transcript_id": VALIDATOR_MODEL,
+        }
+    return inputs
+
+
+def evidence_hashes() -> dict:
+    return {
+        path.name: {"sha256": sha256_file(path), "bytes": path.stat().st_size}
+        for path in sorted(EVIDENCE.iterdir())
+        if path.is_file()
+    }
+
+
+def build_manifest() -> dict:
+    return {
+        "packet": "h40-arbitrary-topic-e2e",
+        "harness": {"path": "harness_e2e.py", "sha256": sha256_file(HERE / "harness_e2e.py")},
+        "inputs": packet_inputs(),
+        "evidence": evidence_hashes(),
+    }
+
+
+def write_manifest() -> dict:
+    manifest = build_manifest()
+    MANIFEST.write_text(_json_dump(manifest) + "\n", encoding="utf-8")
+    return manifest
+
+
+def verify_packet(root: Path | None = None) -> list[str]:
+    """Compare the packet on disk against its manifest. Empty list means fresh.
+
+    Compares content hashes, never verdict strings: a re-run whose evidence changed, a transcript
+    edited under the packet, or a harness change all read as stale.
+    """
+    root = Path(root) if root is not None else HERE
+    manifest_path = root / "manifest.json"
+    if not manifest_path.exists():
+        return [f"{manifest_path.name} is missing"]
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [f"{manifest_path.name} is not valid JSON: {exc}"]
+    problems: list[str] = []
+    harness = manifest.get("harness") or {}
+    harness_path = root / str(harness.get("path") or "harness_e2e.py")
+    if harness_path.exists():
+        actual = sha256_file(harness_path)
+        if actual != harness.get("sha256"):
+            problems.append(
+                f"{harness_path.name} sha256 changed (manifest {harness.get('sha256')}, "
+                f"disk {actual}); the packet was produced by a different harness"
+            )
+    else:
+        problems.append(f"{harness_path.name} is missing")
+    for name, entry in sorted((manifest.get("inputs") or {}).items()):
+        transcript = root / str(entry.get("transcript"))
+        if not transcript.exists():
+            problems.append(f"{entry.get('transcript')} is missing")
+            continue
+        actual = sha256_file(transcript)
+        if actual != entry.get("transcript_sha256"):
+            problems.append(
+                f"{entry.get('transcript')} sha256 changed (manifest "
+                f"{entry.get('transcript_sha256')}, disk {actual})"
+            )
+            continue
+        scenario = json.loads(transcript.read_text(encoding="utf-8"))["scenario"]
+        brief_hash = sha256_bytes(_json_dump(_scenario_brief(scenario)).encode("utf-8"))
+        if brief_hash != entry.get("brief_sha256"):
+            problems.append(
+                f"{entry.get('transcript')} brief sha256 changed (manifest "
+                f"{entry.get('brief_sha256')}, disk {brief_hash})"
+            )
+        if str(scenario.get("scope")) != str(entry.get("scope")):
+            problems.append(
+                f"{entry.get('transcript')} scope changed (manifest {entry.get('scope')!r}, "
+                f"disk {scenario.get('scope')!r})"
+            )
+    evidence_dir = root / "evidence"
+    listed = manifest.get("evidence") or {}
+    for name, entry in sorted(listed.items()):
+        path = evidence_dir / name
+        if not path.exists():
+            problems.append(f"evidence/{name} is missing")
+            continue
+        actual = sha256_file(path)
+        if actual != entry.get("sha256"):
+            problems.append(
+                f"evidence/{name} sha256 changed (manifest {entry.get('sha256')}, disk {actual})"
+            )
+    if evidence_dir.exists():
+        for path in sorted(evidence_dir.iterdir()):
+            if path.is_file() and path.name not in listed:
+                problems.append(f"evidence/{path.name} is not listed in the manifest")
+    return problems
+
+
 def _run(label: str, runner, *, prefix: str):
     work = Path(tempfile.mkdtemp(prefix=f"coursebook-h40-{prefix}-"))
     previous = os.environ.get("HERMES_HOME")
@@ -1026,6 +1389,8 @@ def _run(label: str, runner, *, prefix: str):
 
 
 def main(argv: list[str]) -> int:
+    if "--verify" in argv[1:]:
+        return _verify_and_report()
     EVIDENCE.mkdir(parents=True, exist_ok=True)
     names = [name for name in (argv[1:] or list(TRANSCRIPTS.glob("*.json")))]
     names = [Path(name).stem for name in names]
@@ -1069,8 +1434,10 @@ def main(argv: list[str]) -> int:
         emit()
     partial = _run("partial", run_partial_unit_probe, prefix="partial-unit")
     (EVIDENCE / "partial_unit_batch.json").write_text(_json_dump(partial) + "\n", encoding="utf-8")
-    emit("partial_unit_batch (H-30b D1): "
-         f"unit state={partial['unit_result'].get('state')} "
+    unit_state = (partial["unit_result"] or {}).get("state") or "refused"
+    emit("partial_unit_batch (H-42 transactional unit stage; H-30b D1): "
+         f"unit state={unit_state} "
+         f"unit_refusal={(partial.get('unit_stage_refusal') or {}).get('type')} "
          f"persisted_sections={len(partial['persisted_sections'])} "
          f"lesson_refusal={(partial['lesson_stage_refusal'] or {}).get('type')} "
          f"page_state={partial['lesson_page_state']} check_id={partial['lesson_page_check_id']}")
@@ -1079,7 +1446,29 @@ def main(argv: list[str]) -> int:
     emit(f"overall: {'PASS' if overall else 'FAIL'}  ({sum(v == 'PASS' for v in summary.values())}"
          f"/{len(summary)} scenarios)")
     (EVIDENCE / "run-output.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    emit(f"packet: {len(evidence_hashes())} evidence file(s) content-addressed in "
+         f"manifest.json; {len(packet_inputs())} transcript input(s)")
+    (EVIDENCE / "run-output.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_manifest()
     return 0 if overall else 1
+
+
+def _verify_and_report() -> int:
+    """``--verify``: does the packet on disk still match manifest.json, byte for byte?"""
+    problems = verify_packet()
+    if problems:
+        for problem in problems:
+            print(f"STALE  {problem}")
+        print("packet: STALE — the committed packet no longer matches its manifest")
+        return 1
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    print("packet: FRESH — every evidence file and harness input matches manifest.json")
+    print(f"harness  {manifest['harness']['sha256']}  {manifest['harness']['path']}")
+    for name, entry in sorted(manifest["inputs"].items()):
+        print(f"input    {entry['transcript_sha256']}  {entry['transcript']}  scope={entry['scope']}")
+    for name, entry in sorted(manifest["evidence"].items()):
+        print(f"evidence {entry['sha256']}  evidence/{name}")
+    return 0
 
 
 if __name__ == "__main__":

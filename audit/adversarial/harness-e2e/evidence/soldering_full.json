@@ -19,6 +19,8 @@
     "plan_validated_before_approval": true,
     "prerequisite_edges_declared": true,
     "prerequisite_edges_point_backwards": true,
+    "scope_contract_is_coherent": true,
+    "scope_matches_documented_bounds": true,
     "units_user_enqueued_not_chained": true,
     "wrong_answer_is_not_yet": true
   },
@@ -82,292 +84,7 @@
   },
   "lesson_rows": [
     {
-      "lesson_id": "094c93506db353af",
-      "page": {
-        "check": {
-          "assistance_policy": {
-            "answer_marks_evidence_class": "none",
-            "hint": "available"
-          },
-          "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
-          "scaffolds": [],
-          "stimulus": {
-            "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "What temperature range suits leaded solder?"
-          }
-        },
-        "direction": "ltr",
-        "lang": "en-US",
-        "learner_explanation": "Temperature is a time control: too cold means a longer touch and a colder joint.",
-        "learner_explanation_short": "Temperature is a time control: too cold means a longer",
-        "lesson_intent": "Teach the temperature setting for leaded solder.",
-        "media": [],
-        "parent_notes": null,
-        "section_title": "Set an iron to the temperature a leaded joint needs",
-        "segments": [
-          {
-            "body": "Set the station, wait for the display to settle, and tin the tip before the first joint.",
-            "heading": "The step",
-            "kind": "model",
-            "short": "Set the station, wait for the display to settle, and tin"
-          },
-          {
-            "body": "Leaded solder wants a moderate setting; hotter burns the flux before the joint forms.",
-            "heading": "Do it",
-            "kind": "guided",
-            "short": "Leaded solder wants a moderate setting; hotter burns the"
-          }
-        ],
-        "sources": [],
-        "supervision_notes": [],
-        "worked_example": {
-          "answer": "The step is done and checked. Leaded solder wants a moderate setting; hotter burns the flux before the joint forms.",
-          "prompt": "A worked example of Set an iron to the temperature a leaded joint needs",
-          "short": "The step is done and checked. Leaded solder wants a moderate setting; hotter",
-          "steps": [
-            "Set the dial",
-            "Wait for the display",
-            "Tin the tip"
-          ]
-        }
-      },
-      "section_id": "d2259dea9a144096",
-      "state": "validated"
-    },
-    {
-      "lesson_id": "14247201cb8efefd",
-      "page": {
-        "check": {
-          "assistance_policy": {
-            "answer_marks_evidence_class": "none",
-            "hint": "available"
-          },
-          "evidence_target": "discrimination",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
-          "scaffolds": [],
-          "stimulus": {
-            "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "What does a cold joint look like?"
-          }
-        },
-        "direction": "ltr",
-        "lang": "en-US",
-        "learner_explanation": "Surface is the cheapest inspection you have, and it is read before power is applied.",
-        "learner_explanation_short": "Surface is the cheapest inspection you have, and it is",
-        "lesson_intent": "Teach visual discrimination.",
-        "media": [],
-        "parent_notes": null,
-        "section_title": "Recognise a cold joint from its surface",
-        "segments": [
-          {
-            "body": "Compare a grainy joint with a bright fillet and say which one moved while it cooled.",
-            "heading": "The step",
-            "kind": "model",
-            "short": "Compare a grainy joint with a bright fillet and say"
-          },
-          {
-            "body": "A cold joint has a grainy, matte surface; a sound fillet is bright and concave.",
-            "heading": "Do it",
-            "kind": "guided",
-            "short": "A cold joint has a grainy, matte surface; a sound"
-          }
-        ],
-        "sources": [],
-        "supervision_notes": [],
-        "worked_example": {
-          "answer": "The step is done and checked. A cold joint has a grainy, matte surface; a sound fillet is bright and concave.",
-          "prompt": "A worked example of Recognise a cold joint from its surface",
-          "short": "The step is done and checked. A cold joint has a grainy, matte surface;",
-          "steps": [
-            "Look at the surface",
-            "Compare to a fillet",
-            "Name the cold one"
-          ]
-        }
-      },
-      "section_id": "58a87f9aaafd944d",
-      "state": "validated"
-    },
-    {
-      "lesson_id": "23cb6a09a210e845",
-      "page": {
-        "check": {
-          "assistance_policy": {
-            "answer_marks_evidence_class": "none",
-            "hint": "available"
-          },
-          "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
-          "scaffolds": [],
-          "stimulus": {
-            "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "Which side of the board should the bent lead sit on?"
-          }
-        },
-        "direction": "ltr",
-        "lang": "en-US",
-        "learner_explanation": "A part that stands off the board strains its joints every time the board flexes.",
-        "learner_explanation_short": "A part that stands off the board strains its joints",
-        "lesson_intent": "Teach lead forming.",
-        "media": [],
-        "parent_notes": null,
-        "section_title": "Form a lead so the part seats flush",
-        "segments": [
-          {
-            "body": "Bend the lead with pliers at the board thickness and let the part drop flush without pushing it.",
-            "heading": "The step",
-            "kind": "model",
-            "short": "Bend the lead with pliers at the board thickness and let the"
-          },
-          {
-            "body": "The body sits flat with the lead bent between the body and the pad.",
-            "heading": "Do it",
-            "kind": "guided",
-            "short": "The body sits flat with the lead bent between"
-          }
-        ],
-        "sources": [],
-        "supervision_notes": [],
-        "worked_example": {
-          "answer": "The step is done and checked. The body sits flat with the lead bent between the body and the pad.",
-          "prompt": "A worked example of Form a lead so the part seats flush",
-          "short": "The step is done and checked. The body sits flat with the lead",
-          "steps": [
-            "Measure the board",
-            "Bend with pliers",
-            "Drop the part"
-          ]
-        }
-      },
-      "section_id": "4621baf084e58fc1",
-      "state": "validated"
-    },
-    {
-      "lesson_id": "2ef2c44fa4772160",
-      "page": {
-        "check": {
-          "assistance_policy": {
-            "answer_marks_evidence_class": "none",
-            "hint": "available"
-          },
-          "evidence_target": "transfer",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
-          "scaffolds": [],
-          "stimulus": {
-            "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "Which meter setting proves the repair conducts?"
-          }
-        },
-        "direction": "ltr",
-        "lang": "en-US",
-        "learner_explanation": "A joint can look right and still be open; the meter is the check the eye cannot make.",
-        "learner_explanation_short": "A joint can look right and still be open; the meter is",
-        "lesson_intent": "Teach the final electrical check.",
-        "media": [],
-        "parent_notes": null,
-        "section_title": "Prove continuity with a meter after rework",
-        "segments": [
-          {
-            "body": "Set the meter to continuity, probe the two ends of the repaired path, and confirm the beep before power.",
-            "heading": "The step",
-            "kind": "model",
-            "short": "Set the meter to continuity, probe the two ends of the repaired"
-          },
-          {
-            "body": "Continuity between the intended points proves the repair conducts.",
-            "heading": "Do it",
-            "kind": "guided",
-            "short": "Continuity between the intended points proves"
-          }
-        ],
-        "sources": [],
-        "supervision_notes": [],
-        "worked_example": {
-          "answer": "The step is done and checked. Continuity between the intended points proves the repair conducts.",
-          "prompt": "A worked example of Prove continuity with a meter after rework",
-          "short": "The step is done and checked. Continuity between the intended",
-          "steps": [
-            "Set continuity",
-            "Probe both ends",
-            "Confirm the beep"
-          ]
-        }
-      },
-      "section_id": "58433413f8f44186",
-      "state": "validated"
-    },
-    {
-      "lesson_id": "4629f2f00861eb63",
-      "page": {
-        "check": {
-          "assistance_policy": {
-            "answer_marks_evidence_class": "none",
-            "hint": "available"
-          },
-          "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
-          "scaffolds": [],
-          "stimulus": {
-            "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "Why add fresh solder before desoldering?"
-          }
-        },
-        "direction": "ltr",
-        "lang": "en-US",
-        "learner_explanation": "Old solder has lost its flux, so adding fresh solder is what makes removal quick.",
-        "learner_explanation_short": "Old solder has lost its flux, so adding fresh solder",
-        "lesson_intent": "Teach desoldering a part.",
-        "media": [],
-        "parent_notes": null,
-        "section_title": "Desolder a two-lead part without overheating it",
-        "segments": [
-          {
-            "body": "Add fresh solder to each joint, alternate heat between the leads, and pull gently once both are molten.",
-            "heading": "The step",
-            "kind": "model",
-            "short": "Add fresh solder to each joint, alternate heat between the leads, and"
-          },
-          {
-            "body": "Fresh solder and alternating heat keep the part and the pads alive.",
-            "heading": "Do it",
-            "kind": "guided",
-            "short": "Fresh solder and alternating heat keep the part"
-          }
-        ],
-        "sources": [],
-        "supervision_notes": [],
-        "worked_example": {
-          "answer": "The step is done and checked. Fresh solder and alternating heat keep the part and the pads alive.",
-          "prompt": "A worked example of Desolder a two-lead part without overheating it",
-          "short": "The step is done and checked. Fresh solder and alternating heat keep",
-          "steps": [
-            "Add fresh solder",
-            "Alternate the heat",
-            "Pull gently"
-          ]
-        }
-      },
-      "section_id": "582b87098e45339e",
-      "state": "validated"
-    },
-    {
-      "lesson_id": "b230c3d5b2768a09",
+      "lesson_id": "0000000000000052",
       "page": {
         "check": {
           "assistance_policy": {
@@ -420,11 +137,68 @@
           ]
         }
       },
-      "section_id": "bc9a79e6ede3715d",
+      "section_id": "0000000000000028",
       "state": "validated"
     },
     {
-      "lesson_id": "c5f4ed3701a54c53",
+      "lesson_id": "0000000000000055",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "procedure",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "What temperature range suits leaded solder?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "Temperature is a time control: too cold means a longer touch and a colder joint.",
+        "learner_explanation_short": "Temperature is a time control: too cold means a longer",
+        "lesson_intent": "Teach the temperature setting for leaded solder.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Set an iron to the temperature a leaded joint needs",
+        "segments": [
+          {
+            "body": "Set the station, wait for the display to settle, and tin the tip before the first joint.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Set the station, wait for the display to settle, and tin"
+          },
+          {
+            "body": "Leaded solder wants a moderate setting; hotter burns the flux before the joint forms.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "Leaded solder wants a moderate setting; hotter burns the"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. Leaded solder wants a moderate setting; hotter burns the flux before the joint forms.",
+          "prompt": "A worked example of Set an iron to the temperature a leaded joint needs",
+          "short": "The step is done and checked. Leaded solder wants a moderate setting; hotter",
+          "steps": [
+            "Set the dial",
+            "Wait for the display",
+            "Tin the tip"
+          ]
+        }
+      },
+      "section_id": "0000000000000029",
+      "state": "validated"
+    },
+    {
+      "lesson_id": "000000000000005e",
       "page": {
         "check": {
           "assistance_policy": {
@@ -477,239 +251,11 @@
           ]
         }
       },
-      "section_id": "af958bb329d7d8b3",
+      "section_id": "000000000000002f",
       "state": "validated"
     },
     {
-      "lesson_id": "ddf575774da87ad7",
-      "page": {
-        "check": {
-          "assistance_policy": {
-            "answer_marks_evidence_class": "none",
-            "hint": "available"
-          },
-          "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
-          "scaffolds": [],
-          "stimulus": {
-            "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "When do you lift the wick?"
-          }
-        },
-        "direction": "ltr",
-        "lang": "en-US",
-        "learner_explanation": "Pulling the wick while the solder is solid is how pads lift.",
-        "learner_explanation_short": "Pulling the wick while the solder is solid",
-        "lesson_intent": "Teach bridge removal.",
-        "media": [],
-        "parent_notes": null,
-        "section_title": "Wick a solder bridge without lifting the pad",
-        "segments": [
-          {
-            "body": "Add flux, lay the wick over the bridge, and heat the wick until the solder flows into it before lifting.",
-            "heading": "The step",
-            "kind": "model",
-            "short": "Add flux, lay the wick over the bridge, and heat the wick until"
-          },
-          {
-            "body": "Heat through the wick and stop as soon as the bridge disappears.",
-            "heading": "Do it",
-            "kind": "guided",
-            "short": "Heat through the wick and stop as soon"
-          }
-        ],
-        "sources": [],
-        "supervision_notes": [],
-        "worked_example": {
-          "answer": "The step is done and checked. Heat through the wick and stop as soon as the bridge disappears.",
-          "prompt": "A worked example of Wick a solder bridge without lifting the pad",
-          "short": "The step is done and checked. Heat through the wick and stop",
-          "steps": [
-            "Add flux",
-            "Lay the wick",
-            "Heat until the bridge flows"
-          ]
-        }
-      },
-      "section_id": "7ef5aa82ae156608",
-      "state": "validated"
-    },
-    {
-      "lesson_id": "de732b73e1e76e50",
-      "page": {
-        "check": {
-          "assistance_policy": {
-            "answer_marks_evidence_class": "none",
-            "hint": "available"
-          },
-          "evidence_target": "comprehension",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
-          "scaffolds": [],
-          "stimulus": {
-            "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "Which feature decides the part's orientation?"
-          }
-        },
-        "direction": "ltr",
-        "lang": "en-US",
-        "learner_explanation": "Orientation errors survive soldering and only show up when the circuit does not work.",
-        "learner_explanation_short": "Orientation errors survive soldering and only show up when",
-        "lesson_intent": "Teach polarity against the board marking.",
-        "media": [],
-        "parent_notes": null,
-        "section_title": "Insert a part in the right orientation",
-        "segments": [
-          {
-            "body": "Find the marking on the part and match it to the board's own marking before you bend anything.",
-            "heading": "The step",
-            "kind": "model",
-            "short": "Find the marking on the part and match it to the board's"
-          },
-          {
-            "body": "The part's marking and the board's marking face the same way.",
-            "heading": "Do it",
-            "kind": "guided",
-            "short": "The part's marking and the board's marking"
-          }
-        ],
-        "sources": [],
-        "supervision_notes": [],
-        "worked_example": {
-          "answer": "The step is done and checked. The part's marking and the board's marking face the same way.",
-          "prompt": "A worked example of Insert a part in the right orientation",
-          "short": "The step is done and checked. The part's marking and the",
-          "steps": [
-            "Read the part",
-            "Read the board",
-            "Align them"
-          ]
-        }
-      },
-      "section_id": "b000090891210663",
-      "state": "validated"
-    },
-    {
-      "lesson_id": "e81c1c42d39e0089",
-      "page": {
-        "check": {
-          "assistance_policy": {
-            "answer_marks_evidence_class": "none",
-            "hint": "available"
-          },
-          "evidence_target": "procedure",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
-          "scaffolds": [],
-          "stimulus": {
-            "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "Where does the solder go?"
-          }
-        },
-        "direction": "ltr",
-        "lang": "en-US",
-        "learner_explanation": "Solder fed onto the tip makes a cold joint that looks finished and fails later.",
-        "learner_explanation_short": "Solder fed onto the tip makes a cold joint that",
-        "lesson_intent": "Teach the heat order.",
-        "media": [],
-        "parent_notes": null,
-        "section_title": "Heat the pad and lead together before feeding solder",
-        "segments": [
-          {
-            "body": "Touch the tip to the pad and the lead at once, count two seconds, then feed solder into the joint, not the tip.",
-            "heading": "The step",
-            "kind": "model",
-            "short": "Touch the tip to the pad and the lead at once, count two seconds, then"
-          },
-          {
-            "body": "The joint reaches temperature first; solder follows the heat.",
-            "heading": "Do it",
-            "kind": "guided",
-            "short": "The joint reaches temperature first; solder"
-          }
-        ],
-        "sources": [],
-        "supervision_notes": [],
-        "worked_example": {
-          "answer": "The step is done and checked. The joint reaches temperature first; solder follows the heat.",
-          "prompt": "A worked example of Heat the pad and lead together before feeding solder",
-          "short": "The step is done and checked. The joint reaches temperature",
-          "steps": [
-            "Touch pad and lead",
-            "Wait for heat",
-            "Feed into the joint"
-          ]
-        }
-      },
-      "section_id": "52f38bdb8814fc29",
-      "state": "validated"
-    },
-    {
-      "lesson_id": "f527344f925a5495",
-      "page": {
-        "check": {
-          "assistance_policy": {
-            "answer_marks_evidence_class": "none",
-            "hint": "available"
-          },
-          "evidence_target": "transfer",
-          "kind": "quiz",
-          "learner_instructions": "Answer in one short phrase, without notes.",
-          "scaffolds": [],
-          "stimulus": {
-            "choices": [],
-            "format": "text",
-            "items": [],
-            "prompt": "Which joint needs rework?"
-          }
-        },
-        "direction": "ltr",
-        "lang": "en-US",
-        "learner_explanation": "Applying one criterion to many joints is the skill; the criterion itself does not change.",
-        "learner_explanation_short": "Applying one criterion to many joints is the skill; the",
-        "lesson_intent": "Apply the criterion to a real joint.",
-        "media": [],
-        "parent_notes": null,
-        "section_title": "Inspect a finished joint against the fillet criterion",
-        "segments": [
-          {
-            "body": "Judge each joint on the board against the fillet criterion and mark the ones that need rework.",
-            "heading": "The step",
-            "kind": "model",
-            "short": "Judge each joint on the board against the fillet criterion and"
-          },
-          {
-            "body": "A sound joint is shiny, concave and covers the pad without a ball.",
-            "heading": "Do it",
-            "kind": "guided",
-            "short": "A sound joint is shiny, concave and covers"
-          }
-        ],
-        "sources": [],
-        "supervision_notes": [],
-        "worked_example": {
-          "answer": "The step is done and checked. A sound joint is shiny, concave and covers the pad without a ball.",
-          "prompt": "A worked example of Inspect a finished joint against the fillet criterion",
-          "short": "The step is done and checked. A sound joint is shiny, concave",
-          "steps": [
-            "Pick a joint",
-            "Compare to the criterion",
-            "Mark rework"
-          ]
-        }
-      },
-      "section_id": "5dba6aa106b39ca8",
-      "state": "validated"
-    },
-    {
-      "lesson_id": "ff5d92a1b8839526",
+      "lesson_id": "0000000000000061",
       "page": {
         "check": {
           "assistance_policy": {
@@ -762,7 +308,463 @@
           ]
         }
       },
-      "section_id": "444d8f399ac4aa42",
+      "section_id": "0000000000000030",
+      "state": "validated"
+    },
+    {
+      "lesson_id": "000000000000006a",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "procedure",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "Which side of the board should the bent lead sit on?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "A part that stands off the board strains its joints every time the board flexes.",
+        "learner_explanation_short": "A part that stands off the board strains its joints",
+        "lesson_intent": "Teach lead forming.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Form a lead so the part seats flush",
+        "segments": [
+          {
+            "body": "Bend the lead with pliers at the board thickness and let the part drop flush without pushing it.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Bend the lead with pliers at the board thickness and let the"
+          },
+          {
+            "body": "The body sits flat with the lead bent between the body and the pad.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "The body sits flat with the lead bent between"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. The body sits flat with the lead bent between the body and the pad.",
+          "prompt": "A worked example of Form a lead so the part seats flush",
+          "short": "The step is done and checked. The body sits flat with the lead",
+          "steps": [
+            "Measure the board",
+            "Bend with pliers",
+            "Drop the part"
+          ]
+        }
+      },
+      "section_id": "0000000000000036",
+      "state": "validated"
+    },
+    {
+      "lesson_id": "000000000000006d",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "comprehension",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "Which feature decides the part's orientation?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "Orientation errors survive soldering and only show up when the circuit does not work.",
+        "learner_explanation_short": "Orientation errors survive soldering and only show up when",
+        "lesson_intent": "Teach polarity against the board marking.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Insert a part in the right orientation",
+        "segments": [
+          {
+            "body": "Find the marking on the part and match it to the board's own marking before you bend anything.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Find the marking on the part and match it to the board's"
+          },
+          {
+            "body": "The part's marking and the board's marking face the same way.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "The part's marking and the board's marking"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. The part's marking and the board's marking face the same way.",
+          "prompt": "A worked example of Insert a part in the right orientation",
+          "short": "The step is done and checked. The part's marking and the",
+          "steps": [
+            "Read the part",
+            "Read the board",
+            "Align them"
+          ]
+        }
+      },
+      "section_id": "0000000000000037",
+      "state": "validated"
+    },
+    {
+      "lesson_id": "0000000000000076",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "procedure",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "Where does the solder go?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "Solder fed onto the tip makes a cold joint that looks finished and fails later.",
+        "learner_explanation_short": "Solder fed onto the tip makes a cold joint that",
+        "lesson_intent": "Teach the heat order.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Heat the pad and lead together before feeding solder",
+        "segments": [
+          {
+            "body": "Touch the tip to the pad and the lead at once, count two seconds, then feed solder into the joint, not the tip.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Touch the tip to the pad and the lead at once, count two seconds, then"
+          },
+          {
+            "body": "The joint reaches temperature first; solder follows the heat.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "The joint reaches temperature first; solder"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. The joint reaches temperature first; solder follows the heat.",
+          "prompt": "A worked example of Heat the pad and lead together before feeding solder",
+          "short": "The step is done and checked. The joint reaches temperature",
+          "steps": [
+            "Touch pad and lead",
+            "Wait for heat",
+            "Feed into the joint"
+          ]
+        }
+      },
+      "section_id": "000000000000003d",
+      "state": "validated"
+    },
+    {
+      "lesson_id": "0000000000000079",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "discrimination",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "What does a cold joint look like?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "Surface is the cheapest inspection you have, and it is read before power is applied.",
+        "learner_explanation_short": "Surface is the cheapest inspection you have, and it is",
+        "lesson_intent": "Teach visual discrimination.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Recognise a cold joint from its surface",
+        "segments": [
+          {
+            "body": "Compare a grainy joint with a bright fillet and say which one moved while it cooled.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Compare a grainy joint with a bright fillet and say"
+          },
+          {
+            "body": "A cold joint has a grainy, matte surface; a sound fillet is bright and concave.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "A cold joint has a grainy, matte surface; a sound"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. A cold joint has a grainy, matte surface; a sound fillet is bright and concave.",
+          "prompt": "A worked example of Recognise a cold joint from its surface",
+          "short": "The step is done and checked. A cold joint has a grainy, matte surface;",
+          "steps": [
+            "Look at the surface",
+            "Compare to a fillet",
+            "Name the cold one"
+          ]
+        }
+      },
+      "section_id": "000000000000003e",
+      "state": "validated"
+    },
+    {
+      "lesson_id": "0000000000000082",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "transfer",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "Which joint needs rework?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "Applying one criterion to many joints is the skill; the criterion itself does not change.",
+        "learner_explanation_short": "Applying one criterion to many joints is the skill; the",
+        "lesson_intent": "Apply the criterion to a real joint.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Inspect a finished joint against the fillet criterion",
+        "segments": [
+          {
+            "body": "Judge each joint on the board against the fillet criterion and mark the ones that need rework.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Judge each joint on the board against the fillet criterion and"
+          },
+          {
+            "body": "A sound joint is shiny, concave and covers the pad without a ball.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "A sound joint is shiny, concave and covers"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. A sound joint is shiny, concave and covers the pad without a ball.",
+          "prompt": "A worked example of Inspect a finished joint against the fillet criterion",
+          "short": "The step is done and checked. A sound joint is shiny, concave",
+          "steps": [
+            "Pick a joint",
+            "Compare to the criterion",
+            "Mark rework"
+          ]
+        }
+      },
+      "section_id": "0000000000000044",
+      "state": "validated"
+    },
+    {
+      "lesson_id": "0000000000000085",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "procedure",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "When do you lift the wick?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "Pulling the wick while the solder is solid is how pads lift.",
+        "learner_explanation_short": "Pulling the wick while the solder is solid",
+        "lesson_intent": "Teach bridge removal.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Wick a solder bridge without lifting the pad",
+        "segments": [
+          {
+            "body": "Add flux, lay the wick over the bridge, and heat the wick until the solder flows into it before lifting.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Add flux, lay the wick over the bridge, and heat the wick until"
+          },
+          {
+            "body": "Heat through the wick and stop as soon as the bridge disappears.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "Heat through the wick and stop as soon"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. Heat through the wick and stop as soon as the bridge disappears.",
+          "prompt": "A worked example of Wick a solder bridge without lifting the pad",
+          "short": "The step is done and checked. Heat through the wick and stop",
+          "steps": [
+            "Add flux",
+            "Lay the wick",
+            "Heat until the bridge flows"
+          ]
+        }
+      },
+      "section_id": "0000000000000045",
+      "state": "validated"
+    },
+    {
+      "lesson_id": "000000000000008e",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "procedure",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "Why add fresh solder before desoldering?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "Old solder has lost its flux, so adding fresh solder is what makes removal quick.",
+        "learner_explanation_short": "Old solder has lost its flux, so adding fresh solder",
+        "lesson_intent": "Teach desoldering a part.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Desolder a two-lead part without overheating it",
+        "segments": [
+          {
+            "body": "Add fresh solder to each joint, alternate heat between the leads, and pull gently once both are molten.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Add fresh solder to each joint, alternate heat between the leads, and"
+          },
+          {
+            "body": "Fresh solder and alternating heat keep the part and the pads alive.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "Fresh solder and alternating heat keep the part"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. Fresh solder and alternating heat keep the part and the pads alive.",
+          "prompt": "A worked example of Desolder a two-lead part without overheating it",
+          "short": "The step is done and checked. Fresh solder and alternating heat keep",
+          "steps": [
+            "Add fresh solder",
+            "Alternate the heat",
+            "Pull gently"
+          ]
+        }
+      },
+      "section_id": "000000000000004b",
+      "state": "validated"
+    },
+    {
+      "lesson_id": "0000000000000091",
+      "page": {
+        "check": {
+          "assistance_policy": {
+            "answer_marks_evidence_class": "none",
+            "hint": "available"
+          },
+          "evidence_target": "transfer",
+          "kind": "quiz",
+          "learner_instructions": "Answer in one short phrase, without notes.",
+          "scaffolds": [],
+          "stimulus": {
+            "choices": [],
+            "format": "text",
+            "items": [],
+            "prompt": "Which meter setting proves the repair conducts?"
+          }
+        },
+        "direction": "ltr",
+        "lang": "en-US",
+        "learner_explanation": "A joint can look right and still be open; the meter is the check the eye cannot make.",
+        "learner_explanation_short": "A joint can look right and still be open; the meter is",
+        "lesson_intent": "Teach the final electrical check.",
+        "media": [],
+        "parent_notes": null,
+        "section_title": "Prove continuity with a meter after rework",
+        "segments": [
+          {
+            "body": "Set the meter to continuity, probe the two ends of the repaired path, and confirm the beep before power.",
+            "heading": "The step",
+            "kind": "model",
+            "short": "Set the meter to continuity, probe the two ends of the repaired"
+          },
+          {
+            "body": "Continuity between the intended points proves the repair conducts.",
+            "heading": "Do it",
+            "kind": "guided",
+            "short": "Continuity between the intended points proves"
+          }
+        ],
+        "sources": [],
+        "supervision_notes": [],
+        "worked_example": {
+          "answer": "The step is done and checked. Continuity between the intended points proves the repair conducts.",
+          "prompt": "A worked example of Prove continuity with a meter after rework",
+          "short": "The step is done and checked. Continuity between the intended",
+          "steps": [
+            "Set continuity",
+            "Probe both ends",
+            "Confirm the beep"
+          ]
+        }
+      },
+      "section_id": "000000000000004c",
       "state": "validated"
     }
   ],
@@ -776,91 +778,91 @@
     },
     "attempt_rows": [
       {
-        "check_id": "b20148cd2ddee3d7",
+        "check_id": "0000000000000053",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:a584036c58bec84268da0f48bc2c9dd1cb37778a58696daaec992ee25300155c\"}",
-        "id": "att_b565248c46e4499aae50a0b81fcb86ab",
+        "id": "att_0000000000000000000000000000009c",
         "state": "committed",
         "verdict": "pass"
       },
       {
-        "check_id": "37d20800fe06764a",
+        "check_id": "0000000000000056",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:91075c69b554ba156c9217b2becefa7bb24045d55e7b0e05d829d65b251720de\"}",
-        "id": "att_96bd4239eca94e108a03d353a6a9e94b",
+        "id": "att_000000000000000000000000000000a2",
         "state": "committed",
         "verdict": "not_yet"
       }
     ],
     "check_lanes": [
       {
-        "objective_id": "120f3cc178ccbaaf",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "78441a2e8a599af1",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "9718d2becacecb09",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "e5c9484e214abb47",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "aeca13aa69949d98",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "064b90de52d11b40",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "a1ddd32fb8a2fbd3",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "1db6b2cc29747227",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "02f6c34605e32f24",
+        "objective_id": "0000000000000010",
         "reference_kind": "exact",
         "state": "closed",
         "stimulus_format": "text"
       },
       {
-        "objective_id": "b799f0dc95c41aaa",
+        "objective_id": "0000000000000011",
         "reference_kind": "exact",
         "state": "open",
         "stimulus_format": "text"
       },
       {
-        "objective_id": "441cbe6b47625df4",
+        "objective_id": "0000000000000012",
         "reference_kind": "exact",
         "state": "open",
         "stimulus_format": "text"
       },
       {
-        "objective_id": "92a8b1a5d5a7b830",
+        "objective_id": "0000000000000013",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "0000000000000014",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "0000000000000015",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "0000000000000016",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "0000000000000017",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "0000000000000018",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "0000000000000019",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "000000000000001a",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "000000000000001b",
         "reference_kind": "exact",
         "state": "open",
         "stimulus_format": "text"
@@ -1220,6 +1222,58 @@
     "subject_domain": "technical_procedure",
     "title": "Through-hole soldering for a first repair"
   },
+  "scope_bounds": {
+    "brief_scope": "full",
+    "contract": "contracts/rpc.v13.json",
+    "contract_scopes": [
+      "single",
+      "short",
+      "full"
+    ],
+    "declared": {
+      "full": {
+        "objectives": [
+          12,
+          40
+        ],
+        "units": [
+          2,
+          12
+        ]
+      },
+      "short": {
+        "objectives": [
+          3,
+          6
+        ],
+        "units": [
+          1,
+          3
+        ]
+      },
+      "single": {
+        "objectives": [
+          1,
+          1
+        ],
+        "units": [
+          1,
+          1
+        ]
+      }
+    },
+    "schema": {
+      "objectives": [
+        1,
+        40
+      ],
+      "units": [
+        1,
+        12
+      ]
+    },
+    "violations": []
+  },
   "steps": {
     "approval_refusals": [
       {
@@ -1237,13 +1291,13 @@
     ],
     "approve": {
       "approval_provenance": null,
-      "plan_hash": "sha256:d11f187cdb23a0b8afad5b95f9e5434b1b4fb3ad6c656a4f32d9e2f82a9753d6",
+      "plan_hash": "sha256:846c65eca040806b2453887a14beaf0edacb68790ce39f0c7390ae243ef1d88c",
       "revision": 1,
       "state_after": "approved"
     },
     "grading": [
       {
-        "check_id": "b20148cd2ddee3d7",
+        "check_id": "0000000000000053",
         "label": "correct",
         "objective_ordinal": 1,
         "open": {
@@ -1254,9 +1308,9 @@
         "submit": {
           "contract_version": 13,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-52417e",
+          "operation_id": "op-h40-attempt-submit-00009b",
           "result": {
-            "attempt_id": "att_b565248c46e4499aae50a0b81fcb86ab",
+            "attempt_id": "att_0000000000000000000000000000009c",
             "criteria": [
               {
                 "id": "c1",
@@ -1273,7 +1327,7 @@
         }
       },
       {
-        "check_id": "37d20800fe06764a",
+        "check_id": "0000000000000056",
         "label": "wrong",
         "objective_ordinal": 2,
         "open": {
@@ -1284,9 +1338,9 @@
         "submit": {
           "contract_version": 13,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-754f64",
+          "operation_id": "op-h40-attempt-submit-0000a1",
           "result": {
-            "attempt_id": "att_96bd4239eca94e108a03d353a6a9e94b",
+            "attempt_id": "att_000000000000000000000000000000a2",
             "criteria": [
               {
                 "id": "c1",
@@ -1310,14 +1364,14 @@
         {
           "attempt_count": 0,
           "audit_state": "passed",
-          "check_id": "b20148cd2ddee3d7",
+          "check_id": "0000000000000053",
           "evidence_target": "recall",
           "state": "open",
           "version": 1
         }
       ],
       "course": {
-        "course_id": "crs_00f406e1b1514bbd979d311f6a189348",
+        "course_id": "crs_00000000000000000000000000000002",
         "title": "Through-hole soldering for a first repair"
       },
       "document": {
@@ -1333,7 +1387,7 @@
             "source_ids": []
           },
           {
-            "check_id": "b20148cd2ddee3d7",
+            "check_id": "0000000000000053",
             "deep": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
             "headline": "Do it",
             "id": "blk_1e9a311a0425fb12231e",
@@ -1363,10 +1417,10 @@
             "source_ids": []
           }
         ],
-        "check_id": "b20148cd2ddee3d7",
-        "content_hash": "sha256:53d07cd821b08b1036f15cd18c16194d278873b09ce6c9b242115242f3adfdca",
+        "check_id": "0000000000000053",
+        "content_hash": "sha256:da6af3b8c3b6bae59b70cc1850e3ade7e445384b33bea45514bacac8bfb331fe",
         "direction": "ltr",
-        "document_id": "doc_53d07cd821b08b1036f1",
+        "document_id": "doc_da6af3b8c3b6bae59b70",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -1381,14 +1435,14 @@
           "textbook": true
         }
       },
-      "enrollment_id": "enr_aeed55ef4e944b8ba0e7429a5d7bcc3b",
+      "enrollment_id": "enr_00000000000000000000000000000005",
       "notebook_entries": [],
       "revision": 1,
       "runtime": null,
       "section": {
         "evidence_target": "recall",
         "last_opened_at": null,
-        "objective_id": "02f6c34605e32f24",
+        "objective_id": "0000000000000010",
         "ordinal": 1,
         "state": "not_started",
         "title": "Name the three burn and fume hazards at the bench"
@@ -1399,7 +1453,7 @@
           "fetched_at": "2026-11-07T12:00:00Z",
           "published_at": null,
           "publisher": null,
-          "source_id": "752596ecbc9537e4",
+          "source_id": "0000000000000008",
           "source_type": "web_page",
           "support_status": "unassessed",
           "title": "Recorded page: through-hole soldering",
@@ -1419,16 +1473,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_34c33028e4b74ff78c7094c639ec2606",
+          "job_id": "job_00000000000000000000000000000051",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "b20148cd2ddee3d7",
-              "lesson_id": "b230c3d5b2768a09",
+              "check_id": "0000000000000053",
+              "lesson_id": "0000000000000052",
               "reused": false,
-              "section_id": "bc9a79e6ede3715d",
+              "section_id": "0000000000000028",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1451,17 +1505,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "acf75c791ae61b14",
+              "validation_id": "0000000000000054",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "37d20800fe06764a",
-              "lesson_id": "094c93506db353af",
+              "check_id": "0000000000000056",
+              "lesson_id": "0000000000000055",
               "reused": false,
-              "section_id": "d2259dea9a144096",
+              "section_id": "0000000000000029",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1484,7 +1538,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "df0b499b31f96081",
+              "validation_id": "0000000000000057",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -1492,7 +1546,7 @@
           "needs_review": [],
           "next_unit_ordinal": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -1549,16 +1603,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_ab15181cbf9b4b4f86b50fef65fec9f6",
+          "job_id": "job_0000000000000000000000000000005d",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "90ca60fda7e7d505",
-              "lesson_id": "c5f4ed3701a54c53",
+              "check_id": "000000000000005f",
+              "lesson_id": "000000000000005e",
               "reused": false,
-              "section_id": "af958bb329d7d8b3",
+              "section_id": "000000000000002f",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1581,17 +1635,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "37289b82239bd2be",
+              "validation_id": "0000000000000060",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "fa674e1484c6a9c9",
-              "lesson_id": "ff5d92a1b8839526",
+              "check_id": "0000000000000062",
+              "lesson_id": "0000000000000061",
               "reused": false,
-              "section_id": "444d8f399ac4aa42",
+              "section_id": "0000000000000030",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1614,7 +1668,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "89e836227ed2506a",
+              "validation_id": "0000000000000063",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -1622,7 +1676,7 @@
           "needs_review": [],
           "next_unit_ordinal": 3,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -1679,16 +1733,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_b8f6cee2c6bc4f4591b2f5eecf7f9b4c",
+          "job_id": "job_00000000000000000000000000000069",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0298bf372bd490e3",
-              "lesson_id": "23cb6a09a210e845",
+              "check_id": "000000000000006b",
+              "lesson_id": "000000000000006a",
               "reused": false,
-              "section_id": "4621baf084e58fc1",
+              "section_id": "0000000000000036",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1711,17 +1765,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "cc0507f8f013b3b3",
+              "validation_id": "000000000000006c",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "1d1c006c330e01d7",
-              "lesson_id": "de732b73e1e76e50",
+              "check_id": "000000000000006e",
+              "lesson_id": "000000000000006d",
               "reused": false,
-              "section_id": "b000090891210663",
+              "section_id": "0000000000000037",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1744,7 +1798,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "3a0169b8d1454838",
+              "validation_id": "000000000000006f",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -1752,7 +1806,7 @@
           "needs_review": [],
           "next_unit_ordinal": 4,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -1809,16 +1863,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_f354263b0c5b40879054f3ab427a33bc",
+          "job_id": "job_00000000000000000000000000000075",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "64f7f0b71240f47a",
-              "lesson_id": "e81c1c42d39e0089",
+              "check_id": "0000000000000077",
+              "lesson_id": "0000000000000076",
               "reused": false,
-              "section_id": "52f38bdb8814fc29",
+              "section_id": "000000000000003d",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1841,17 +1895,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "bea75e36b470337a",
+              "validation_id": "0000000000000078",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "02c41ee59a4888d4",
-              "lesson_id": "14247201cb8efefd",
+              "check_id": "000000000000007a",
+              "lesson_id": "0000000000000079",
               "reused": false,
-              "section_id": "58a87f9aaafd944d",
+              "section_id": "000000000000003e",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1874,7 +1928,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "cdb1a69d9a89d821",
+              "validation_id": "000000000000007b",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -1882,7 +1936,7 @@
           "needs_review": [],
           "next_unit_ordinal": 5,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -1939,16 +1993,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_73f8ad71013047358fd3c1e582aac702",
+          "job_id": "job_00000000000000000000000000000081",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "696eb433abfe47fe",
-              "lesson_id": "f527344f925a5495",
+              "check_id": "0000000000000083",
+              "lesson_id": "0000000000000082",
               "reused": false,
-              "section_id": "5dba6aa106b39ca8",
+              "section_id": "0000000000000044",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1971,17 +2025,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "df50b4ed52f26ec0",
+              "validation_id": "0000000000000084",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "522ae1d2e30dff1c",
-              "lesson_id": "ddf575774da87ad7",
+              "check_id": "0000000000000086",
+              "lesson_id": "0000000000000085",
               "reused": false,
-              "section_id": "7ef5aa82ae156608",
+              "section_id": "0000000000000045",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -2004,7 +2058,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "b7bbf2842ccd1e5b",
+              "validation_id": "0000000000000087",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -2012,7 +2066,7 @@
           "needs_review": [],
           "next_unit_ordinal": 6,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -2069,16 +2123,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_ce049add92cf4b0b9a66bc046ea38ffb",
+          "job_id": "job_0000000000000000000000000000008d",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "cb1e812ba796b186",
-              "lesson_id": "4629f2f00861eb63",
+              "check_id": "000000000000008f",
+              "lesson_id": "000000000000008e",
               "reused": false,
-              "section_id": "582b87098e45339e",
+              "section_id": "000000000000004b",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -2101,17 +2155,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "9961a67605f8c9a9",
+              "validation_id": "0000000000000090",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "b2a14b18344b8257",
-              "lesson_id": "2ef2c44fa4772160",
+              "check_id": "0000000000000092",
+              "lesson_id": "0000000000000091",
               "reused": false,
-              "section_id": "58433413f8f44186",
+              "section_id": "000000000000004c",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -2134,7 +2188,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "a93e3fa7605e916a",
+              "validation_id": "0000000000000093",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -2142,7 +2196,7 @@
           "needs_review": [],
           "next_unit_ordinal": null,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -2191,7 +2245,7 @@
       }
     ],
     "outline": {
-      "enrollment_id": "enr_aeed55ef4e944b8ba0e7429a5d7bcc3b",
+      "enrollment_id": "enr_00000000000000000000000000000005",
       "objectives": [
         {
           "attempt_count": 0,
@@ -2199,7 +2253,7 @@
           "evidence_target": "recall",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "02f6c34605e32f24",
+          "objective_id": "0000000000000010",
           "ordinal": 1,
           "state": "not_started",
           "title": "Name the three burn and fume hazards at the bench"
@@ -2210,7 +2264,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "e5c9484e214abb47",
+          "objective_id": "0000000000000011",
           "ordinal": 2,
           "state": "not_started",
           "title": "Set an iron to the temperature a leaded joint needs"
@@ -2221,7 +2275,7 @@
           "evidence_target": "comprehension",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "1db6b2cc29747227",
+          "objective_id": "0000000000000012",
           "ordinal": 3,
           "state": "not_started",
           "title": "Read a resistor value from its colour bands"
@@ -2232,7 +2286,7 @@
           "evidence_target": "discrimination",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "92a8b1a5d5a7b830",
+          "objective_id": "0000000000000013",
           "ordinal": 4,
           "state": "not_started",
           "title": "Inspect a pad for lift before inserting a part"
@@ -2243,7 +2297,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "120f3cc178ccbaaf",
+          "objective_id": "0000000000000014",
           "ordinal": 5,
           "state": "not_started",
           "title": "Form a lead so the part seats flush"
@@ -2254,7 +2308,7 @@
           "evidence_target": "comprehension",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "9718d2becacecb09",
+          "objective_id": "0000000000000015",
           "ordinal": 6,
           "state": "not_started",
           "title": "Insert a part in the right orientation"
@@ -2265,7 +2319,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "064b90de52d11b40",
+          "objective_id": "0000000000000016",
           "ordinal": 7,
           "state": "not_started",
           "title": "Heat the pad and lead together before feeding solder"
@@ -2276,7 +2330,7 @@
           "evidence_target": "discrimination",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "78441a2e8a599af1",
+          "objective_id": "0000000000000017",
           "ordinal": 8,
           "state": "not_started",
           "title": "Recognise a cold joint from its surface"
@@ -2287,7 +2341,7 @@
           "evidence_target": "transfer",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "a1ddd32fb8a2fbd3",
+          "objective_id": "0000000000000018",
           "ordinal": 9,
           "state": "not_started",
           "title": "Inspect a finished joint against the fillet criterion"
@@ -2298,7 +2352,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "aeca13aa69949d98",
+          "objective_id": "0000000000000019",
           "ordinal": 10,
           "state": "not_started",
           "title": "Wick a solder bridge without lifting the pad"
@@ -2309,7 +2363,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "441cbe6b47625df4",
+          "objective_id": "000000000000001a",
           "ordinal": 11,
           "state": "not_started",
           "title": "Desolder a two-lead part without overheating it"
@@ -2320,15 +2374,15 @@
           "evidence_target": "transfer",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "b799f0dc95c41aaa",
+          "objective_id": "000000000000001b",
           "ordinal": 12,
           "state": "not_started",
           "title": "Prove continuity with a meter after rework"
         }
       ],
       "plan": {
-        "plan_hash": "sha256:d11f187cdb23a0b8afad5b95f9e5434b1b4fb3ad6c656a4f32d9e2f82a9753d6",
-        "plan_id": "1ac5957054817e0f",
+        "plan_hash": "sha256:846c65eca040806b2453887a14beaf0edacb68790ce39f0c7390ae243ef1d88c",
+        "plan_id": "0000000000000009",
         "state": "approved",
         "units": [
           {
@@ -2340,7 +2394,7 @@
                 "evidence_target": "recall",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "02f6c34605e32f24",
+                "objective_id": "0000000000000010",
                 "ordinal": 1,
                 "state": "not_started",
                 "title": "Name the three burn and fume hazards at the bench"
@@ -2351,7 +2405,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "e5c9484e214abb47",
+                "objective_id": "0000000000000011",
                 "ordinal": 2,
                 "state": "not_started",
                 "title": "Set an iron to the temperature a leaded joint needs"
@@ -2372,7 +2426,7 @@
                 "evidence_target": "comprehension",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "1db6b2cc29747227",
+                "objective_id": "0000000000000012",
                 "ordinal": 3,
                 "state": "not_started",
                 "title": "Read a resistor value from its colour bands"
@@ -2383,7 +2437,7 @@
                 "evidence_target": "discrimination",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "92a8b1a5d5a7b830",
+                "objective_id": "0000000000000013",
                 "ordinal": 4,
                 "state": "not_started",
                 "title": "Inspect a pad for lift before inserting a part"
@@ -2397,13 +2451,13 @@
             "title": "Components and the board",
             "unmet": [
               {
-                "objective_id": "02f6c34605e32f24",
+                "objective_id": "0000000000000010",
                 "ordinal": 1,
                 "state": "not_started",
                 "title": "Name the three burn and fume hazards at the bench"
               },
               {
-                "objective_id": "e5c9484e214abb47",
+                "objective_id": "0000000000000011",
                 "ordinal": 2,
                 "state": "not_started",
                 "title": "Set an iron to the temperature a leaded joint needs"
@@ -2419,7 +2473,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "120f3cc178ccbaaf",
+                "objective_id": "0000000000000014",
                 "ordinal": 5,
                 "state": "not_started",
                 "title": "Form a lead so the part seats flush"
@@ -2430,7 +2484,7 @@
                 "evidence_target": "comprehension",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "9718d2becacecb09",
+                "objective_id": "0000000000000015",
                 "ordinal": 6,
                 "state": "not_started",
                 "title": "Insert a part in the right orientation"
@@ -2444,13 +2498,13 @@
             "title": "Through-hole insertion",
             "unmet": [
               {
-                "objective_id": "1db6b2cc29747227",
+                "objective_id": "0000000000000012",
                 "ordinal": 3,
                 "state": "not_started",
                 "title": "Read a resistor value from its colour bands"
               },
               {
-                "objective_id": "92a8b1a5d5a7b830",
+                "objective_id": "0000000000000013",
                 "ordinal": 4,
                 "state": "not_started",
                 "title": "Inspect a pad for lift before inserting a part"
@@ -2466,7 +2520,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "064b90de52d11b40",
+                "objective_id": "0000000000000016",
                 "ordinal": 7,
                 "state": "not_started",
                 "title": "Heat the pad and lead together before feeding solder"
@@ -2477,7 +2531,7 @@
                 "evidence_target": "discrimination",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "78441a2e8a599af1",
+                "objective_id": "0000000000000017",
                 "ordinal": 8,
                 "state": "not_started",
                 "title": "Recognise a cold joint from its surface"
@@ -2491,13 +2545,13 @@
             "title": "Soldering a joint",
             "unmet": [
               {
-                "objective_id": "120f3cc178ccbaaf",
+                "objective_id": "0000000000000014",
                 "ordinal": 5,
                 "state": "not_started",
                 "title": "Form a lead so the part seats flush"
               },
               {
-                "objective_id": "9718d2becacecb09",
+                "objective_id": "0000000000000015",
                 "ordinal": 6,
                 "state": "not_started",
                 "title": "Insert a part in the right orientation"
@@ -2513,7 +2567,7 @@
                 "evidence_target": "transfer",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "a1ddd32fb8a2fbd3",
+                "objective_id": "0000000000000018",
                 "ordinal": 9,
                 "state": "not_started",
                 "title": "Inspect a finished joint against the fillet criterion"
@@ -2524,7 +2578,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "aeca13aa69949d98",
+                "objective_id": "0000000000000019",
                 "ordinal": 10,
                 "state": "not_started",
                 "title": "Wick a solder bridge without lifting the pad"
@@ -2538,13 +2592,13 @@
             "title": "Inspection and rework",
             "unmet": [
               {
-                "objective_id": "064b90de52d11b40",
+                "objective_id": "0000000000000016",
                 "ordinal": 7,
                 "state": "not_started",
                 "title": "Heat the pad and lead together before feeding solder"
               },
               {
-                "objective_id": "78441a2e8a599af1",
+                "objective_id": "0000000000000017",
                 "ordinal": 8,
                 "state": "not_started",
                 "title": "Recognise a cold joint from its surface"
@@ -2560,7 +2614,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "441cbe6b47625df4",
+                "objective_id": "000000000000001a",
                 "ordinal": 11,
                 "state": "not_started",
                 "title": "Desolder a two-lead part without overheating it"
@@ -2571,7 +2625,7 @@
                 "evidence_target": "transfer",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "b799f0dc95c41aaa",
+                "objective_id": "000000000000001b",
                 "ordinal": 12,
                 "state": "not_started",
                 "title": "Prove continuity with a meter after rework"
@@ -2585,13 +2639,13 @@
             "title": "Desoldering and final check",
             "unmet": [
               {
-                "objective_id": "a1ddd32fb8a2fbd3",
+                "objective_id": "0000000000000018",
                 "ordinal": 9,
                 "state": "not_started",
                 "title": "Inspect a finished joint against the fillet criterion"
               },
               {
-                "objective_id": "aeca13aa69949d98",
+                "objective_id": "0000000000000019",
                 "ordinal": 10,
                 "state": "not_started",
                 "title": "Wick a solder bridge without lifting the pad"
@@ -2634,15 +2688,15 @@
           "outcome": "independently_validated",
           "warning": null
         },
-        "course_id": "crs_00f406e1b1514bbd979d311f6a189348",
-        "job_id": "job_a71fef661b92453eb5c6ea31ead5c6fa",
+        "course_id": "crs_00000000000000000000000000000002",
+        "job_id": "job_00000000000000000000000000000007",
         "job_kind": "plan",
         "level": "beginner",
         "next_unit_ordinal": 1,
         "objectives": 12,
-        "plan_content_hash": "sha256:d11f187cdb23a0b8afad5b95f9e5434b1b4fb3ad6c656a4f32d9e2f82a9753d6",
+        "plan_content_hash": "sha256:846c65eca040806b2453887a14beaf0edacb68790ce39f0c7390ae243ef1d88c",
         "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-        "plan_id": "1ac5957054817e0f",
+        "plan_id": "0000000000000009",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 2,
         "research": {
@@ -2653,7 +2707,7 @@
           "reason": null,
           "status": "ok"
         },
-        "research_id": "7f6449c051a4aa3d",
+        "research_id": "000000000000001c",
         "reused": false,
         "scope": "full",
         "scope_cap_weeks": 104,
@@ -2714,7 +2768,7 @@
           "waived_unknown": [],
           "warning": null
         },
-        "validation_id": "4df3812a48efeca6",
+        "validation_id": "000000000000001d",
         "validation_verdict": "pass",
         "warnings": []
       }
@@ -2773,18 +2827,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_50ae6fabeee441f2851d1ba610a4c545",
+          "job_id": "job_00000000000000000000000000000027",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "bc9a79e6ede3715d",
-            "d2259dea9a144096"
+            "0000000000000028",
+            "0000000000000029"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -2816,7 +2870,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "f8a77de41f06b962",
+          "validation_id": "000000000000002a",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 1
@@ -2832,18 +2886,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_e5835c6a0ac04a1982306b0a2f3cfc13",
+          "job_id": "job_0000000000000000000000000000002e",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 3,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "af958bb329d7d8b3",
-            "444d8f399ac4aa42"
+            "000000000000002f",
+            "0000000000000030"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -2875,7 +2929,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "93766abfce784db8",
+          "validation_id": "0000000000000031",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 2
@@ -2891,18 +2945,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_e1a4cdab780c415dafec7e160044d51b",
+          "job_id": "job_00000000000000000000000000000035",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 4,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "4621baf084e58fc1",
-            "b000090891210663"
+            "0000000000000036",
+            "0000000000000037"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -2934,7 +2988,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "011da33fce3d3391",
+          "validation_id": "0000000000000038",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 3
@@ -2950,18 +3004,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_bc616a4e579d4a07a2fce1ef091a82b4",
+          "job_id": "job_0000000000000000000000000000003c",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 5,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "52f38bdb8814fc29",
-            "58a87f9aaafd944d"
+            "000000000000003d",
+            "000000000000003e"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -2993,7 +3047,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "7d09c0ff8a7d1716",
+          "validation_id": "000000000000003f",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 4
@@ -3009,18 +3063,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_2e71352663474b42acc700da0f9ab2d5",
+          "job_id": "job_00000000000000000000000000000043",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 6,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "5dba6aa106b39ca8",
-            "7ef5aa82ae156608"
+            "0000000000000044",
+            "0000000000000045"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -3052,7 +3106,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "e624c87cdac38605",
+          "validation_id": "0000000000000046",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 5
@@ -3068,18 +3122,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_d3f5c61ea7f54a3eab2312f1ebd303a8",
+          "job_id": "job_0000000000000000000000000000004a",
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "1ac5957054817e0f",
+          "plan_id": "0000000000000009",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "582b87098e45339e",
-            "58433413f8f44186"
+            "000000000000004b",
+            "000000000000004c"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -3111,7 +3165,7 @@
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "197cfd6a23293fed",
+          "validation_id": "000000000000004d",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 6

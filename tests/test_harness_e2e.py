@@ -11,6 +11,7 @@ the real pipeline; the test asserts that label too.
 
 from __future__ import annotations
 
+import copy
 import importlib.util
 import json
 import shutil
@@ -140,6 +141,185 @@ class HarnessEndToEndTest(unittest.TestCase):
         )["ceiling_probe"]
         self.assertEqual(committed_probe["at_bound"]["accepted"], True)
         self.assertEqual(committed_probe["over_bound"]["rejected"], True)
+
+
+PACKET = ROOT / "audit" / "adversarial" / "harness-e2e"
+MANIFEST = PACKET / "manifest.json"
+SCOPES = {"bicycle_single": "single", "music_short": "short", "soldering_full": "full"}
+
+
+def _committed_plan(name: str) -> dict:
+    return json.loads((EVIDENCE / f"{name}.json").read_text(encoding="utf-8"))["plan_document"]
+
+
+class ScopeBoundsContractTest(unittest.TestCase):
+    """D6: the scope bound must be checked against the declared contract, and must be able to fail.
+
+    The question this answers is not "did the generator obey its own table" (that cannot fail) but
+    "does the plan this run produced sit inside the band the RPC contract, the plan schema and the
+    declared per-scope expectation publish". A deliberately out-of-band plan must be refused by the
+    same function the harness asserts on.
+    """
+
+    def test_the_three_committed_plans_match_the_declared_bounds(self) -> None:
+        for name, scope in SCOPES.items():
+            with self.subTest(name=name):
+                plan = _committed_plan(name)
+                self.assertTrue(
+                    harness_e2e.scope_matches_documented_bounds(scope, plan),
+                    harness_e2e.scope_bound_violations(scope, plan),
+                )
+
+    def test_the_contract_schema_and_expectations_agree(self) -> None:
+        declared = harness_e2e.declared_scope_bounds()
+        self.assertEqual(declared["problems"], [])
+        self.assertEqual(tuple(declared["contract_scopes"]), ("single", "short", "full"))
+        self.assertEqual(declared["schema_objectives"], (1, 40))
+        self.assertEqual(declared["schema_units"], (1, 12))
+        self.assertEqual(declared["expectations"]["full"]["objectives"], (12, 40))
+        self.assertEqual(declared["expectations"]["single"]["objectives"], (1, 1))
+
+    def test_an_out_of_band_full_plan_fails_the_assertion(self) -> None:
+        """The historical D6 shape defect: a six-objective plan labelled `full`."""
+        plan = copy.deepcopy(_committed_plan("soldering_full"))
+        plan["objectives"] = plan["objectives"][:6]
+        plan["check_plan"] = plan["check_plan"][:6]
+        self.assertEqual(plan["scope"], "full")
+        violations = harness_e2e.scope_bound_violations("full", plan)
+        self.assertTrue(violations, "a 6-objective `full` plan was accepted as in band")
+        self.assertFalse(harness_e2e.scope_matches_documented_bounds("full", plan))
+        self.assertTrue(any("objective" in reason for reason in violations), violations)
+
+    def test_a_padded_single_plan_fails_the_assertion(self) -> None:
+        """The other historical defect: one-off padded to four objectives (D1's shape)."""
+        plan = copy.deepcopy(_committed_plan("bicycle_single"))
+        template = plan["objectives"][0]
+        plan["objectives"] = [
+            {**template, "ordinal": ordinal,
+             "title": f"{template['title']} ({ordinal})",
+             "evidence_criteria": [criterion
+                                   for criterion in template.get("evidence_criteria") or []]
+             + [f"restated point {ordinal}"]}
+            for ordinal in (1, 2, 3, 4)
+        ]
+        plan["check_plan"] = [
+            {**plan["check_plan"][0], "objective_ref": ordinal}
+            for ordinal in (1, 2, 3, 4)
+        ]
+        self.assertEqual(plan["scope"], "single")
+        self.assertFalse(harness_e2e.scope_matches_documented_bounds("single", plan))
+        self.assertTrue(harness_e2e.scope_bound_violations("single", plan))
+
+    def test_the_declared_ceiling_passes_and_one_past_it_does_not(self) -> None:
+        base = _committed_plan("soldering_full")
+
+        def sized(objectives: int) -> dict:
+            plan = copy.deepcopy(base)
+            template = plan["objectives"][0]
+            plan["objectives"] = [
+                {**template, "ordinal": ordinal}
+                for ordinal in range(1, objectives + 1)
+            ]
+            plan["check_plan"] = [
+                {**plan["check_plan"][0], "objective_ref": ordinal}
+                for ordinal in range(1, objectives + 1)
+            ]
+            return plan
+
+        self.assertTrue(harness_e2e.scope_matches_documented_bounds("full", sized(40)))
+        self.assertFalse(harness_e2e.scope_matches_documented_bounds("full", sized(41)))
+        # A plan that contradicts the brief's scope is out of band too.
+        self.assertFalse(harness_e2e.scope_matches_documented_bounds("full", sized(6)))
+
+
+class PacketManifestTest(unittest.TestCase):
+    """D7: the packet is content-addressed, byte-reproducible, and tamper-evident."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.homes = []
+        cls.fresh = {}
+        for name in NAMES:
+            home = Path(tempfile.mkdtemp(prefix=f"coursebook-h45-{name}-")) / "home"
+            home.mkdir(parents=True)
+            cls.homes.append(home.parent)
+            cls.fresh[name] = run_scenario(name, home=home)
+        home = Path(tempfile.mkdtemp(prefix="coursebook-h45-ceiling-")) / "home"
+        home.mkdir(parents=True)
+        cls.homes.append(home.parent)
+        cls.fresh["soldering_full"]["ceiling_probe"] = run_ceiling_probe(home)
+        evidence = cls.fresh["soldering_full"]
+        evidence["assertions"] = harness_e2e._assert_scenario(
+            "soldering_full", evidence["scenario"], evidence
+        )
+        evidence["verdict"] = "PASS" if all(evidence["assertions"].values()) else "FAIL"
+        home = Path(tempfile.mkdtemp(prefix="coursebook-h45-partial-")) / "home"
+        home.mkdir(parents=True)
+        cls.homes.append(home.parent)
+        cls.fresh["partial"] = harness_e2e.run_partial_unit_probe(home)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        for path in cls.homes:
+            shutil.rmtree(path, ignore_errors=True)
+
+    def test_the_manifest_covers_every_evidence_file_and_input(self) -> None:
+        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        self.assertIn("evidence", manifest)
+        self.assertIn("inputs", manifest)
+        for path in sorted(EVIDENCE.iterdir()):
+            self.assertIn(path.name, manifest["evidence"], f"{path.name} is not in the manifest")
+            self.assertRegex(manifest["evidence"][path.name]["sha256"], r"^[0-9a-f]{64}$")
+        for name, scope in SCOPES.items():
+            entry = manifest["inputs"][name]
+            self.assertEqual(entry["scope"], scope)
+            self.assertRegex(entry["transcript_sha256"], r"^[0-9a-f]{64}$")
+            self.assertRegex(entry["brief_sha256"], r"^[0-9a-f]{64}$")
+            self.assertIn("recorded-transcript-h40", entry["model_transcript_id"])
+            self.assertIn("recorded-validator-h40", entry["validator_transcript_id"])
+
+    def test_the_committed_packet_verifies_clean(self) -> None:
+        self.assertEqual(harness_e2e.verify_packet(), [])
+
+    def test_fresh_evidence_reproduces_the_committed_bytes(self) -> None:
+        for name, evidence in self.fresh.items():
+            if name == "partial":
+                continue
+            with self.subTest(name=name):
+                fresh = (harness_e2e._json_dump(evidence) + "\n").encode("utf-8")
+                committed = (EVIDENCE / f"{name}.json").read_bytes()
+                self.assertEqual(
+                    harness_e2e.sha256_bytes(fresh), harness_e2e.sha256_bytes(committed),
+                    f"{name}: a re-run is not byte-identical to the committed packet",
+                )
+        fresh_partial = (harness_e2e._json_dump(self.fresh["partial"]) + "\n").encode("utf-8")
+        self.assertEqual(
+            harness_e2e.sha256_bytes(fresh_partial),
+            harness_e2e.sha256_bytes((EVIDENCE / "partial_unit_batch.json").read_bytes()),
+        )
+
+    def test_a_changed_transcript_reads_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "packet"
+            shutil.copytree(PACKET, root)
+            target = root / "transcripts" / "music_short.json"
+            original = target.read_text(encoding="utf-8")
+            target.write_text(original.replace("circle of fifths", "circle of fifths ", 1),
+                              encoding="utf-8")
+            problems = harness_e2e.verify_packet(root)
+            self.assertTrue(problems, "a changed transcript was accepted as fresh")
+            self.assertTrue(any("music_short" in problem for problem in problems), problems)
+
+    def test_a_changed_evidence_file_reads_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "packet"
+            shutil.copytree(PACKET, root)
+            target = root / "evidence" / "bicycle_single.json"
+            original = target.read_text(encoding="utf-8")
+            target.write_text(original + "\n", encoding="utf-8")
+            problems = harness_e2e.verify_packet(root)
+            self.assertTrue(problems, "a changed evidence file was accepted as fresh")
+            self.assertTrue(any("bicycle_single" in problem for problem in problems), problems)
 
 
 if __name__ == "__main__":
