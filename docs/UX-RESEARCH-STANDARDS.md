@@ -81,6 +81,8 @@ slogan, or a generic animation is a defect even if it looks polished.
 
 ## 4. Type, spacing, color and shape
 
+- The shipped colour contract is `contracts/cb.tokens.v2.json` (Atlas Lamp, 15 tokens); v1 is
+  history and must not be mutated. No raw hex outside the single `CB_TOKENS_JSON` literal.
 - One font family; 4–6 sizes on a body-first ramp (steps roughly 1.14–1.25). Body line-height
   ~1.5; display ~1.12. Prose measure 50–75ch, hard cap 80ch.
 - No gradients, glass/blur, gradient text, thick decorative left borders (>1px), hard offset
