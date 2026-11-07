@@ -5867,6 +5867,32 @@
             }
           ],
           "description": "Instructions generated with the check, when the stored stimulus carries them."
+        },
+        "items": {
+          "type": "array",
+          "description": "Structured checklist items, projected from `checks.stimulus_json` when the stored stimulus carries them. One label per item is rendered once, on the check surface; a label that repeats another after case, spacing and punctuation are normalised is refused by `check.get` (VALIDATION_FAILED, reason `duplicate_check_item_label`) instead of being served twice. Always present in a served stimulus: an empty array when the check has no items.",
+          "maxItems": 24,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            }
+          }
         }
       }
     },

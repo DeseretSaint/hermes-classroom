@@ -544,11 +544,15 @@ authority would make the learning surface dishonest no matter how correct the re
 | `lesson.assist` | any answer text, rubric, verdict, criteria or objective state | It records *that* scaffolding was used, never what the learner knows. Access is not evidence. |
 
 The stimulus is built from a **closed allowlist** (`prompt`, `format`, `choices`,
-`learner_instructions`). `checks.stimulus_json` is importer- and generator-written, so it can hold
-keys nobody planned for; `check.get` drops what it does not recognise instead of echoing it, and
-`additionalProperties: false` in the response schema means a handler that passes the JSON through
-fails response validation and becomes `INTERNAL_ERROR` rather than a rendered answer key. The
-contract tests exercise exactly that: a stimulus carrying `reference_answer` is refused.
+`learner_instructions`, `items`). `checks.stimulus_json` is importer- and generator-written, so it
+can hold keys nobody planned for; `check.get` drops what it does not recognise instead of echoing
+it, and `additionalProperties: false` in the response schema means a handler that passes the JSON
+through fails response validation and becomes `INTERNAL_ERROR` rather than a rendered answer key.
+The contract tests exercise exactly that: a stimulus carrying `reference_answer` is refused.
+`items` is structured check data, not prose: an array of `{id, label}` rendered once on the check
+surface. `check.get` validates it on the way out (bounds, id shape, duplicate or near-duplicate
+labels after case/spacing/punctuation are ignored, and `learner_instructions` that only repeat the
+prompt) with `VALIDATION_FAILED` rather than serving a checklist the learner would read twice.
 
 ### `course.outline` semantics
 
@@ -596,7 +600,9 @@ contract tests exercise exactly that: a stimulus carrying `reference_answer` is 
   `cb.pack` allows a pack check's stimulus, which is copied into `checks.stimulus_json` verbatim;
   `format` defaults to `text` when the stored stimulus declares none, which is the honest reading of
   an imported pack check (an open answer, and `cb.projection` v1 emits no format); `choices` is `[]`
-  for a text item; `learner_instructions` is passed through when the generator stored it.
+  for a text item; `learner_instructions` is passed through when the generator stored it; `items`
+  is `[]` when the check carries no checklist, and otherwise the stored `{id, label}` list bounded
+  at 24 items and 200 characters per label, with duplicate or near-duplicate labels refused.
 * **`audit_state` is exposed, and it is honest.** A check whose audit failed can still be rendered —
   the pane must be able to say why it refuses — but `attempt.submit` keeps refusing it with
   `POLICY_VIOLATION` / `reason: check_not_audited`. Seeing a question is not grading it.

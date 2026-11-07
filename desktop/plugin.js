@@ -2805,9 +2805,13 @@ function whenLabel(value) {
  * objective's audited spec. The revision fence travels in the envelope, so a check opened against
  * an older intent is refused as STALE_REVISION rather than silently winning.
  */
-function useOpenCheck({ enrollmentId, objectiveId, revision, enabled }) {
+function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemented }) {
   const [state, setState] = useState({ status: 'idle', check: null, error: null })
   const [ticket, setTicket] = useState(0)
+  // `check.open` returns identity only; the learner-facing stimulus (prompt, choices, items) is a
+  // separate read. A build that does not implement `check.get` keeps today's answer-only surface
+  // rather than guessing a question.
+  const canReadStimulus = Boolean(implemented && implemented.has('check.get'))
 
   useEffect(() => {
     if (!enabled || !enrollmentId || !objectiveId) {
@@ -2823,8 +2827,23 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled }) {
     )
       .then((response) => {
         if (cancelled) return
-        if (response && response.ok) setState({ status: 'ready', check: response.result, error: null })
-        else setState({ status: 'error', check: null, error: (response && response.error) || null })
+        if (!response || !response.ok) {
+          setState({ status: 'error', check: null, error: (response && response.error) || null })
+          return
+        }
+        const opened = response.result
+        setState({ status: 'ready', check: opened, error: null })
+        if (!canReadStimulus || !opened || !opened.check_id) return
+        rpc('check.get', { enrollment_id: enrollmentId, check_id: opened.check_id })
+          .then((detail) => {
+            if (cancelled || !detail || !detail.ok || !detail.result || !detail.result.stimulus) return
+            setState((previous) =>
+              previous.check && previous.check.check_id === opened.check_id
+                ? { ...previous, check: { ...previous.check, stimulus: detail.result.stimulus } }
+                : previous
+            )
+          })
+          .catch(() => {})
       })
       .catch((error) => {
         if (!cancelled) {
@@ -2838,7 +2857,7 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled }) {
     return () => {
       cancelled = true
     }
-  }, [enrollmentId, objectiveId, revision, enabled, ticket])
+  }, [enrollmentId, objectiveId, revision, enabled, canReadStimulus, ticket])
 
   return { ...state, reload: () => setTicket((value) => value + 1) }
 }
@@ -2997,6 +3016,11 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
   const locked = phase === 'submitting'
   const showForm = phase === 'awaiting_input' || phase === 'stale'
   const criteria = (result && result.criteria) || []
+  // The learner-facing question, projected by `check.get`. `check.open` carries identity only, so a
+  // build without that read simply has no stimulus here and shows the answer form alone.
+  const stimulus = check.stimulus || null
+  const choices = stimulus && Array.isArray(stimulus.choices) ? stimulus.choices : []
+  const items = stimulus && Array.isArray(stimulus.items) ? stimulus.items : []
 
   return jsxs('div', {
     className: 'flex flex-col gap-2',
@@ -3009,6 +3033,56 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
           result && result.evidence_class ? jsx(EvidenceClassText, { value: result.evidence_class }) : null
         ]
       }),
+
+      stimulus && stimulus.prompt
+        ? jsxs('div', {
+            className: 'flex flex-col gap-2',
+            'data-cb-check-stimulus': check.check_id,
+            children: [
+              jsx('div', {
+                className: 'max-w-prose',
+                children: jsx(sdk.MessageTextContent, { text: stimulus.prompt })
+              }),
+              stimulus.learner_instructions
+                ? jsx('p', {
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    children: stimulus.learner_instructions
+                  })
+                : null,
+              choices.length > 0
+                ? jsx('ul', {
+                    className: 'flex flex-col gap-1 text-sm leading-snug',
+                    'aria-label': 'Choices',
+                    children: choices.map((choice, index) =>
+                      jsx('li', { key: `choice-${index}`, children: choice })
+                    )
+                  })
+                : null,
+              items.length > 0
+                ? jsxs('div', {
+                    className: 'flex flex-col gap-1',
+                    'data-cb-check-items': String(items.length),
+                    children: [
+                      jsx(sdk.PanelSectionLabel, { children: 'CHECKLIST' }),
+                      // One label per item, printed here and nowhere else in the lesson.
+                      jsx('ul', {
+                        className: 'flex flex-col gap-1',
+                        'aria-label': 'Checklist',
+                        children: items.map((item) =>
+                          jsx('li', {
+                            key: item.id,
+                            className: 'text-sm leading-snug',
+                            'data-cb-check-item': item.id,
+                            children: item.label
+                          })
+                        )
+                      })
+                    ]
+                  })
+                : null
+            ]
+          })
+        : null,
 
       showForm
         ? jsxs('div', {
@@ -3560,11 +3634,44 @@ function BlockMedia({ media, blockId, ordinal }) {
   )
 }
 
-function BlockBody({ block, sources, checkSlot }) {
+/**
+ * Checklist labels are check data, not prose.
+ *
+ * A section's `deep`/`short` prose can still carry the lines an author also wrote into the check
+ * (older sections did exactly that: the teaching segment, the `check_prompt` practice block and
+ * the check surface each printed the same list). The check surface prints every structured item
+ * once, so the document renderer drops a prose line whose only content is that item's label. The
+ * comparison ignores case, spacing and punctuation, the same rule the backend validates with.
+ */
+function normalizeCheckLabel(value) {
+  return String(value == null ? '' : value)
+    .toLowerCase()
+    .replace(/[\p{P}\p{S}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function withoutCheckLabels(text, checkLabels) {
+  if (!text || !checkLabels || checkLabels.length === 0) return text
+  const hidden = new Set(checkLabels.map(normalizeCheckLabel).filter(Boolean))
+  if (hidden.size === 0) return text
+  const kept = []
+  for (const line of String(text).split('\n')) {
+    if (hidden.has(normalizeCheckLabel(line))) continue
+    if (line.trim() === '' && kept.length > 0 && kept[kept.length - 1].trim() === '') continue
+    kept.push(line)
+  }
+  return kept.join('\n').trim()
+}
+
+function BlockBody({ block, sources, checkSlot, checkLabels }) {
+  const body = withoutCheckLabels(block.deep, checkLabels)
   return jsxs('div', {
     className: 'flex flex-col gap-2',
     children: [
-      jsx('div', { className: 'max-w-prose', children: jsx(sdk.MessageTextContent, { text: block.deep }) }),
+      body
+        ? jsx('div', { className: 'max-w-prose', children: jsx(sdk.MessageTextContent, { text: body }) })
+        : null,
       (block.media || []).map((media, index) =>
         jsx(BlockMedia, { media, blockId: block.id, ordinal: index }, `${block.id}-media-${index}`)
       ),
@@ -3577,7 +3684,7 @@ function BlockBody({ block, sources, checkSlot }) {
 }
 
 /** Textbook: every block in authored order, the full `deep` prose, inline figures. */
-function TextbookBlock({ block, sources, checkSlot }) {
+function TextbookBlock({ block, sources, checkSlot, checkLabels }) {
   return jsxs('article', {
     className: 'flex flex-col gap-2 border-b border-(--ui-stroke-tertiary) py-3 first:pt-0 last:border-b-0 last:pb-0',
     'data-cb-block': block.id,
@@ -3590,14 +3697,15 @@ function TextbookBlock({ block, sources, checkSlot }) {
           jsx('h3', { className: 'min-w-0 text-base font-semibold leading-snug', children: block.headline })
         ]
       }),
-      BlockBody({ block, sources, checkSlot })
+      BlockBody({ block, sources, checkSlot, checkLabels })
     ]
   })
 }
 
 /** Guided: one block at a time, the authored `short` prose, progress and a check on its block. */
-function GuidedBlock({ block, index, total, sources, checkSlot, onBack, onNext }) {
+function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onBack, onNext }) {
   const last = index >= total - 1
+  const body = withoutCheckLabels(block.short || block.deep, checkLabels)
   return jsxs('section', {
     className: 'flex flex-col gap-3',
     'aria-labelledby': `cb-guided-headline-${block.id}`,
@@ -3626,10 +3734,12 @@ function GuidedBlock({ block, index, total, sources, checkSlot, onBack, onNext }
           })
         ]
       }),
-      jsx('div', {
-        className: 'max-w-prose',
-        children: jsx(sdk.MessageTextContent, { text: block.short || block.deep })
-      }),
+      body
+        ? jsx('div', {
+            className: 'max-w-prose',
+            children: jsx(sdk.MessageTextContent, { text: body })
+          })
+        : null,
       (block.media || []).map((media, ordinal) =>
         jsx(BlockMedia, { media, blockId: block.id, ordinal }, `${block.id}-media-${ordinal}`)
       ),
@@ -3670,8 +3780,9 @@ function GuidedBlock({ block, index, total, sources, checkSlot, onBack, onNext }
  * The document is server-owned; this component decides placement, never content. A view switch
  * re-renders the same blocks, the same ids and the same single check.
  */
-function LessonDocumentView({ document, view, sources, checkSlot }) {
+function LessonDocumentView({ document, view, sources, checkSlot, checkLabels }) {
   const blocks = (document && document.blocks) || []
+  const labels = Array.isArray(checkLabels) ? checkLabels : []
   const [step, setStep] = useState(0)
   if (blocks.length === 0) {
     return jsx(EmptyState, {
@@ -3703,6 +3814,7 @@ function LessonDocumentView({ document, view, sources, checkSlot }) {
           index: current,
           total: blocks.length,
           sources,
+          checkLabels: labels,
           checkSlot: block.check_id && block.check_id === checkId ? checkSlot : null,
           onBack: () => setStep(Math.max(0, current - 1)),
           onNext: () => setStep(Math.min(blocks.length - 1, current + 1))
@@ -3725,6 +3837,7 @@ function LessonDocumentView({ document, view, sources, checkSlot }) {
             {
               block,
               sources,
+              checkLabels: labels,
               checkSlot: attached >= 0 && block.check_id === checkId ? checkSlot : null
             },
             block.id
@@ -3761,8 +3874,16 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
     enrollmentId: row.enrollment_id,
     objectiveId,
     revision: page ? page.revision : 0,
-    enabled: Boolean(page) && supports('check.open') && Boolean(section)
+    enabled: Boolean(page) && supports('check.open') && Boolean(section),
+    implemented
   })
+  // The check surface prints one label per structured item; the document prose must not print the
+  // same line again on the teaching block or the practice block.
+  const checkStimulus = check.check && check.check.stimulus ? check.check.stimulus : null
+  const checkLabels =
+    checkStimulus && Array.isArray(checkStimulus.items)
+      ? checkStimulus.items.map((item) => item && item.label).filter(Boolean)
+      : []
   const checkNode =
     check.status === 'error'
       ? jsx(QuietNote, {
@@ -3935,7 +4056,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 document,
                 view: lessonView,
                 sources: sourceIndex,
-                checkSlot: checkNode
+                checkSlot: checkNode,
+                checkLabels
               },
               objectiveId
             )
@@ -5492,7 +5614,8 @@ function LessonPaneBody({ binding, storedId }) {
     enrollmentId: binding.enrollment_id,
     objectiveId,
     revision,
-    enabled: Boolean(objectiveId) && backendSupports('check.open') && Boolean(page.data)
+    enabled: Boolean(objectiveId) && backendSupports('check.open') && Boolean(page.data),
+    implemented: backendWire.implemented
   })
 
   const section = page.data && page.data.section
@@ -8377,7 +8500,7 @@ function CoursebookSettings() {
 // Named seam for tests/test_desktop_lesson_views.py. The block views and the section page are pure
 // components over a server-owned document, so a Node test can render them without a backend, a
 // chat or a window.
-export { LessonDocumentView, LESSON_VIEWS, SectionPage }
+export { AttemptControls, LessonDocumentView, LESSON_VIEWS, SectionPage }
 
 export default {
   id: PLUGIN_ID,

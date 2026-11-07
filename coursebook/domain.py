@@ -25,6 +25,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import unicodedata
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Sequence
@@ -2398,10 +2399,102 @@ def evidence_disputes(payload: dict[str, Any], envelope: dict[str, Any]) -> tupl
 STIMULUS_FORMATS: tuple[str, ...] = ("text", "selection", "verification")
 OUTLINE_OBJECTIVE_LIMIT = 400
 STIMULUS_PROMPT_LIMIT = 8000
+STIMULUS_ITEM_LIMIT = 24
+STIMULUS_ITEM_ID_LIMIT = 64
+STIMULUS_ITEM_LABEL_LIMIT = 200
+STIMULUS_ITEM_ID_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]*\Z")
+
+
+def _check_label_key(value: str) -> str:
+    """Normalise a check label for comparison: case, spacing and punctuation are ignored.
+
+    The Desktop renderer applies the same rule before dropping a prose line whose only content is
+    a check item's label, so the reject-on-read rule and the print-once rule cannot disagree.
+    """
+    cleaned = "".join(
+        " " if unicodedata.category(character)[0] in {"P", "S"} else character
+        for character in value.lower()
+    )
+    return " ".join(cleaned.split())
+
+
+def _stimulus_items(stored: dict[str, Any]) -> list[dict[str, str]]:
+    """Project a stored checklist onto ``items[]``, refusing a label the learner would read twice.
+
+    The stimulus is the learner-facing form of the check. Two items whose labels read the same
+    (case, spacing or punctuation aside) are not two verification steps, and an item list that
+    repeats itself is a broken check: it is refused on read rather than rendered twice.
+    """
+    raw = stored.get("items")
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise RpcError.of(
+            "VALIDATION_FAILED", "the check's items must be a list.", field="items",
+            reason="stimulus_items_not_a_list",
+        )
+    if len(raw) > STIMULUS_ITEM_LIMIT:
+        raise RpcError.of(
+            "VALIDATION_FAILED", f"a check may carry at most {STIMULUS_ITEM_LIMIT} items.",
+            field="items", reason="too_many_check_items",
+        )
+    items: list[dict[str, str]] = []
+    seen_ids: set[str] = set()
+    seen_labels: set[str] = set()
+    for index, item in enumerate(raw):
+        field = f"items[{index}]"
+        if not isinstance(item, dict):
+            raise RpcError.of(
+                "VALIDATION_FAILED", "each check item must be an object with an id and a label.",
+                field=field, reason="stimulus_item_not_an_object",
+            )
+        item_id = item.get("id")
+        label = item.get("label")
+        if (
+            not isinstance(item_id, str)
+            or len(item_id) > STIMULUS_ITEM_ID_LIMIT
+            or not STIMULUS_ITEM_ID_RE.match(item_id)
+        ):
+            raise RpcError.of(
+                "VALIDATION_FAILED", "a check item needs an id of letters, digits, dot, colon, dash or underscore.",
+                field=f"{field}.id", reason="invalid_check_item_id",
+            )
+        if not isinstance(label, str) or not label.strip():
+            raise RpcError.of(
+                "VALIDATION_FAILED", "a check item needs a non-empty label.",
+                field=f"{field}.label", reason="check_item_missing_label",
+            )
+        if len(label) > STIMULUS_ITEM_LABEL_LIMIT:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                f"a check item label may be at most {STIMULUS_ITEM_LABEL_LIMIT} characters.",
+                field=f"{field}.label", reason="check_item_label_too_long",
+            )
+        if item_id in seen_ids:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "two checklist items carry the same id.",
+                field=f"{field}.id", reason="duplicate_check_item_id",
+            )
+        key = _check_label_key(label)
+        if key in seen_labels:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "two checklist items carry the same label once case, spacing and punctuation are ignored.",
+                field=f"{field}.label", reason="duplicate_check_item_label",
+            )
+        seen_ids.add(item_id)
+        seen_labels.add(key)
+        items.append({"id": item_id, "label": label})
+    return items
 
 
 def _stimulus_view(stored: Any) -> dict[str, Any]:
-    """Project a stored stimulus onto the three contracted keys (+ optional instructions)."""
+    """Project a stored stimulus onto the contracted keys (+ optional instructions and items).
+
+    The allowlist is still closed: an unrecognised stored key is dropped rather than echoed,
+    because a smuggled answer key must never reach the pane through a read. ``items[]`` is the one
+    addition: it is structured check data, not prose, and it is validated on the way out.
+    """
     if not isinstance(stored, dict):
         raise RpcError.of(
             "VALIDATION_FAILED", "the stored check has no stimulus.", reason="stimulus_missing_prompt"
@@ -2416,12 +2509,25 @@ def _stimulus_view(stored: Any) -> dict[str, Any]:
     declared_format = stored.get("format")
     choices = stored.get("choices")
     instructions = stored.get("learner_instructions")
+    items = _stimulus_items(stored)
+    if (
+        isinstance(instructions, str)
+        and _check_label_key(instructions)
+        and _check_label_key(instructions) == _check_label_key(prompt)
+    ):
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "the learner instructions only repeat the prompt; the check would ask the same thing twice.",
+            field="learner_instructions",
+            reason="instructions_repeat_prompt",
+        )
     return {
         "prompt": prompt[:STIMULUS_PROMPT_LIMIT],
         # An imported pack check declares no format; an open answer is the honest reading.
         "format": declared_format if declared_format in STIMULUS_FORMATS else "text",
         "choices": [str(choice)[:200] for choice in (choices if isinstance(choices, list) else [])][:8],
         "learner_instructions": str(instructions)[:400] if isinstance(instructions, str) else None,
+        "items": items,
     }
 
 

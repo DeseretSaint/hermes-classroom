@@ -38,29 +38,45 @@ EVIDENCE = ROOT / "audit" / "visual" / "m1-mode-parity" / "evidence.json"
 HARNESS = """
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { LessonDocumentView } from './plugin.js'
+import { AttemptControls, LessonDocumentView } from './plugin.js'
 
 const fs = await import('node:fs')
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
 const index = {}
 for (const source of payload.sources || []) index[source.source_id] = source
 const labels = payload.checkLabels || []
-const checkSlot = labels.length
-  ? React.createElement(
-      'div',
-      { 'data-cb-check-surface': 'true' },
-      labels.map((label, i) => React.createElement('p', { key: i }, label))
-    )
-  : null
-const html = renderToStaticMarkup(
-  React.createElement(LessonDocumentView, {
-    document: payload.document,
-    view: payload.view,
-    sources: index,
-    checkSlot
-  })
-)
-process.stdout.write(html)
+if (payload.kind === 'check') {
+  const html = renderToStaticMarkup(
+    React.createElement(AttemptControls, {
+      enrollmentId: 'enr_0123456789abcdef',
+      objectiveId: 'obj_0123456789abcdef',
+      check: payload.check,
+      revision: 1,
+      implemented: new Set(),
+      bindingState: 'active',
+      onCommitted: () => {}
+    })
+  )
+  process.stdout.write(html)
+} else {
+  const checkSlot = labels.length
+    ? React.createElement(
+        'div',
+        { 'data-cb-check-surface': 'true' },
+        labels.map((label, i) => React.createElement('p', { key: i }, label))
+      )
+    : null
+  const html = renderToStaticMarkup(
+    React.createElement(LessonDocumentView, {
+      document: payload.document,
+      view: payload.view,
+      sources: index,
+      checkSlot,
+      checkLabels: labels
+    })
+  )
+  process.stdout.write(html)
+}
 """
 
 CHECKLIST = ["Check the heat", "Check sharp objects", "Check small parts", "Check allergies"]
@@ -442,45 +458,21 @@ class AnswerLeakTest(RenderCase):
 
 
 class RepeatedChecklistRegressionTest(RenderCase):
-    """The old defect: the same checklist labels are printed twice in one view.
+    """The old defect: the same checklist labels were printed three times in one view.
 
     A verification checklist authored into the section prose *and* into the check prompt reaches
     ``lesson.page`` as two blocks with the same text (the teaching segment and the ``check_prompt``
-    practice block), so Textbook prints every label twice. A structured check keeps its labels on
-    the single check surface, and each label is printed once.
+    practice block), and the check surface prints the labels too. A structured check keeps its
+    labels on the single check surface: the document renderer drops a prose line that is only the
+    check's own label, so each label is printed once.
     """
 
-    def test_old_fixture_duplicates_labels_today(self) -> None:
-        """Characterisation of the open defect: the double print is real, not hypothetical."""
-        lesson = self.prepare_lesson()
-        self.seed_page(
-            lesson,
-            [
-                ("teaching", "Before you start, walk the list:\n" + "\n".join(CHECKLIST)),
-                ("check_prompt", "Verify each item:\n" + "\n".join(CHECKLIST)),
-            ],
-        )
-        document = self.page(lesson)["document"]
-        html = self.render(document, "textbook", check_labels=CHECKLIST)
-        counts = {label: html.count(label) for label in CHECKLIST}
-        self.assertEqual(counts, {label: 3 for label in CHECKLIST})
-        record(
-            duplicate_checklist={
-                "fixture": "teaching segment + check_prompt segment + check surface",
-                "view": "textbook",
-                "label_counts": counts,
-                "expected": {label: 1 for label in CHECKLIST},
-                "verdict": "FAIL",
-            }
-        )
-
-    @unittest.expectedFailure
     def test_old_fixture_prints_each_label_once(self) -> None:
-        """DEFECT (t_ff6ce87a): this must flip green when checklist labels are structured.
+        """The regression is closed: the old fixture now prints each label exactly once.
 
-        Today the same labels reach the Textbook view three times: once in the teaching segment,
-        once in the ``check_prompt`` practice block and once on the check surface. The card's
-        contract is one print per label.
+        The stored text still carries the checklist in both segments. The renderer treats a line
+        that normalises to a structured check item's label as check data, drops it from the
+        document block, and the one check surface prints it once.
         """
         lesson = self.prepare_lesson()
         self.seed_page(
@@ -493,12 +485,21 @@ class RepeatedChecklistRegressionTest(RenderCase):
         document = self.page(lesson)["document"]
         html = self.render(document, "textbook", check_labels=CHECKLIST)
         counts = {label: html.count(label) for label in CHECKLIST}
-        # The contract is one print per label. The old fixture prints each twice (section prose and
-        # the practice block), which is the repeated-checklist defect named on this card.
         self.assertEqual(
             counts,
             {label: 1 for label in CHECKLIST},
             f"repeated checklist labels in the Textbook view: {counts}",
+        )
+        self.assertEqual(html.count("data-cb-check-surface"), 1)
+        record(
+            duplicate_checklist={
+                "fixture": "teaching segment + check_prompt segment + check surface",
+                "view": "textbook",
+                "label_counts_before": {label: 3 for label in CHECKLIST},
+                "label_counts": counts,
+                "expected": {label: 1 for label in CHECKLIST},
+                "verdict": "PASS",
+            }
         )
 
     def test_structured_fixture_prints_each_label_once(self) -> None:
@@ -538,14 +539,22 @@ class RepeatedChecklistRegressionTest(RenderCase):
             counts = {label: html.count(label) for label in CHECKLIST}
             self.assertEqual(counts, {label: 1 for label in CHECKLIST}, f"{view}: {counts}")
 
+    def test_a_prose_line_that_merely_looks_like_a_label_is_kept(self) -> None:
+        """Negative control: only a whole line that *is* the label is dropped, not prose."""
+        lesson = self.prepare_lesson()
+        sentence = "Check the heat before you touch the pan, every time."
+        self.seed_page(lesson, [("teaching", sentence)])
+        document = self.page(lesson)["document"]
+        html = self.render(document, "textbook", check_labels=["Check the heat"])
+        self.assertIn(sentence, html)
+
 
 class StructuredCheckItemsSeamTest(RenderCase):
-    """The card's second requirement: ``stimulus.items[]`` is the structured checklist.
+    """``stimulus.items[]`` is the structured checklist, projected by ``check.get``.
 
-    Contract v8's ``check_stimulus`` (``contracts/rpc.v8.json#/$defs/check_stimulus``) has exactly
-    ``prompt``, ``format``, ``choices`` and ``learner_instructions``; ``domain._stimulus_view``
-    projects that closed allowlist. A stored ``items[]`` is therefore dropped before any view can
-    render it. These two tests state the requirement and stay red until the seam exists.
+    Contract v8's ``check_stimulus`` (``contracts/rpc.v8.json#/$defs/check_stimulus``) admits
+    ``prompt``, ``format``, ``choices``, ``learner_instructions`` and ``items``;
+    ``domain._stimulus_view`` projects that closed allowlist and validates the list on the way out.
     """
 
     def store_stimulus(self, lesson: dict, stimulus: dict) -> None:
@@ -560,18 +569,22 @@ class StructuredCheckItemsSeamTest(RenderCase):
             {"enrollment_id": lesson["enrollment_id"], "objective_id": lesson["objective_id"]},
         )["result"]["stimulus"]
 
-    def test_closed_allowlist_drops_stored_items_today(self) -> None:
-        """Characterisation: the seam is absent, measured through the shipped ``check.get``."""
+    def structured_items(self) -> list[dict]:
+        return [
+            {"id": f"item_{index}", "label": label}
+            for index, label in enumerate(CHECKLIST, start=1)
+        ]
+
+    def test_check_get_projects_structured_items_and_drops_unknown_keys(self) -> None:
+        """The seam is present: items survive the read, a smuggled key still does not."""
         lesson = self.prepare_lesson()
         self.store_stimulus(
             lesson,
             {
                 "prompt": "Verify each item in the workshop.",
                 "format": "verification",
-                "items": [
-                    {"id": f"item_{index}", "label": label}
-                    for index, label in enumerate(CHECKLIST, start=1)
-                ],
+                "items": self.structured_items(),
+                "reference_answer": "not on the wire",
             },
         )
         stimulus = self.read_stimulus(lesson)
@@ -587,13 +600,15 @@ class StructuredCheckItemsSeamTest(RenderCase):
                     "learner_instructions",
                     "prompt",
                 ],
-                "verdict": "FAIL: contract v8 check_stimulus has no items[] and _stimulus_view drops it",
+                "verdict": "PASS: items[] projected, unknown keys still dropped",
             }
         )
-        self.assertEqual(sorted(stimulus), ["choices", "format", "learner_instructions", "prompt"])
-        self.assertIsNone(stimulus.get("items"))
+        self.assertEqual(
+            sorted(stimulus), ["choices", "format", "items", "learner_instructions", "prompt"]
+        )
+        self.assertEqual(stimulus["items"], self.structured_items())
+        self.assertNotIn("reference_answer", stimulus)
 
-    @unittest.expectedFailure
     def test_check_get_serves_each_structured_item_label_once(self) -> None:
         lesson = self.prepare_lesson()
         self.store_stimulus(
@@ -601,10 +616,7 @@ class StructuredCheckItemsSeamTest(RenderCase):
             {
                 "prompt": "Verify each item in the workshop.",
                 "format": "verification",
-                "items": [
-                    {"id": f"item_{index}", "label": label}
-                    for index, label in enumerate(CHECKLIST, start=1)
-                ],
+                "items": self.structured_items(),
             },
         )
         stimulus = self.read_stimulus(lesson)
@@ -612,7 +624,6 @@ class StructuredCheckItemsSeamTest(RenderCase):
         self.assertEqual(labels, CHECKLIST)
         self.assertEqual(len(labels), len(set(labels)))
 
-    @unittest.expectedFailure
     def test_duplicate_or_repeated_instructions_are_rejected(self) -> None:
         lesson = self.prepare_lesson()
         self.store_stimulus(
@@ -633,6 +644,90 @@ class StructuredCheckItemsSeamTest(RenderCase):
             {"enrollment_id": lesson["enrollment_id"], "objective_id": lesson["objective_id"]},
         )
         self.assertEqual(error["code"], "VALIDATION_FAILED")
+
+    def test_a_near_duplicate_label_is_rejected_with_its_reason(self) -> None:
+        lesson = self.prepare_lesson()
+        self.store_stimulus(
+            lesson,
+            {
+                "prompt": "Verify each item in the workshop.",
+                "format": "verification",
+                "items": [
+                    {"id": "item_1", "label": "Check the heat"},
+                    {"id": "item_2", "label": "check  the heat."},
+                ],
+            },
+        )
+        error = self.err(
+            "check.get",
+            {"enrollment_id": lesson["enrollment_id"], "objective_id": lesson["objective_id"]},
+        )
+        self.assertEqual(error["code"], "VALIDATION_FAILED")
+        self.assertEqual(error["details"]["reason"], "duplicate_check_item_label")
+        self.assertEqual(error["details"]["field"], "items[1].label")
+
+    def test_instructions_that_only_repeat_the_prompt_are_rejected(self) -> None:
+        lesson = self.prepare_lesson()
+        self.store_stimulus(
+            lesson,
+            {
+                "prompt": "Verify each item in the workshop.",
+                "format": "verification",
+                "learner_instructions": "verify each item in the workshop",
+            },
+        )
+        error = self.err(
+            "check.get",
+            {"enrollment_id": lesson["enrollment_id"], "objective_id": lesson["objective_id"]},
+        )
+        self.assertEqual(error["code"], "VALIDATION_FAILED")
+        self.assertEqual(error["details"]["reason"], "instructions_repeat_prompt")
+
+
+class CheckSurfaceItemsTest(RenderCase):
+    """The check surface itself prints one label per structured item, once."""
+
+    def test_check_surface_renders_each_item_once(self) -> None:
+        check = {
+            "check_id": "chk_a21c39778c8e4588877d85220af17ff7",
+            "check_version": 2,
+            "evidence_target": "production",
+            "stimulus": {
+                "prompt": "Verify each item in the workshop.",
+                "format": "verification",
+                "choices": [],
+                "learner_instructions": None,
+                "items": [
+                    {"id": f"item_{index}", "label": label}
+                    for index, label in enumerate(CHECKLIST, start=1)
+                ],
+            },
+        }
+        case = self.root / "check.json"
+        case.write_text(json.dumps({"kind": "check", "check": check}), encoding="utf-8")
+        result = subprocess.run(
+            ["node", str(self.root / "harness.mjs"), str(case)],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        html = result.stdout
+        for label in CHECKLIST:
+            self.assertEqual(html.count(label), 1, label)
+        for index in range(1, len(CHECKLIST) + 1):
+            self.assertIn(f'data-cb-check-item="item_{index}"', html)
+        self.assertIn("Verify each item in the workshop.", html)
+        self.assertIn(f'data-cb-check-items="{len(CHECKLIST)}"', html)
+        record(
+            check_surface_items={
+                "label_counts": {label: html.count(label) for label in CHECKLIST},
+                "item_markers": len(CHECKLIST),
+                "prompt_rendered": True,
+                "verdict": "PASS",
+            }
+        )
 
 
 if __name__ == "__main__":
