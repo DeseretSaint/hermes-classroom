@@ -99,13 +99,14 @@ longer changes the verdict, while an uncommitted edit to a tracked file still fa
 1, 2, 4 and 5 (tests, `node --check`, doctor, mounted backend trace) run against the checkout as
 before.
 
-Expected at 0.1.0 on the CB-017 release commit: **685 tests pass** (`Ran 685 tests ... OK`; 674 on
-master, 685 = 674 + 11 from the two replan branches), `desktop/plugin.js` syntax OK,
-`hermes plugins validate` passes all **16** admission checks with one warning (private core imports,
-see section 3), doctor reports **1 tool and 3 hooks**, the mounted backend trace passes **31/31**
-expectations, and `validate.sh` ends `Validation passed.` with exit 0. `validate-plugin.sh --ref`
-on the same commit ends `Release gate passed: 3/3 checks`; the commit and verbatim output are in
-`docs/CB017-RELEASE-VERIFICATION.md` §1.
+Expected at 0.1.0 on the CB-017 release commit (`29bede7`): **685 tests pass** (`Ran 685 tests ...
+OK`; 674 on master before CB-017, 685 = 674 + 11 from the two replan branches), `desktop/plugin.js`
+syntax OK, `hermes plugins validate` passes all **16** admission checks with one warning (private
+core imports, see section 3), doctor reports **1 tool and 3 hooks**, the mounted backend trace
+passes **31/31** expectations, and `validate.sh` ends `Validation passed.` with exit 0.
+`validate-plugin.sh` on that commit ends `Release gate passed: 3/3 checks on
+29bede7643403cd9d608499232125e6347c680dd (802 files).`; §1 and §1.1 of
+`docs/CB017-RELEASE-VERIFICATION.md` carry the verbatim output and the clean-export install.
 
 Fresh install path, in a throwaway home:
 
@@ -185,10 +186,9 @@ OK: 1 file(s) valid
 
 Gate status: **NOT MET.** The route mounts against a reachable backend; what remains is the host
 gateway binding (P3-operational, `docs/REVIEW_CB017-FINAL.md` §3.1), which is an operator decision,
-and Sentinel passing the demo scenarios on the exact build being recorded. Row 9 has no completed
-end-to-end artifact yet: replan → lessons → export is fixed and proven through lesson-job start; the
-export half is re-driven before the demo (`docs/REVIEW_CB017-FINAL.md` §3.2). No recording happens
-without DeseretSaint's approval.
+and Sentinel passing the demo scenarios on the exact build being recorded. Row 9 is closed end to
+end on this tree (replan → lessons → export, `docs/REVIEW_CB017-FINAL.md` §10), so it no longer
+holds the demo back. No recording happens without DeseretSaint's approval.
 
 - Every shot in `docs/DEMO.md` has a passing Sentinel scenario on the release commit.
 - Two precomputed segments are captioned on screen: Parent Studio pages and cached lesson media.
@@ -210,7 +210,6 @@ without DeseretSaint's approval.
 | Blocker | Why it blocks | Owner |
 | --- | --- | --- |
 | No composer on an isolated home (CB-QA-09) — P3-operational, host gateway binding | One gateway per host: `hermes gateway run --force` is refused while profile `default` owns it. This is not a plugin defect: `desktop/plugin.js` mounts the library and Parent Studio whenever the window reaches a backend (`docs/REVIEW_CB017-FINAL.md` §3.1). The unblock is an operator decision on the recording path (record on the gateway-owning profile, or stop that gateway first) | DeseretSaint / Atlas |
-| Row 9 export half unproven | The lessons job the replan fix unblocks was still `running` at the gate's 1800 s budget, so the export and lesson-set re-approval steps were not driven (`docs/REVIEW_CB017-FINAL.md` §3.2) | Vellum (`t_1ad9e4a1`) |
 | `evidence.inspect` returns an open check's reference answer (CB-QA-10) | The answer key crosses the client boundary while the check is open; the UI does not render it, the RPC does | Cinder |
 | Auxiliary grader accepts a persuaded pass (CB-QA-11) | The open-response lane cannot distinguish an honest pass from an injected one, so the lane ships disabled | Cinder |
 | Demo gate not met | Sentinel's demo scenarios have not passed on the release commit, and recording needs operator approval | Sentinel, DeseretSaint |
@@ -221,9 +220,11 @@ without DeseretSaint's approval.
 Verified on this branch, so they are not blockers: 52/52 `cb.rpc` v7 methods mounted with no
 contract problems, schema v4 from migrations `0001`-`0004`, 685 tests and 31/31 mounted backend
 expectations under `scripts/validate.sh`, pack round-trip and export hash matching, eight
-`parent.*` methods, and the replan carry with the Parent Studio plan guard. Those paths are
-implemented and tested; the UI halves are unverified until the gateway condition in the first row
-is resolved for the recording.
+`parent.*` methods, the replan carry with the Parent Studio plan guard, and the full
+replan → lessons → export loop on contest row 9 (export `exp_2e068c56`, content hash
+`sha256:ccf69462…e5a5` matching the approved hash, `export.ready: true`). The UI halves beyond the
+row-9 drive are unverified until the gateway condition in the first row is resolved for the
+recording.
 
 ## 8. Review packet (as of 2026-11-06)
 
@@ -231,13 +232,17 @@ is resolved for the recording.
 | --- | --- |
 | Repository | `https://github.com/DeseretSaint/hermes-classroom` (private; source backup only) |
 | Release branch | `wt/cb-017-harbor-release` (local only; push is operator-gated and did not happen in this run) |
-| Release commit (pinned) | `d142a1e23ceeab6ceec13c457e4f41ac1508cf6c` — `validate-plugin.sh --ref` 3/3 on 803 files |
-| Candidate gated by Atlas | `67d6773` — 685 tests, `validate.sh` exit 0, 31/31 backend expectations, live `cb.rpc` v7 / 52 methods (`docs/REVIEW_CB017-FINAL.md` §2) |
+| Release commit (pinned) | `29bede7643403cd9d608499232125e6347c680dd` — merged master: master + `da99d8a` replan carry + `6502e56` plan guard + `67d6773` CB-017 review + `26e782f` row-9 export tail |
+| Gates on the pinned commit | `validate-plugin.sh` 3/3 on 802 files; 685 tests OK; clean `git archive` install 6/6, `Installed.`; live `cb.rpc` v7 / 52 methods, `contract_problems []` (`docs/CB017-RELEASE-VERIFICATION.md` §1, §1.1) |
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
-| Verification evidence | `docs/CB017-RELEASE-VERIFICATION.md`, `docs/cb017-shots/`, `docs/cb016-verify/` |
-| Catalog draft | `catalog/coursebook.yaml` pinned to `d142a1e`, validator `OK: 1 file(s) valid`; not submitted |
+| Verification evidence | `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
+| Catalog draft | `catalog/coursebook.yaml` pinned to `29bede7`, validator `OK: 1 file(s) valid`; not submitted |
 | Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and four partial (`[~]`: 5, 6, 10, 11) |
 
-The pinned commit and the branch head differ by one catalog-and-record commit, because the catalog
-cannot pin itself. The installed tree at `d142a1e` is the one the gates ran on.
+One gap is recorded rather than hidden: the pin is the code commit `29bede7`, and this release
+record is a docs-only commit above it, because the catalog cannot describe a commit it is not on.
+At `29bede7` the README still carries the pre-re-pin wording (674 tests, route "verdict open"), so
+the release-record commit must land on master before a catalog pull request is opened, and `sha`
+and `docs_url` move to that merge in the same change. The catalog comment says the same. The
+installed tree at `29bede7` is the one the gates ran on.

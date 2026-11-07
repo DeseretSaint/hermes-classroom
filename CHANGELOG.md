@@ -55,13 +55,15 @@ Verbatim from `docs/REVIEW_CB017-FINAL.md` §9:
 - A structural objective `add` after a plan is authored yields a version with no covering outline:
   lessons are deliberately withheld, and the course must be started from a new brief.
 - A lesson section above 4,000,000 characters cannot render in one page; imports refuse it pre-write.
-- Rows 1/3/4/5/7/8/9/10/13 of the contest matrix are partial or open, as tabulated in
-  `docs/REVIEW_CB015.md` §12.
+- Rows 1/3/4/5/7/8/10/13 of the contest matrix are partial or open, as tabulated in
+  `docs/REVIEW_CB015.md` §12. Row 9's export half was driven after this gate (§10).
 
 Also at 0.1.0:
 
-- Contest row 9 status: replan → lessons → export is fixed and proven through lesson-job start; the
-  export half is re-driven before the demo.
+- Contest row 9 is closed end to end on this tree: plan v10 approved after replan, lessons job
+  `job_2390ab7a` completed with 4 lessons, lesson set re-approved, and export `exp_2e068c56`
+  produced with content hash `sha256:ccf69462…e5a5` matching the approved hash (backend export
+  ready, no `blocked_reason`). Evidence: `docs/REVIEW_CB017-row9-ui.json`, `docs/REVIEW_CB017-FINAL.md` §10.
 - The CB-QA-09 route finding is P3-operational (host gateway binding), not a plugin defect: one
   gateway per host, owned by profile `default` (`docs/REVIEW_CB017-FINAL.md` §3.1).
 - `evidence.inspect` returns an open check's reference answer in the L2 projection (CB-QA-10).
@@ -71,10 +73,11 @@ Also at 0.1.0:
   equivalents. Reminders are absent.
 - No license file. The repository may not be redistributed until DeseretSaint adds one.
 
-### Verification at the CB-017 candidate
+### Verification at the release commit `29bede7`
 
-`scripts/validate-plugin.sh` 3/3 checks on a clean `git archive` export of the release commit;
-`scripts/validate.sh` exit 0 with 685 tests, `node --check` OK, 16 admission checks, 1 tool / 3
-hooks registered, 31/31 mounted backend expectations; `git archive` of the commit installed into a
-fresh home (`6/6` admission, `Installed.`). `docs/CB017-RELEASE-VERIFICATION.md` carries the
-commands, the commit and the evidence files. 685 = 674 on master + 11 from the two replan branches.
+`scripts/validate-plugin.sh` 3/3 checks on a clean `git archive` export of the release commit (802
+files); `Ran 685 tests in 72.181s` — `OK`; `node --check` OK; `git archive` of the commit installed
+into a fresh home (`6/6` admission, `Installed.`) and answered `cb.rpc` v7 with 52 methods,
+`contract_problems []`, schema 4. `docs/CB017-RELEASE-VERIFICATION.md` carries the commands, the
+commit, the verbatim output and the install transcript. 685 = 674 on master before CB-017 + 11 from
+the two replan branches.

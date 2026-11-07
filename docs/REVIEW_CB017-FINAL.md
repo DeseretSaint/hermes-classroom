@@ -118,7 +118,7 @@ new methods — which is what happened here. It stays v7.
 
 | row | status | note |
 | --- | --- | --- |
-| 9 | partial → **partial (fix verified, export half pending)** | §3.2 |
+| 9 | **live** (fix verified §3.2; export tail driven §10) | replan → plan approve → lessons complete → lesson-set approve → export, UI and backend agreeing |
 | 1, 10, 13 | partial / boundary | native folder picker not automatable in the rig (t_36679b90) |
 | 4 | open | chat and pane answers race — not driven |
 | 3, 5, 7, 8 | partial | each names its missing half in `REVIEW_CB015.md` §12 |
@@ -139,7 +139,7 @@ new methods — which is what happened here. It stays v7.
 ## 7. Shortest path to GO
 
 1. Let `job_2390ab7a…` settle; re-drive `scripts/cb015r-row9-replan-ui.mjs` to completion and commit
-   the JSON + stills. (Vellum, ~1 generation cycle.)
+   the JSON + stills. (Vellum, ~1 generation cycle.) **Done — §10.**
 2. Harbor re-derives README/CHANGELOG/SUBMISSION/ARCHITECTURE and re-pins the catalog on the merged
    commit, then re-runs `validate-plugin.sh --ref`.
 3. Operator: approve the demo path (install into the gateway-owning profile, or stop that gateway and
@@ -170,5 +170,56 @@ Candidate commit: `6502e56090cb5cf5755d1ebd7af8202bca481897`.
 * A structural objective `add` after a plan is authored yields a version with no covering outline:
   lessons are deliberately withheld, and the course must be started from a new brief.
 * A lesson section above 4,000,000 characters cannot render in one page; imports refuse it pre-write.
-* Rows 1/3/4/5/7/8/9/10/13 of the contest matrix are partial or open, as tabulated in
-  `docs/REVIEW_CB015.md` §12.
+* Rows 1/3/4/5/7/8/10/13 of the contest matrix are partial or open, as tabulated in
+  `docs/REVIEW_CB015.md` §12. Row 9's export half was driven after this gate (§10).
+
+# Appended after the gate verdict.
+
+## 10. Row 9 export tail — driven (Vellum, t_1ad9e4a1)
+
+This section is post-gate evidence appended to §3.2. It changes no other row and does not reopen the
+gate verdict; it closes the one item §7 step 1 left outstanding.
+
+**Environment.** The same isolated rig as §3.2: home `~/.hermes/coursebook-test-t_fc758da8/home`,
+backend `127.0.0.1:44251` serving `wt/cb-017-atlas` at `67d6773` (`plugin_root` reported by
+`/runtime`), `desktop/plugin.js` sha256 `c59ebc3c…8281fb`, window CDP **9347**.
+
+**1 — the lessons job settled.** `job_2390ab7ac33d4bff9e62d8eae5649ee7` reached `state: completed`
+at `2026-11-06T23:54:11Z` with `checkpoint.lessons = 4`, `progress.message = "4 lessons authored"`,
+`error: null`. It did not fail on a missing authored document; the §3.2 fix held all the way through
+generation.
+
+**2 — the export half was driven on the real Desktop UI.** Because the gate is a separate approval,
+the run picked up at `Plan approved · v10` / `Lesson set approval: Changes need review`
+(approved content hash `22dae2d0…`, current `ccf69462…`, `Export the approved files` disabled), then:
+`Approve this lesson set` → gate shows `Lesson set approved`, export enabled → `Export the approved
+files` → exported.
+
+> **Export exp_2e068c56b9a04ced96b872aaccb98ad0 · just now · content hash
+> sha256:ccf69462cb8073a5115b01571879fd232b76af9386e919c90c89a79dc94eb5a5**
+
+**3 — backend and disk corroborate the screen.** `parent.blueprint.read` afterwards returns
+`approval.state = active` with `content_hash` equal to the approved hash above and
+`export.ready = true`, `blocked_reason = null`; the plan is `pln_d25b00bb…` v10 `approved`. The
+export produced real files in
+`~/.hermes/coursebook-test-t_fc758da8/home/plugin-data/coursebook/pack-exports/`:
+`…-9fb8dda5e750c34c.zip` (17,843 B — 13 entries: 4 parent-guide, 4 learner-page, 4 answer-guide
+markdown plus `pack.json`) and `…-9fb8dda5e750c34c.pdf` (11,776 B, PDF 1.4, 7 pages).
+
+**Artifact.** `docs/REVIEW_CB017-row9-ui.json` — UI steps and verdicts, plus a `corroboration` block
+holding the backend records, export-file hashes and shot hashes. Driver:
+`scripts/cb017-row9-tail.mjs` (tail-only; `node --check` OK).
+
+| shot | sha256 |
+| --- | --- |
+| `docs/cb017-shots/row9r-06-export-gate-blocked.png` | `e674b02f36a521cea95d3e40d56ef7460309a47d543cc24bb7a6a9cea7bf2e6c` |
+| `docs/cb017-shots/row9r-07-lesson-set-approved.png` | `ce933e643b7c0f5803692e4e31bccde50dceda8c178f29edbe96bec60ed8689a` |
+| `docs/cb017-shots/row9r-08-exported-files.png` | `3fe3e227f142b2b58e5b83a4027b3283623dd5d3764b7aa7b50a8fb2f3bdb117` |
+| `docs/cb017-shots/row9r-09-exported-files-detail.png` | `e8e1194b3605088e7d9bc5b62905b443fe92b2210ea4b824107e85ad60def592` |
+
+Shots `row9r-01..05` were not re-captured; their sha256 values still match §8 exactly.
+
+**Consequence for the matrix.** Row 9 is now live end to end for this tree — replan → plan approve →
+lessons job start → lessons complete → lesson-set approve → export — with the UI and the backend
+agreeing on the approved content hash. The remaining pre-submission items are the other rows, the
+demo path and the re-pin, not this row.

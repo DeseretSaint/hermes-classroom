@@ -1,16 +1,19 @@
 # Draft catalog entry for Coursebook. NOT SUBMITTED.
 #
-# The sha below is a real release commit, but the entry is still a draft: gates 5, 7, 9 and 10 of
-# docs/SUBMISSION.md are open or partial (host gateway binding for the recording, demo gate,
-# license, publication sign-off). CB-QA-09 is not a plugin defect; Atlas reclassified it as
-# P3-operational (docs/REVIEW_CB017-FINAL.md §3.1).
+# The sha below is the merged code commit (29bede7: the CB-017 line on master). The release record
+# that re-derives the docs is a docs-only commit above it, so at the pinned tree the README still
+# carries the pre-re-pin wording; land that record on master and re-pin before opening the pull
+# request. The entry is still a draft: gates 5, 7, 9 and 10 of docs/SUBMISSION.md are open or
+# partial (host gateway binding for the recording, demo gate, license, publication sign-off).
+# CB-QA-09 is not a plugin defect; Atlas reclassified it as P3-operational
+# (docs/REVIEW_CB017-FINAL.md §3.1).
 # Before the catalog pull request, merge every code change, re-run `scripts/validate-plugin.sh` on
 # the final commit, then set sha and docs_url to that commit and keep version in step with the
 # pinned code — all in one change. See docs/SUBMISSION.md sections 3 and 4. Do not submit this file
 # while sha and description disagree; gate 11 is exactly that check.
 name: coursebook
 repo: https://github.com/DeseretSaint/hermes-classroom
-sha: d142a1e23ceeab6ceec13c457e4f41ac1508cf6c
+sha: 29bede7643403cd9d608499232125e6347c680dd
 description: >-
   A native Hermes Desktop learning workspace where a lesson is governed state rather than chat:
   one objective at a time, typed checks, bounded grading, transactional transitions, inspectable
@@ -34,12 +37,11 @@ tier: community
 category: desktop
 requires_hermes: ">=0.23.0"
 version: "0.1.0"
-docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/d142a1e23ceeab6ceec13c457e4f41ac1508cf6c/docs/INSTALL.md
+docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/29bede7643403cd9d608499232125e6347c680dd/docs/INSTALL.md
 readme: true
 platforms: []
 known_issues:
   - "Desktop route #/coursebook mounts against a reachable backend. A window with no gateway renders no route page for any hash (host shell degradation); CB-QA-09 was reclassified P3-operational, a one-gateway-per-host binding owned by the default profile, not a plugin defect. An isolated window therefore has no chat composer until the operator resolves the recording path."
-  - "Contest row 9 is partial: replan -> lessons -> export is fixed and proven through lesson-job start; the export half is re-driven before the demo."
   - "No license file is present in this repository yet; do not redistribute until one is added."
   - "Research runs inside plan jobs only; there is no standalone research command."
   - "Image and speech generation are absent: lesson generation emits declarative media specs with text equivalents and no provider is wired."

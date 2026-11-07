@@ -20,9 +20,10 @@ No demo has been recorded. Read the status table before installing.
 ## Status
 
 Version 0.1.0. The release gates and the route evidence for this tree are in
-`docs/CB017-RELEASE-VERIFICATION.md` (CB-017 candidate `67d6773`, the tree this record re-derives);
-`docs/CB016-RELEASE-VERIFICATION.md` is the earlier record at `e93b8c5`, kept for its two
-condition captures. The adversarial report on the previous candidate is `docs/REVIEW_CB014.md`
+`docs/CB017-RELEASE-VERIFICATION.md` (CB-017 line, merged master `29bede7`); the adversarial
+review and the contest matrix are `docs/REVIEW_CB017-FINAL.md`, including Vellum's row-9 export
+tail in §10. `docs/CB016-RELEASE-VERIFICATION.md` is the earlier record at `e93b8c5`, kept for its
+two condition captures. The adversarial report on the previous candidate is `docs/REVIEW_CB014.md`
 (candidate `f4a42f34`, NO-GO on the Desktop route, not on the backend).
 
 Three states are used below. **Working** means a command was run against this build and passed.
@@ -39,7 +40,7 @@ there is no code path at all.
 | Profile-scoped SQLite schema and migrations `0001`-`0004` | Working: `health.get` answers `db.ready: true`, `schema_version: 4` on a fresh home |
 | Desktop route `#/coursebook`, sidebar entry, pane, command palette, settings page | Working with a reachable backend: mounts the library, `New course`, Parent Studio and a course card (`docs/CB017-RELEASE-VERIFICATION.md` §2). A window with no gateway renders no route page for any hash — host shell degradation, reclassified P3-operational by Atlas (`docs/REVIEW_CB017-FINAL.md` §3.1) |
 | Course creation, plans, lessons, grading, transitions, evidence | Implemented, unverified in the UI: 685-test suite, plus adversarial S01/S02/S10-S12 (duplicate submit, stale revision, invalid/hung/throwing grader) all pass |
-| Replan of an approved plan, then lessons, then export | Implemented: the authored outline is carried onto the replanned version (`da99d8a`), Generate lessons is withheld for a version that cannot author (`6502e56`), and a lessons job now starts where it used to fail `INTERNAL_ERROR`. Proven through lesson-job start; the export half is re-driven before the demo (`docs/REVIEW_CB017-FINAL.md` §3.2) |
+| Replan of an approved plan, then lessons, then export | Working end to end for this tree: replan → plan approve (v10) → lessons job start → 4 lessons authored → lesson-set approve → export, with the UI and the backend agreeing on the approved content hash (`sha256:ccf69462…e5a5`), `export.ready: true` and no `blocked_reason`. Evidence: `docs/REVIEW_CB017-row9-ui.json`, `docs/REVIEW_CB017-FINAL.md` §10 |
 | Notebooks, quiz history, review queue, usage accounting | Implemented, unverified in the UI: `notebook.save/list/update/delete`, `quiz.history`, `review.queue/action` and `usage.summary` are in the mounted registry |
 | Pack import and export, Parent Studio authoring | Implemented, unverified in the UI: `pack.import/export/preview/inspect/list/delete` and eight `parent.*` methods; P17/P18/P20 pass, and export reproduces the reviewed content hash |
 | Research | Implemented inside plan jobs: bounded, query-capped and ledgered through the host `web_search`/`web_extract` seam; records `unavailable` rather than inventing a source. No standalone RPC |
@@ -106,11 +107,12 @@ settings-page seam. With no chat bound to an enrollment, the pane offers `Open C
 reports that no durable chat is bound yet. The backend it reads answers `health.get` with
 `db.ready: true` and `schema_version: 4`.
 
-The route is condition-dependent, and one of the two conditions is not shippable. In a window that
-reaches a gateway-backed backend, `#/coursebook` mounts the course library, the `New course` action
-and Parent Studio (`docs/CB016-RELEASE-VERIFICATION.md` §3b). In a window whose isolated home cannot
-start a gateway, the shell renders the session home for every hash instead (CB-QA-09, §3a). A demo
-that shows the chat side needs the second condition fixed, because a lesson binds to a chat.
+In a window that reaches a gateway-backed backend, `#/coursebook` mounts the course library, the
+`New course` action and Parent Studio (`docs/CB017-RELEASE-VERIFICATION.md` §2). A window whose
+isolated home has no gateway shows the session home for every hash instead — that is the shell,
+not the plugin, and Atlas reclassified CB-QA-09 as P3-operational on exactly that evidence
+(`docs/REVIEW_CB017-FINAL.md` §3.1). A demo that shows the chat side still needs a composer, which
+means recording on the profile that owns this host's gateway.
 
 Ask the agent to run `coursebook_status` to get the health block as JSON. If the backend is not
 mounted, the pane names the enable path and offers Check again instead of showing an empty
@@ -146,8 +148,9 @@ This candidate is not shippable as a Desktop product.
   a second, so an isolated window has no composer; the plugin's own `Backend off` / `Offline`
   states are proven separately. The demo's chat surface therefore needs the operator to record on
   the gateway-owning profile, or to stop that gateway first.
-- Row 9 of the contest matrix is partial: replan → lessons → export is fixed and proven through
-  lesson-job start; the export half is re-driven before the demo.
+- Row 9 is closed on this tree (replan → lessons → export, §"Status"); the demo still cannot be
+  recorded on this host for the gateway reason above, and that is a process blocker, not a product
+  one.
 - Image and speech generation, and reminders, are absent. Research runs only inside plan jobs.
 - The auxiliary open-response grader is disabled. Closed checks are graded against a stored
   reference; with the lane enabled, an answer that persuades an obedient grader is accepted
@@ -171,7 +174,7 @@ Coursebook has not established that it improves learning. Parent observations ar
 - `docs/PRIVACY_EGRESS.md`: per-operation disclosure.
 - `docs/DEMO.md`: the demo script and its precomputed/live split.
 - `docs/CB017-RELEASE-VERIFICATION.md`: gates, clean install, the clean-export run and the route
-  finding as reclassified (CB-017 candidate `67d6773`).
+  finding as reclassified (CB-017 line, merged master `29bede7`).
 - `docs/CB016-RELEASE-VERIFICATION.md`: the earlier record at `e93b8c5`, including the two route
   condition captures.
 - `CHANGELOG.md`: what 0.1.0 contains and what it does not.

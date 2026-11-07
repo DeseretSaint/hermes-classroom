@@ -14,9 +14,11 @@ Two surfaces decide it, and they fail for different reasons:
   not a plugin defect (`docs/REVIEW_CB017-FINAL.md` §3.1). The 8-25 s chat shot needs that operator
   decision. Until it is made there is no honest way to record the chat turns.
 
-Row 9 of the contest matrix is partial: replan → lessons → export is fixed and proven through
-lesson-job start; the export half is re-driven before the demo
-(`docs/REVIEW_CB017-FINAL.md` §3.2, Vellum `t_1ad9e4a1`).
+Row 9 of the contest matrix is closed end to end on this tree: replan → plan approve (v10) →
+lessons job start → 4 lessons authored → lesson-set approve → export, with the UI and the backend
+agreeing on the approved content hash (`sha256:ccf69462…e5a5`, export `exp_2e068c56`,
+`export.ready: true`, no `blocked_reason`). Evidence: `docs/REVIEW_CB017-row9-ui.json`,
+`docs/REVIEW_CB017-FINAL.md` §10.
 
 The build does perform the four flows this file once said were missing. Course creation and pack
 export run on this tree: `pack.import` creates a course and enrollment, `pack.export` returns a

@@ -150,21 +150,22 @@ edits instead, and `--ref <commit>` gates another commit.
 bash scripts/test.sh
 ```
 
-Observed on the CB-017 tree (`67d6773`, and reproduced on the release commit): `Ran 685 tests in
-74.216s`, `OK`, then `desktop/plugin.js: syntax OK` (`scripts/validate.sh`); `scripts/test.sh` runs
-the same suite plus the syntax check.
+Observed on the CB-017 release commit (`29bede7`): `Ran 685 tests in 72.181s`, `OK`, then
+`desktop/plugin.js: syntax OK` (`scripts/validate.sh`); `scripts/test.sh` runs the same suite plus
+the syntax check.
 
 ```
 bash scripts/validate.sh
 ```
 
-Observed on the CB-017 tree (`67d6773`): 685 tests OK, `desktop/plugin.js: syntax OK`,
+Observed on the CB-017 release commit (`29bede7`): 685 tests OK, `desktop/plugin.js: syntax OK`,
 `hermes plugins validate` on an export of the tracked tree passes all 16 admission checks with one
 warning (private core imports, see below), `hermes plugins doctor .` reports `1 tool(s), 3 hook(s)`,
 the mounted backend trace passes all 31 expectations against an isolated `HERMES_HOME`, and the
-script ends `Validation passed.` with exit 0. `scripts/validate-plugin.sh --ref <release commit>`
-on the pinned commit reports `Release gate passed: 3/3 checks` on that commit. The exact commit,
-file count and verbatim output are in `docs/CB017-RELEASE-VERIFICATION.md` §1.
+script ends `Validation passed.` with exit 0. `scripts/validate-plugin.sh` on the same commit
+reports `Release gate passed: 3/3 checks on 29bede7643403cd9d608499232125e6347c680dd (802 files).`
+The verbatim output and the clean-export install are in `docs/CB017-RELEASE-VERIFICATION.md` §1 and
+§1.1.
 
 ```
 hermes plugins doctor coursebook
