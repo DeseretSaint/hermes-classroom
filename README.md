@@ -44,7 +44,7 @@ there is no code path at all.
 | Notebooks, quiz history, review queue, usage accounting | Implemented, unverified in the UI: `notebook.save/list/update/delete`, `quiz.history`, `review.queue/action` and `usage.summary` are in the mounted registry |
 | Pack import and export, Parent Studio authoring | Implemented, unverified in the UI: `pack.import/export/preview/inspect/list/delete` and eight `parent.*` methods; P17/P18/P20 pass, and export reproduces the reviewed content hash |
 | Research | Implemented inside plan jobs: bounded, query-capped and ledgered through the host `web_search`/`web_extract` seam; records `unavailable` rather than inventing a source. No standalone RPC |
-| Image and speech generation | Absent: the media policy, content-addressed artifact store and text-fallback path ship, but no image or TTS provider is wired, and lesson generation emits declarative media specs, never generated media |
+| Image and speech generation | Implemented: the host's configured image/TTS providers are called through `ctx.dispatch_tool`; generated visuals and narration are stored as content-addressed artifacts with text equivalents and honest degraded states. Pronunciation scoring is not shipped yet |
 | Reminders | Absent: no RPC, no job runner, no storage |
 
 Every method declared by `cb.rpc` v7 has a handler in this build, so there is no command that

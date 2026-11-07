@@ -1729,6 +1729,14 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
                 " updated_at, last_opened_at) VALUES (?, ?, ?, 'active', 0, ?, ?, ?)",
                 (run_id, enrollment["id"], objective["id"], now, now, now),
             )
+            # Authored media (when the plan/lesson pipeline produced it) is projected into the
+            # durable page before the chat writes its own teaching segments. The text equivalent
+            # is kept even when an artifact is absent, so a provider failure is visible, not silent.
+            from . import media as coursebook_media
+
+            coursebook_media.seed_authored_media(
+                connection, lesson_run_id=run_id, objective_id=str(objective["id"]), now=now
+            )
             result = {
                 "lesson_run_id": run_id,
                 "run_state": "created",

@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author | `coursebook.plan.generate` | `plan-prompt.v1` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v2` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v3` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
@@ -138,7 +138,9 @@ ran, and the reasons are stored. Nothing is quietly discarded and nothing is qui
 
 For an **approved** plan only (`PlanNotApproved` otherwise) the pipeline writes one lesson per
 section: 2–6 teaching segments, one worked example, one check, a learner explanation, a source list
-and a declarative media spec (no image model is called; media generation is CB-012's).
+and a declarative media spec. After the lesson is validated, the media caller generates a host
+illustration, deterministic schematic or TTS narration through `ctx.dispatch_tool`, caches the
+artifact by spec/source hash, and leaves a complete text equivalent when the provider fails.
 
 The learner page is built from an allowlist, never by deleting keys:
 
@@ -153,7 +155,7 @@ The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and 
 enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
 page against the linked checks before serving.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v2`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v3`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never

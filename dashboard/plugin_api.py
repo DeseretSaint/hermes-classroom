@@ -180,6 +180,19 @@ async def packs_grant(body: dict[str, Any] = Body(...)) -> Any:
     return {"ok": True, "staged_id": staged_id}
 
 
+@router.get("/media/{artifact_id}")
+async def media_preview(artifact_id: str) -> dict[str, Any]:
+    """Bounded inline preview for one visual/audio artifact.
+
+    The Desktop renderer has a JSON-only ``ctx.rest`` door, so an image or audio player needs a
+    data URL rather than a relative file link. This route is authenticated by the host's normal
+    ``/api/`` middleware; it re-verifies size and sha256 before encoding, and returns a refusal as
+    data so the lesson can keep its text equivalent and download handle.
+    """
+    media = _media()
+    return media.preview_artifact(artifact_id)
+
+
 @router.get("/artifacts/{handle}")
 async def artifact_download(handle: str) -> Any:
     """Stream one exported pack by its expiring, session-bound handle (CB-010).
@@ -231,6 +244,11 @@ def _download_name(path: Path) -> str:
 def _pack_flow() -> Any:
     _load_backend()
     return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.pack_flow")
+
+
+def _media() -> Any:
+    _load_backend()
+    return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.media")
 
 
 def _bindings() -> Any:

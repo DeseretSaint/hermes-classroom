@@ -21,6 +21,7 @@ import logging
 from typing import Any
 
 from .coursebook import __version__, executor, hooks, tools
+from .coursebook import media as media_mod
 from .coursebook import research
 from .coursebook.generation import bind_host_llm
 
@@ -37,6 +38,10 @@ def register(ctx: Any) -> None:
     # Generation jobs run in the agent process; bind the host-owned LLM once so the pipeline
     # never reaches for a raw provider key. Unbound calls fail loudly in generation.host_llm().
     bind_host_llm(getattr(ctx, "llm", None))
+    # Media uses the host's own image_generate/text_to_speech tools through ctx.dispatch_tool:
+    # no provider key enters the plugin, and an old/bare host leaves media as a complete text
+    # lesson instead of fabricating a file.
+    media_mod.bind_host_seam(ctx)
     # Research uses the host's own web_search/web_extract tools through ctx.dispatch_tool, so it
     # inherits the user's provider, egress rules and SSRF checks. An unusable host is recorded as
     # "research unavailable" by the pipeline, never replaced with an invented source.

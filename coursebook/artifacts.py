@@ -158,6 +158,7 @@ class MediaSpec:
     kind: str
     role: str
     text_equivalent: str
+    prompt: str | None = None
     source_ids: tuple[str, ...] = ()
     permission: str | None = None
     voice: str | None = None
@@ -171,6 +172,7 @@ class MediaSpec:
             "kind": self.kind,
             "role": self.role,
             "text_equivalent": self.text_equivalent,
+            "prompt": self.prompt,
             "source_ids": list(self.source_ids),
             "permission": self.permission,
             "voice": self.voice,

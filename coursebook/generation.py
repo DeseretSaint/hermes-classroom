@@ -100,7 +100,7 @@ PIPELINE_VERSION = "cb.gen.v1"
 logger = logging.getLogger("coursebook.generation")
 
 PLAN_PROMPT_VERSION = "plan-prompt.v1"
-LESSON_PROMPT_VERSION = "lesson-prompt.v2"
+LESSON_PROMPT_VERSION = "lesson-prompt.v3"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v1"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
@@ -802,9 +802,27 @@ LESSON_SCHEMA: dict[str, Any] = {
                 "required": ["kind", "purpose", "spec", "text_equivalent"],
                 "properties": {
                     "kind": {"type": "string", "enum": ["visual", "audio"]},
+                    "role": {
+                        "type": "string",
+                        "enum": ["illustration", "schematic", "sourced_technical", "narration"],
+                    },
                     "purpose": {"type": "string", "minLength": 3, "maxLength": 200},
                     "spec": {"type": "string", "minLength": 3, "maxLength": 800},
                     "text_equivalent": {"type": "string", "minLength": 5, "maxLength": 1200},
+                    "source_ids": {
+                        "type": "array",
+                        "maxItems": 8,
+                        "items": _identifier,
+                    },
+                    "permission": {
+                        "type": "string",
+                        "enum": ["public_domain", "licensed", "linked", "unknown"],
+                    },
+                    "voice": {"type": "string", "minLength": 1, "maxLength": 80},
+                    "language": {"type": "string", "minLength": 2, "maxLength": 35},
+                    "transcript": {"type": "string", "minLength": 1, "maxLength": 1200},
+                    "technical": {"type": "boolean"},
+                    "facts": {"type": "object", "maxProperties": 20},
                 },
             },
         },
@@ -910,7 +928,10 @@ LESSON_SYSTEM_PROMPT = (
     "reference answer inside the learner-facing explanation or segments. Respect the recipe: a "
     "one-off brief gets a verification checklist, not a quiz; a parent lesson is parent-led with "
     "observation notes and supervision. Every media item is a declarative spec with a complete "
-    "text equivalent; you never generate an image. Return only the JSON object."
+    "text equivalent; the harness generates the image or audio, and you never claim that a "
+    "generated illustration is a measurement or procedure authority. For a technical procedure, "
+    "use a schematic with structured facts and cite the source; for language pronunciation, use "
+    "narration with the exact transcript, language and voice. Return only the JSON object."
 )
 
 VALIDATION_SYSTEM_PROMPT = (
@@ -961,7 +982,12 @@ def _lesson_instructions(*, recipe: str, locale: str | None, scaffold_note: str)
         "Include exactly one check.",
         "Write 3-6 rubric criteria in check.rubric, each a distinct observable aspect of the "
         "response; never restate one aspect in two criteria.",
-        "Media items are declarative specs only, each with a complete text equivalent.",
+        "Media items are declarative specs, each with a complete text equivalent. Add media when "
+        "it carries teaching meaning: a labelled schematic for a technical sequence, an "
+        "illustration for context, or a narration for a language phrase. Never use an illustration "
+        "as a measurement, procedure or safety authority. For audio, set role='narration', include "
+        "the exact transcript, language and voice, and keep the transcript equal to the text "
+        "equivalent. For a schematic, put the structured facts in facts.rows as label/value pairs.",
     ]
     if locale:
         lines.append(f"Content locale: {locale}.")
@@ -1430,7 +1456,7 @@ def build_lesson_request(
             "checks": 1,
             "rubric_criteria": [3, 6],
             "reference_answer": "stored separately; never inside segments, explanation or worked example",
-            "media": "declarative spec with complete text equivalent; never generate an image",
+            "media": "declarative spec with complete text equivalent; the harness generates it and never treats an illustration as technical authority",
         },
     }
     if feedback:
@@ -2584,8 +2610,14 @@ def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources
         "media": [
             {
                 "kind": item["kind"],
+                "role": item.get("role"),
                 "purpose": item["purpose"],
                 "text_equivalent": item["text_equivalent"],
+                "artifact_id": item.get("artifact_id"),
+                "mime": item.get("mime"),
+                "label": item.get("label"),
+                "degraded": bool(item.get("degraded")),
+                "reason": item.get("reason"),
             }
             for item in lesson.get("media") or []
         ],
