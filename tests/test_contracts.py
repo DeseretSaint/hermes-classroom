@@ -263,9 +263,9 @@ class ContractSetTest(unittest.TestCase):
 
     def test_wire_contract_is_current(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 13)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 14)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v13"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v14"))
         # Every place the wire version is echoed (both response envelopes, health.get) must agree.
         # A missed constant is an envelope the plugin itself produces and cannot validate.
         echo = _wire_echoes(contracts.contract("cb.rpc"))
@@ -1298,7 +1298,7 @@ class V5AmendmentTest(unittest.TestCase):
         for version in (1, 2, 3, 4, 5, 6, 7, 8, 9):
             # Not in the inventory, and not silently repurposed: history stays history.
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v14.json")
 
     def test_v5_adds_only_the_outline_check_and_assist_surface(self) -> None:
         # The v5 snapshot, not the live inventory: v6 appended the Parent Studio family afterwards.
@@ -1694,7 +1694,7 @@ class V6AmendmentTest(unittest.TestCase):
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
         for version in (1, 2, 3, 4, 5):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v14.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v8.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
@@ -2589,7 +2589,7 @@ class V10AmendmentTest(unittest.TestCase):
             expected = {**FROZEN_RPC_SHA256, **FROZEN_DB_SHA256}[filename]
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v14.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v8.json")
 
     def test_v10_adds_no_error_code_and_no_vocabulary_change(self) -> None:
@@ -2917,7 +2917,7 @@ class V11AmendmentTest(unittest.TestCase):
             expected = {**FROZEN_RPC_SHA256, **FROZEN_DB_SHA256}[filename]
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v13.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v14.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v8.json")
 
     def test_docs_publish_the_v11_delta(self) -> None:
@@ -2962,10 +2962,21 @@ class V13AmendmentTest(unittest.TestCase):
         def normalise(payload: dict) -> dict:
             payload = _normalise_refresh_refs(json.loads(json.dumps(payload)))
 
+            # v14 adds `fields` to a syllabus.get item and relaxes decisions minItems on
+            # syllabus.alignment.review. Strip exactly that delta so this stays a v13-vs-v12 check.
+            response_items = payload.get("response", {}).get("properties", {}).get("items")
+            if isinstance(response_items, dict) and isinstance(response_items.get("items"), dict):
+                properties = response_items["items"].get("properties")
+                if isinstance(properties, dict):
+                    properties.pop("fields", None)
+            decisions = payload.get("request", {}).get("properties", {}).get("decisions")
+            if isinstance(decisions, dict):
+                decisions["minItems"] = 1
+
             def walk(node: object) -> None:
                 if isinstance(node, dict):
                     if node.get("contract_version") == {"const": 12}:
-                        node["contract_version"] = {"const": 13}
+                        node["contract_version"] = {"const": 14}
                     for value in node.values():
                         walk(value)
                 elif isinstance(node, list):
@@ -3039,7 +3050,7 @@ class ChecklistConfirmationWireTest(unittest.TestCase):
             )
 
     def test_the_wire_version_moved_only_for_the_blueprint(self) -> None:
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 13)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 14)
         answer = contracts.method_schema("attempt.submit")["request"]["properties"]["answer"]
         self.assertFalse(answer["additionalProperties"])
         self.assertEqual(sorted(answer["properties"]), ["kind", "selection", "text"])

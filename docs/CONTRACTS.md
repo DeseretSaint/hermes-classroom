@@ -1,6 +1,7 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v13** (H-08 authored-course export; v12 = H-26 student syllabus intake, v11 = H-21 slice A,
+Status: **frozen at v14** (H-26b syllabus read projection; v13 = H-08 authored-course export,
+v12 = H-26 student syllabus intake, v11 = H-21 slice A,
 v10 = H-01, v9 = M3-B1, v8 = M1-P4, v7 = CB-015 residual, v6 = CB-011, v5 = CB-026, v4 = CB-024,
 v3 = CB-022, v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
@@ -17,16 +18,17 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v13.json` | 13 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v14.json` | 14 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v8.json` | 8 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v4.json` | 4 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v12** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json` and `rpc.v12.json`), the
+The v1 **to v13** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`, `rpc.v12.json` and
+`rpc.v13.json`), the
 v1 **to v7** files for `cb.db` (including `db.v3.json`, `db.v5.json` and `db.v7.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v3 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v12.json`, `db.v7.json`,
+as immutable history: the superseded current files are `rpc.v13.json`, `db.v7.json`,
 `errors.v3.json` and `jobs.v3.json`.
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
@@ -1581,3 +1583,46 @@ pack-backed course.
    `lesson.begin` `mode: resume` when `resumable`/`reattachable` is true. If the host cannot
    re-enter a stored session after a process restart, Session-lifecycle work (Cinder + Sentinel)
    must say so, and the banner degrades to **Start a fresh run** only.
+
+## v14 delta (H-26b) — a stated due date and weight reach the learner, and an all-aligned mapping is reviewable
+
+H-27 wired the learner syllabus review against the merged H-26a handlers and found two read/contract
+gaps. Both are additive; no state machine, table, column or migration moves, and `cb.db` stays v8.
+
+**1. `syllabus.get` serves stated assessment fields.** `parse_document` built `due`, `weight` and
+`weight_unit` per assessment, but `_store_parse` persisted only the title item, and a
+`"<title> (due)"` row was appended only when the due date was *unknown*. A file that stated
+`Due: 2026-09-01` and `5%` therefore served neither. The fix is at parse time, not read time: the
+single `assessment` item now carries an optional `fields` object in `syllabus_items.value_json`.
+
+```json
+"fields": {
+  "due":    {"value": "2026-09-01", "state": "extracted", "anchors": [{"block_id": "blk…", "quote": "Due: 2026-09-01"}], "derivation": "explicit"},
+  "weight": {"value": 5, "state": "extracted", "anchors": [{"block_id": "blk…", "quote": "5%"}], "derivation": "explicit"},
+  "weight_unit": "percent"
+}
+```
+
+`due` and `weight` reuse the item shape (`value`/`state`/`anchors`/`derivation`, optional
+`candidates`); `weight_unit` is `percent`, `points` or `unknown`. An unknown field keeps
+`state: "unknown"` with no value and no anchors, and the `"<title> (due)"` placeholder row is still
+emitted exactly as before, so v13 consumers are unaffected. The item `kind` stays `assessment`; the
+cb.db v8 enum is closed and unchanged. Revisions parsed before v14 carry no `fields`; consumers key
+off its presence and nothing is backfilled.
+
+**2. An all-aligned mapping can be reviewed.** `syllabus.alignment.review` required
+`decisions` `minItems: 1`, and every action targeted a non-aligned state. A mapping the
+deterministic aligner resolved entirely to `aligned` had no legal decision, so `reviewed_revision`
+could never be set and `plan.approve` refused `SYLLABUS_UNREVIEWED` forever. v14 relaxes
+`decisions` to `minItems: 0`, where an empty array means *the learner reviewed the mapping and
+accepted every row as aligned*. The claim is verified by the backend, not trusted: after the
+`alignment_revision` fence, an empty array is refused with `VALIDATION_FAILED` (detail:
+`alignment_revision`, `conflict`, `partial`, `unmatched`, `stale` counts) unless this course and
+syllabus revision have no non-stale `partial`/`unmatched`/`conflict`/`stale` row and no stale row at
+all. `unmatched` and `partial` do not block `reviewed_revision` on their own, so without the guard a
+caller could mark a mapping reviewed without acknowledging a single row. No new action value and no
+new error code: the guard is one branch, and it is the only relaxed request constraint in v14.
+
+**Not in this delta.** No new method, error code, job kind, vocabulary value, table, column or
+migration; no removal or renumbering of the `(due)` placeholder row; no second parser in
+`syllabus.get`; no UI change (Vellum re-points H-27's adapter to `fields`).
