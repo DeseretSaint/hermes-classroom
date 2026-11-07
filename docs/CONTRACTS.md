@@ -96,6 +96,24 @@ HTTP error. That keeps the Desktop half to one branch (`response.ok`) instead of
 * Ids are minted by Coursebook (`identifier` pattern). Titles, paths and chat session ids are never
   primary keys — that is the R1 finding in `AUDIT.md`.
 
+### Verification checklist confirmation rides `selection` (no version change)
+
+A `verification`-format check with declared `items[{id, label}]` is confirmed by an ordinary
+`attempt.submit` answer:
+
+```json
+{ "kind": "selection", "selection": ["item_1", "item_2"] }
+```
+
+The entries are the check's **declared item ids** (`check.get` serves them; localized labels are not
+identity). Ticking every declared item is `pass` with `evidence_class: self_reported`; a subset is
+`partial`; an empty selection (`checklist_no_items_confirmed`) or an id the check did not declare
+(`unknown_check_item`) is `VALIDATION_FAILED` before any attempt row is written. The `answer` object
+stays closed — no confirmation field is added — and `checks.reference_json` stays `rubric_only`.
+This is the kernel reading an existing field, not a v11 amendment: `cb.rpc` remains at 10 and
+`cb.db` does not move. A parent-recipe course is excluded; its recording path is
+`observation.record` (`docs/CHECKLIST-CONFIRMATION.md` §6).
+
 ## v2 delta (CB-018)
 
 v1 froze 24 methods. Operator review found screens the UX contract requires but the wire could not

@@ -133,6 +133,16 @@ export const DropdownMenuItem = () => null
 export const DropdownMenuTrigger = () => null
 export const DropdownMenuContent = () => null
 export const Codicon = () => null
+export const Checkbox = (props) =>
+  el('input', {
+    type: 'checkbox',
+    checked: Boolean(props.checked),
+    disabled: Boolean(props.disabled),
+    id: props.id || null,
+    'aria-label': props['aria-label'] || null,
+    'data-cb-check-tick': props['data-cb-check-tick'] || null,
+    onChange: () => props.onCheckedChange && props.onCheckedChange(!props.checked)
+  })
 export const SandboxedFrame = () => null
 export const Tabs = () => null
 export const Tip = () => null

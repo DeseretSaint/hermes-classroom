@@ -25,7 +25,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from . import api, db, evidence, segments
+from . import api, db, evidence, prompts, segments
 
 # ── classification ──────────────────────────────────────────────────────────
 
@@ -491,6 +491,9 @@ def continuation_prompt(*, verdict: str, next_action: str, evidence_class: str =
     lines.append(action)
     if objective_id:
         lines.append(f"Objective: {objective_id}.")
+    # Frozen chat directive (docs/ASSESSMENT-BREADTH.md §7.4). Contract-independent: it is chat
+    # instruction text, never a check field.
+    lines.append(prompts.CHAT_CAPABILITY_RULE)
     return " ".join(lines)
 
 

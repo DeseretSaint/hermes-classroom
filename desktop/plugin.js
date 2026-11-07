@@ -3910,7 +3910,67 @@ const EVIDENCE_CLASS_COPY = {
   cold: 'Cold attempt',
   hinted: 'Hinted',
   answer_shown: 'Answer shown',
+  self_reported: 'Self-reported',
+  parent_reported: 'Parent reported',
   override: 'Override — not independent evidence'
+}
+
+// Frozen copy, docs/CHECKLIST-CONFIRMATION.md §9.4. A confirmation checklist is the learner's own
+// statement that they did the steps; it is never an independent observation, so neither string may
+// be softened into "mastered", "verified", "passed independently" or an unqualified "complete".
+const SELF_REPORTED_CONFIRM_COPY =
+  'You confirmed every step. This is your own report, not an independent check.'
+const SELF_REPORTED_EVIDENCE_COPY =
+  'Self-reported — you told us. It cannot count as independent evidence.'
+
+/** The notice a bare evidence-class badge cannot carry, keyed by class. */
+const EVIDENCE_CLASS_NOTICE = {
+  self_reported: SELF_REPORTED_EVIDENCE_COPY
+}
+
+/**
+ * A self-reported attempt never renders the unqualified `Passed` label: the badge carries the
+ * qualifier with it wherever attempts are listed, so a row read out of context cannot claim an
+ * independent pass.
+ */
+function verdictLabel(verdict, evidenceClass) {
+  if (evidenceClass === 'self_reported' && verdict === 'pass') return 'Self-reported pass'
+  return VERDICT_COPY[verdict] || verdict || 'unknown'
+}
+
+/** Next-step copy for a self-reported verdict; the generic strings say "complete" unqualified. */
+const SELF_REPORTED_NEXT_ACTION = {
+  complete_objective:
+    'This objective advances on your own report, not an independent check. It will come back for review.',
+  review_objective:
+    'Access advanced on your own report. It is not independent evidence and it will return for review.',
+  continue: 'Continue when you are ready; what you confirmed here was your own report.',
+  retry_attempt: 'Tick the remaining steps and submit again. This stays your own report.'
+}
+
+function nextActionCopy(result) {
+  if (!result) return 'The backend recorded the next action.'
+  if (result.evidence_class === 'self_reported' && SELF_REPORTED_NEXT_ACTION[result.next_action]) {
+    return SELF_REPORTED_NEXT_ACTION[result.next_action]
+  }
+  return NEXT_ACTION_COPY[result.next_action] || 'The backend recorded the next action.'
+}
+
+/**
+ * The checklist answer object sent to `attempt.submit`.
+ *
+ * Frozen by docs/CHECKLIST-CONFIRMATION.md §9.2: `kind: "selection"` over the check's own item ids.
+ * The label is the question, never the answer — sending labels, or mixing in the typed text, is a
+ * different answer than the one the kernel grades (`unknown_check_item` otherwise).
+ */
+function checklistAnswer(ids) {
+  return { kind: 'selection', selection: (ids || []).slice() }
+}
+
+/** The items a check card may tick: a served `verification` stimulus with declared items. */
+function checklistItems(stimulus) {
+  if (!stimulus || stimulus.format !== 'verification') return []
+  return Array.isArray(stimulus.items) ? stimulus.items.filter((item) => item && item.id && item.label) : []
 }
 
 const VERDICT_COPY = {
@@ -3948,7 +4008,21 @@ function StateText({ state }) {
 }
 
 function EvidenceClassText({ value }) {
-  return jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: EVIDENCE_CLASS_COPY[value] || value || 'unknown' })
+  const label = EVIDENCE_CLASS_COPY[value] || value || 'unknown'
+  const notice = EVIDENCE_CLASS_NOTICE[value]
+  if (!notice) {
+    return jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: label })
+  }
+  // The frozen §9.4 sentence travels with the class wherever it is shown; a badge alone ("Self-
+  // reported") could be read as a stronger claim than the learner actually made.
+  return jsxs('span', {
+    className: 'flex flex-wrap items-baseline gap-1',
+    'data-cb-evidence-notice': value,
+    children: [
+      jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: label }),
+      jsx('span', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: notice })
+    ]
+  })
 }
 
 function Hairline() {
@@ -4053,24 +4127,165 @@ function attemptAnswer(answer) {
 }
 
 /**
+ * The graded half of a check, as a pure component so a Node test can render it without a backend.
+ *
+ * A `self_reported` pass never renders the generic "Passed" label: it renders the frozen §9.4
+ * sentence, which is the only claim the learner actually made. A checklist result shows the
+ * returned `criteria[]` against the served items (id → label, `met` → ticked/not) and a `partial`
+ * keeps the check open by inviting the remaining steps.
+ */
+function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewExample, onExplain }) {
+  const selfReported = Boolean(result && result.evidence_class === 'self_reported')
+  const confirmed = (checklist || []).map((item) => {
+    const match = (criteria || []).find((criterion) => criterion && criterion.id === item.id)
+    return { id: item.id, label: item.label, met: Boolean(match && match.met) }
+  })
+  const confirmedCount = confirmed.filter((item) => item.met).length
+  const selfReportedPass = selfReported && result.verdict === 'pass'
+  return jsxs('div', {
+    className: 'flex flex-col gap-2',
+    'data-cb-verdict': result.verdict,
+    'data-cb-evidence-class': result.evidence_class || null,
+    children: [
+      selfReportedPass
+        ? jsx('strong', {
+            className: 'max-w-prose text-sm font-medium',
+            'data-cb-self-reported': 'confirmation',
+            children: SELF_REPORTED_CONFIRM_COPY
+          })
+        : jsx('div', { className: 'text-sm font-medium', children: verdictLabel(result.verdict, result.evidence_class) }),
+
+      confirmed.length > 0
+        ? jsxs('div', {
+            className: 'flex flex-col gap-1',
+            'data-cb-check-criteria': String(confirmed.length),
+            children: [
+              jsx(sdk.PanelSectionLabel, { children: 'STEPS YOU CONFIRMED' }),
+              jsx('ul', {
+                className: 'flex flex-col gap-1.5',
+                children: confirmed.map((item, index) =>
+                  jsxs(
+                    'li',
+                    {
+                      className: 'flex items-start gap-2',
+                      'data-cb-criterion': item.id,
+                      'data-cb-criterion-met': item.met ? 'true' : 'false',
+                      children: [
+                        jsx(sdk.Checkbox, {
+                          checked: item.met,
+                          disabled: true,
+                          id: `cb-result-item-${index}`,
+                          'aria-label': `${item.met ? 'Confirmed' : 'Not confirmed'}: ${item.label}`
+                        }),
+                        jsx('label', {
+                          className: 'text-sm leading-snug',
+                          htmlFor: `cb-result-item-${index}`,
+                          children: item.label
+                        }),
+                        jsx('span', {
+                          className: 'ml-auto text-xs text-(--ui-text-secondary)',
+                          children: item.met ? 'Confirmed' : 'Not confirmed'
+                        })
+                      ]
+                    },
+                    item.id
+                  )
+                )
+              })
+            ]
+          })
+        : criteria.length > 0
+          ? jsx('ul', {
+              className: 'flex flex-col gap-1',
+              children: criteria.map((item, index) =>
+                jsxs(
+                  'li',
+                  {
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    children: [
+                      jsx(sdk.Codicon, { name: item.met ? 'pass' : 'circle-slash', size: '0.75rem' }),
+                      jsx('span', { className: 'ml-1', children: item.observed || item.id })
+                    ]
+                  },
+                  `${item.id || 'criterion'}-${index}`
+                )
+              )
+            })
+          : jsx(QuietNote, { children: 'No criterion detail was returned for this verdict.' }),
+
+      confirmed.length > 0 && !selfReportedPass
+        ? jsx(QuietNote, {
+            children: `You confirmed ${confirmedCount} of ${confirmed.length} steps. Tick the remaining steps and submit again; this stays your own report, not an independent check.`
+          })
+        : null,
+
+      jsx(QuietNote, { children: nextActionCopy(result) }),
+
+      selfReportedPass
+        ? null
+        : jsxs('div', {
+            className: 'flex flex-wrap items-center gap-2',
+            children: [
+              confirmed.length > 0
+                ? jsx(sdk.Button, {
+                    variant: 'default',
+                    size: 'sm',
+                    onClick: onResumeChecklist,
+                    children: 'Tick the remaining steps'
+                  })
+                : jsx(sdk.Button, {
+                    variant: 'secondary',
+                    size: 'sm',
+                    onClick: onNewExample,
+                    children: 'Try a new example'
+                  }),
+              confirmed.length > 0
+                ? null
+                : jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onExplain, children: 'Explain the difference' })
+            ]
+          })
+    ]
+  })
+}
+
+/**
  * One attempt, started and finished in the pane or on the lesson page.
  *
  * Idempotency is enrollment + check + a per-view nonce: retrying a failed grade re-sends the SAME
- * nonce, so the backend returns the stored attempt instead of writing a second one. The answer
- * carries both `text` and a one-element `selection`, because a closed-form check may be graded on
- * either field and the contract permits both.
+ * nonce, so the backend returns the stored attempt instead of writing a second one. A written
+ * answer carries both `text` and a one-element `selection`; a checklist answer carries only
+ * `kind: "selection"` with the ticked item ids.
  */
-function AttemptControls({ enrollmentId, objectiveId, check, revision, implemented, bindingState, onCommitted }) {
+function AttemptControls({
+  enrollmentId,
+  objectiveId,
+  check,
+  revision,
+  implemented,
+  bindingState,
+  onCommitted,
+  parentLed = false
+}) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const [text, setText] = useState('')
+  const [ticked, setTicked] = useState([])
   const [phase, setPhase] = useState('awaiting_input')
   const [result, setResult] = useState(null)
   const [resultCheck, setResultCheck] = useState(null)
   const [error, setError] = useState(null)
   const [overrideOpen, setOverrideOpen] = useState(false)
   const nonceRef = useRef(null)
+  const answerRef = useRef(null)
   const resultRef = useRef(null)
   const detached = Boolean(bindingState && bindingState !== 'active')
+
+  // What this card is asking for. A `verification` stimulus with declared items is a checklist and
+  // is answered with the item ids; every other stimulus keeps the written-answer path.
+  const stimulus = check ? check.stimulus || null : null
+  const servedItems = stimulus && Array.isArray(stimulus.items) ? stimulus.items : []
+  // A parent-led lesson is observed by an adult through the observation control (H-21), never ticked here.
+  const checklist = parentLed ? [] : checklistItems(stimulus)
+  const readOnlyItems = parentLed ? [] : checklist.length > 0 ? [] : servedItems
 
   // The answer form unmounts when a verdict arrives; put focus on the verdict itself so a keyboard
   // user is not dropped back on <body> with no idea whether the submission went through.
@@ -4086,6 +4301,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
   useEffect(() => {
     if (result) return
     setText('')
+    setTicked([])
     setPhase('awaiting_input')
     setResult(null)
     setResultCheck(null)
@@ -4096,11 +4312,17 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
 
   const submit = useCallback(async () => {
     if (!check) return
-    const answer = text.trim()
-    if (!answer) {
+    // A checklist submits the ticked item ids, never the labels and never the typed text (§9.2).
+    const answer = checklist.length > 0 ? checklistAnswer(ticked) : attemptAnswer(text.trim())
+    if (checklist.length > 0 && ticked.length === 0) {
+      setError({ code: 'VALIDATION_FAILED', message: 'Tick at least one step before submitting.' })
+      return
+    }
+    if (checklist.length === 0 && !text.trim()) {
       setError({ code: 'VALIDATION_FAILED', message: 'Write an answer before submitting.' })
       return
     }
+    answerRef.current = answer
     if (!nonceRef.current) nonceRef.current = newOperationId('attempt')
     setPhase('submitting')
     setError(null)
@@ -4111,7 +4333,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
         check_id: check.check_id,
         check_version: check.check_version,
         attempt_nonce: nonceRef.current,
-        answer: attemptAnswer(answer)
+        answer
       },
       {
         idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
@@ -4129,7 +4351,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
     setResultCheck(check)
     setPhase(graded.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
     if (onCommitted) onCommitted(graded)
-  }, [check, text, enrollmentId, revision, onCommitted])
+  }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted])
 
   const retryGrading = useCallback(async () => {
     if (!check || !nonceRef.current) return
@@ -4142,7 +4364,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
         check_id: check.check_id,
         check_version: check.check_version,
         attempt_nonce: nonceRef.current,
-        answer: attemptAnswer(text.trim())
+        answer: answerRef.current || (checklist.length > 0 ? checklistAnswer(ticked) : attemptAnswer(text.trim()))
       },
       {
         idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
@@ -4158,7 +4380,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
     setResultCheck(check)
     setPhase(response.result.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
     if (onCommitted) onCommitted(response.result)
-  }, [check, text, enrollmentId, revision, onCommitted])
+  }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted])
 
   const moveOn = useCallback(async () => {
     if (!check) return
@@ -4193,9 +4415,23 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
   const criteria = (result && result.criteria) || []
   // The learner-facing question, projected by `check.get`. `check.open` carries identity only, so a
   // build without that read simply has no stimulus here and shows the answer form alone.
-  const stimulus = check.stimulus || null
   const choices = stimulus && Array.isArray(stimulus.choices) ? stimulus.choices : []
-  const items = stimulus && Array.isArray(stimulus.items) ? stimulus.items : []
+  const toggleItem = (id, next) => {
+    setTicked((previous) => {
+      const already = previous.includes(id)
+      if (next && !already) return [...previous, id]
+      if (!next && already) return previous.filter((item) => item !== id)
+      return previous
+    })
+  }
+  const checklistEmpty = checklist.length > 0 && ticked.length === 0
+  // A partial keeps the check open: tick the rest and submit again. That is a new attempt, so the
+  // per-view nonce is dropped rather than replaying the stored partial.
+  const resumeChecklist = () => {
+    nonceRef.current = null
+    setError(null)
+    setPhase('awaiting_input')
+  }
 
   return jsxs('div', {
     className: 'flex flex-col gap-2',
@@ -4233,28 +4469,69 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
                     )
                   })
                 : null,
-              items.length > 0
+              checklist.length > 0
                 ? jsxs('div', {
                     className: 'flex flex-col gap-1',
-                    'data-cb-check-items': String(items.length),
+                    'data-cb-check-items': String(checklist.length),
+                    'data-cb-check-items-mode': 'selection',
                     children: [
                       jsx(sdk.PanelSectionLabel, { children: 'CHECKLIST' }),
-                      // One label per item, printed here and nowhere else in the lesson.
+                      // One row per declared item: the served id is the submitted value, the label
+                      // is the question. Ticking is the answer; nothing is typed here.
                       jsx('ul', {
-                        className: 'flex flex-col gap-1',
+                        className: 'flex flex-col gap-1.5',
                         'aria-label': 'Checklist',
-                        children: items.map((item) =>
-                          jsx('li', {
-                            key: item.id,
-                            className: 'text-sm leading-snug',
-                            'data-cb-check-item': item.id,
-                            children: item.label
-                          })
+                        children: checklist.map((item, index) =>
+                          jsxs(
+                            'li',
+                            {
+                              className: 'flex items-start gap-2',
+                              'data-cb-check-item': item.id,
+                              children: [
+                                jsx(sdk.Checkbox, {
+                                  'aria-describedby': 'cb-attempt-help',
+                                  checked: ticked.includes(item.id),
+                                  'data-cb-check-tick': item.id,
+                                  disabled: locked || detached,
+                                  id: `cb-check-item-${index}`,
+                                  onCheckedChange: (next) => toggleItem(item.id, next === true)
+                                }),
+                                jsx('label', {
+                                  className: 'text-sm leading-snug',
+                                  htmlFor: `cb-check-item-${index}`,
+                                  children: item.label
+                                })
+                              ]
+                            },
+                            item.id
+                          )
                         )
                       })
                     ]
                   })
-                : null
+                : readOnlyItems.length > 0
+                  ? jsxs('div', {
+                      className: 'flex flex-col gap-1',
+                      'data-cb-check-items': String(readOnlyItems.length),
+                      'data-cb-check-items-mode': 'read_only',
+                      children: [
+                        jsx(sdk.PanelSectionLabel, { children: 'CHECKLIST' }),
+                        // One label per item, printed here and nowhere else in the lesson.
+                        jsx('ul', {
+                          className: 'flex flex-col gap-1',
+                          'aria-label': 'Checklist',
+                          children: readOnlyItems.map((item) =>
+                            jsx('li', {
+                              key: item.id,
+                              className: 'text-sm leading-snug',
+                              'data-cb-check-item': item.id,
+                              children: item.label
+                            })
+                          )
+                        })
+                      ]
+                    })
+                  : null
             ]
           })
         : null,
@@ -4262,28 +4539,40 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
       showForm
         ? jsxs('div', {
             className: 'flex flex-col gap-2',
+            'data-cb-answer-kind': checklist.length > 0 ? 'selection' : 'text',
             children: [
-              jsx('label', {
-                className: 'text-xs font-medium text-(--ui-text-secondary)',
-                htmlFor: 'cb-attempt-answer',
-                children: 'Your answer'
-              }),
-              jsx(sdk.Textarea, {
-                id: 'cb-attempt-answer',
-                'aria-describedby': 'cb-attempt-help',
-                disabled: locked || detached,
-                onChange: (event) => setText(event.target.value),
-                placeholder: 'Type the answer you would give in the lesson.',
-                rows: 3,
-                value: text
-              }),
-              jsx('p', {
-                id: 'cb-attempt-help',
-                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-                children: supports('check.get')
-                  ? 'The question and any choices are shown above; this field records what you answered.'
-                  : 'The question and any choices are in the teaching chat. This field records your answer and the backend grades it once.'
-              }),
+              checklist.length > 0
+                ? jsx('p', {
+                    id: 'cb-attempt-help',
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    children:
+                      'Tick every step you actually completed. Your ticks are recorded as your own report, not as an independent check.'
+                  })
+                : jsx('label', {
+                    className: 'text-xs font-medium text-(--ui-text-secondary)',
+                    htmlFor: 'cb-attempt-answer',
+                    children: 'Your answer'
+                  }),
+              checklist.length > 0
+                ? null
+                : jsx(sdk.Textarea, {
+                    id: 'cb-attempt-answer',
+                    'aria-describedby': 'cb-attempt-help',
+                    disabled: locked || detached,
+                    onChange: (event) => setText(event.target.value),
+                    placeholder: 'Type the answer you would give in the lesson.',
+                    rows: 3,
+                    value: text
+                  }),
+              checklist.length > 0
+                ? null
+                : jsx('p', {
+                    id: 'cb-attempt-help',
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    children: supports('check.get')
+                      ? 'The question and any choices are shown above; this field records what you answered.'
+                      : 'The question and any choices are in the teaching chat. This field records your answer and the backend grades it once.'
+                  }),
               detached
                 ? jsx(QuietNote, {
                     children: 'This lesson’s chat binding is detached, so Submit is disabled until it is reconciled.'
@@ -4295,20 +4584,31 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
                   jsx(sdk.Button, {
                     variant: 'default',
                     size: 'sm',
-                    disabled: locked || detached || !text.trim(),
+                    disabled: locked || detached || (checklist.length > 0 ? checklistEmpty : !text.trim()),
                     onClick: submit,
-                    children: locked ? 'Submitting' : 'Submit answer'
+                    children: locked ? 'Submitting' : checklist.length > 0 ? 'Submit confirmation' : 'Submit answer'
                   }),
-                  jsx(sdk.Button, {
-                    variant: 'text',
-                    size: 'sm',
-                    disabled: locked || !text,
-                    onClick: () => {
-                      setText('')
-                      setError(null)
-                    },
-                    children: 'Edit answer'
-                  })
+                  checklist.length > 0
+                    ? jsx(sdk.Button, {
+                        variant: 'text',
+                        size: 'sm',
+                        disabled: locked || ticked.length === 0,
+                        onClick: () => {
+                          setTicked([])
+                          setError(null)
+                        },
+                        children: 'Clear ticks'
+                      })
+                    : jsx(sdk.Button, {
+                        variant: 'text',
+                        size: 'sm',
+                        disabled: locked || !text,
+                        onClick: () => {
+                          setText('')
+                          setError(null)
+                        },
+                        children: 'Edit answer'
+                      })
                 ]
               })
             ]
@@ -4331,50 +4631,20 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
             ref: resultRef,
             tabIndex: -1,
             children: [
-              jsx('div', { className: 'text-sm font-medium', children: VERDICT_COPY[result.verdict] || result.verdict }),
-              criteria.length > 0
-                ? jsx('ul', {
-                    className: 'flex flex-col gap-1',
-                    children: criteria.map((item, index) =>
-                      jsxs(
-                        'li',
-                        {
-                          className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-                          children: [
-                            jsx(sdk.Codicon, { name: item.met ? 'pass' : 'circle-slash', size: '0.75rem' }),
-                            jsx('span', { className: 'ml-1', children: item.observed || item.id })
-                          ]
-                        },
-                        `${item.id || 'criterion'}-${index}`
-                      )
-                    )
-                  })
-                : jsx(QuietNote, { children: 'No criterion detail was returned for this verdict.' }),
-              jsx(QuietNote, { children: NEXT_ACTION_COPY[result.next_action] || 'The backend recorded the next action.' }),
-              jsxs('div', {
-                className: 'flex flex-wrap items-center gap-2',
-                children: [
-                  jsx(sdk.Button, {
-                    variant: 'secondary',
-                    size: 'sm',
-                    onClick: () => {
-                      setText('')
-                      setResult(null)
-                      setResultCheck(null)
-                      setPhase('awaiting_input')
-                      nonceRef.current = null
-                    },
-                    children: 'Try a new example'
-                  }),
-                  jsx(sdk.Button, {
-                    variant: 'text',
-                    size: 'sm',
-                    onClick: () => {
-                      setPhase('awaiting_input')
-                    },
-                    children: 'Explain the difference'
-                  })
-                ]
+              jsx(AttemptVerdict, {
+                result,
+                criteria,
+                checklist,
+                onResumeChecklist: resumeChecklist,
+                onNewExample: () => {
+                  setText('')
+                  setTicked([])
+                  setResult(null)
+                  setResultCheck(null)
+                  setPhase('awaiting_input')
+                  nonceRef.current = null
+                },
+                onExplain: () => setPhase('awaiting_input')
               })
             ]
           })
@@ -6954,6 +7224,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
           revision: page ? page.revision : 0,
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
+          parentLed: Boolean(row && row.recipe === 'parent'),
           onCommitted: () => {
             if (onChanged) onChanged()
           }
@@ -7229,7 +7500,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                         jsxs('span', {
                           className: 'flex items-center gap-2',
                           children: [
-                            jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: VERDICT_COPY[attempt.verdict] || attempt.verdict }),
+                            jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: verdictLabel(attempt.verdict, attempt.evidence_class) }),
                             jsx(EvidenceClassText, { value: attempt.evidence_class })
                           ]
                         })
@@ -7419,7 +7690,7 @@ function OverviewView({ row, page, review, quizzes, implemented, onOpenSection, 
                 children: [
                   jsx('span', {
                     className: 'text-(--ui-text-secondary)',
-                    children: `${VERDICT_COPY[recent.verdict] || recent.verdict} · ${whenLabel(recent.committed_at || recent.created_at)}`
+                    children: `${verdictLabel(recent.verdict, recent.evidence_class)} · ${whenLabel(recent.committed_at || recent.created_at)}`
                   }),
                   jsx(EvidenceClassText, { value: recent.evidence_class })
                 ]
@@ -8024,7 +8295,7 @@ function QuizzesView({ row, quizzes, implemented, onOpenSection, onChanged }) {
                         jsxs('div', {
                           className: 'flex flex-wrap items-center gap-2',
                           children: [
-                            jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: VERDICT_COPY[attempt.verdict] || attempt.verdict }),
+                            jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: verdictLabel(attempt.verdict, attempt.evidence_class) }),
                             jsx(EvidenceClassText, { value: attempt.evidence_class }),
                             jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: whenLabel(attempt.committed_at || attempt.created_at) })
                           ]
@@ -8348,7 +8619,7 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
                       jsxs('span', {
                         className: 'flex items-center gap-2',
                         children: [
-                          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: VERDICT_COPY[attempt.verdict] || attempt.verdict }),
+                          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: verdictLabel(attempt.verdict, attempt.evidence_class) }),
                           jsx(EvidenceClassText, { value: attempt.evidence_class })
                         ]
                       })
@@ -8899,6 +9170,7 @@ function LessonPaneBody({ binding, storedId }) {
                 revision,
                 implemented: backendWire.implemented,
                 bindingState: bindingStatus,
+                parentLed: Boolean(row && row.recipe === 'parent'),
                 onCommitted: () => {
                   page.reload()
                   library.reload()
@@ -11832,15 +12104,19 @@ function CoursebookSettings() {
 // server-owned document, so a Node test can render them without a backend, a chat or a window.
 export {
   AttemptControls,
+  AttemptVerdict,
   BackendUnavailable,
   CB_TOKENS,
   CB_TOKEN_NAMES,
   COURSE_SCOPES,
+  EvidenceClassText,
   FieldRail,
   FieldDeskHome,
   FieldNotesStrip,
   FieldQuestView,
   LESSON_VIEWS,
+  SELF_REPORTED_CONFIRM_COPY,
+  SELF_REPORTED_EVIDENCE_COPY,
   LearnerPlanView,
   LessonDocumentView,
   MediaFrame,
@@ -11856,6 +12132,8 @@ export {
   cbModeFromTheme,
   cbMotionPreference,
   cbScopeStyle,
+  checklistAnswer,
+  checklistItems,
   deskEstimateLabel,
   lessonViewOptions,
   mainlineObjective,

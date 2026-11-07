@@ -52,7 +52,9 @@ from . import sources as source_ledger
 from . import artifacts
 from . import lesson_document
 from . import policy as capability_policy
+from . import prompts
 from . import rubrics
+from . import validators
 from .packs import MIN_RUBRIC_CRITERIA
 from .research import (
     ResearchBudget,
@@ -136,7 +138,7 @@ PLAN_PROMPT_VERSION = "plan-prompt.v3"
 PLAN_PROMPT_VERSION_V2 = "plan-prompt.v4"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
-LESSON_PROMPT_VERSION = "lesson-prompt.v6"
+LESSON_PROMPT_VERSION = "lesson-prompt.v7"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v2"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
@@ -2336,6 +2338,9 @@ def _lesson_instructions(
     if recipe == "parent":
         lines.append("The check is a parent observation (kind 'observation'); include parent_notes and "
                      "supervision_notes.")
+    # Frozen chat directive (docs/ASSESSMENT-BREADTH.md §7.4): the lesson page is read inside a
+    # teaching chat, so it must not promise a capability this build does not have.
+    lines.append(prompts.CHAT_CAPABILITY_RULE)
     return "\n".join(lines)
 
 
@@ -5910,6 +5915,62 @@ def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources
     }
 
 
+def _accepted_forms(check: dict[str, Any]) -> list[str]:
+    """Every string the authored check declares as a correct answer, in one stable order.
+
+    The generated lesson schema states its answer vocabulary as three fields: one
+    ``reference_answer``, a list of ``accepted_answers``, and ``accepted_alternatives`` groups
+    (variant forms of one accepted answer, e.g. kana and romaji). All of them are correct by the
+    author's own declaration, so the stored ``exact`` reference carries the union rather than only
+    the first field.
+    """
+    forms: list[str] = []
+    for candidate in [check.get("reference_answer")] + list(check.get("accepted_answers") or []):
+        if not isinstance(candidate, str):
+            continue
+        text = candidate.strip()
+        if text and text not in forms:
+            forms.append(text)
+    for group in check.get("accepted_alternatives") or []:
+        if not isinstance(group, list):
+            continue
+        for candidate in group:
+            if not isinstance(candidate, str):
+                continue
+            text = candidate.strip()
+            if text and text not in forms:
+                forms.append(text)
+    return forms
+
+
+def _reference_payload(check: dict[str, Any]) -> dict[str, Any]:
+    """Build the stored reference with an explicit grading lane.
+
+    The learner's answer reaches the backend on ``answer.text`` for every generated check: the
+    pane shows choices and checklist items as text and submits what the learner typed. So a
+    generated quiz — text or selection format — is closed-form and takes the deterministic
+    ``exact`` lane over the union of its declared correct forms.
+
+    A verification checklist and a parent observation are *self-reported*: their accepted answers
+    describe a confirmation ("all three steps ticked honestly"), not a string a learner types.
+    They declare ``rubric_only`` explicitly, which is the open lane's own tag. That is a recorded
+    decision, not the old accidental fallthrough: the checklist confirmation has no collection
+    seam in 0.1.0 (see ``docs/GRADING-LANES.md``).
+    """
+    legacy = {
+        "reference_answer": check["reference_answer"],
+        "accepted_answers": list(check["accepted_answers"]),
+        "accepted_alternatives": [list(group) for group in check.get("accepted_alternatives") or []],
+    }
+    kind = str(check.get("kind") or "quiz")
+    stimulus_format = str((check.get("stimulus") or {}).get("format") or "text")
+    if kind == "observation" or stimulus_format == "verification":
+        return validators.seal_reference({"kind": "rubric_only", **legacy})
+    return validators.seal_reference(
+        {"kind": "exact", "answers": _accepted_forms(check), **legacy}
+    )
+
+
 def _check_payloads(lesson: dict[str, Any], *, locale: str | None) -> dict[str, Any]:
     check = lesson["check"]
     stimulus = {
@@ -5924,11 +5985,7 @@ def _check_payloads(lesson: dict[str, Any], *, locale: str | None) -> dict[str, 
         "scaffolds": dict(check["scaffolds"]),
         "assistance_policy": dict(check["assistance_policy"]),
     }
-    reference = {
-        "reference_answer": check["reference_answer"],
-        "accepted_answers": list(check["accepted_answers"]),
-        "accepted_alternatives": [list(group) for group in check.get("accepted_alternatives") or []],
-    }
+    reference = _reference_payload(check)
     rubric = {"criteria": [dict(item) for item in check["rubric"]]}
     return {"stimulus": stimulus, "reference": reference, "rubric": rubric, "locale": locale}
 
