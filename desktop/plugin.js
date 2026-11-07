@@ -1145,6 +1145,11 @@ function PackPreview({ preview, existing }) {
             ]
           })
         : null,
+      jsx('p', {
+        className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+        'data-cb-breadth': 'pack-plan',
+        children: PLAN_BREADTH_DISCLOSURE
+      }),
       jsx(sdk.PanelSectionLabel, { children: `OUTCOMES (${objectives.length})` }),
       jsx('div', {
         className: 'flex flex-col',
@@ -3910,8 +3915,25 @@ const EVIDENCE_CLASS_COPY = {
   cold: 'Cold attempt',
   hinted: 'Hinted',
   answer_shown: 'Answer shown',
-  override: 'Override — not independent evidence'
+  override: 'Override — not independent evidence',
+  self_reported: 'Reported by you — not independently verified.',
+  parent_reported: 'Reported by the parent — not graded by Coursebook.'
 }
+
+// Frozen learner-facing breadth copy (`docs/ASSESSMENT-BREADTH.md` §7). One static disclosure for
+// every plan and every check: this build grades written answers, choices and checklists only. The
+// strings are not keyed to a topic — a keyword classifier over the learner's goal would announce a
+// construct-specific limit the harness cannot actually detect.
+const PLAN_BREADTH_DISCLOSURE =
+  'What Coursebook can check — Written answers, choices, and checklists. This build cannot collect or grade a program, a recording, a photo, or a built object. Checks marked "practice only" never advance a section.'
+const CHECK_SURFACE_DISCLOSURE =
+  'Your answer is text, a choice, or a checklist. Nothing you type is executed.'
+const OPEN_LANE_NOT_GRADED_COPY =
+  'Saved, not graded. This build has no grading model for open answers, so no verdict was produced. Your answer is saved, no progress was changed, and Retry grading does not consume an attempt.'
+// The backend writes this into `attempts.grading_provenance_json.failure` when it fails closed
+// because `grading.grade_open` had no aux grader. That record is the only honest signal that a
+// `needs_retry` came from the unconfigured open lane rather than a closed-lane grader fault.
+const OPEN_LANE_UNCONFIGURED_PATTERN = /open-response aux grader is not configured/i
 
 const VERDICT_COPY = {
   pass: 'Passed',
@@ -3949,6 +3971,13 @@ function StateText({ state }) {
 
 function EvidenceClassText({ value }) {
   return jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: EVIDENCE_CLASS_COPY[value] || value || 'unknown' })
+}
+
+/** True only when the backend's own attempt record says the open lane had no grader. */
+function openLaneWasUnconfigured(provenance) {
+  if (!provenance || typeof provenance !== 'object') return false
+  const failure = provenance.failure
+  return typeof failure === 'string' && OPEN_LANE_UNCONFIGURED_PATTERN.test(failure)
 }
 
 function Hairline() {
@@ -4068,6 +4097,7 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
   const [resultCheck, setResultCheck] = useState(null)
   const [error, setError] = useState(null)
   const [overrideOpen, setOverrideOpen] = useState(false)
+  const [openLaneUnconfigured, setOpenLaneUnconfigured] = useState(false)
   const nonceRef = useRef(null)
   const resultRef = useRef(null)
   const detached = Boolean(bindingState && bindingState !== 'active')
@@ -4090,9 +4120,30 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
     setResult(null)
     setResultCheck(null)
     setError(null)
+    setOpenLaneUnconfigured(false)
     nonceRef.current = null
   }, [check && check.check_id, result])
   const displayCheck = resultCheck || check
+
+  // §7.3 copy is keyed to the lane, not to the topic. `attempt.submit` returns the verdict but not
+  // the reference kind, so read the attempt's own grading provenance once: only when the backend
+  // recorded that the open-response grader was unconfigured does the "Saved, not graded" copy
+  // replace the generic retry copy. If that read is unavailable or silent, nothing changes.
+  const resolveNeedsRetryLane = useCallback(
+    async (attemptId) => {
+      if (!attemptId || !(implemented && implemented.has('quiz.history'))) return
+      try {
+        const response = await rpc('quiz.history', { enrollment_id: enrollmentId, objective_id: objectiveId })
+        if (!response.ok) return
+        const rows = (response.result && response.result.attempts) || []
+        const row = rows.find((item) => item.attempt_id === attemptId)
+        if (row && openLaneWasUnconfigured(row.grading_provenance)) setOpenLaneUnconfigured(true)
+      } catch (err) {
+        // A read-only lane probe must never replace the verdict the learner just received.
+      }
+    },
+    [enrollmentId, objectiveId, implemented]
+  )
 
   const submit = useCallback(async () => {
     if (!check) return
@@ -4127,9 +4178,11 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
     const graded = response.result
     setResult(graded)
     setResultCheck(check)
+    setOpenLaneUnconfigured(false)
     setPhase(graded.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
+    if (graded.verdict === 'needs_retry') void resolveNeedsRetryLane(graded.attempt_id)
     if (onCommitted) onCommitted(graded)
-  }, [check, text, enrollmentId, revision, onCommitted])
+  }, [check, text, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
 
   const retryGrading = useCallback(async () => {
     if (!check || !nonceRef.current) return
@@ -4156,9 +4209,11 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
     }
     setResult(response.result)
     setResultCheck(check)
+    setOpenLaneUnconfigured(false)
     setPhase(response.result.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
+    if (response.result.verdict === 'needs_retry') void resolveNeedsRetryLane(response.result.attempt_id)
     if (onCommitted) onCommitted(response.result)
-  }, [check, text, enrollmentId, revision, onCommitted])
+  }, [check, text, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
 
   const moveOn = useCallback(async () => {
     if (!check) return
@@ -4386,13 +4441,21 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
             ref: resultRef,
             tabIndex: -1,
             children: [
-              jsx('div', {
-                className: 'text-sm font-medium',
-                children: 'I couldn’t grade this attempt.'
-              }),
-              jsx(QuietNote, {
-                children: 'Your answer is saved; no progress was changed. Retrying does not create a second attempt.'
-              }),
+              openLaneUnconfigured
+                ? jsx('p', {
+                    className: 'max-w-prose text-sm leading-relaxed',
+                    'data-cb-breadth': 'open-lane',
+                    children: OPEN_LANE_NOT_GRADED_COPY
+                  })
+                : jsx('div', {
+                    className: 'text-sm font-medium',
+                    children: 'I couldn’t grade this attempt.'
+                  }),
+              openLaneUnconfigured
+                ? null
+                : jsx(QuietNote, {
+                    children: 'Your answer is saved; no progress was changed. Retrying does not create a second attempt.'
+                  }),
               error ? jsx(ErrorLine, { error }) : null,
               jsxs('div', {
                 className: 'flex flex-wrap items-center gap-2',
@@ -4455,6 +4518,12 @@ function AttemptControls({ enrollmentId, objectiveId, check, revision, implement
         children: supports('lesson.assist')
           ? 'Hints and shown answers are recorded against the next attempt.'
           : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
+      }),
+
+      jsx('p', {
+        className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+        'data-cb-breadth': 'check',
+        children: CHECK_SURFACE_DISCLOSURE
       }),
 
       jsx(FocusReturningDialog, {
@@ -10248,6 +10317,11 @@ function StudioPlanView({
           jsxs('div', {
             className: 'flex min-w-0 flex-1 flex-col gap-2',
             children: [
+              jsx('p', {
+                className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                'data-cb-breadth': 'plan',
+                children: PLAN_BREADTH_DISCLOSURE
+              }),
               jsx(sdk.PanelSectionLabel, { children: `OUTLINE AND ACTIVITIES (${objectives.length})` }),
               ...displayObjectives.map((objective, index) => {
                 const draft = drafts[objective.objective_id] || {}
