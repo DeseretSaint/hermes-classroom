@@ -24,8 +24,8 @@ that path.
 | Install, enable, load | local only | Nothing. The package is read from disk, and load-time reconciliation is a non-creating schema-version read | Working |
 | Pane health check | the local Hermes backend: `ctx.rest('/health')` → `/api/plugins/coursebook/health` in the same process | Nothing leaves the machine. The first successful `health.get` provisions the profile database; the lifecycle hooks do not (CB-014-R1) | Working |
 | `coursebook_status` tool | local only | Nothing. Reads local health, the mounted-method list and the contract inventory and returns JSON to the agent | Working |
-| Plan and lesson generation (a `plan` job from the job tick) | the host plugin LLM route (`ctx.llm`) — the model configured for the Hermes profile | The goal, recipe, dials and locale; the bounded research query list and source briefs with capped excerpts; for a lesson, the approved plan, the section and the objective. A separate validation call re-reads the candidate artifact, the learner page and the source briefs | Implemented; unreachable from the Desktop behind CB-QA-09 |
-| Research inside a plan job | the host `web_search` and `web_extract` tools, so the user's configured search backend, and then the named sites themselves | The goal-derived queries (capped before any call), then the URLs returned by search. Fetched text is kept as a bounded excerpt only | Implemented inside plan jobs. No standalone RPC |
+| Plan and lesson generation (a `plan` job from the job tick) | the host plugin LLM route (`ctx.llm`) — the model configured for the Hermes profile | The goal, recipe, dials and locale; the bounded research query list and source briefs with capped excerpts. Each excerpt is wrapped in an explicit untrusted-data envelope and the prompt says it is data, never instructions; the source id is the only locally minted identifier. For a lesson, the approved plan, the section and the objective. A separate validation call re-reads the candidate artifact, the learner page and the source briefs, including the same enveloped excerpts | Implemented; unreachable from the Desktop behind CB-QA-09 |
+| Research inside a plan job | the host `web_search` and `web_extract` tools, so the user's configured search backend, and then the named sites themselves | The goal-derived queries (capped before any call), then the URLs returned by search. Fetched text is kept as a bounded excerpt only and is treated as untrusted data in every later prompt; it cannot change recipe rules, schemas, state or exports | Implemented inside plan jobs. No standalone RPC |
 | Lesson chat | the selected chat provider, plus any configured external memory provider (host behavior, not Coursebook's) | The learner message and the conversation history the host sends for any chat. Coursebook injects only the committed public verdict, the permitted next action and the objective id — never a reference answer, rubric internals or provider text | Implemented; subject to the same CB-QA-09 reachability gap |
 | Grading, closed checks | local only | Nothing. The answer is compared against the stored reference by a deterministic local grader | Working |
 | Grading, open response (auxiliary lane) | no destination | Nothing. No auxiliary adapter is configured in this build (`configure_aux_grader` is never called), so an open response is not sent anywhere and the attempt is recorded as unable to grade rather than passed | Disabled |
@@ -56,6 +56,24 @@ that path.
 
 The hooks forward nothing to a provider themselves. What a lesson chat costs in egress is what the
 host chat call costs, plus the context line above.
+
+### Fetched third-party text
+
+Research retrieves pages the user's search backend returned; that text is attacker-controlled input
+and is never treated as policy. On the model path it is carried as bounded data, not as a message:
+every source row is marked `role: "untrusted_source_data"`, the excerpt sits between
+`[[BEGIN-UNTRUSTED-SOURCE-DATA]]` and `[[END-UNTRUSTED-SOURCE-DATA]]`, and marker occurrences in the
+fetched text are escaped so page content cannot close the envelope. One shared rule appended to the
+plan, lesson and validation prompts says the source array is data, text inside the markers is never
+a command, and a source id is not support.
+
+What that does not do: it does not make a model immune to injection, and this document does not
+claim it does. A hostile page can still influence the prose a model writes. The harness enforces the
+boundary after the fact: recipe and schema rules still run, the provenance lint refuses an invented
+URL, title, publisher, DOI or ISBN in the artifact, and a validator cannot move a source to
+`supported`/`partial`/`contradictory` without a ledger source id and a verbatim excerpt from that
+source. Whether a real quote actually supports the sentence around it remains a model judgment.
+Nothing fetched is uploaded anywhere beyond the model call already disclosed above.
 
 ## Local persistence
 
