@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-07T10:21:17.195Z",
+  "generated_at": "2026-11-07T11:19:53.675Z",
   "kind": "static render of the shipped Desktop module in Chromium (no backend, no chat, no RPC)",
   "fixture": "syllabus.parse.v1 FIXTURE (tests/test_desktop_syllabus_ui.py) — not a backend response",
   "chromium": "Chrome/155.0.8059.84",

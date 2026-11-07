@@ -3988,6 +3988,9 @@ const SYLLABUS_REASON_COPY = Object.freeze({
   model: 'Suggested by the model; treat it as a hypothesis, not proof.',
   anchor_mismatch: 'The quote could not be found in your file, so this stays unknown.',
   no_target: 'No row in the course plan matched this item.',
+  weak_title_tokens: 'The plan covers part of this item, not all of it.',
+  scheduled_after_deadline: 'The plan reaches this topic after the week your syllabus gives it.',
+  value_unknown: 'Your file does not state this item, so nothing was mapped to it.',
   week_mismatch: 'The plan places this topic in a different week.',
   deadline_passed: 'The plan schedules work after the date in your syllabus.',
   scope_exceeded: 'The plan claims more than this item asks for.',
@@ -4222,6 +4225,163 @@ function syllabusScopeProposal(parsed) {
   return { proposal: 'full', reason: `Your file lists ${weeks} weeks and ${assessments} assessment${assessments === 1 ? '' : 's'}, so this is a long course; authoring runs unit by unit.`, weeks, assessments }
 }
 
+/**
+ * One parsed item kind in the learner's words. The backend's `syllabus.get` serves a flat item
+ * list; the review screen groups it, and the "what is missing" line never prints a raw kind.
+ */
+const SYLLABUS_KIND_COPY = Object.freeze({
+  course_code: 'course code',
+  course_title: 'course title',
+  institution: 'institution',
+  instructor: 'instructor',
+  meeting_pattern: 'when the class meets',
+  term_label: 'term name',
+  term_start: 'term start',
+  term_end: 'term end',
+  week: 'week',
+  reading: 'reading',
+  assessment: 'assessment',
+  learning_outcome: 'learning outcome',
+  policy: 'study policy'
+})
+
+/**
+ * `syllabus.get` → the review document.
+ *
+ * The wire carries a flat item list (`kind`, `title`, `value`, `state`, `anchors`, `week_ordinal`);
+ * this groups it into the course facts, weeks, readings, assessments, outcomes and policies the
+ * review renders. It composes nothing: an item the backend marks unknown stays unknown, a weight the
+ * item list does not carry stays unknown, and a week's topic is only read off a title that the parse
+ * wrote. Fixture documents (already in this shape) pass through unchanged.
+ */
+function syllabusParseView(view) {
+  const source = view || {}
+  if (source.document) return source
+  const items = Array.isArray(source.items) ? source.items : []
+  const blocks = Array.isArray(source.blocks) ? source.blocks : []
+  const syllabus = source.syllabus || {}
+  const run = source.parse_run || null
+  const validation = (run && run.validation) || {}
+  const item = (kind) => {
+    const found = items.find((entry) => entry && entry.kind === kind)
+    return found
+      ? {
+          value: found.value,
+          state: found.state,
+          anchors: Array.isArray(found.anchors) ? found.anchors : [],
+          derivation: found.derivation || 'unknown',
+          candidates: found.candidates,
+          item_id: found.item_id
+        }
+      : { state: 'unknown', anchors: [], derivation: 'unknown' }
+  }
+  const weekItems = items.filter((entry) => entry && entry.kind === 'week')
+  const weeks = weekItems.map((entry) => {
+    const title = String(entry.title || '')
+    const split = title.indexOf(':')
+    const label = (split >= 0 ? title.slice(0, split) : title).trim()
+    const topic = split >= 0 ? title.slice(split + 1).trim() : ''
+    return {
+      ordinal: { value: entry.value, state: entry.state, anchors: entry.anchors || [], derivation: entry.derivation || 'unknown' },
+      weekOrdinal: entry.week_ordinal === undefined ? null : entry.week_ordinal,
+      label: label ? { value: label, state: 'extracted', anchors: entry.anchors || [] } : { state: 'unknown', anchors: [] },
+      topic: topic ? { value: topic, state: 'extracted', anchors: entry.anchors || [] } : { state: 'unknown', anchors: [] },
+      anchors: Array.isArray(entry.anchors) ? entry.anchors : [],
+      readings: items.filter((candidate) => candidate.kind === 'reading' && candidate.week_ordinal === entry.week_ordinal),
+      assessments: []
+    }
+  })
+  // An assessment with no due date is stored twice: the title row and a `"<title> (due)"` row that
+  // carries the unknown. The companion row is folded back into its title; it is never a second
+  // assessment, and it never invents a date.
+  const assessments = []
+  for (const entry of items.filter((candidate) => candidate && candidate.kind === 'assessment')) {
+    const title = String(entry.title || '')
+    const due = /^(.*) \(due\)$/.exec(title)
+    if (due) {
+      const parent = assessments.find(
+        (row) => row.baseTitle === due[1].trim() && row.week_ordinal === entry.week_ordinal
+      )
+      if (parent) {
+        parent.due = {
+          value: entry.value,
+          state: entry.state,
+          anchors: Array.isArray(entry.anchors) ? entry.anchors : [],
+          derivation: entry.derivation || 'unknown'
+        }
+        continue
+      }
+    }
+    const row = {
+      id: entry.item_id || null,
+      baseTitle: title,
+      title: {
+        value: entry.value,
+        state: entry.state,
+        anchors: Array.isArray(entry.anchors) ? entry.anchors : [],
+        derivation: entry.derivation || 'unknown'
+      },
+      kind: 'assessment',
+      due: { state: 'unknown', anchors: [], derivation: 'unknown' },
+      weight: { state: 'unknown', anchors: [], derivation: 'unknown' },
+      weight_unit: 'unknown',
+      week_ordinal: entry.week_ordinal === undefined ? null : entry.week_ordinal,
+      anchors: Array.isArray(entry.anchors) ? entry.anchors : []
+    }
+    assessments.push(row)
+    const week = weeks.find((candidate) => candidate.weekOrdinal === entry.week_ordinal)
+    if (week) week.assessments.push(row)
+  }
+  const listOf = (kind) =>
+    items
+      .filter((entry) => entry && entry.kind === kind)
+      .map((entry) => ({
+        value: entry.value,
+        state: entry.state,
+        anchors: Array.isArray(entry.anchors) ? entry.anchors : [],
+        derivation: entry.derivation || 'unknown'
+      }))
+  const unknowns = []
+  for (const entry of items) {
+    if (!entry || entry.state !== 'unknown') continue
+    const label = SYLLABUS_KIND_COPY[entry.kind] || 'item'
+    const title = entry.title && !/ \(due\)$/.test(String(entry.title)) ? ` (${entry.title})` : ''
+    unknowns.push(`${label}${title}`)
+  }
+  const warnings = []
+  const mismatches = Number(validation.anchor_mismatches || 0)
+  if (mismatches > 0) {
+    warnings.push(
+      `${mismatches} item${mismatches === 1 ? '' : 's'} could not be tied to a quote in your file. They are shown as not stated rather than guessed.`
+    )
+  }
+  return {
+    syllabus_id: syllabus.syllabus_id || null,
+    revision: syllabus.revision === undefined ? null : syllabus.revision,
+    content_sha256: syllabus.content_sha256 || null,
+    parse_state: run ? (run.state === 'needs_review' ? 'needs_review' : 'parsed') : null,
+    parse_run: run,
+    warnings,
+    blocks,
+    coverage: source.coverage || {},
+    unknowns: [...new Set(unknowns)],
+    document: {
+      schema: 'syllabus.parse.v1',
+      course: { code: item('course_code'), title: item('course_title') },
+      institution: item('institution'),
+      instructor: item('instructor'),
+      meeting_pattern: item('meeting_pattern'),
+      term: { label: item('term_label'), start_date: item('term_start'), end_date: item('term_end') },
+      weeks,
+      assessments,
+      learning_outcomes: listOf('learning_outcome'),
+      policies: listOf('policy'),
+      unknowns: [...new Set(unknowns)],
+      coverage: source.coverage || {}
+    }
+  }
+}
+
 /** The course's own metadata, each field stated by the file or absent. Nothing is composed. */
 function syllabusCourseFields(parsed) {
   const document = parsed && parsed.document ? parsed.document : parsed || {}
@@ -4288,8 +4448,13 @@ function syllabusAlignmentView(alignment) {
     const valueState = item.value_state || item.valueState || (item.value === undefined || item.value === null ? 'unknown' : 'extracted')
     const anchors = Array.isArray(item.anchors) ? item.anchors : []
     const target = item.target || null
+    const evidence = item.evidence && typeof item.evidence === 'object' ? item.evidence : {}
     const reasonCode = item.reason_code || item.reasonCode || null
-    const reason = item.reason || (reasonCode && SYLLABUS_REASON_COPY[reasonCode]) || copy.line
+    const reason =
+      item.reason ||
+      (reasonCode && SYLLABUS_REASON_COPY[reasonCode]) ||
+      evidence.explanation ||
+      copy.line
     const blocks = state === 'conflict' || state === 'stale' || (state === 'unknown' && valueState !== 'unknown')
     const actions = []
     if (state === 'partial') actions.push({ action: 'accept_partial', label: 'Accept what it covers' })
@@ -4521,19 +4686,22 @@ function SyllabusAnchorPanel({ open, anchors, blocks, label, onClose }) {
 }
 
 function SyllabusWeekRow({ week, onAnchor }) {
-  const ordinal = syllabusItemView(week && week.ordinal !== undefined ? { value: week.ordinal, state: 'extracted', anchors: week.anchors } : { state: 'unknown' })
-  const label = syllabusItemView(week && week.label ? { value: week.label, state: 'extracted', anchors: week.anchors } : { state: 'unknown' })
+  // A parse item (`{value,state,anchors}`) and a hand-written fixture (a plain ordinal or string)
+  // are both honourd; neither is turned into a value the file did not state.
+  const asItem = (value, anchors) =>
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? value
+      : value === undefined || value === null || value === ''
+        ? { state: 'unknown', anchors: anchors || [] }
+        : { value, state: 'extracted', anchors: anchors || [], derivation: 'explicit' }
+  const ordinal = syllabusItemView(asItem(week && week.ordinal, week && week.anchors))
+  const label = syllabusItemView(asItem(week && week.label, week && week.anchors))
   // `topic` is an item in the parse document and a plain string in a hand-written fixture: both
   // shapes are honoured, and neither is turned into a value the file did not state.
-  const rawTopic = week && week.topic
-  const topic = syllabusItemView(
-    rawTopic && typeof rawTopic === 'object'
-      ? rawTopic
-      : rawTopic
-        ? { value: rawTopic, state: 'extracted', anchors: week.anchors }
-        : { state: 'unknown' }
+  const topic = syllabusItemView(asItem(week && week.topic, week && week.anchors))
+  const readings = (week && Array.isArray(week.readings) ? week.readings : []).map((entry) =>
+    syllabusItemView(asItem(entry, week && week.anchors))
   )
-  const readings = (week && Array.isArray(week.readings) ? week.readings : []).map(syllabusItemView)
   return jsxs('div', {
     className: 'flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) py-2 last:border-b-0',
     'data-cb-syllabus-week': ordinal.unknown ? label.text : ordinal.text,
@@ -4563,7 +4731,7 @@ function SyllabusWeekRow({ week, onAnchor }) {
  * The parse review: course facts, outcomes, weeks, assessments, then what the file does not
  * state. The coverage line is measured by the backend; the sentence is the design's own.
  */
-function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, busy }) {
+function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, busy, continueLabel }) {
   const [anchor, setAnchor] = useState(null)
   const document = parsed && parsed.document ? parsed.document : parsed || {}
   const fields = syllabusCourseFields(document)
@@ -4669,7 +4837,7 @@ function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, bu
           variant: 'default',
           disabled: Boolean(busy) || needsReview,
           onClick: onContinue,
-          children: 'Confirm these details'
+          children: continueLabel || 'Confirm these details'
         })
       ] })
     ]
@@ -4759,16 +4927,276 @@ function SyllabusAlignmentReview({ alignment, onDecision, onApprove, onRealign, 
 }
 
 /**
+ * The plan-tab gate, as one value both the panel and a test can read.
+ *
+ * `plan.approve` on a companion course is refused by the backend until the bound syllabus revision
+ * has been reviewed and no mapping row is stale. The UI predicts exactly that so the button is
+ * disabled with a reason instead of failing after a click; the backend remains the authority.
+ */
+function syllabusPlanGate({ binding, planState, rowsReady }) {
+  if (!binding) return { required: false, ready: true, reason: null, stale: false }
+  const stale = Boolean(binding.stale)
+  const reviewed =
+    binding.reviewed_revision !== null &&
+    binding.reviewed_revision !== undefined &&
+    Number(binding.reviewed_revision) === Number(binding.revision)
+  const ready = Boolean(reviewed) && !stale
+  const reason = stale
+    ? 'Your syllabus changed. This course stays as it was until the new revision is mapped and reviewed; approval is blocked.'
+    : !rowsReady
+      ? 'Map the draft plan to your syllabus before approving it.'
+      : !reviewed
+        ? 'Review the mapping on this tab before approving the plan.'
+        : null
+  return { required: true, ready, reason, stale }
+}
+
+/**
+ * The alignment gate on a companion course's plan tab.
+ *
+ * It reads the binding from `course.get`, the parsed document from `syllabus.get` and the mapping
+ * from `syllabus.alignment.get`. Mapping is an explicit click once a draft plan exists (the plan is
+ * the thing being mapped), the learner's decisions go through `syllabus.alignment.review`, and the
+ * component reports to its parent whether `plan.approve` may be pressed. It never regenerates a
+ * plan, never re-aligns after a revision change on its own, and never hides a stale mapping.
+ */
+function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGateChange, onChanged, onNewSyllabus }) {
+  const supports = (method) => (typeof backendSupports === 'function' ? backendSupports(method) : false)
+  const signal = Number(reloadSignal || 0)
+  const bindingQuery = useRpcQuery(
+    'course.get',
+    { course_id: course.course_id },
+    `cb-syl-binding-${course.course_id}-${signal}`,
+    supports('course.get') && supports('syllabus.alignment.get')
+  )
+  const binding =
+    bindingQuery.data && bindingQuery.data.course && bindingQuery.data.course.syllabus
+      ? bindingQuery.data.course.syllabus
+      : null
+  const syllabusId = binding ? binding.syllabus_id : null
+  const syllabusRevision = binding ? binding.revision : null
+  const documentQuery = useRpcQuery(
+    'syllabus.get',
+    { syllabus_id: syllabusId, revision: syllabusRevision, include_blocks: true },
+    `cb-syl-doc-${syllabusId}-${syllabusRevision}-${signal}`,
+    Boolean(syllabusId) && supports('syllabus.get')
+  )
+  const alignmentQuery = useRpcQuery(
+    'syllabus.alignment.get',
+    { syllabus_id: syllabusId, revision: syllabusRevision, course_id: course.course_id },
+    `cb-syl-align-${syllabusId}-${syllabusRevision}-${course.course_id}-${signal}`,
+    Boolean(syllabusId) && supports('syllabus.alignment.get')
+  )
+  const [decisions, setDecisions] = useState({})
+  const [busy, setBusy] = useState(false)
+  const [aligning, setAligning] = useState(false)
+  const [error, setError] = useState(null)
+  const [notice, setNotice] = useState(null)
+
+  const alignment = alignmentQuery.data || null
+  const view = alignment ? syllabusAlignmentView(alignment) : null
+  const blocks = (documentQuery.data && documentQuery.data.blocks) || (alignment && alignment.blocks) || []
+  const needsDecision = view
+    ? view.rows.filter(
+        (row) =>
+          row.reviewState === 'pending' &&
+          ['partial', 'unmatched', 'conflict'].includes(row.state) &&
+          row.valueState !== 'unknown'
+      )
+    : []
+  const stale = Boolean((binding && binding.stale) || (view && view.stale))
+  const rowsReady = Boolean(view && view.rows.length > 0)
+  const gate = syllabusPlanGate({ binding, planState, rowsReady })
+  const gateReady = gate.ready
+  const gateReason = gate.reason
+
+  useEffect(() => {
+    if (onGateChange) {
+      onGateChange({ required: Boolean(binding), ready: gateReady, reason: gateReason, stale })
+    }
+  }, [binding, gateReady, gateReason, stale, onGateChange])
+
+  // Mapping runs as the existing import job; the screen polls the alignment read instead of
+  // inventing a percentage for a job that reports state only.
+  useEffect(() => {
+    if (!aligning) return undefined
+    let attempts = 0
+    const handle = setInterval(() => {
+      attempts += 1
+      alignmentQuery.reload()
+      if (attempts >= 40) setAligning(false)
+    }, 1500)
+    return () => clearInterval(handle)
+  }, [aligning, alignmentQuery.reload])
+
+  useEffect(() => {
+    if (view && view.rows.length > 0 && aligning) setAligning(false)
+  }, [view, aligning])
+
+  const mapPlan = useCallback(async () => {
+    if (!planId || !syllabusId) return
+    setBusy(true)
+    setError(null)
+    setNotice(null)
+    const outcome = await queueSyllabusAlignment({
+      call: rpc,
+      syllabusId,
+      revision: syllabusRevision,
+      courseId: course.course_id,
+      planId
+    })
+    setBusy(false)
+    if (!outcome.ok) {
+      setError(outcome.error || { code: 'INTERNAL_ERROR', message: 'The mapping job could not be started.' })
+      return
+    }
+    setAligning(true)
+    setNotice('Mapping the plan to your syllabus. This runs on this device; the rows appear when it finishes.')
+    alignmentQuery.reload()
+  }, [planId, syllabusId, syllabusRevision, course.course_id, alignmentQuery.reload])
+
+  const review = useCallback(async () => {
+    if (!view || !syllabusId) return
+    const payload = syllabusReviewPayload({
+      syllabusId,
+      revision: syllabusRevision,
+      courseId: course.course_id,
+      alignmentRevision: view.alignmentRevision,
+      decisions: needsDecision.map((row) => ({ item_id: row.itemId, action: decisions[row.itemId] })).filter((row) => row.action)
+    })
+    if (payload.decisions.length === 0) {
+      setError({ code: 'SYLLABUS_UNREVIEWED', message: 'Every item already needs no decision. The backend records a review only from an accepted item, so approval cannot be recorded for this mapping.' })
+      return
+    }
+    setBusy(true)
+    setError(null)
+    const response = await rpc('syllabus.alignment.review', payload, { idempotencyKey: newOperationId('syllabus-review') })
+    setBusy(false)
+    if (!response.ok) {
+      const nextRevision = staleRevision(response)
+      if (nextRevision !== null) alignmentQuery.reload()
+      setError(response.error || { code: 'INTERNAL_ERROR', message: 'The review was not recorded.' })
+      return
+    }
+    const result = response.result || {}
+    if (result.plan_replan_required) {
+      setNotice('The plan needs to change to match your syllabus. Start a new plan version, then map it again. Your current plan is unchanged.')
+    } else if (result.reviewed_revision !== null && result.reviewed_revision !== undefined) {
+      setNotice('Mapping approved. The plan can now be approved on this tab.')
+    } else {
+      setNotice('Some items still need a decision before the mapping is approved.')
+    }
+    bindingQuery.reload()
+    alignmentQuery.reload()
+    if (onChanged) onChanged()
+  }, [view, syllabusId, syllabusRevision, course.course_id, needsDecision, decisions, alignmentQuery, bindingQuery, onChanged])
+
+  const decide = useCallback((itemId, action) => {
+    setDecisions((previous) => ({ ...previous, [itemId]: action }))
+  }, [])
+
+  if (bindingQuery.status === 'error' && !bindingQuery.data) {
+    return jsx(sdk.ErrorState, {
+      title: 'The syllabus binding could not be read',
+      description: `${bindingQuery.error && bindingQuery.error.code ? bindingQuery.error.code + ': ' : ''}${describeError(bindingQuery.error)}`,
+      children: jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: bindingQuery.reload, children: 'Try again' })
+    })
+  }
+  if (!binding) return null
+  if (!planId) {
+    return jsx('div', {
+      className: 'max-w-prose text-xs text-(--ui-text-secondary)',
+      'data-cb-align-panel': 'waiting',
+      children: 'Your syllabus is bound to this course. The mapping appears once the draft plan is written; nothing is mapped against a template.'
+    })
+  }
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-3 border-t border-(--ui-stroke-tertiary) pt-3',
+    'data-cb-align-panel': gateReady ? 'ready' : 'blocked',
+    children: [
+      stale
+        ? jsxs('div', {
+            className: 'flex flex-col gap-1 border-l-2 border-(--ui-stroke-secondary) pl-3',
+            'data-cb-align-stale': 'true',
+            children: [
+              jsx('div', { className: 'text-sm font-medium', children: 'Your syllabus has a new revision' }),
+              jsx('div', {
+                className: 'max-w-prose text-xs text-(--ui-text-secondary)',
+                children:
+                  syllabusStaleNotice({ revision: syllabusRevision, counts: (alignment && alignment.counts) || {}, planRevision: syllabusRevision }).lines.join(' ')
+              }),
+              onNewSyllabus
+                ? jsx(sdk.Button, {
+                    className: 'self-start',
+                    size: 'sm',
+                    variant: 'secondary',
+                    onClick: () => onNewSyllabus({ syllabusId, revision: syllabusRevision, courseId: course.course_id, enrollmentId: course.enrollment_id }),
+                    children: 'Upload the new syllabus'
+                  })
+                : null
+            ]
+          })
+        : null,
+      !rowsReady && !aligning
+        ? jsxs('div', { className: 'flex flex-col gap-2', children: [
+            jsx('div', { className: 'text-sm font-semibold', children: 'Map this plan to your syllabus' }),
+            jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.alignmentGate }),
+            jsx(sdk.Button, {
+              className: 'self-start',
+              size: 'sm',
+              variant: 'default',
+              disabled: busy || stale,
+              onClick: mapPlan,
+              children: 'Map the plan to my syllabus'
+            })
+          ] })
+        : null,
+      aligning && !rowsReady
+        ? jsxs('div', { className: 'flex flex-col gap-2', children: [
+            jsx(sdk.Loader, { label: 'Mapping the plan to your syllabus' }),
+            jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: 'The mapping runs on this device and is built from validated items only. There is no percentage to show.' })
+          ] })
+        : null,
+      rowsReady
+        ? jsx(SyllabusAlignmentReview, {
+            alignment: { ...alignment, blocks },
+            busy,
+            onDecision: (decision) => decide(decision.item_id, decision.action),
+            onApprove: review,
+            onRealign: stale ? null : mapPlan
+          })
+        : null,
+      needsDecision.length
+        ? jsx('div', {
+            className: 'max-w-prose text-xs text-(--ui-text-secondary)',
+            children: `${needsDecision.filter((row) => decisions[row.itemId]).length} of ${needsDecision.length} items have a decision. Every partly covered, uncovered or conflicting item needs one before the mapping is approved.`
+          })
+        : null,
+      notice ? jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: notice }) : null,
+      error
+        ? jsx(sdk.ErrorState, {
+            title: error.code || 'The mapping could not be recorded',
+            description: error.message || describeError(error)
+          })
+        : null
+    ]
+  })
+}
+
+/**
  * Intake. The file door is feature-detected: a build without a byte-reading door gets the honest
  * sentence and the paste box, never a picker that cannot deliver. Every refusal is the backend's
  * typed code with a readable sentence, and cancellation stops before the next call.
  */
-function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
+function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisionOnly }) {
+  const supersedesId = supersedes && supersedes.syllabusId ? supersedes.syllabusId : null
   const [step, setStep] = useState('choose')
   const [pasted, setPasted] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [syllabus, setSyllabus] = useState(null)
+  const [parseJob, setParseJob] = useState(null)
   const [parsed, setParsed] = useState(null)
   const [cancelled, setCancelled] = useState(false)
   const [ack, setAck] = useState(false)
@@ -4793,7 +5221,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
 
   const submitPasted = useCallback(async () => {
     if (busy || cancelledRef.current) return
-    const built = syllabusIntakePayload({ pastedText: pasted })
+    const built = syllabusIntakePayload({ pastedText: pasted, supersedesSyllabusId: supersedesId })
     if (!built.ok) {
       refuse(built.error)
       return
@@ -4824,6 +5252,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
         setStep('choose')
         return
       }
+      setParseJob(job.result)
       onParsed && onParsed(created.result)
       setStep('parsing')
     } catch (failure) {
@@ -4832,7 +5261,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
     } finally {
       setBusy(false)
     }
-  }, [busy, pasted, refuse, onParsed])
+  }, [busy, pasted, refuse, onParsed, supersedesId])
 
   const openFile = useCallback(async () => {
     const files = pluginContext && pluginContext.files
@@ -4870,8 +5299,8 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
       }
       const built = syllabusIntakePayload(
         acceptable.text
-          ? { fileName: entry.name, text: read.text }
-          : { fileName: entry.name, dataUrl: read.dataUrl }
+          ? { fileName: entry.name, text: read.text, supersedesSyllabusId: supersedesId }
+          : { fileName: entry.name, dataUrl: read.dataUrl, supersedesSyllabusId: supersedesId }
       )
       if (!built.ok) {
         refuse(built.error)
@@ -4883,7 +5312,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
     } finally {
       setBusy(false)
     }
-  }, [])
+  }, [supersedesId])
 
   const sendIntake = useCallback(async (payload) => {
     const created = await rpc('syllabus.intake.create', payload, {
@@ -4904,6 +5333,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
       refuse(job.error)
       return
     }
+    setParseJob(job.result)
     onParsed && onParsed(created.result)
     setStep('parsing')
   }, [refuse, onParsed])
@@ -4911,13 +5341,21 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
   const cancel = useCallback(() => {
     cancelledRef.current = true
     setCancelled(true)
+    // Stopping the watch is not stopping the job. A real cancel is sent when the backend has
+    // already minted the parse job, so the learner is not told work stopped while it runs on.
+    if (parseJob && parseJob.job_id) {
+      rpc('jobs.cancel', { job_id: parseJob.job_id }, { idempotencyKey: `cb-syllabus-parse-cancel-${parseJob.job_id}` })
+        .catch(() => null)
+    }
     onCancel && onCancel()
-  }, [onCancel])
+  }, [onCancel, parseJob])
 
   if (step === 'parsing' || step === 'parsed') {
     return jsx(SyllabusParseStage, {
       syllabus,
+      jobId: parseJob && parseJob.job_id,
       parsed,
+      revisionOnly,
       onParsed: setParsed,
       onStep: setStep,
       onCancel: cancel,
@@ -4989,9 +5427,9 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed }) {
 }
 
 /** Parse stage: poll the stored document, then hand the review screen its real items. */
-function SyllabusParseStage({ syllabus, parsed, onParsed, onStep, onCancel, onCreated, busy, error, refuse }) {
+function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, onStep, onCancel, onCreated, busy, error, refuse }) {
   const [document, setDocument] = useState(null)
-  const [state, setState] = useState(parsed ? 'parsed' : 'parsing')
+  const [state, setState] = useState(parsed && parsed.parse_state ? 'parsed' : 'parsing')
   const [step, setStep] = useState('review')
   const [scope, setScope] = useState('short')
   const [submitting, setSubmitting] = useState(false)
@@ -4999,7 +5437,7 @@ function SyllabusParseStage({ syllabus, parsed, onParsed, onStep, onCancel, onCr
   const keyRef = useRef(null)
 
   useEffect(() => {
-    if (!syllabus || parsed) return undefined
+    if (!syllabus || document) return undefined
     let stopped = false
     let attempts = 0
     let dispose = null
@@ -5024,18 +5462,33 @@ function SyllabusParseStage({ syllabus, parsed, onParsed, onStep, onCancel, onCr
         return
       }
       const result = response.result || {}
-      if (result.state === 'parsed' || result.parse_state) {
-        setDocument(result)
+      // `syllabus.get` carries no top-level state: the parse run is the state, and the stored
+      // document is only readable once that run exists.
+      const view = syllabusParseView(result)
+      if (view.parse_state) {
+        setDocument(view)
         setState('parsed')
-        onParsed && onParsed(result)
+        onParsed && onParsed(view)
         stop()
         return
       }
-      if (result.state === 'failed') {
+      if (result.syllabus && result.syllabus.state === 'failed') {
         setFailure({ code: 'SYLLABUS_REJECTED', message: 'Your file could not be read. Check it is the syllabus itself and try again.' })
         setState('failed')
         stop()
         return
+      }
+      if (jobId) {
+        const job = await rpc('jobs.get', { job_id: jobId })
+        if (stopped) return
+        const jobView = job && job.ok ? job.result.job : null
+        if (jobView && ['failed', 'cancelled', 'interrupted_requires_retry'].includes(jobView.state)) {
+          const message = (jobView.error && jobView.error.message) || 'The parse did not finish. Check the file is the syllabus itself and try again.'
+          setFailure({ code: (jobView.error && jobView.error.code) || 'SYLLABUS_REJECTED', message })
+          setState('failed')
+          stop()
+          return
+        }
       }
       if (attempts >= 150) {
         setState('slow')
@@ -5051,9 +5504,9 @@ function SyllabusParseStage({ syllabus, parsed, onParsed, onStep, onCancel, onCr
       dispose = () => clearInterval(handle)
     }
     return stop
-  }, [syllabus, parsed, onParsed])
+  }, [syllabus, jobId, document, onParsed])
 
-  const target = document || parsed
+  const target = document || (parsed && parsed.document ? parsed : null)
 
   if (state === 'parsing') {
     return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'parsing', children: [
@@ -5072,6 +5525,15 @@ function SyllabusParseStage({ syllabus, parsed, onParsed, onStep, onCancel, onCr
     return jsxs('div', { className: 'flex flex-col gap-2', children: [
       jsx('div', { className: 'max-w-prose text-sm', children: 'The parse is taking longer than usual. It keeps running on this device; you can come back to it from Library.' }),
       jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Back to Library' })
+    ] })
+  }
+  if (!target) {
+    return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'parse-unreadable', children: [
+      jsx(sdk.ErrorState, {
+        title: 'The parsed details could not be read',
+        description: 'The parse finished but its stored items did not load. Nothing is shown from a template; try reading the file again.'
+      }),
+      jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Back' })
     ] })
   }
 
@@ -5122,8 +5584,15 @@ function SyllabusParseStage({ syllabus, parsed, onParsed, onStep, onCancel, onCr
     parsed: target,
     blocks: (target && target.blocks) || [],
     busy: Boolean(busy),
+    continueLabel: revisionOnly ? 'Check the new revision' : null,
     onBack: onCancel,
     onContinue: () => {
+      if (revisionOnly) {
+        // A new revision is not a new course: the parse is recorded, the mapping is now stale, and
+        // the screen returns to the course so the learner can see that before anything else.
+        onCreated && onCreated({ revision: target.revision, syllabusId: target.syllabus_id })
+        return
+      }
       const proposal = syllabusScopeProposal(target)
       setScope(proposal.proposal || 'short')
       setStep('scope')
@@ -9983,7 +10452,7 @@ function SourcesView({ page }) {
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
  * control; below ~47.5rem it collapses into one labelled picker so the strip can never clip.
  */
-function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView }) {
+function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, reloadSignal, onNewSyllabus }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   // A route in from the Field Desk names the section to open; otherwise the course opens on its
   // overview with the backend's own current objective already selected.
@@ -10152,7 +10621,9 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       implemented,
       onOpenSection: openSection,
       onStartLesson: (objectiveId) => startLesson('fresh', objectiveId),
-      onChanged: refresh
+      onChanged: refresh,
+      reloadSignal,
+      onNewSyllabus
     })
   } else if (view === 'evidence') {
     body = jsx(EvidenceView, { evidence: evidence.data, implemented, onOpenSection: openSection })
@@ -11419,7 +11890,8 @@ function StudioPlanView({
   onChanged,
   supported,
   surface,
-  outlineHidden
+  outlineHidden,
+  syllabusGate
 }) {
   // `surface: 'learner'` is the same outline/plan review for a learner course: identical reads,
   // identical approve and lessons actions, minus the parent-only authoring controls (edit plan,
@@ -11734,7 +12206,7 @@ function StudioPlanView({
                 ? jsx(sdk.Button, {
                     size: 'sm',
                     variant: 'default',
-                    disabled: busy || !supported('plan.approve'),
+                    disabled: busy || !supported('plan.approve') || Boolean(syllabusGate && syllabusGate.required && !syllabusGate.ready),
                     onClick: approvePlan,
                     children: 'Approve plan'
                   })
@@ -11766,6 +12238,13 @@ function StudioPlanView({
         children:
           'Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.'
       }),
+      syllabusGate && syllabusGate.required && !syllabusGate.ready
+        ? jsx('div', {
+            className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+            'data-cb-syllabus-gate': 'blocked',
+            children: syllabusGate.reason
+          })
+        : null,
       lessonDocumentGap
         ? jsx('p', {
             className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -12050,7 +12529,9 @@ function LearnerPlanView({
   onStartLesson,
   onChanged,
   jobHint,
-  scopeHint
+  scopeHint,
+  reloadSignal,
+  onNewSyllabus
 }) {
   const supports = (method) => (implemented ? implemented.has(method) : backendSupports(method))
   const outline = useRpcQuery(
@@ -12074,6 +12555,9 @@ function LearnerPlanView({
     supports('jobs.list')
   )
   const [retryJobId, setRetryJobId] = useState(null)
+  // The plan tab's approval is gated by the syllabus mapping on a companion course. The panel
+  // reports readiness; the button reads it, and the backend enforces the same rule.
+  const [syllabusGate, setSyllabusGate] = useState({ required: false, ready: true, reason: null, stale: false })
 
   const plan = outline.data && outline.data.plan
   const objectives = (outline.data && outline.data.objectives) || []
@@ -12158,6 +12642,15 @@ function LearnerPlanView({
             onChanged: reloadAll
           })
         : null,
+      jsx(SyllabusAlignmentPanel, {
+        course,
+        planId: plan ? plan.plan_id : null,
+        planState: plan ? plan.state : null,
+        reloadSignal,
+        onGateChange: setSyllabusGate,
+        onChanged: reloadAll,
+        onNewSyllabus
+      }),
       jsx(StudioPlanView, {
         course,
         revision,
@@ -12170,7 +12663,8 @@ function LearnerPlanView({
         onChanged: reloadAll,
         supported: supports,
         surface: 'learner',
-        outlineHidden: approved
+        outlineHidden: approved,
+        syllabusGate
       })
     ]
   })
@@ -12865,6 +13359,9 @@ function CoursebookPage() {
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
   const [syllabusFlow, setSyllabusFlow] = useState(false)
+  const [syllabusSupersedes, setSyllabusSupersedes] = useState(null)
+  const [companionTarget, setCompanionTarget] = useState(null)
+  const [courseReloadTick, setCourseReloadTick] = useState(0)
   const [openCourse, setOpenCourse] = useState(null)
   const [studioCourse, setStudioCourse] = useState(null)
   const [studioSeed, setStudioSeed] = useState(null)
@@ -12881,6 +13378,41 @@ function CoursebookPage() {
     setStudioCourse(null)
     setStudioSeed(null)
     setDestination(next)
+  }, [])
+
+  // A created companion course is opened from the library read, never from the create response:
+  // the row carries the enrolment revision the plan tab fences on, and the plan itself is still a
+  // background job. This waits for the row to appear instead of inventing one.
+  useEffect(() => {
+    if (!companionTarget) return undefined
+    let cancelled = false
+    let attempts = 0
+    const find = async () => {
+      attempts += 1
+      const response = await rpc('library.list', { filter: 'all', limit: 100, sort: 'recent' })
+      if (cancelled) return
+      const rows = response && response.ok && response.result && Array.isArray(response.result.items) ? response.result.items : []
+      const row = rows.find((candidate) => candidate.course_id === companionTarget.courseId)
+      if (row) {
+        rememberedDestination = 'courses'
+        setDestination('courses')
+        setOpenCourse({ row, objectiveId: null, view: 'plan' })
+        setCompanionTarget(null)
+        return
+      }
+      if (attempts >= 20) setCompanionTarget(null)
+    }
+    find()
+    const handle = setInterval(find, 1500)
+    return () => {
+      cancelled = true
+      clearInterval(handle)
+    }
+  }, [companionTarget])
+
+  const openNewSyllabusRevision = useCallback((target) => {
+    setSyllabusSupersedes(target || {})
+    setSyllabusFlow(true)
   }, [])
 
   useRouteIntent(
@@ -12965,11 +13497,20 @@ function CoursebookPage() {
     })
   } else if (syllabusFlow) {
     body = jsx(SyllabusIntakeFlow, {
-      onCancel: () => setSyllabusFlow(false),
+      revisionOnly: Boolean(syllabusSupersedes),
+      supersedes: syllabusSupersedes,
+      onCancel: () => {
+        setSyllabusFlow(false)
+        setSyllabusSupersedes(null)
+      },
       // The course and its plan job are real ids the backend returned; the desk reloads so the
       // new companion course appears from `library.list`, not from this screen's memory.
-      onCreated: () => {
+      onCreated: (created) => {
+        const revising = Boolean(syllabusSupersedes)
         setSyllabusFlow(false)
+        setSyllabusSupersedes(null)
+        if (revising) setCourseReloadTick((value) => value + 1)
+        else if (created && created.courseId) setCompanionTarget({ courseId: created.courseId })
         reloadHealth()
       }
     })
@@ -13029,7 +13570,9 @@ function CoursebookPage() {
       implemented,
       profile: currentScope().profile,
       onBack: () => setOpenCourse(null),
-      onChanged: () => reloadHealth()
+      onChanged: () => reloadHealth(),
+      reloadSignal: courseReloadTick,
+      onNewSyllabus: openNewSyllabusRevision
     })
   } else if (coursesMode === 'list') {
     body = jsx(CoursesView, {
@@ -13433,6 +13976,7 @@ export {
   SYLLABUS_MIME_HINTS,
   ALIGNMENT_STATE_COPY,
   SyllabusAlignmentReview,
+  SyllabusAlignmentPanel,
   SyllabusAnchorPanel,
   SyllabusEntry,
   SyllabusIntakeFlow,
@@ -13449,6 +13993,8 @@ export {
   syllabusFormatFor,
   syllabusIntakePayload,
   syllabusItemView,
+  syllabusParseView,
+  syllabusPlanGate,
   syllabusPlanBrief,
   syllabusReviewPayload,
   syllabusScopeProposal,

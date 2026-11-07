@@ -49,6 +49,8 @@ import {
   syllabusCoursePayload,
   syllabusIntakePayload,
   syllabusItemView,
+  syllabusParseView,
+  syllabusPlanGate,
   syllabusReviewPayload,
   syllabusScopeProposal,
   syllabusStaleNotice
@@ -124,6 +126,10 @@ if (payload.kind === 'intake') {
       })
     : null
   output = { created, aligned, calls: t.calls }
+} else if (payload.kind === 'parse-view') {
+  output = syllabusParseView(payload.view)
+} else if (payload.kind === 'gate') {
+  output = syllabusPlanGate(payload.input)
 } else if (payload.kind === 'render-parse') {
   output = {
     html: renderToStaticMarkup(
@@ -272,6 +278,65 @@ def _fixture_alignment() -> dict:
                 "anchors": [{"block_id": "b12", "quote": "Midterm — October 15 (30%)", "page": 4}],
             },
         ],
+    }
+
+
+def _fixture_syllabus_get() -> dict:
+    """A `syllabus.get`-shaped response: the flat item list the backend serves (not a document)."""
+
+    def item(kind, title, value, state, anchors, *, week=None, item_id="sit_0", derivation="explicit"):
+        return {
+            "item_id": item_id,
+            "kind": kind,
+            "title": title,
+            "value": value,
+            "state": state,
+            "anchors": anchors,
+            "derivation": derivation,
+            "ordinal": 0,
+            "week_ordinal": week,
+        }
+
+    return {
+        "syllabus": {
+            "syllabus_id": "syl_getfixture01",
+            "series_id": "sys_getfixture01",
+            "revision": 3,
+            "supersedes_id": None,
+            "content_sha256": "c" * 64,
+            "file_name": "cs340-databases.md",
+            "mime": "text/markdown",
+            "source_kind": "markdown",
+            "state": "parsed",
+            "created_at": "2026-11-07T00:00:00Z",
+            "superseded_at": None,
+            "bytes": 1726,
+        },
+        "blocks": [
+            {"block_id": "blk_1", "ordinal": 1, "kind": "section", "label": "CS 340 — Introduction to Databases", "page": None, "line_start": 1, "line_end": 1, "text": "# CS 340 — Introduction to Databases"},
+            {"block_id": "blk_2", "ordinal": 2, "kind": "section", "label": "Week 1: Relational model", "page": None, "line_start": 19, "line_end": 21, "text": "### Week 1: Relational model\nReading: Chapter 1\nQuiz 1 due 2026-09-01 (5%)"},
+        ],
+        "items": [
+            item("course_code", None, "CS 340", "extracted", [{"block_id": "blk_1", "quote": "CS 340"}]),
+            item("course_title", None, "Introduction to Databases", "extracted", [{"block_id": "blk_1", "quote": "Introduction to Databases"}]),
+            item("institution", None, None, "unknown", [], derivation="unknown"),
+            item("week", "Week 1: Relational model", 1, "extracted", [{"block_id": "blk_2", "quote": "Week 1"}], week=1),
+            item("reading", "Chapter 1", "Chapter 1", "extracted", [{"block_id": "blk_2", "quote": "Chapter 1"}], week=1),
+            item("assessment", "Quiz 1", "Quiz 1", "extracted", [{"block_id": "blk_2", "quote": "Quiz 1"}], week=1),
+            item("assessment", "Quiz 1 (due)", None, "unknown", [], week=1, derivation="unknown"),
+            item("learning_outcome", "Explain relational algebra", None, "unknown", [], derivation="unknown"),
+        ],
+        "parse_run": {
+            "parse_run_id": "spr_getfixture01",
+            "schema": "syllabus.parse.v1",
+            "state": "parsed",
+            "provider": None,
+            "model": None,
+            "created_at": "2026-11-07T00:00:00Z",
+            "validation": {"items_total": 8, "items_checked": 6, "anchor_mismatches": 1, "state": "parsed"},
+        },
+        "coverage": {"pages": None, "blocks": 2, "extracted_chars": 120, "items_total": 8, "items_extracted": 5},
+        "unknowns": ["institution", "reading", "learning_outcome"],
     }
 
 
@@ -481,6 +546,77 @@ class SyllabusDesktopTest(unittest.TestCase):
         self.assertEqual(out["pending"], 2)
         self.assertNotIn("regenerat", text.lower())
 
+    # ── the backend's flat item list, read by the shipped adapter ───────────
+
+    def test_the_backend_item_list_becomes_the_review_document(self) -> None:
+        out = self.run_case({"kind": "parse-view", "view": _fixture_syllabus_get()})
+        document = out["document"]
+        self.assertEqual(out["parse_state"], "parsed")
+        self.assertEqual(out["syllabus_id"], "syl_getfixture01")
+        self.assertEqual(document["course"]["code"]["value"], "CS 340")
+        self.assertEqual(document["course"]["title"]["value"], "Introduction to Databases")
+        self.assertEqual(document["institution"]["state"], "unknown")
+        self.assertEqual(len(document["weeks"]), 1)
+        week = document["weeks"][0]
+        self.assertEqual(week["ordinal"]["value"], 1)
+        self.assertEqual(week["topic"]["value"], "Relational model")
+        self.assertEqual(week["readings"][0]["value"], "Chapter 1")
+        # The `(due)` companion row folds into its assessment; it is not a second assessment and
+        # it never turns an unstated date into one.
+        self.assertEqual(len(document["assessments"]), 1)
+        self.assertEqual(document["assessments"][0]["title"]["value"], "Quiz 1")
+        self.assertEqual(document["assessments"][0]["due"]["state"], "unknown")
+        self.assertEqual(document["assessments"][0]["weight"]["state"], "unknown")
+        self.assertIn("institution", document["unknowns"])
+        self.assertNotIn("course_code", document["unknowns"])
+        self.assertTrue(any("could not be tied to a quote" in line for line in out["warnings"]))
+
+    def test_the_adapted_document_renders_through_the_real_parse_review(self) -> None:
+        adapted = self.run_case({"kind": "parse-view", "view": _fixture_syllabus_get()})
+        rendered = self.run_case({"kind": "render-parse", "parsed": adapted})
+        html = rendered["html"]
+        self.assertIn("What Coursebook read from your syllabus", html)
+        self.assertIn("CS 340", html)
+        self.assertIn("Relational model", html)
+        self.assertIn("Week 1", html)
+        self.assertIn("Not in your file", html)
+        self.assertIn("Not official course material", html)
+        self.assertNotIn("syllabus_item", html)
+        self.assertNotIn("week_ordinal", html)
+
+    # ── the plan-tab gate ───────────────────────────────────────────────────
+
+    def test_the_plan_gate_waits_for_the_mapping_and_the_review(self) -> None:
+        unmapped = self.run_case({
+            "kind": "gate",
+            "input": {"binding": {"syllabus_id": "syl_1", "revision": 3, "reviewed_revision": None, "alignment_revision": 0}, "planState": "draft", "rowsReady": False},
+        })
+        self.assertTrue(unmapped["required"])
+        self.assertFalse(unmapped["ready"])
+        self.assertIn("Map the draft plan", unmapped["reason"])
+        mapped = self.run_case({
+            "kind": "gate",
+            "input": {"binding": {"syllabus_id": "syl_1", "revision": 3, "reviewed_revision": None, "alignment_revision": 2, "stale": False}, "planState": "draft", "rowsReady": True},
+        })
+        self.assertFalse(mapped["ready"])
+        self.assertIn("Review the mapping", mapped["reason"])
+        reviewed = self.run_case({
+            "kind": "gate",
+            "input": {"binding": {"syllabus_id": "syl_1", "revision": 3, "reviewed_revision": 3, "alignment_revision": 2, "stale": False}, "planState": "draft", "rowsReady": True},
+        })
+        self.assertTrue(reviewed["ready"])
+        self.assertIsNone(reviewed["reason"])
+        stale = self.run_case({
+            "kind": "gate",
+            "input": {"binding": {"syllabus_id": "syl_1", "revision": 3, "reviewed_revision": 3, "alignment_revision": 2, "stale": True}, "planState": "draft", "rowsReady": True},
+        })
+        self.assertFalse(stale["ready"])
+        self.assertTrue(stale["stale"])
+        self.assertIn("changed", stale["reason"])
+        plain = self.run_case({"kind": "gate", "input": {"binding": None, "planState": "draft", "rowsReady": False}})
+        self.assertFalse(plain["required"])
+        self.assertTrue(plain["ready"])
+
     # ── the companion course sequence ───────────────────────────────────────
 
     def test_the_sequence_is_course_enrollment_plan_then_align(self) -> None:
@@ -598,6 +734,23 @@ class SyllabusSourceAssertions(unittest.TestCase):
         self.assertNotIn("/syllabus/fetch", source)
         # The intake payload builder never emits a path key.
         self.assertNotIn("payload.path", source)
+
+    def test_the_alignment_panel_is_wired_to_the_plan_tab_and_names_the_revision_action(self) -> None:
+        source = _source()
+        # The panel is rendered by the learner plan tab, not a bespoke job screen.
+        self.assertIn("jsx(SyllabusAlignmentPanel, {", source)
+        self.assertIn("'data-cb-syllabus-gate': 'blocked'", source)
+        self.assertIn("Upload the new syllabus", source)
+        self.assertIn("syllabusPlanGate", source)
+        # The panel's own copy makes no official-enrollment, grade or integration claim.
+        start = source.index("function SyllabusAlignmentPanel")
+        end = source.index("function SyllabusIntakeFlow")
+        panel = source[start:end].lower()
+        for banned in ("enrolled", "enrollment confirmed", "gradebook", "canvas", "moodle",
+                       "counts toward your grade", "official course", "your professor"):
+            self.assertNotIn(banned, panel, banned)
+        # Revision changes never trigger a silent re-map or regeneration.
+        self.assertIn("onRealign: stale ? null : mapPlan", source)
 
     def test_the_one_job_engine_is_reused(self) -> None:
         source = _source()
