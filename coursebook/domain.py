@@ -44,6 +44,7 @@ from . import (
     parent_authoring as authoring,
     review,
     sources as source_ledger,
+    validators,
 )
 from .api import RpcError
 from .contracts import method_names
@@ -903,6 +904,18 @@ def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
             raise RpcError.of(
                 "VALIDATION_FAILED", "the check has no reference answer.", reason="objective_not_checkable"
             )
+        try:
+            validators.reference_kind(reference)
+        except validators.ReferenceSpecError:
+            # A stored reference must name its grading lane before it can reach a learner. This is
+            # the write gate that makes "no kind" impossible by construction, not by convention
+            # (docs/GRADING-LANES.md).
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "this check does not declare a grading lane and cannot be assessed.",
+                reason="check_not_gradable",
+                objective_id=objective["id"],
+            )
         current = _row(
             connection, "SELECT MAX(version) AS version FROM checks WHERE objective_id = ?", (objective["id"],)
         )
@@ -979,9 +992,19 @@ def progression_challenge_out(payload: dict[str, Any], envelope: dict[str, Any])
             "UPDATE checks SET state = 'superseded' WHERE objective_id = ? AND state = 'open'", (objective["id"],)
         )
         _, reference, rubric = _spec_content(spec)
+        variant_reference = variant.get("reference") or reference
+        try:
+            validators.reference_kind(variant_reference)
+        except validators.ReferenceSpecError:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "this challenge does not declare a grading lane and cannot be assessed.",
+                reason="check_not_gradable",
+                objective_id=objective["id"],
+            )
         check_id = _insert_check(
             connection, objective, spec, variant.get("stimulus") or {},
-            variant.get("reference") or reference, variant.get("rubric") or rubric, version,
+            variant_reference, variant.get("rubric") or rubric, version,
         )
         _transition(connection, enrollment["id"], expected, to_revision, "continue")
         result = {"check_id": check_id, "check_version": version, "revision": to_revision}

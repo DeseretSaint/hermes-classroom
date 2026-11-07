@@ -210,10 +210,15 @@ def grade(
 ) -> GradingResult:
     """Route one answer to the lane its reference declares.
 
-    Only an explicitly closed kind takes the deterministic lane. Anything else — including a
-    missing or unknown kind — is open, because guessing a lane would be guessing a verdict.
+    A closed kind takes the deterministic lane and ``rubric_only`` takes the open lane. A missing
+    or unknown kind is a **grader failure**, not an open response: silently falling through to the
+    open lane is how every generated lesson became ungradeable while looking deliberate. Callers
+    persist that failure as ``needs_retry``, exactly like any other unavailable grader.
     """
-    kind = (reference or {}).get("kind")
+    try:
+        kind = validators.reference_kind(reference)
+    except validators.ReferenceSpecError as exc:
+        raise GradingUnavailable(str(exc)) from exc
     if kind in validators.CLOSED_KINDS:
         return grade_closed(reference=reference, rubric=rubric, answer=answer)
     return grade_open(
