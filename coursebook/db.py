@@ -60,14 +60,25 @@ class SchemaDrift(RuntimeError):
     """An applied migration's checksum no longer matches the file on disk."""
 
 
+#: Schema version this build expects and writes. ``cb.db`` declares the same number; the
+#: migration runner refuses a package whose contract and constant disagree, so a half-done bump
+#: is a hard failure rather than a database two versions apart from its contract.
+DB_SCHEMA_VERSION = 7
+
+
 def db_contract() -> dict[str, Any]:
     """The authoritative table/record inventory (``cb.db``)."""
     return contract("cb.db")
 
 
 def target_schema_version() -> int:
-    """Schema version this build expects, read from ``cb.db``."""
-    return int(db_contract()["schema_version"])
+    """Schema version this build expects, read from ``cb.db`` and pinned by the constant."""
+    declared = int(db_contract()["schema_version"])
+    if declared != DB_SCHEMA_VERSION:
+        raise SchemaDrift(
+            f"cb.db declares schema_version {declared}, code expects {DB_SCHEMA_VERSION}"
+        )
+    return DB_SCHEMA_VERSION
 
 
 def migration_table() -> str:

@@ -1,0 +1,181 @@
+"""Blueprint v2 fixtures shared by the unit-stage tests and the scoped plan test.
+
+Every document is hand-built here, never copied from a provider. The rules pass because the
+fields are honest (no invented URL, no sourced claim without a ledger row), not because the
+builder bypasses a check.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+from typing import Any, Sequence
+
+from coursebook import generation as gen
+
+NOW = datetime(2026, 11, 7, 12, 0, tzinfo=timezone.utc)
+
+
+def media_none() -> dict[str, Any]:
+    return {
+        "construct": "",
+        "image": {"level": "none", "role": "none"},
+        "audio": {"level": "none", "role": "none"},
+    }
+
+
+def blueprint_plan(
+    *,
+    scope: str = "single",
+    units: int = 1,
+    objectives_per_unit: int = 1,
+    recipe: str = "casual",
+    check_kind: str | None = None,
+    reviews: Sequence[int] = (),
+    spaced_review: bool | None = None,
+) -> dict[str, Any]:
+    """A schema-valid ``coursebook.plan.v2`` document.
+
+    ``reviews`` is the per-unit review section count (one entry per unit). ``target_lessons`` is
+    the unit's objective count plus its review count, which is what the unit stage must author.
+    """
+    if check_kind is None:
+        check_kind = "verification" if recipe == "one_off" else "quiz"
+    if spaced_review is None:
+        spaced_review = recipe == "committed"
+    unit_rows: list[dict[str, Any]] = []
+    objective_rows: list[dict[str, Any]] = []
+    check_rows: list[dict[str, Any]] = []
+    ordinal = 1
+    for unit_ordinal in range(1, units + 1):
+        review_count = int(reviews[unit_ordinal - 1]) if unit_ordinal - 1 < len(reviews) else 0
+        unit_rows.append(
+            {
+                "ordinal": unit_ordinal,
+                "title": f"Unit {unit_ordinal}: a distinct phase",
+                "goal": f"Unit {unit_ordinal} makes the next part of the goal possible.",
+                "prereq_unit_ordinals": [unit_ordinal - 1] if unit_ordinal > 1 else [],
+                "target_lessons": objectives_per_unit + review_count,
+            }
+        )
+        for _ in range(objectives_per_unit):
+            objective_rows.append(
+                {
+                    "ordinal": ordinal,
+                    "unit_ref": unit_ordinal,
+                    "title": f"Objective {ordinal}: do the observable thing",
+                    "evidence_target": "comprehension",
+                    "evidence_criteria": [
+                        "Shows the behaviour in a fresh example without prompting"
+                    ],
+                    "support": "unverified",
+                }
+            )
+            check_rows.append(
+                {
+                    "objective_ref": ordinal,
+                    "kind": check_kind,
+                    "evidence_target": "comprehension",
+                }
+            )
+            ordinal += 1
+    weeks = {"single": 1, "short": 8, "full": 24}.get(scope, 24)
+    plan: dict[str, Any] = {
+        "plan_schema": gen.PLAN_SCHEMA_V2_NAME,
+        "scope": scope,
+        "title": "A scoped course",
+        "learner_outcome": "The learner can do the thing this course is about.",
+        "delivery": "self_study",
+        "time_estimate": {
+            "sessions_per_week": 2,
+            "minutes_per_session": 45,
+            "weeks": weeks,
+            "basis": "none",
+            "confidence": "low",
+            "rationale": "A planning estimate, not an attainment claim.",
+        },
+        "units": unit_rows,
+        "objectives": objective_rows,
+        "check_plan": check_rows,
+        "context_needs": ["romaji scaffold while the learner reads kana"],
+        "source_ids": [],
+        "exclusions": ["Nothing beyond the stated learner outcome is claimed"],
+        "spaced_review": spaced_review,
+    }
+    if recipe in ("casual", "one_off"):
+        plan["evidence_note"] = (
+            "A casual/one-off course: checks are self-reported and never independent evidence."
+        )
+    return plan
+
+
+def unit_sections_document(
+    *,
+    unit: dict[str, Any],
+    objectives: Sequence[dict[str, Any]],
+    reviews: int = 0,
+) -> dict[str, Any]:
+    """A schema-valid unit-sections document for one unit."""
+    sections: list[dict[str, Any]] = []
+    for index, objective in enumerate(objectives, start=1):
+        sections.append(
+            {
+                "ordinal": index,
+                "unit_ref": int(unit["ordinal"]),
+                "role": "owner",
+                "primary_objective_ref": int(objective["ordinal"]),
+                "reinforces": [],
+                "title": f"Lesson {objective['ordinal']}: the observable thing",
+                "lesson_intent": (
+                    "Carry the construct the objective names so a cold attempt can show it."
+                ),
+                "context_needs": ["a quiet place to answer"],
+                "source_ids": [],
+                "media_need": media_none(),
+            }
+        )
+    for extra in range(1, reviews + 1):
+        refs = [int(obj["ordinal"]) for obj in objectives[:2]] or [int(objectives[0]["ordinal"])]
+        sections.append(
+            {
+                "ordinal": len(sections) + 1,
+                "unit_ref": int(unit["ordinal"]),
+                "role": "review",
+                "primary_objective_ref": None,
+                "reinforces": refs,
+                "title": f"Review {extra}: retrieval of earlier work",
+                "lesson_intent": (
+                    "Retrieve the earlier objective with its existing check, without reteaching."
+                ),
+                "context_needs": ["a quiet place to answer"],
+                "source_ids": [],
+                "media_need": media_none(),
+            }
+        )
+    return {"unit_ref": int(unit["ordinal"]), "sections": sections}
+
+
+def response(payload: dict) -> gen.LLMResponse:
+    return gen.LLMResponse(
+        text=json.dumps(payload, ensure_ascii=False),
+        parsed=payload,
+        provider="fake",
+        model="fake-model",
+        input_tokens=120,
+        output_tokens=240,
+    )
+
+
+def validation_pass() -> dict[str, Any]:
+    return {
+        "verdict": "pass",
+        "criteria": [
+            {
+                "id": name,
+                "verdict": "pass",
+                "reason": "nothing in the artifact contradicts this criterion",
+            }
+            for name in gen.VALIDATION_CRITERIA
+        ],
+        "rejections": [],
+    }

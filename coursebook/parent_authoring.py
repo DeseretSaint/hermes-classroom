@@ -115,10 +115,23 @@ def plan_hash(connection, plan) -> str:
 
     ``domain._plan_hash`` delegates here so the hash a parent approves (``plan.approve``), the
     hash ``parent.blueprint.read`` reports and the hash inside ``content_hash`` can never drift.
+
+    R4 legacy invariance is structural, not a special case: the ``units`` key is added only when
+    at least one ``plan_units`` row exists, and an objective's ``unit`` key only when its
+    ``unit_id`` is non-NULL. A plan stored before migration 0007 therefore hashes exactly the
+    payload it hashed under v6 — byte for byte, so every stored ``plan_content_hash`` keeps
+    binding. A unit retitle or a prerequisite change *does* change the hash, because it changes
+    what the learner approved.
     """
+    objective_columns = {
+        str(row[1]) for row in connection.execute("PRAGMA table_info(objectives)").fetchall()
+    }
+    has_unit_column = "unit_id" in objective_columns
+    select = "SELECT id, ordinal, title, evidence_target, evidence_criteria_json, version"
+    if has_unit_column:
+        select += ", unit_id"
     objectives = connection.execute(
-        "SELECT id, ordinal, title, evidence_target, evidence_criteria_json, version"
-        " FROM objectives WHERE plan_id = ? ORDER BY ordinal",
+        select + " FROM objectives WHERE plan_id = ? ORDER BY ordinal",
         (plan["id"],),
     ).fetchall()
     payload = {
@@ -126,18 +139,50 @@ def plan_hash(connection, plan) -> str:
         "version": plan["version"],
         "schedule": _load(plan["schedule_json"], {}),
         "objectives": [
+            _objective_hash_entry(row, has_unit_column) for row in objectives
+        ],
+    }
+    tables = {
+        str(row[0])
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ).fetchall()
+    }
+    units = []
+    if "plan_units" in tables:
+        units = connection.execute(
+            "SELECT id, ordinal, title, goal, prereq_unit_ordinals_json, target_lessons"
+            " FROM plan_units WHERE plan_id = ? ORDER BY ordinal",
+            (plan["id"],),
+        ).fetchall()
+    if units:
+        payload["units"] = [
             {
                 "id": row["id"],
                 "ordinal": row["ordinal"],
                 "title": row["title"],
-                "evidence_target": row["evidence_target"],
-                "evidence_criteria": _load(row["evidence_criteria_json"], []),
-                "version": row["version"],
+                "goal": row["goal"],
+                "prereq_unit_ordinals": _load(row["prereq_unit_ordinals_json"], []),
+                "target_lessons": row["target_lessons"],
             }
-            for row in objectives
-        ],
-    }
+            for row in units
+        ]
     return "sha256:" + hashlib.sha256(packs.canonical_json_bytes(payload)).hexdigest()
+
+
+def _objective_hash_entry(row, has_unit_column: bool) -> dict[str, Any]:
+    """One objective's hash entry. ``unit`` exists only for a unit-scoped (post-0007) row."""
+    entry = {
+        "id": row["id"],
+        "ordinal": row["ordinal"],
+        "title": row["title"],
+        "evidence_target": row["evidence_target"],
+        "evidence_criteria": _load(row["evidence_criteria_json"], []),
+        "version": row["version"],
+    }
+    if has_unit_column and row["unit_id"] is not None:
+        entry["unit"] = row["unit_id"]
+    return entry
 
 
 def _objectives(connection, plan_id: str) -> list[Any]:
