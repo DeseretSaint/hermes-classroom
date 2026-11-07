@@ -19,28 +19,65 @@ No demo has been recorded. Read the status table before installing.
 
 ## Status
 
-Version 0.1.0. The release gates and the route evidence for this tree are in
+Version 0.1.0. The release gates and the route evidence for the 0.1.0 tree are in
 `docs/CB017-RELEASE-VERIFICATION.md` (CB-017 line, merged master `29bede7`); the adversarial
 review and the contest matrix are `docs/REVIEW_CB017-FINAL.md`, including Vellum's row-9 export
 tail in §10. `docs/CB016-RELEASE-VERIFICATION.md` is the earlier record at `e93b8c5`, kept for its
 two condition captures. The adversarial report on the previous candidate is `docs/REVIEW_CB014.md`
 (candidate `f4a42f34`, NO-GO on the Desktop route, not on the backend).
 
-Master has since advanced beyond `29bede7` with the M0 host-media slice (`3cead45`); the 0.1.0
-evidence above is still the `29bede7` record and has not been re-run on the new tree. The
-default-profile demo gate `t_6a32ffe9` must measure current master after the operator restarts
-that gateway; publication remains gated by `docs/SUBMISSION.md` §0.
+`master` has since advanced beyond `29bede7` with the M0 host-media slice (`3cead45`) and the
+M1-M3 product line (`d28e7e3`). The 0.1.0 evidence above is still the `29bede7` record and has not
+been re-run on the newer tree. The default-profile demo gate `t_6a32ffe9` must measure current
+`master` after the operator restarts that gateway; publication remains gated by
+`docs/SUBMISSION.md` §0.
 
-Three states are used below. **Working** means a command was run against this build and passed.
+### Product line after 0.1.0
+
+This tree also carries the post-0.1.0 product line from `docs/VISUAL_MEDIA_PLAN.md`: M0 on `master`
+at `3cead45`, M1-M3 merged on `master` at `d28e7e3`, and M4 merged here from
+`wt/m4-visual-regression` at `2b37b5b`. Phase-to-commit mapping, per-phase evidence and the gated
+remainder: `docs/PRODUCT-LINE-RELEASE-NOTES.md`.
+
+The 0.1.0 rows below are the release record for `29bede7` and are deliberately not rewritten to
+describe this tree. The product-line rows are separate, and they use two weaker words:
+
+- **Rendered** — the shipped Desktop module was mounted and measured in headless Chromium against a
+  stub host transport. Real paint, real layout and a real accessibility tree; no backend, no chat,
+  no `lesson.page` RPC.
+- **Working (live)** — a mounted Desktop window reached a real isolated backend and the state was
+  read back from it. Neither word means "recorded as a demo", and neither is a release claim.
+
+| Product-line surface | State on this tree | Evidence |
+| --- | --- | --- |
+| Contracts `cb.rpc` v9 and `cb.db` v5 | Working: 54 declared methods and 54 handlers, parity asserted by the suite; schema 5 from migrations `0001`-`0005` | `contracts/rpc.v9.json`, `contracts/db.v5.json`; parity asserted by the suite (`1039 tests OK`) |
+| Textbook view | Working (live): a real document served over the real RPC; the frame set covers Textbook and Guided (13 frames) | `audit/visual/m1-guided-authoring/README.md` |
+| Guided view | Working (live) on a newly authored document (`state=complete`, `views.guided=true`). The older demo course still reports `textbook_only` because its stored page predates `lesson-prompt.v5`; it was not rewritten | `audit/visual/m1-guided-authoring/` |
+| Field Desk home (Continue, path, sources, all courses) | Working (live): the desk and its backend-off, empty and loading states were read from an isolated window | `audit/visual/m2-field-desk/README.md`, `live-evidence.json` |
+| Field Notes (save from a block, search, return to the exact block) | Working (live): 15 live frames including 460 px and exact-block return | `audit/visual/m2-field-notes/live-evidence.json` |
+| Field Quest | Rendered: 14 static frames and 56 render/parity tests, plus a live availability capture. No live Quest frame exists, because the stored lessons in every reachable home predate authored `short` | `audit/visual/m2-field-quest/README.md`, `live-availability.json` |
+| Procedure lens (typed header, numbered steps, hazard callout, schematic rows, source permission) | Rendered: 7 frames and 28 validator/render tests. No lesson prompt authors a `procedure` header yet, so this is proof against a contract-valid fixture | `docs/M4-PROCEDURE-LAYOUT.md`, `audit/visual/m4-procedure/` |
+| Pronunciation Studio (listen, record, compare, dispute) | Rendered: 14 frames and 15 jsdom interaction tests. It is inert on every existing section because none has a narration media child; no live attempt was walked | `docs/M3-PRONUNCIATION-UI.md`, `tests/test_desktop_pronunciation.py`, `audit/visual/m3-pronunciation/` |
+| Media generation and preview | Working for the host adapter (one real PNG and one real MP3 through `docs/M0-MEDIA-PROBE.md`) and Rendered in the lesson (60 decoded images, 22 audio elements, 0 autoplay, text equivalent for each). The preview route is covered by tests, not driven live on this tree | `docs/M0-MEDIA-PROBE.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `audit/visual/m4-visual/audit.json` |
+| M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,102 text nodes (worst authored 6.61:1), 0 unnamed of 340 accessibility controls, no clipped text or horizontal overflow | `audit/visual/m4-visual/audit.json` (sha256 `ac3538bd…1bf70`), `docs/M4-VISUAL-MEDIA-AUDIT.md` |
+| 460 px narrow width | Partial: the module itself reflows at 460 px with no horizontal overflow, but the shipped host still gives the route 101 px when the chat rail is docked. The host patch that fixes the grid is neither merged nor installed | `audit/visual/m1-narrow-width/DECISION.md` §Residuals; `audit/visual/m4-visual/*-460-*.png` |
+
+Nothing in the product line changes install status. The catalog entry is still a draft pinned to the
+0.1.0 release commit, no pull request has been opened, and no release tag exists.
+
+### 0.1.0 surface table (release record, post-release changes named)
+
+Three states are used in this table. **Working** means a command was run against that build and
+passed.
 **Implemented, unverified in the UI** means the backend path is implemented and tested, and the
 Desktop surface exists, but this release pass did not drive it through the UI. **Absent** means
-there is no code path at all.
+there is no code path at all. Unless a row names a later commit, the row describes `29bede7`.
 
 | Surface | State in this build |
 | --- | --- |
 | One installable package (agent half plus Desktop half) | Working: `scripts/install-local.sh` installs both halves; `hermes plugins validate` and `hermes plugins doctor` pass |
 | `coursebook_status` agent tool (read-only health) | Working: the single registered tool |
-| Backend routes `/health`, `/schema`, `/rpc`, `/runtime`, `/packs/*`, `/artifacts/<handle>`, `/media/<artifact_id>` | Implemented: the first six were re-driven by `scripts/probe-backend.py` (31/31); the media preview is covered by `tests/test_manifest.py` and `tests/test_media_generation.py` |
+| Backend routes `/health`, `/schema`, `/rpc`, `/runtime`, `/packs/*`, `/artifacts/<handle>`, `/media/<artifact_id>` | Implemented: the first six were re-driven by `scripts/probe-backend.py` (31/31). `/media/<artifact_id>` is an M0 addition (`3cead45`), covered by `tests/test_manifest.py` and `tests/test_media_generation.py`; it does not exist at `29bede7` |
 | Frozen contracts: `cb.rpc` v7, `cb.db` v4, `cb.jobs` v2, `cb.errors` v2, `cb.pack` v1, `cb.projection` v1, `cb.vocabulary` v1 | Working: 52 declared methods, 52 handlers, no contract problems from `/runtime` |
 | Profile-scoped SQLite schema and migrations `0001`-`0004` | Working: `health.get` answers `db.ready: true`, `schema_version: 4` on a fresh home |
 | Desktop route `#/coursebook`, sidebar entry, pane, command palette, settings page | Working with a reachable backend: mounts the library, `New course`, Parent Studio and a course card (`docs/CB017-RELEASE-VERIFICATION.md` §2). A window with no gateway renders no route page for any hash — host shell degradation, reclassified P3-operational by Atlas (`docs/REVIEW_CB017-FINAL.md` §3.1) |
@@ -49,10 +86,11 @@ there is no code path at all.
 | Notebooks, quiz history, review queue, usage accounting | Implemented, unverified in the UI: `notebook.save/list/update/delete`, `quiz.history`, `review.queue/action` and `usage.summary` are in the mounted registry |
 | Pack import and export, Parent Studio authoring | Implemented, unverified in the UI: `pack.import/export/preview/inspect/list/delete` and eight `parent.*` methods; P17/P18/P20 pass, and export reproduces the reviewed content hash |
 | Research | Implemented inside plan jobs: bounded, query-capped and ledgered through the host `web_search`/`web_extract` seam; records `unavailable` rather than inventing a source. No standalone RPC |
-| Image and speech generation | Implemented: the host's configured image/TTS providers are called through `ctx.dispatch_tool`; generated visuals and narration are stored as content-addressed artifacts with text equivalents and honest degraded states. Pronunciation scoring is not shipped yet |
+| Image and speech generation | Implemented on `master` since `3cead45` (M0): the host's configured image/TTS providers are called through `ctx.dispatch_tool`; generated visuals and narration are stored as content-addressed artifacts with text equivalents and honest degraded states. Absent at the 0.1.0 release commit `29bede7`. Pronunciation scoring is not shipped yet |
 | Reminders | Absent: no RPC, no job runner, no storage |
 
-Every method declared by `cb.rpc` v7 has a handler in this build, so there is no command that
+Every method declared by `cb.rpc` v7 has a handler in that build, and the same holds on this tree
+for v9's 54 methods, so there is no command that
 answers a plausible success for work it cannot do. A method outside the contract is refused with
 `VALIDATION_FAILED`; a handler that cannot answer returns a contract error rather than a
 fabricated result. Two backend defects are open and recorded in `docs/REVIEW_CB014.md`:
@@ -164,6 +202,36 @@ This candidate is not shippable as a Desktop product.
 - `evidence.inspect` returns an open check's reference in the L2 projection (CB-QA-10). The UI
   does not render it; the RPC boundary does.
 
+The product line adds surfaces with limits of their own; these are not the 0.1.0 rows above.
+
+- Narrow width is a host gap, not a plugin claim. At 460 px the shipped host gives the Coursebook
+  route 101 px while the chat rail is docked. The fix (`narrowLeavesGrid`) lives on
+  `DeseretSaint/hermes-agent` branch `wt/host-narrow-rail` (`5900b6e7a0`), is neither merged nor
+  installed, and the M4 frames measure the module in a 460 px viewport rather than through the host
+  grid (`audit/visual/m1-narrow-width/DECISION.md`).
+- Field Quest has no live frame. Stored lessons predate authored `short`, so `views.field_quest` is
+  false on every section a window reached; the lens is proven by render and parity tests
+  (`audit/visual/m2-field-quest/README.md`).
+- The procedure lens has no authoring path. The validator, contract and renderer are proven against
+  a contract-valid fixture; the lesson prompt does not emit `procedure` yet
+  (`docs/M4-PROCEDURE-LAYOUT.md`).
+- The Pronunciation Studio is inert until a section carries narration media, and no existing section
+  does. With no recogniser configured it says "Practice only, not graded" and records nothing; a
+  take is `model_assessed` evidence, never verified pronunciation or mastery
+  (`docs/M3-PRONUNCIATION-UI.md`).
+- Media proof is split. Generation is real (one host PNG and one host MP3 in
+  `docs/M0-MEDIA-PROBE.md`); the lesson renderer is measured statically, and audio is checked for
+  attributes and decode, not audibility (`docs/M4-VISUAL-MEDIA-AUDIT.md`).
+- No user-facing text-only or reduced-data preference ships. The text-only path exercised is the
+  no-artifact fallback.
+- Reduced motion is satisfied by construction: the module paints no transition or animation, so the
+  audit cannot claim to have suppressed one.
+- Accessibility names come from the Chromium accessibility tree, not from a screen reader.
+- A failed audio preview is typed `visual` in the internal `data-cb-media-kind` attribute while its
+  visible label and transcript stay correct (`t_acd97416`, low, open).
+- The product line is not demo evidence and not a release: no video exists, the demo gate is NOT
+  MET (`docs/DEMO.md`), and no catalog PR, tag or submission was made (`docs/SUBMISSION.md` §0).
+
 There is no learning-style diagnosis, no "2 sigma" claim, no guaranteed mastery, no child safety
 or COPPA certification, and no efficacy claim. Educational research motivates the design;
 Coursebook has not established that it improves learning. Parent observations are labeled
@@ -179,6 +247,12 @@ Coursebook has not established that it improves learning. Parent observations ar
 - `docs/WORK_PACKAGES.md`: file ownership and merge order.
 - `docs/PRIVACY_EGRESS.md`: per-operation disclosure.
 - `docs/DEMO.md`: the demo script and its precomputed/live split.
+- `docs/PRODUCT-LINE-RELEASE-NOTES.md`: phase-to-commit map for the post-0.1.0 product line and what
+  is still gated.
+- `docs/VISUAL_MEDIA_PLAN.md`: the product-line direction that M0-M4 implement.
+- `docs/M0-MEDIA-PROBE.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/M4-PROCEDURE-LAYOUT.md`,
+  `docs/M3-PRONUNCIATION-UI.md`: measured evidence for media, the visual/a11y gate, the procedure
+  lens and the pronunciation studio.
 - `docs/CB017-RELEASE-VERIFICATION.md`: gates, clean install, the clean-export run and the route
   finding as reclassified (CB-017 line, merged master `29bede7`).
 - `docs/CB016-RELEASE-VERIFICATION.md`: the earlier record at `e93b8c5`, including the two route
@@ -198,8 +272,9 @@ bash scripts/validate.sh        # pre-merge gate: tests, syntax, admission on an
 bash scripts/validate-plugin.sh # release gate: admission on a git archive export of HEAD
 ```
 
-Run `scripts/validate.sh` before any merge into master. It is the pre-merge gate, and it passes
-on this tree: 685 tests OK, node check OK, 31/31 backend expectations. Its admission step validates
+Run `scripts/validate.sh` before any merge into master. It is the pre-merge gate; it passed on the
+0.1.0 commit with 685 tests, node check OK and 31/31 backend expectations. On this tree the suite
+is 1039 tests (`python3 -m unittest discover -s tests -t .`, `OK`). Its admission step validates
 an export of the tracked tree (`scripts/lib/gate-export.sh`), not the checkout root, so the
 gitignored `.worktrees/` farm is never scanned and an uncommitted edit to a tracked file still fails
 that step. `scripts/validate-plugin.sh` is the release gate for one pinned commit.
