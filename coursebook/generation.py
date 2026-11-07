@@ -6378,7 +6378,11 @@ def _resolve_review_target(
             "evidence_target": row["evidence_target"],
             "stimulus": dict(stimulus),
             "learner_instructions": stimulus.get("learner_instructions") or "",
-            "scaffolds": dict(stimulus.get("scaffolds") or {}),
+            # H-18: an owner check authored after this change stores the open scaffold list, and a
+            # legacy one stores the Japanese triple object. Normalise both instead of dict()-ing a
+            # list, so a review lesson over an H-18 lesson keeps working and its scaffolds stay
+            # readable by enforce_lesson_rules.
+            "scaffolds": localization.copy_scaffolds(stimulus.get("scaffolds")),
             "assistance_policy": dict(stimulus.get("assistance_policy") or {}),
             "reference_answer": reference.get("reference_answer"),
             "accepted_answers": list(reference.get("accepted_answers") or []),

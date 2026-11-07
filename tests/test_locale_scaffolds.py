@@ -12,6 +12,7 @@ These tests pin the decision the Japanese-only scaffold triple could not express
 from __future__ import annotations
 
 import json
+import sqlite3
 import unittest
 from pathlib import Path
 
@@ -205,3 +206,71 @@ class LegacyDocumentHashTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("document = lesson_document.document_from_page(authored, check_id=check_id)", source)
         self.assertNotIn('authored, check_id=check_id, locale=', source)
+
+
+class ReviewTargetScaffoldTest(unittest.TestCase):
+    """A review lesson reuses an owner check, so it must read the new scaffold list too.
+
+    Before H-18 the review target copied ``stimulus.scaffolds`` with ``dict(...)``. An H-18 lesson
+    stores a list, and ``dict(list)`` raises, which would have made every review section over a
+    newly authored lesson fail. This pins the normalisation on a real SQLite database.
+    """
+
+    def _connection(self):
+        connection = sqlite3.connect(":memory:")
+        connection.row_factory = sqlite3.Row
+        gen.ensure_schema(connection)
+        now = "2026-11-07T00:00:00Z"
+        connection.execute(
+            "INSERT INTO plans (id, course_id, version, state, plan_hash, schedule_json, created_at)"
+            " VALUES ('pln_review0001', 'crs_review0001', 1, 'approved', 'h', '{}', ?)",
+            (now,),
+        )
+        connection.execute(
+            "INSERT INTO objectives (id, plan_id, ordinal, title, evidence_target,"
+            " evidence_criteria_json, state, version, created_at)"
+            " VALUES ('obj_review0001', 'pln_review0001', 1, 'Greet', 'recall', '[]', 'independent', 1, ?)",
+            (now,),
+        )
+        return connection
+
+    def _seed_check(self, connection, scaffolds) -> None:
+        connection.execute(
+            "INSERT INTO checks (id, objective_id, version, evidence_target, stimulus_json,"
+            " rubric_json, reference_json, locale, audit_state, state, created_at)"
+            " VALUES ('chk_review0001', 'obj_review0001', 1, 'recall', ?, '{}', '{}', 'ja-JP',"
+            " 'passed', 'open', '2026-11-07T00:00:00Z')",
+            (json.dumps({"prompt": "Say hello", "scaffolds": scaffolds}),),
+        )
+        connection.execute(
+            "INSERT INTO gen_lessons (id, plan_id, section_id, plan_hash, version, state, page_json,"
+            " created_at, updated_at) VALUES ('lsn_review0001', 'pln_review0001', 'sec1', 'h', 1,"
+            " 'validated', ?, '2026-11-07T00:00:00Z', '2026-11-07T00:00:00Z')",
+            (json.dumps({"check": {"kind": "quiz"}}),),
+        )
+        connection.execute(
+            "INSERT INTO gen_lesson_checks (lesson_id, check_id, objective_ref)"
+            " VALUES ('lsn_review0001', 'chk_review0001', 1)"
+        )
+
+    def test_open_list_scaffolds_survive_the_review_projection(self) -> None:
+        connection = self._connection()
+        self.addCleanup(connection.close)
+        self._seed_check(connection, [{"kind": "romaji"}, {"kind": "gloss", "gloss": "en"}])
+        target = gen._resolve_review_target(connection, "pln_review0001", {"objective_refs": [1]})
+        self.assertEqual(target["check"]["scaffolds"], [{"kind": "romaji"}, {"kind": "gloss", "gloss": "en"}])
+        self.assertEqual(target["check"]["kind"], "quiz")
+        self.assertEqual(
+            localization.declared_scaffold_kinds(target["check"]["scaffolds"]),
+            {"romaji", "gloss"},
+        )
+
+    def test_legacy_triple_scaffolds_still_project(self) -> None:
+        connection = self._connection()
+        self.addCleanup(connection.close)
+        self._seed_check(connection, {"romaji": True, "furigana": True, "english_meaning": True})
+        target = gen._resolve_review_target(connection, "pln_review0001", {"objective_refs": [1]})
+        self.assertEqual(
+            target["check"]["scaffolds"],
+            [{"kind": "romaji"}, {"kind": "furigana"}, {"kind": "gloss"}],
+        )
