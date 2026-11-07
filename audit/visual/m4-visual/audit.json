@@ -1,5 +1,6 @@
 {
-  "generated_at": "2026-11-07T10:02:41.212Z",
+  "generated_at": "2026-11-07T12:58:00.956Z",
+  "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
   "frames": [
@@ -457,8 +458,11 @@
       "ax_controls": 13,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -467,6 +471,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -475,6 +481,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -483,6 +491,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -491,57 +501,53 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
+          "kind": "authored",
+          "tab": 4,
+          "tag": "button",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 5,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 6,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 7,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 10,
+      "keyboard_count": 8,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-light-1280-32",
@@ -997,8 +1003,11 @@
       "ax_controls": 13,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -1007,6 +1016,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -1015,6 +1026,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -1023,6 +1036,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -1031,57 +1046,53 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
+          "kind": "authored",
+          "tab": 4,
+          "tag": "button",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 653
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 5,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 653
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 6,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 653
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 653
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 653
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 7,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 653
         }
       ],
-      "keyboard_count": 10,
+      "keyboard_count": 8,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-light-460-16",
@@ -1537,9 +1548,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -1996,8 +2012,11 @@
       "ax_controls": 13,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -2006,6 +2025,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -2014,6 +2035,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -2022,6 +2045,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -2030,57 +2055,53 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
+          "kind": "authored",
+          "tab": 4,
+          "tag": "button",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 5,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 6,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 7,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 10,
+      "keyboard_count": 8,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-dark-1280-32",
@@ -2536,8 +2557,11 @@
       "ax_controls": 13,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -2546,6 +2570,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -2554,6 +2580,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -2562,6 +2590,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -2570,57 +2600,53 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
+          "kind": "authored",
+          "tab": 4,
+          "tag": "button",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 653
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 5,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 653
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 6,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 653
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 653
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 653
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 7,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 653
         }
       ],
-      "keyboard_count": 10,
+      "keyboard_count": 8,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-dark-460-16",
@@ -3076,9 +3102,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -3495,8 +3526,11 @@
       "ax_controls": 6,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 6,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -3505,6 +3539,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -3513,6 +3549,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -3521,6 +3559,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -3529,6 +3569,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save audio",
           "name": "",
@@ -3537,14 +3579,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -3553,9 +3589,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 7,
+      "keyboard_count": 6,
+      "keyboard_presses": 6,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 7
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 6
     },
     {
       "id": "textbook-textonly-light-1280-32",
@@ -3971,8 +4011,11 @@
       "ax_controls": 6,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 6,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -3981,6 +4024,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -3989,6 +4034,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -3997,6 +4044,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -4005,6 +4054,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save audio",
           "name": "",
@@ -4013,14 +4064,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 258
-        },
-        {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -4029,9 +4074,13 @@
           "scroll_y": 258
         }
       ],
-      "keyboard_count": 7,
+      "keyboard_count": 6,
+      "keyboard_presses": 6,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 7
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 6
     },
     {
       "id": "textbook-textonly-light-460-16",
@@ -4447,9 +4496,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -4866,8 +4920,11 @@
       "ax_controls": 6,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 6,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -4876,6 +4933,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -4884,6 +4943,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -4892,6 +4953,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -4900,6 +4963,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save audio",
           "name": "",
@@ -4908,14 +4973,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -4924,9 +4983,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 7,
+      "keyboard_count": 6,
+      "keyboard_presses": 6,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 7
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 6
     },
     {
       "id": "textbook-textonly-dark-1280-32",
@@ -5342,8 +5405,11 @@
       "ax_controls": 6,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 6,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -5352,6 +5418,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -5360,6 +5428,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -5368,6 +5438,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -5376,6 +5448,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save audio",
           "name": "",
@@ -5384,22 +5458,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 258
-        },
-        {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 258
-        },
-        {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -5408,9 +5468,13 @@
           "scroll_y": 258
         }
       ],
-      "keyboard_count": 8,
+      "keyboard_count": 6,
+      "keyboard_presses": 6,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 8
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 6
     },
     {
       "id": "textbook-textonly-dark-460-16",
@@ -5826,9 +5890,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -6271,8 +6340,11 @@
       "ax_controls": 8,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -6281,6 +6353,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -6289,6 +6363,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -6297,6 +6373,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -6305,6 +6383,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -6313,6 +6393,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -6321,6 +6403,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Save audio",
           "name": "",
@@ -6329,14 +6413,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -6345,9 +6423,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 9,
+      "keyboard_count": 8,
+      "keyboard_presses": 8,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-unavailable-light-1280-32",
@@ -6789,8 +6871,11 @@
       "ax_controls": 8,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -6799,6 +6884,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -6807,6 +6894,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -6815,6 +6904,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -6823,6 +6914,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -6831,6 +6924,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -6839,6 +6934,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Save audio",
           "name": "",
@@ -6847,25 +6944,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 323
-        },
-        {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 9,
+      "keyboard_count": 8,
+      "keyboard_presses": 8,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-unavailable-light-460-16",
@@ -7307,9 +7402,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -7752,8 +7852,11 @@
       "ax_controls": 8,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -7762,6 +7865,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -7770,6 +7875,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -7778,6 +7885,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -7786,6 +7895,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -7794,6 +7905,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -7802,6 +7915,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Save audio",
           "name": "",
@@ -7810,14 +7925,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -7826,9 +7935,13 @@
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 9,
+      "keyboard_count": 8,
+      "keyboard_presses": 8,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-unavailable-dark-1280-32",
@@ -8270,8 +8383,11 @@
       "ax_controls": 8,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -8280,6 +8396,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -8288,6 +8406,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -8296,6 +8416,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -8304,6 +8426,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -8312,6 +8436,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -8320,6 +8446,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Save audio",
           "name": "",
@@ -8328,25 +8456,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 323
-        },
-        {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 9,
+      "keyboard_count": 8,
+      "keyboard_presses": 8,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-unavailable-dark-460-16",
@@ -8788,9 +8914,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -9018,8 +9149,11 @@
       "ax_controls": 5,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 5,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -9028,6 +9162,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -9036,6 +9172,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -9044,6 +9182,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Back",
           "name": "",
@@ -9052,25 +9192,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Continue",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Artifact details",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 6,
+      "keyboard_count": 5,
+      "keyboard_presses": 5,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 6
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 5
     },
     {
       "id": "guided-light-1280-32",
@@ -9297,8 +9435,11 @@
       "ax_controls": 5,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 5,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -9307,6 +9448,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -9315,6 +9458,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -9323,6 +9468,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Back",
           "name": "",
@@ -9331,33 +9478,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Continue",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Artifact details",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Save to notebook",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 7,
+      "keyboard_count": 5,
+      "keyboard_presses": 5,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 7
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 5
     },
     {
       "id": "guided-light-460-16",
@@ -9584,9 +9721,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -9814,8 +9956,11 @@
       "ax_controls": 5,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 5,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -9824,6 +9969,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -9832,6 +9979,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -9840,6 +9989,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Back",
           "name": "",
@@ -9848,25 +9999,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Continue",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Artifact details",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 6,
+      "keyboard_count": 5,
+      "keyboard_presses": 5,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 6
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 5
     },
     {
       "id": "guided-dark-1280-32",
@@ -10093,8 +10242,11 @@
       "ax_controls": 5,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 5,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -10103,6 +10255,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -10111,6 +10265,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -10119,6 +10275,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Back",
           "name": "",
@@ -10127,25 +10285,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Continue",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Artifact details",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 6,
+      "keyboard_count": 5,
+      "keyboard_presses": 5,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 6
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 5
     },
     {
       "id": "guided-dark-460-16",
@@ -10372,9 +10528,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -11052,8 +11213,11 @@
       "ax_controls": 17,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 12,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -11062,6 +11226,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -11070,6 +11236,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -11078,6 +11246,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -11086,6 +11256,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -11094,6 +11266,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -11102,54 +11276,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -11158,17 +11286,63 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 8,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 9,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 10,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 11,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 14,
+      "keyboard_count": 12,
+      "keyboard_presses": 18,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 12
     },
     {
       "id": "quest-light-1280-32",
@@ -11845,8 +12019,11 @@
       "ax_controls": 17,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 12,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -11855,6 +12032,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -11863,6 +12042,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -11871,6 +12052,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -11879,6 +12062,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -11887,6 +12072,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -11895,54 +12082,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -11951,17 +12092,63 @@
           "scroll_y": 830
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 830
+        },
+        {
+          "kind": "authored",
+          "tab": 8,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 830
+        },
+        {
+          "kind": "authored",
+          "tab": 9,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 830
+        },
+        {
+          "kind": "authored",
+          "tab": 10,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 830
+        },
+        {
+          "kind": "authored",
+          "tab": 11,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 928
         }
       ],
-      "keyboard_count": 14,
+      "keyboard_count": 12,
+      "keyboard_presses": 18,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 12
     },
     {
       "id": "quest-light-460-16",
@@ -12638,9 +12825,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -13318,8 +13510,11 @@
       "ax_controls": 17,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 12,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -13328,6 +13523,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -13336,6 +13533,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -13344,6 +13543,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -13352,6 +13553,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -13360,6 +13563,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -13368,54 +13573,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -13424,17 +13583,63 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 8,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 9,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 10,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 11,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 14,
+      "keyboard_count": 12,
+      "keyboard_presses": 18,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 12
     },
     {
       "id": "quest-dark-1280-32",
@@ -14111,8 +14316,11 @@
       "ax_controls": 17,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 12,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -14121,6 +14329,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -14129,6 +14339,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -14137,6 +14349,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -14145,6 +14359,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -14153,6 +14369,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -14161,54 +14379,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 830
-        },
-        {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -14217,17 +14389,63 @@
           "scroll_y": 830
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 830
+        },
+        {
+          "kind": "authored",
+          "tab": 8,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 830
+        },
+        {
+          "kind": "authored",
+          "tab": 9,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 830
+        },
+        {
+          "kind": "authored",
+          "tab": 10,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 830
+        },
+        {
+          "kind": "authored",
+          "tab": 11,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 928
         }
       ],
-      "keyboard_count": 14,
+      "keyboard_count": 12,
+      "keyboard_presses": 18,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 12
     },
     {
       "id": "quest-dark-460-16",
@@ -14904,9 +15122,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -15795,8 +16018,11 @@
       "ax_controls": 11,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 11,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -15805,6 +16031,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -15813,6 +16041,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -15821,6 +16051,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -15829,14 +16061,8 @@
           "scroll_y": 875
         },
         {
-          "tag": "summary",
-          "text": "Text equivalent",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 875
-        },
-        {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -15845,6 +16071,8 @@
           "scroll_y": 875
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -15853,6 +16081,8 @@
           "scroll_y": 875
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -15861,14 +16091,8 @@
           "scroll_y": 875
         },
         {
-          "tag": "summary",
-          "text": "Text equivalent",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 875
-        },
-        {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -15877,6 +16101,8 @@
           "scroll_y": 1197
         },
         {
+          "kind": "authored",
+          "tab": 8,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -15885,6 +16111,8 @@
           "scroll_y": 1197
         },
         {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -15893,6 +16121,8 @@
           "scroll_y": 1197
         },
         {
+          "kind": "authored",
+          "tab": 10,
           "tag": "a",
           "text": "https://example.test/manual/head-gasket",
           "name": "",
@@ -15901,9 +16131,13 @@
           "scroll_y": 1197
         }
       ],
-      "keyboard_count": 13,
+      "keyboard_count": 11,
+      "keyboard_presses": 13,
+      "keyboard_shadow_stops": 2,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 13
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 11
     },
     {
       "id": "procedure-light-1280-32",
@@ -16791,8 +17025,11 @@
       "ax_controls": 11,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 11,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -16801,6 +17038,8 @@
           "scroll_y": 840
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -16809,6 +17048,8 @@
           "scroll_y": 840
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -16817,6 +17058,8 @@
           "scroll_y": 1559
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -16825,14 +17068,8 @@
           "scroll_y": 2291
         },
         {
-          "tag": "summary",
-          "text": "Text equivalent",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 2291
-        },
-        {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -16841,6 +17078,8 @@
           "scroll_y": 2291
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -16849,6 +17088,8 @@
           "scroll_y": 2291
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -16857,14 +17098,8 @@
           "scroll_y": 3379
         },
         {
-          "tag": "summary",
-          "text": "Text equivalent",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 3379
-        },
-        {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -16873,6 +17108,8 @@
           "scroll_y": 3379
         },
         {
+          "kind": "authored",
+          "tab": 8,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -16881,6 +17118,8 @@
           "scroll_y": 3379
         },
         {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -16889,6 +17128,8 @@
           "scroll_y": 3379
         },
         {
+          "kind": "authored",
+          "tab": 10,
           "tag": "a",
           "text": "https://example.test/manual/head-gasket",
           "name": "",
@@ -16897,9 +17138,13 @@
           "scroll_y": 3379
         }
       ],
-      "keyboard_count": 13,
+      "keyboard_count": 11,
+      "keyboard_presses": 13,
+      "keyboard_shadow_stops": 2,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 13
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 11
     },
     {
       "id": "procedure-light-460-16",
@@ -17787,9 +18032,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -18678,8 +18928,11 @@
       "ax_controls": 11,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 11,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -18688,6 +18941,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -18696,6 +18951,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -18704,6 +18961,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -18712,14 +18971,8 @@
           "scroll_y": 875
         },
         {
-          "tag": "summary",
-          "text": "Text equivalent",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 875
-        },
-        {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -18728,6 +18981,8 @@
           "scroll_y": 875
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -18736,6 +18991,8 @@
           "scroll_y": 875
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -18744,14 +19001,8 @@
           "scroll_y": 875
         },
         {
-          "tag": "summary",
-          "text": "Text equivalent",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 875
-        },
-        {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -18760,6 +19011,8 @@
           "scroll_y": 1197
         },
         {
+          "kind": "authored",
+          "tab": 8,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -18768,6 +19021,8 @@
           "scroll_y": 1197
         },
         {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -18776,6 +19031,8 @@
           "scroll_y": 1197
         },
         {
+          "kind": "authored",
+          "tab": 10,
           "tag": "a",
           "text": "https://example.test/manual/head-gasket",
           "name": "",
@@ -18784,9 +19041,13 @@
           "scroll_y": 1197
         }
       ],
-      "keyboard_count": 13,
+      "keyboard_count": 11,
+      "keyboard_presses": 13,
+      "keyboard_shadow_stops": 2,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 13
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 11
     },
     {
       "id": "procedure-dark-1280-32",
@@ -19674,8 +19935,11 @@
       "ax_controls": 11,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 11,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -19684,6 +19948,8 @@
           "scroll_y": 840
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -19692,6 +19958,8 @@
           "scroll_y": 840
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -19700,6 +19968,8 @@
           "scroll_y": 1559
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -19708,14 +19978,8 @@
           "scroll_y": 2291
         },
         {
-          "tag": "summary",
-          "text": "Text equivalent",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 2291
-        },
-        {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -19724,6 +19988,8 @@
           "scroll_y": 2291
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -19732,6 +19998,8 @@
           "scroll_y": 2291
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -19740,14 +20008,8 @@
           "scroll_y": 3379
         },
         {
-          "tag": "summary",
-          "text": "Text equivalent",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 3379
-        },
-        {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -19756,6 +20018,8 @@
           "scroll_y": 3379
         },
         {
+          "kind": "authored",
+          "tab": 8,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -19764,6 +20028,8 @@
           "scroll_y": 3379
         },
         {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -19772,6 +20038,8 @@
           "scroll_y": 3379
         },
         {
+          "kind": "authored",
+          "tab": 10,
           "tag": "a",
           "text": "https://example.test/manual/head-gasket",
           "name": "",
@@ -19780,9 +20048,13 @@
           "scroll_y": 3379
         }
       ],
-      "keyboard_count": 13,
+      "keyboard_count": 11,
+      "keyboard_presses": 13,
+      "keyboard_shadow_stops": 2,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 13
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 11
     },
     {
       "id": "procedure-dark-460-16",
@@ -20670,9 +20942,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -21141,8 +21418,11 @@
       "ax_controls": 10,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 10,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Start the review",
           "name": "",
@@ -21151,6 +21431,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Open the section",
           "name": "",
@@ -21159,6 +21441,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "All field notes",
           "name": "",
@@ -21167,6 +21451,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Go to the current lesson",
           "name": "",
@@ -21175,6 +21461,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "01 Name the three things an engine needs",
           "name": "",
@@ -21183,6 +21471,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "02 Diagnose a no-start Review due",
           "name": "",
@@ -21191,6 +21481,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "03 Replace a fouled plug Started",
           "name": "",
@@ -21199,6 +21491,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "04 Check compression safely Not started",
           "name": "",
@@ -21207,6 +21501,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 8,
           "tag": "button",
           "text": "Show sources",
           "name": "",
@@ -21215,25 +21511,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Search and manage courses",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Start the review",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 11,
+      "keyboard_count": 10,
+      "keyboard_presses": 10,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 10
     },
     {
       "id": "field-desk-light-1280-32",
@@ -21701,8 +21995,11 @@
       "ax_controls": 10,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 10,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Start the review",
           "name": "",
@@ -21711,6 +22008,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Open the section",
           "name": "",
@@ -21719,6 +22018,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "All field notes",
           "name": "",
@@ -21727,6 +22028,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Go to the current lesson",
           "name": "",
@@ -21735,6 +22038,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "01 Name the three things an engine needs",
           "name": "",
@@ -21743,6 +22048,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "02 Diagnose a no-start Review due",
           "name": "",
@@ -21751,6 +22058,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "03 Replace a fouled plug Started",
           "name": "",
@@ -21759,6 +22068,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "04 Check compression safely Not started",
           "name": "",
@@ -21767,6 +22078,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 8,
           "tag": "button",
           "text": "Show sources",
           "name": "",
@@ -21775,25 +22088,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Search and manage courses",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Start the review",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 11,
+      "keyboard_count": 10,
+      "keyboard_presses": 10,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 10
     },
     {
       "id": "field-desk-light-460-16",
@@ -22261,9 +22572,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -22785,8 +23101,11 @@
       "ax_controls": 10,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 10,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Start the review",
           "name": "",
@@ -22795,6 +23114,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Open the section",
           "name": "",
@@ -22803,6 +23124,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "All field notes",
           "name": "",
@@ -22811,6 +23134,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Go to the current lesson",
           "name": "",
@@ -22819,6 +23144,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "01 Name the three things an engine needs",
           "name": "",
@@ -22827,6 +23154,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "02 Diagnose a no-start Review due",
           "name": "",
@@ -22835,6 +23164,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "03 Replace a fouled plug Started",
           "name": "",
@@ -22843,6 +23174,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "04 Check compression safely Not started",
           "name": "",
@@ -22851,6 +23184,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 8,
           "tag": "button",
           "text": "Show sources",
           "name": "",
@@ -22859,25 +23194,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Search and manage courses",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Start the review",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 11,
+      "keyboard_count": 10,
+      "keyboard_presses": 10,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 11
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 10
     },
     {
       "id": "field-desk-dark-1280-32",
@@ -23398,8 +23731,11 @@
       "ax_controls": 10,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 10,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Start the review",
           "name": "",
@@ -23408,6 +23744,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Open the section",
           "name": "",
@@ -23416,6 +23754,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "All field notes",
           "name": "",
@@ -23424,6 +23764,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Go to the current lesson",
           "name": "",
@@ -23432,6 +23774,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "01 Name the three things an engine needs",
           "name": "",
@@ -23440,6 +23784,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "02 Diagnose a no-start Review due",
           "name": "",
@@ -23448,6 +23794,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "03 Replace a fouled plug Started",
           "name": "",
@@ -23456,6 +23804,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "04 Check compression safely Not started",
           "name": "",
@@ -23464,6 +23814,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 8,
           "tag": "button",
           "text": "Show sources",
           "name": "",
@@ -23472,33 +23824,23 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 9,
           "tag": "button",
           "text": "Search and manage courses",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Start the review",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "button",
-          "text": "Open the section",
-          "name": "",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
         }
       ],
-      "keyboard_count": 12,
+      "keyboard_count": 10,
+      "keyboard_presses": 10,
+      "keyboard_shadow_stops": 0,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 12
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 10
     },
     {
       "id": "field-desk-dark-460-16",
@@ -24019,9 +24361,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -24478,9 +24825,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -24937,9 +25289,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -25167,9 +25524,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -25397,9 +25759,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -26077,9 +26444,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -26757,9 +27129,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -27648,9 +28025,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -28539,9 +28921,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -29010,9 +29397,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -29534,9 +29926,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -29993,9 +30390,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -30452,9 +30854,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -31343,9 +31750,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -32234,9 +32646,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -32705,9 +33122,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -33176,9 +33598,14 @@
       "ax_controls": null,
       "ax_unnamed": null,
       "ax_unnamed_sample": null,
+      "keyboard_declared": null,
       "keyboard_order": null,
       "keyboard_count": null,
+      "keyboard_presses": null,
+      "keyboard_shadow_stops": null,
+      "keyboard_unreachable": null,
       "keyboard_unnamed": null,
+      "keyboard_ring_missing": null,
       "keyboard_visible_ring": null
     },
     {
@@ -33635,8 +34062,11 @@
       "ax_controls": 13,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -33645,6 +34075,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -33653,6 +34085,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -33661,6 +34095,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -33669,57 +34105,53 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
+          "kind": "authored",
+          "tab": 4,
+          "tag": "button",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 5,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 6,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 7,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 10,
+      "keyboard_count": 8,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "textbook-dark-1280-16-reduced",
@@ -34175,8 +34607,11 @@
       "ax_controls": 13,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 8,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -34185,6 +34620,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -34193,6 +34630,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -34201,6 +34640,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -34209,57 +34650,53 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
+          "kind": "authored",
+          "tab": 4,
+          "tag": "button",
+          "text": "Artifact details",
+          "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 5,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 6,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
+          "kind": "authored",
+          "tab": 7,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
           "in_viewport": true,
           "scroll_y": 0
         }
       ],
-      "keyboard_count": 10,
+      "keyboard_count": 8,
+      "keyboard_presses": 14,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 5
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 8
     },
     {
       "id": "quest-light-1280-16-reduced",
@@ -34936,8 +35373,11 @@
       "ax_controls": 17,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 12,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -34946,6 +35386,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -34954,6 +35396,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -34962,6 +35406,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -34970,6 +35416,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -34978,6 +35426,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -34986,54 +35436,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -35042,17 +35446,63 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 8,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 9,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 10,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 11,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 14,
+      "keyboard_count": 12,
+      "keyboard_presses": 18,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 12
     },
     {
       "id": "quest-dark-1280-16-reduced",
@@ -35729,8 +36179,11 @@
       "ax_controls": 17,
       "ax_unnamed": 0,
       "ax_unnamed_sample": [],
+      "keyboard_declared": 12,
       "keyboard_order": [
         {
+          "kind": "authored",
+          "tab": 0,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -35739,6 +36192,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 1,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -35747,6 +36202,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 2,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -35755,6 +36212,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 3,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
@@ -35763,6 +36222,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 4,
           "tag": "button",
           "text": "Save visual",
           "name": "",
@@ -35771,6 +36232,8 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 5,
           "tag": "button",
           "text": "Read in Textbook",
           "name": "",
@@ -35779,54 +36242,8 @@
           "scroll_y": 0
         },
         {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": true,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
-          "tag": "audio",
-          "text": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii",
-          "name": "\u3053\u3093\u306b\u3061\u306f\u3002\u4eca\u65e5\u306f\u3044\u3044\u5929\u6c17\u3067\u3059\u306d\u3002 (Konnichiwa. Ky\u014d wa ii tenki desu ne.) Good afternoon. The weather is nice today.",
-          "ring": false,
-          "in_viewport": true,
-          "scroll_y": 0
-        },
-        {
+          "kind": "authored",
+          "tab": 6,
           "tag": "button",
           "text": "Artifact details",
           "name": "",
@@ -35835,17 +36252,63 @@
           "scroll_y": 0
         },
         {
+          "kind": "authored",
+          "tab": 7,
           "tag": "button",
           "text": "Save to notebook",
           "name": "",
           "ring": true,
           "in_viewport": true,
           "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 8,
+          "tag": "button",
+          "text": "Save audio",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 9,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 10,
+          "tag": "button",
+          "text": "Save to notebook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
+        },
+        {
+          "kind": "authored",
+          "tab": 11,
+          "tag": "button",
+          "text": "Read in Textbook",
+          "name": "",
+          "ring": true,
+          "in_viewport": true,
+          "scroll_y": 0
         }
       ],
-      "keyboard_count": 14,
+      "keyboard_count": 12,
+      "keyboard_presses": 18,
+      "keyboard_shadow_stops": 6,
+      "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
-      "keyboard_visible_ring": 9
+      "keyboard_ring_missing": 0,
+      "keyboard_visible_ring": 12
     }
   ],
   "source_scan": {
@@ -35854,7 +36317,7 @@
     "hex_literals_outside_token_table": 0,
     "sample": [],
     "tertiary_text_utility_uses": 0,
-    "contract_file": "/home/deseretsaint/.hermes/cache/scratch/cb-integrate-h21/contracts/cb.tokens.v1.json",
+    "contract_file": "contracts/cb.tokens.v1.json",
     "contract_present": true,
     "contract_matches_shipped_table": true,
     "contract_gates": {
@@ -35875,7 +36338,7 @@
           "hex_literals_outside_token_table": 0,
           "sample": [],
           "tertiary_text_utility_uses": 0,
-          "contract_file": "/home/deseretsaint/.hermes/cache/scratch/cb-integrate-h21/contracts/cb.tokens.v1.json",
+          "contract_file": "contracts/cb.tokens.v1.json",
           "contract_present": true,
           "contract_matches_shipped_table": true,
           "contract_gates": {
@@ -35921,9 +36384,13 @@
         "ax_controls": 340,
         "ax_unnamed": 0,
         "keyboard_unnamed": 0,
+        "keyboard_stops": 280,
+        "keyboard_unreachable": 0,
+        "keyboard_ring_missing": 0,
+        "keyboard_host_widget_stops": 80,
         "positive_tabindex": 0,
         "keyboard_frames": 32,
-        "note": "audio player internals are UA shadow-DOM controls; the host carries the aria-label."
+        "note": "the walk presses Tab until every control the DOM declares has been visited once and focus wraps, then counts distinct authored stops; the audio player's UA shadow parts are host-widget stops and are counted separately, never as Coursebook controls."
       }
     },
     {
@@ -36185,8 +36652,9 @@
         "owner": "desktop specialist (product code)"
       }
     ],
+    "reference_time": "2026-11-07T10:00:00.000Z",
     "plugin_sha256": "ab63470906c792299ec1db5a25b178a72a6577c7571aac9aec49c8bd64f64540",
-    "branch": "HEAD",
+    "branch": "wt/m4v-determinism",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }

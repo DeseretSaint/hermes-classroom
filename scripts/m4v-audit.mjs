@@ -7,32 +7,64 @@
  * Every number comes from Chromium (computed styles, layout, accessibility tree, real key events).
  * Nothing here is inferred from the module source.
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { readFileSync, writeFileSync, mkdirSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { resolve, join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { spawn } from 'node:child_process'
+import { createServer } from 'node:net'
 
 const framesDoc = JSON.parse(readFileSync(process.argv[2], 'utf8'))
 const outDir = resolve(process.argv[3] || 'audit/visual/m4-visual')
 mkdirSync(outDir, { recursive: true })
-const PORT = process.env.M4V_CDP_PORT || '9433'
+
+/* Bind a port the OS says is free, rather than a fixed 9433. A fixed port means a second audit
+ * (or a leftover browser from an earlier one) silently answers the CDP handshake, so the run
+ * measures somebody else's browser instead of the one it spawned. */
+const freePort = () => new Promise((done, fail) => {
+  const server = createServer()
+  server.on('error', fail)
+  server.listen(0, '127.0.0.1', () => {
+    const { port } = server.address()
+    server.close(() => done(port))
+  })
+})
+const PORT = Number(process.env.M4V_CDP_PORT) || await freePort()
+// A short profile path: Chromium derives its process-singleton socket path from the temp root plus
+// the profile dir, and a long TMPDIR (a nested scratch tree is easily 100+ chars) makes Chromium
+// abort with "Socket path too long" before CDP ever opens.
+const SHORT_TMP = existsSync('/tmp') ? '/tmp' : tmpdir()
+const profileDir = mkdtempSync(join(SHORT_TMP, 'cb-m4v-chromium-'))
 
 const chromium = spawn('chromium', [
   '--headless=new', '--no-sandbox', '--disable-gpu', '--hide-scrollbars',
   `--remote-debugging-port=${PORT}`,
-  `--user-data-dir=${resolve(outDir, '.chromium')}`,
+  `--user-data-dir=${profileDir}`,
   'about:blank'
-], { stdio: 'ignore' })
+], {
+  stdio: ['ignore', 'ignore', 'pipe'],
+  detached: true,
+  // Chromium derives its process-singleton socket from TMPDIR. The audit's own scratch TMPDIR is
+  // often long enough that Chromium aborts with "Socket path too long", so the browser gets the
+  // short profile dir as its temp root instead.
+  env: { ...process.env, TMPDIR: profileDir }
+})
+let chromiumStderr = ''
+chromium.stderr.on('data', (chunk) => { chromiumStderr = (chromiumStderr + chunk.toString()).slice(-8000) })
 
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms))
 let targets = null
 for (let attempt = 0; attempt < 100; attempt += 1) {
+  if (chromium.exitCode !== null) break
   try {
     targets = await (await fetch(`http://127.0.0.1:${PORT}/json`)).json()
     if (targets.length) break
   } catch (error) { targets = null }
   await sleep(250)
 }
-if (!targets || !targets.length) { chromium.kill(); throw new Error('chromium CDP did not open') }
+if (!targets || !targets.length) {
+  chromium.kill('SIGKILL')
+  throw new Error(`chromium CDP did not open (pid ${chromium.pid}, exit ${chromium.exitCode})\n${chromiumStderr}`)
+}
 
 const page = targets.find((entry) => entry.type === 'page')
 const socket = new WebSocket(page.webSocketDebuggerUrl)
@@ -277,12 +309,104 @@ const MEASURE = (tokenNames) => `(() => {
   }
 })()`
 
-const KEYBOARD = `(async () => {
+const FOCUSABLE_SELECTOR = 'a[href], button, input, select, textarea, [tabindex]'
+
+/* ── settled keyboard walk ───────────────────────────────────────────────────────────────────
+ * The walk answers one question: can every control the DOM declares be reached with Tab?
+ *
+ * The previous version pressed `interactive_count + 2` Tabs and counted every press that landed
+ * on an element. That number was never a control count: the extra presses walked past the last
+ * control, wrapped to the first and counted it a second time, so the total changed between two
+ * runs of the same module. The `<audio controls>` host adds further steps — its UA shadow parts
+ * each report `document.activeElement === audio`, so one host produced five or six identical
+ * rows and the authored controls after it were never reached.
+ *
+ * This version stamps every declared control, presses Tab until each stamped control has been
+ * seen once AND focus has wrapped (a repeat or the document boundary), and reports the distinct
+ * authored stops. Host-widget stops (audio UA internals) are recorded separately and never
+ * counted as coursebook controls.
+ */
+async function settle() {
+  await evaluate(`(async () => {
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready } catch (error) {} }
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
+    return true
+  })()`)
+}
+
+const DECLARED = `(() => {
   const root = document.querySelector('[data-cb-scope]') || document.body
-  const interactive = [...root.querySelectorAll('a[href], button, input, select, textarea, [tabindex]')]
+  const els = [...root.querySelectorAll('${FOCUSABLE_SELECTOR}')]
     .filter((el) => el.getAttribute('tabindex') !== '-1' && !el.disabled)
-  return { count: interactive.length }
+  els.forEach((el, index) => el.setAttribute('data-cb-tab', String(index)))
+  return els.map((el) => ({
+    tab: Number(el.getAttribute('data-cb-tab')),
+    tag: el.tagName.toLowerCase(),
+    text: (el.innerText || el.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim().slice(0, 40),
+    name: el.getAttribute('aria-label') || ''
+  }))
 })()`
+
+const ACTIVE = `(() => {
+  const el = document.activeElement
+  if (!el) return { kind: 'none' }
+  if (el === document.body || el === document.documentElement) return { kind: 'boundary', tag: el.tagName.toLowerCase() }
+  const style = getComputedStyle(el)
+  const rect = el.getBoundingClientRect()
+  const authored = el.getAttribute('data-cb-tab')
+  return {
+    kind: authored === null ? 'host-widget' : 'authored',
+    tab: authored === null ? null : Number(authored),
+    tag: el.tagName.toLowerCase(),
+    text: (el.innerText || el.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim().slice(0, 40),
+    name: el.getAttribute('aria-label') || '',
+    ring: (parseFloat(style.outlineWidth) > 0 && style.outlineStyle !== 'none') || (style.boxShadow && style.boxShadow !== 'none'),
+    in_viewport: rect.width > 0 && rect.height > 0,
+    scroll_y: Math.round(window.scrollY)
+  }
+})()`
+
+async function pressTab() {
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 })
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 })
+  return evaluate(ACTIVE)
+}
+
+async function keyboardWalk() {
+  const declared = await evaluate(DECLARED)
+  if (!declared.length) {
+    return { declared: 0, count: 0, stops: [], unreachable: [], shadow_stops: [], unnamed: 0, ring_missing: 0, presses: 0 }
+  }
+  await evaluate('document.body.focus && document.body.focus()')
+  const seen = new Map()
+  const shadow = []
+  const limit = declared.length * 4 + 40
+  let presses = 0
+  for (; presses < limit; presses += 1) {
+    const info = await pressTab()
+    if (info.kind === 'boundary' || info.kind === 'none') {
+      if (seen.size >= declared.length) break
+      continue
+    }
+    if (info.kind === 'host-widget') { shadow.push({ tag: info.tag, text: info.text }); continue }
+    if (seen.has(info.tab)) {
+      if (seen.size >= declared.length) break
+      continue
+    }
+    seen.set(info.tab, info)
+  }
+  const stops = [...seen.values()].sort((first, second) => first.tab - second.tab)
+  return {
+    declared: declared.length,
+    count: stops.length,
+    stops,
+    unreachable: declared.filter((item) => !seen.has(item.tab)),
+    shadow_stops: shadow,
+    unnamed: stops.filter((row) => !row.text && !row.name).length,
+    ring_missing: stops.filter((row) => !row.ring).length,
+    presses
+  }
+}
 
 async function axNames() {
   const tree = await send('Accessibility.getFullAXTree')
@@ -300,34 +424,9 @@ async function axNames() {
   return { controls, unnamed }
 }
 
-async function keyboardWalk(steps) {
-  await evaluate('document.body.focus && document.body.focus()')
-  const order = []
-  for (let index = 0; index < steps; index += 1) {
-    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 })
-    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 })
-    const info = await evaluate(`(() => {
-      const el = document.activeElement
-      if (!el || el === document.body) return null
-      const style = getComputedStyle(el)
-      const rect = el.getBoundingClientRect()
-      const ring = (parseFloat(style.outlineWidth) > 0 && style.outlineStyle !== 'none') || (style.boxShadow && style.boxShadow !== 'none')
-      return {
-        tag: el.tagName.toLowerCase(),
-        text: (el.innerText || el.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim().slice(0, 40),
-        name: el.getAttribute('aria-label') || '',
-        ring,
-        in_viewport: rect.width > 0 && rect.height > 0,
-        scroll_y: Math.round(window.scrollY)
-      }
-    })()`)
-    if (info) order.push(info)
-  }
-  return order
-}
-
 const evidence = {
   generated_at: new Date().toISOString(),
+  reference_time: framesDoc.reference_time || null,
   kind: 'painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium',
   chromium: (await send('Browser.getVersion')).product,
   frames: []
@@ -347,11 +446,12 @@ for (const frame of framesDoc.frames) {
   await sleep(450)
   await evaluate(`document.documentElement.style.fontSize = '${frame.font_px}px'`)
   await sleep(150)
+  await settle()
   const measured = await evaluate(MEASURE(TOKEN_NAMES))
   const ax = frame.forced_colors === 'none' && frame.width === 1280 ? await axNames() : null
   let keyboard = null
   if (frame.forced_colors === 'none' && frame.width === 1280 && measured.interactive_count > 0) {
-    keyboard = await keyboardWalk(Math.min(measured.interactive_count + 2, 24))
+    keyboard = await keyboardWalk()
   }
   const height = Math.min(Math.max(measured.content_height, 400), 6000)
   await send('Emulation.setDeviceMetricsOverride', { width: frame.width, height, deviceScaleFactor: 1, mobile: false })
@@ -368,16 +468,25 @@ for (const frame of framesDoc.frames) {
     ax_controls: ax ? ax.controls.length : null,
     ax_unnamed: ax ? ax.unnamed.length : null,
     ax_unnamed_sample: ax ? ax.unnamed.slice(0, 6) : null,
-    keyboard_order: keyboard,
-    keyboard_count: keyboard ? keyboard.length : null,
-    keyboard_unnamed: keyboard ? keyboard.filter((row) => !row.text && !row.name).length : null,
-    keyboard_visible_ring: keyboard ? keyboard.filter((row) => row.ring).length : null
+    keyboard_declared: keyboard ? keyboard.declared : null,
+    keyboard_order: keyboard ? keyboard.stops : null,
+    keyboard_count: keyboard ? keyboard.count : null,
+    keyboard_presses: keyboard ? keyboard.presses : null,
+    keyboard_shadow_stops: keyboard ? keyboard.shadow_stops.length : null,
+    keyboard_unreachable: keyboard ? keyboard.unreachable : null,
+    keyboard_unnamed: keyboard ? keyboard.unnamed : null,
+    keyboard_ring_missing: keyboard ? keyboard.ring_missing : null,
+    keyboard_visible_ring: keyboard ? keyboard.stops.filter((row) => row.ring).length : null
   }
   evidence.frames.push(record)
   console.log(`${frame.id}: contrast_min=${record.contrast_min} fails=${record.contrast_failures} clipped=${record.clipped_count} overflow=${record.horizontal_overflow} unnamed=${record.ax_unnamed} media=${record.media_frames.length} audio=${record.audios.length} img=${record.images.length}`)
 }
 
 writeFileSync(resolve(outDir, 'audit.json'), `${JSON.stringify(evidence, null, 2)}\n`)
+try { await send('Browser.close') } catch (error) { /* the browser may already be gone */ }
+await sleep(400)
 socket.close()
-chromium.kill()
+try { if (chromium.exitCode === null) process.kill(-chromium.pid, 'SIGKILL') } catch (error) { /* already exited */ }
+await sleep(200)
+try { rmSync(profileDir, { recursive: true, force: true }) } catch (error) { /* best effort */ }
 console.log(`wrote ${evidence.frames.length} frames to ${outDir}`)
