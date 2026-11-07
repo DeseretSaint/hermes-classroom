@@ -1320,6 +1320,20 @@ def jobs_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         replay = _idempotent_lookup(connection, key, method, payload_hash)
         if replay is not None:
             return replay
+        # A lessons job is preflighted against the plan it names *before* it is queued: a job whose
+        # minimum cannot fit the configured ceiling would otherwise start and half-fail, which is
+        # the audit's P1-6 recovery trap. The refusal spends nothing and creates no row.
+        try:
+            preflight = generation.preflight_lesson_brief(connection, dict(payload.get("brief") or {}))
+        except generation.GenerationRejected as exc:
+            raise RpcError.of("VALIDATION_FAILED", str(exc), field="brief.budget_usd") from exc
+        if preflight is not None and not preflight.fits_minimum:
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                preflight.refusal_message(),
+                reason="cost_preflight_insufficient",
+                **preflight.to_dict(),
+            )
         result = job_service.create(
             payload["kind"],
             payload["brief"],

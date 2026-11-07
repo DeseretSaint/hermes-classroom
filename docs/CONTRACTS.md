@@ -955,6 +955,48 @@ rewriting the document snapshot. Request/response shapes, error codes and file f
 — this is a behaviour note for a frozen v6 method, not a version bump. `require_revision`,
 idempotency replay and `plan.approve`'s hash fence are untouched.
 
+### Cost ceilings and the `CostCeilingExceeded` recovery checkpoint (behaviour note, no wire change)
+
+The dollar ceiling is now sized from the plan, not flat, and a mid-course abort is a recoverable
+state rather than a dead end. No contract version moves: everything below fits inside the existing
+`jobs.checkpoint` (`type: object`, `maxProperties: 40`), `cb.errors#details`
+(`maxProperties: 32`), and the already-frozen `POLICY_VIOLATION` code.
+
+* **`jobs.create` preflight.** When `kind = plan` and `brief.stage = lessons`, the handler counts
+  `gen_plan_sections` for `brief.plan_id` and resolves the ceiling
+  (`brief.budget_usd` > `COURSEBOOK_JOB_MAX_COST_USD` > the plan-sized default). If the ceiling
+  cannot pay the plan's *minimum* (one generation + one validation per section), the request is
+  refused with `POLICY_VIOLATION`, `details.reason = "cost_preflight_insufficient"` and the
+  preflight arithmetic (`section_count`, `minimum_calls`, `maximum_calls`, `minimum_cost_usd`,
+  `maximum_cost_usd`, `max_calls`, `max_cost_usd`, `budget_source`, `fits_minimum`,
+  `fits_maximum`). **No job row is created and nothing is spent.** `brief.budget_usd` must be a
+  positive number; anything else is `VALIDATION_FAILED` / `field: brief.budget_usd`.
+* **The ceiling actually used is recorded.** A successful lessons stage stores
+  `checkpoint.budget = {max_calls, max_cost_usd, source}` and `checkpoint.preflight = {...}`.
+  `source` is `declared`, `operator_env`, `operator_brief` or `caller`, so an operator can tell a
+  raised ceiling from a sized one. `usage.summary` response shape is unchanged (it is frozen to
+  aggregate calls/tokens/artifacts); the per-job configured value lives on the job's checkpoint.
+* **Mid-course abort checkpoint.** When a lessons stage hits the ceiling the job fails with
+  `POLICY_VIOLATION` and `details` carrying `reason: cost_ceiling_exceeded`,
+  `sections_total`, `sections_completed_count`, `calls`, `estimated_cost_usd`, `unknown_calls`,
+  `max_cost_usd`, `max_calls` and `actions`. The same facts — plus the completed section ids — are
+  merged into `jobs.checkpoint` (it survives the failure; `finish` writes it on the failed path):
+
+  | key | meaning |
+  |---|---|
+  | `kind` | `cost_ceiling_exceeded` or `cost_preflight_refused` |
+  | `plan_id`, `sections_total`, `sections_completed`, `sections_completed_count` | what already has durable lesson rows |
+  | `calls`, `known_cost_usd`, `estimated_cost_usd`, `unknown_calls` | what was actually spent |
+  | `max_cost_usd`, `max_calls` | the ceiling that stopped it |
+  | `actions` | `["continue_remaining", "raise_budget", "stop"]` |
+  | `resume` | `{method: jobs.create, brief: {stage: lessons, plan_id}}` |
+  | `raise_budget` | `{env: COURSEBOOK_JOB_MAX_COST_USD, brief_field: brief.budget_usd}` |
+
+  `continue_remaining` is a plain `jobs.create` for the same plan: `run_lesson_job` reuses the
+  existing `(section_id, plan_hash, version)` rows, so completed sections are neither re-authored
+  nor re-charged. The action labels authorize nothing on their own — each is a separate command.
+  `stop` is the default because the job is already `failed`, not running.
+
 ### Handlers Cinder must register (after this freeze)
 
 **Registration status: landed in CB-014.** All eight `parent.*` methods are registered — seven in
