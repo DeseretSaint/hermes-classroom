@@ -8361,7 +8361,7 @@ function HeroField({ identity, children, phone }) {
       gap: '0.65rem',
       padding: phone ? '0.9rem 0.95rem' : '1.1rem 1.2rem 1.15rem',
       background: parent ? 'var(--cb-plum-soft)' : 'var(--cb-lamp-soft)',
-      borderTop: `3px solid ${parent ? 'var(--cb-plum)' : 'var(--cb-lamp)'}`,
+      borderTop: `1px solid ${parent ? 'var(--cb-plum)' : 'var(--cb-lamp)'}`,
       maxWidth: '100%',
       boxSizing: 'border-box'
     },
@@ -8416,6 +8416,169 @@ function ModeDot({ mode }) {
   return jsx('span', {
     'aria-hidden': 'true',
     style: { display: 'inline-block', width: '3px', height: '3px', minWidth: '3px', borderRadius: '50%', background: paint, verticalAlign: 'middle' }
+  })
+}
+
+/** Which hue a surface owns: Textbook `accent`, Guided `field`, Field Quest `ochre`. */
+function cbModeFor(view) {
+  if (view === 'guided') return 'guided'
+  if (view === 'field_quest') return 'field_quest'
+  return 'textbook'
+}
+
+/**
+ * The state word with its hue. The pill is always text; colour is the second channel, never the
+ * only one (docs/COURSEBOOK-VISUAL-IDENTITY-V2.md §2.3, §6.3).
+ */
+function CbStatePill({ state, label, phone }) {
+  const tone = cbSpineTone(state)
+  const word = label || DESK_STATE_WORD[state] || 'Not started'
+  return jsx('span', {
+    'data-cb-state-pill': state || 'not_started',
+    'data-cb-state-tone': tone,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      fontFamily: CB_SANS,
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      lineHeight: 1.3,
+      color: deskToneColor(tone),
+      border: `1px solid ${deskToneColor(tone)}`,
+      borderRadius: '999px',
+      padding: '0.15rem 0.55rem',
+      whiteSpace: 'nowrap'
+    },
+    children: word
+  })
+}
+
+/**
+ * The recorded facts of a course, as one calm line rather than a metric block: the number and its
+ * caption sit in reading order, separated by a rule. Only facts the backend read produced appear.
+ */
+function HeroFacts({ facts, phone }) {
+  const rows = (facts || []).filter(Boolean)
+  if (rows.length === 0) return null
+  return jsx('div', {
+    'data-cb-hero-facts': String(rows.length),
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: phone ? '0.25rem 0.6rem' : '0.25rem 0.9rem', minWidth: 0 },
+    children: rows.map((fact, index) =>
+      jsxs('span', {
+        'data-cb-hero-fact': fact.label,
+        style: { display: 'inline-flex', alignItems: 'baseline', gap: '0.3rem', minWidth: 0 },
+        children: [
+          index > 0
+            ? jsx('span', { 'aria-hidden': 'true', style: { color: 'var(--cb-ink-soft)' }, children: '·' })
+            : null,
+          jsx('span', {
+            style: {
+              fontFamily: CB_SANS,
+              fontVariantNumeric: 'tabular-nums',
+              fontSize: '1rem',
+              fontWeight: 600,
+              lineHeight: 1.4,
+              color: 'var(--cb-ink)',
+              overflowWrap: 'anywhere'
+            },
+            children: fact.value
+          }),
+          jsx('span', {
+            style: { fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+            children: fact.label
+          })
+        ]
+      }, fact.label)
+    )
+  })
+}
+
+/**
+ * Tier-one navigation for a course: a plain tab row with the mode dot on the reading surfaces and
+ * a 2px underline on the current one. It never hides a surface behind a select.
+ */
+function LearningTabs({ options, value, onChange, phone, ariaLabel }) {
+  return jsx('nav', {
+    'aria-label': ariaLabel || 'Course surfaces',
+    'data-cb-learning-tabs': value,
+    role: 'tablist',
+    style: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'stretch',
+      gap: phone ? '0.15rem 0.5rem' : '0.15rem 1.1rem',
+      borderBottom: '1px solid var(--cb-rule)',
+      minWidth: 0
+    },
+    children: (options || []).map((option) => {
+      const current = option.id === value
+      const mode = option.mode ? cbModeFor(option.id) : null
+      return jsx(
+        sdk.Button,
+        {
+          variant: 'text',
+          role: 'tab',
+          'aria-selected': current ? 'true' : 'false',
+          'data-cb-tab': option.id,
+          className: '!h-auto !px-0 !py-0',
+          onClick: () => onChange(option.id),
+          children: jsx('span', {
+            style: {
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: phone ? '0.7rem 0' : '0.45rem 0 0.4rem',
+              borderBottom: current ? '2px solid var(--cb-accent)' : '2px solid transparent',
+              fontFamily: CB_SANS,
+              fontSize: '0.8125rem',
+              fontWeight: current ? 600 : 400,
+              color: current ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
+              whiteSpace: 'nowrap'
+            },
+            children: [mode ? jsx(ModeDot, { mode }) : null, option.label]
+          })
+        },
+        option.id
+      )
+    })
+  })
+}
+
+/**
+ * The check / notice panel: `lamp-soft` with a 2px `lamp` top edge for a pending state, or a 1px
+ * `coral` left edge for a retry. It is a field, not a card, and it never carries a red fill.
+ */
+function CheckPanelFrame({ kind, label, children }) {
+  const retry = kind === 'retry'
+  const pending = kind === 'pending'
+  return jsxs('section', {
+    'data-cb-check-panel': kind || 'check',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+      padding: retry ? '0.75rem 0.9rem 0.8rem 1rem' : '0.9rem 1rem 0.95rem',
+      background: retry ? 'var(--cb-paper)' : pending ? 'var(--cb-lamp-soft)' : 'var(--cb-paper-raised)',
+      borderTop: pending ? '1px solid var(--cb-lamp)' : 'none',
+      borderLeft: retry ? '1px solid var(--cb-coral)' : 'none',
+      maxWidth: CB_MEASURE,
+      boxSizing: 'border-box'
+    },
+    children: [
+      label
+        ? jsx('div', {
+            style: {
+              fontFamily: CB_SANS,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              lineHeight: 1.3,
+              color: retry ? 'var(--cb-coral)' : 'var(--cb-ochre)'
+            },
+            children: label
+          })
+        : null,
+      children
+    ]
   })
 }
 
@@ -9451,16 +9614,31 @@ const BLOCK_ROLE_COPY = {
 function BlockSourceChips({ ids, index }) {
   if (!ids || ids.length === 0) return null
   return jsx('div', {
-    className: 'flex flex-wrap items-center gap-1',
     'data-cb-block-sources': String(ids.length),
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.3rem' },
     children: ids.map((id) =>
       jsx(
         'span',
-        { className: 'inline-flex max-w-full min-w-0 items-center', children: jsx(sdk.Badge, {
-            size: 'xs',
-            variant: 'outline',
-            children: (index && index[id] && index[id].title) || `Source ${id}`
-          }) },
+        {
+          'data-cb-source-chip': id,
+          style: {
+            display: 'inline-flex',
+            maxWidth: '100%',
+            minWidth: 0,
+            alignItems: 'center',
+            border: '1px solid var(--cb-rule)',
+            borderRadius: '2px',
+            padding: '0.1rem 0.45rem',
+            fontFamily: CB_SANS,
+            fontSize: '0.6875rem',
+            fontWeight: 600,
+            lineHeight: 1.3,
+            color: 'var(--cb-ink-soft)',
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere'
+          },
+          children: (index && index[id] && index[id].title) || `Source ${id}`
+        },
         id
       )
     )
@@ -9488,6 +9666,17 @@ function BlockMedia({ media, blockId, ordinal }) {
     {
       className: 'flex flex-col gap-1',
       'data-cb-block-media': media.artifact_id || 'text-only',
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.35rem',
+        maxWidth: '48rem',
+        padding: '0.55rem 0.7rem',
+        border: '1px solid var(--cb-rule)',
+        background: 'var(--cb-paper-raised)',
+        borderRadius: 0,
+        boxSizing: 'border-box'
+      },
       children: [
         jsx(MediaSegment, { segment }),
         media.degraded && media.reason
@@ -9571,13 +9760,30 @@ function blockSaveExcerpt(block, checkLabels, media) {
   return withoutCheckLabels(block.deep, checkLabels) || block.short || block.headline || ''
 }
 
-function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation }) {
+/**
+ * The reading voice of one block: serif, 66ch, 1.65. The first block of a section is its lede and
+ * carries a 2px `accent` reading edge; every later block is the same column without the edge, so
+ * long prose stays scannable without a second font or a card per paragraph.
+ */
+function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation, lede }) {
   const body = withoutCheckLabels(block.deep, checkLabels)
   return jsxs('div', {
     className: 'flex flex-col gap-2',
     children: [
       body
-        ? jsx('div', { className: 'max-w-prose', children: jsx(sdk.MessageTextContent, { text: body }) })
+        ? jsx('div', {
+            'data-cb-reading-body': lede ? 'lede' : 'body',
+            style: {
+              maxWidth: CB_MEASURE,
+              fontFamily: CB_SERIF,
+              fontSize: lede ? '1.1875rem' : '1.0625rem',
+              lineHeight: lede ? 1.5 : 1.65,
+              color: 'var(--cb-ink)',
+              borderLeft: lede ? '1px solid var(--cb-accent)' : 'none',
+              paddingLeft: lede ? '0.9rem' : 0
+            },
+            children: jsx(sdk.MessageTextContent, { text: body })
+          })
         : null,
       (block.media || []).map((media, index) =>
         jsx(BlockMedia, { media, blockId: block.id, ordinal: index }, `${block.id}-media-${index}`)
@@ -9586,59 +9792,156 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronun
       jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
       jsx(BlockSaveActions, { block, checkLabels, onSaveBlock }),
       checkSlot
-        ? jsx('div', { className: 'flex flex-col gap-2 pt-1', 'data-cb-block-check': block.id, children: checkSlot })
+        ? jsx(CheckPanelFrame, {
+            kind: 'check',
+            label: 'Checkpoint',
+            children: jsx('div', {
+              className: 'flex flex-col gap-2',
+              'data-cb-block-check': block.id,
+              children: [
+                checkSlot,
+                jsx('p', {
+                  style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                  children: 'This is the section’s one check. It is the same in Textbook, Guided and Field Quest, and it is not a grade.'
+                })
+              ]
+            })
+          })
         : null
     ]
   })
 }
 
 /** Textbook: every block in authored order, the full `deep` prose, inline figures. */
-function TextbookBlock({ block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation }) {
+function TextbookBlock({ block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation, lede }) {
   return jsxs('article', {
-    className: 'flex flex-col gap-2 border-b border-(--ui-stroke-tertiary) py-3 first:pt-0 last:border-b-0 last:pb-0',
+    className: 'flex flex-col gap-2',
     'data-cb-block': block.id,
     'data-cb-role': block.role,
+    'data-cb-block-lede': lede ? 'true' : 'false',
     tabIndex: -1,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+      maxWidth: CB_MEASURE,
+      padding: lede ? '0 0 1.35rem' : '1.35rem 0',
+      borderTop: lede ? 'none' : '1px solid var(--cb-rule)'
+    },
     children: [
       jsxs('div', {
-        className: 'flex flex-wrap items-baseline gap-2',
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.25rem 0.6rem' },
         children: [
-          jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: BLOCK_ROLE_COPY[block.role] || block.role }),
-          jsx('h3', { className: 'min-w-0 text-base font-semibold leading-snug', children: block.headline })
+          jsx('h3', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: '1.25rem',
+              fontWeight: 600,
+              lineHeight: 1.25,
+              letterSpacing: '-0.01em',
+              color: 'var(--cb-ink)',
+              maxWidth: '34ch',
+              overflowWrap: 'anywhere'
+            },
+            children: block.headline
+          }),
+          jsx('span', {
+            style: { fontFamily: CB_SANS, fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--cb-ink-soft)' },
+            children: BLOCK_ROLE_COPY[block.role] || block.role
+          })
         ]
       }),
-      BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation })
+      BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronunciation, lede })
     ]
   })
 }
 
-/** Guided: one block at a time, the authored `short` prose, progress and a check on its block. */
+/** Guided: one step at a time, the authored `short` prose, the step's place, and the action. */
 function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onBack, onNext, onSaveBlock, pronunciation }) {
   const last = index >= total - 1
   const body = withoutCheckLabels(block.short || block.deep, checkLabels)
+  const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
   return jsxs('section', {
     className: 'flex flex-col gap-3',
     'aria-labelledby': `cb-guided-headline-${block.id}`,
     'data-cb-block': block.id,
     'data-cb-role': block.role,
+    'data-cb-step-count': `${index + 1}/${total}`,
     tabIndex: -1,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      maxWidth: CB_MEASURE,
+      paddingLeft: phone ? 0 : '2.75rem',
+      position: 'relative'
+    },
     children: [
+      // The step margin: a 28px node and a 1px connector in the Guided hue. At narrow widths the
+      // step number moves into the heading line instead of shrinking the reading column.
+      phone
+        ? null
+        : jsxs('span', {
+            'aria-hidden': 'true',
+            style: { position: 'absolute', left: 0, top: '0.15rem', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' },
+            children: [
+              jsx('span', {
+                'data-cb-guided-node': String(index + 1),
+                style: {
+                  width: '1.75rem',
+                  height: '1.75rem',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'var(--cb-accent-soft)',
+                  border: '2px solid var(--cb-field)',
+                  color: 'var(--cb-field)',
+                  fontFamily: CB_SANS,
+                  fontVariantNumeric: 'tabular-nums',
+                  fontSize: '0.7rem',
+                  fontWeight: 600
+                },
+                children: String(index + 1).padStart(2, '0')
+              }),
+              jsx('span', { style: { flex: '1 1 auto', width: '1px', background: 'var(--cb-rule)', marginTop: '0.25rem' } })
+            ]
+          }),
       jsxs('div', {
-        className: 'flex flex-wrap items-baseline justify-between gap-2',
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.3rem 0.75rem' },
         children: [
           jsxs('div', {
-            className: 'flex flex-wrap items-baseline gap-2',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.25rem 0.6rem', minWidth: 0 },
             children: [
-              jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: BLOCK_ROLE_COPY[block.role] || block.role }),
               jsx('h3', {
-                className: 'min-w-0 text-base font-semibold leading-snug',
                 id: `cb-guided-headline-${block.id}`,
+                style: {
+                  margin: 0,
+                  minWidth: 0,
+                  fontFamily: CB_SERIF,
+                  fontSize: '1.25rem',
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.01em',
+                  color: 'var(--cb-ink)',
+                  overflowWrap: 'anywhere'
+                },
                 children: block.headline
+              }),
+              jsx('span', {
+                style: { fontFamily: CB_SANS, fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--cb-field)' },
+                children: BLOCK_ROLE_COPY[block.role] || block.role
               })
             ]
           }),
           jsx('span', {
-            className: 'text-xs text-(--ui-text-secondary)',
+            style: {
+              fontFamily: CB_SANS,
+              fontVariantNumeric: 'tabular-nums',
+              fontSize: '0.75rem',
+              color: 'var(--cb-ink-soft)'
+            },
             'aria-live': 'polite',
             'data-cb-step': `${index + 1}/${total}`,
             children: `Step ${index + 1} of ${total}`
@@ -9647,7 +9950,13 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
       }),
       body
         ? jsx('div', {
-            className: 'max-w-prose',
+            style: {
+              maxWidth: CB_MEASURE,
+              fontFamily: CB_SERIF,
+              fontSize: '1.125rem',
+              lineHeight: 1.6,
+              color: 'var(--cb-ink)'
+            },
             children: jsx(sdk.MessageTextContent, { text: body })
           })
         : null,
@@ -9657,9 +9966,22 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
       jsx(PronunciationSeat, { block, pronunciation }),
       jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
       jsx(BlockSaveActions, { block, checkLabels, onSaveBlock }),
-      checkSlot ? jsx('div', { className: 'flex flex-col gap-2', 'data-cb-block-check': block.id, children: checkSlot }) : null,
+      checkSlot
+        ? jsx(CheckPanelFrame, {
+            kind: 'check',
+            label: 'Checkpoint',
+            children: jsx('div', { className: 'flex flex-col gap-2', 'data-cb-block-check': block.id, children: checkSlot })
+          })
+        : null,
       jsxs('div', {
-        className: 'flex flex-wrap items-center gap-2',
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.5rem',
+          paddingTop: '0.65rem',
+          borderTop: '1px solid var(--cb-rule)'
+        },
         children: [
           jsx(sdk.Button, {
             variant: 'secondary',
@@ -9677,7 +9999,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
           }),
           last
             ? jsx('span', {
-                className: 'text-xs text-(--ui-text-secondary)',
+                style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
                 children: 'End of the guided pass. The Textbook view keeps the full text.'
               })
             : null
@@ -9720,12 +10042,19 @@ function questProgressLabel(summary) {
   return `${independent} independent · ${due} due`
 }
 
-/** One mission: the block's short prose, its media, its sources and — on a checkpoint — its check. */
+/**
+ * One mission on the quest spine: a numbered node, the role word, a serif title, one line of what
+ * the learner does, and one tertiary way into the same block in Textbook. A checkpoint keeps the
+ * same node but gains the `lamp-soft` check field. Nothing is locked, nothing is scored, and the
+ * clickable affordance is the whole brief — not a grey bar under every mission
+ * (docs/COURSEBOOK-VISUAL-IDENTITY-V2.md §4.7, §5.9).
+ */
 function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbook, onSaveBlock, pronunciation }) {
   const block = mission.block
   const body = withoutCheckLabels(block.short || block.deep, checkLabels)
-  const stateWord = mission.checkpoint ? 'Checkpoint' : 'Mission'
-  const tone = mission.checkpoint ? 'var(--cb-accent)' : 'var(--cb-ink-soft)'
+  const checkpoint = mission.checkpoint
+  const stateWord = checkpoint ? 'Checkpoint' : 'Mission'
+  const tone = checkpoint ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
   const headingId = `cb-mission-headline-${block.id}`
   // The mission's heading and prose are the brief. Clicking anywhere outside an actual control
   // hands the same block to Textbook, so a learner who taps the brief is not left wondering
@@ -9752,8 +10081,8 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
     'data-cb-mission': block.id,
     'data-cb-mission-index': String(mission.index + 1),
     'data-cb-mission-role': block.role,
-    'data-cb-mission-checkpoint': mission.checkpoint ? 'true' : 'false',
-    'data-cb-mission-check': mission.checkpoint && block.check_id ? block.check_id : '',
+    'data-cb-mission-checkpoint': checkpoint ? 'true' : 'false',
+    'data-cb-mission-check': checkpoint && block.check_id ? block.check_id : '',
     tabIndex: 0,
     role: 'link',
     'aria-label': `Open mission ${mission.index + 1}, ${block.headline}, in Textbook`,
@@ -9761,69 +10090,88 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
     onClick: openMission,
     onKeyDown: openMissionOnKey,
     style: {
+      position: 'relative',
       display: 'flex',
       flexDirection: 'column',
-      gap: '0.4rem',
       listStyle: 'none',
-      padding: '0.65rem 0 0.75rem 0.85rem',
-      borderLeft: `2px solid ${mission.checkpoint ? 'var(--cb-accent)' : 'var(--cb-rule)'}`,
+      padding: checkpoint ? '0.85rem 0.95rem 0.95rem 2.9rem' : '0.75rem 0.5rem 0.8rem 2.9rem',
+      background: checkpoint ? 'var(--cb-lamp-soft)' : 'transparent',
+      borderTop: checkpoint ? '1px solid var(--cb-lamp)' : 'none',
       maxWidth: '46rem',
+      boxSizing: 'border-box',
       cursor: 'pointer'
     },
     children: [
-      jsxs('div', {
-        style: {
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          gap: '0.2rem 0.75rem'
-        },
+      // The spine: a node per mission and a hairline that runs through the whole list.
+      jsxs('span', {
+        'aria-hidden': 'true',
+        style: { position: 'absolute', left: '0.75rem', top: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' },
         children: [
-          jsxs('div', {
-            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem', minWidth: 0 },
-            children: [
-              jsx('span', {
-                'data-cb-mission-number': '',
-                style: {
-                  flex: '0 0 auto',
-                  fontVariantNumeric: 'tabular-nums',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: tone
-                },
-                children: String(mission.index + 1).padStart(2, '0')
-              }),
-              jsx(sdk.Badge, {
-                size: 'xs',
-                variant: 'muted',
-                children: BLOCK_ROLE_COPY[block.role] || block.role
-              }),
-              jsx('h3', {
-                id: headingId,
-                style: {
-                  margin: 0,
-                  minWidth: 0,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  lineHeight: 1.35,
-                  color: 'var(--cb-ink)',
-                  overflowWrap: 'anywhere'
-                },
-                children: block.headline
-              })
-            ]
-          }),
           jsx('span', {
-            'data-cb-mission-state': mission.checkpoint ? 'checkpoint' : 'mission',
-            style: { flex: '0 0 auto', fontSize: '0.7rem', fontWeight: 500, color: tone },
-            children: stateWord
+            'data-cb-mission-node': String(mission.index + 1),
+            style: {
+              width: '1.75rem',
+              height: '1.75rem',
+              flex: '0 0 1.75rem',
+              marginTop: checkpoint ? '0.05rem' : '0.1rem',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: checkpoint ? 'var(--cb-ochre)' : 'var(--cb-paper)',
+              color: checkpoint ? 'var(--cb-paper)' : 'var(--cb-ink-soft)',
+              border: checkpoint ? 'none' : '1.5px solid var(--cb-rule)',
+              fontFamily: CB_SANS,
+              fontVariantNumeric: 'tabular-nums',
+              fontSize: '0.7rem',
+              fontWeight: 600
+            },
+            children: String(mission.index + 1).padStart(2, '0')
+          }),
+          jsx('span', { style: { flex: '1 1 auto', width: '1px', background: 'var(--cb-rule)', marginTop: '0.2rem' } })
+        ]
+      }),
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.2rem 0.75rem' },
+        children: [
+          jsx('h3', {
+            id: headingId,
+            style: {
+              margin: 0,
+              minWidth: 0,
+              fontFamily: CB_SERIF,
+              fontSize: '1.25rem',
+              fontWeight: 600,
+              lineHeight: 1.25,
+              color: 'var(--cb-ink)',
+              overflowWrap: 'anywhere'
+            },
+            children: block.headline
+          }),
+          jsxs('span', {
+            'data-cb-mission-state': checkpoint ? 'checkpoint' : 'mission',
+            style: {
+              flex: '0 0 auto',
+              fontFamily: CB_SANS,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              lineHeight: 1.3,
+              color: tone
+            },
+            children: [stateWord, ' · ', BLOCK_ROLE_COPY[block.role] || block.role]
           })
         ]
       }),
       body
         ? jsx('div', {
-            style: { maxWidth: '46rem' },
+            style: {
+              maxWidth: CB_MEASURE,
+              paddingTop: '0.3rem',
+              fontFamily: CB_SERIF,
+              fontSize: '1rem',
+              lineHeight: 1.6,
+              color: 'var(--cb-ink)'
+            },
             children: jsx(sdk.MessageTextContent, { text: body })
           })
         : null,
@@ -9833,33 +10181,36 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
       jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
       jsx(BlockSaveActions, { block, checkLabels, onSaveBlock, className: 'flex flex-wrap items-center gap-1 self-start' }),
       jsx(PronunciationSeat, { block, pronunciation }),
-      mission.checkpoint
+      checkpoint
         ? jsxs('div', {
             'data-cb-mission-gate': block.check_id || 'unattached',
-            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingTop: '0.15rem' },
+            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingTop: '0.35rem' },
             children: [
-              jsx(DeskLabel, { children: 'Checkpoint' }),
-              jsx('div', {
-                style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+              jsx('p', {
+                style: { margin: 0, maxWidth: CB_MEASURE, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                 children: 'This is the section’s existing check — the same one Textbook and Guided use. Finishing it is not required to read anything here.'
               }),
               checkSlot
                 ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' }, children: checkSlot })
                 : jsx('div', {
-                    style: { fontSize: '0.8rem', color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: CB_SANS, fontSize: '0.8rem', color: 'var(--cb-ink-soft)' },
                     children: 'No check could be attached to this checkpoint, so the mission stays readable and ungated.'
                   })
             ]
           })
         : null,
-      jsx(sdk.Button, {
-        variant: 'text',
-        size: 'sm',
-        className: 'self-start',
-        'data-cb-mission-read': block.id,
-        'aria-label': `Read mission ${mission.index + 1}, ${block.headline}, in Textbook`,
-        onClick: () => onReadInTextbook(block.id),
-        children: 'Read in Textbook'
+      // One tertiary link at the foot of the brief, not a full-width bar under every mission.
+      jsx('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', paddingTop: '0.35rem' },
+        children: jsx(sdk.Button, {
+          variant: 'text',
+          size: 'sm',
+          className: 'self-start',
+          'data-cb-mission-read': block.id,
+          'aria-label': `Read mission ${mission.index + 1}, ${block.headline}, in Textbook`,
+          onClick: () => onReadInTextbook(block.id),
+          children: 'Read in Textbook'
+        })
       })
     ]
   })
@@ -9877,8 +10228,13 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
 function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, unattached, onOpenBlock, onSaveBlock, pronunciation }) {
   const missions = questMissions(document)
   const motion = useCbMotion()
+  const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
   const progressLabel = questProgressLabel(progress)
   const checkpoints = missions.filter((mission) => mission.checkpoint).length
+  const display = `${missions.length} ${missions.length === 1 ? 'mission' : 'missions'}, ${checkpoints} ${checkpoints === 1 ? 'checkpoint' : 'checkpoints'}`
+  const due = progress && typeof progress === 'object' ? Number(progress.review_due) || 0 : 0
+  const independent = progress && typeof progress === 'object' ? Number(progress.independent) || 0 : 0
+  const hasRecord = progress && typeof progress === 'object' && Number(progress.total_objectives) > 0
   return jsxs('div', {
     ...lessonTextAttrs(document),
     'data-cb-lesson-view': 'field_quest',
@@ -9887,33 +10243,55 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
     'data-cb-quest-progress': progressLabel,
     'data-cb-quest-missions': String(missions.length),
     'data-cb-quest-checkpoints': String(checkpoints),
-    style: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+    style: { display: 'flex', flexDirection: 'column', gap: '0.9rem' },
     children: [
-      jsxs('div', {
-        style: {
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          gap: '0.2rem 0.75rem'
-        },
+      jsxs('header', {
+        'data-cb-quest-head': '',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', maxWidth: '46rem' },
         children: [
-          jsx(DeskLabel, { children: 'Field Quest' }),
-          jsx('span', {
-            style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
-            children: `${progressLabel} · ${missions.length} mission${missions.length === 1 ? '' : 's'}, ${checkpoints} checkpoint${checkpoints === 1 ? '' : 's'}`
+          jsx('h2', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SERIF,
+              fontSize: phone ? '1.5rem' : 'clamp(1.75rem, 1.4rem + 1.1vw, 2.25rem)',
+              fontWeight: 600,
+              lineHeight: 1.1,
+              letterSpacing: '-0.015em',
+              color: 'var(--cb-ink)',
+              maxWidth: '24ch'
+            },
+            children: display.charAt(0).toUpperCase() + display.slice(1)
+          }),
+          jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '52ch' },
+            children: 'Missions are the reading path. The checkpoint is shared with the other lesson views.'
+          }),
+          jsx(HeroFacts, {
+            phone,
+            facts: [
+              { value: String(missions.length), label: 'Missions' },
+              { value: String(checkpoints), label: 'Checkpoints' },
+              hasRecord ? { value: String(due), label: 'Due for review' } : null
+            ].filter(Boolean)
+          }),
+          jsxs('details', {
+            'data-cb-quest-note': '',
+            style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', { style: { cursor: 'pointer' }, children: 'What these counts mean' }),
+              jsx('p', {
+                style: { margin: '0.3rem 0 0', lineHeight: 1.5, maxWidth: '52ch' },
+                children: hasRecord
+                  ? `Counts describe evidence the backend already recorded — ${independent} independent, ${due} due. They are not a score, nothing here is locked, and the checkpoint is the section’s existing check.`
+                  : 'Counts describe evidence the backend already recorded. They are not a score, nothing here is locked, and the checkpoint is the section’s existing check.'
+              })
+            ]
           })
         ]
       }),
-      jsx('p', {
-        'data-cb-quest-note': '',
-        style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
-        children:
-          'Counts describe evidence the backend already recorded; they are not a score. Open any mission to read its teaching in Textbook; nothing is locked, and the checkpoint is the section’s existing check.'
-      }),
       jsx('ol', {
         'data-cb-quest-path': '',
-        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.1rem' },
+        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 0 },
         children: missions.map((mission) =>
           jsx(
             QuestMission,
@@ -10504,11 +10882,12 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
     children: [
       jsx('div', {
         className: 'flex flex-col',
-        children: blocks.map((block) =>
+        children: blocks.map((block, index) =>
           jsx(
             TextbookBlock,
             {
               block,
+              lede: index === 0,
               sources,
               checkLabels: labels,
               checkSlot: attached >= 0 && block.check_id === checkId ? checkSlot : null,
@@ -10735,17 +11114,47 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   if (!page) {
     body =
       pageStatus === 'error'
-        ? jsx(sdk.ErrorState, {
-            title: 'This section could not be read',
-            description: `${pageError && pageError.code ? pageError.code + ': ' : ''}${describeError(pageError)}`,
-            children: jsx(sdk.Button, {
-              variant: 'secondary',
-              size: 'sm',
-              onClick: onRetryPage,
-              children: 'Try again'
-            })
+        ? jsx('section', {
+            'data-cb-section-error': '',
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+              maxWidth: CB_MEASURE,
+              padding: '0.8rem 0.9rem 0.85rem 1rem',
+              borderLeft: '1px solid var(--cb-coral)'
+            },
+            children: [
+              jsx('h3', {
+                style: { margin: 0, fontFamily: CB_SERIF, fontSize: '1.25rem', fontWeight: 600, lineHeight: 1.2, color: 'var(--cb-ink)' },
+                children: 'This section could not be read'
+              }),
+              jsx('p', {
+                style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+                children: 'Nothing was lost. The page is still saved on this profile; the read just did not finish.'
+              }),
+              pageError && pageError.code
+                ? jsxs('details', {
+                    style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                    children: [
+                      jsx('summary', { style: { cursor: 'pointer' }, children: 'Technical detail' }),
+                      jsx('p', { style: { margin: '0.25rem 0 0' }, children: `${pageError.code}: ${describeError(pageError)}` })
+                    ]
+                  })
+                : null,
+              jsxs('div', {
+                style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', paddingTop: '0.2rem' },
+                children: [
+                  jsx(sdk.Button, { variant: 'default', size: 'sm', onClick: onRetryPage, children: 'Try again' }),
+                  jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCapabilities, children: 'Open Capabilities' })
+                ]
+              })
+            ]
           })
-        : jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this section' }) })
+        : jsx('div', {
+            style: { padding: '2rem 0', display: 'flex', justifyContent: 'center' },
+            children: jsx(sdk.Loader, { label: 'Reading this section' })
+          })
   } else {
     body = jsxs('div', {
       className: 'flex flex-col gap-4',
@@ -10756,32 +11165,49 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
 
         runtime && !bindingActive
           ? jsx('div', {
-              className: 'border-l border-(--ui-stroke-secondary) pl-3 text-xs leading-relaxed text-(--ui-text-secondary)',
-              children:
-                'This section has no lesson chat yet. Start a fresh run to open one; its first message binds the chat to this section.'
+              'data-cb-detached': runtime.binding_status || 'detached',
+              style: {
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.5rem',
+                padding: '0.7rem 0.9rem',
+                background: 'var(--cb-lamp-soft)',
+                borderTop: '1px solid var(--cb-lamp)'
+              },
+              children: [
+                jsx('span', {
+                  style: { fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+                  children: 'No lesson chat is open for this section yet. Start the lesson to open one that belongs to it.'
+                })
+              ]
             })
           : null,
 
+        // One primary action per screen: continue the chat that is already bound, or start the
+        // lesson. A fresh run is a genuinely different action, so it stays available as a tertiary
+        // link rather than competing as a second filled button.
         jsxs('div', {
-          className: 'flex flex-wrap items-center gap-2',
+          'data-cb-section-actions': bindingActive ? 'resume' : 'start',
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
           children: [
-            bindingActive
-              ? jsx(sdk.Button, {
-                  variant: 'default',
-                  size: 'sm',
-                  disabled: busy,
-                  onClick: () => begin('resume'),
-                  children: 'Continue here'
-                })
-              : null,
             jsx(sdk.Button, {
-              variant: bindingActive ? 'secondary' : 'default',
+              variant: 'default',
               size: 'sm',
               disabled: busy,
-              onClick: () => begin('fresh'),
-              children: 'Start a fresh run'
+              onClick: () => begin(bindingActive ? 'resume' : 'fresh'),
+              children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start the lesson'
             }),
-            jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onBack, children: 'All sections' })
+            bindingActive
+              ? jsx(sdk.Button, {
+                  variant: 'text',
+                  size: 'sm',
+                  disabled: busy,
+                  onClick: () => begin('fresh'),
+                  children: 'Start a fresh run instead'
+                })
+              : null
           ]
         }),
         jsx(NoticeLine, { notice, busy }),
@@ -10862,9 +11288,10 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 )
               )
             })
-          : jsx(EmptyState, {
-              title: 'No teaching segments yet',
-              description: 'Segments appear here after a teaching turn in the bound chat. Coursebook does not write them for you.'
+          : jsx(BlankPlate, {
+              title: 'No teaching yet',
+              caption:
+                'A teaching turn in the lesson chat writes the first segment here. Coursebook does not write it for you.'
             }),
 
         // A parent-recipe page records an observation; it never mounts the graded check node.
@@ -10873,30 +11300,40 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         document || parentLed ? null : jsx(sdk.PanelSectionLabel, { children: 'CURRENT CHECK' }),
         document || parentLed ? null : checkNode,
 
+        // Repeated identical attempt rows are collapsed into one summary plus a disclosure: the
+        // count is recorded, the detail is available, and the reading column stays quiet.
         page.attempts && page.attempts.length > 0
-          ? jsxs('div', {
-              className: 'flex flex-col',
+          ? jsxs('details', {
+              'data-cb-attempts': String(page.attempts.length),
+              style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', maxWidth: CB_MEASURE },
               children: [
-                jsx(sdk.PanelSectionLabel, { children: 'ATTEMPTS ON THIS SECTION' }),
-                page.attempts.slice(0, 5).map((attempt) =>
-                  jsxs(
-                    'div',
-                    {
-                      className: 'flex flex-wrap items-center justify-between gap-2 border-b border-(--ui-stroke-tertiary) py-1.5 last:border-b-0 text-xs',
-                      children: [
-                        jsx('span', { className: 'text-(--ui-text-secondary)', children: whenLabel(attempt.committed_at || attempt.created_at) }),
-                        jsxs('span', {
-                          className: 'flex items-center gap-2',
-                          children: [
-                            jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: verdictLabel(attempt.verdict, attempt.evidence_class) }),
-                            jsx(EvidenceClassText, { value: attempt.evidence_class })
-                          ]
-                        })
-                      ]
-                    },
-                    attempt.attempt_id
+                jsx('summary', {
+                  style: { cursor: 'pointer', fontFamily: CB_SANS, fontSize: '0.8125rem', color: 'var(--cb-ink-soft)' },
+                  children: `${page.attempts.length} ${page.attempts.length === 1 ? 'attempt' : 'attempts'} recorded on this section · last ${whenLabel(page.attempts[0].committed_at || page.attempts[0].created_at)}`
+                }),
+                jsx('div', {
+                  style: { display: 'flex', flexDirection: 'column', paddingTop: '0.3rem' },
+                  children: page.attempts.map((attempt) =>
+                    jsxs(
+                      'div',
+                      {
+                        className: 'flex flex-wrap items-center justify-between gap-2 text-xs',
+                        style: { borderTop: '1px solid var(--cb-rule)', padding: '0.4rem 0' },
+                        children: [
+                          jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: whenLabel(attempt.committed_at || attempt.created_at) }),
+                          jsxs('span', {
+                            className: 'flex items-center gap-2',
+                            children: [
+                              jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: verdictLabel(attempt.verdict, attempt.evidence_class) }),
+                              jsx(EvidenceClassText, { value: attempt.evidence_class })
+                            ]
+                          })
+                        ]
+                      },
+                      attempt.attempt_id
+                    )
                   )
-                )
+                })
               ]
             })
           : null,
@@ -10921,20 +11358,24 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   // twice: the source cards and saved notes live in the third part of the workspace.
   const railFacts = section
     ? [
-        { label: 'State', value: section.state || 'unrecorded' },
-        { label: 'Evidence', value: learnerEvidenceTarget(section.evidence_target) || 'unrecorded' },
+        { label: 'State', value: DESK_STATE_WORD[section.state] || 'Not started' },
+        { label: 'Evidence', value: learnerEvidenceTarget(section.evidence_target) || 'Not recorded' },
         { label: 'Attempts', value: String((page && page.attempts ? page.attempts.length : 0)) }
       ]
     : []
   const viewOptions = document ? lessonViewOptions(document) : []
   const activeView = viewOptions.some((option) => option.id === lessonView) ? lessonView : 'textbook'
+  const activeMode = cbModeFor(activeView)
   const switcher = document
     ? jsxs('div', {
         className: 'flex flex-wrap items-center gap-2',
         'data-cb-view-switcher': viewOptions.length > 1 ? 'available' : 'textbook-only',
         'data-cb-view-options': viewOptions.map((option) => option.id).join(' '),
         children: [
-          jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: 'Lesson view' }),
+          jsxs('span', {
+            style: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            children: [jsx(ModeDot, { mode: activeMode }), 'Lesson view']
+          }),
           viewOptions.length > 1
             ? jsx(sdk.SegmentedControl, {
                 onChange: (next) => {
@@ -10949,32 +11390,78 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         ]
       })
     : null
-  const shellActions = page
-    ? [switcher, runtime ? jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: runtime.session_state }) : null]
-    : [jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onBack, children: 'All sections' })]
+  const shellActions = page ? [switcher] : []
+
+  // The breadcrumb is the course the section belongs to, and the section's place in it: one calm
+  // line above the reading column, never a second navigation bar.
+  const ordinal = section && section.ordinal ? String(section.ordinal) : null
+  const total = row.evidence_summary && row.evidence_summary.total_objectives ? String(row.evidence_summary.total_objectives) : null
+  const place = ordinal && total ? `Section ${ordinal} of ${total}` : ordinal ? `Section ${ordinal}` : null
+  const metaLine = section
+    ? [
+        jsx(sdk.Button, {
+          key: 'back',
+          variant: 'text',
+          size: 'sm',
+          'data-cb-breadcrumb': 'sections',
+          className: 'self-start',
+          onClick: onBack,
+          children: [jsx(sdk.Codicon, { name: 'chevron-left', size: '0.8rem' }), row.title || 'All sections']
+        }),
+        jsx('span', {
+          key: 'place',
+          style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+          children: [place, activeView === 'textbook' ? 'Textbook' : activeView === 'guided' ? 'Guided' : 'Field Quest'].filter(Boolean).join(' · ')
+        }),
+        jsx(CbStatePill, { key: 'state', state: section.state }),
+        section.evidence_target
+          ? jsx('span', {
+              key: 'evidence',
+              style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+              children: learnerEvidenceTarget(section.evidence_target) || 'Evidence target not recorded'
+            })
+          : null,
+        section.last_opened_at
+          ? jsx('span', {
+              key: 'opened',
+              style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+              children: `Last opened ${whenLabel(section.last_opened_at)}`
+            })
+          : null
+      ]
+    : [jsx(sdk.Button, { key: 'back', variant: 'text', size: 'sm', onClick: onBack, children: 'All sections' })]
 
   return jsx(WorkspaceShell, {
-    eyebrow: 'Coursebook',
+    eyebrow: null,
     title: section && section.title ? section.title : 'Section',
-    subtitle: section
-      ? [
-          section.state || null,
-          section.evidence_target || null,
-          section.last_opened_at ? `last opened ${whenLabel(section.last_opened_at)}` : null
-        ].filter(Boolean).join(' · ')
-      : null,
-    meta: page && !parentLed && check.status === 'error' ? [jsx(QuietNote, { children: 'The check could not be opened.' })] : [],
+    subtitle: null,
+    meta: metaLine,
     actions: shellActions,
     rail: page
       ? jsx(FieldRail, {
           next: row.next_step && (row.next_step.label || row.next_step.kind) ? (row.next_step.label || row.next_step.kind) : null,
           facts: railFacts,
           sources: page.sources || [],
-          notes: page.notebook_entries || []
+          notes: page.notebook_entries || [],
         })
       : null,
     children: [
       body,
+      page && document
+        ? jsx('div', {
+            'data-cb-section-footer': '',
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.5rem',
+              paddingTop: '0.9rem',
+              borderTop: '1px solid var(--cb-rule)',
+              maxWidth: CB_MEASURE
+            },
+            children: jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onBack, children: 'Back to the section index' })
+          })
+        : null,
       jsx(NotebookSaveDialog, {
         open: Boolean(saveSeed),
         seed: saveSeed,
@@ -10990,13 +11477,13 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
     ]
   })
 }
-/** Overview: where you are, what is next, one review row, then the course's own metadata. */
+/** Overview: the course summary, one next move, the route, then recent evidence and reference. */
 function OverviewView({ row, page, review, quizzes, outline, implemented, onOpenSection, onResume }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const next = row.next_step || {}
   const section = page && page.section
   const due = review && Array.isArray(review.items) ? review.items.filter((item) => item.overdue) : []
-  const recent = quizzes && Array.isArray(quizzes.attempts) ? quizzes.attempts[0] : null
+  const recent = quizzes && Array.isArray(quizzes.attempts) ? quizzes.attempts.slice(0, 3) : []
   const warning = row.warning ? WARNING_COPY_LEARNING[row.warning] : null
   const objectives = outline && Array.isArray(outline.objectives) ? outline.objectives.filter(Boolean) : []
   const summary = row.evidence_summary || {}
@@ -11010,9 +11497,11 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
   const nextEntry = mainlineObjective(row, objectives)
   const nextTitle = section ? section.title : nextEntry ? nextEntry.title : next.label || null
   const nextSemantic = nextEntry ? sectionStateSemantic(nextEntry.state, true) : null
+  const currentId = section ? section.objective_id : nextEntry ? nextEntry.objective_id : null
+  const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
 
   return jsxs('div', {
-    className: 'flex max-w-2xl flex-col gap-4',
+    className: 'flex max-w-3xl flex-col gap-5',
     children: [
       warning ? jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: warning }) : null,
 
@@ -11024,86 +11513,160 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
         compact: true
       }),
 
-      jsxs('div', {
-        className: 'flex flex-col gap-1',
+      // One next move, in the same row language as the course index: the row itself is the action
+      // and the primary button is the only filled control on the screen.
+      jsxs('section', {
+        'data-cb-overview-next': currentId || 'none',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: '46rem' },
         children: [
-          jsx(sdk.PanelSectionLabel, { children: 'CURRENT OBJECTIVE' }),
-          jsx('div', { className: 'text-sm font-medium', children: section ? section.title : next.label || 'No objective recorded yet' }),
-          section
-            ? jsxs('div', {
-                className: 'flex flex-wrap items-center gap-2',
+          jsxs('div', {
+            style: {
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.9rem',
+              padding: '0.9rem 0.9rem 0.9rem 1rem',
+              background: 'var(--cb-lamp-soft)',
+              borderTop: '1px solid var(--cb-lamp)',
+              boxSizing: 'border-box'
+            },
+            children: [
+              jsx('span', {
+                'aria-hidden': 'true',
+                style: {
+                  flex: '0 0 2.5rem',
+                  fontFamily: CB_SANS,
+                  fontVariantNumeric: 'tabular-nums',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  lineHeight: 1.6,
+                  color: 'var(--cb-ink-soft)'
+                },
+                children: section && section.ordinal ? String(section.ordinal).padStart(2, '0') : '—'
+              }),
+              jsxs('div', {
+                style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: 0, flex: '1 1 auto' },
                 children: [
-                  jsx(StateText, { state: section.state }),
-                  section.evidence_target
-                    ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: learnerEvidenceTarget(section.evidence_target) })
-                    : null
+                  jsx('div', {
+                    style: {
+                      fontFamily: CB_SERIF,
+                      fontSize: '1.25rem',
+                      fontWeight: 600,
+                      lineHeight: 1.25,
+                      color: 'var(--cb-ink)',
+                      overflowWrap: 'anywhere'
+                    },
+                    children: nextTitle || 'No objective recorded yet'
+                  }),
+                  section
+                    ? jsxs('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' } , children: [
+                        jsx(CbStatePill, { state: section.state }),
+                        section.evidence_target
+                          ? jsx('span', {
+                              style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                              children: learnerEvidenceTarget(section.evidence_target)
+                            })
+                          : null
+                      ] })
+                    : null,
+                  jsx('div', {
+                    style: { fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                    children: next.label ? `Next: ${next.label}` : 'The backend did not return a next step for this course.'
+                  })
                 ]
               })
-            : null,
-          jsx(QuietNote, { children: next.label || 'The backend did not return a next step for this course.' })
-        ]
-      }),
-
-      jsxs('div', {
-        className: 'flex flex-wrap items-center gap-2',
-        children: [
-          jsx(sdk.Button, {
-            variant: 'default',
-            size: 'sm',
-            disabled: !section,
-            onClick: () => onResume(section ? section.objective_id : null),
-            children: next.kind === 'resume_lesson' ? 'Resume lesson' : 'Start lesson'
+            ]
           }),
-          jsx(sdk.Button, {
-            variant: 'secondary',
-            size: 'sm',
-            disabled: !section,
-            onClick: () => onOpenSection(section ? section.objective_id : null),
-            children: 'Open this section'
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
+            children: [
+              jsx(sdk.Button, {
+                variant: 'default',
+                size: 'sm',
+                disabled: !section,
+                onClick: () => onResume(section ? section.objective_id : null),
+                children: next.kind === 'resume_lesson' ? 'Resume the lesson' : 'Start the lesson'
+              }),
+              jsx(sdk.Button, {
+                variant: 'text',
+                size: 'sm',
+                disabled: !section,
+                onClick: () => onOpenSection(section ? section.objective_id : null),
+                children: 'Read this section'
+              })
+            ]
           })
         ]
       }),
 
-      jsxs('div', {
-        className: 'flex flex-col',
-        children: [
-          jsx(sdk.PanelSectionLabel, { children: 'REVIEW' }),
-          due.length === 0
-            ? jsx(QuietNote, { children: 'Nothing due. The review queue stays quiet until evidence is scheduled.' })
-            : jsxs('div', {
-                className: 'flex flex-wrap items-center justify-between gap-2 py-1',
-                children: [
-                  jsx('div', {
-                    className: 'text-xs text-(--ui-text-secondary)',
-                    children: `${due.length} due${review.total_overdue > due.length ? ` · ${review.total_overdue} overdue in total` : ''}`
-                  }),
-                  jsx(sdk.Button, {
-                    variant: 'secondary',
-                    size: 'sm',
-                    onClick: () => onOpenSection(due[0].objective_id),
-                    children: 'Open the oldest'
-                  })
-                ]
+      objectives.length > 0
+        ? jsxs('section', {
+            'data-cb-overview-route': '',
+            style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+            children: [
+              jsx(PlateHead, {
+                title: `${objectives.length} ${objectives.length === 1 ? 'section' : 'sections'}`,
+                caption: progress.statement || progressStatement(progress.independent, progress.total)
+              }),
+              jsx(RouteSpine, {
+                objectives,
+                currentId,
+                phone,
+                onSelect: (objectiveId) => onOpenSection(objectiveId),
+                ariaLabel: 'Course sections'
               })
-        ]
-      }),
+            ]
+          })
+        : null,
 
-      jsxs('div', {
-        className: 'flex flex-col',
+      jsxs('section', {
+        'data-cb-overview-evidence': '',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
         children: [
-          jsx(sdk.PanelSectionLabel, { children: 'RECENT EVENT' }),
-          recent
-            ? jsxs('div', {
-                className: 'flex flex-wrap items-center justify-between gap-2 text-xs',
-                children: [
-                  jsx('span', {
-                    className: 'text-(--ui-text-secondary)',
-                    children: `${verdictLabel(recent.verdict, recent.evidence_class)} · ${whenLabel(recent.committed_at || recent.created_at)}`
-                  }),
-                  jsx(EvidenceClassText, { value: recent.evidence_class })
-                ]
+          jsx(PlateHead, {
+            title: 'Recent evidence',
+            caption: due.length > 0 ? `${due.length} ${due.length === 1 ? 'section is' : 'sections are'} due for review.` : null
+          }),
+          recent.length > 0
+            ? jsx('div', {
+                style: { display: 'flex', flexDirection: 'column' },
+                children: recent.map((attempt, index) =>
+                  jsxs('div', {
+                    'data-cb-evidence-row': attempt.attempt_id || String(index),
+                    style: {
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'baseline',
+                      justifyContent: 'space-between',
+                      gap: '0.2rem 0.75rem',
+                      padding: '0.45rem 0',
+                      borderTop: index === 0 ? '1px solid var(--cb-rule)' : '1px solid var(--cb-rule)',
+                      fontFamily: CB_SANS,
+                      fontSize: '0.75rem',
+                      lineHeight: 1.45
+                    },
+                    children: [
+                      jsx('span', {
+                        style: { color: 'var(--cb-ink-soft)' },
+                        children: `${verdictLabel(attempt.verdict, attempt.evidence_class)} · ${whenLabel(attempt.committed_at || attempt.created_at)}`
+                      }),
+                      jsx(EvidenceClassText, { value: attempt.evidence_class })
+                    ]
+                  }, attempt.attempt_id || index)
+                )
               })
-            : jsx(QuietNote, { children: 'No attempt has been recorded on this course yet.' })
+            : jsx('p', {
+                style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                children: 'No attempt has been recorded on this course yet.'
+              }),
+          due.length > 0
+            ? jsx(sdk.Button, {
+                variant: 'text',
+                size: 'sm',
+                className: 'self-start',
+                onClick: () => onOpenSection(due[0].objective_id),
+                children: `Start with the oldest: ${due[0].title || 'the first section due'}`
+              })
+            : null
         ]
       }),
 
@@ -11211,65 +11774,52 @@ function sectionToneColor(key) {
 }
 
 /**
- * Course identity + the one-screen answer: where am I, and what is next.
- *
- * It sits above the section list and above the overview's metadata. The progress sentence is a
- * count the backend records; there is no percentage, ring or streak.
+ * The course line: the title, the recorded progress sentence and the next move, in that order.
+ * It is a summary strip, not a hero — the course hero belongs to Course Detail — so it carries no
+ * lamp field, no seal and no action. Every value is one the backend recorded; there is no percent,
+ * ring or streak (docs/COURSEBOOK-VISUAL-IDENTITY-V2.md §3, §4.4).
  */
 function CourseIdentity({ title, subtitle, progress, nextTitle, nextSemantic, compact }) {
   return jsxs('section', {
-    'data-cb-identity': 'course',
+    'data-cb-identity': compact ? 'summary' : 'course',
     style: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '0.4rem',
-      padding: compact ? '0.6rem 0 0.65rem' : '0.85rem 0 0.9rem',
-      borderTop: '2px solid var(--cb-ink)',
+      gap: '0.3rem',
+      padding: compact ? '0.15rem 0 0.55rem' : '0.2rem 0 0.7rem',
       borderBottom: '1px solid var(--cb-rule)',
       maxWidth: '46rem'
     },
     children: [
-      jsxs('div', {
-        style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' },
-        children: [
-          jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
-            children: [
-              jsx('div', {
-                style: {
-                  fontSize: '0.63rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  color: 'var(--cb-ink-soft)'
-                },
-                children: 'Field notes'
-              }),
-              jsx('h3', {
-                style: {
-                  margin: 0,
-                  fontSize: compact ? '1.05rem' : 'clamp(1.25rem, 1rem + 0.9vw, 1.65rem)',
-                  lineHeight: 1.2,
-                  letterSpacing: '-0.005em',
-                  color: 'var(--cb-ink)',
-                  overflowWrap: 'anywhere'
-                },
-                children: title
-              })
-            ]
-          }),
-          jsx(FieldNoteMark, { title, compact })
-        ]
+      jsx('h2', {
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: compact ? '1.25rem' : 'clamp(1.5rem, 1.2rem + 0.9vw, 2rem)',
+          fontWeight: 600,
+          lineHeight: 1.15,
+          letterSpacing: '-0.01em',
+          color: 'var(--cb-ink)',
+          maxWidth: '34ch',
+          overflowWrap: 'anywhere'
+        },
+        children: title
       }),
       jsx('div', {
         'data-cb-progress-statement': '',
-        style: { fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+        style: {
+          fontFamily: CB_SANS,
+          fontVariantNumeric: 'tabular-nums',
+          fontSize: '0.8125rem',
+          lineHeight: 1.5,
+          color: 'var(--cb-ink-soft)'
+        },
         children: progress
       }),
       nextTitle
         ? jsxs('div', {
             'data-cb-next-statement': '',
-            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.35rem', fontSize: '0.8rem' },
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.35rem', fontFamily: CB_SANS, fontSize: '0.8125rem' },
             children: [
               jsx('span', { style: { fontWeight: 600, color: 'var(--cb-accent)' }, children: 'Next ·' }),
               jsx('span', { style: { color: 'var(--cb-ink)', overflowWrap: 'anywhere' }, children: nextTitle }),
@@ -11280,18 +11830,22 @@ function CourseIdentity({ title, subtitle, progress, nextTitle, nextSemantic, co
           })
         : null,
       subtitle
-        ? jsx('div', { style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' }, children: subtitle })
+        ? jsx('div', { style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' }, children: subtitle })
         : null
     ]
   })
 }
 
 /**
- * One section row. The row itself is the action: a single button, one chevron, no repeated
- * "Open section" label. State is an icon plus a word, never colour alone.
+ * One section row in the course index: a 40px number gutter, a serif title, one honest subline
+ * and the state word at the end. The row itself is the action — no chevron-only affordance, no
+ * repeated "Open section" label, no card border. State is a word plus its hue, never colour alone
+ * (docs/COURSEBOOK-VISUAL-IDENTITY-V2.md §4.6).
  */
 function SectionRow({ entry, semantic, isNext, onOpen }) {
+  const [hover, setHover] = useState(false)
   const target = learnerEvidenceTarget(entry.evidence_target)
+  const subline = target || (isNext && entry.last_opened_at ? `Last opened ${whenLabel(entry.last_opened_at)}` : null)
   return jsx(sdk.Button, {
     variant: 'text',
     className: 'w-full justify-start',
@@ -11299,61 +11853,64 @@ function SectionRow({ entry, semantic, isNext, onOpen }) {
     'data-cb-section-row': entry.objective_id,
     'data-cb-section-state': semantic.key,
     onClick: () => onOpen(entry.objective_id),
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => setHover(false),
+    onFocus: () => setHover(true),
+    onBlur: () => setHover(false),
     children: jsxs('span', {
       style: {
         display: 'flex',
         alignItems: 'flex-start',
-        gap: '0.7rem',
+        gap: '0.9rem',
         width: '100%',
-        padding: '0.5rem 0.1rem',
+        padding: '0.8rem 0.35rem 0.8rem 0.6rem',
+        boxSizing: 'border-box',
         textAlign: 'left',
+        borderTop: '1px solid var(--cb-rule)',
         borderLeft: isNext ? '2px solid var(--cb-accent)' : '2px solid transparent',
-        paddingLeft: '0.55rem'
+        background: isNext ? 'var(--cb-accent-soft)' : hover ? 'var(--cb-accent-soft)' : 'transparent'
       },
       children: [
-        jsxs('span', {
+        jsx('span', {
+          'aria-hidden': 'true',
           style: {
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.3rem',
-            flex: '0 0 auto',
-            minWidth: '5.8rem',
-            fontSize: '0.72rem',
-            fontWeight: 500,
-            color: sectionToneColor(semantic.key)
+            flex: '0 0 2.5rem',
+            fontFamily: CB_SANS,
+            fontVariantNumeric: 'tabular-nums',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
+            lineHeight: 1.6,
+            color: isNext ? 'var(--cb-accent)' : 'var(--cb-ink-soft)'
           },
-          children: [
-            jsx(sdk.Codicon, { name: semantic.icon, size: '0.8rem' }),
-            jsx('span', { children: semantic.label })
-          ]
+          children: String(entry.ordinal || 0).padStart(2, '0')
         }),
         jsxs('span', {
-          style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0, flex: '1 1 auto' },
+          style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0, flex: '1 1 auto' },
           children: [
             jsx('span', {
               style: {
                 overflowWrap: 'anywhere',
-                fontSize: '0.9rem',
-                fontWeight: isNext ? 600 : 400,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                fontFamily: CB_SERIF,
+                fontSize: '1.125rem',
+                fontWeight: 600,
+                lineHeight: 1.3,
                 color: 'var(--cb-ink)'
               },
               children: entry.title
             }),
-            target
-              ? jsx('span', { style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' }, children: target })
-              : null,
-            isNext && entry.last_opened_at
-              ? jsx('span', {
-                  style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' },
-                  children: `last opened ${whenLabel(entry.last_opened_at)}`
-                })
+            subline
+              ? jsx('span', { style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' }, children: subline })
               : null
           ]
         }),
         jsx('span', {
-          'aria-hidden': 'true',
-          style: { flex: '0 0 auto', alignSelf: 'center', color: 'var(--cb-ink-soft)' },
-          children: jsx(sdk.Codicon, { name: 'chevron-right', size: '0.9rem' })
+          'data-cb-section-pill': semantic.key,
+          style: { flex: '0 0 auto', alignSelf: 'center' },
+          children: jsx(CbStatePill, { state: entry.state })
         })
       ]
     })
@@ -11555,17 +12112,39 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
   }
 
   return jsxs('div', {
-    className: 'flex max-w-3xl flex-col gap-3',
+    className: 'flex max-w-3xl flex-col gap-4',
     children: [
       jsx(CourseIdentity, {
         title: row.title || 'This course',
         progress: progress.statement || progressStatement(progress.independent, progress.total),
         nextTitle,
         nextSemantic,
-        subtitle:
-          progress.due > 0
-            ? `${progress.due} ${progress.due === 1 ? 'section is' : 'sections are'} due for review.`
-            : null
+        compact: true
+      }),
+      // The reading plate: what is here, how much of it carries evidence, and the one line that
+      // explains the measure. The old identity paragraph becomes this caption.
+      jsxs('section', {
+        'data-cb-reading-plate': '',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.55rem' },
+        children: [
+          jsx(PlateHead, {
+            title: `${rows.length} ${rows.length === 1 ? 'section' : 'sections'}`,
+            caption: progress.due > 0
+              ? `${progress.due} ${progress.due === 1 ? 'section is' : 'sections are'} due for review.`
+              : null
+          }),
+          objectives.length > 0
+            ? jsx(EvidenceTally, {
+                objectives,
+                caption: progress.statement || progressStatement(progress.independent, progress.total)
+              })
+            : null,
+          jsx('p', {
+            'data-cb-reading-caption': '',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+            children: '66 characters per line. Evidence is named, never estimated.'
+          })
+        ]
       }),
       hasOutline
         ? null
@@ -12650,7 +13229,10 @@ function CourseExportView({ row, implemented }) {
   return jsxs('div', {
     className: 'flex max-w-3xl flex-col gap-3',
     children: [
-      jsx('div', { className: 'text-sm font-semibold', children: 'Review the export' }),
+      jsx(PlateHead, {
+        title: 'Export course…',
+        caption: 'Review the files, the licence and the rights statement before anything is packaged.'
+      }),
       jsx('div', {
         className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
         children:
@@ -12993,108 +13575,204 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
   const topCanResume = Boolean(
     page.data && page.data.runtime && page.data.runtime.binding_status === 'active'
   )
+  const objectives = outline.data && Array.isArray(outline.data.objectives) ? outline.data.objectives.filter(Boolean) : []
+  const summary = row.evidence_summary || {}
+  const courseProgress = objectives.length
+    ? objectiveProgress(objectives)
+    : {
+        total: Number(summary.total_objectives) || 0,
+        independent: Number(summary.independent) || 0,
+        due: Number(summary.review_due) || 0
+      }
+  const section = page.data && page.data.section ? page.data.section : null
+  const sectionTotal = objectives.length || Number(courseProgress.total) || 0
+  const sectionOrdinal = section && section.ordinal ? Number(section.ordinal) : null
+  const dueCount = review.data && typeof review.data.total_overdue === 'number' ? Number(review.data.total_overdue) : null
+  const heroFacts = [
+    sectionTotal
+      ? {
+          value: sectionOrdinal ? `Section ${sectionOrdinal} of ${sectionTotal}` : `${sectionTotal} ${sectionTotal === 1 ? 'section' : 'sections'}`,
+          label: (section && section.title) || 'In this course'
+        }
+      : null,
+    courseProgress.total
+      ? { value: `${courseProgress.independent} of ${courseProgress.total}`, label: 'With independent evidence' }
+      : null,
+    dueCount !== null && dueCount > 0 ? { value: String(dueCount), label: 'Due for review' } : null
+  ].filter(Boolean)
+  const parentIdentity = row.recipe === 'parent' ? 'plum' : 'lamp'
+  const tierOne = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'textbook', label: 'Textbook', mode: true },
+    { id: 'notebook', label: 'Notebook' },
+    { id: 'quizzes', label: 'Quizzes' },
+    { id: 'evidence', label: 'Evidence' }
+  ]
+  const tierTwo = [
+    { id: 'plan', label: 'Plan' },
+    { id: 'sources', label: 'Sources' },
+    supports('course.export.read') ? { id: 'export', label: 'Export' } : null
+  ].filter(Boolean)
+  const tierTwoActive = tierTwo.some((option) => option.id === view)
+  const layout = cbLayoutFor(useCbViewportWidth())
+  const phone = layout === 'phone'
+  const compactHero = layout !== 'wide'
 
   return jsxs('div', {
-    className: 'flex flex-col gap-3',
+    'data-cb-course-detail': view,
+    className: 'flex flex-col gap-4',
     children: [
-      jsx(sdk.Button, { className: 'self-start', variant: 'text', size: 'sm', onClick: onBack, children: 'All courses' }),
-      jsxs('div', {
-        className: 'flex flex-wrap items-start justify-between gap-3',
-        children: [
-          jsxs('div', {
-            className: 'flex min-w-0 flex-col gap-1',
-            children: [
-              jsx('h2', { className: 'min-w-0 break-words text-sm font-semibold', children: row.title }),
-              jsxs('div', {
-                className: 'flex flex-wrap items-center gap-2',
-                children: [
-                  jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: (RECIPE_COPY[row.recipe] || {}).title || row.recipe }),
-                  row.warning ? jsx(WarningBadge, { warning: row.warning }) : null,
-                  jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: currentTitle })
-                ]
-              })
-            ]
-          }),
-          jsxs('div', {
-            className: 'flex shrink-0 flex-wrap items-center justify-end gap-2',
-            children: [
-              // The export action lives on the course itself: a course a learner authored from a
-              // goal can package itself without visiting Parent Studio or the pack library.
-              supports('course.export.read') && view !== 'export'
-                ? jsx(sdk.Button, {
-                    variant: 'secondary',
-                    size: 'sm',
-                    onClick: () => selectView('export'),
-                    children: 'Export course…'
-                  })
-                : null,
-              jsx(sdk.Button, {
-                variant: 'default',
-                size: 'sm',
-                disabled: busy,
-                onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
-                children: busy ? 'Opening' : nextKind === 'resume_lesson' && topCanResume ? 'Resume lesson' : 'Start lesson'
-              })
-            ]
-          })
-        ]
+      jsx(sdk.Button, {
+        className: 'self-start',
+        variant: 'text',
+        size: 'sm',
+        'data-cb-course-back': '',
+        onClick: onBack,
+        children: 'All courses'
       }),
-      jsx(NoticeLine, { notice, busy }),
 
-      jsx('div', {
-        className: 'hidden min-[47.5rem]:block',
-        children: jsx(sdk.SegmentedControl, {
-          onChange: selectView,
-          options: LEARNING_VIEWS,
-          sizing: 'content',
-          value: view
+      // The compact hero: one lamp field, one seal, three recorded facts, one primary action.
+      jsx(HeroField, {
+        identity: parentIdentity,
+        phone,
+        children: jsxs('div', {
+          style: {
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'flex-start',
+            gap: phone ? '0.75rem' : '1.75rem'
+          },
+          children: [
+            jsx(SurveyMark, { courseId: row.course_id, identity: parentIdentity, size: phone ? 40 : 64 }),
+            jsxs('div', {
+              style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, flex: compactHero ? '1 1 100%' : '1 1 16rem' },
+              children: [
+                jsx('h1', {
+                  'data-cb-course-title': '',
+                  style: {
+                    margin: 0,
+                    fontFamily: CB_SERIF,
+                    fontSize: 'clamp(1.75rem, 1.35rem + 1.6vw, 2.5rem)',
+                    fontWeight: 600,
+                    lineHeight: 1.12,
+                    letterSpacing: '-0.015em',
+                    color: 'var(--cb-ink)',
+                    maxWidth: '20ch',
+                    overflowWrap: 'anywhere'
+                  },
+                  children: row.title || 'This course'
+                }),
+                jsxs('div', {
+                  style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.45rem' },
+                  children: [
+                    jsx(CbStatePill, { state: section ? section.state : row.enrollment_status === 'active' ? 'introduced' : 'not_started' }),
+                    row.recipe
+                      ? jsx('span', {
+                          style: { fontFamily: CB_SANS, fontSize: '0.8125rem', color: 'var(--cb-ink-soft)' },
+                          children: (RECIPE_COPY[row.recipe] || {}).title || row.recipe
+                        })
+                      : null,
+                    row.warning ? jsx(WarningBadge, { warning: row.warning }) : null
+                  ]
+                }),
+                jsx(HeroFacts, { facts: heroFacts, phone })
+              ]
+            }),
+            jsxs('div', {
+              'data-cb-hero-actions': '',
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                gap: '0.45rem',
+                flex: compactHero ? '1 1 100%' : '0 0 13rem',
+                minWidth: 0
+              },
+              children: [
+                jsx(sdk.Button, {
+                  variant: 'default',
+                  disabled: busy,
+                  onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
+                  children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start the lesson'
+                }),
+                jsx(sdk.Button, {
+                  variant: 'secondary',
+                  onClick: () => {
+                    setView('textbook')
+                    setOpenSectionId(null)
+                  },
+                  children: 'Open the textbook'
+                }),
+                jsxs('details', {
+                  'data-cb-why-next': '',
+                  style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                  children: [
+                    jsx('summary', { style: { cursor: 'pointer' }, children: 'Why this is next' }),
+                    jsx('p', { style: { margin: '0.35rem 0 0', lineHeight: 1.5 }, children: currentTitle })
+                  ]
+                })
+              ]
+            })
+          ]
         })
       }),
+
+      jsx(NoticeLine, { notice, busy }),
+
+      // Two tiers, every surface one click away. The reading modes carry their dot; the reference
+      // tier is a plain text row so it never competes with the reading path.
       jsxs('div', {
-        className: 'flex items-center gap-2 min-[47.5rem]:hidden',
+        style: { display: 'flex', flexDirection: 'column', gap: '0.15rem' },
         children: [
-          jsx('label', {
-            htmlFor: 'cb-view-picker',
-            className: 'text-xs font-medium text-(--ui-text-secondary)',
-            children: 'View'
-          }),
-          jsxs(sdk.Select, {
-            value: view,
-            onValueChange: selectView,
-            children: [
+          jsx(LearningTabs, { options: tierOne, value: view, onChange: selectView, phone, ariaLabel: 'Course surfaces' }),
+          jsx('div', {
+            'data-cb-tier-two': view,
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.15rem 0.9rem' },
+            children: tierTwo.map((option) =>
               jsx(
-                sdk.SelectTrigger,
+                sdk.Button,
                 {
-                  id: 'cb-view-picker',
-                  className: 'w-44',
-                  // The selected view is part of the name: a combobox whose name is only
-                  // "Course view" makes a screen-reader user open it to learn where they are.
-                  'aria-label': `Course view: ${viewLabel}`,
-                  children: jsx(sdk.SelectValue, {})
+                  variant: 'text',
+                  size: 'sm',
+                  'data-cb-tab': option.id,
+                  'aria-current': option.id === view ? 'page' : undefined,
+                  onClick: () => selectView(option.id),
+                  children: option.label
                 },
-                'trigger'
-              ),
-              jsx(
-                sdk.SelectContent,
-                {
-                  children: LEARNING_VIEWS.map((option) =>
-                    jsx(sdk.SelectItem, { value: option.id, children: option.label }, option.id)
-                  )
-                },
-                'content'
+                option.id
               )
-            ]
+            )
           })
         ]
       }),
 
-      review.data && review.data.total_overdue > 0 && view !== 'overview'
+      tierTwoActive
         ? jsx('div', {
-            className: 'text-xs text-(--ui-text-secondary)',
-            children: `${review.data.total_overdue} objective(s) are due for review.`
+            style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            children: `You are reading ${viewLabel.toLowerCase()}, outside the course route. Overview, Textbook, Notebook, Quizzes and Evidence stay one click away above.`
           })
         : null,
-      rows.length > 0 ? null : null,
+      review.data && review.data.total_overdue > 0 && view !== 'overview'
+        ? jsx(CheckPanelFrame, {
+            kind: 'check',
+            label: 'Review due',
+            children: jsxs('div', {
+              style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' },
+              children: [
+                jsx('span', {
+                  style: { fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+                  children: `${review.data.total_overdue} ${review.data.total_overdue === 1 ? 'section is' : 'sections are'} due for review.`
+                }),
+                jsx(sdk.Button, {
+                  variant: 'text',
+                  size: 'sm',
+                  onClick: () => selectView('overview'),
+                  children: 'See what is due'
+                })
+              ]
+            })
+          })
+        : null,
       body
     ]
   })

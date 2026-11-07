@@ -386,7 +386,11 @@ def source_scan() -> dict:
     token_table = table_match.group(1) if table_match else ""
     outside = [match.group(0) for match in COLOUR_LITERAL.finditer(text) if match.group(0) not in token_table]
     hex_outside = [match.group(0) for match in re.finditer(r"#[0-9a-fA-F]{3,8}\b", text) if match.group(0) not in token_table]
-    contract = ROOT / "contracts" / "cb.tokens.v1.json"
+    # The shipped table is v2 (Atlas Lamp). Prefer the newest contract on disk so the claim compares
+    # the module against the contract it actually implements, and keep v1 as history.
+    contract = ROOT / "contracts" / "cb.tokens.v2.json"
+    if not contract.is_file():
+        contract = ROOT / "contracts" / "cb.tokens.v1.json"
     contract_tokens = json.loads(contract.read_text(encoding="utf-8")) if contract.is_file() else None
     shipped_palette = json.loads(token_table) if token_table else None
     return {
