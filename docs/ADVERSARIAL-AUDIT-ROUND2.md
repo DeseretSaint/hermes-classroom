@@ -50,9 +50,10 @@ bash scripts/validate-plugin.sh <clean export>            # result in the card s
 
 **Reproduction**
 
-`tests/test_adversarial_round2.PlanGateTest.test_rejected_plan_rows_are_draft_and_the_domain_approves_them`
+`tests/test_adversarial_round2.PlanGateTest.test_rejected_plan_rows_are_draft_and_the_domain_refuses_approval`
 runs `run_plan_job` with a validator that rejects `factual_correctness`, then calls the real
-`plan.approve` handler through `api.dispatch`. Observed:
+`plan.approve` handler through `api.dispatch`. Observed at audit time (pre-H-12; the same test now
+asserts the H-12 refusal instead of this bypass):
 
 ```
 result["validation_verdict"] == "reject"
