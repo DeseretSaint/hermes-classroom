@@ -78,6 +78,21 @@ def _document(filename: str) -> dict:
     return json.loads((contracts.CONTRACT_DIR / filename).read_text(encoding="utf-8"))
 
 
+#: Fields cb.rpc v8 appended to an existing method. Additive means no v7 field moved, so the
+#: carried-over comparisons remove exactly these before comparing against the earlier snapshot.
+V8_ADDED_METHOD_FIELDS: dict[str, tuple[str, ...]] = {"lesson.page": ("document",)}
+
+
+def _carried_payload(payload: dict, method: str) -> dict:
+    carried = json.loads(json.dumps(payload))
+    for field in V8_ADDED_METHOD_FIELDS.get(method, ()):
+        carried["response"]["properties"].pop(field, None)
+        required = carried["response"].get("required") or []
+        if field in required:
+            required.remove(field)
+    return carried
+
+
 def _envelope(method: str, payload: dict | None = None, **overrides) -> dict:
     body = {
         "contract": "cb.rpc",
@@ -183,9 +198,9 @@ class ContractSetTest(unittest.TestCase):
 
     def test_wire_contract_is_current(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 7)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 8)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v7"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v8"))
         # Every place the wire version is echoed (both response envelopes, health.get) must agree.
         # A missed constant is an envelope the plugin itself produces and cannot validate.
         echo = _wire_echoes(contracts.contract("cb.rpc"))
@@ -258,7 +273,9 @@ class V2AmendmentTest(unittest.TestCase):
             for method in document["$defs"]["method"]["enum"]:
                 with self.subTest(version=version, method=method):
                     self.assertIn(method, contracts.method_names())
-                    carried = json.loads(json.dumps(current["$defs"]["methods"]["properties"][method]))
+                    carried = _carried_payload(
+                        current["$defs"]["methods"]["properties"][method], method
+                    )
                     if method == "health.get":
                         carried["response"]["properties"]["contract_version"] = {
                             "const": document["$defs"]["methods"]["properties"][method]
@@ -1172,6 +1189,7 @@ FROZEN_RPC_SHA256 = {
     "rpc.v4.json": "sha256:b910c5e4a02015db6d35131e283b10582a4a8d400a24b9f3a6f8b242b538ad49",
     "rpc.v5.json": "sha256:e4dfea0e031b32698e9e354f640b25acfcdf68244ec819a3cedc375e8bd8b156",
     "rpc.v6.json": "sha256:7fa0ccfe5553c43b249ea370d87fd993e32047092f5be5471b9ddd0dc2bf3397",
+    "rpc.v7.json": "sha256:3862b55e6853a93e064f8ee9475b5dd464ae32e9221d04e527f498fc6cc41f64",
 }
 
 #: The superseded storage snapshots stay on disk and stay byte-identical: a later amendment is a
@@ -1197,10 +1215,10 @@ class V5AmendmentTest(unittest.TestCase):
             with self.subTest(filename=filename):
                 digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
                 self.assertEqual(f"sha256:{digest}", expected)
-        for version in (1, 2, 3, 4, 5):
+        for version in (1, 2, 3, 4, 5, 6, 7):
             # Not in the inventory, and not silently repurposed: history stays history.
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v7.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v8.json")
 
     def test_v5_adds_only_the_outline_check_and_assist_surface(self) -> None:
         # The v5 snapshot, not the live inventory: v6 appended the Parent Studio family afterwards.
@@ -1233,7 +1251,9 @@ class V5AmendmentTest(unittest.TestCase):
             for method in document["$defs"]["method"]["enum"]:
                 with self.subTest(version=version, method=method):
                     original = document["$defs"]["methods"]["properties"][method]
-                    carried = json.loads(json.dumps(current["$defs"]["methods"]["properties"][method]))
+                    carried = _carried_payload(
+                        current["$defs"]["methods"]["properties"][method], method
+                    )
                     if method == "health.get":
                         carried["response"]["properties"]["contract_version"] = {
                             "const": original["response"]["properties"]["contract_version"]["const"]
@@ -1581,11 +1601,11 @@ class V6AmendmentTest(unittest.TestCase):
             with self.subTest(filename=filename):
                 digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
                 self.assertEqual(f"sha256:{digest}", expected)
-        for version in (1, 2, 3, 4, 5, 6):
+        for version in (1, 2, 3, 4, 5, 6, 7):
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
         for version in (1, 2, 3):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v7.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v8.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v4.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
@@ -1617,7 +1637,9 @@ class V6AmendmentTest(unittest.TestCase):
             for method in document["$defs"]["method"]["enum"]:
                 with self.subTest(version=version, method=method):
                     original = document["$defs"]["methods"]["properties"][method]
-                    carried = json.loads(json.dumps(current["$defs"]["methods"]["properties"][method]))
+                    carried = _carried_payload(
+                        current["$defs"]["methods"]["properties"][method], method
+                    )
                     if method == "health.get":
                         carried["response"]["properties"]["contract_version"] = {
                             "const": original["response"]["properties"]["contract_version"]["const"]
@@ -1999,11 +2021,22 @@ class V7AmendmentTest(unittest.TestCase):
                         original["response"]["properties"]["contract_version"]["const"], 6
                     )
                     self.assertEqual(
-                        carried["response"]["properties"]["contract_version"]["const"], 7
+                        carried["response"]["properties"]["contract_version"]["const"], 8
                     )
                     original = json.loads(json.dumps(original))
                     carried = json.loads(json.dumps(carried))
-                    original["response"]["properties"]["contract_version"] = {"const": 7}
+                    original["response"]["properties"]["contract_version"] = {"const": 8}
+                if method == "lesson.page":
+                    # v8 adds exactly one response field to the read method and removes nothing.
+                    self.assertIn("document", carried["response"]["properties"])
+                    self.assertIn("document", carried["response"]["required"])
+                    self.assertEqual(
+                        carried["response"]["properties"]["document"],
+                        {"$ref": "#/$defs/lesson_document"},
+                    )
+                    carried = json.loads(json.dumps(carried))
+                    carried["response"]["properties"].pop("document")
+                    carried["response"]["required"].remove("document")
                 self.assertEqual(original, carried)
         # Both response envelopes and the request envelope echo the live version.
         echoes = _wire_echoes(current)

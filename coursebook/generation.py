@@ -48,6 +48,7 @@ from jsonschema import Draft202012Validator
 from . import research as research_mod
 from . import sources as source_ledger
 from . import artifacts
+from . import lesson_document
 from . import policy as capability_policy
 from . import rubrics
 from .packs import MIN_RUBRIC_CRITERIA
@@ -1444,6 +1445,12 @@ def _narrative_text(page: dict[str, Any]) -> str:
     for item in page.get("media") or []:
         parts.append(str(item.get("purpose") or ""))
         parts.append(str(item.get("text_equivalent") or ""))
+    # The v8 block document is another rendering of the same page. If a projection ever put an
+    # answer into a block headline or media label, the learner-facing surface would announce it
+    # just as surely as a segment body would.
+    document = page.get("document")
+    if isinstance(document, dict):
+        parts.append(lesson_document.narrative_text(document))
     return _normalize_answer("\n".join(parts))
 
 
@@ -3265,10 +3272,19 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
     if _leaks(page):
         raise LessonNotAvailable("stored lesson page contains answer material; refusing to serve it")
     check_rows = connection.execute(
-        "SELECT reference_json, rubric_json FROM checks c JOIN gen_lesson_checks l ON l.check_id = c.id "
-        "WHERE l.lesson_id = ?",
+        "SELECT c.id AS check_id, c.reference_json, c.rubric_json"
+        " FROM checks c JOIN gen_lesson_checks l ON l.check_id = c.id"
+        " WHERE l.lesson_id = ? ORDER BY c.version DESC",
         (lesson_id,),
     ).fetchall()
+    check_id = str(dict(check_rows[0])["check_id"]) if check_rows else None
+    # v8 read projection: one validated block document, projected from the stored page. The row
+    # is never rewritten, so an older page keeps its v7 bytes and gains the document at read.
+    document = lesson_document.document_from_page(page, check_id=check_id)
+    page = dict(page)
+    page["document"] = document
+    if _leaks(page):
+        raise LessonNotAvailable("projected lesson document contains answer material; refusing to serve it")
     page_text = _narrative_text(page)
     for check_row in check_rows:
         reference = _load_json(dict(check_row).get("reference_json"), {})
