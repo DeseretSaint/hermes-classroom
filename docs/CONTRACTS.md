@@ -1,7 +1,7 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v9** (M3-B1 additive amendment; v8 = M1-P4, v7 = CB-015 residual, v6 = CB-011,
-v5 = CB-026, v4 = CB-024, v3 = CB-022, v2 = CB-018).
+Status: **frozen at v10** (H-01 additive amendment; v9 = M3-B1, v8 = M1-P4, v7 = CB-015 residual,
+v6 = CB-011, v5 = CB-026, v4 = CB-024, v3 = CB-022, v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
 contract: **Atlas**. Implementers are the specialists named below.
 
@@ -16,15 +16,16 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v2.json` | 2 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v9.json` | 9 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v5.json` | 5 | Cinder | migrations, every command, evidence views |
+| `cb.rpc` | `contracts/rpc.v10.json` | 10 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.db` | `contracts/db.v6.json` | 6 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v2.json` | 2 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v8** files for `cb.rpc` (including `rpc.v6.json`), the v1 **to v4** files for `cb.db`
-(including `db.v3.json`), and the v1 files for `cb.errors` and `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v8.json` and `db.v4.json`.
+The v1 **to v9** files for `cb.rpc` (including `rpc.v6.json` and `rpc.v9.json`), the v1 **to v5**
+files for `cb.db` (including `db.v3.json` and `db.v5.json`), and the v1 files for `cb.errors` and
+`cb.jobs` remain on disk, unmodified, as immutable history: the superseded current files are
+`rpc.v9.json` and `db.v5.json`.
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 `tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so
@@ -39,7 +40,7 @@ version in the URI and the declared version agree for every file.
 `cb.rpc` is transport-neutral. The root schema validates a **request envelope**:
 
 ```json
-{ "contract": "cb.rpc", "contract_version": 9,
+{ "contract": "cb.rpc", "contract_version": 10,
   "method": "attempt.submit", "operation_id": "op-...", "idempotency_key": "...",
   "expected_revision": 12, "payload": { } }
 ```
@@ -1199,6 +1200,40 @@ replay returns the stored result; a repeated `attempt_nonce` returns the origina
 separate from `attempts`; no v4 table changes and there is no backfill. It has no audio, path,
 provider-key or model-cache column.
 
+## v10 delta (H-01) — learner capability inputs and the plan-job brief
+
+The adversarial harness review (P0-3) found the capability policy's inputs unreachable from the
+product path: `plan_lesson_capability` needs `subject_domain`, `level` and `lesson_intent`, but
+`course.create` froze the dials to `pace`/`depth`/`assessment`/`autonomy` with
+`additionalProperties: false`, and `locale` alone was the policy's fallback — so a Spanish technical
+procedure was classified as a language lesson and lost its schematic, while the Japanese L0
+scaffold (`_scaffold_policy`) could only be reached by an internal test fixture. P0-4's plan-scope
+gap had the same shape: there was no `scope` field anywhere.
+
+v10 makes those inputs first-class, additively. No method is added or removed (54 stay), no error
+code, job kind or vocabulary value changes, and every v1-v9 payload still validates because every
+new field is optional.
+
+| Surface | Added | Notes |
+|---|---|---|
+| `course.create.request` | `level` (string ≤35 or null), `subject_domain` (string ≤60 or null), `scope` (`single`/`short`/`full` or null) | Optional; `locale` stays optional as before. The four dials are unchanged and stay closed — a level or domain is **not** smuggled into `dials`. |
+| `jobs.create.request` | one typed `plan` brief (`$defs/plan_brief`) applied when `kind = "plan"` | Carries `goal`, `brief`, `title`, `recipe`, `dials`, `locale`, `level`, `subject_domain`, `scope`, `course_id`, `enrollment_id`, `plan_id`, `stage`, plus the Parent Studio authoring fields (a `parent.brief.create` job is re-queued through `jobs.create` from the brief its own `jobs.get` returned). `additionalProperties: false`, so an unknown field is `VALIDATION_FAILED` rather than a silent no-op. Other job families keep the bounded open `brief` object. |
+| `cb.db` v6 | nullable `courses.level`, `courses.subject_domain`, `courses.scope` via migration `0006_courses_plan_brief_inputs.sql` | Stored once on the course so `course.get` and the plan job read the same values. `scope` is CHECK-constrained to `single`/`short`/`full` or NULL. No backfill: an existing row keeps NULL, which means "the brief did not name it". |
+
+**What reads them.** `coursebook.domain.course_create` stores the three values (blank collapses to
+NULL) and `course.get` returns them. `coursebook.generation.run_plan_job` reads the same fields from
+the job brief, keys its reuse cache on them (a changed level or domain never reuses a plan authored
+under a different policy), persists them beside `dials` in the plan document, and hands the policy a
+view of the dials that includes `level`/`subject_domain` — the dials stored on the course remain the
+four contract dials. `run_lesson_job` reads the same stored values, so a lesson's capability policy
+and language scaffold agree with the plan it belongs to. Nothing here invents a value: with all
+three absent, every code path behaves exactly as it did at v9.
+
+**Deliberately not in this delta.** No UI control, no plan-shape change from `scope` (the planner
+still authors one section per objective; acting on `scope` is a later card), no research-budget
+change, and no new dial. The contract only guarantees the inputs arrive and are persisted honestly;
+it does not claim the planner uses them yet.
+
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
@@ -1222,6 +1257,8 @@ provider-key or model-cache column.
 | v6 | 2026-11-06 | CB-011 additive amendment. 51 RPC methods (+parent.brief.create, parent.brief.get, parent.plan.edit, parent.final.approve, parent.blueprint.read, parent.export, parent.reflection.record, parent.reflection.list) so the Parent Studio can be built without reading SQLite. cb.db **v3** adds `final_approvals` (lesson-set approval bound to plan hash + content hash, with the vocabulary value that invalidates it) and `parent_reflections` via migration 0003; no column changes, no new error code, `cb.vocabulary`/`cb.jobs`/`cb.pack`/`cb.projection` unchanged. Rejected: a generic path-addressed `pack.file.read` (role-scoped tabs instead), a `lesson` job kind (would force a `cb.pack` v2 and reject installed packs), and per-lesson prose editing (no storage decision yet). The Parent Studio answers tab is the one scoped exception to "no answer text on the wire". |
 | v7 | 2026-11-06 | CB-015 residual additive amendment. 52 RPC methods (+`source.revalidate`) so the stale-source state is reachable through cb.rpc instead of only by hand-writing a row; the existing `sources.assert_check_current` gate then refuses dependent grading with `CHECK_STALE`. cb.db **v4** adds the nullable `sources.content_hash` baseline column via migration 0004 (additive, no backfill), because pack-imported sources have no research-run snapshot and would otherwise report `changed=false` forever. No new error code, job kind or vocabulary value. `source.revalidate` carries `idempotency_key` and deliberately no `expected_revision`; the envelope revision is 0 and is not an enrollment revision. Detection only: there is no status-restoring recovery command, and a client must not expose a one-way "check for changes" control. |
 | v8 | 2026-11-06 | M1-P4 additive amendment. One new response field, `lesson.page.document` (the §5 block document), with `$defs/lesson_document`, `$defs/lesson_block` and `$defs/lesson_document_media`. 52 RPC methods unchanged; no cb.db table, column, migration, error code, job kind or vocabulary value; every v7 `lesson.page` field stays required and unchanged. The document is projected at read time from the same durable rows, so old rows are never rewritten; a page authored before v8 reports `state = "textbook_only"` with `views.guided = false` and a human note rather than a broken toggle. One check attaches to exactly one block, media is a child of a block, and the document can contain no reference answer or rubric text. `rpc.v7.json` is pinned by sha256. |
+| v9 | 2026-11-06 | M3-B1 additive amendment. 54 RPC methods (+`pronunciation.attempt`, `pronunciation.dispute`) and cb.db **v5** `pronunciation_attempts` via migration 0005. A pronunciation result is `model_assessed`, never a grade: it cannot close a check, advance an objective or write a transition, and no audio is stored. No new error code, job kind or vocabulary value. `rpc.v8.json` is pinned by sha256. |
+| v10 | 2026-11-07 | H-01 additive amendment. `course.create` gains optional `level`, `subject_domain` and `scope`; `jobs.create` gains one closed `$defs/plan_brief` for `kind = "plan"` so unknown fields are refused instead of silently ignored. cb.db **v6** adds nullable `courses.level`/`subject_domain`/`scope` via migration 0006, with no backfill. 54 RPC methods unchanged; no error code, job kind, vocabulary value or dial changes. `rpc.v9.json` and `db.v5.json` are pinned by sha256. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
