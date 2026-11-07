@@ -138,11 +138,16 @@ class FakeHost:
 
 
 def plan_job(goal: str = "Order coffee in Japanese", *, recipe: str = "committed", dials=None, locale="ja-JP", job_id="job-plan-1") -> dict:
+    # v10: level is a first-class brief field, not a dial. The default fixture still exercises the
+    # L0 scaffold, now through the field the contract actually carries.
+    brief = {"goal": goal, "recipe": recipe, "dials": dials or {}, "locale": locale}
+    if not dials:
+        brief["level"] = "L0"
     return {
         "job_id": job_id,
         "kind": "plan",
         "attempt_id": "attempt-1",
-        "brief": {"goal": goal, "recipe": recipe, "dials": dials or {"level": "L0"}, "locale": locale},
+        "brief": brief,
     }
 
 

@@ -12,6 +12,7 @@ import json
 import unittest
 
 from coursebook import api, contracts
+from tests.kernel_support import KernelCase
 
 #: Handler registration happens when a module is imported, and the dispatch seam answers
 #: NOT_IMPLEMENTED until then. Importing the two registering modules here keeps this module's
@@ -88,6 +89,12 @@ def _document(filename: str) -> dict:
 #: carried-over comparisons remove exactly these before comparing against the earlier snapshot.
 V8_ADDED_METHOD_FIELDS: dict[str, tuple[str, ...]] = {"lesson.page": ("document",)}
 
+#: Fields cb.rpc v10 appended to a shipped method's *request*. They are optional and were absent
+#: from every earlier snapshot, so the carried-over comparisons remove exactly these.
+V10_ADDED_METHOD_FIELDS: dict[str, tuple[str, ...]] = {
+    "course.create": ("level", "subject_domain", "scope"),
+}
+
 
 def _carried_payload(payload: dict, method: str) -> dict:
     carried = json.loads(json.dumps(payload))
@@ -96,6 +103,13 @@ def _carried_payload(payload: dict, method: str) -> dict:
         required = carried["response"].get("required") or []
         if field in required:
             required.remove(field)
+    request = carried["request"]
+    for field in V10_ADDED_METHOD_FIELDS.get(method, ()):
+        (request.get("properties") or {}).pop(field, None)
+    if method == "jobs.create":
+        # v10 applies a closed `$defs/plan_brief` to `kind = "plan"`; the open bounded brief
+        # object every earlier snapshot froze is untouched.
+        request.pop("allOf", None)
     return carried
 
 
@@ -204,9 +218,9 @@ class ContractSetTest(unittest.TestCase):
 
     def test_wire_contract_is_current(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 9)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 10)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v9"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v10"))
         # Every place the wire version is echoed (both response envelopes, health.get) must agree.
         # A missed constant is an envelope the plugin itself produces and cannot validate.
         echo = _wire_echoes(contracts.contract("cb.rpc"))
@@ -1197,6 +1211,7 @@ FROZEN_RPC_SHA256 = {
     "rpc.v6.json": "sha256:7fa0ccfe5553c43b249ea370d87fd993e32047092f5be5471b9ddd0dc2bf3397",
     "rpc.v7.json": "sha256:3862b55e6853a93e064f8ee9475b5dd464ae32e9221d04e527f498fc6cc41f64",
     "rpc.v8.json": "sha256:02df1a21823e086926f6df7be6b9db93066243d676d34c4cff6329504c94e6ae",
+    "rpc.v9.json": "sha256:f0484a930c9a1666d54d86cb0e80443b611cb166ae4ecdc4676ed82784475812",
 }
 
 #: The superseded storage snapshots stay on disk and stay byte-identical: a later amendment is a
@@ -1206,6 +1221,7 @@ FROZEN_DB_SHA256 = {
     "db.v2.json": "sha256:873fd56c4ea0a7229721ce9eb6065dd2a9370cc5563099852c88858e0413c0d7",
     "db.v3.json": "sha256:4c0569e4505f12e5862db6d63effe7363da64c1e0e0c837a49ed278b08ab48b6",
     "db.v4.json": "sha256:ef243b2db653c49e90b35b08746e2283409b609cb310e9b2185f8fa898cebcde",
+    "db.v5.json": "sha256:3a1a6f0155130523fcbecbb64bfa23eb709666f888d20486f15dc6ce4d18ea5b",
 }
 
 
@@ -1223,10 +1239,10 @@ class V5AmendmentTest(unittest.TestCase):
             with self.subTest(filename=filename):
                 digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
                 self.assertEqual(f"sha256:{digest}", expected)
-        for version in (1, 2, 3, 4, 5, 6, 7, 8):
+        for version in (1, 2, 3, 4, 5, 6, 7, 8, 9):
             # Not in the inventory, and not silently repurposed: history stays history.
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v9.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v10.json")
 
     def test_v5_adds_only_the_outline_check_and_assist_surface(self) -> None:
         # The v5 snapshot, not the live inventory: v6 appended the Parent Studio family afterwards.
@@ -1617,12 +1633,12 @@ class V6AmendmentTest(unittest.TestCase):
             with self.subTest(filename=filename):
                 digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
                 self.assertEqual(f"sha256:{digest}", expected)
-        for version in (1, 2, 3, 4, 5, 6, 7, 8):
+        for version in (1, 2, 3, 4, 5, 6, 7, 8, 9):
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        for version in (1, 2, 3, 4):
+        for version in (1, 2, 3, 4, 5):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v9.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v5.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v10.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v6.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
         v5 = _document("rpc.v5.json")
@@ -1736,8 +1752,10 @@ class V6AmendmentTest(unittest.TestCase):
     def test_final_approval_invalidation_is_storable_and_gates_export(self) -> None:
         db = _document("db.v3.json")
         self.assertEqual(db["schema_version"], 3)
-        self.assertEqual(contracts.contract_version("cb.db"), 5)
-        self.assertEqual(contracts.contract("cb.db")["schema_version"], 5)
+        # The live inventory moved on (v5 for M3-B1, v6 for the H-01 course inputs); the migration
+        # this test is about is still the v3 one and is still on disk.
+        self.assertEqual(contracts.contract_version("cb.db"), 6)
+        self.assertEqual(contracts.contract("cb.db")["schema_version"], 6)
         migration = [entry for entry in db["migration_plan"] if entry["version"] == 3]
         self.assertEqual(len(migration), 1)
         self.assertEqual(migration[0]["migration"],
@@ -2059,6 +2077,13 @@ class V7AmendmentTest(unittest.TestCase):
                     carried = json.loads(json.dumps(carried))
                     carried["response"]["properties"].pop("document")
                     carried["response"]["required"].remove("document")
+                # v10 adds optional request inputs and one plan-brief condition; nothing moved.
+                for field in V10_ADDED_METHOD_FIELDS.get(method, ()):
+                    carried = json.loads(json.dumps(carried))
+                    carried["request"]["properties"].pop(field)
+                if method == "jobs.create":
+                    carried = json.loads(json.dumps(carried))
+                    carried["request"].pop("allOf", None)
                 self.assertEqual(original, carried)
         # Both response envelopes and the request envelope echo the live version.
         echoes = _wire_echoes(current)
@@ -2200,19 +2225,20 @@ class V9AmendmentTest(unittest.TestCase):
         self.assertEqual(response["properties"]["state"], {"const": "open"})
 
     def test_db_v5_adds_only_the_pronunciation_attempts_table(self) -> None:
+        # The v5 snapshot, not the live inventory: v6 appended the H-01 course-input columns.
         v4 = _document("db.v4.json")
-        current = contracts.contract("cb.db")
-        self.assertEqual(contracts.contract_version("cb.db"), 5)
-        self.assertEqual(current["schema_version"], 5)
-        self.assertEqual(set(current["tables"]), set(v4["tables"]) | {"pronunciation_attempts"})
+        v5 = _document("db.v5.json")
+        self.assertEqual(v5["x-contract-version"], 5)
+        self.assertEqual(v5["schema_version"], 5)
+        self.assertEqual(set(v5["tables"]), set(v4["tables"]) | {"pronunciation_attempts"})
         for table, spec in v4["tables"].items():
-            self.assertEqual(current["tables"][table], spec, f"v4 table {table} changed")
-        columns = current["tables"]["pronunciation_attempts"]["columns"]
+            self.assertEqual(v5["tables"][table], spec, f"v4 table {table} changed")
+        columns = v5["tables"]["pronunciation_attempts"]["columns"]
         self.assertEqual(columns["verdict"]["enum"], ["meets_target", "close", "needs_practice"])
         self.assertEqual(columns["evidence_class"]["enum"], ["model_assessed"])
         for forbidden in ("audio", "audio_bytes", "audio_path", "path", "api_key", "model_path"):
             self.assertNotIn(forbidden, columns)
-        migration = [entry for entry in current["migration_plan"] if entry["version"] == 5]
+        migration = [entry for entry in v5["migration_plan"] if entry["version"] == 5]
         self.assertEqual(len(migration), 1)
         self.assertEqual(migration[0]["migration"], "0005_pronunciation_attempts.sql")
         self.assertTrue(any("Additive only" in line for line in migration[0]["impact"]))
@@ -2226,6 +2252,309 @@ class V9AmendmentTest(unittest.TestCase):
         self.assertEqual(contracts.contract_version("cb.errors"), 2)
         self.assertEqual(contracts.contract_version("cb.jobs"), 2)
         self.assertEqual(contracts.audit_contracts(), [])
+
+
+V10_NEW_COURSE_FIELDS = ("level", "subject_domain", "scope")
+
+#: The plan-brief fields v10 accepts for `kind = "plan"`. The parent-authoring fields are part of
+#: it because a Parent Studio job is re-queued from its own stored brief.
+V10_PLAN_BRIEF_FIELDS = {
+    "goal", "brief", "title", "recipe", "dials", "locale", "level", "subject_domain", "scope",
+    "course_id", "enrollment_id", "plan_id", "stage",
+    "starting_point", "age_band", "reading_level", "duration_minutes", "setting", "materials",
+    "exclusions", "supervision", "desired_pages", "desired_visuals", "narration",
+    "egress_acknowledged", "redaction_requested",
+}
+
+
+def _course_payload(**overrides) -> dict:
+    payload = {
+        "title": "Replace the front brake pads",
+        "recipe": "one_off",
+        "goal": "Replace the front brake pads and torque the caliper to spec",
+        "locale": "es-ES",
+        "level": "L0",
+        "subject_domain": "repair",
+        "scope": "single",
+        "dials": {
+            "pace": "steady",
+            "depth": "working",
+            "assessment": "self_check",
+            "autonomy": "guided",
+        },
+    }
+    payload.update(overrides)
+    return payload
+
+
+class V10AmendmentTest(unittest.TestCase):
+    """H-01: the inputs the policy and planner need are on the wire, additively.
+
+    v9 froze four dials and no level/domain/scope, so the capability policy's fallback read
+    `locale` as "this is a language course" and the L0 scaffold was unreachable. v10 makes the
+    inputs first-class without moving a single v9 payload.
+    """
+
+    def _carried_from_v9(self, payload: dict, method: str) -> dict:
+        carried = json.loads(json.dumps(payload))
+        request = carried["request"]
+        for field in V10_ADDED_METHOD_FIELDS.get(method, ()):
+            (request.get("properties") or {}).pop(field, None)
+        if method == "jobs.create":
+            request.pop("allOf", None)
+        return carried
+
+    def test_v10_is_additive_over_v9_and_keeps_the_method_enum(self) -> None:
+        v9 = _document("rpc.v9.json")
+        self.assertEqual(v9["x-contract-version"], 9)
+        current = contracts.contract("cb.rpc")
+        self.assertEqual(current["x-contract-version"], 10)
+        self.assertEqual(current["$id"], "https://contracts.coursebook.hermes/rpc/v10")
+        self.assertEqual(current["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v9")
+        self.assertEqual(list(contracts.method_names()), v9["$defs"]["method"]["enum"])
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_every_v9_method_payload_is_carried_over_verbatim(self) -> None:
+        v9 = _document("rpc.v9.json")
+        current = contracts.contract("cb.rpc")
+        for method in v9["$defs"]["method"]["enum"]:
+            with self.subTest(method=method):
+                original = v9["$defs"]["methods"]["properties"][method]
+                carried = self._carried_from_v9(
+                    current["$defs"]["methods"]["properties"][method], method
+                )
+                if method == "health.get":
+                    # The one permitted difference: the version echo follows the wire version.
+                    self.assertEqual(
+                        carried["response"]["properties"]["contract_version"],
+                        {"const": contracts.WIRE_CONTRACT_VERSION},
+                    )
+                    original = json.loads(json.dumps(original))
+                    carried = json.loads(json.dumps(carried))
+                    original["response"]["properties"]["contract_version"] = {
+                        "const": contracts.WIRE_CONTRACT_VERSION
+                    }
+                self.assertEqual(original, carried)
+
+    def test_every_v9_payload_still_validates(self) -> None:
+        # A v9 caller sends no level/domain/scope and the four dials only. Each payload below is a
+        # shape that was legal at v9 and must still validate at v10.
+        contracts.validate_request_payload(
+            "course.create", {"title": "Braise", "recipe": "casual", "goal": "Braise short ribs"}
+        )
+        contracts.validate_request_payload(
+            "course.create",
+            {
+                "title": "Braise",
+                "recipe": "casual",
+                "goal": "Braise short ribs",
+                "locale": "en-US",
+                "dials": {"pace": "light", "depth": "survey", "assessment": "none", "autonomy": "balanced"},
+            },
+        )
+        contracts.validate_request_payload("jobs.create", {"kind": "plan", "brief": {}})
+        contracts.validate_request_payload(
+            "jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": "pln_12345678"}}
+        )
+        contracts.validate_request_payload(
+            "jobs.create",
+            {"kind": "plan", "brief": {"goal": "Braise", "recipe": "casual", "dials": {"depth": "deep"},
+                                        "locale": "en-US", "course_id": "crs_12345678"}},
+        )
+        contracts.validate_request_payload(
+            "jobs.create", {"kind": "research", "brief": {"topic": "braising"}}
+        )
+        contracts.validate_request_payload("jobs.create", {"kind": "media", "brief": {"goal": "diagram"}})
+
+    def test_the_new_inputs_validate_and_nulls_mean_unspecified(self) -> None:
+        contracts.validate_request_payload("course.create", _course_payload())
+        contracts.validate_request_payload(
+            "course.create", _course_payload(level=None, subject_domain=None, scope=None)
+        )
+        for scope in ("single", "short", "full"):
+            with self.subTest(scope=scope):
+                contracts.validate_request_payload("course.create", _course_payload(scope=scope))
+
+    def test_unknown_fields_are_rejected(self) -> None:
+        # course.create is closed at the top level and inside the dials.
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload("course.create", _course_payload(lesson_intent="do it"))
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "course.create", _course_payload(dials={"pace": "light", "level": "L0"})
+            )
+        # A plan brief is closed: a typo cannot become an input nobody reads.
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "jobs.create", {"kind": "plan", "brief": {"goal": "Braise", "scop": "full"}}
+            )
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "jobs.create", {"kind": "plan", "brief": {"goal": "Braise", "dials": {"levl": "L0"}}}
+            )
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "jobs.create", {"kind": "plan", "brief": {"goal": "Braise", "scope": "whole"}}
+            )
+
+    def test_the_four_dials_stay_closed(self) -> None:
+        dials = contracts.method_schema("course.create")["request"]["properties"]["dials"]
+        self.assertEqual(set(dials["properties"]), {"pace", "depth", "assessment", "autonomy"})
+        self.assertIs(dials["additionalProperties"], False)
+        plan_brief = contracts.contract("cb.rpc")["$defs"]["plan_brief"]
+        self.assertEqual(
+            set(plan_brief["properties"]["dials"]["properties"]),
+            {"pace", "depth", "assessment", "autonomy"},
+        )
+        self.assertIs(plan_brief["properties"]["dials"]["additionalProperties"], False)
+        # level/subject_domain/scope are course inputs, not dials: they are top-level siblings.
+        request = contracts.method_schema("course.create")["request"]
+        for field in V10_NEW_COURSE_FIELDS:
+            self.assertIn(field, request["properties"])
+            self.assertNotIn(field, dials["properties"])
+        self.assertNotIn("level", request["required"])
+
+    def test_jobs_create_accepts_one_plan_brief_without_a_second_job_kind(self) -> None:
+        plan_brief = contracts.contract("cb.rpc")["$defs"]["plan_brief"]
+        self.assertIs(plan_brief["additionalProperties"], False)
+        self.assertEqual(set(plan_brief["properties"]), V10_PLAN_BRIEF_FIELDS)
+        self.assertEqual(_schema_problems(plan_brief), [])
+        self.assertIn("plan", contracts.contract("cb.vocabulary")["$defs"]["job_kind"]["enum"])
+        self.assertEqual(set(contracts.contract("cb.vocabulary")["$defs"]["job_kind"]["enum"]),
+                         {"plan", "research", "media", "export", "import"})
+        # A full Parent Studio brief round-trips through jobs.create: that is the retry path the
+        # desktop uses (`jobs.get` -> `jobs.create`), so its fields are part of the accepted shape.
+        contracts.validate_request_payload(
+            "jobs.create",
+            {"kind": "plan", "brief": {
+                "title": "Kitchen chemistry", "goal": "Explain fizzing", "recipe": "parent",
+                "dials": {}, "locale": "en-US", "level": "L0", "subject_domain": "science",
+                "scope": "short", "course_id": "crs_12345678", "enrollment_id": "enr_12345678",
+                "stage": "plan", "starting_point": None, "age_band": "7-9",
+                "reading_level": "early reader", "duration_minutes": 45, "setting": "home",
+                "materials": ["baking soda"], "exclusions": ["no flame"],
+                "supervision": "An adult pours.", "desired_pages": 6,
+                "desired_visuals": "diagrams", "narration": "script",
+                "egress_acknowledged": True, "redaction_requested": False,
+            }},
+        )
+
+    def test_db_v6_adds_only_the_three_nullable_course_columns(self) -> None:
+        v5 = _document("db.v5.json")
+        current = contracts.contract("cb.db")
+        self.assertEqual(contracts.contract_version("cb.db"), 6)
+        self.assertEqual(current["schema_version"], 6)
+        self.assertEqual(current["x-supersedes"], "https://contracts.coursebook.hermes/db/v5")
+        self.assertEqual(set(current["tables"]), set(v5["tables"]))
+        for table, spec in v5["tables"].items():
+            if table != "courses":
+                self.assertEqual(current["tables"][table], spec, f"v5 table {table} changed")
+        columns = current["tables"]["courses"]["columns"]
+        for field in V10_NEW_COURSE_FIELDS:
+            self.assertEqual(columns[field]["type"], "TEXT")
+            self.assertTrue(columns[field]["nullable"], f"{field} must be nullable for old rows")
+        self.assertEqual(set(columns["scope"]["enum"]), {"single", "short", "full"})
+        self.assertEqual(
+            [column for column in columns if column not in v5["tables"]["courses"]["columns"]],
+            list(V10_NEW_COURSE_FIELDS),
+        )
+        migration = [entry for entry in current["migration_plan"] if entry["version"] == 6]
+        self.assertEqual(len(migration), 1)
+        self.assertEqual(migration[0]["migration"], "0006_courses_plan_brief_inputs.sql")
+        self.assertTrue(any("Additive only" in line for line in migration[0]["impact"]))
+        self.assertTrue(any("No backfill" in line for line in migration[0]["impact"]))
+        sql = (contracts.CONTRACT_DIR.parent / "coursebook" / "migrations"
+               / migration[0]["migration"]).read_text(encoding="utf-8")
+        for statement in (
+            "ALTER TABLE courses ADD COLUMN level TEXT",
+            "ALTER TABLE courses ADD COLUMN subject_domain TEXT",
+            "ALTER TABLE courses ADD COLUMN scope TEXT CHECK (scope IS NULL OR scope IN ('single', 'short', 'full'))",
+        ):
+            self.assertIn(statement, sql)
+        # The migration the contract names is applied by the real runner, and the target is v6.
+        self.assertEqual(contracts.contract("cb.db")["schema_version"], 6)
+
+    def test_superseded_snapshots_are_pinned(self) -> None:
+        for filename in ("rpc.v9.json", "db.v5.json"):
+            expected = {**FROZEN_RPC_SHA256, **FROZEN_DB_SHA256}[filename]
+            digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
+            self.assertEqual(f"sha256:{digest}", expected)
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v10.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v6.json")
+
+    def test_v10_adds_no_error_code_and_no_vocabulary_change(self) -> None:
+        self.assertEqual(contracts.contract_version("cb.errors"), 2)
+        self.assertEqual(contracts.contract_version("cb.vocabulary"), 1)
+        self.assertEqual(contracts.contract_version("cb.jobs"), 2)
+        self.assertEqual(contracts.contract_version("cb.pack"), 1)
+        self.assertEqual(contracts.contract_version("cb.projection"), 1)
+        self.assertEqual(contracts.audit_contracts(), [])
+
+    def test_docs_publish_the_v10_delta(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for needle in (
+            "v10 delta (H-01)",
+            "rpc.v10.json",
+            "db.v6.json",
+            "0006_courses_plan_brief_inputs.sql",
+            "plan_brief",
+            "subject_domain",
+            "`single`/`short`/`full`",
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
+
+
+class V10PersistenceTest(KernelCase):
+    """The new inputs survive the real database: stored once, read back by `course.get`."""
+
+    def test_course_create_round_trips_all_new_fields(self) -> None:
+        result = self.ok("course.create", _course_payload())["result"]
+        course = self.ok("course.get", {"course_id": result["course_id"]})["result"]["course"]
+        self.assertEqual(course["level"], "L0")
+        self.assertEqual(course["subject_domain"], "repair")
+        self.assertEqual(course["scope"], "single")
+        self.assertEqual(course["locale"], "es-ES")
+        self.assertEqual(
+            course["dials"],
+            {"pace": "steady", "depth": "working", "assessment": "self_check", "autonomy": "guided"},
+        )
+        # Level is a course input, never smuggled into the stored dials.
+        self.assertNotIn("level", course["dials"])
+        self.assertNotIn("subject_domain", course["dials"])
+        row = self.rows("SELECT level, subject_domain, scope FROM courses WHERE id = ?",
+                        (result["course_id"],))[0]
+        self.assertEqual(row, {"level": "L0", "subject_domain": "repair", "scope": "single"})
+
+    def test_blank_inputs_are_stored_as_null_not_empty_strings(self) -> None:
+        payload = _course_payload(level="  ", subject_domain="", scope=None)
+        result = self.ok("course.create", payload)["result"]
+        course = self.ok("course.get", {"course_id": result["course_id"]})["result"]["course"]
+        self.assertIsNone(course["level"])
+        self.assertIsNone(course["subject_domain"])
+        self.assertIsNone(course["scope"])
+
+    def test_an_old_row_with_null_fields_is_valid(self) -> None:
+        # A course row written before v6 (or by a caller that sent none of the new fields).
+        course_id, _ = self.new_course()
+        course = self.ok("course.get", {"course_id": course_id})["result"]["course"]
+        for field in V10_NEW_COURSE_FIELDS:
+            self.assertIsNone(course[field], field)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM courses WHERE level IS NULL"), 1)
+        # NULL is a value the schema describes, not a row the reader refuses.
+        self.assertEqual(contracts.contract("cb.db")["tables"]["courses"]["columns"]["level"]["nullable"], True)
+
+    def test_a_v9_job_brief_still_creates_a_plan_job(self) -> None:
+        created = self.ok("jobs.create", {"kind": "plan",
+                                          "brief": {"goal": "Braise", "recipe": "casual"}})["result"]
+        self.assertEqual(created["state"], "queued")
+        job = self.ok("jobs.get", {"job_id": created["job_id"]})["result"]["job"]
+        self.assertEqual(job["brief"], {"goal": "Braise", "recipe": "casual"})
+
+    def test_an_unknown_plan_brief_field_never_reaches_a_job_row(self) -> None:
+        error = self.err("jobs.create", {"kind": "plan",
+                                         "brief": {"goal": "Braise", "scop": "full"}})
+        self.assertEqual(error["code"], "VALIDATION_FAILED")
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM jobs"), 0)
 
 
 def _outline_result(*, plan: dict | None | str = "default", objectives: list | None = None) -> dict:
