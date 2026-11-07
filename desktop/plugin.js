@@ -3892,7 +3892,8 @@ const LEARNING_VIEWS = [
   { id: 'quizzes', label: 'Quizzes' },
   { id: 'plan', label: 'Plan' },
   { id: 'evidence', label: 'Evidence' },
-  { id: 'sources', label: 'Sources' }
+  { id: 'sources', label: 'Sources' },
+  { id: 'export', label: 'Export' }
 ]
 
 /** A section or quiz row is never colour-only: this is the text that carries the state. */
@@ -8702,6 +8703,265 @@ function SourcesView({ page }) {
   })
 }
 /**
+ * Export — the learner's course packages itself (cb.rpc v11).
+ *
+ * `course.export.read` is the review, `course.export` is the write, and the two agree about the
+ * content hash: the surface echoes the hash it displayed, so the exported archive is the exact
+ * page set a person read. The file list, licence, rights statement and no-upload statement all come
+ * from the backend; nothing here invents a file, a size or a promise.
+ *
+ * A pack-backed course has no business here — its bytes belong to `pack.export` — so the backend
+ * answers `course_pack_backed` and this view says so instead of offering a second, competing export.
+ */
+const COURSE_EXPORT_BLOCKED_COPY = {
+  plan_not_approved:
+    'The plan is not approved yet. Approve the plan before packaging this course: an unapproved plan is not a published design.',
+  lessons_not_validated:
+    'At least one lesson page has not passed validation, so it cannot be packaged. Regenerate or fix the page first; a page no validator cleared is not content to hand to someone else.',
+  no_generated_content:
+    'This course has no lesson pages yet. Generate the lessons before packaging it.',
+  changes_need_review:
+    'The lesson text changed after it was approved. Review the pages again before packaging them.',
+  export_not_exportable:
+    'The generated lessons do not meet the pack’s teaching minima yet, so the archive would not import. Fix the lesson content first.',
+  export_write_failed:
+    'The archive could not be written. Nothing was exported and nothing was sent anywhere.',
+  course_pack_backed:
+    'This course came from a pack. Its file list and licence belong to that pack, so re-export it from the pack surface — this course cannot export its own copy.'
+}
+
+/** The exact write call, including the reviewed-content fence. Pure so a test can assert it. */
+function courseExportRequest(row, reviewedContentHash) {
+  return {
+    method: 'course.export',
+    payload: {
+      enrollment_id: row.enrollment_id,
+      expected_content_hash: reviewedContentHash
+    },
+    options: { idempotencyKey: newOperationId('course-export') }
+  }
+}
+
+function CourseExportView({ row, implemented }) {
+  const supports = (method) => Boolean(implemented && implemented.has(method))
+  const key = `course-export-${row.enrollment_id}`
+  const query = useRpcQuery(
+    'course.export.read',
+    { enrollment_id: row.enrollment_id },
+    key,
+    supports('course.export.read')
+  )
+  const [confirmed, setConfirmed] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [exported, setExported] = useState(null)
+  const [artifact, setArtifact] = useState(null)
+
+  const run = useCallback(async () => {
+    if (!query.data || !query.data.content_hash) return
+    setBusy(true)
+    setError(null)
+    try {
+      const request = courseExportRequest(row, query.data.content_hash)
+      const response = await rpc(request.method, request.payload, request.options)
+      if (!response.ok) {
+        if (response.error && response.error.code === 'DELETE_SCOPE_STALE') {
+          setError({
+            message:
+              'The lesson text changed since this page was read, so nothing was exported. The review was refreshed; export again only if the new file list is the one you want.'
+          })
+          query.reload()
+          return
+        }
+        throw new Error(`${response.error ? response.error.code + ': ' : ''}${describeError(response.error)}`)
+      }
+      if (response.result.content_hash !== query.data.content_hash) {
+        throw new Error(
+          'The backend exported a different content hash than the one reviewed. Nothing here should be handed on.'
+        )
+      }
+      setExported(response.result)
+      const facts = await rpc('artifact.get', {
+        artifact_id: response.result.artifacts[0].artifact_id
+      })
+      if (facts.ok) setArtifact(facts.result)
+      query.reload()
+    } catch (failure) {
+      setError({ message: describeError(failure) })
+    } finally {
+      setBusy(false)
+    }
+  }, [query, row])
+
+  if (!supports('course.export.read')) {
+    return jsx(QuietNote, {
+      children:
+        'This backend build does not publish the course export commands, so there is no export action here. Nothing is offered that would produce a file the backend did not write.'
+    })
+  }
+  if (query.status === 'loading' && !query.data) {
+    return jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading what an export would contain' }) })
+  }
+  if (query.status === 'error' && !query.data) {
+    return jsx(sdk.ErrorState, {
+      title: 'The export review could not be read',
+      description: `${query.error && query.error.code ? query.error.code + ': ' : ''}${describeError(query.error)}`,
+      children: jsx(sdk.Button, { variant: 'secondary', onClick: query.reload, children: 'Try again' })
+    })
+  }
+  const read = query.data || {}
+  const files = read.files || []
+
+  if (!read.ready) {
+    return jsxs('div', {
+      className: 'flex max-w-3xl flex-col gap-3',
+      children: [
+        jsx('div', { className: 'text-sm font-semibold', children: 'This course cannot be packaged yet' }),
+        jsx('div', {
+          className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+          children:
+            (read.blocked_reason && COURSE_EXPORT_BLOCKED_COPY[read.blocked_reason]) ||
+            read.blocked_message ||
+            'The backend gave no reason, so no export is offered.'
+        }),
+        (read.problems || []).length > 0
+          ? jsx('div', {
+              className: 'flex flex-col gap-1',
+              children: read.problems.map((problem) =>
+                jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `• ${problem}` }, problem)
+              )
+            })
+          : null,
+        read.sections
+          ? jsx('div', {
+              className: 'text-xs text-(--ui-text-secondary)',
+              children: `${Number(read.sections.validated)} of ${Number(read.sections.total)} lesson page(s) validated.`
+            })
+          : null,
+        jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: query.reload, children: 'Check again' })
+      ]
+    })
+  }
+
+  return jsxs('div', {
+    className: 'flex max-w-3xl flex-col gap-3',
+    children: [
+      jsx('div', { className: 'text-sm font-semibold', children: 'Review the export' }),
+      jsx('div', {
+        className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+        children:
+          'Every file below is in the archive. Attempts, notebook notes, evidence, transcripts and provider ' +
+          'settings are not part of a pack and are excluded by construction.'
+      }),
+      jsxs('div', {
+        className: 'flex flex-col',
+        children: files.map((file) =>
+          jsxs(
+            'div',
+            {
+              className:
+                'flex flex-wrap items-baseline justify-between gap-2 border-b border-(--ui-stroke-tertiary) py-1.5 last:border-b-0',
+              children: [
+                jsx('div', { className: 'min-w-0 break-all text-xs', children: file.name }),
+                jsxs('div', {
+                  className: 'flex shrink-0 items-center gap-2 text-xs text-(--ui-text-secondary)',
+                  children: [
+                    jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: file.role }),
+                    jsx('span', { children: bytesLabel(file.bytes) })
+                  ]
+                })
+              ]
+            },
+            file.name
+          )
+        )
+      }),
+      jsxs('div', {
+        className: 'flex flex-col',
+        children: [
+          jsx(PackReviewLine, { label: 'Files', value: String(files.length) }),
+          jsx(PackReviewLine, {
+            label: 'Content hash',
+            value: jsx('code', { className: 'text-xs', children: read.content_hash })
+          }),
+          jsx(PackReviewLine, {
+            label: 'Licence',
+            value: `${(read.license && read.license.id) || 'unknown'} · ${(read.license && read.license.redistribution) || 'unknown'}`
+          }),
+          jsx(PackReviewLine, {
+            label: 'Plan',
+            value: read.plan ? `version ${read.plan.version} · ${read.plan.state}` : 'not recorded'
+          })
+        ]
+      }),
+      jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: read.rights }),
+      jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: read.no_upload }),
+      jsxs('label', {
+        className: 'flex items-start gap-2 text-xs text-(--ui-text-secondary)',
+        children: [
+          jsx('input', {
+            checked: confirmed,
+            onChange: (event) => setConfirmed(Boolean(event.target.checked)),
+            type: 'checkbox'
+          }),
+          jsx('span', {
+            children: 'I reviewed these files, the licence and the rights statement; package exactly this text.'
+          })
+        ]
+      }),
+      jsx(sdk.Button, {
+        disabled: busy || !confirmed,
+        onClick: run,
+        size: 'sm',
+        variant: 'default',
+        children: busy ? 'Packaging' : 'Export these files'
+      }),
+      error ? jsx('div', { className: 'text-xs', children: error.message }) : null,
+      exported
+        ? jsxs('div', {
+            className: 'flex flex-col',
+            children: [
+              jsx(sdk.PanelSectionLabel, { children: 'EXPORTED' }),
+              jsx(PackReviewLine, {
+                label: 'Content hash',
+                value: jsx('code', { className: 'text-xs', children: exported.content_hash })
+              }),
+              jsx(PackReviewLine, { label: 'Matches the reviewed hash', value: 'yes' }),
+              jsx(PackReviewLine, {
+                label: 'Pack',
+                value: `${exported.pack.pack_id} v${exported.pack.pack_version}`
+              }),
+              jsx(PackReviewLine, { label: 'Files', value: String((exported.files || []).length) }),
+              jsx(PackReviewLine, {
+                label: 'Archive bytes',
+                value: bytesLabel(exported.artifacts && exported.artifacts[0] ? exported.artifacts[0].bytes : 0)
+              }),
+              artifact
+                ? jsx(sdk.Button, {
+                    asChild: true,
+                    size: 'sm',
+                    variant: 'secondary',
+                    children: jsx('a', {
+                      download: `${exported.pack.pack_id}-${exported.pack.pack_version}.zip`,
+                      href: artifact.download.url,
+                      children: 'Download archive'
+                    })
+                  })
+                : null,
+              jsx('div', {
+                className: 'mt-1 text-xs leading-relaxed text-(--ui-text-secondary)',
+                children:
+                  'The download link is the host route the backend named; the session is checked there and the ' +
+                  'handle expires. The file is byte-identical to the hash above.'
+              })
+            ]
+          })
+        : null
+    ]
+  })
+}
+
+/**
  * Course detail — the durable page for one enrollment.
  *
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
@@ -8880,6 +9140,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     })
   } else if (view === 'evidence') {
     body = jsx(EvidenceView, { evidence: evidence.data, implemented, onOpenSection: openSection })
+  } else if (view === 'export') {
+    body = jsx(CourseExportView, { row, implemented })
   } else {
     body = jsx(SourcesView, { page: page.data })
   }
@@ -8910,6 +9172,16 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
           jsxs('div', {
             className: 'flex shrink-0 flex-wrap items-center justify-end gap-2',
             children: [
+              // The export action lives on the course itself: a course a learner authored from a
+              // goal can package itself without visiting Parent Studio or the pack library.
+              supports('course.export.read') && view !== 'export'
+                ? jsx(sdk.Button, {
+                    variant: 'secondary',
+                    size: 'sm',
+                    onClick: () => selectView('export'),
+                    children: 'Export course…'
+                  })
+                : null,
               jsx(sdk.Button, {
                 variant: 'default',
                 size: 'sm',
@@ -12115,6 +12387,7 @@ export {
   FieldNotesStrip,
   FieldQuestView,
   LESSON_VIEWS,
+  LEARNING_VIEWS,
   SELF_REPORTED_CONFIRM_COPY,
   SELF_REPORTED_EVIDENCE_COPY,
   LearnerPlanView,
@@ -12147,7 +12420,9 @@ export {
   courseCreatePayload,
   questProgressLabel,
   readNotebookRef,
-  stripExcerpt
+  stripExcerpt,
+  courseExportRequest,
+  COURSE_EXPORT_BLOCKED_COPY
 }
 
 export default {

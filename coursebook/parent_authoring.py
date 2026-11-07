@@ -47,6 +47,15 @@ MAX_BLUEPRINT_CHARS = 20000
 #: Roles whose text must never contain a check's reference answer.
 LEARNER_ROLES: frozenset[str] = frozenset({"learner_page", "narration"})
 
+#: The licence an authored course is packaged under. An authored export is a local copy, never a
+#: publication and never a redistribution grant, so the rights statement is fixed with the licence.
+AUTHORED_LICENSE: dict[str, str] = {"id": "all-rights-reserved", "redistribution": "local_only"}
+
+#: The one learner-page state a page may be exported from. ``generation`` writes ``validated`` only
+#: after its independent validator passed; anything else (missing row, ``draft``,
+#: ``needs_review``) is content a validator has not cleared.
+VALIDATED_LESSON_STATE = "validated"
+
 
 class AuthoredExportBlocked(RuntimeError):
     """The authored course cannot be exported right now, with the reason the studio renders."""
@@ -457,6 +466,32 @@ def ready_sections(composed: Sequence[Mapping[str, Any]]) -> list[Mapping[str, A
     return [section for section in composed if section.get("page") is not None]
 
 
+def validated_sections(
+    composed: Sequence[Mapping[str, Any]],
+) -> tuple[list[Mapping[str, Any]], list[str]]:
+    """Split a composed course into ``(validated, problems)``.
+
+    The authored-export gate (``course.export``) ships only pages a validator cleared: every
+    section must have a generated page *and* a ``gen_lessons`` row in ``validated`` state. A page
+    parked for review is content a model wrote, not content that passed; exporting it would hand
+    a reader a lesson the harness itself refused. ``problems`` names each section by ordinal and
+    observed state so the surface can show exactly which page blocks and why.
+    """
+    validated: list[Mapping[str, Any]] = []
+    problems: list[str] = []
+    for section in composed:
+        label = f"section {int(section['ordinal'])} ({str(section.get('title') or 'untitled')})"
+        if section.get("page") is None:
+            problems.append(f"{label} has no generated page")
+            continue
+        state = str(section.get("lesson_state") or "")
+        if state != VALIDATED_LESSON_STATE:
+            problems.append(f"{label} is {state or 'not generated'}, not validated")
+            continue
+        validated.append(section)
+    return validated, problems
+
+
 def content_hash(course_id: str, plan_id: str, plan_hash: str, composed: Sequence[Mapping[str, Any]]) -> str:
     """The frozen v6 definition. Depends only on the served text, never on a file name."""
     payload = {
@@ -579,8 +614,23 @@ def _check_rubric(check: Any, objective: Any) -> list[str]:
     return values
 
 
-def build_pack(connection, course, plan, composed: Sequence[Mapping[str, Any]]) -> tuple[dict[str, Any], dict[str, bytes]]:
-    """Assemble a fresh ``cb.pack`` v1 document. Never copies a stored manifest."""
+def build_pack(
+    connection,
+    course,
+    plan,
+    composed: Sequence[Mapping[str, Any]],
+    *,
+    pack_prefix: str = "parent",
+    attribution: str | None = None,
+    contributors: Sequence[Mapping[str, Any]] | None = None,
+) -> tuple[dict[str, Any], dict[str, bytes]]:
+    """Assemble a fresh ``cb.pack`` v1 document. Never copies a stored manifest.
+
+    The identity/attribution keywords let the general authored export (``course.export``) ship a
+    learner-authored course under its own ``authored-`` pack identity and wording while this one
+    builder keeps a single definition of *which bytes* the course is. Defaults reproduce the
+    Parent Studio pack exactly, so ``parent.export`` is unchanged.
+    """
     generated: list[dict[str, Any]] = [dict(item) for item in ready_sections(composed)]
     if not generated:
         raise AuthoredExportBlocked("no_generated_content", "this course has no generated lesson content yet.")
@@ -686,19 +736,24 @@ def build_pack(connection, course, plan, composed: Sequence[Mapping[str, Any]]) 
             }
         )
 
-    attribution = f"{course['title']} — authored by the parent in Coursebook."
+    attribution = attribution or f"{course['title']} — authored by the parent in Coursebook."
     optional: dict[str, Any] = {}
     if course["locale"]:
         optional["locale"] = str(course["locale"])
+    # Only reachable when a course row somehow has an empty title; the fallback follows the
+    # identity so a parent pack keeps the wording it always had.
+    title_fallback = "Parent course" if pack_prefix == "parent" else "Authored course"
     manifest = packs.build_manifest(
-        pack_id=_pack_id(str(course["id"])),
+        pack_id=_pack_id(str(course["id"]), pack_prefix),
         pack_version="1.0.0",
-        title=str(course["title"])[:200] or "Parent course",
+        title=str(course["title"])[:200] or title_fallback,
         recipe=str(course["recipe"]),
         minimum_coursebook_version="0.1.0",
-        license={"id": "all-rights-reserved", "redistribution": "local_only"},
+        license=dict(AUTHORED_LICENSE),
         attribution=attribution,
-        contributors=[{"name": "Parent author", "role": "author"}],
+        contributors=list(contributors)
+        if contributors is not None
+        else [{"name": "Parent author", "role": "author"}],
         objectives=pack_objectives,
         files=files,
         file_metadata=metadata,
@@ -709,9 +764,9 @@ def build_pack(connection, course, plan, composed: Sequence[Mapping[str, Any]]) 
     return manifest, files
 
 
-def _pack_id(course_id: str) -> str:
+def _pack_id(course_id: str, prefix: str = "parent") -> str:
     suffix = re.sub(r"[^a-z0-9]+", "-", str(course_id).lower()).strip("-") or "course"
-    return f"parent-{suffix}"[:128].rstrip("-")
+    return f"{prefix}-{suffix}"[:128].rstrip("-")
 
 
 def _assert_no_answer_leak(manifest: Mapping[str, Any], files: Mapping[str, bytes], composed: Sequence[Mapping[str, Any]]) -> None:

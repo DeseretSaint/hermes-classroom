@@ -97,3 +97,51 @@ The boundary is pinned by `tests/test_pack_authoring_bound.py` (4,000,000 accept
 * Trust labels are four separate dimensions (`integrity_verified`, `automated_checks_passed`,
   `human_review_recorded`, `model_assessed_support`). None of them, and no hash, means the content
   is safe or true.
+
+## 5. An authored course packages itself (`course.export`, cb.rpc v13)
+
+Before v13 the only authored export was Parent Studio's `parent.export`, and `pack.export` refused
+any course with no `pack_id` (`course_not_pack_backed`). A course a learner created from a goal —
+the main product path — could therefore not be packaged at all. v13 adds two commands and no
+storage:
+
+| Command | What it does |
+|---|---|
+| `course.export.read` | The review: `ready` / `blocked_reason` / `blocked_message` / `problems[]`, the exact file list with role, name, size and sha256, the course-text `content_hash`, the licence, the rights statement, the no-upload statement, the plan identity and the validated/total page counts. |
+| `course.export` | The write: `enrollment_id` + `expected_content_hash` (the hash the review read returned) + an `idempotency_key`. Writes one archive, records one `export` artifact, and returns the file list and `pack` identity. |
+
+**The gate, in order.** (1) The course must not be pack-backed — an imported course is refused with
+`course_pack_backed` and keeps using `pack.export`, whose allowlist is not weakened. (2) The current
+plan must be `approved` (`plan_not_approved`). (3) **Every** lesson section must carry a generated
+page whose `gen_lessons.state` is `validated` (`lessons_not_validated`, one `problems[]` line per
+page: "section 2 (…) is needs_review, not validated"). (4) If the course has an active
+`final_approvals` row, its `content_hash` must still match (`changes_need_review`).
+
+Final approval is **not** required: the approved plan plus validated pages is the approval authority
+for a learner-authored course. A stored final approval is still honoured as a hash fence, so a
+course a parent signed off cannot change and then ship under that signature.
+
+**Two hash fences.** The reviewed hash is echoed back by the caller; a mismatch is
+`DELETE_SCOPE_STALE` and no byte is written. The write then re-reads the course inside its adopt
+transaction and refuses with `changes_need_review` if the text moved while the archive was built.
+
+**What is in the archive.** A fresh `cb.pack` v1 document, built by
+`parent_authoring.build_pack` from the validated page rows: `parent-guide/NN-*.md`,
+`lessons/NN-*.md` and `answer-guide/NN-*.md` for every objective, the plan's objectives and
+evidence criteria, and each check's stimulus, rubric and reference answer. The learner page text is
+in the archive as Markdown; the learner surface offers no PDF handout (that stays
+`parent.export`). Identity is `authored-<course-id>`, version `1.0.0`, licence
+`all-rights-reserved` with `redistribution: local_only`. The response says what the file is: a local
+copy for reuse, not a publication, and nothing was uploaded.
+
+**Round-trip.** The archive is an ordinary pack: `pack.preview` → `pack.import` cuts a new course
+from it, and that course is then pack-backed (`pack.export`, never `course.export`).
+`tests/test_course_export.py` proves the loop end to end, including that imports still pass the
+answer-key audit and the teaching minima.
+
+**One content rule the round-trip enforces.** `packs._answer_key_problems` refuses an archive whose
+learner-facing page prints a check's reference answer verbatim. A multiple-choice lesson that prints
+the correct option in its own page therefore exports but does *not* import; the page has to ask for
+the answer rather than show it. That rule is older than this command and is not relaxed here — the
+test fixture uses a short-answer prompt for exactly this reason.
+
