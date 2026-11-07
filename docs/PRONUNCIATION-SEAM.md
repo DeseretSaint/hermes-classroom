@@ -22,6 +22,16 @@ inside Coursebook: local-only, no provider key, no `stt.provider` hijack, model 
 plugin data directory, and an explicit practice-only state when the dependency or model is
 unavailable. The adapter is never labelled as the host's STT.
 
+**Local feasibility probe (same day):** `faster-whisper 1.2.1` is installed in the plugin
+runtime; its built-in MP3 decoder is broken against `av 19.0.2`
+(`open() ... metadata_errors`), and downgrading `av` has no Python 3.14 wheel. The working path
+is to decode with the host `ffmpeg` binary to 16 kHz mono s16le PCM and pass a float32 NumPy
+array to `WhisperModel.transcribe`. On the generated Japanese TTS file (3.168 s), that path
+returned `こんにちは、今日はいい天気ですね。` with `language=ja`, `language_probability=1.0` and
+`base` CPU int8. Therefore `M3-B1` must treat `ffmpeg` as a prerequisite and return
+`unavailable`/practice-only when `ffmpeg`, `faster-whisper`, or the cached model is absent — never
+a fabricated score.
+
 A plugin can *be* an STT backend; it cannot *use* the host's STT. The three plausible seams were
 each tested and each fails:
 
