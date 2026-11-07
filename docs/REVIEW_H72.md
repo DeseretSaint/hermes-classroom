@@ -210,3 +210,7 @@ Release gate passed: 3/3 checks on e9c030d26d174d018b6c187ff5c5f43c5ef49805 (156
 
 Run on the committed branch (`git archive` export of the commit, not the checkout), so the new MP3 and the
 regenerated `pack.json` are the ones the gate saw.
+
+The commit named there is the implementation commit; the review file was amended onto the same branch
+after that run, and a doc-only amend cannot change the plugin, the Desktop module or the pack. The final
+HEAD was re-gated the same way before this branch was handed back.
