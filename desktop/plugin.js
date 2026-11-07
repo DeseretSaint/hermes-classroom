@@ -8427,6 +8427,18 @@ function cbModeFor(view) {
 }
 
 /**
+ * The lamp fill for the one primary action on a screen. The SDK button supplies behaviour, focus
+ * and disabled handling; the identity fill comes from the scoped tokens so the primary is the
+ * brand field and not the host's default accent (§4.12 of the v2 spec).
+ */
+const CB_PRIMARY_STYLE = {
+  background: 'var(--cb-lamp)',
+  color: 'var(--cb-on-lamp)',
+  border: '1px solid var(--cb-on-lamp)',
+  borderRadius: '2px'
+}
+
+/**
  * The state word with its hue. The pill is always text; colour is the second channel, never the
  * only one (docs/COURSEBOOK-VISUAL-IDENTITY-V2.md §2.3, §6.3).
  */
@@ -11195,6 +11207,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
             jsx(sdk.Button, {
               variant: 'default',
               size: 'sm',
+              style: CB_PRIMARY_STYLE,
               disabled: busy,
               onClick: () => begin(bindingActive ? 'resume' : 'fresh'),
               children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start the lesson'
@@ -11582,6 +11595,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
               jsx(sdk.Button, {
                 variant: 'default',
                 size: 'sm',
+                style: CB_PRIMARY_STYLE,
                 disabled: !section,
                 onClick: () => onResume(section ? section.objective_id : null),
                 children: next.kind === 'resume_lesson' ? 'Resume the lesson' : 'Start the lesson'
@@ -13691,6 +13705,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
               children: [
                 jsx(sdk.Button, {
                   variant: 'default',
+                  style: CB_PRIMARY_STYLE,
                   disabled: busy,
                   onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
                   children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start the lesson'
