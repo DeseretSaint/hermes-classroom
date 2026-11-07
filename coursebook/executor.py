@@ -184,6 +184,12 @@ class _Resolvers:
                 "lessons": len(result.get("lessons") or []),
                 "media": media_result.as_checkpoint(),
             }
+            # The actual configured ceiling is recorded on the job, not inferred from a default:
+            # an operator who raised it (or a plan that sized it) must be able to see which.
+            if isinstance(result.get("budget"), dict):
+                checkpoint["budget"] = result["budget"]
+            if isinstance(result.get("preflight"), dict):
+                checkpoint["preflight"] = result["preflight"]
             if media_error:
                 checkpoint["media"]["error"] = media_error
             return job_service.StageResult(

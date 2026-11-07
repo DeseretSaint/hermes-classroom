@@ -72,12 +72,20 @@ __all__ = [
     "ProviderTimeout",
     "ProviderFailure",
     "CostCeilingExceeded",
+    "CostPreflightRefused",
+    "CostPreflight",
+    "COST_ACTIONS",
+    "DECLARED_CALL_COST_USD",
+    "DEFAULT_MAX_COST_USD",
     "LessonNotAvailable",
     "LLMRequest",
     "LLMResponse",
     "CostBudget",
     "default_cost_budget",
     "lesson_cost_budget",
+    "lesson_calls",
+    "preflight_lesson_cost",
+    "assert_cost_preflight",
     "provider_timeout_s",
     "PROVIDER_TIMEOUT_SECONDS",
     "PROVIDER_TIMEOUT_ENV",
@@ -189,8 +197,109 @@ class ProviderFailure(GenerationError):
         self.purpose = purpose
 
 
+#: The recovery actions a cost abort may offer. Fixed strings so a UI can switch on them; the
+#: backend never infers authorization from a label — each action is a separate command.
+COST_ACTIONS: tuple[str, ...] = ("continue_remaining", "raise_budget", "stop")
+
+
 class CostCeilingExceeded(GenerationError):
-    """A declared spend ceiling would be exceeded. Future calls are refused; spend is recorded."""
+    """A declared spend ceiling would be exceeded. Future calls are refused; spend is recorded.
+
+    The exception also carries the *recovery checkpoint*: what was already authored, what was
+    spent, and the three legal actions. A caller can persist it (``to_checkpoint``) and resume
+    without re-authoring completed sections; nothing here grants permission to spend more.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
+        #: Section ids whose lesson row is already durable and validated/parked.
+        self.sections_completed: list[str] = []
+        self.sections_total: int = 0
+        self.calls: int = 0
+        self.known_cost_usd: float = 0.0
+        self.estimated_cost_usd: float = 0.0
+        self.unknown_calls: int = 0
+        self.max_cost_usd: float | None = None
+        self.max_calls: int | None = None
+        self.plan_id: str | None = None
+        self.recovery: str | None = None
+        self.actions: list[str] = list(COST_ACTIONS)
+
+    def attach_checkpoint(
+        self,
+        *,
+        plan_id: str | None,
+        sections_completed: Sequence[str],
+        sections_total: int,
+        usage: "_Usage",
+        budget: "CostBudget",
+        recovery: str,
+    ) -> "CostCeilingExceeded":
+        """Attach the durable facts. Never called before the rows they describe exist."""
+        self.plan_id = plan_id
+        self.sections_completed = [str(item) for item in sections_completed][:200]
+        self.sections_total = int(sections_total)
+        self.calls = len(usage.calls)
+        self.known_cost_usd = round(float(usage.known_cost), 6)
+        self.estimated_cost_usd = round(float(usage.estimated_spend_usd), 6)
+        self.unknown_calls = int(usage.unknown_calls)
+        self.max_cost_usd = budget.max_cost_usd
+        self.max_calls = budget.max_calls
+        self.recovery = recovery
+        self.args = (f"{self.message}. {recovery}",)
+        return self
+
+    def to_checkpoint(self) -> dict[str, Any]:
+        """The typed recovery record stored on the job (checkpoint column, contract-legal).
+
+        ``continue_remaining`` re-creates a lessons job for the same plan: completed sections are
+        reused by ``(section, plan_hash, version)`` and cost nothing. ``raise_budget`` names the
+        two operator overrides. ``stop`` is the default: the job is already failed, not running.
+        """
+        return {
+            "kind": "cost_ceiling_exceeded",
+            "plan_id": self.plan_id,
+            "sections_total": self.sections_total,
+            "sections_completed": list(self.sections_completed),
+            "sections_completed_count": len(self.sections_completed),
+            "calls": self.calls,
+            "known_cost_usd": self.known_cost_usd,
+            "estimated_cost_usd": self.estimated_cost_usd,
+            "unknown_calls": self.unknown_calls,
+            "max_cost_usd": self.max_cost_usd,
+            "max_calls": self.max_calls,
+            "actions": list(self.actions),
+            "resume": {
+                "method": "jobs.create",
+                "brief": {"stage": "lessons", "plan_id": self.plan_id},
+            },
+            "raise_budget": {
+                "env": JOB_MAX_COST_ENV,
+                "brief_field": "brief.budget_usd",
+            },
+        }
+
+
+class CostPreflightRefused(CostCeilingExceeded):
+    """The configured ceiling cannot pay for the *minimum* calls this plan needs.
+
+    Raised before the first provider call and before any job row exists, so the operator sees the
+    arithmetic instead of a job that half-fails. Refusing is not a spend decision: nothing ran.
+    """
+
+    def __init__(self, preflight: "CostPreflight") -> None:
+        self.preflight = preflight
+        super().__init__(preflight.refusal_message())
+        self.max_cost_usd = preflight.max_cost_usd
+        self.max_calls = preflight.max_calls
+        self.sections_total = preflight.section_count
+
+    def to_checkpoint(self) -> dict[str, Any]:
+        record = super().to_checkpoint()
+        record.update({"kind": "cost_preflight_refused", "preflight": self.preflight.to_dict()})
+        record["resume"] = {"method": "jobs.create", "brief": {"stage": "lessons", "plan_id": None}}
+        return record
 
 
 class LessonNotAvailable(GenerationError):
@@ -246,16 +355,32 @@ LLM = Callable[[LLMRequest], LLMResponse]
 
 @dataclass
 class CostBudget:
-    """Honest ceilings for one job. Unknown cost is tracked, not guessed.
+    """Honest ceilings for one job. Unknown cost is charged at a declared estimate, never zero.
 
     ``max_calls`` is the *worst legal* pipeline cost, not the happy path: 8 sections x 2 attempts
     x (generate + validate) = 32. The old default of 8 was below the floor for any plan larger
     than four sections (CB-011-D1: a five-section plan needs 10 calls before a single retry, so
     the job ended ``POLICY_VIOLATION`` on a fast provider).
+
+    ``max_cost_usd`` is the hard dollar ceiling this job will not cross. ``source`` records where
+    it came from so the job view can show the *actual configured* value instead of implying a
+    default. ``source`` is one of ``declared`` (sized from the plan), ``operator_env``
+    (``COURSEBOOK_JOB_MAX_COST_USD``), ``operator_brief`` (``brief.budget_usd``) or ``caller``
+    (an explicit in-process budget, used by tests and the executor).
     """
 
     max_calls: int = 32
     max_cost_usd: float | None = 0.75
+    source: str = "declared"
+
+    def as_dict(self) -> dict[str, Any]:
+        """The configured value as the job/usage view records it. Hours of history in one place."""
+        return {
+            "max_calls": int(self.max_calls),
+            "max_cost_usd": self.max_cost_usd,
+            "source": self.source,
+        }
+
 
 
 # ── Provider policy ─────────────────────────────────────────────────────────
@@ -295,8 +420,19 @@ CALLS_PER_LESSON_ATTEMPT = 2
 #: Attempts per section before the lesson is parked for review with its reasons.
 LESSON_ATTEMPTS = 2
 
+#: Declared per-call cost used to *size* a ceiling and to charge a call whose provider reported no
+#: cost at all. This is a policy estimate, not a bill: it rounds the audit's measured $0.032 per
+#: structured call (ADVERSARIAL-AUDIT-ROUND2 P1-6) up by a quarter so a legitimate job is not
+#: refused by a few tenths of a cent. It never replaces a reported cost, and it never discounts a
+#: reported one.
+DECLARED_CALL_COST_USD = 0.04
 
-def _env_positive_float(name: str, default: float) -> float:
+#: The floor a job ceiling is sized from. It is the previous flat ceiling, kept so an unconfigured
+#: deployment never pays less than it used to.
+DEFAULT_MAX_COST_USD = 0.75
+
+
+def _env_positive_float(name: str, default: float, *, unit: str = "s") -> float:
     """Read a positive float override. An invalid value is logged and the default kept.
 
     A typo in a deployment variable must not silently change policy, but it must not take every
@@ -308,10 +444,10 @@ def _env_positive_float(name: str, default: float) -> float:
     try:
         value = float(str(raw).strip())
     except (TypeError, ValueError):
-        logger.warning("coursebook: ignoring %s=%r (not a number); using %.1fs", name, raw, default)
+        logger.warning("coursebook: ignoring %s=%r (not a number); using %.2f%s", name, raw, default, unit)
         return default
     if value <= 0:
-        logger.warning("coursebook: ignoring %s=%r (not positive); using %.1fs", name, raw, default)
+        logger.warning("coursebook: ignoring %s=%r (not positive); using %.2f%s", name, raw, default, unit)
         return default
     return value
 
@@ -341,26 +477,196 @@ def _timeout_for(purpose: str, timeout_s: float | None) -> float:
     return value
 
 
-def default_cost_budget(*, max_calls: int | None = None) -> CostBudget:
-    """A job budget. The cost ceiling comes from the operator when one is configured."""
-    ceiling = CostBudget.max_cost_usd
-    if ceiling is not None:
-        ceiling = _env_positive_float(JOB_MAX_COST_ENV, float(ceiling))
+def _operator_cost_override(*, brief_budget_usd: Any = None) -> tuple[float | None, str | None]:
+    """Resolve an explicit operator ceiling. Returns ``(value, source)``; ``None`` means unset.
+
+    Resolution order: the job brief (``brief.budget_usd``, an explicit per-job decision) beats the
+    deployment variable, which beats nothing. A malformed value is a refusal, not a silent default:
+    an operator who typed a ceiling must see that it was not applied.
+    """
+    if brief_budget_usd is not None:
+        if isinstance(brief_budget_usd, bool) or not isinstance(brief_budget_usd, (int, float)):
+            raise GenerationRejected(f"brief.budget_usd must be a number, got {type(brief_budget_usd).__name__}")
+        value = float(brief_budget_usd)
+        if value <= 0:
+            raise GenerationRejected(f"brief.budget_usd must be positive, got {value}")
+        return value, "operator_brief"
+    raw = os.environ.get(JOB_MAX_COST_ENV)
+    if raw is not None and str(raw).strip():
+        try:
+            value = float(str(raw).strip())
+        except (TypeError, ValueError):
+            logger.warning("coursebook: ignoring %s=%r (not a number)", JOB_MAX_COST_ENV, raw)
+            return None, None
+        if value <= 0:
+            logger.warning("coursebook: ignoring %s=%r (not positive)", JOB_MAX_COST_ENV, raw)
+            return None, None
+        return value, "operator_env"
+    return None, None
+
+
+def default_cost_budget(*, max_calls: int | None = None, brief_budget_usd: Any = None) -> CostBudget:
+    """A job budget. The ceiling is the sized floor unless the operator declares one."""
+    override, source = _operator_cost_override(brief_budget_usd=brief_budget_usd)
     return CostBudget(
         max_calls=CostBudget.max_calls if max_calls is None else int(max_calls),
-        max_cost_usd=ceiling,
+        max_cost_usd=DEFAULT_MAX_COST_USD if override is None else override,
+        source=source or "declared",
     )
 
 
-def lesson_cost_budget(section_count: int) -> CostBudget:
-    """Budget sized to the plan, not to a constant.
+def lesson_calls(section_count: int, *, attempts: int = LESSON_ATTEMPTS) -> tuple[int, int]:
+    """``(minimum_calls, worst_legal_calls)`` for a plan of ``section_count`` sections.
 
-    Every section gets :data:`LESSON_ATTEMPTS` attempts of one generation plus one independent
-    validation. A ceiling below that floor fails a job that is behaving exactly as designed.
+    The minimum is one generation plus one validation per section — no retries. The worst legal
+    case adds the second attempt the validator is allowed to ask for.
     """
     sections = max(1, int(section_count))
-    calls = sections * CALLS_PER_LESSON_ATTEMPT * LESSON_ATTEMPTS
-    return default_cost_budget(max_calls=calls)
+    per_section = CALLS_PER_LESSON_ATTEMPT * max(1, int(attempts))
+    return sections * CALLS_PER_LESSON_ATTEMPT, sections * per_section
+
+
+def lesson_cost_budget(section_count: int, *, brief_budget_usd: Any = None) -> CostBudget:
+    """Budget sized to the plan's sections, not to a constant.
+
+    Every section gets :data:`LESSON_ATTEMPTS` attempts of one generation plus one independent
+    validation, so the call ceiling is ``4 x sections``. The *dollar* ceiling is sized the same
+    way from :data:`DECLARED_CALL_COST_USD`, which is the half of the audit's P1-6 defect that a
+    flat $0.75 left binding: 8 sections need 32 calls, and a $0.75 ceiling aborted at call 24
+    with sections unauthored. A caller/operator value still wins.
+    """
+    _, worst_legal = lesson_calls(section_count)
+    sized_floor = worst_legal * DECLARED_CALL_COST_USD
+    override, source = _operator_cost_override(brief_budget_usd=brief_budget_usd)
+    return CostBudget(
+        max_calls=worst_legal,
+        max_cost_usd=max(DEFAULT_MAX_COST_USD, sized_floor) if override is None else override,
+        source=source or "declared",
+    )
+
+
+@dataclass(frozen=True)
+class CostPreflight:
+    """The arithmetic shown *before* a lesson job spends anything.
+
+    ``fits_minimum`` is the refuse gate: below it, not even one generation+validation per section
+    is payable, so starting would guarantee a half-authored course. ``fits_maximum`` is the honest
+    headroom statement recorded on the job: below it the job can still legally fail mid-course, and
+    that path now leaves a recovery checkpoint instead of a dead end.
+    """
+
+    section_count: int
+    minimum_calls: int
+    maximum_calls: int
+    cost_per_call_usd: float
+    minimum_cost_usd: float
+    maximum_cost_usd: float
+    max_calls: int
+    max_cost_usd: float | None
+    budget_source: str
+
+    @property
+    def fits_minimum(self) -> bool:
+        if self.max_calls < self.minimum_calls:
+            return False
+        return self.max_cost_usd is None or self.max_cost_usd + 1e-9 >= self.minimum_cost_usd
+
+    @property
+    def fits_maximum(self) -> bool:
+        if self.max_calls < self.maximum_calls:
+            return False
+        return self.max_cost_usd is None or self.max_cost_usd + 1e-9 >= self.maximum_cost_usd
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "section_count": self.section_count,
+            "minimum_calls": self.minimum_calls,
+            "maximum_calls": self.maximum_calls,
+            "cost_per_call_usd": self.cost_per_call_usd,
+            "minimum_cost_usd": self.minimum_cost_usd,
+            "maximum_cost_usd": self.maximum_cost_usd,
+            "max_calls": self.max_calls,
+            "max_cost_usd": self.max_cost_usd,
+            "budget_source": self.budget_source,
+            "fits_minimum": self.fits_minimum,
+            "fits_maximum": self.fits_maximum,
+        }
+
+    def refusal_message(self) -> str:
+        return (
+            f"cost preflight refused: {self.section_count} sections need at least "
+            f"{self.minimum_calls} provider calls (~${self.minimum_cost_usd:.2f} at the declared "
+            f"${self.cost_per_call_usd:.2f}/call) but the configured ceiling is "
+            f"{self.max_calls} calls / ${self.max_cost_usd if self.max_cost_usd is not None else 'unlimited'}. "
+            f"Nothing was spent. Raise {JOB_MAX_COST_ENV} or pass brief.budget_usd, then retry."
+        )
+
+
+def preflight_lesson_cost(section_count: int, *, budget: CostBudget | None = None) -> CostPreflight:
+    """Size and check the ceiling for a lesson job. Pure: reads no row and spends nothing."""
+    sections = max(1, int(section_count))
+    minimum_calls, maximum_calls = lesson_calls(sections)
+    resolved = budget or lesson_cost_budget(sections)
+    return CostPreflight(
+        section_count=sections,
+        minimum_calls=minimum_calls,
+        maximum_calls=maximum_calls,
+        cost_per_call_usd=float(DECLARED_CALL_COST_USD),
+        minimum_cost_usd=round(minimum_calls * DECLARED_CALL_COST_USD, 6),
+        maximum_cost_usd=round(maximum_calls * DECLARED_CALL_COST_USD, 6),
+        max_calls=int(resolved.max_calls),
+        max_cost_usd=resolved.max_cost_usd,
+        budget_source=resolved.source,
+    )
+
+
+def assert_cost_preflight(section_count: int, *, budget: CostBudget | None = None) -> CostPreflight:
+    """Refuse a lesson job whose *minimum* cannot fit the configured ceiling.
+
+    Called before the first provider call, so a refusal costs nothing and leaves no job half-done.
+    """
+    preflight = preflight_lesson_cost(section_count, budget=budget)
+    if not preflight.fits_minimum:
+        raise CostPreflightRefused(preflight)
+    return preflight
+
+
+def plan_section_count(connection: sqlite3.Connection, plan_id: str) -> int:
+    """Sections authored for a plan version, or 0 when no outline exists yet.
+
+    Read-only and tolerant of a database that predates the generation tables: a lessons job for a
+    plan with no outline is refused later by the job itself, not by a preflight that cannot count.
+    """
+    try:
+        row = connection.execute(
+            "SELECT COUNT(*) AS n FROM gen_plan_sections WHERE plan_id = ?", (str(plan_id),)
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return 0
+    if row is None:
+        return 0
+    value = row["n"] if isinstance(row, sqlite3.Row) else row[0]
+    return int(value or 0)
+
+
+def preflight_lesson_brief(connection: sqlite3.Connection, brief: dict[str, Any]) -> CostPreflight | None:
+    """Preflight for a queued lessons brief. ``None`` when the brief names no authorable plan.
+
+    This is what ``jobs.create`` calls before inserting a job: a job that cannot pay for its own
+    minimum is never created, so the queue cannot hold a guaranteed half-failure.
+    """
+    brief = dict(brief or {})
+    if str(brief.get("stage") or "") != "lessons":
+        return None
+    plan_id = brief.get("plan_id")
+    if not plan_id:
+        return None
+    sections = plan_section_count(connection, str(plan_id))
+    if sections <= 0:
+        return None
+    budget = lesson_cost_budget(sections, brief_budget_usd=brief.get("budget_usd"))
+    return preflight_lesson_cost(sections, budget=budget)
+
 
 
 @dataclass
@@ -371,22 +677,38 @@ class _Usage:
     output_tokens: int = 0
     known_cost: float = 0.0
     unknown_cost: bool = False
+    unknown_calls: int = 0
+
+    @property
+    def estimated_spend_usd(self) -> float:
+        """Known cost plus the declared estimate for every call that reported no cost.
+
+        A call with an unknown cost is *not* free. Charging it at
+        :data:`DECLARED_CALL_COST_USD` keeps the dollar ceiling meaningful on a provider that does
+        not return usage; the audit's P1-6 abort was exactly the case where a ceiling looked
+        satisfied only because the missing costs were treated as zero.
+        """
+        return float(self.known_cost) + float(self.unknown_calls) * DECLARED_CALL_COST_USD
 
     def before_call(self, request: LLMRequest) -> None:
         if len(self.calls) >= self.budget.max_calls:
             raise CostCeilingExceeded(
                 f"job already made {len(self.calls)} provider calls (ceiling {self.budget.max_calls})"
             )
-        if self.budget.max_cost_usd is not None and self.known_cost >= self.budget.max_cost_usd:
+        if self.budget.max_cost_usd is not None and self.estimated_spend_usd >= self.budget.max_cost_usd:
             raise CostCeilingExceeded(
-                f"known spend {self.known_cost:.4f} USD already reaches the "
+                f"spend {self.estimated_spend_usd:.4f} USD ({len(self.calls)} calls, "
+                f"{self.unknown_calls} with unknown cost) already reaches the "
                 f"{self.budget.max_cost_usd:.4f} USD ceiling"
             )
 
     def record(self, request: LLMRequest, response: LLMResponse, duration_ms: int) -> None:
         cost = response.cost_usd
-        self.unknown_cost = self.unknown_cost or cost is None
-        self.known_cost += float(cost or 0.0)
+        if cost is None:
+            self.unknown_cost = True
+            self.unknown_calls += 1
+        else:
+            self.known_cost += float(cost)
         self.input_tokens += int(response.input_tokens or 0)
         self.output_tokens += int(response.output_tokens or 0)
         self.calls.append(
@@ -401,10 +723,10 @@ class _Usage:
                 "duration_ms": duration_ms,
             }
         )
-        if self.budget.max_cost_usd is not None and self.known_cost > self.budget.max_cost_usd:
+        if self.budget.max_cost_usd is not None and self.estimated_spend_usd > self.budget.max_cost_usd:
             raise CostCeilingExceeded(
-                f"known spend {self.known_cost:.4f} USD exceeded the "
-                f"{self.budget.max_cost_usd:.4f} USD ceiling"
+                f"spend {self.estimated_spend_usd:.4f} USD ({self.unknown_calls} calls with unknown "
+                f"cost) exceeded the {self.budget.max_cost_usd:.4f} USD ceiling"
             )
 
     def summary(self) -> dict[str, Any]:
@@ -414,6 +736,9 @@ class _Usage:
             "output_tokens": self.output_tokens,
             "cost_usd": None if self.unknown_cost and self.known_cost == 0 else self.known_cost,
             "unknown_cost": self.unknown_cost,
+            "unknown_calls": self.unknown_calls,
+            "estimated_cost_usd": round(self.estimated_spend_usd, 6),
+            "budget": self.budget.as_dict(),
         }
 
 
@@ -3571,7 +3896,9 @@ def run_lesson_job(
     """Author one validated lesson per section of an **approved** plan.
 
     Idempotent per ``(section, plan_hash, version)``: re-running the job reuses existing lessons
-    and never duplicates rows or spend.
+    and never duplicates rows or spend. The budget is sized to the plan and preflighted before the
+    first provider call; a ceiling that cannot pay the minimum raises ``CostPreflightRefused`` and
+    spends nothing.
     """
     ensure_schema(connection)
     job = dict(job or {})
@@ -3642,9 +3969,12 @@ def run_lesson_job(
             " Re-author the plan before generating lessons."
         )
 
-    # Budget sized to *this* plan: every section gets two attempts of generate + validate. A
-    # fixed ceiling below that floor failed jobs that were behaving exactly as designed.
-    usage = _Usage(budget or lesson_cost_budget(len(section_rows)))
+    # Budget sized to *this* plan: every section gets two attempts of generate + validate, and the
+    # dollar ceiling scales with the calls. Never start a job whose *minimum* (one generate + one
+    # validate per section) cannot be paid: that is the audit's P1-6 half-authored course.
+    resolved_budget = budget or lesson_cost_budget(len(section_rows), brief_budget_usd=brief.get("budget_usd"))
+    preflight = assert_cost_preflight(len(section_rows), budget=resolved_budget)
+    usage = _Usage(resolved_budget)
 
     lesson_summaries: list[dict[str, Any]] = []
     try:
@@ -3686,6 +4016,7 @@ def run_lesson_job(
             )
     except BaseException as exc:
         _record_usage(connection, job_id, usage, now)
+        completed = [str(item["section_id"]) for item in lesson_summaries]
         if isinstance(exc, ProviderTimeout):
             # The authored sections are already durable. Say so, and name the action that
             # continues without re-authoring (and re-charging) them.
@@ -3693,6 +4024,23 @@ def run_lesson_job(
                 f"{len(lesson_summaries)} of {len(section_rows)} sections are saved for plan "
                 f"{plan_id}; create a new lessons job for that plan to continue without "
                 f"re-authoring them"
+            )
+        elif isinstance(exc, CostCeilingExceeded):
+            # Same durable truth as a timeout, plus the ceiling arithmetic and the three legal
+            # actions. An empty list is honest: a refusal before the loop persisted nothing.
+            exc.attach_checkpoint(
+                plan_id=str(plan_id),
+                sections_completed=completed,
+                sections_total=len(section_rows),
+                usage=usage,
+                budget=resolved_budget,
+                recovery=(
+                    f"{len(completed)} of {len(section_rows)} sections are saved for plan {plan_id} "
+                    f"(spend ${usage.estimated_spend_usd:.4f} of the "
+                    f"{resolved_budget.max_cost_usd if resolved_budget.max_cost_usd is not None else 'unlimited'} USD ceiling). "
+                    "Continue the remaining sections with a new lessons job for that plan, raise the "
+                    f"budget with {JOB_MAX_COST_ENV} or brief.budget_usd, or stop"
+                ),
             )
         raise
 
@@ -3705,6 +4053,8 @@ def run_lesson_job(
         "lessons": lesson_summaries,
         "needs_review": [item["section_id"] for item in lesson_summaries if item["state"] == "needs_review"],
         "usage": usage.summary(),
+        "preflight": preflight.to_dict(),
+        "budget": resolved_budget.as_dict(),
     }
 
 

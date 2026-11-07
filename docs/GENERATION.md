@@ -382,20 +382,70 @@ Operator overrides, no code change required:
 * `COURSEBOOK_<PURPOSE>_TIMEOUT_SECONDS` — one purpose, e.g.
   `COURSEBOOK_LESSON_GENERATE_TIMEOUT_SECONDS=600`.
 * `COURSEBOOK_PROVIDER_TIMEOUT_SECONDS` — every purpose (a purpose-specific value wins).
-* `COURSEBOOK_JOB_MAX_COST_USD` — the per-job known-cost ceiling (default 0.75).
+* `COURSEBOOK_JOB_MAX_COST_USD` — the per-job dollar ceiling (a deployment-wide override).
+* `brief.budget_usd` on a `jobs.create` — a per-job ceiling that wins over the environment.
 
-An invalid value is logged and the declared default kept; a typo never invents a deadline.
+An invalid value is logged and the declared default kept; a typo never invents a deadline. A
+malformed `brief.budget_usd` is different: it is refused (`VALIDATION_FAILED`) because an operator
+who typed a ceiling must be told it was not applied.
+
+### Sized ceilings and the preflight gate
 
 `CostBudget.max_calls` defaults to 32 — the worst legal pipeline cost, 8 sections x 2 attempts x
 (generate + validate). A lesson job is budgeted to its own plan (`lesson_cost_budget`, 4 calls per
 section) rather than to a constant: a fixed ceiling below the pipeline floor failed jobs that were
 behaving exactly as designed (a five-section plan needs 10 calls before any retry, the old default
-was 8). The ceiling still stops a runaway retry loop.
+was 8).
+
+The **dollar** ceiling is sized the same way. `lesson_cost_budget(n)` returns
+
+    max_calls     = n * CALLS_PER_LESSON_ATTEMPT * LESSON_ATTEMPTS     (4n)
+    max_cost_usd  = max(DEFAULT_MAX_COST_USD, max_calls * DECLARED_CALL_COST_USD)
+
+with `DEFAULT_MAX_COST_USD = 0.75` (the old flat ceiling, kept as a floor) and
+`DECLARED_CALL_COST_USD = 0.04` (the audit's measured $0.032 per structured call, rounded up so a
+legitimate job is not refused by a rounding error). Eight sections therefore get $1.28, not $0.75:
+the audit's P1-6 abort at call 24 — with sections left unauthored — was the flat ceiling binding
+while the call ceiling scaled. The operator override still wins, and the value actually used is
+recorded (`CostBudget.source` = `declared` / `operator_env` / `operator_brief` / `caller`).
+
+Before a lesson job spends anything, `preflight_lesson_cost(n)` states the arithmetic and
+`assert_cost_preflight` refuses when the configured ceiling cannot pay the **minimum** (one
+generation + one validation per section, no retries). `jobs.create` runs the same preflight for a
+`brief.stage = lessons` request and refuses *before creating the job row*, with
+`POLICY_VIOLATION` / `details.reason = cost_preflight_insufficient` and the numbers, so the queue
+never holds a job that is guaranteed to half-fail. Below the **worst legal** cost but above the
+minimum the job starts — and if the ceiling does bind, it now leaves a recovery checkpoint instead
+of a dead end.
+
+A call whose provider reported no cost is charged at `DECLARED_CALL_COST_USD` for ceiling
+purposes. Unknown is still recorded as unknown (`cost_usd: null`, `unknown_cost: true`,
+`unknown_calls: n`); it is simply never treated as free. The job summary also carries
+`estimated_cost_usd` and the configured `budget`.
 
 A provider deadline is the host's failure, not the grader's: `job_service` reports
 `HOST_UNAVAILABLE` (capability, retryable) with the purpose and measured duration in `details`.
 A lesson timeout names what survived — "N of M sections are saved for plan X; create a new lessons
 job for that plan" — and the retry reuses those rows, so no authored section is re-charged.
+
+### `CostCeilingExceeded` recovery checkpoint
+
+The ceiling is not negotiable mid-job, but the abort is recoverable. `run_lesson_job` re-raises a
+`CostCeilingExceeded` (or the subclass `CostPreflightRefused`) with a typed checkpoint:
+
+* `sections_completed` / `sections_total` — the lesson rows that are already durable, by section id;
+* `calls`, `known_cost_usd`, `estimated_cost_usd`, `unknown_calls` — what was actually spent;
+* `max_cost_usd`, `max_calls` — the ceiling that stopped it;
+* `actions` — `continue_remaining`, `raise_budget`, `stop`;
+* `resume` — the `jobs.create` brief that continues (`{stage: lessons, plan_id}`);
+* `raise_budget` — `COURSEBOOK_JOB_MAX_COST_USD` or `brief.budget_usd`.
+
+`job_service` merges `to_checkpoint()` into `jobs.checkpoint` on the failure path and copies the
+numbers into `error.details`, so `jobs.get` is enough to decide. Resuming does not re-author or
+double-charge a completed section: the existing `(section_id, plan_hash, version)` row is reused.
+"Raise budget" is a new operator decision for the *next* attempt; it is never inferred from a
+failed one, and the hard ceiling is never weakened by the recovery path.
+
 
 ## 10. Tests
 
@@ -408,6 +458,14 @@ retry idempotency, cost ceilings, unknown cost staying null, structural separati
 passes, web text not becoming policy, configured deadlines and their env overrides, a successful
 115 s call not being declared late, the sized lesson budget above the pipeline floor, and a
 timeout that keeps its authored sections and is resumed without re-authoring them.
+
+`tests/test_cost_ceilings.py` covers the H-17 sizing and recovery path: the dollar ceiling scaling
+with section count, a small course fitting and a large one refused by preflight (at `run_lesson_job`
+and at `jobs.create`, with no job row and no spend), a mid-course abort that keeps its completed
+pages and exposes the typed checkpoint on `jobs.get`, a resume that authors only the missing
+sections, unknown cost charged at the declared estimate instead of zero, and the configured ceiling
+(and its source) recorded on the job.
+
 
 A live smoke test is intentionally **not** included: no test in this repo makes a network call, and
 no fixture claims to be real provider output.
