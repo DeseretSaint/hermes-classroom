@@ -2641,6 +2641,47 @@ def _check_result(**overrides) -> dict:
     return result
 
 
+class ChecklistConfirmationWireTest(unittest.TestCase):
+    """H-34 (`docs/CHECKLIST-CONFIRMATION.md` §2.1): the confirmation needs no v11.
+
+    A verification checklist is confirmed by an existing ``selection`` answer over the check's
+    declared item ids. The ``answer`` object is closed, so no confirmation field can be invented
+    and nothing about ``cb.rpc`` moved.
+    """
+
+    def payload(self, answer: dict) -> dict:
+        return {
+            "enrollment_id": "enr_12345678",
+            "check_id": "chk_12345678",
+            "check_version": 1,
+            "attempt_nonce": "nonce-confirm-1",
+            "answer": answer,
+        }
+
+    def test_selection_of_declared_item_ids_is_wire_legal(self) -> None:
+        contracts.validate_request_payload(
+            "attempt.submit",
+            self.payload({"kind": "selection", "selection": ["item_1", "item_2", "item_3"]}),
+        )
+
+    def test_an_extra_key_inside_answer_is_refused(self) -> None:
+        with self.assertRaises(contracts.ContractError):
+            contracts.validate_request_payload(
+                "attempt.submit",
+                self.payload({
+                    "kind": "selection",
+                    "selection": ["item_1"],
+                    "confirmations": ["item_1"],
+                }),
+            )
+
+    def test_the_wire_version_did_not_move(self) -> None:
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 10)
+        answer = contracts.method_schema("attempt.submit")["request"]["properties"]["answer"]
+        self.assertFalse(answer["additionalProperties"])
+        self.assertEqual(sorted(answer["properties"]), ["kind", "selection", "text"])
+
+
 if __name__ == "__main__":
     unittest.main()
 

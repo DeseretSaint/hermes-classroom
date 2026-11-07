@@ -35,9 +35,26 @@ DEFAULT_DEADLINE_MS = 8000
 #: The contract verdict for "the grader could not finish". Never a pass.
 RETRY_VERDICT = "needs_retry"
 
+#: The one evidence class the confirmation lane may claim. ``domain.attempt_submit`` accepts this
+#: value from a grader result and nothing else, so no adapter can smuggle ``cold`` through.
+CONFIRMATION_EVIDENCE_CLASS = "self_reported"
+
 
 class GradingUnavailable(RuntimeError):
     """The grader could not finish. The caller persists ``needs_retry``; nothing advances."""
+
+
+class ConfirmationAnswerError(ValueError):
+    """A confirmation answer that cannot be read as a selection of declared items.
+
+    ``reason`` is the frozen contract reason (``docs/CHECKLIST-CONFIRMATION.md`` §4.3). The command
+    layer translates it into ``VALIDATION_FAILED`` **before** the write transaction: a refusal is
+    not a failed attempt, so no attempt row, evidence or revision bump is written.
+    """
+
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+        super().__init__(reason)
 
 
 @dataclass(frozen=True)
@@ -45,6 +62,7 @@ class GradingResult:
     verdict: str
     criteria: list[dict[str, Any]] = field(default_factory=list)
     provenance: dict[str, Any] = field(default_factory=dict)
+    evidence_class: str | None = None
 
 
 #: ``grader(answer, rubric, construct, context, attempt_id) -> dict``.
@@ -97,6 +115,83 @@ def grade_closed(
             "grader": f"deterministic:{reference.get('kind')}",
             "reference_sha256": reference_hash(reference),
         },
+    )
+
+
+def confirmation_items(
+    reference: dict[str, Any] | None, stimulus: dict[str, Any] | None
+) -> list[dict[str, str]] | None:
+    """The declared checklist items when this check is confirmation-shaped, else ``None``.
+
+    Frozen predicate (``docs/CHECKLIST-CONFIRMATION.md`` §4.1): ``reference.kind == rubric_only``
+    and ``stimulus.format == verification`` with a non-empty list of ``{id, label}``. The answer
+    kind and the course recipe are checked by the caller, because they are not properties of the
+    check. A malformed item list is *not* confirmation-shaped: it falls through to the existing
+    router unchanged, which fails closed.
+    """
+    if not isinstance(reference, dict) or reference.get("kind") != "rubric_only":
+        return None
+    if not isinstance(stimulus, dict) or stimulus.get("format") != "verification":
+        return None
+    raw = stimulus.get("items")
+    if not isinstance(raw, list) or not raw:
+        return None
+    items: list[dict[str, str]] = []
+    for entry in raw:
+        if not isinstance(entry, dict):
+            return None
+        item_id = entry.get("id")
+        label = entry.get("label")
+        if not isinstance(item_id, str) or not item_id or not isinstance(label, str):
+            return None
+        items.append({"id": item_id, "label": label})
+    return items
+
+
+def grade_confirmation(
+    items: list[dict[str, str]],
+    answer: dict[str, Any],
+    *,
+    reference: dict[str, Any] | None = None,
+) -> GradingResult:
+    """Grade a tick-list by membership only: provider-free, deterministic, self-reported.
+
+    A criterion exists for **every declared item**, in declared order, so a partial confirmation
+    records which steps were and were not confirmed. ``met`` is membership in the deduped
+    selection; nothing compares labels, and nothing consults a model.
+    """
+    selection = answer.get("selection") if isinstance(answer, dict) else None
+    submitted: list[str] = []
+    if isinstance(selection, list):
+        for entry in selection:
+            if entry not in submitted:
+                submitted.append(entry)
+    if not submitted:
+        raise ConfirmationAnswerError("checklist_no_items_confirmed")
+    declared = {item["id"] for item in items}
+    for entry in submitted:
+        if not isinstance(entry, str) or entry not in declared:
+            raise ConfirmationAnswerError("unknown_check_item")
+    confirmed = set(submitted)
+    criteria = [
+        {
+            "id": item["id"][:80],
+            "observed": item["label"][:500],
+            "met": item["id"] in confirmed,
+        }
+        for item in items[:40]
+    ]
+    verdict = "pass" if all(criterion["met"] for criterion in criteria) else "partial"
+    return GradingResult(
+        verdict=verdict,
+        criteria=criteria,
+        provenance={
+            "grader": "provider-free:confirmation",
+            "reference_sha256": reference_hash(reference or {"kind": "rubric_only"}),
+            "declared_items": len(items),
+            "confirmed_items": len(confirmed),
+        },
+        evidence_class=CONFIRMATION_EVIDENCE_CLASS,
     )
 
 
@@ -207,6 +302,7 @@ def grade(
     attempt_id: str,
     locale: str | None = None,
     deadline_ms: int = DEFAULT_DEADLINE_MS,
+    allow_confirmation: bool = True,
 ) -> GradingResult:
     """Route one answer to the lane its reference declares.
 
@@ -214,11 +310,24 @@ def grade(
     or unknown kind is a **grader failure**, not an open response: silently falling through to the
     open lane is how every generated lesson became ungradeable while looking deliberate. Callers
     persist that failure as ``needs_retry``, exactly like any other unavailable grader.
+
+    A verification checklist answered with a ``selection`` takes the **confirmation lane** first:
+    provider-free, membership-only, evidence class ``self_reported``. The caller passes
+    ``allow_confirmation=False`` for a parent-recipe enrollment, whose only recording path is
+    ``observation.record`` (``docs/CHECKLIST-CONFIRMATION.md`` §6).
     """
     try:
         kind = validators.reference_kind(reference)
     except validators.ReferenceSpecError as exc:
         raise GradingUnavailable(str(exc)) from exc
+    if (
+        allow_confirmation
+        and isinstance(answer, dict)
+        and answer.get("kind") == "selection"
+    ):
+        items = confirmation_items(reference, stimulus)
+        if items is not None:
+            return grade_confirmation(items, answer, reference=reference)
     if kind in validators.CLOSED_KINDS:
         return grade_closed(reference=reference, rubric=rubric, answer=answer)
     return grade_open(

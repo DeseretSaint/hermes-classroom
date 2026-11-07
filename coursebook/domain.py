@@ -1138,6 +1138,9 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         )
         if prior is not None:
             return int(enrollment["revision"]), _attempt_result(prior, int(enrollment["revision"]))
+        # A parent-recipe course records observations through ``observation.record``, never through
+        # a child-operated checklist; the confirmation lane is disabled for it.
+        recipe = str(_course_of_enrollment(connection, enrollment)["recipe"] or "")
         if int(check["version"]) != int(payload["check_version"]):
             raise _check_stale(
                 "the open check has been superseded; no attempt was created.",
@@ -1173,6 +1176,16 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         graded = grading.grade(
             reference=reference, rubric=rubric, stimulus=stimulus, answer=answer,
             attempt_id=attempt_id, locale=locale,
+            allow_confirmation=recipe != "parent",
+        )
+    except grading.ConfirmationAnswerError as exc:
+        # A refusal, not a failed attempt: no attempt row, no evidence, no revision bump. Raised
+        # before the write transaction opens.
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "that checklist answer is not a confirmation of declared items.",
+            field="answer",
+            reason=exc.reason,
         )
     except Exception as exc:  # noqa: BLE001 - a grader that cannot finish is needs_retry, never a pass
         graded = None
@@ -1227,6 +1240,10 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
             return int(enrollment["revision"]), result
 
         verdict = graded.verdict
+        # Only the confirmation lane may name an evidence class, and only its own constant. A
+        # future aux adapter cannot return ``cold`` through this channel.
+        if graded.evidence_class == grading.CONFIRMATION_EVIDENCE_CLASS:
+            evidence_class = graded.evidence_class
         to_revision = _bump_enrollment(connection, enrollment["id"], expected)
         connection.execute(
             "INSERT INTO attempts (id, enrollment_id, check_id, check_version, attempt_nonce, answer_kind,"

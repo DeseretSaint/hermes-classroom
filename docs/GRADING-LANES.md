@@ -69,11 +69,24 @@ honestly"), not a string a learner types, and 0.1.0 has no seam that collects wh
 ticked. Grading a typed string against that prose would manufacture a verdict.
 
 Decision: generated `verification` checks and `observation` checks declare `{"kind":
-"rubric_only"}` **explicitly**. They remain ungraded (`needs_retry`) in 0.1.0, exactly as the open
-lane is today, but the reason is now recorded and pinned by a test instead of being an accidental
-fallthrough. Making them gradeable needs a checklist-confirmation submission seam — a contract
-change — or a model-assessed lane, which is gated (see §2.4). This is tracked as a follow-up; it is
-not authorised by this card.
+"rubric_only"}` **explicitly**, so a missing kind is never mistaken for an open response.
+
+The checklist no longer stays ungraded (H-34, `docs/CHECKLIST-CONFIRMATION.md` §4). A `rubric_only`
+**verification** check with a non-empty `{id, label}` item list, answered with
+`{"kind": "selection", "selection": [<declared item ids>]}`, takes the **confirmation lane** in
+`grading.grade_confirmation`: deterministic, provider-free, membership only.
+
+* every declared item ticked → `pass`, `evidence_class = self_reported`, `review_objective`, check
+  `closed`, objective `introduced` if `not_started`, **no layer-2 row**;
+* ≥1 but not all → `partial`, `retry_attempt`, check stays `open`, objective `needs_review`;
+* `selection: []` → `VALIDATION_FAILED` `checklist_no_items_confirmed`; an undeclared id →
+  `VALIDATION_FAILED` `unknown_check_item`, both before any row is written;
+* `criteria[]` is one entry per declared item, in declared order, `met` = the item's id was ticked.
+
+The reference is never rewritten to a closed kind, a `text` answer on the checklist stays
+`needs_retry`, and a parent-recipe course is excluded (`observation.record` is its path,
+`CHECKLIST-CONFIRMATION.md` §6). This is a kernel reading of the existing `selection` answer, not a
+contract change.
 
 ### 2.4 Pack `production` / `transfer`: `rubric_only` behind the CB-QA-11 gate
 
@@ -112,17 +125,30 @@ It is prompt text only — it never enters `checks.reference_json`, the check sc
 * generated selection quiz (incl. `production` target) grades the typed choice;
 * an accepted alternative (`konnichiwa`) also passes;
 * every generated check's `reference_json` declares a known kind;
-* generated verification checklist → `rubric_only`, submission stays `needs_retry`, nothing advances;
+* generated verification checklist → `rubric_only`; a `text` submission stays `needs_retry`, while
+  a `selection` of declared item ids takes the confirmation lane (H-34, below);
 * a spec without a lane is refused at `check.open` (`check_not_gradable`, no row written);
 * `grading.grade` with a missing kind raises `GradingUnavailable`;
 * `seal_reference` refuses an unsealed spec;
 * pack import: closed target → `exact`, `production`/`transfer` → explicit `rubric_only`;
 * the §7.4 directive is present in the lesson-author and continuation prompts.
 
+`tests/test_checklist_confirmation.py` (12 cases, real migrated DB, real `check.open` →
+`attempt.submit`, one-off verification fixture) pins the confirmation lane: full tick → `pass` /
+`self_reported` / `review_objective` / `closed` / `introduced` / zero layer-2 / one `met:true`
+criterion per item; answer persisted verbatim and inspectable; subset → `partial` / `retry_attempt` /
+`open` / `needs_review`; unknown id and empty selection → `VALIDATION_FAILED` with no attempt row and
+no revision bump; `text` stay `needs_retry`; hint then full tick stays `self_reported` with the hint
+row inspectable; pack `production` selection stays `needs_retry`; a parent-recipe enrollment does not
+take the lane. `tests/test_contracts.py` pins that the selection payload is wire-legal and that an
+extra key inside `answer` is refused.
+
 ## 5. Out of scope / follow-ups
 
-* Checklist-confirmation submission for verification checks (§2.3) — needs a contract method and is
-  a separate decision.
 * Enabling the aux lane for open responses — blocked on CB-QA-11 and the `PREBUILD_SPEC.md` §8
   measurement.
 * No UI, no `desktop/plugin.js`, no merge/push in this card.
+
+The checklist-confirmation lane is no longer a follow-up: it landed as H-34 (`grading.grade`'s
+confirmation rule + `tests/test_checklist_confirmation.py`) with **zero** `cb.rpc` / `cb.db` delta,
+because the answer object already carried `selection`.
