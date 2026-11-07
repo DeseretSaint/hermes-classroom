@@ -1,0 +1,237 @@
+{
+  "name": "view-plan",
+  "title": "Course detail — Plan",
+  "reached": {
+    "hash": "#/coursebook",
+    "destination": "courses"
+  },
+  "screenshot": "audit/h64/06-view-plan.png",
+  "textExcerpt": "Coursebook What you are learning, what has been checked, and what to do next. New course Courses Library Parent Studio All courses Roadside flat repair One task I need to do now Plan update Replace the inner tube and inspect the tire for the cause of the flat Export course… Resume lesson View Plan One lesson. Research and drafting may take several minutes; there is no progress percentage until the plan exists. Plan draft · v2 plan sha256:60ae281a0649… Approve plan Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash. What Coursebook can check — Written answers, choices, and checklists. This build cannot collect or grade a program, a recording, a photo, or a built object. Checks marked \"practice only\" never advance a section. OUTLINE AND ACTIVITIES (1) 01 Replace the inner tube and inspect the tire for the cause of the flat procedure State: not_started · check: none SOURCES AND REVIEW NOTES Sources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here. No sources recorded for this course. A draft plan can be e",
+  "dialogs": [],
+  "controls": [
+    {
+      "index": 0,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "New course",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 720,
+        "y": 58
+      },
+      "screenshot": "audit/h64/controls/06-view-plan-000.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": "Choose one option above to continue. Nothing is generated until you review the plan on the last step.",
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 1,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Courses",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "true",
+      "selected": null,
+      "rect": {
+        "x": 311,
+        "y": 104
+      },
+      "outcome": "current-state",
+      "detail": "already pressed/selected; a click has no state left to change"
+    },
+    {
+      "index": 2,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Library",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 371,
+        "y": 104
+      },
+      "screenshot": "audit/h64/controls/06-view-plan-002.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "library",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest courses->library"
+    },
+    {
+      "index": 3,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Parent Studio",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 443,
+        "y": 104
+      },
+      "screenshot": "audit/h64/controls/06-view-plan-003.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "studio",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest courses->studio"
+    },
+    {
+      "index": 4,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "All courses",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 318,
+        "y": 128
+      },
+      "screenshot": "audit/h64/controls/06-view-plan-004.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 5,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Export course…",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 332,
+        "y": 244
+      },
+      "screenshot": "audit/h64/controls/06-view-plan-005.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 6,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Resume lesson",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 444,
+        "y": 244
+      },
+      "outcome": "mutating",
+      "detail": "starts/steers a lesson run; verified separately with before/after evidence"
+    },
+    {
+      "index": 7,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": "combobox",
+      "label": "Course view: Plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 401,
+        "y": 283
+      },
+      "screenshot": "audit/h64/controls/06-view-plan-007.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    },
+    {
+      "index": 8,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Approve plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 716,
+        "y": 377
+      },
+      "screenshot": "audit/h64/controls/06-view-plan-008.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    }
+  ],
+  "index": 6
+}

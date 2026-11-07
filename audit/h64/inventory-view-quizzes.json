@@ -1,0 +1,460 @@
+{
+  "name": "view-quizzes",
+  "title": "Course detail — Quizzes",
+  "reached": {
+    "hash": "#/coursebook",
+    "destination": "courses"
+  },
+  "screenshot": "audit/h64/05-view-quizzes.png",
+  "textExcerpt": "Coursebook What you are learning, what has been checked, and what to do next. New course Courses Library Parent Studio All courses Roadside flat repair One task I need to do now Plan update Replace the inner tube and inspect the tire for the cause of the flat Export course… Resume lesson View Quizzes All results Passed Partly there Not yet Could not be graded All assistance First try Hinted Answer shown Override No quiz attempts yet Answers you give in a lesson are recorded here with their original feedback.",
+  "dialogs": [],
+  "controls": [
+    {
+      "index": 0,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "New course",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 720,
+        "y": 58
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-000.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": "Choose one option above to continue. Nothing is generated until you review the plan on the last step.",
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 1,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Courses",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "true",
+      "selected": null,
+      "rect": {
+        "x": 311,
+        "y": 104
+      },
+      "outcome": "current-state",
+      "detail": "already pressed/selected; a click has no state left to change"
+    },
+    {
+      "index": 2,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Library",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 371,
+        "y": 104
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-002.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "library",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest courses->library"
+    },
+    {
+      "index": 3,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Parent Studio",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 443,
+        "y": 104
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-003.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "studio",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest courses->studio"
+    },
+    {
+      "index": 4,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "All courses",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 318,
+        "y": 128
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-004.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 5,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Export course…",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 332,
+        "y": 244
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-005.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 6,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Resume lesson",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 444,
+        "y": 244
+      },
+      "outcome": "mutating",
+      "detail": "starts/steers a lesson run; verified separately with before/after evidence"
+    },
+    {
+      "index": 7,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": "combobox",
+      "label": "Course view: Quizzes",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 401,
+        "y": 283
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-007.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    },
+    {
+      "index": 8,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "All results",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "true",
+      "selected": null,
+      "rect": {
+        "x": 315,
+        "y": 322
+      },
+      "outcome": "current-state",
+      "detail": "already pressed/selected; a click has no state left to change"
+    },
+    {
+      "index": 9,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Passed",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 379,
+        "y": 322
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-009.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 10,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Partly there",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 447,
+        "y": 322
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-010.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "control state changed"
+    },
+    {
+      "index": 11,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Not yet",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 515,
+        "y": 322
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-011.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "control state changed"
+    },
+    {
+      "index": 12,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Could not be graded",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 604,
+        "y": 322
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-012.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "control state changed"
+    },
+    {
+      "index": 13,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "All assistance",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "true",
+      "selected": null,
+      "rect": {
+        "x": 325,
+        "y": 355
+      },
+      "outcome": "current-state",
+      "detail": "already pressed/selected; a click has no state left to change"
+    },
+    {
+      "index": 14,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "First try",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 398,
+        "y": 355
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-014.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "control state changed"
+    },
+    {
+      "index": 15,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Hinted",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 455,
+        "y": 355
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-015.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "control state changed"
+    },
+    {
+      "index": 16,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Answer shown",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 528,
+        "y": 355
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-016.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "control state changed"
+    },
+    {
+      "index": 17,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Override",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 607,
+        "y": 355
+      },
+      "screenshot": "audit/h64/controls/05-view-quizzes-017.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "control state changed"
+    }
+  ],
+  "index": 5
+}

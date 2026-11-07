@@ -1,0 +1,47 @@
+{
+  "picker-Notebook": {
+    "before": [],
+    "after": [
+      {
+        "role": "listbox",
+        "text": "Overview Textbook Notebook Quizzes Plan Evidence Sources Export"
+      }
+    ]
+  },
+  "picker-Quizzes": {
+    "before": [],
+    "after": [
+      {
+        "role": "listbox",
+        "text": "Overview Textbook Notebook Quizzes Plan Evidence Sources Export"
+      }
+    ]
+  },
+  "picker-Evidence": {
+    "before": [],
+    "after": [
+      {
+        "role": "listbox",
+        "text": "Overview Textbook Notebook Quizzes Plan Evidence Sources Export"
+      }
+    ]
+  },
+  "filterByTag": {
+    "hashBefore": "#/coursebook",
+    "hashAfter": "#/coursebook",
+    "textChanged": false,
+    "beforePopovers": [],
+    "afterPopovers": [
+      {
+        "role": "listbox",
+        "text": "All tags"
+      }
+    ],
+    "excerpt": "Coursebook What you are learning, what has been checked, and what to do next. New course Courses Library Parent Studio All courses Roadside flat repair One task I need to do now Plan update Replace the inner tube and inspect the tire for the cause of the flat Export course… Resume lesson View Notebo",
+    "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_2019765e/audit/h64/evidence-filter-by-tag.png"
+  },
+  "filterToggle": {
+    "popoversAfterSecondClick": [],
+    "textChanged": false
+  }
+}

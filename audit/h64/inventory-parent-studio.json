@@ -1,0 +1,391 @@
+{
+  "name": "parent-studio",
+  "title": "Parent Studio",
+  "reached": {
+    "hash": "#/coursebook",
+    "destination": "studio"
+  },
+  "screenshot": "audit/h64/12-parent-studio.png",
+  "textExcerpt": "Coursebook Plan lessons for your child here. You teach them; there is no child chat, and answers never reach the learner pages. New lesson plan Courses Library Parent Studio Lesson plans you prepared for your child Two plans can describe the same lesson and still be different plans: each brief you write is kept as its own plan, so you can keep one per child, compare two versions, or start again without losing the first. Japanese café basics, revised Lesson plan for a child updated 22 hr ago Open plan Japanese café basics Lesson plan for a child updated 1 d ago Open plan Japanese café basics Lesson plan for a child updated 1 d ago Open plan Kitchen fractions for a 9-year-old Lesson plan for a child updated 1 d ago Open plan Kitchen fractions for a 9-year-old Lesson plan for a child updated 1 d ago Open plan Kitchen fractions for a 9-year-old Lesson plan for a child updated 1 d ago Open plan Kitchen fractions for a 9-year-old Lesson plan for a child updated 1 d ago Open plan Kitchen fractions for a 9-year-old Lesson plan for a child updated 1 d ago Open plan Kitchen fractions for a 9-year-old Lesson plan for a child updated 1 d ago Open plan Kitchen fractions for a 9-year-old Lesson ",
+  "dialogs": [],
+  "controls": [
+    {
+      "index": 0,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "New lesson plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 333,
+        "y": 124
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 1,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Courses",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 311,
+        "y": 156
+      },
+      "screenshot": "audit/h64/controls/12-parent-studio-001.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest studio->courses"
+    },
+    {
+      "index": 2,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Library",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 371,
+        "y": 156
+      },
+      "screenshot": "audit/h64/controls/12-parent-studio-002.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "library",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest studio->library"
+    },
+    {
+      "index": 3,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Parent Studio",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "true",
+      "selected": null,
+      "rect": {
+        "x": 443,
+        "y": 156
+      },
+      "outcome": "current-state",
+      "detail": "already pressed/selected; a click has no state left to change"
+    },
+    {
+      "index": 4,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 330
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 5,
+      "occurrence": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 430
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 6,
+      "occurrence": 3,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 529
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 7,
+      "occurrence": 4,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 629
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 8,
+      "occurrence": 5,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 728
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 9,
+      "occurrence": 6,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 828
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 10,
+      "occurrence": 7,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 927
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 11,
+      "occurrence": 8,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1026
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 12,
+      "occurrence": 9,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1126
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 13,
+      "occurrence": 10,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1225
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 14,
+      "occurrence": 11,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1325
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 15,
+      "occurrence": 12,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1424
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 16,
+      "occurrence": 13,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1524
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 17,
+      "occurrence": 14,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1623
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 18,
+      "occurrence": 15,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1723
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 19,
+      "occurrence": 16,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1822
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    },
+    {
+      "index": 20,
+      "occurrence": 17,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 317,
+        "y": 1922
+      },
+      "outcome": "destructive-or-native",
+      "detail": "writes state or opens a native picker; handler inspected in source"
+    }
+  ],
+  "index": 12
+}

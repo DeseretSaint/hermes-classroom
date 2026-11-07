@@ -1,0 +1,1245 @@
+{
+  "name": "courses-list",
+  "title": "Courses list (search & manage)",
+  "reached": {
+    "hash": "#/coursebook",
+    "destination": "courses"
+  },
+  "screenshot": "audit/h64/01-courses-list.png",
+  "textExcerpt": "Coursebook Every course on this profile, with search and the next step the backend recorded. New course Courses Library Parent Studio Back to the Field Desk All In progress Review due Archived REVIEW DUE Japanese affection and register — an L0 demonstration classroom · 1 due Review Japanese affection and register — an L0 demonstration classroom · 3 due Review Find relative minors on the circle of fifths One task I need to do now Plan update Review and approve the plan 0 independent · 1 objective A newer plan draft is waiting for review. Open Roadside flat repair One task I need to do now Plan update Resume Replace the inner tube and inspect the tire for the cause of the flat 0 independent · 1 objective A newer plan draft is waiting for review. Open Resume lesson Order coffee in Japanese One task I need to do now Resume Identify the correct replacement pad for the brake model 0 independent · 4 objectives Open Resume lesson Japanese affection and register — an L0 demonstration classroom A little at a time Source stale Resume Explain why register changes with the relationship 1 independent · 4 objectives A source behind this course changed. Existing evidence is kept; the source needs ",
+  "dialogs": [],
+  "controls": [
+    {
+      "index": 0,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "New course",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 321,
+        "y": 108
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-000.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": "Choose one option above to continue. Nothing is generated until you review the plan on the last step.",
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 1,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Courses",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "true",
+      "selected": null,
+      "rect": {
+        "x": 311,
+        "y": 140
+      },
+      "outcome": "current-state",
+      "detail": "already pressed/selected; a click has no state left to change"
+    },
+    {
+      "index": 2,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Library",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 371,
+        "y": 140
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-002.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "library",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest courses->library"
+    },
+    {
+      "index": 3,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Parent Studio",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 443,
+        "y": 140
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-003.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "studio",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest courses->studio"
+    },
+    {
+      "index": 4,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Back to the Field Desk",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 349,
+        "y": 164
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-004.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 5,
+      "occurrence": 1,
+      "tag": "INPUT",
+      "role": null,
+      "label": "Search courses",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 394,
+        "y": 198
+      },
+      "outcome": "field",
+      "detail": "text-entry field; proven by typing in the surface setup, not by a click"
+    },
+    {
+      "index": 6,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "All",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "true",
+      "selected": null,
+      "rect": {
+        "x": 515,
+        "y": 199
+      },
+      "outcome": "current-state",
+      "detail": "already pressed/selected; a click has no state left to change"
+    },
+    {
+      "index": 7,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "In progress",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 570,
+        "y": 199
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-007.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "control state changed"
+    },
+    {
+      "index": 8,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Review due",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 649,
+        "y": 199
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-008.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 9,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Archived",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 721,
+        "y": 199
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-009.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 10,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Review",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 724,
+        "y": 252
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-010.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 11,
+      "occurrence": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Review",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 724,
+        "y": 280
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 10 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 12,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 430
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-012.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 13,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Find relative minors on the circle of fifths",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 430
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-013.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    },
+    {
+      "index": 14,
+      "occurrence": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 580
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 15,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Resume lesson",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 384,
+        "y": 580
+      },
+      "outcome": "mutating",
+      "detail": "starts/steers a lesson run; verified separately with before/after evidence"
+    },
+    {
+      "index": 16,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Roadside flat repair",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 455,
+        "y": 580
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-016.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    },
+    {
+      "index": 17,
+      "occurrence": 3,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 709
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 18,
+      "occurrence": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Resume lesson",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 384,
+        "y": 709
+      },
+      "outcome": "mutating",
+      "detail": "starts/steers a lesson run; verified separately with before/after evidence"
+    },
+    {
+      "index": 19,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Order coffee in Japanese",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 455,
+        "y": 709
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-019.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    },
+    {
+      "index": 20,
+      "occurrence": 4,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 922
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 21,
+      "occurrence": 3,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Resume lesson",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 384,
+        "y": 922
+      },
+      "outcome": "mutating",
+      "detail": "starts/steers a lesson run; verified separately with before/after evidence"
+    },
+    {
+      "index": 22,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Japanese affection and register — an L0 demonstration classroom",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 455,
+        "y": 922
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-022.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    },
+    {
+      "index": 23,
+      "occurrence": 5,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 1135
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 24,
+      "occurrence": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Japanese affection and register — an L0 demonstration classroom",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 1135
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 22 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 25,
+      "occurrence": 6,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 1265
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 26,
+      "occurrence": 4,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Resume lesson",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 384,
+        "y": 1265
+      },
+      "outcome": "mutating",
+      "detail": "starts/steers a lesson run; verified separately with before/after evidence"
+    },
+    {
+      "index": 27,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Japanese café basics, revised",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 455,
+        "y": 1265
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-027.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    },
+    {
+      "index": 28,
+      "occurrence": 7,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 1478
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 29,
+      "occurrence": 3,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Japanese affection and register — an L0 demonstration classroom",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 1478
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 22 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 30,
+      "occurrence": 8,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 1607
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 31,
+      "occurrence": 5,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Resume lesson",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 384,
+        "y": 1607
+      },
+      "outcome": "mutating",
+      "detail": "starts/steers a lesson run; verified separately with before/after evidence"
+    },
+    {
+      "index": 32,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Japanese café basics",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 455,
+        "y": 1607
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-032.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    },
+    {
+      "index": 33,
+      "occurrence": 9,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 1736
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 34,
+      "occurrence": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Japanese café basics",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 1736
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 32 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 35,
+      "occurrence": 10,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 1866
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 36,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 1866
+      },
+      "screenshot": "audit/h64/controls/01-courses-list-036.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": false,
+        "controlStateChanged": false
+      },
+      "outcome": "noop",
+      "detail": "no route, dialog, notice or state change"
+    },
+    {
+      "index": 37,
+      "occurrence": 11,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 1995
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 38,
+      "occurrence": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 1995
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 39,
+      "occurrence": 12,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 2125
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 40,
+      "occurrence": 3,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 2125
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 41,
+      "occurrence": 13,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 2254
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 42,
+      "occurrence": 4,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 2254
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 43,
+      "occurrence": 14,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 2384
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 44,
+      "occurrence": 5,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 2384
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 45,
+      "occurrence": 15,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 2513
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 46,
+      "occurrence": 6,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 2513
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 47,
+      "occurrence": 16,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 2643
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 48,
+      "occurrence": 7,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 2643
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 49,
+      "occurrence": 17,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 2772
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 50,
+      "occurrence": 8,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 2772
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 51,
+      "occurrence": 18,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 2901
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 52,
+      "occurrence": 9,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 2901
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 53,
+      "occurrence": 19,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 3031
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 54,
+      "occurrence": 10,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 3031
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 55,
+      "occurrence": 20,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 3160
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 56,
+      "occurrence": 11,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 3160
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 57,
+      "occurrence": 21,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 3290
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 58,
+      "occurrence": 12,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 3290
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 59,
+      "occurrence": 22,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 3419
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 60,
+      "occurrence": 13,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 3419
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 61,
+      "occurrence": 23,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 304,
+        "y": 3569
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 12 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 62,
+      "occurrence": 14,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Actions for Kitchen fractions for a 9-year-old",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 348,
+        "y": 3569
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 36 / occurrence 1 on this surface (exercised once)"
+    }
+  ],
+  "index": 1
+}
