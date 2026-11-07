@@ -448,15 +448,57 @@ def run_research(
     )
 
 
+def _normalize_quote(text: Any) -> str:
+    """Whitespace-normalised text used for exact quote matching. No fuzzy tolerance."""
+    return " ".join(str(text or "").split())
+
+
+#: A validator must quote at least this many characters for a verdict to count as a link. It is
+#: a floor against a one-word "quote", not a claim that a short quote proves anything.
+MIN_CLAIM_EXCERPT_CHARS = 12
+
+#: Statuses that may move a source off ``unverified``. Every one of them needs an explicit link.
+UPGRADE_STATUSES = frozenset({"partial", "supported", "contradictory"})
+
+
+def claim_verdict_link_problem(
+    verdict: dict[str, Any],
+    source: SourceRecord | None,
+) -> str | None:
+    """Why a validator verdict cannot upgrade support, or ``None`` when the link is explicit.
+
+    The rule is deterministic: a non-``unverified`` verdict needs (a) a ``source_id`` present in
+    the ledger and (b) an ``excerpt`` that occurs verbatim (whitespace collapsed) in that
+    source's bounded excerpt. A source id alone is provenance, never support. The validator
+    cannot link a claim to text the ledger did not fetch.
+    """
+    status = verdict.get("support")
+    if status not in UPGRADE_STATUSES:
+        return "status does not upgrade support"
+    if source is None:
+        return "source id is absent from the ledger"
+    excerpt = verdict.get("excerpt")
+    if not isinstance(excerpt, str):
+        return "no verbatim excerpt was quoted"
+    needle = _normalize_quote(excerpt)
+    if len(needle) < MIN_CLAIM_EXCERPT_CHARS:
+        return f"quoted excerpt is shorter than {MIN_CLAIM_EXCERPT_CHARS} characters"
+    if needle not in _normalize_quote(source.excerpt):
+        return "quoted excerpt does not occur in the fetched source text"
+    return None
+
+
 def apply_support_verdicts(
     sources: Iterable[SourceRecord],
     verdicts: Iterable[dict[str, Any]],
 ) -> list[SourceRecord]:
-    """Move source support from ``unverified`` using *validator* claim verdicts only.
+    """Move source support from ``unverified`` using *linked* validator claim verdicts only.
 
     A source with no verdict stays ``unverified``; a ``contradictory`` verdict wins over
     ``supported`` because conflicting evidence is the fact worth surfacing. Provenance never
-    upgrades support on its own.
+    upgrades support on its own: every non-``unverified`` verdict must name a ledger source and
+    quote text that occurs in that source's stored excerpt (see :func:`claim_verdict_link_problem`).
+    An accepted verdict appends its claim reference to ``source.claim_links``.
     """
     by_id = {source.source_id: source for source in sources}
     rank = {"unverified": 0, "partial": 1, "supported": 2, "contradictory": 3}
@@ -466,8 +508,13 @@ def apply_support_verdicts(
         if not source_id or source_id not in by_id or status not in SUPPORT_STATUSES:
             continue
         source = by_id[source_id]
+        if claim_verdict_link_problem(verdict, source) is not None:
+            continue
         if rank[status] > rank.get(source.support_status, 0):
             source.support_status = status
+        item = verdict.get("item")
+        if isinstance(item, str) and item.strip() and item.strip() not in source.claim_links:
+            source.claim_links.append(item.strip())
     return list(by_id.values())
 
 
