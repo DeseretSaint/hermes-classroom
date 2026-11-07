@@ -447,6 +447,23 @@ async function loadBinding({ storedSessionId = null, enrollmentId = null } = {})
 }
 
 /**
+ * Front the Coursebook pane (chat and pane are one surface — DEMO.md's learning shots need both
+ * on screen). The pane is a contributed pane, so the SDK wants its contribution-scoped id
+ * `<pluginId>:<paneId>`; older desktops have no `revealPane`, and there this stays a no-op.
+ * Called only from an explicit lesson-start action, never from a background effect.
+ */
+function revealCoursebookPane() {
+  if (typeof host.revealPane !== 'function') return false
+  const paneId = `${PLUGIN_ID}:pane`
+  try {
+    host.revealPane(paneId)
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
+/**
  * Open the chat a binding row names. Only `stored_session_id` is accepted, and only for an
  * active binding: a paused/detached/branched/orphaned lesson is a state the UI must explain,
  * not quietly bypass by opening some other chat.
@@ -464,6 +481,9 @@ async function resumeBoundSession(binding) {
   await host.openSession(binding.stored_session_id, {
     profile: binding.profile || currentScope().profile || undefined
   })
+  // The chat is now the focused surface; front the lesson pane beside it so a resumed lesson
+  // never lands on a chat-only screen.
+  revealCoursebookPane()
   return { ok: true, storedSessionId: binding.stored_session_id }
 }
 
@@ -472,6 +492,9 @@ async function resumeBoundSession(binding) {
 function startLessonChat(profile) {
   if (typeof host.newChat !== 'function') return false
   host.newChat(profile || null)
+  // `newChat` swaps the route to the draft and unmounts the Coursebook page; front the pane so
+  // the fresh chat keeps the lesson surface beside it.
+  revealCoursebookPane()
   return true
 }
 

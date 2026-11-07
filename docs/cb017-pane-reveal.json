@@ -1,0 +1,67 @@
+{
+  "card": "t_d587a007",
+  "title": "Lesson start opens the chat but never reveals the Coursebook pane",
+  "branch": "wt/cb017-pane-reveal",
+  "base_commit": "f3ca765",
+  "date": "2026-11-06",
+  "rig": {
+    "window": "isolated Hermes Desktop (Electron) launched by scripts/cb013-live-window.sh",
+    "hermes_home": "/home/deseretsaint/.hermes/coursebook-test-vellum/home",
+    "user_data": "/home/deseretsaint/.hermes/coursebook-test-vellum/userdata",
+    "cdp_port": 9349,
+    "backend": "http://127.0.0.1:44219 (remote connection, cb.rpc v7)",
+    "plugin_source": "worktree desktop/plugin.js copied to <home>/desktop-plugins/coursebook/plugin.js",
+    "precondition": "right sidebar collapsed; host.paneVisibility('coursebook:pane').get() === false"
+  },
+  "oracle": "window.__HERMES_PLUGIN_SDK__.host.paneVisibility('coursebook:pane').get() + DOM text + screenshot",
+  "plugin_sha256_before": "c59ebc3c937385f1119787a5522acda09fb852f8180c06e3d3f4615e3c8281fb",
+  "plugin_sha256_after": "c151974a7de0fed2662e977a001127327b3c3cf96d19a54cd49b819433f935fc",
+  "pre_fix": {
+    "fresh_start": {
+      "action": "coursebook list -> Open 'Japanese café basics' -> 'Start lesson' (startLessonChat path)",
+      "hash": "#/",
+      "chat": true,
+      "pane_visibility": false,
+      "pane_text_present": false,
+      "result": "chat alone",
+      "screenshots": ["docs/cb017-shots/pre-fresh-before.png", "docs/cb017-shots/pre-fresh-after.png"]
+    },
+    "resume_bound": {
+      "action": "coursebook -> 'Japanese affection and register' (enr_544f0aba) -> Textbook section -> 'Continue here' (resumeBoundSession path)",
+      "binding": "bind_947ef59d9fb948509fc15c553656d00b, status active",
+      "focused_stored_session_id": "20261106_095109_eac24e",
+      "hash": "#/20261106_095109_eac24e",
+      "chat": true,
+      "pane_visibility": false,
+      "pane_text_present": false,
+      "result": "chat alone",
+      "screenshots": ["docs/cb017-shots/pre-resume2-before.png", "docs/cb017-shots/pre-resume2-after.png"]
+    }
+  },
+  "post_fix": {
+    "fresh_start": {
+      "action": "same course -> 'Start lesson' with the pane collapsed beforehand",
+      "hash": "#/",
+      "chat": true,
+      "pane_visibility": true,
+      "pane_text_present": true,
+      "result": "chat + pane side by side",
+      "screenshots": ["docs/cb017-shots/post-fresh-before.png", "docs/cb017-shots/post-fresh-after.png"]
+    },
+    "resume_bound": {
+      "action": "same section -> 'Continue here' with the pane collapsed beforehand",
+      "focused_stored_session_id": "20261106_095109_eac24e",
+      "hash": "#/20261106_095109_eac24e",
+      "chat": true,
+      "pane_visibility": true,
+      "pane_text_present": true,
+      "result": "chat + pane side by side; pane shows the bound objective",
+      "screenshots": ["docs/cb017-shots/post-resume-before.png", "docs/cb017-shots/post-resume-after.png"]
+    }
+  },
+  "fix": {
+    "file": "desktop/plugin.js",
+    "change": "new revealCoursebookPane() helper (feature-detects host.revealPane, calls it with the contribution-scoped id 'coursebook:pane', no-op where absent); called after host.openSession resolves in resumeBoundSession and after host.newChat in startLessonChat",
+    "core_files_touched": false
+  }
+}
