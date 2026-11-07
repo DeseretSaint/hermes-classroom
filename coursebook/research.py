@@ -58,6 +58,7 @@ __all__ = [
     "ResearchRun",
     "SearchSeam",
     "HermesToolSearch",
+    "ensure_host_tools",
     "NullSearch",
     "budget_for",
     "normalize_depth",
@@ -379,7 +380,19 @@ class HermesToolSearch:
         interrupted from Python, so the adapter enforces its own wall clock through the bounded
         pool. Overrun is a typed :class:`ResearchTimeout`; a fully stuck pool is
         :class:`ResearchUnavailable` — never an unbounded wait.
+
+        ``dispatch_tool`` answering ``Unknown tool`` means the host registry in this process never
+        registered the tool (a serve/dashboard process loads plugins but not the agent's tool
+        setup). :func:`ensure_host_tools` registers the host's own handlers, then the call is
+        retried once; nothing is invented if that fails (H-63 D-H63-1).
         """
+        raw = self._call_bounded(tool, arguments)
+        payload = _loads_tool_json(raw)
+        if str(payload.get("error") or "").startswith(_UNKNOWN_TOOL) and ensure_host_tools():
+            raw = self._call_bounded(tool, arguments)
+        return raw
+
+    def _call_bounded(self, tool: str, arguments: dict[str, Any]) -> Any:
         try:
             return run_bounded(
                 lambda: self._host.dispatch_tool(tool, arguments),
@@ -398,8 +411,9 @@ class HermesToolSearch:
     def search(self, query: str, limit: int) -> list[dict[str, Any]]:
         raw = self._dispatch("web_search", {"query": query, "limit": int(limit)})
         payload = _loads_tool_json(raw)
-        if payload.get("success") is False:
-            raise ResearchUnavailable(_bound(str(payload.get("error") or "web_search failed"), _MAX_REASON))
+        error = _tool_error(payload)
+        if error:
+            raise ResearchUnavailable(_bound(error, _MAX_REASON))
         rows = ((payload.get("data") or {}).get("web")) or []
         results: list[dict[str, Any]] = []
         for row in rows:
@@ -422,7 +436,9 @@ class HermesToolSearch:
         payload = _loads_tool_json(raw)
         results = payload.get("results")
         if not isinstance(results, list) or not results:
-            raise ResearchUnavailable(_bound(str(payload.get("error") or "web_extract returned nothing"), _MAX_REASON))
+            raise ResearchUnavailable(
+                _bound(_tool_error(payload) or "web_extract returned nothing", _MAX_REASON)
+            )
         entry = results[0]
         if not isinstance(entry, dict) or entry.get("error"):
             raise ResearchUnavailable(
@@ -446,7 +462,54 @@ class HermesToolSearch:
 # asks for :func:`host_search`; an unbound (or unusable) host yields ``None``, which
 # ``run_research`` records honestly as ``status="unavailable"`` rather than inventing a source.
 
+#: The registry's unknown-tool body. ``tools.registry.dispatch`` answers a missing handler with
+#: ``{"error": "Unknown tool: <name>"}`` — not the ``{"success": false, ...}`` shape the web tools
+#: themselves return. Reading only ``success`` made that body look like a successful empty search
+#: and hid the missing seam (H-63 D-H63-1).
+_UNKNOWN_TOOL = "Unknown tool"
+
 _HOST_SEAM: Any = None
+
+#: Result of :func:`ensure_host_tools`, cached: one import attempt per process.
+_HOST_TOOLS: bool | None = None
+
+
+def _tool_error(payload: dict[str, Any]) -> str | None:
+    """The error a host tool result carries, in either host shape.
+
+    ``web_search_tool`` returns ``{"success": false, "error": ...}``; a registry-level dispatch
+    failure (unknown tool, a handler raising) returns the bare ``tool_error`` body
+    ``{"error": ...}``. Both are failures, never an empty result set.
+    """
+    if payload.get("success") is False:
+        return str(payload.get("error") or "host tool reported failure")
+    if payload.get("error") and not payload.get("data") and not payload.get("results"):
+        return str(payload.get("error"))
+    return None
+
+
+def ensure_host_tools() -> bool:
+    """Register the host's own web tools in this process when the seam cannot see them.
+
+    A ``hermes serve`` / dashboard process loads plugins but never runs the agent's tool setup, so
+    ``ctx.dispatch_tool("web_search", ...)`` answers ``Unknown tool`` there and every plan authored
+    by that process carries zero sources (H-63 D-H63-1). Importing the host's own tool module
+    registers the same handlers the agent would dispatch — provider selection, egress rules and
+    SSRF checks stay the host's own; the plugin still never reads a provider key.
+
+    Returns whether the import succeeded. False is honest: the unknown-tool failure is then
+    recorded in the research ledger instead of being mistaken for an empty search.
+    """
+    global _HOST_TOOLS
+    if _HOST_TOOLS is not None:
+        return _HOST_TOOLS
+    try:
+        import tools.web_tools  # noqa: F401 - registers web_search/web_extract handlers
+    except Exception:  # noqa: BLE001 - a bare test host has no agent tool package
+        _HOST_TOOLS = False
+        return False
+    _HOST_TOOLS = True
+    return True
 
 
 def bind_host_seam(host: Any) -> None:

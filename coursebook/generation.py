@@ -2483,6 +2483,23 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
     return lines
 
 
+def _plan_length_rule() -> str:
+    """The hard-cap rule every plan prompt states (H-63 D-H63-2).
+
+    The caps are the schema's ``maxLength`` values; the provider enforces them by cutting the
+    value. Asking for a length below the cap is the only way the model can finish a sentence, so
+    each prose field names its own safe bound rather than "keep it short".
+    """
+    return (
+        "Every string has a hard maximum length. The provider enforces a maximum by cutting the "
+        "value, so a field that reaches its maximum has lost its ending and the plan is rejected. "
+        "Write learner_outcome in at most 450 characters, evidence_note in at most 300, "
+        "time_estimate.rationale in at most 450, parent.reading_level in at most 30, "
+        "parent.parent_facing_summary in at most 450, and every other prose field well under its "
+        "maximum. Finish every sentence."
+    )
+
+
 def _plan_instructions(
     *,
     recipe: str,
@@ -2644,6 +2661,7 @@ def _plan_instructions(
         "or listened to. The capability policy re-checks every declaration and rejects a role "
         "this lesson cannot carry."
     )
+    lines.append(_plan_length_rule())
 
     if dials:
         lines.append(f"Learner dials: {canonical_json(dials)}.")
@@ -2793,6 +2811,7 @@ def _plan_instructions_v2(
             f"Capability policy decision for these inputs: check angle {capability.check_angle!r}, "
             f"rubric profile {capability.rubric_profile!r}."
         )
+    lines.append(_plan_length_rule())
     if dials:
         lines.append(f"Learner dials: {canonical_json(dials)}.")
     if locale:
@@ -3109,6 +3128,95 @@ def _enforce_parent_brief_bounds(
         )
 
 
+#: A free-prose string sitting exactly on its schema ``maxLength`` is provider-truncated copy, not
+#: authored copy: the structured-output layer enforces ``maxLength`` by cutting the value, so a
+#: value that lands on the cap has lost its ending (H-63 D-H63-2: a 600-char ``learner_outcome``
+#: ending ``…do not establish,so``, a 400-char ``evidence_note`` ending ``…excluded as a``, a
+#: 40-char ``parent.reading_level`` ending ``…chart-l批``). Short caps are identifier/code territory,
+#: not prose, so only slots at or above this size are judged.
+PROSE_CAP_MIN = 40
+
+#: How much of a prose cap an author is asked to use. A retry request names this bound so a
+#: regenerated field has room to finish its sentence instead of landing on the cap again.
+PROSE_CAP_SHARE = 0.75
+
+
+def _iter_prose_caps(schema: Any, path: tuple[str, ...] = ()) -> Any:
+    """Yield ``(path, max_length)`` for every free-prose string slot in a JSON schema."""
+    if not isinstance(schema, dict):
+        return
+    properties = schema.get("properties")
+    if isinstance(properties, dict):
+        for name, child in properties.items():
+            yield from _iter_prose_caps(child, path + (str(name),))
+    items = schema.get("items")
+    if isinstance(items, dict):
+        yield from _iter_prose_caps(items, path + ("[]",))
+    for key in ("anyOf", "oneOf"):
+        for child in schema.get(key) or []:
+            yield from _iter_prose_caps(child, path)
+    raw_type = schema.get("type")
+    kind = raw_type if isinstance(raw_type, str) else next(
+        (entry for entry in raw_type or [] if entry != "null"), None
+    )
+    cap = schema.get("maxLength")
+    if (
+        kind == "string"
+        and isinstance(cap, int)
+        and cap >= PROSE_CAP_MIN
+        and "enum" not in schema
+        and "const" not in schema
+        and path
+    ):
+        yield path, cap
+
+
+def _strings_at(document: Any, path: tuple[str, ...]) -> list[str]:
+    values: list[Any] = [document]
+    for step in path:
+        next_values: list[Any] = []
+        for value in values:
+            if step == "[]":
+                if isinstance(value, list):
+                    next_values.extend(value)
+            elif isinstance(value, dict) and step in value:
+                next_values.append(value[step])
+        values = next_values
+    return [value for value in values if isinstance(value, str)]
+
+
+def _prose_cap_reasons(document: Any, schema: Any) -> list[str]:
+    """Reasons every free-prose value that reached its hard cap is truncated.
+
+    A schema cannot see truncation (the string is still a valid string), and the provider's only
+    truncation signal is that the value is exactly ``maxLength`` long. Refusing it here — before
+    the independent validator is asked anything — turns a systematically clipped plan into one
+    regeneration with the field and the safe bound named in the revision instructions.
+    """
+    reasons: list[str] = []
+    for path, cap in _iter_prose_caps(schema):
+        bound = min(cap - 1, max(10, int(cap * PROSE_CAP_SHARE)))
+        for value in _strings_at(document, path):
+            if len(value) >= cap:
+                named = ".".join(part for part in path if part != "[]")
+                reasons.append(
+                    f"{named} is {len(value)} characters, at its {cap}-character cap: the provider "
+                    f"cut it and the ending is lost. Rewrite it in at most {bound} characters."
+                )
+                break
+    return reasons
+
+
+def _plan_schema_for_document(
+    plan: dict[str, Any], parent_brief: dict[str, Any] | None
+) -> dict[str, Any]:
+    """The schema this document was authored against, so cap fields are read from one authority."""
+    v2 = str(plan.get("plan_schema") or "") == PLAN_SCHEMA_V2_NAME
+    if parent_brief is not None and desired_pages(parent_brief) is not None:
+        return parent_plan_schema_v2(parent_brief) if v2 else parent_plan_schema(parent_brief)
+    return PLAN_SCHEMA_V2 if v2 else PLAN_SCHEMA_V1
+
+
 def enforce_plan_rules(
     plan: dict[str, Any],
     *,
@@ -3125,27 +3233,38 @@ def enforce_plan_rules(
     pre-blueprint v1 document (one implicit unit), which keeps exactly the rules it shipped with.
     The marker is read from the validated document, so a model cannot choose the weaker rule set:
     the request schema already refused a v2 request answered as v1.
+
+    Truncation is judged first and merged into whatever structural reasons the rule set found: a
+    clipped prose value is a regeneration trigger on either schema, never a stored artifact.
     """
-    if str(plan.get("plan_schema") or "") == PLAN_SCHEMA_V2_NAME:
-        _enforce_plan_rules_v2(
-            plan,
-            recipe=recipe,
-            dials=dials,
-            locale=locale,
-            ledger=ledger,
-            scope=scope,
-            parent_brief=parent_brief,
-        )
-        return
-    _enforce_plan_rules_v1(
-        plan,
-        recipe=recipe,
-        dials=dials,
-        locale=locale,
-        ledger=ledger,
-        scope=scope,
-        parent_brief=parent_brief,
-    )
+    truncated = _prose_cap_reasons(plan, _plan_schema_for_document(plan, parent_brief))
+    try:
+        if str(plan.get("plan_schema") or "") == PLAN_SCHEMA_V2_NAME:
+            _enforce_plan_rules_v2(
+                plan,
+                recipe=recipe,
+                dials=dials,
+                locale=locale,
+                ledger=ledger,
+                scope=scope,
+                parent_brief=parent_brief,
+            )
+        else:
+            _enforce_plan_rules_v1(
+                plan,
+                recipe=recipe,
+                dials=dials,
+                locale=locale,
+                ledger=ledger,
+                scope=scope,
+                parent_brief=parent_brief,
+            )
+    except _RuleViolation as exc:
+        if truncated:
+            raise _RuleViolation(truncated + list(exc.reasons)) from exc
+        raise
+    if truncated:
+        raise _RuleViolation(truncated)
 
 
 def _enforce_plan_rules_v1(
