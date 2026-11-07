@@ -110,9 +110,14 @@ def memory_connection() -> sqlite3.Connection:
 
 
 class PlanGateTest(unittest.TestCase):
-    """Finding H10-1: a validator-rejected plan is stored as an approvable draft."""
+    """Finding H10-1: a validator-rejected plan is stored as an approvable draft.
 
-    def test_rejected_plan_rows_are_draft_and_the_domain_approves_them(self) -> None:
+    H-12 (merged after this audit) makes approval fail closed. The audit-time observation is kept
+    in `docs/ADVERSARIAL-AUDIT-ROUND2.md`; this regression now asserts the fixed behavior and the
+    side-effect-free refusal, so the old bypass cannot return unnoticed.
+    """
+
+    def test_rejected_plan_rows_are_draft_and_the_domain_refuses_approval(self) -> None:
         home = tempfile.mkdtemp(prefix="cb-h10-")
         old = os.environ.get("HERMES_HOME")
         os.environ["HERMES_HOME"] = home
@@ -147,9 +152,8 @@ class PlanGateTest(unittest.TestCase):
             self.assertEqual(document["generation_state"], "needs_review")
             self.assertIsNotNone(document["validation_id"])
 
-            # The generation job already created the course row; enroll in it, then approve the
-            # rejected plan through the real handler. plan.approve only checks the hash and that
-            # state != 'approved'; it never consults the validation record.
+            # The generation job already created the course row; enroll in it, then attempt to
+            # approve the rejected plan through the real handler. H-12 makes this fail closed.
             enrollment = api.dispatch({
                 "contract": api.RPC_CONTRACT, "contract_version": api.RPC_CONTRACT_VERSION,
                 "method": "enrollment.create", "operation_id": "op-h10-enroll",
@@ -165,11 +169,13 @@ class PlanGateTest(unittest.TestCase):
                 "payload": {"enrollment_id": enrollment["result"]["enrollment_id"],
                             "plan_id": result["plan_id"], "plan_hash": current_hash},
             })
-            self.assertTrue(approval["ok"], approval)
+            self.assertFalse(approval["ok"], approval)
+            self.assertEqual(approval["error"]["code"], "VALIDATION_FAILED")
+            self.assertEqual(approval["error"]["details"]["reason"], "plan_not_validated")
             with db.read() as readable:
                 approved = readable.execute("SELECT state FROM plans WHERE id = ?",
                                             (result["plan_id"],)).fetchone()["state"]
-            self.assertEqual(approved, "approved")
+            self.assertEqual(approved, "draft")
         finally:
             if old is None:
                 os.environ.pop("HERMES_HOME", None)
