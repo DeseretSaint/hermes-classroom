@@ -1,0 +1,593 @@
+{
+  "auditor": "sentinel (cbqa)",
+  "card": "H-63R / t_af57b886",
+  "date": "2026-11-07",
+  "defects": [
+    {
+      "evidence": "job_1a348fd966c541bea02a270f4a591fb6 was created over HTTP, then claimed and executed by the isolated `hermes serve` process on port 44229 while the agent-side pump returned finished=[]; that run recorded research.status='unavailable' (no source fetched) and rejected the plan for a deterministic rule.",
+      "id": "D-H63-1",
+      "severity": "P1",
+      "title": "serve/dashboard process executes the job tick without the host research seam",
+      "why_it_matters": "This is the same class as the card's stalled RPC job: the process the Desktop talks to can run generation with no agent tools, so every RPC-created job gets zero research support even though a properly bound agent tick does ground research."
+    },
+    {
+      "evidence": "topic1 learner_outcome length=600 (cap 600) ends '...do not establish,so'; topic2 evidence_note length=400 (cap 400) ends '...excluded as a'; topic2 parent.reading_level length=40 (cap 40) contains 'chart-l\\u6279'. The independent validator rejected all three as incomplete/corrupted.",
+      "id": "D-H63-2",
+      "severity": "P2",
+      "title": "plan prose fields are hard-truncated at JSON-schema maxLength, producing mid-word and mid-codepoint artifacts",
+      "why_it_matters": "The generator asks for prose at the schema cap and the provider truncates at the limit; the validator then correctly refuses the plan, so a live arbitrary topic can never be approved when the model writes near the cap."
+    },
+    {
+      "evidence": "topic3: jobs.cancel -> cancel_requested at 8.2s; job reached completed_late at 244.3s after authoring the whole plan. No stage boundary existed to stop at.",
+      "id": "D-H63-3",
+      "severity": "P3",
+      "title": "cancel during a running provider call is only honoured after the call returns",
+      "why_it_matters": "Documented contract behaviour (completed_late), but a user who cancels still pays for and receives a full generation; the UI copy must not promise an immediate stop."
+    }
+  ],
+  "follow_up": "H-63F: bind the research/validator seams for the serve tick or keep the tick in the agent process only; and make plan prose length-aware (no hard maxLength truncation) before an arbitrary-topic live plan can be approved.",
+  "isolated_home": "/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home",
+  "provider": {
+    "author": "nous / deepseek/deepseek-v4.1-flash-1017",
+    "validator": "nous / deepseek/deepseek-v4.1-flash"
+  },
+  "provider_calls_are_live": true,
+  "runs": [
+    {
+      "bound_s": 600,
+      "checks": 1,
+      "elapsed_to_terminal_s": 270.3,
+      "generation_status": "needs_review",
+      "generator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous"
+      },
+      "job_id": "job_0b8f30e6691c401a8c7baf191545816c",
+      "job_lease_at_end": null,
+      "objectives": 1,
+      "plan_schema": "coursebook.plan.v2",
+      "progress_message": "plan authored (needs_review)",
+      "pump": {
+        "done_at_s": 268.9,
+        "finished": [
+          {
+            "artifact_ids": [],
+            "attempt_id": "att_4b43ea917c304228b54ecb030e4b4296",
+            "brief": {
+              "course_id": "crs_962aa032433240a5a4c0ca49af83e021",
+              "dials": {
+                "assessment": "none",
+                "autonomy": "guided",
+                "depth": "working",
+                "pace": "light"
+              },
+              "enrollment_id": "enr_7bad3e1caf5f464b9c3d3de2488f5c52",
+              "goal": "How does a bicycle derailleur index through its gears?",
+              "recipe": "one_off",
+              "scope": "single",
+              "stage": "plan",
+              "subject_domain": "repair"
+            },
+            "cancel_requested_at": null,
+            "checkpoint": {
+              "domain_provenance": {
+                "declared_locale": null,
+                "declared_subject_domain": "repair",
+                "resolved_domain": "technical_procedure",
+                "source": "declared",
+                "target_language": null
+              },
+              "generation_state": "needs_review",
+              "last_stage": "plan",
+              "next_unit_ordinal": 1,
+              "objectives": 1,
+              "plan_hash": "sha256:0f3cab63d2682c3262d37cb01c9295ae6ef081954856f7deb8d7cef3230eb558",
+              "plan_id": "02cad489af559a74",
+              "plan_schema": "coursebook.plan.v2",
+              "plan_version": 2,
+              "units": 1
+            },
+            "created_at": "2026-11-07T19:49:57Z",
+            "error": null,
+            "job_id": "job_0b8f30e6691c401a8c7baf191545816c",
+            "kind": "plan",
+            "lease": null,
+            "operation_id": "h63-jobs-create-1794080997031079567",
+            "progress": {
+              "message": "plan authored (needs_review)",
+              "stage": "plan",
+              "steps_done": 1,
+              "steps_total": 1
+            },
+            "state": "completed",
+            "updated_at": "2026-11-07T19:54:25Z"
+          }
+        ]
+      },
+      "rejection_reasons": [
+        "objective 1 evidence_criteria[3] (indexing left open): Marks a learner wrong for stating the true cable-tension indexing mechanism; a correct answer from prior knowledge is scored as a failure, which teaches the learner that a true statement is false.",
+        "objective 1 evidence_criteria[4] (no cable tension/limit screw/adjustment claims: Penalises true statements about cable tension, limit screws and adjustment; scope discipline should not be a pass/fail tick that marks correct content as an error.",
+        "plan.learner_outcome: The outcome string is truncated mid-clause ('...do not establish,so'), so the plan's statement of what the learner will produce is incomplete and cannot be delivered or checked as written."
+      ],
+      "research_failures": 0,
+      "research_queries": 2,
+      "research_reason": null,
+      "research_sources": 4,
+      "research_status": "ok",
+      "tag": "topic1-derailleur",
+      "terminal_state": "completed",
+      "timeline": [
+        {
+          "elapsed_s": 0.2,
+          "lease": null,
+          "message": "",
+          "stage": "queued",
+          "state": "queued"
+        },
+        {
+          "elapsed_s": 2.2,
+          "lease": {
+            "expires_at": "2026-11-07T19:51:57Z",
+            "owner": "worker-9b3acb930caf"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 4.2,
+          "lease": {
+            "expires_at": "2026-11-07T19:51:57Z",
+            "owner": "worker-9b3acb930caf"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 270.3,
+          "lease": null,
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "state": "completed"
+        }
+      ],
+      "truncation": {
+        "evidence_note": {
+          "at_cap": false,
+          "length": 294,
+          "schema_max": 400,
+          "tail": "he summary's own statements."
+        },
+        "learner_outcome": {
+          "at_cap": true,
+          "length": 600,
+          "schema_max": 600,
+          "tail": "excerpts do not establish,so"
+        }
+      },
+      "units": 1,
+      "usage_calls": 4,
+      "validation_independence": "independent",
+      "validation_verdict": "reject",
+      "validator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "provider": "nous"
+      }
+    },
+    {
+      "bound_s": 600,
+      "checks": 1,
+      "elapsed_to_terminal_s": 302.3,
+      "generation_status": "needs_review",
+      "generator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous"
+      },
+      "job_id": "job_ce74bba08e85405fbb21bb13001f57bc",
+      "job_lease_at_end": null,
+      "objectives": 1,
+      "plan_schema": "coursebook.plan.v2",
+      "progress_message": "plan authored (needs_review)",
+      "pump": {
+        "done_at_s": 301.2,
+        "finished": [
+          {
+            "artifact_ids": [],
+            "attempt_id": "att_8805f0270bd34446a6cdc4184a9d950e",
+            "brief": {
+              "course_id": "crs_99290f8333ee496eb9d1d8f9502bdddd",
+              "dials": {
+                "assessment": "none",
+                "autonomy": "guided",
+                "depth": "working",
+                "pace": "light"
+              },
+              "enrollment_id": "enr_e75322998b7d4926af02c3e9dd8a063b",
+              "goal": "Find the relative minor on the circle of fifths",
+              "recipe": "one_off",
+              "scope": "single",
+              "stage": "plan",
+              "subject_domain": "music"
+            },
+            "cancel_requested_at": null,
+            "checkpoint": {
+              "domain_provenance": {
+                "declared_locale": null,
+                "declared_subject_domain": "music",
+                "resolved_domain": "music",
+                "source": "declared",
+                "target_language": null
+              },
+              "generation_state": "needs_review",
+              "last_stage": "plan",
+              "next_unit_ordinal": 1,
+              "objectives": 1,
+              "plan_hash": "sha256:5a29b502af2293b49b521358a8a670422bc73fa33cf1ac3bd78771761a93837d",
+              "plan_id": "150f448ab59140a4",
+              "plan_schema": "coursebook.plan.v2",
+              "plan_version": 2,
+              "units": 1
+            },
+            "created_at": "2026-11-07T19:54:56Z",
+            "error": null,
+            "job_id": "job_ce74bba08e85405fbb21bb13001f57bc",
+            "kind": "plan",
+            "lease": null,
+            "operation_id": "h63-jobs-create-1794081296338646522",
+            "progress": {
+              "message": "plan authored (needs_review)",
+              "stage": "plan",
+              "steps_done": 1,
+              "steps_total": 1
+            },
+            "state": "completed",
+            "updated_at": "2026-11-07T19:59:57Z"
+          }
+        ]
+      },
+      "rejection_reasons": [
+        "plan.goal: The goal promises a general skill ('Find the relative minor on the circle of fifths') that the single C major objective and the exclusions cannot deliver; a learner would finish without the stated capability.",
+        "parent.reading_level: Value is corrupted: 'Plain English, short sentences; chart-l\u6279' contains a stray CJK character and an unfinished word, so it cannot be shown to a parent.",
+        "plan.evidence_note: The note is truncated mid-sentence ('...is excluded as a'), leaving the rationale incomplete and unusable.",
+        "check_plan[0]: A learner ticking their own checklist cannot produce evidence of comprehension, and two of the three criteria test recognition/recall; the stated evidence target is not met by the instrument."
+      ],
+      "research_failures": 1,
+      "research_queries": 2,
+      "research_reason": "1 fetch failure(s); first: https://paddystudio.com/tools/circle-of-fifths/?k=Gm: venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environments/8f3bc04345f24c\u2026",
+      "research_sources": 3,
+      "research_status": "degraded",
+      "tag": "topic2-relative-minor",
+      "terminal_state": "completed",
+      "timeline": [
+        {
+          "elapsed_s": 0.2,
+          "lease": null,
+          "message": "",
+          "stage": "queued",
+          "state": "queued"
+        },
+        {
+          "elapsed_s": 2.2,
+          "lease": {
+            "expires_at": "2026-11-07T19:56:56Z",
+            "owner": "worker-7df596b299ce"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 4.2,
+          "lease": {
+            "expires_at": "2026-11-07T19:56:56Z",
+            "owner": "worker-7df596b299ce"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 302.3,
+          "lease": null,
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "state": "completed"
+        }
+      ],
+      "truncation": {
+        "evidence_note": {
+          "at_cap": true,
+          "length": 400,
+          "schema_max": 400,
+          "tail": "tive minors is excluded as a"
+        },
+        "learner_outcome": {
+          "at_cap": false,
+          "length": 355,
+          "schema_max": 600,
+          "tail": "al procedure for other keys."
+        },
+        "parent.reading_level": {
+          "bytes": 42,
+          "length": 40,
+          "repr": "Plain English, short sentences; chart-l\u6279",
+          "schema_max": 40
+        }
+      },
+      "units": 1,
+      "usage_calls": 4,
+      "validation_independence": "independent",
+      "validation_verdict": "reject",
+      "validator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "provider": "nous"
+      }
+    },
+    {
+      "bound_s": 600,
+      "checks": 1,
+      "elapsed_to_terminal_s": 244.3,
+      "generation_status": "needs_review",
+      "generator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous"
+      },
+      "job_id": "job_84e393160b994db78c345dd736d2a459",
+      "job_lease_at_end": null,
+      "objectives": 1,
+      "plan_schema": "coursebook.plan.v2",
+      "progress_message": "plan authored (needs_review)",
+      "pump": {
+        "done_at_s": 243.6,
+        "finished": [
+          {
+            "artifact_ids": [],
+            "attempt_id": "att_159434a6e3d9424bbb1f676272dab3a6",
+            "brief": {
+              "course_id": "crs_8428eceaa7264646ace3b6d03c1aea0d",
+              "dials": {
+                "assessment": "none",
+                "autonomy": "guided",
+                "depth": "survey",
+                "pace": "light"
+              },
+              "enrollment_id": "enr_3345f7af39434768a195b6982f9d6451",
+              "goal": "Sharpen a kitchen knife safely with a whetstone",
+              "recipe": "one_off",
+              "scope": "single",
+              "stage": "plan",
+              "subject_domain": "repair"
+            },
+            "cancel_requested_at": null,
+            "checkpoint": {
+              "domain_provenance": {
+                "declared_locale": null,
+                "declared_subject_domain": "repair",
+                "resolved_domain": "technical_procedure",
+                "source": "declared",
+                "target_language": null
+              },
+              "generation_state": "needs_review",
+              "last_stage": "plan",
+              "next_unit_ordinal": 1,
+              "objectives": 1,
+              "plan_hash": "sha256:410c5b1412477650821ae6f83b03e709579c1643b9878329ccefbb3264c123ef",
+              "plan_id": "59c7c6006e4df8b4",
+              "plan_schema": "coursebook.plan.v2",
+              "plan_version": 2,
+              "units": 1
+            },
+            "created_at": "2026-11-07T20:00:18Z",
+            "error": null,
+            "job_id": "job_84e393160b994db78c345dd736d2a459",
+            "kind": "plan",
+            "lease": null,
+            "operation_id": "h63-jobs-create-1794081618196918345",
+            "progress": {
+              "message": "plan authored (needs_review)",
+              "stage": "plan",
+              "steps_done": 1,
+              "steps_total": 1
+            },
+            "state": "completed_late",
+            "updated_at": "2026-11-07T20:04:21Z"
+          }
+        ]
+      },
+      "rejection_reasons": [
+        "objective 1 / unit 1: The only objective verifies that a guide exists and never addresses the stated goal of sharpening a knife safely; presenting it as the plan for this goal leaves the goal unmet.",
+        "check_plan[0] verification checklist: The checklist collects a title, a publisher and a stated intention, which is attestation rather than comprehension, so it cannot evidence the declared comprehension target."
+      ],
+      "research_failures": 1,
+      "research_queries": 1,
+      "research_reason": "1 fetch failure(s); first: https://www.foodandwine.com/how-to-sharpen-kitchen-knives-according-to-knife-makers-amazon-12140560: venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/instal\u2026",
+      "research_sources": 1,
+      "research_status": "degraded",
+      "tag": "topic3-cancel",
+      "terminal_state": "completed_late",
+      "timeline": [
+        {
+          "elapsed_s": 0.2,
+          "lease": null,
+          "message": "",
+          "stage": "queued",
+          "state": "queued"
+        },
+        {
+          "elapsed_s": 2.2,
+          "lease": {
+            "expires_at": "2026-11-07T20:02:18Z",
+            "owner": "worker-b645f1693879"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 4.2,
+          "lease": {
+            "expires_at": "2026-11-07T20:02:18Z",
+            "owner": "worker-b645f1693879"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 10.2,
+          "lease": {
+            "expires_at": "2026-11-07T20:02:18Z",
+            "owner": "worker-b645f1693879"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "cancel_requested"
+        },
+        {
+          "elapsed_s": 244.3,
+          "lease": null,
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "state": "completed_late"
+        }
+      ],
+      "truncation": {
+        "evidence_note": {
+          "at_cap": false,
+          "length": 208,
+          "schema_max": 400,
+          "tail": "n teaching sharpening steps."
+        },
+        "learner_outcome": {
+          "at_cap": false,
+          "length": 279,
+          "schema_max": 600,
+          "tail": "sharpening procedure itself."
+        }
+      },
+      "units": 1,
+      "usage_calls": 4,
+      "validation_independence": "independent",
+      "validation_verdict": "reject",
+      "validator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "provider": "nous"
+      }
+    },
+    {
+      "bound_s": 600,
+      "checks": 1,
+      "elapsed_to_terminal_s": 94.1,
+      "generation_status": "needs_review",
+      "generator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous"
+      },
+      "job_id": "job_1a348fd966c541bea02a270f4a591fb6",
+      "job_lease_at_end": null,
+      "objectives": 1,
+      "plan_schema": "coursebook.plan.v2",
+      "progress_message": "plan authored (needs_review)",
+      "pump": {
+        "done_at_s": 0.0,
+        "finished": []
+      },
+      "rejection_reasons": [
+        "a one-off brief is not a parent-led lesson"
+      ],
+      "research_failures": 0,
+      "research_queries": 2,
+      "research_reason": "no source could be fetched",
+      "research_sources": 0,
+      "research_status": "unavailable",
+      "tag": "topic4-http",
+      "terminal_state": "completed",
+      "timeline": [
+        {
+          "elapsed_s": 0.0,
+          "lease": {
+            "expires_at": "2026-11-07T20:07:37Z",
+            "owner": "worker-e00435cbf616"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 2.0,
+          "lease": {
+            "expires_at": "2026-11-07T20:07:37Z",
+            "owner": "worker-e00435cbf616"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 4.0,
+          "lease": {
+            "expires_at": "2026-11-07T20:07:37Z",
+            "owner": "worker-e00435cbf616"
+          },
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 94.1,
+          "lease": null,
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "state": "completed"
+        }
+      ],
+      "truncation": {
+        "evidence_note": {
+          "at_cap": false,
+          "length": 164,
+          "schema_max": 400,
+          "tail": "st, not as established fact."
+        },
+        "learner_outcome": {
+          "at_cap": false,
+          "length": 285,
+          "schema_max": 600,
+          "tail": "hifting are different cases."
+        },
+        "parent.reading_level": {
+          "bytes": 18,
+          "length": 18,
+          "repr": "age 12-14 / guided",
+          "schema_max": 40
+        }
+      },
+      "units": 1,
+      "usage_calls": 3,
+      "validation_independence": "unidentified",
+      "validation_verdict": "reject",
+      "validator": {
+        "known": false,
+        "model": null,
+        "provider": null
+      }
+    }
+  ],
+  "search_backend": "host web_search/web_extract tools through coursebook.research.HermesToolSearch",
+  "source_commit": "ea5f15d",
+  "verdicts": {
+    "approvable_live_plan": "FAIL",
+    "cancel_reaches_terminal": "PASS (completed_late; running provider call not interrupted)",
+    "cross_model_validation": "PASS",
+    "live_loop_terminates_in_process_with_seams": "PASS",
+    "live_research_grounded": "PASS",
+    "serve_process_runs_tick_without_research_seam": "FAIL (defect D-H63-1)"
+  }
+}
