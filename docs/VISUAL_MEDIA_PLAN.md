@@ -120,7 +120,68 @@ Replace the current list-first home with:
 The home must answer "what do I do next?" in one glance. It must not become a dashboard of
 vanity metrics.
 
-## 4. Lesson document model
+## 4. Capability policy and rubric angles
+
+The harness must decide **what kind of lesson this is** before it decides what to generate. A
+head-gasket procedure needs a deterministic schematic and a verification checklist; a Japanese
+greeting needs narration and a production check; an algebra derivation needs neither an image nor
+audio and should not get either.
+
+Introduce one explicit, testable `LessonCapabilityPolicy` (new module `coursebook/policy.py`) with
+inputs:
+
+```
+recipe            one_off | casual | committed | companion | parent
+evidence_target   recall | comprehension | production | discrimination | procedure | transfer
+lesson_intent     the authored section intent
+locale / level     language and scaffold context
+subject_domain    language | technical_procedure | mathematics | history | ... (advisory)
+```
+
+It returns a typed plan, not prose:
+
+```
+image:      none | optional | required
+image_role: illustration | schematic | sourced_reference
+audio:      none | optional | required
+audio_role: narration | pronunciation_reference
+check_angle: recall | comprehension | production | discrimination | procedure | transfer
+             | verification | observation
+rubric_profile: concept_explanation | procedural | language_production | recall_accuracy
+                | source_analysis | observation
+```
+
+Hard rules:
+
+- Default is `none` for both media. Media is added only when it carries the lesson's evidence.
+- An abstract, symbolic or grammar lesson gets no image and no audio unless the authored intent
+  names a genuinely visual or oral construct.
+- A language pronunciation/production objective may require narration; a reading/writing
+  objective must not get narration merely because the course has a locale.
+- A technical procedure may require a schematic or a permissioned source image; an AI
+  illustration is context only and is never a measurement, sequence or safety authority.
+- A one-off practical brief gets a verification checklist, not a quiz, and no decorative media.
+- A parent lesson gets parent observation, not a child quiz.
+- The policy is deterministic and tested over a matrix of representative lessons (head gasket,
+  Japanese greeting, algebra, history source analysis, wiring brief, parent reading lesson).
+- The model may propose media, but the policy and validator reject media that the lesson does not
+  justify. The prompt must ask for media only when the policy permits it; the validator must not
+  invent a media requirement after the fact.
+
+Rubrics are selected by construct, not one generic template:
+
+- concept explanation: accurate claim, mechanism, example, limits;
+- procedural: ordered steps, safety stop condition, verification;
+- language production: target phrase, pronunciation/fluency, meaning, register;
+- recall accuracy: correct answer, accepted alternatives, no cue leakage;
+- source analysis: claim, evidence, provenance, contradiction handling;
+- observation: observable behavior, context, note, follow-up.
+
+Every profile still requires at least three distinct observable criteria. “Understands” is never a
+criterion. The rubric profile is recorded on the plan/lesson and checked against the objective's
+evidence target.
+
+## 5. Lesson document model
 
 One validated `LessonDocument` is stored per section and shared by every view.
 
@@ -172,7 +233,7 @@ contract v8 read shape, projected from the existing validated page first, then a
 by the lesson prompt. Do not rewrite old rows. A v7 page renders in Textbook with a clear "this
 older lesson has no guided view" state rather than a broken toggle.
 
-## 5. Media architecture
+## 6. Media architecture
 
 ### 5.1 Host seams
 
@@ -241,7 +302,7 @@ Audio never autoplays. A "Play" control is explicit and keyboard reachable. Imag
 respect the reduced-data/text-only path. Every media item has a visible provenance line and a
 caption.
 
-## 6. Pronunciation: a real practice loop, not a fake score
+## 7. Pronunciation: a real practice loop, not a fake score
 
 The language-audio path is:
 
@@ -274,7 +335,7 @@ Privacy: audio is sent only after an explicit record action and a visible disclo
 configured STT provider; takes are deleted after scoring unless the learner saves them. The
 recording is never included in a community pack or an export.
 
-## 7. Technical visuals and procedure lessons
+## 8. Technical visuals and procedure lessons
 
 For a head-gasket or similar procedure, the lesson view uses:
 
@@ -289,7 +350,7 @@ The model may propose the structured facts, but the validator must check them ag
 source ledger. An AI illustration can set context; it cannot carry a torque value, a clearance,
 a sequence or a safety instruction.
 
-## 8. Contract and schema changes
+## 9. Contract and schema changes
 
 This is a product-line change, so it gets a versioned contract, not an ad-hoc extra field.
 
@@ -317,7 +378,7 @@ generated, the pack may carry `narration` as `audio/mpeg` with its transcript; t
 pack rule that narration is audio-only stays. A text-only narration script remains the
 narration tab, not a fake audio file.
 
-## 9. Delivery phases
+## 10. Delivery phases
 
 ### Phase M0 — media truth (first vertical slice)
 
@@ -360,7 +421,7 @@ narration tab, not a fake audio file.
   text-only.
 - F-01 contrast remains a gate.
 
-## 10. Acceptance bar
+## 11. Acceptance bar
 
 The product line is ready only when all of these are true on one recorded commit:
 
@@ -380,7 +441,7 @@ The product line is ready only when all of these are true on one recorded commit
   equivalents; it never contains attempts, recordings, notebook notes or provider settings.
 - Publication remains gated on the operator's final sign-off.
 
-## 11. Non-goals for this phase
+## 12. Non-goals for this phase
 
 - No chat-only "AI tutor" that replaces the validated lesson document.
 - No generated image used as a measurement, torque spec, procedure authority or safety
@@ -390,7 +451,7 @@ The product line is ready only when all of these are true on one recorded commit
 - No visual skin that breaks Hermes theme tokens or the light/dark contrast floor.
 - No new provider key path in the plugin.
 
-## 12. Open decisions
+## 13. Open decisions
 
 1. **Release boundary.** Recommend: land M0 as the media truth slice for the hackathon
    candidate; keep M1–M4 on the product line. Do not stuff the visual rewrite into the RC.
