@@ -26,6 +26,11 @@ tail in §10. `docs/CB016-RELEASE-VERIFICATION.md` is the earlier record at `e93
 two condition captures. The adversarial report on the previous candidate is `docs/REVIEW_CB014.md`
 (candidate `f4a42f34`, NO-GO on the Desktop route, not on the backend).
 
+Master has since advanced beyond `29bede7` with the M0 host-media slice (`3cead45`); the 0.1.0
+evidence above is still the `29bede7` record and has not been re-run on the new tree. The
+default-profile demo gate `t_6a32ffe9` must measure current master after the operator restarts
+that gateway; publication remains gated by `docs/SUBMISSION.md` §0.
+
 Three states are used below. **Working** means a command was run against this build and passed.
 **Implemented, unverified in the UI** means the backend path is implemented and tested, and the
 Desktop surface exists, but this release pass did not drive it through the UI. **Absent** means
