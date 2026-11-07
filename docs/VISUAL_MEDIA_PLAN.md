@@ -330,8 +330,10 @@ narration tab, not a fake audio file.
 - Add the `/media/{artifact_id}` preview route and render images/audio in the lesson page.
 - Tests: fake producer, cache hit, provider failure/text fallback, MIME rejection, media segment
   seeding, UI contract scanner. No real provider in unit tests.
-- Evidence: one real image and one real TTS artifact generated through the host, stored as
-  artifacts and visible in a live lesson pane.
+- Evidence: one real image and one real TTS artifact generated through the host and accepted by the
+  artifact layer (`docs/M0-MEDIA-PROBE.md`); the lesson-pane projection and renderer are covered by
+  `tests/test_media_generation.py`. A live lesson-pane observation remains gated by the
+  operator-owned default-gateway restart (`t_6a32ffe9`).
 
 ### Phase M1 — LessonDocument and Textbook/Guided
 
