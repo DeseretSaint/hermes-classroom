@@ -31,12 +31,34 @@ The signals are structural:
     exactly three dots and is a continuation marker; two dots is a truncation artifact.
 
 ``ends on a dangling function word``
-    The final word cannot end a sentence ("and", "not", "the", "to", "because", ...). This is the
-    signal that catches an ending which *did* keep its terminal period but lost its complement
-    (the audit's ``"…, not."`` shape).
+    The final word cannot end a sentence ("and", "not", "the", "because", ...), or it is a
+    preposition whose object the sentence never supplies. This is the signal that catches an
+    ending which *did* keep its terminal period but lost its complement (the audit's
+    ``"…, not."`` shape). See *stranded prepositions* below.
 
 ``ends mid-sentence``
     The final prose line carries no terminal punctuation and declares no continuation marker.
+
+*Stranded prepositions.* English legitimately ends a clause on a preposition when the
+preposition's object has been extracted from earlier in the same sentence — "the one the *song
+resolves to*", "the note the *line ended with*", "what the *bar is for*". A word list cannot tell
+that apart from a clip that kept its period and lost the object ("…becomes the reference *for*"),
+so the distinction is structural, not a longer list:
+
+    a terminal preposition is dangling unless the word immediately before it is the finite verb
+    of its clause and at least one token precedes that verb (the clause's subject).
+
+"…resolves to." and "…the song resolves to." therefore differ: the bare "resolves to." has no
+subject and stays dangling, while "the song resolves to" is a clause with its object extracted.
+"…reference for." and "…the model from." fail because a noun precedes the preposition, not a verb.
+Verb-hood is judged by *shape* (a third-person ``-s``, ``-ed``, ``-ing``, a closed set of
+auxiliaries and irregular past forms), never by a lexicon of content verbs.
+
+Accepted false-negative risk of that rule: a complete sentence that strands a preposition after a
+bare infinitive or a base-form verb ("the shape to aim for.", "the room to practise in.") is still
+refused, because a base form is not a finite-verb cue. An over-strict gate costs one regeneration
+with the reasons attached in its revision instructions; a miss serves clipped copy to a learner, so
+the rule is deliberately biased toward refusing.
 
 Exemptions are structural, not stylistic: a text that ends inside a list item, on a table row, on a
 closed fence line or on a labelled value line (``Answer: …``, ``Step 2: …``) is terminated by that
@@ -105,14 +127,92 @@ _DANGLING_WORDS = frozenset(
     a an the
     and or but nor yet
     because if when while unless until than
-    of in on at to from with without by for about into onto over under
-    between through during before after above below across against toward towards
     as
     not
     this these those its their his her our your my
     which who whom whose
     """.split()
 )
+
+#: Prepositions are judged separately: each of these may legally end an English clause when the
+#: object has been extracted from earlier in the sentence (see *stranded prepositions* in the
+#: module docstring). A terminal preposition is dangling only when the structure gives it no verb
+#: to hang on, which is why the check below is syntactic rather than lexical.
+_PREPOSITIONS = frozenset(
+    """
+    of in on at to from with without by for about into onto over under
+    between through during before after above below across against toward towards
+    """.split()
+)
+
+#: Finite forms that can strand a preposition, treated as verbs by shape alone. The closed sets
+#: are auxiliaries/modals (which the ``_DANGLING_WORDS`` note above already rules may end a
+#: sentence) and common irregular past forms; regular ``-ed``/``-ing``/third-person ``-s`` are
+#: recognised morphologically so no content-verb lexicon is needed.
+_AUXILIARIES = frozenset(
+    """
+    am is are was were be been being do does did has have had
+    can could will would shall should may might must
+    """.split()
+)
+_IRREGULAR_FINITE = frozenset(
+    """
+    got made took gave went came ran sat put set found held kept left let lost met paid said sold
+    sent spent stood told thought understood won wrote drove flew knew saw heard brought bought
+    caught chose drew fell felt fought grew hit hung laid led meant read rode rose sang shot showed
+    shut slept spoke stole struck swept taught threw woke wore
+    """.split()
+)
+#: A determiner directly before a ``-s`` word makes it a plural noun ("the notes to"), not a
+#: third-person verb ("the song resolves to"). Same shape, different part of speech.
+_DETERMINERS = frozenset(
+    "a an the this these those my your his her its our their".split()
+)
+
+
+def _verb_like(token: str, before: str | None = None) -> bool:
+    """Whether ``token`` has the shape of a finite verb, judged morphologically."""
+    word = token.lower()
+    if (before or "").lower() in _AUXILIARIES:
+        return True  # "is built", "was made", "has ended" — a periphrastic finite verb
+    if word in _AUXILIARIES or word in _IRREGULAR_FINITE:
+        return True
+    if len(word) >= 4 and word.endswith("ed"):
+        return True
+    if len(word) >= 5 and word.endswith("ing"):
+        return True
+    if (
+        len(word) >= 3
+        and word.endswith("s")
+        and not word.endswith(("ss", "us", "is"))
+        and (before or "").lower() not in _DETERMINERS
+    ):
+        return True
+    return False
+
+
+def _strands_preposition(text: str, word: str) -> bool:
+    """True when a terminal ``word`` is a preposition left in place by object extraction.
+
+    ``text`` ends with ``word``. The structural cue is that the token immediately before the
+    preposition is a finite verb and something precedes that verb as its subject: "the song
+    resolves to" strands ``to``, while "the reference for" has only a noun in front of it and
+    "resolves to" has no subject at all.
+    """
+    if word.lower() not in _PREPOSITIONS:
+        return False
+    tokens = re.findall(r"[A-Za-z']+", text)
+    if len(tokens) < 3:  # subject + finite verb + the preposition
+        return False
+    return _verb_like(tokens[-2], tokens[-3])
+
+
+def _dangling_end(text: str, word: str) -> bool:
+    """Whether ``word``, which ends ``text``, is a dangling function word or preposition."""
+    if word in _PREPOSITIONS:
+        return not _strands_preposition(text, word)
+    return word in _DANGLING_WORDS
+
 
 
 def _is_blank(line: str) -> bool:
@@ -233,7 +333,7 @@ def completeness_problems(text: Any, *, where: str, prose: bool = True) -> list[
         if _trailing_marker(body) is not None:
             return problems
         dangling = _last_word(body.rstrip(".,;:")).lower()
-        if body.endswith((",", ";", ":")) or (dangling in _DANGLING_WORDS):
+        if body.endswith((",", ";", ":")) or _dangling_end(body.rstrip(".,;:"), dangling):
             problems.append(
                 prefix
                 + " truncated_checklist: ends on a list item that stops mid-item "
@@ -260,8 +360,9 @@ def completeness_problems(text: Any, *, where: str, prose: bool = True) -> list[
         )
         return problems
     if core and core[-1] in _TERMINAL:
-        dangling = _last_word(core.rstrip(".!?\u2026\u3002\uff01\uff1f\uff61")).lower()
-        if dangling in _DANGLING_WORDS:
+        clause = core.rstrip(".!?\u2026\u3002\uff01\uff1f\uff61")
+        dangling = _last_word(clause).lower()
+        if _dangling_end(clause, dangling):
             problems.append(
                 prefix
                 + " dangling_terminal_word: ends on "

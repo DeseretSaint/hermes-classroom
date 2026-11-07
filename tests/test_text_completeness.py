@@ -147,6 +147,93 @@ class CompletenessRulesTest(unittest.TestCase):
         )
 
 
+class StrandedPrepositionTest(unittest.TestCase):
+    """H-51: a clause-final preposition with its object earlier is complete, not a cut.
+
+    The rule the gate uses is structural: a terminal preposition is dangling unless the token
+    before it is a finite verb and something precedes that verb as its subject. These are the
+    false positives that rule removes, and the genuine cuts it must keep refusing.
+    """
+
+    #: One complete sentence per preposition the gate used to refuse. Every one ends on a
+    #: preposition whose object was extracted from earlier in the same sentence.
+    COMPLETE = (
+        "The home chord is the one the song resolves to.",
+        "Name the interval the chorus is built of.",
+        "This is the room the lesson begins in.",
+        "Ask which chord the bridge builds on.",
+        "Ask what the second bar is for.",
+        "Play the note the previous line ended with.",
+        "Recall the question the unit asks about.",
+        "Name the fret the player looks at.",
+        "Say which rule the example is governed by.",
+        "Name the note the phrase starts from.",
+        # The card's comma case: a stranded preposition before a further complete clause.
+        "Ask which chord the bridge resolves to, and name the note it lands on.",
+    )
+
+    #: Genuine cut-offs: the period survived, the object did not.
+    CUT_OFF = (
+        "Every good practice session becomes the reference for.",
+        "becomes the reference for.",
+        "The lesson builds a habit and the learner copies the model from.",
+        "The rule is: connect the joint, then inspect, not.",
+    )
+
+    def problems(self, text: str) -> list[str]:
+        return text_completeness.completeness_problems(text, where="body")
+
+    def test_complete_sentences_ending_in_a_stranded_preposition_pass(self) -> None:
+        for body in self.COMPLETE:
+            with self.subTest(body=body):
+                self.assertEqual(self.problems(body), [])
+
+    def test_a_genuine_cut_ending_in_a_preposition_still_fails(self) -> None:
+        for body in self.CUT_OFF:
+            with self.subTest(body=body):
+                self.assertEqual(_checks(self.problems(body)), {"dangling_terminal_word"})
+
+    def test_a_bare_verb_with_no_subject_does_not_excuse_a_preposition(self) -> None:
+        # The clause's subject is the structural cue; "resolves to." alone has none.
+        self.assertEqual(
+            _checks(self.problems("The song explains what the practice resolves to.")), set()
+        )
+        self.assertEqual(
+            _checks(self.problems("resolves to.")), {"dangling_terminal_word"}
+        )
+
+    def test_a_complete_checklist_item_may_end_in_a_stranded_preposition(self) -> None:
+        self.assertEqual(
+            self.problems("Steps:\n- deflate the tyre\n- play the chord the song resolves to"),
+            [],
+        )
+        truncated = "Steps:\n- deflate the tyre\n- play the chord the song resolves to the"
+        self.assertEqual(_checks(self.problems(truncated)), {"truncated_checklist"})
+
+    def test_a_terminal_strand_after_a_bare_infinitive_is_still_refused(self) -> None:
+        """Accepted false-negative risk, pinned: a base form is not a finite-verb cue."""
+        self.assertEqual(
+            _checks(self.problems("The shape to aim for.")), {"dangling_terminal_word"}
+        )
+
+    def test_a_truncated_lesson_short_is_still_rejected_after_the_relaxation(self) -> None:
+        block = {
+            "id": "blk_h51_00001",
+            "role": "explain",
+            "headline": "Home chord",
+            "short": "The home chord is what the whole song is built for.",
+            "deep": "The home chord is the one the song resolves to.",
+            "check_id": None,
+            "media": [],
+            "source_ids": [],
+        }
+        lesson_document.validate_blocks([block])
+        block["short"] = "The home chord is what the whole song is built for"
+        with self.assertRaises(lesson_document.LessonDocumentError) as caught:
+            lesson_document.validate_blocks([block])
+        self.assertIn("mid_sentence_end", str(caught.exception))
+
+
 class LessonDocumentGateTest(unittest.TestCase):
     """The document validator is the shared gate: authoring and ``lesson.page`` readiness."""
 
