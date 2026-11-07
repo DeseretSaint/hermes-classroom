@@ -226,6 +226,8 @@ class DesktopRegistrationTest(unittest.TestCase):
                 # CB-011 Parent Studio: the third destination and "write a brief" intent.
                 "studio",
                 "studio-new",
+                # H-27: the student syllabus path is its own intent, not a pack.
+                "syllabus",
             },
         )
 
