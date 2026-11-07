@@ -2226,13 +2226,18 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
   const current = desk.current
   const title = current ? current.title : desk.nextLabel
   const courseTitle = desk.row && desk.row.title ? desk.row.title : null
+  // At a genuinely narrow route the stamp would steal the last usable line length from the title.
+  // Keep it on the wide desk, where it reads as a course cover; drop it when the text must lead.
+  const viewportWidth = useCbViewportWidth()
+  const compact = viewportWidth > 0 && viewportWidth < 620
   return jsxs('section', {
     'data-cb-continue': '',
+    'data-cb-continue-compact': compact ? 'true' : 'false',
     style: {
       display: 'flex',
       flexDirection: 'column',
       gap: '0.65rem',
-      padding: '1.1rem 1.2rem 1.15rem',
+      padding: compact ? '0.9rem 0.95rem' : '1.1rem 1.2rem 1.15rem',
       background: 'var(--cb-paper-raised)',
       border: '1px solid var(--cb-rule)',
       borderTop: '3px solid var(--cb-accent)',
@@ -2240,10 +2245,10 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
     },
     children: [
       jsxs('div', {
-        style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' },
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem 1rem' },
         children: [
           jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0 },
+            style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0, flex: '1 1 16rem' },
             children: [
               jsx(DeskLabel, { children: 'Continue' }),
               courseTitle
@@ -2254,7 +2259,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
                       fontWeight: 600,
                       lineHeight: 1.4,
                       color: 'var(--cb-ink)',
-                      overflowWrap: 'anywhere'
+                      overflowWrap: 'break-word'
                     },
                     children: courseTitle
                   })
@@ -2263,11 +2268,11 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
                 'data-cb-continue-section': '',
                 style: {
                   margin: 0,
-                  fontSize: 'clamp(1.25rem, 1rem + 1vw, 1.95rem)',
+                  fontSize: compact ? '1.35rem' : 'clamp(1.25rem, 1rem + 1vw, 1.95rem)',
                   lineHeight: 1.18,
                   letterSpacing: '-0.01em',
                   color: 'var(--cb-ink)',
-                  overflowWrap: 'anywhere'
+                  overflowWrap: 'break-word'
                 },
                 children: title
               }),
@@ -2295,7 +2300,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
               jsx(DeskStats, { desk })
             ]
           }),
-          jsx(CourseStamp, { title: courseTitle || title, large: true })
+          compact ? null : jsx(CourseStamp, { title: courseTitle || title, large: true })
         ]
       }),
       jsxs('p', {
@@ -2928,6 +2933,7 @@ function FieldDeskHome({
 
   return jsxs('div', {
     'data-cb-desk': 'ready',
+    'data-cb-desk-layout': wide ? 'wide' : 'stacked',
     style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
     children: [
       stale
@@ -7893,6 +7899,41 @@ function useCbMotion() {
 
 /** Live width from `host.state.viewport`, with a static read for hosts that predate the atom. */
 function useCbViewportWidth() {
+  // The host atom reports the whole application window. Coursebook can sit in a much narrower
+  // route pane (for example beside the chat rail), and choosing the wide shell from the window
+  // width squeezes the Continue card into a word-per-line column. Measure the route itself when a
+  // DOM exists; keep the host read as the SSR/older-host fallback.
+  const [containerWidth, setContainerWidth] = useState(0)
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return undefined
+    let node = null
+    let observer = null
+    const read = () => {
+      if (!node || !node.isConnected) return
+      const rect = node.getBoundingClientRect()
+      if (rect.width > 0) setContainerWidth(Math.round(rect.width))
+    }
+    const attach = () => {
+      node = document.querySelector('[data-cb-route]')
+      if (!node) return false
+      read()
+      if (typeof ResizeObserver === 'function') {
+        observer = new ResizeObserver(read)
+        observer.observe(node)
+      }
+      window.addEventListener('resize', read)
+      return true
+    }
+    if (!attach()) {
+      const retry = window.setTimeout(attach, 0)
+      return () => window.clearTimeout(retry)
+    }
+    return () => {
+      if (observer) observer.disconnect()
+      window.removeEventListener('resize', read)
+    }
+  }, [])
+
   const atom = sdk.host && sdk.host.state ? sdk.host.state.viewport : null
   const read = () => {
     try {
@@ -7905,9 +7946,9 @@ function useCbViewportWidth() {
   }
   if (atom && typeof sdk.useValue === 'function') {
     const rect = sdk.useValue(atom)
-    if (rect && typeof rect.width === 'number') return rect.width
+    if (rect && typeof rect.width === 'number') return containerWidth || rect.width
   }
-  return read()
+  return containerWidth || read()
 }
 
 /** Pure so the layout decision is testable without a window: wide only when the width is known. */
@@ -15517,6 +15558,8 @@ function CoursebookPane() {
   // The pane is part of the same scoped surface as the route: same token table, same mode.
   const cbMode = useCbMode()
   const cbMotion = useCbMotion()
+  const paneWidth = useCbViewportWidth()
+  const narrowPane = paneWidth > 0 && paneWidth < 620
   const scopeProfile = currentScope().profile
   const [bindNote, setBindNote] = useState(null)
   const attemptedBind = useRef(null)
@@ -15597,9 +15640,10 @@ function CoursebookPane() {
     body = jsx(sdk.PanelEmpty, {
       icon: 'book',
       title: 'No durable chat yet',
-      description:
-        'A new chat gets its stored session id after its first turn. Coursebook binds a lesson to that ' +
-        'stored id — never to the live runtime id and never to "the most recent chat".',
+      description: narrowPane
+        ? 'Coursebook binds this chat after its first message. Open Coursebook to start or resume a lesson.'
+        : 'A new chat gets its stored session id after its first turn. Coursebook binds a lesson to that ' +
+          'stored id — never to the live runtime id and never to "the most recent chat".',
       action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
     })
   } else if (state.status === 'loading') {

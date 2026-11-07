@@ -140,7 +140,7 @@ export const host = {
     focusedStoredSessionId: atom(null),
     focusedSessionProfile: atom('default'),
     profile: atom('default'),
-    viewport: atom({ width: 1280, height: 900, narrow: false })
+    viewport: atom({ width: Number(process.env.CB_TEST_WIDTH || 1280), height: 900, narrow: false })
   },
   profileRoutes: async () => [{ connectionId: 'local', mode: 'local', profile: 'default', targetProfile: 'default' }],
   navigate: () => {},
@@ -299,11 +299,14 @@ class FieldDeskRenderTest(unittest.TestCase):
     def run_harness(self, payload: dict) -> str:
         case = self.root / "case.json"
         case.write_text(json.dumps(payload), encoding="utf-8")
+        env = dict(os.environ)
+        env["CB_TEST_WIDTH"] = str(payload.get("width", 1280))
         result = subprocess.run(
             ["node", str(self.root / "harness.mjs"), str(case)],
             cwd=self.root,
             capture_output=True,
             text=True,
+            env=env,
             timeout=120,
         )
         self.assertEqual(result.returncode, 0, result.stderr[-2000:])
@@ -341,6 +344,21 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn("Review 1 objective(s)", html)
         self.assertIn("Next · ", html)
         self.assertIn("Section 2 of 4", html)
+
+    def test_a_narrow_desk_stacks_and_drops_the_course_stamp(self) -> None:
+        html = self.render(width=460)
+        self.assertIn('data-cb-desk-layout="stacked"', html)
+        self.assertIn('data-cb-continue-compact="true"', html)
+        self.assertNotIn("data-cb-course-stamp", html)
+        # The title is not being squeezed into a term-per-line column; the full row remains.
+        self.assertIn("Diagnose a no-start", html)
+        self.assertIn("Open the section", html)
+
+    def test_a_wide_desk_keeps_the_course_stamp(self) -> None:
+        html = self.render(width=1280)
+        self.assertIn('data-cb-desk-layout="wide"', html)
+        self.assertIn('data-cb-continue-compact="false"', html)
+        self.assertIn("data-cb-course-stamp", html)
 
     def test_continue_shows_the_recorded_estimate_and_last_touched(self) -> None:
         html = self.render()
