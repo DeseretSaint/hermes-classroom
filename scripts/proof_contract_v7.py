@@ -124,8 +124,10 @@ class V7SourceRevalidateProof(KernelCase):
 
     def test_contract_and_storage_versions(self) -> None:
         self.assertEqual(contracts.audit_contracts(), [])
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 7)
-        self.assertEqual(contracts.contract_version("cb.rpc"), 7)
+        # v8 is additive over the v7 surface this proof exercises; the proof pins that the wire
+        # has not gone backwards, not that no later additive amendment exists.
+        self.assertGreaterEqual(contracts.WIRE_CONTRACT_VERSION, 7)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
         self.assertEqual(contracts.contract_version("cb.db"), 4)
         self.assertEqual(api.implemented_methods().count("source.revalidate"), 1)
         self.assertEqual(int(self.scalar("PRAGMA user_version") or 0), 0,

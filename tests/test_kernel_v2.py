@@ -154,6 +154,8 @@ class LessonRuntimeTest(KernelCase):
                                         "objective_id": lesson["objective_id"]})["result"]
         self.assertIsNone(page["runtime"])
         self.assertEqual(page["segments"], [])
+        self.assertEqual(page["document"]["state"], "empty")
+        self.assertEqual(page["document"]["blocks"], [])
         self.assertEqual(page["section"]["title"], "Compute")
         self.assertEqual(page["checks"][0]["check_id"], lesson["check_id"])
         self.assertEqual(page["checks"][0]["attempt_count"], 0)
@@ -174,6 +176,15 @@ class LessonRuntimeTest(KernelCase):
         self.assertEqual(page["runtime"]["session_state"], "missing")
         self.assertEqual(page["segments"][0]["text"], "Braising is low and slow.")
         self.assertEqual(page["state"], "not_started")
+        # v8: the same durable rows project to one block document; an older section is
+        # textbook-only rather than a broken Guided toggle.
+        document = page["document"]
+        self.assertEqual(document["state"], "textbook_only")
+        self.assertFalse(document["views"]["guided"])
+        self.assertEqual(len(document["blocks"]), 1)
+        self.assertEqual(document["blocks"][0]["deep"], "Braising is low and slow.")
+        self.assertEqual(document["check_id"], lesson["check_id"])
+        self.assertEqual(document["blocks"][0]["check_id"], lesson["check_id"])
 
     def test_page_refuses_another_courses_objective(self) -> None:
         first = self.prepare_lesson()

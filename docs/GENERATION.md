@@ -208,6 +208,49 @@ On rejection the author is called **once more** with the validator's itemised re
 `LessonNotAvailable`. There is no path that enables a learner-facing check without a passing
 independent validation.
 
+## 8. The lesson document: one validated document, many views
+
+`docs/VISUAL_MEDIA_PLAN.md` §5 replaces the linear segment contract with a block document. The
+backend owns the document; a view is a lens over it. `coursebook/lesson_document.py` builds it as a
+**pure read projection**: it never writes a row, never calls a provider and never mints content.
+
+Two stored shapes project into the same `$defs/lesson_document`:
+
+* `generation.learner_page()` projects the stored `gen_lessons.page_json` (`segments`,
+  `worked_example`, `learner_explanation`, `media`, `sources`) and attaches the linked check id.
+  The row is not rewritten: an older page keeps its v7 bytes and gains `document` at read.
+* `lesson.page` projects the durable `lesson_segments` rows plus the course artifact index. Teaching
+  prose maps positionally to `orient`/`explain`/`recap`, a `check_prompt` segment becomes the
+  `practice` block, and a `media` segment becomes a media child of the preceding block.
+
+Rules the projection cannot bend:
+
+* `short` is authored, never synthesised from `deep`. A projected v7 page therefore has
+  `short = null` everywhere, reports `state = "textbook_only"` and `views.guided = false`, and
+  carries a human `view_note`: the Desktop disables the view and explains why instead of showing an
+  empty Guided pane. Only `document_from_blocks()` (the authored v8 path) reaches `complete`.
+* One check attaches to exactly one block: the first `practice` block, else the page's terminal
+  block. Two blocks claiming a check, or a check no block carries, is a `LessonDocumentError`, not
+  a rendering decision.
+* Media is a child of a block. Narration placement follows the practice block; a visual follows
+  the example, then the explanation, then the first block. The child keeps the authored kind, role,
+  purpose, text equivalent and label; provenance stays on `artifact.get`. A legacy media segment
+  whose artifact row is unknown is preserved as block text rather than labelled with a guessed
+  kind.
+* Source ids recorded on a segment travel with that block. A v7 page recorded provenance only at
+  document level, so its ids survive in `document.source_ids` and no block-level citation is
+  invented.
+* `validate_document()` re-checks the allowlist, the role vocabulary, duplicate ids, empty blocks,
+  the single-check rule, the view/state consistency and the content hash. `document_id` and
+  `content_hash` are derived from the canonical document, so a re-read is byte-identical and a
+  review can name the exact document it read.
+* `generation._narrative_text()` now includes the document, so `assert_no_answer_leak` and
+  `learner_page()` refuse a page or projection that announces a reference answer, accepted answer
+  or rubric text.
+
+`lesson.begin`, attempts, grading and evidence are untouched. The document is a projection of the
+teaching record, not a second grading authority.
+
 ## 9. Provider deadlines and job budgets
 
 A deadline is policy, so it is declared once per request purpose in

@@ -1,7 +1,7 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v7** (CB-015 residual additive amendment; v6 = CB-011, v5 = CB-026, v4 = CB-024,
-v3 = CB-022, v2 = CB-018).
+Status: **frozen at v8** (M1-P4 additive amendment; v7 = CB-015 residual, v6 = CB-011, v5 = CB-026,
+v4 = CB-024, v3 = CB-022, v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
 contract: **Atlas**. Implementers are the specialists named below.
 
@@ -16,15 +16,15 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v2.json` | 2 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v7.json` | 7 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate`), Sable (transport), Lattice (`pack.*`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v8.json` | 8 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v4.json` | 4 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v2.json` | 2 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v6** files for `cb.rpc`, the v1 **to v3** files for `cb.db`, and the v1 files for
-`cb.errors` and `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v6.json` and `db.v3.json`.
+The v1 **to v7** files for `cb.rpc` (including `rpc.v6.json`), the v1 **to v3** files for `cb.db`,
+and the v1 files for `cb.errors` and `cb.jobs` remain on disk, unmodified,
+as immutable history: the superseded current files are `rpc.v7.json` and `db.v3.json`.
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 `tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so
@@ -39,7 +39,7 @@ version in the URI and the declared version agree for every file.
 `cb.rpc` is transport-neutral. The root schema validates a **request envelope**:
 
 ```json
-{ "contract": "cb.rpc", "contract_version": 7,
+{ "contract": "cb.rpc", "contract_version": 8,
   "method": "attempt.submit", "operation_id": "op-...", "idempotency_key": "...",
   "expected_revision": 12, "payload": { } }
 ```
@@ -105,7 +105,7 @@ payload is byte-identical (asserted in `tests/test_contracts.py`).
 | New method | Purpose | Request (required fields) | Response (required fields) |
 |---|---|---|---|
 | `library.list` | Courses home after restart: search/filter/sort, next step, provenance, empty states | `query?`, `filter`, `recipe?`, `sort`, `limit`, `cursor?` | `items`, `next_cursor`, `total`, `empty_reason`, `applied_filter` |
-| `lesson.page` | Durable Textbook section page; read-only navigation, never changes evidence | `enrollment_id`, `objective_id`, `section_id?` | `course`, `section`, `runtime`, `segments`, `sources`, `artifacts`, `checks`, `notebook_entries`, `attempts`, `state`, `revision` |
+| `lesson.page` | Durable Textbook section page; read-only navigation, never changes evidence | `enrollment_id`, `objective_id`, `section_id?` | `course`, `section`, `runtime`, `segments`, `document`, `sources`, `artifacts`, `checks`, `notebook_entries`, `attempts`, `state`, `revision` |
 | `lesson.begin` | Resume or start a section's durable lesson run | `enrollment_id`, `objective_id`, `mode` (`resume`/`fresh`) | `lesson_run_id`, `run_state`, `binding`, `resume`, `revision` |
 | `enrollment.update` | Archive/unarchive/pause/resume an enrollment (reversible) | `enrollment_id`, `action` | `enrollment_id`, `status`, `revision` |
 | `enrollment.delete` | Delete one enrollment's learning data, with previewed scope | `enrollment_id`, `dry_run`, `data_scope_hash?` | `deleted`, `data_scope`, `revision` |
@@ -142,6 +142,25 @@ Read-only GET-shaped method: it renders the durable page and **never** opens a c
 attempt, or advances an objective. Jumping backward in the textbook cannot erase later evidence
 because nothing is written. `runtime` is null when the section has never had a run. Segment text is
 the backend-owned teaching record; the Hermes chat transcript is not required and is not a field.
+
+v8 adds `document` to the same response: the validated block document of
+`docs/VISUAL_MEDIA_PLAN.md` §5, projected at read time from the rows this response already
+returned. It is not a second authority and adds no storage or write. `blocks[]` carry a structural
+`role` (`orient`/`explain`/`example`/`practice`/`recap`), a `headline`, `short` and `deep`
+renderings of the same authored text, at most one `check_id`, `media[]` children and
+`source_ids[]`. One check attaches to exactly one block; media is never free-floating.
+
+`state` says how much of the document exists. `complete` means every block has authored short and
+deep text, so Guided, Field Quest and Field Notes are available. `textbook_only` means the page was
+authored before v8 (or carries a linear chat transcript), so every `short` is `null`, those views
+are `false`, and `view_note` says why in human words: a client disables the toggle and shows the
+note instead of rendering an empty Guided view. `empty` means the section has no teaching content
+yet. The projection is deterministic: the same rows and check id produce the same `document_id`
+and `content_hash`, so a client can cache it and a review can name it. Source ids recorded on a
+segment travel with that block; a v7 page recorded provenance only at document level, so its
+`source_ids` survive at document level and no block-level citation is invented. The document
+contains no reference answer, accepted answer or rubric text, and `generation.assert_no_answer_leak`
+reads the document as well as the page.
 
 ### `lesson.begin` semantics — resume vs fresh, stale sessions, detached chats
 
@@ -1078,10 +1097,46 @@ Migration `0003_parent_studio_approvals_and_reflections.sql` (cb.db v3, CB-011) 
 difficulty + revisit note, no evidence columns), with their indexes. No v2 table, column, index or
 unique key changes, and there is no backfill.
 
+## v8 delta (M1-P4) — one lesson document, many views
+
+v7 rendered a lesson as one linear segment list. v8 adds exactly one response field to one read
+method: `lesson.page.document`, the validated `LessonDocument` of `docs/VISUAL_MEDIA_PLAN.md` §5.
+Every v1–v7 method name and every v1–v7 method request/response payload is preserved unchanged;
+no v7 field is removed or retyped, and the only bytes that move inside a carried method are
+`health.get`'s `contract_version` echo (7 → 8) and both response envelopes' `contract_version`
+consts. The method enum stays at 52 because v8 adds no command.
+
+| Aspect | v8 decision |
+|---|---|
+| Wire | `lesson.page.response.document` (`$defs/lesson_document`, `$defs/lesson_block`, `$defs/lesson_document_media`), required alongside every v7 field |
+| Block | `id`, `role` (`orient`/`explain`/`example`/`practice`/`recap`), `headline`, `short`, `deep`, `check_id`, `media[]`, `source_ids[]` |
+| Check | at most one check per document; exactly one block carries it. No block, and no view, duplicates it |
+| Media | a child of a block (`kind`, `role`, `artifact_id`, `purpose`, `text_equivalent`, `label`, `degraded`, `reason`), never a free-floating gallery item |
+| State | `complete` (short and deep authored for every block), `textbook_only` (projected from the older linear shape; `views.guided=false` plus a human `view_note`), `empty` |
+| Storage | none. `document` is projected from rows `lesson.page` already reads (`lesson_segments` and course `artifacts`); `gen_lessons.page_json` is projected by `generation.learner_page`. No cb.db migration, no new column, and old rows are never rewritten |
+| Determinism | block ids are derived from position, role and text; `content_hash` is sha256 over the canonical document core and `document_id` is `doc_` + its first 20 hex characters. Re-reading the same rows returns the same document |
+| Answers | no `reference_answer`, `accepted_answers`, `accepted_alternatives` or `rubric` anywhere in the document. The projection is built from an allowlist and `validate_document` re-checks it; `generation.assert_no_answer_leak` covers the document |
+| Rights | a media child keeps only the authored purpose, text equivalent and label; provenance stays on `artifact.get`. A legacy media segment whose artifact row is unknown is preserved as block text rather than labelled with a guessed kind |
+| Views | Textbook renders `deep` in authored order, Guided renders `short` one block at a time, Field Quest maps the same `role` sequence to missions and uses the existing check, Field Notes captures. None of them authors a fact; a view is a lens over the one document |
+
+**Migration.** There is no backfill and no rewrite. A section whose durable rows predate v8 reads
+as `textbook_only` with `views.guided = false` and a note that says so. A page projected from
+`gen_lessons.page_json` maps the authored segment kinds (`model` → `example`, `explain` →
+`explain`, `guided` → `practice`, `retrieval` → `recap`), the worked example to `example` and the
+learner explanation to `recap`. A page projected from `lesson_segments` maps teaching prose
+positionally (first `orient`, last `recap`, middle `explain`), a `check_prompt` segment to the
+`practice` block and a `media` segment to a media child of the preceding block. `short` is never
+synthesised from `deep`: only an authored block document can reach `complete`.
+
+**Not in v8.** No authored-block columns and no prompt change to the lesson schema; the projection
+is ready for authored blocks (`document_from_blocks`) but this release does not ask the model for
+them. No UI change: the Desktop ignores a field it does not know, and older clients keep reading
+`segments`. No change to grading, attempts, evidence or mastery semantics.
+
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
-2. Add a new file (`rpc.v7.json`, `db.v4.json`, `projection.v1.json`) and bump
+2. Add a new file (`rpc.v8.json`, `db.v4.json`, `projection.v1.json`) and bump
    `$id`/`x-contract-version`/`x-supersedes`. Never edit a
    shipped version in a way that changes meaning; clients cache by version.
 3. Update `CONTRACT_FILES` in `coursebook/contracts.py` and run
@@ -1100,6 +1155,7 @@ unique key changes, and there is no backfill.
 | v5 (binding scope) | 2026-11-06 | CB-009 finding: `binding.get` now answers `objective_id` and `lesson_run_id` from the `bindings` row so the pane scopes to the bound section instead of the enrollment's current one. Additive inside v5 because `binding` is an open object in `rpc.v5.json` and `cb.db` v2 already stores both columns: **no v6, no schema edit, no version bump, no status-semantics change**. `null` = legacy/course-level binding; the platform seam answers `null` on a v1 binding table rather than omitting the fields. |
 | v6 | 2026-11-06 | CB-011 additive amendment. 51 RPC methods (+parent.brief.create, parent.brief.get, parent.plan.edit, parent.final.approve, parent.blueprint.read, parent.export, parent.reflection.record, parent.reflection.list) so the Parent Studio can be built without reading SQLite. cb.db **v3** adds `final_approvals` (lesson-set approval bound to plan hash + content hash, with the vocabulary value that invalidates it) and `parent_reflections` via migration 0003; no column changes, no new error code, `cb.vocabulary`/`cb.jobs`/`cb.pack`/`cb.projection` unchanged. Rejected: a generic path-addressed `pack.file.read` (role-scoped tabs instead), a `lesson` job kind (would force a `cb.pack` v2 and reject installed packs), and per-lesson prose editing (no storage decision yet). The Parent Studio answers tab is the one scoped exception to "no answer text on the wire". |
 | v7 | 2026-11-06 | CB-015 residual additive amendment. 52 RPC methods (+`source.revalidate`) so the stale-source state is reachable through cb.rpc instead of only by hand-writing a row; the existing `sources.assert_check_current` gate then refuses dependent grading with `CHECK_STALE`. cb.db **v4** adds the nullable `sources.content_hash` baseline column via migration 0004 (additive, no backfill), because pack-imported sources have no research-run snapshot and would otherwise report `changed=false` forever. No new error code, job kind or vocabulary value. `source.revalidate` carries `idempotency_key` and deliberately no `expected_revision`; the envelope revision is 0 and is not an enrollment revision. Detection only: there is no status-restoring recovery command, and a client must not expose a one-way "check for changes" control. |
+| v8 | 2026-11-06 | M1-P4 additive amendment. One new response field, `lesson.page.document` (the §5 block document), with `$defs/lesson_document`, `$defs/lesson_block` and `$defs/lesson_document_media`. 52 RPC methods unchanged; no cb.db table, column, migration, error code, job kind or vocabulary value; every v7 `lesson.page` field stays required and unchanged. The document is projected at read time from the same durable rows, so old rows are never rewritten; a page authored before v8 reports `state = "textbook_only"` with `views.guided = false` and a human note rather than a broken toggle. One check attaches to exactly one block, media is a child of a block, and the document can contain no reference answer or rubric text. `rpc.v7.json` is pinned by sha256. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
