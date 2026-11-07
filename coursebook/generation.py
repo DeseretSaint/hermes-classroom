@@ -127,6 +127,32 @@ RECIPES = ("one_off", "casual", "committed", "companion", "parent")
 EVIDENCE_TARGETS = ("recall", "comprehension", "production", "discrimination", "procedure", "transfer")
 SUPPORT_VALUES = ("sourced", "unverified")
 
+#: Plan-brief scopes (cb.rpc v10). A scope is the *breadth and time expectation* the brief
+#: declares for the course. This module owns the cap; there is no separate scope engine in this
+#: branch, so the value is recorded, stated in the plan prompt, and enforced as a maximum on the
+#: plan's own ``time_estimate.weeks``. It never rewrites the plan's time estimate: the authored
+#: estimate stays the authority and the deterministic rule only refuses one that exceeds the cap.
+SCOPES: tuple[str, ...] = ("single", "short", "full")
+
+SCOPE_EXPECTATIONS: dict[str, dict[str, Any]] = {
+    "single": {
+        "max_weeks": 1,
+        "objectives": (4, 5),
+        "note": "one sitting: a plan the learner finishes in a single session",
+    },
+    "short": {
+        "max_weeks": 8,
+        "objectives": (4, 6),
+        "note": "a short course of a few weeks, not a term-long syllabus",
+    },
+    "full": {
+        "max_weeks": 104,
+        "objectives": (4, 8),
+        "note": "a full course; the standard objective range stands",
+    },
+}
+
+
 MAX_PLAN_BYTES = 48 * 1024
 MAX_LESSON_BYTES = 64 * 1024
 MAX_VALIDATION_BYTES = 24 * 1024
@@ -1061,6 +1087,35 @@ def _plan_input(brief: dict[str, Any], name: str) -> str | None:
     return None
 
 
+def _dial_text(dials: dict[str, Any], name: str) -> str | None:
+    """A legacy dial-carried value, read without ever writing it back into ``dials``.
+
+    Pre-v10 briefs and direct callers sometimes put ``level`` in the dials dict. The value is
+    honoured for the policy and the prompt, but ``dials`` itself is never mutated: it is a closed
+    contract object and a stored plan document must not gain keys it did not declare.
+    """
+    value = (dials or {}).get(name)
+    if isinstance(value, str):
+        text = value.strip()
+        return text or None
+    return None
+
+
+def _scope_expectation(scope: str | None) -> dict[str, Any] | None:
+    """The declared scope's expectation, or ``None`` when the brief named no scope.
+
+    An unknown value raises: the contract's enum has three members, and a plan job that names a
+    fourth would otherwise be authored under no cap at all while claiming a scope.
+    """
+    if scope is None:
+        return None
+    key = str(scope).strip().lower()
+    expectation = SCOPE_EXPECTATIONS.get(key)
+    if expectation is None:
+        raise GenerationRejected(f"unknown scope {scope!r}; expected one of {SCOPES}")
+    return {**expectation, "scope": key}
+
+
 def _policy_dials(
     dials: dict[str, Any], *, level: str | None = None, subject_domain: str | None = None
 ) -> dict[str, Any]:
@@ -1112,12 +1167,18 @@ def lesson_capability_plan(
     locale: str | None,
     dials: dict[str, Any],
     plan: dict[str, Any] | None = None,
+    level: str | None = None,
+    subject_domain: str | None = None,
 ) -> capability_policy.LessonCapabilityPlan:
     """Compute the one capability decision this section is authored under.
 
     The plan (recipe), the objective (evidence target), the authored section intent, the
     learner's locale/level and the advisory subject domain are the only inputs. The result is
     immutable and deterministic; nothing here reads a provider, a clock or the database.
+
+    ``level``/``subject_domain`` are the declared cb.rpc v10 inputs from the plan document. They
+    are accepted beside ``dials`` because ``dials`` is the closed four-dial object; the dials
+    fallback exists only for a pre-v10 plan document, which has nowhere else to carry them.
     """
     section = section or {}
     evidence_target = str(
@@ -1125,14 +1186,19 @@ def lesson_capability_plan(
         or section.get("evidence_target")
         or "comprehension"
     )
-    level = dials.get("level")
+    resolved_level = level or dials.get("level")
+    resolved_domain = (
+        _subject_domain(plan=plan, section=section)
+        or (subject_domain.strip() if isinstance(subject_domain, str) and subject_domain.strip() else None)
+        or _subject_domain(dials=dials)
+    )
     return capability_policy.plan_lesson_capability(
         recipe=str(recipe),
         evidence_target=evidence_target,
         lesson_intent=str(section.get("lesson_intent") or ""),
         locale=locale,
-        level=str(level) if level else None,
-        subject_domain=_subject_domain(plan=plan, section=section, dials=dials),
+        level=str(resolved_level) if resolved_level else None,
+        subject_domain=resolved_domain,
     )
 
 
@@ -1172,19 +1238,50 @@ def _capability_prompt_lines(capability: capability_policy.LessonCapabilityPlan)
     return lines
 
 
-def _plan_instructions(*, recipe: str, dials: dict[str, Any], locale: str | None, research_status: str) -> str:
+def _plan_instructions(
+    *,
+    recipe: str,
+    dials: dict[str, Any],
+    locale: str | None,
+    research_status: str,
+    level: str | None = None,
+    subject_domain: str | None = None,
+    scope: str | None = None,
+    capability: capability_policy.LessonCapabilityPlan | None = None,
+) -> str:
+    expectation = _scope_expectation(scope)
+    low, high = expectation["objectives"] if expectation else (4, 8)
     lines = [
         "Design plan v1 for the goal in the input.",
         f"Recipe: {recipe}.",
         f"Research status: {research_status}.",
-        "Produce 4 to 8 objectives, each with a stable ordinal, an evidence target and 1-3 "
-        "observable evidence criteria.",
+        f"Produce {low} to {high} objectives, each with a stable ordinal, an evidence target and "
+        "1-3 observable evidence criteria.",
         "Produce one section per objective: exactly one section for each objective, and each "
         "section names exactly one objective it serves plus its lesson intent.",
         "Produce a check plan covering every objective at least once, with the recipe-appropriate "
         "kind and whether it collects independent evidence.",
         "State explicit exclusions: what this course will not cover or claim.",
     ]
+    # The declared inputs are stated as themselves. ``locale`` is the language of delivery and
+    # ``subject_domain`` is what the course is about; the plan may not collapse one into the other.
+    if level:
+        lines.append(
+            f"Learner level: {level}. It is declared by the brief; never infer a level from the "
+            "locale, and do not move objectives outside it."
+        )
+    if subject_domain:
+        domain = capability_policy.normalise_subject_domain(subject_domain, locale)
+        lines.append(
+            f"Subject domain: {domain} (declared as {subject_domain!r}). This is what the course "
+            "is about, not the language it is delivered in."
+        )
+    if expectation:
+        lines.append(
+            f"Scope: {expectation['scope']} — {expectation['note']}. The time estimate must fit "
+            f"within {expectation['max_weeks']} week(s); a plan that needs longer does not fit "
+            "this scope."
+        )
     if recipe == "one_off":
         lines.append("No quiz and no homework: checks are verification checklists, spaced_review false.")
     if recipe == "committed":
@@ -1200,6 +1297,17 @@ def _plan_instructions(*, recipe: str, dials: dict[str, Any], locale: str | None
             f"Capability policy: every check is angle {angle!r} ({angle_reason}); do not schedule "
             "another check kind."
         )
+    if capability is not None:
+        # The decision this plan is authored under, from the same function the lesson stage uses.
+        # With no lesson intent it decides no media; its reasons still name what the declared
+        # domain permits and refuses, which is what the plan needs to know about sections.
+        lines.append(
+            f"Capability policy decision for these inputs: check angle {capability.check_angle!r}, "
+            f"rubric profile {capability.rubric_profile!r}, image {capability.image!r}, "
+            f"audio {capability.audio!r}."
+        )
+        for reason in capability.reasons:
+            lines.append(f"- {reason}.")
     lines.append(
         "Capability policy for media: media is not the default and this plan does not assign any. "
         "A lesson may carry media only where its authored intent names the construct the media "
@@ -1316,11 +1424,13 @@ def enforce_plan_rules(
     dials: dict[str, Any],
     locale: str | None,
     ledger: Sequence[SourceRecord],
+    scope: str | None = None,
 ) -> None:
     """Deterministic plan rules. Runs *before* the validator and never replaces it."""
     reasons: list[str] = []
     if recipe not in RECIPES:
         raise GenerationRejected(f"unknown recipe {recipe!r}")
+    expectation = _scope_expectation(scope)
 
     objectives = plan.get("objectives") or []
     sections = plan.get("sections") or []
@@ -1363,6 +1473,17 @@ def enforce_plan_rules(
         reasons.append("basis 'fsi' requires a benchmark with explicit non-transferability")
     if estimate.get("attainment_hours") and estimate.get("confidence") == "high":
         reasons.append("attainment hours cannot carry high confidence")
+
+    # Scope cap. The declared scope is a breadth/time expectation, and the plan's own estimate is
+    # the only place the pipeline can check it deterministically. This branch has no separate
+    # scope engine: the value is recorded, stated in the prompt, and capped here, nothing more.
+    if expectation is not None:
+        weeks = estimate.get("weeks")
+        if isinstance(weeks, int) and weeks > int(expectation["max_weeks"]):
+            reasons.append(
+                f"scope {expectation['scope']!r} caps the plan at {expectation['max_weeks']} "
+                f"week(s); the time estimate says {weeks} week(s)"
+            )
 
     # Provenance: never cite a source the ledger does not contain (AUDIT R7).
     ledger_ids = {source.source_id for source in ledger}
@@ -1819,12 +1940,35 @@ def build_plan_request(
     research_run: ResearchRun,
     feedback: str | None = None,
     timeout_s: float | None = None,
+    level: str | None = None,
+    subject_domain: str | None = None,
+    scope: str | None = None,
 ) -> LLMRequest:
+    # ``dials`` stays the closed four-dial object the contract spells; the declared plan-brief
+    # inputs travel beside it. A legacy caller that still carries level/domains inside its dials
+    # dict is honoured here without ever writing them back into ``dials``.
+    declared_level = level or _dial_text(dials, "level")
+    declared_domain = subject_domain or _dial_text(dials, "subject_domain")
+    # The plan-time capability decision: the same deterministic function the lesson stage calls,
+    # computed for the plan's own declared inputs. At plan time no lesson intent exists yet, so
+    # the decision refuses media; its reasons are what tell the author what the domain permits.
+    capability = capability_policy.plan_lesson_capability(
+        recipe=recipe,
+        evidence_target="comprehension",
+        lesson_intent="",
+        locale=locale,
+        level=declared_level,
+        subject_domain=declared_domain,
+    )
     payload = {
         "goal": goal,
         "recipe": recipe,
-        "dials": dials,
+        "dials": dict(dials or {}),
         "locale": locale,
+        "level": declared_level,
+        "subject_domain": declared_domain,
+        "scope": scope,
+        "capability_policy": capability.to_dict(),
         "research": {
             "status": research_run.status,
             "reason": research_run.reason,
@@ -1844,7 +1988,16 @@ def build_plan_request(
         purpose="coursebook.plan.generate",
         prompt_version=PLAN_PROMPT_VERSION,
         system_prompt=PLAN_SYSTEM_PROMPT,
-        instructions=_plan_instructions(recipe=recipe, dials=dials, locale=locale, research_status=research_run.status),
+        instructions=_plan_instructions(
+            recipe=recipe,
+            dials=dials,
+            locale=locale,
+            research_status=research_run.status,
+            level=declared_level,
+            subject_domain=declared_domain,
+            scope=scope,
+            capability=capability,
+        ),
         input_text=_bounded_input(payload),
         schema=PLAN_SCHEMA,
         schema_name="coursebook_plan_v1",
@@ -1862,13 +2015,19 @@ def build_plan_validation_request(
     locale: str | None,
     research_run: ResearchRun,
     timeout_s: float | None = None,
+    level: str | None = None,
+    subject_domain: str | None = None,
+    scope: str | None = None,
 ) -> LLMRequest:
     payload = {
         "artifact_kind": "plan",
         "goal": goal,
         "recipe": recipe,
-        "dials": dials,
+        "dials": dict(dials or {}),
         "locale": locale,
+        "level": level or _dial_text(dials, "level"),
+        "subject_domain": subject_domain or _dial_text(dials, "subject_domain"),
+        "scope": scope,
         "research_status": research_run.status,
         "sources": _source_brief(research_run.sources),
         "plan": plan,
@@ -1900,8 +2059,14 @@ def build_lesson_request(
     timeout_s: float | None = None,
     rubric_profile: str | None = None,
     capability: capability_policy.LessonCapabilityPlan | None = None,
+    level: str | None = None,
+    subject_domain: str | None = None,
 ) -> LLMRequest:
-    policy = _scaffold_policy(recipe, dials, locale)
+    declared_level = level or _dial_text(dials, "level")
+    declared_domain = subject_domain or _dial_text(dials, "subject_domain")
+    # The scaffold policy needs the declared level, so it reads the in-memory view; the payload
+    # keeps ``dials`` closed and carries the declared inputs as their own fields.
+    policy = _scaffold_policy(recipe, _policy_dials(dials, level=declared_level, subject_domain=declared_domain), locale)
     capability = capability or lesson_capability_plan(
         recipe=recipe,
         section=section,
@@ -1909,6 +2074,8 @@ def build_lesson_request(
         locale=locale,
         dials=dials,
         plan=plan,
+        level=declared_level,
+        subject_domain=declared_domain,
     )
     payload = {
         "plan_title": plan.get("title"),
@@ -1917,8 +2084,10 @@ def build_lesson_request(
         "section": section,
         "objective": objective,
         "recipe": recipe,
-        "dials": dials,
+        "dials": dict(dials or {}),
         "locale": locale,
+        "level": declared_level,
+        "subject_domain": declared_domain,
         "capability_policy": capability.to_dict(),
         "sources": [brief for brief in _source_brief(sources) if brief["source_id"] in set(section.get("source_ids") or [])]
         or _source_brief(sources)[:4],
@@ -1967,14 +2136,18 @@ def build_lesson_validation_request(
     locale: str | None,
     sources: Sequence[SourceRecord],
     timeout_s: float | None = None,
+    level: str | None = None,
+    subject_domain: str | None = None,
 ) -> LLMRequest:
     payload = {
         "artifact_kind": "lesson",
         "section": section,
         "objective": objective,
         "recipe": recipe,
-        "dials": dials,
+        "dials": dict(dials or {}),
         "locale": locale,
+        "level": level or _dial_text(dials, "level"),
+        "subject_domain": subject_domain or _dial_text(dials, "subject_domain"),
         "sources": _source_brief(sources),
         "lesson": lesson,
         "learner_facing_page": page,
@@ -2420,6 +2593,15 @@ def plan_document(connection: sqlite3.Connection, plan_id: str) -> dict[str, Any
         "plan_hash": row.get("plan_hash"),
         "generation_state": row.get("generation_state"),
         "validation_id": row.get("validation_id"),
+        # The declared cb.rpc v10 inputs, read back from the document the plan was authored
+        # under. Pre-v10 documents have no such keys, and this projection then says None rather
+        # than inventing a level or domain from the locale.
+        "recipe": document.get("recipe"),
+        "dials": document.get("dials") or {},
+        "locale": document.get("locale"),
+        "level": document.get("level"),
+        "subject_domain": document.get("subject_domain"),
+        "scope": document.get("scope"),
     }
 
 
@@ -2844,6 +3026,9 @@ def run_plan_job(
     level = _plan_input(brief, "level")
     subject_domain = _plan_input(brief, "subject_domain")
     scope = _plan_input(brief, "scope")
+    # Validate the scope enum before any provider call: a fourth scope value would otherwise be
+    # authored under no cap at all while the document claimed one.
+    scope_expectation = _scope_expectation(scope)
     policy_dials = _policy_dials(dials, level=level, subject_domain=subject_domain)
     job_id = str(job.get("job_id") or "") or None
     usage = _Usage(budget or default_cost_budget())
@@ -2883,6 +3068,8 @@ def run_plan_job(
             recipe=recipe,
             dials=dials,
             locale=locale,
+            subject_domain=subject_domain,
+            level=level,
             search=search,
             budget=research_budget or ResearchBudget(),
             now=now,
@@ -2906,17 +3093,25 @@ def run_plan_job(
             plan_request = build_plan_request(
                 goal=goal,
                 recipe=recipe,
-                dials=policy_dials,
+                dials=dials,
                 locale=locale,
                 research_run=research_run,
                 feedback=feedback,
+                level=level,
+                subject_domain=subject_domain,
+                scope=scope,
             )
             response = _call_llm(llm, plan_request, usage)
             candidate = _parse_structured(response, PLAN_SCHEMA, what="plan", max_bytes=MAX_PLAN_BYTES)
 
             try:
                 enforce_plan_rules(
-                    candidate, recipe=recipe, dials=policy_dials, locale=locale, ledger=research_run.sources
+                    candidate,
+                    recipe=recipe,
+                    dials=policy_dials,
+                    locale=locale,
+                    ledger=research_run.sources,
+                    scope=scope,
                 )
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
@@ -2930,9 +3125,12 @@ def run_plan_job(
                 plan=candidate,
                 goal=goal,
                 recipe=recipe,
-                dials=policy_dials,
+                dials=dials,
                 locale=locale,
                 research_run=research_run,
+                level=level,
+                subject_domain=subject_domain,
+                scope=scope,
             )
             assert_separate_pass(plan_request, validation_request)
             validation_response = _call_llm(llm, validation_request, usage)
@@ -3000,6 +3198,15 @@ def run_plan_job(
                 "queries": [entry.get("query") for entry in research_run.queries],
             },
             "warnings": _plan_warnings(recipe, research_run, verdict),
+            # The declared cb.rpc v10 inputs round-trip on the job result as themselves: a caller
+            # that sent a level/domain/scope must be able to read back the exact value the plan
+            # was authored under rather than guess it from the locale.
+            "level": level,
+            "subject_domain": subject_domain,
+            "scope": scope,
+            "scope_cap_weeks": (
+                scope_expectation["max_weeks"] if scope_expectation is not None else None
+            ),
             "usage": usage.summary(),
         }
 
@@ -3318,12 +3525,12 @@ def run_lesson_job(
     plan = document["document"].get("plan") or {}
     recipe = str(document["document"].get("recipe") or "casual")
     # The plan document stores the declared inputs beside the dials; a plan authored before v10
-    # has neither key, so its lessons behave exactly as they did.
-    dials = _policy_dials(
-        dict(document["document"].get("dials") or {}),
-        level=_plan_input(document["document"], "level"),
-        subject_domain=_plan_input(document["document"], "subject_domain"),
-    )
+    # has neither key, so its lessons behave exactly as they did. ``dials`` is the closed object
+    # the contract carries; the declared inputs are passed beside it, never inside it.
+    stored_dials = dict(document["document"].get("dials") or {})
+    level = _plan_input(document["document"], "level")
+    subject_domain = _plan_input(document["document"], "subject_domain")
+    dials = _policy_dials(stored_dials, level=level, subject_domain=subject_domain)
     locale = document["document"].get("locale")
     digest = str(document["plan_hash"])
     research_doc = document["research"]
@@ -3400,6 +3607,9 @@ def run_lesson_job(
                     digest=digest,
                     recipe=recipe,
                     dials=dials,
+                    stored_dials=stored_dials,
+                    level=level,
+                    subject_domain=subject_domain,
                     locale=locale,
                     sources=sources,
                     research_status=research_status,
@@ -3449,9 +3659,14 @@ def _author_section(
     usage: _Usage,
     job_id: str | None,
     now: datetime | None,
+    stored_dials: dict[str, Any] | None = None,
+    level: str | None = None,
+    subject_domain: str | None = None,
 ) -> dict[str, Any]:
     objective_ordinal = int((section.get("objective_refs") or [1])[0])
     objective = _objective_for(connection, plan_id, objective_ordinal)
+    # The requests carry the closed contract dials; ``dials`` here is the in-memory policy view.
+    request_dials = dict(stored_dials if stored_dials is not None else dials)
     # Decide the capability plan once per section: the prompt gets exactly its permissions, the
     # deterministic rules score the same rubric angle, and the lesson row records the same plan.
     capability = lesson_capability_plan(
@@ -3461,6 +3676,8 @@ def _author_section(
         locale=locale,
         dials=dials,
         plan=plan,
+        level=level,
+        subject_domain=subject_domain,
     )
     rubric_profile = rubrics.resolve_profile(capability.rubric_profile, capability.evidence_target)
     lesson: dict[str, Any] | None = None
@@ -3481,12 +3698,14 @@ def _author_section(
             section=section,
             objective=objective,
             recipe=recipe,
-            dials=dials,
+            dials=request_dials,
             locale=locale,
             sources=sources,
             feedback=feedback,
             rubric_profile=rubric_profile,
             capability=capability,
+            level=level,
+            subject_domain=subject_domain,
         )
         response = _call_llm(llm, request, usage)
         candidate = _parse_structured(response, LESSON_SCHEMA, what="lesson", max_bytes=MAX_LESSON_BYTES)
@@ -3537,9 +3756,11 @@ def _author_section(
             section=section,
             objective=objective,
             recipe=recipe,
-            dials=dials,
+            dials=request_dials,
             locale=locale,
             sources=sources,
+            level=level,
+            subject_domain=subject_domain,
         )
         assert_separate_pass(request, validation_request)
         validation_response = _call_llm(llm, validation_request, usage)

@@ -31,6 +31,8 @@ from datetime import datetime, timezone
 from typing import Any, Iterable, Protocol
 from urllib.parse import urlparse
 
+from . import policy
+
 __all__ = [
     "SUPPORT_STATUSES",
     "CONTRACT_SUPPORT_STATUS",
@@ -278,21 +280,37 @@ def derive_queries(
     dials: dict[str, Any] | None = None,
     locale: str | None = None,
     max_queries: int = 4,
+    subject_domain: str | None = None,
+    level: str | None = None,
 ) -> list[str]:
     """Derive a small, deterministic query set. Never random, never unbounded.
 
-    The first query is always the goal itself; later variants add the one qualifier that recipe
-    or locale actually needs. ``dials["depth"] == "overview"`` keeps only the base query, which
-    is the cheapest honest option.
+    The first query is always the goal itself; later variants add the one qualifier that the
+    declared subject domain, recipe or locale actually needs. ``dials["depth"] == "overview"``
+    keeps only the base query, which is the cheapest honest option.
+
+    ``subject_domain`` is what the course is *about*; ``locale`` is the language of delivery.
+    They are not interchangeable (P0-4): before v10 a Spanish brake-pad brief handed a locale
+    and no domain, so research treated it as a language course. When a domain is declared the
+    domain qualifier is used, and the locale-derived language query is only added for a
+    language course.
     """
     dials = dict(dials or {})
     base = _bound(" ".join(str(goal).split()), _MAX_QUERY)
     if not base:
         raise ValueError("cannot derive research queries from an empty goal")
     depth = str(dials.get("depth") or "standard").lower()
+    domain = (
+        policy.normalise_subject_domain(subject_domain, locale)
+        if subject_domain and str(subject_domain).strip()
+        else None
+    )
     queries = [base]
     if depth != "overview":
-        if recipe == "one_off":
+        qualifier = _domain_qualifier(domain, level)
+        if qualifier is not None:
+            queries.append(f"{base} {qualifier}")
+        elif recipe == "one_off":
             queries.append(f"{base} official instructions safety")
         elif recipe == "committed":
             queries.append(f"{base} syllabus learning objectives")
@@ -304,7 +322,9 @@ def derive_queries(
             queries.append(f"{base} beginner guide")
         if depth == "thorough":
             queries.append(f"{base} reference documentation")
-            if locale:
+            # A declared non-language domain is never researched as a language question, even
+            # when the delivery locale is set.
+            if locale and (domain is None or domain == "language"):
                 queries.append(f"{base} {_language_name(locale)}")
     unique: list[str] = []
     seen: set[str] = set()
@@ -319,6 +339,30 @@ def derive_queries(
     return unique
 
 
+#: One qualifier per canonical subject domain. These are research questions about the subject,
+#: not about the language the lesson will be delivered in. An unknown domain falls back to the
+#: recipe qualifier rather than inventing a category.
+_DOMAIN_QUALIFIERS: dict[str, str] = {
+    "technical_procedure": "official procedure steps safety limits",
+    "mathematics": "definitions worked examples",
+    "grammar": "grammar rules examples",
+    "history": "primary sources dates",
+    "language": "learner vocabulary phrases",
+}
+
+
+def _domain_qualifier(domain: str | None, level: str | None) -> str | None:
+    """The subject qualifier for a declared domain, or ``None`` when the recipe owns it."""
+    if domain is None:
+        return None
+    qualifier = _DOMAIN_QUALIFIERS.get(domain)
+    if qualifier is None:
+        return None
+    if domain == "language" and level and str(level).strip():
+        return f"{str(level).strip()} level {qualifier}"
+    return qualifier
+
+
 # ── The bounded pass ────────────────────────────────────────────────────────
 
 
@@ -328,6 +372,8 @@ def run_research(
     recipe: str = "casual",
     dials: dict[str, Any] | None = None,
     locale: str | None = None,
+    subject_domain: str | None = None,
+    level: str | None = None,
     search: SearchSeam | None = None,
     budget: ResearchBudget | None = None,
     now: datetime | None = None,
@@ -342,7 +388,8 @@ def run_research(
     * a seam that errors on every query -> ``status="unavailable"`` with the recorded errors;
     * a seam that yields some sources -> ``status="ok"`` or ``"degraded"`` when fetches failed.
 
-    No branch invents a URL, a title or a fetch date.
+    No branch invents a URL, a title or a fetch date. ``subject_domain`` and ``level`` are the
+    declared cb.rpc v10 inputs; they shape the query set, never the provenance rules.
     """
     budget = budget or ResearchBudget()
     now = now or datetime.now(timezone.utc)
@@ -358,7 +405,15 @@ def run_research(
         )
 
     try:
-        queries = derive_queries(goal, recipe=recipe, dials=dials, locale=locale, max_queries=budget.max_queries)
+        queries = derive_queries(
+            goal,
+            recipe=recipe,
+            dials=dials,
+            locale=locale,
+            max_queries=budget.max_queries,
+            subject_domain=subject_domain,
+            level=level,
+        )
     except ValueError as exc:
         return ResearchRun(status="unavailable", queries=[], sources=[], reason=_bound(str(exc), _MAX_REASON))
 
