@@ -121,13 +121,25 @@ provider the Hermes profile is configured to use.
 - No telemetry and no usage reporting. Usage rows stay in local SQLite and are never sent to
   Coursebook or a third party: no analytics, no crash reporting, no health pings.
 - No credentials. Coursebook declares no `requires_env`, stores no key and does not fetch its own
-  files. Its only configuration key is `status_include_contracts` (a boolean that adds the
-  contract inventory to the `coursebook_status` output). The local speech model is a declared
-  Python dependency with a weight download, not a credential.
+  files. Its configuration keys are `status_include_contracts` (a boolean that adds the contract
+  inventory to the `coursebook_status` output) and `validator_model` / `validator_provider` (an
+  optional second model used only for the validation pass; empty by default). The local speech
+  model is a declared Python dependency with a weight download, not a credential.
 - A pronunciation take is never retained by this slice: it is a private temporary file deleted
   after scoring, it never becomes an artifact, and no raw audio is stored in the database, a pack,
   an export, a notebook entry or telemetry. A missing local recogniser means "practice only, not
   graded"; no score is fabricated.
+
+## What the second-model validator sends, and to whom
+
+When `validator_model` (and optionally `validator_provider`) is set, the plan/lesson validation
+prompt is sent to that model instead of the author model. The payload is the same bounded artifact
+plus the source ledger excerpts described above; it contains no credentials, no chat transcript
+and no learner identity. The host's per-plugin LLM trust gate must allow the override
+(`plugins.entries.coursebook.llm.allow_model_override` / `allow_provider_override` and the matching
+allowlists). A refused override fails the job loudly; the plugin never silently reuses the author
+model and labels the result independent. When both keys are empty there is **no second egress**:
+validation runs on the model already in use and the record says `same_model` / `model_assessed`.
 
 ## Parent and child boundary
 

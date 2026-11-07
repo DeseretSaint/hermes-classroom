@@ -21,9 +21,15 @@ STATUS_TOOL_DESCRIPTION = (
     "degraded instead of guessing."
 )
 
-#: Manifest ``config_schema`` keys this module actually reads. Declaring a setting nothing
+#: Manifest ``config_schema`` keys this build actually reads. Declaring a setting nothing
 #: consumes is a partially wired control, so the schema and this table move together.
-CONFIG_KEYS: tuple[str, ...] = ("status_include_contracts",)
+#: ``validator_model`` / ``validator_provider`` are read by ``__init__.py::register`` (they bind the
+#: validation route before ``coursebook.tools`` is ever invoked), not by this module.
+CONFIG_KEYS: tuple[str, ...] = (
+    "status_include_contracts",
+    "validator_model",
+    "validator_provider",
+)
 DEFAULT_STATUS_INCLUDE_CONTRACTS = True
 
 _read_setting: Callable[[str, Any], Any] | None = None

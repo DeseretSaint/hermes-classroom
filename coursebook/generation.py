@@ -95,7 +95,20 @@ __all__ = [
     "PROVIDER_TIMEOUT_FALLBACK_ENV",
     "PluginLLMAdapter",
     "bind_host_llm",
+    "bind_validator_llm",
+    "validator_llm",
+    "validator_config",
     "host_llm",
+    "model_identity",
+    "validation_independence",
+    "validation_record",
+    "INDEPENDENCE_STATES",
+    "INDEPENDENCE_INDEPENDENT",
+    "INDEPENDENCE_SAME_MODEL",
+    "INDEPENDENCE_UNIDENTIFIED",
+    "OUTCOME_INDEPENDENT",
+    "OUTCOME_MODEL_ASSESSED",
+    "OUTCOME_REJECTED",
     "PLAN_SCHEMA",
     "PLAN_SCHEMA_V1",
     "PLAN_SCHEMA_V2",
@@ -412,6 +425,60 @@ class LLMResponse:
 
 
 LLM = Callable[[LLMRequest], LLMResponse]
+
+
+# ── Validator identity ──────────────────────────────────────────────────────
+#
+# Separation of prompts is necessary and not sufficient. "Independent validation" is a claim
+# about *who* answered, so the pipeline records the identity the provider actually reported and
+# refuses to upgrade support from a pass it cannot attribute to a different model.
+
+#: The validator's model identity equals the author's: a second prompt, not a second opinion.
+INDEPENDENCE_SAME_MODEL = "same_model"
+#: The provider reported no model on one side, so independence cannot be established.
+INDEPENDENCE_UNIDENTIFIED = "unidentified"
+#: Both identities are known and the model (or the provider) differs.
+INDEPENDENCE_INDEPENDENT = "independent"
+
+INDEPENDENCE_STATES: tuple[str, ...] = (
+    INDEPENDENCE_INDEPENDENT,
+    INDEPENDENCE_SAME_MODEL,
+    INDEPENDENCE_UNIDENTIFIED,
+)
+
+#: The only outcome that may be presented as independently validated.
+OUTCOME_INDEPENDENT = "independently_validated"
+#: A pass by the author's own model, or a pass whose facts research could not ground.
+OUTCOME_MODEL_ASSESSED = "model_assessed"
+OUTCOME_REJECTED = "rejected"
+
+
+def model_identity(response: LLMResponse | None) -> dict[str, Any]:
+    """Return ``{"provider", "model", "known"}`` from what the provider actually reported."""
+    provider = getattr(response, "provider", None)
+    model = getattr(response, "model", None)
+    provider = str(provider).strip() if provider else None
+    model = str(model).strip() if model else None
+    return {"provider": provider, "model": model, "known": bool(model)}
+
+
+def validation_independence(
+    generator: dict[str, Any] | None,
+    validator: dict[str, Any] | None,
+) -> str:
+    """Classify the *actual* identity pair. Same model name always means ``same_model``.
+
+    A different model name is independent even behind the same provider (a different model is a
+    different opinion). A missing model on either side cannot be called independent.
+    """
+    gen_model = str((generator or {}).get("model") or "").strip().lower()
+    val_model = str((validator or {}).get("model") or "").strip().lower()
+    if not gen_model or not val_model:
+        return INDEPENDENCE_UNIDENTIFIED
+    if gen_model == val_model:
+        return INDEPENDENCE_SAME_MODEL
+    return INDEPENDENCE_INDEPENDENT
+
 
 
 @dataclass
@@ -796,6 +863,16 @@ class _Usage:
             )
 
     def summary(self) -> dict[str, Any]:
+        by_purpose: dict[str, dict[str, Any]] = {}
+        for call in self.calls:
+            bucket = by_purpose.setdefault(
+                str(call["purpose"]), {"calls": 0, "cost_usd": 0.0, "unknown_cost": False}
+            )
+            bucket["calls"] += 1
+            if call["cost_usd"] is None:
+                bucket["unknown_cost"] = True
+            else:
+                bucket["cost_usd"] = round(bucket["cost_usd"] + float(call["cost_usd"]), 6)
         return {
             "calls": len(self.calls),
             "input_tokens": self.input_tokens,
@@ -805,6 +882,25 @@ class _Usage:
             "unknown_calls": self.unknown_calls,
             "estimated_cost_usd": round(self.estimated_spend_usd, 6),
             "budget": self.budget.as_dict(),
+            "by_purpose": by_purpose,
+        }
+
+    def cost_for(self, purpose_suffix: str) -> dict[str, Any]:
+        """Known spend attributable to calls whose purpose ends with ``purpose_suffix``.
+
+        This is the visible cost delta of the second-model pass: it is reported even when the
+        provider returned no cost, in which case ``cost_usd`` is ``None`` and ``unknown_cost``
+        is true rather than an invented number.
+        """
+        selected = [call for call in self.calls if str(call["purpose"]).endswith(purpose_suffix)]
+        if not selected:
+            return {"calls": 0, "cost_usd": 0.0, "unknown_cost": False}
+        unknown = any(call["cost_usd"] is None for call in selected)
+        known = round(sum(float(call["cost_usd"] or 0.0) for call in selected), 6)
+        return {
+            "calls": len(selected),
+            "cost_usd": None if unknown and known == 0 else known,
+            "unknown_cost": unknown,
         }
 
 
@@ -813,12 +909,24 @@ class PluginLLMAdapter:
 
     This is the only sanctioned route: host-owned credentials, per-plugin trust gate, no key in
     the plugin. It is a plain callable, so tests inject a fake with the same signature.
+
+    For the validator, an optional ``provider``/``model`` override is passed straight to the
+    host. The host's own per-plugin trust gate decides whether the override is allowed
+    (``plugins.entries.coursebook.llm.allow_model_override`` / ``allow_provider_override`` plus
+    ``allowed_models`` / ``allowed_providers``). A denied override fails loudly; the plugin never
+    falls back to the author model and calls that independent.
     """
 
-    def __init__(self, plugin_llm: Any) -> None:
+    def __init__(self, plugin_llm: Any, *, provider: str | None = None, model: str | None = None) -> None:
         if not callable(getattr(plugin_llm, "complete_structured", None)):
             raise TypeError("ctx.llm does not expose complete_structured; refusing to bypass trust")
         self._llm = plugin_llm
+        self._provider = provider or None
+        self._model = model or None
+
+    @property
+    def overrides(self) -> dict[str, Any]:
+        return {"provider": self._provider, "model": self._model}
 
     @classmethod
     def from_ctx(cls, ctx: Any) -> "PluginLLMAdapter":
@@ -828,17 +936,34 @@ class PluginLLMAdapter:
         return cls(llm)
 
     def __call__(self, request: LLMRequest) -> LLMResponse:
-        result = self._llm.complete_structured(
-            instructions=request.instructions,
-            input=[{"type": "text", "text": request.input_text}],
-            json_schema=request.schema,
-            schema_name=request.schema_name,
-            system_prompt=request.system_prompt,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-            timeout=request.timeout_s,
-            purpose=request.purpose,
-        )
+        kwargs: dict[str, Any] = {}
+        if self._provider:
+            kwargs["provider"] = self._provider
+        if self._model:
+            kwargs["model"] = self._model
+        try:
+            result = self._llm.complete_structured(
+                instructions=request.instructions,
+                input=[{"type": "text", "text": request.input_text}],
+                json_schema=request.schema,
+                schema_name=request.schema_name,
+                system_prompt=request.system_prompt,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+                timeout=request.timeout_s,
+                purpose=request.purpose,
+                **kwargs,
+            )
+        except Exception as exc:  # noqa: BLE001 - classify the host's trust refusal, re-raise others
+            if kwargs and "TrustError" in type(exc).__name__:
+                raise GenerationRejected(
+                    "cross-model validator refused by the host trust gate: "
+                    f"{exc}. Enable `plugins.entries.coursebook.llm.allow_model_override` and "
+                    "`allow_provider_override` (with `allowed_models` / `allowed_providers`), or "
+                    "unset `validator_model` / `validator_provider` and accept a model-assessed "
+                    "(non-independent) pass."
+                ) from exc
+            raise
         usage = getattr(result, "usage", None)
         return LLMResponse(
             text=str(getattr(result, "text", "") or ""),
@@ -853,12 +978,43 @@ class PluginLLMAdapter:
 
 #: Bound by the agent half's ``register(ctx)`` — the job runner calls into this process.
 _HOST_LLM: Any = None
+#: Optional second route for validation only. ``None`` means "no second model was configured";
+#: validation still runs with ``_HOST_LLM`` but is recorded as model-assessed, never independent.
+_VALIDATOR_LLM: "PluginLLMAdapter | None" = None
+_VALIDATOR_OVERRIDES: dict[str, Any] = {"provider": None, "model": None}
 
 
 def bind_host_llm(plugin_llm: Any) -> None:
     """Bind the host-owned LLM for job-runner use. Called from the agent half only."""
     global _HOST_LLM
     _HOST_LLM = plugin_llm
+
+
+def bind_validator_llm(plugin_llm: Any, *, provider: str | None = None, model: str | None = None) -> None:
+    """Bind a host-configured second model for validation calls.
+
+    ``provider``/``model`` are host settings (``plugins.entries.coursebook.settings``). When both
+    are empty, no cross-model path exists and ``validator_llm()`` returns ``None``; the pipeline
+    then runs validation on the author model and records ``model_assessed``, never ``independent``.
+    """
+    global _VALIDATOR_LLM, _VALIDATOR_OVERRIDES
+    provider = (str(provider or "").strip() or None)
+    model = (str(model or "").strip() or None)
+    _VALIDATOR_OVERRIDES = {"provider": provider, "model": model}
+    if plugin_llm is None or not (provider or model):
+        _VALIDATOR_LLM = None
+        return
+    _VALIDATOR_LLM = PluginLLMAdapter(plugin_llm, provider=provider, model=model)
+
+
+def validator_llm() -> LLM | None:
+    """Return the configured second-model route, or ``None`` when none is configured."""
+    return _VALIDATOR_LLM
+
+
+def validator_config() -> dict[str, Any]:
+    """Report the configured validator route (settings values, not observed identities)."""
+    return {"configured": _VALIDATOR_LLM is not None, **_VALIDATOR_OVERRIDES}
 
 
 def host_llm() -> LLM:
@@ -1600,6 +1756,15 @@ VALIDATION_SCHEMA: dict[str, Any] = {
                     "item": {"type": "string", "minLength": 1, "maxLength": 80},
                     "source_id": {"type": ["string", "null"], "maxLength": 64},
                     "support": {"type": "string", "enum": list(research_mod.SUPPORT_STATUSES)},
+                    "evidence_quote": {
+                        "type": ["string", "null"],
+                        "maxLength": 300,
+                        "description": (
+                            "Verbatim span from the named source's fetched excerpt that supports the "
+                            "claim. Required for a support upgrade; the ledger checks it against the "
+                            "stored bytes, so a fabricated quote never upgrades support."
+                        ),
+                    },
                     "reason": {"type": "string", "minLength": 3, "maxLength": 400},
                     "excerpt": {
                         "type": ["string", "null"],
@@ -3458,19 +3623,26 @@ def validation_verdict(
     *,
     research_status: str,
     ledger: Sequence[SourceRecord] = (),
+    independence: str = INDEPENDENCE_UNIDENTIFIED,
 ) -> dict[str, Any]:
-    """Turn a validator report into a verdict the pipeline can act on.
+    """Turn a validator report into an outcome the pipeline can act on.
 
     A validator cannot pass an artifact while any criterion failed, and it must answer every
-    criterion. ``unknown`` is honest only where the evidence genuinely is missing (no usable
-    research); elsewhere it is treated as a failure to validate.
+    criterion. ``unknown`` is honest only where the evidence genuinely is missing (research not
+    ``ok``); those answers are recorded as ``waived_unknown`` and close the factual gate: the
+    artifact can be a proposal, never a factually validated one.
 
     Claim verdicts that assert provenance the ledger does not contain are flagged and forced to
     ``unverified`` here, before ``apply_support_verdicts`` ever sees them. The flag is carried in
-    the returned verdict so the job result can surface it; the low-level link rule (source id plus
-    a verbatim excerpt) is enforced again by ``research.claim_verdict_link_problem``.
+    the returned verdict so the job result can surface it; the low-level link rule (a ledger
+    source id plus a verbatim quote of at least 12 characters) is enforced again by
+    ``research.claim_verdict_link_problem``.
+
+    ``independence`` is the *observed* model identity comparison (see
+    :func:`validation_independence`). A pass from the author's own model is stored as
+    ``model_assessed`` and is never reported as independent validation.
     """
-    allowed_unknown = {"source_support", "factual_correctness"} if research_status != "ok" else set()
+    allowed_unknown = {"source_support", "factual_correctness"} if research_status == "unavailable" else set()
     seen: dict[str, str] = {}
     for entry in report.get("criteria") or []:
         seen[str(entry.get("id"))] = str(entry.get("verdict"))
@@ -3479,13 +3651,16 @@ def validation_verdict(
         raise GenerationRejected(f"validator omitted criteria: {', '.join(missing)}")
     failed = [criterion for criterion, value in seen.items() if value == "fail"]
     unknown = [criterion for criterion, value in seen.items() if value == "unknown" and criterion not in allowed_unknown]
+    waived = [criterion for criterion, value in seen.items() if value == "unknown" and criterion in allowed_unknown]
     rejections = list(report.get("rejections") or [])
     declared = str(report.get("verdict"))
     claim_verdicts = [dict(entry) for entry in report.get("claim_verdicts") or []]
     provenance_flags: list[str] = []
     for index, entry in enumerate(claim_verdicts):
         flags = provenance_violations(
-            "\n".join(str(entry.get(key) or "") for key in ("item", "reason", "excerpt")),
+            "\n".join(
+                str(entry.get(key) or "") for key in ("item", "reason", "excerpt", "evidence_quote")
+            ),
             ledger=ledger,
             what=f"claim_verdicts[{index}]",
         )
@@ -3497,16 +3672,29 @@ def validation_verdict(
             "[provenance flagged: the cited provenance is not in the ledger] "
             + str(entry.get("reason") or "")
         )[:400]
+    facts_unverified = research_status == "unavailable"
     passed = declared == "pass" and not failed and not unknown and not rejections
+    if not passed:
+        outcome = OUTCOME_REJECTED
+    elif independence == INDEPENDENCE_INDEPENDENT and not facts_unverified:
+        outcome = OUTCOME_INDEPENDENT
+    else:
+        outcome = OUTCOME_MODEL_ASSESSED
     return {
         "verdict": "pass" if passed else "reject",
         "declared": declared,
         "failed": sorted(failed),
         "unknown": sorted(unknown),
+        "waived_unknown": sorted(waived),
         "rejections": rejections,
         "criteria": [dict(entry) for entry in report.get("criteria") or []],
         "claim_verdicts": claim_verdicts,
         "provenance_flags": provenance_flags,
+        "independence": independence,
+        "independent": independence == INDEPENDENCE_INDEPENDENT,
+        "research_status": research_status,
+        "facts_unverified": facts_unverified,
+        "outcome": outcome,
     }
 
 
@@ -4027,6 +4215,12 @@ _GENERATION_DDL: tuple[str, ...] = (
         generator_prompt_version TEXT NOT NULL,
         validator_prompt_version TEXT NOT NULL,
         validator_model TEXT,
+        generator_model TEXT,
+        generator_provider TEXT,
+        validator_provider TEXT,
+        independence TEXT,
+        facts_unverified INTEGER,
+        outcome TEXT,
         verdict TEXT NOT NULL,
         criteria_json TEXT NOT NULL,
         rejections_json TEXT NOT NULL,
@@ -4121,7 +4315,22 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
             connection.execute(
                 "ALTER TABLE gen_plan_sections ADD COLUMN section_role TEXT NOT NULL DEFAULT 'owner'"
             )
-
+        # Validator identity is additive: an older database keeps its rows and gains the columns
+        # with NULLs, which read as ``unidentified`` rather than as an independent pass.
+        validation_columns = {
+            str(row[1])
+            for row in connection.execute("PRAGMA table_info(gen_validation_records)").fetchall()
+        }
+        for column, ddl in (
+            ("generator_model", "TEXT"),
+            ("generator_provider", "TEXT"),
+            ("validator_provider", "TEXT"),
+            ("independence", "TEXT"),
+            ("facts_unverified", "INTEGER"),
+            ("outcome", "TEXT"),
+        ):
+            if column not in validation_columns:
+                connection.execute(f"ALTER TABLE gen_validation_records ADD COLUMN {column} {ddl}")
 
 
 # ── Persistence helpers ─────────────────────────────────────────────────────
@@ -4339,6 +4548,7 @@ def plan_document(connection: sqlite3.Connection, plan_id: str) -> dict[str, Any
             "SELECT * FROM gen_plan_sections WHERE plan_id = ? ORDER BY ordinal", (plan_id,)
         ).fetchall()
     ]
+    validation = validation_record(connection, row.get("validation_id"))
     return {
         "plan_id": plan_id,
         "plan": document.get("plan") or {},
@@ -4357,6 +4567,16 @@ def plan_document(connection: sqlite3.Connection, plan_id: str) -> dict[str, Any
         "level": document.get("level"),
         "subject_domain": document.get("subject_domain"),
         "scope": document.get("scope"),
+        # Provenance is part of the plan read, not a separate call an approver can skip. An older
+        # document with no validation record returns ``validation: null`` and cannot be upgraded.
+        "validation": validation,
+        "approval": {
+            "outcome": (validation or {}).get("outcome"),
+            "independent": bool((validation or {}).get("independent")),
+            "facts_unverified": bool((validation or {}).get("facts_unverified")),
+            "needs_review": (validation or {}).get("outcome") != OUTCOME_INDEPENDENT,
+            "warning": (validation or {}).get("warning"),
+        },
     }
 
 
@@ -4674,18 +4894,23 @@ def _record_validation(
     subject_id: str,
     subject_hash: str,
     generation_request: LLMRequest,
+    generation_response: LLMResponse | None,
     validation_request: LLMRequest,
     response: LLMResponse,
     verdict: dict[str, Any],
     now: datetime | None,
 ) -> str:
     validation_id = _new_id()
+    generator = model_identity(generation_response)
+    validator = model_identity(response)
+    independence = validation_independence(generator, validator)
     with _transaction(connection):
         connection.execute(
             "INSERT OR IGNORE INTO gen_validation_records (id, subject_kind, subject_id, subject_hash, "
-            "generator_prompt_version, validator_prompt_version, validator_model, verdict, criteria_json, "
-            "rejections_json, generator_prompt_sha256, validator_prompt_sha256, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "generator_prompt_version, validator_prompt_version, validator_model, generator_model, "
+            "generator_provider, validator_provider, independence, facts_unverified, outcome, verdict, "
+            "criteria_json, rejections_json, generator_prompt_sha256, validator_prompt_sha256, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 validation_id,
                 subject_kind,
@@ -4693,7 +4918,15 @@ def _record_validation(
                 subject_hash,
                 generation_request.prompt_version,
                 validation_request.prompt_version,
-                response.model,
+                validator["model"],
+                generator["model"],
+                generator["provider"],
+                validator["provider"],
+                independence,
+                1 if verdict.get("facts_unverified") else 0,
+                verdict.get("outcome") or (
+                    OUTCOME_REJECTED if verdict["verdict"] != "pass" else OUTCOME_MODEL_ASSESSED
+                ),
                 verdict["verdict"],
                 _json(verdict["criteria"]),
                 _json(
@@ -4701,6 +4934,7 @@ def _record_validation(
                         "rejections": verdict["rejections"],
                         "failed": verdict["failed"],
                         "unknown": verdict["unknown"],
+                        "waived_unknown": verdict.get("waived_unknown") or [],
                         "declared": verdict["declared"],
                     }
                 ),
@@ -4715,6 +4949,80 @@ def _record_validation(
             (subject_kind, subject_id, subject_hash, validation_request.prompt_version),
         ).fetchone()
     return str(row[0]) if row is not None else validation_id
+
+
+def validation_record(connection: sqlite3.Connection, validation_id: str | None) -> dict[str, Any] | None:
+    """Read one validation record as the provenance block callers render.
+
+    Older rows created before identity columns existed return ``independence: "unidentified"``:
+    an unknown identity is never upgraded to ``independent`` on read.
+    """
+    if not validation_id:
+        return None
+    row = _row_dict(
+        connection.execute(
+            "SELECT * FROM gen_validation_records WHERE id = ?", (str(validation_id),)
+        ).fetchone()
+    )
+    if row is None:
+        return None
+    generator = {
+        "provider": row.get("generator_provider"),
+        "model": row.get("generator_model"),
+        "known": bool(row.get("generator_model")),
+    }
+    validator = {
+        "provider": row.get("validator_provider"),
+        "model": row.get("validator_model"),
+        "known": bool(row.get("validator_model")),
+    }
+    independence = row.get("independence") or validation_independence(generator, validator)
+    outcome = row.get("outcome") or (
+        OUTCOME_REJECTED
+        if row.get("verdict") != "pass"
+        else (OUTCOME_INDEPENDENT if independence == INDEPENDENCE_INDEPENDENT and not row.get("facts_unverified")
+              else OUTCOME_MODEL_ASSESSED)
+    )
+    rejections = _load_json(row.get("rejections_json"), {}) or {}
+    return {
+        "validation_id": row.get("id"),
+        "subject_kind": row.get("subject_kind"),
+        "subject_id": row.get("subject_id"),
+        "generator": generator,
+        "validator": validator,
+        "independence": independence,
+        "independent": independence == INDEPENDENCE_INDEPENDENT,
+        "facts_unverified": bool(row.get("facts_unverified")),
+        "outcome": outcome,
+        "verdict": row.get("verdict"),
+        "generator_prompt_sha256": row.get("generator_prompt_sha256"),
+        "validator_prompt_sha256": row.get("validator_prompt_sha256"),
+        "waived_unknown": rejections.get("waived_unknown") or [],
+        "warning": _provenance_warning(outcome, independence, bool(row.get("facts_unverified"))),
+    }
+
+
+def _provenance_warning(outcome: str, independence: str, facts_unverified: bool) -> str | None:
+    """One sentence that a caller cannot mistake for a validation claim."""
+    if outcome == OUTCOME_REJECTED:
+        return "validation rejected this artifact: it is not approvable as validated."
+    if outcome == OUTCOME_INDEPENDENT:
+        return None
+    if facts_unverified:
+        return (
+            "facts unverified, no sources: research was unavailable, so factual correctness could "
+            "not be validated. The model assessed its own output; a human approval is a decision, "
+            "not factual verification."
+        )
+    if independence == INDEPENDENCE_SAME_MODEL:
+        return (
+            "model assessed, not independent: the validator ran on the same model that wrote the "
+            "artifact. Treat the pass as a second prompt, not a second opinion."
+        )
+    return (
+        "model assessed, identity unidentified: the provider did not report both model identities, "
+        "so independent validation cannot be claimed."
+    )
 
 
 def _course_id(connection: sqlite3.Connection, brief: dict[str, Any], *, goal: str, recipe: str, locale: str | None, now: datetime | None) -> str:
@@ -4794,6 +5102,10 @@ def run_plan_job(
     parent_brief = parent_brief_view(brief) if recipe == "parent" else None
     job_id = str(job.get("job_id") or "") or None
     usage = _Usage(budget or default_cost_budget())
+    # The validator is the configured second-model route when one exists. When it does not, the
+    # call still happens with the author model, but the recorded identity makes that a
+    # model-assessed pass, never an independent one.
+    validator = validator_llm() or llm
 
     ensure_schema(connection)
     fingerprint = _request_fingerprint(
@@ -4823,6 +5135,18 @@ def run_plan_job(
     if existing is not None:
         result = _load_json(existing["result_json"], {})
         result["reused"] = True
+        if "validation" not in result:
+            # A result cached before H-15 carries no provenance. Derive it from the stored record;
+            # an unreadable identity stays ``unidentified`` and is never upgraded on reuse.
+            record = validation_record(connection, result.get("validation_id"))
+            result["validation"] = record
+            result["approval_provenance"] = {
+                "outcome": (record or {}).get("outcome"),
+                "independent": bool((record or {}).get("independent")),
+                "facts_unverified": bool((record or {}).get("facts_unverified")),
+                "needs_review": (record or {}).get("outcome") != OUTCOME_INDEPENDENT,
+                "warning": (record or {}).get("warning"),
+            }
         return result
 
     try:
@@ -4911,12 +5235,18 @@ def run_plan_job(
                 parent_brief=parent_brief,
             )
             assert_separate_pass(plan_request, validation_request)
-            validation_response = _call_llm(llm, validation_request, usage)
+            validation_response = _call_llm(validator, validation_request, usage)
             report = _parse_structured(
                 validation_response, VALIDATION_SCHEMA, what="plan validation", max_bytes=MAX_VALIDATION_BYTES
             )
+            independence = validation_independence(
+                model_identity(response), model_identity(validation_response)
+            )
             verdict = validation_verdict(
-                report, research_status=research_run.status, ledger=research_run.sources
+                report,
+                research_status=research_run.status,
+                ledger=research_run.sources,
+                independence=independence,
             )
             if verdict["verdict"] == "pass":
                 plan = candidate
@@ -4938,21 +5268,35 @@ def run_plan_job(
                 "declared": "reject",
                 "failed": [],
                 "unknown": [],
+                "waived_unknown": [],
                 "rejections": [
                     {"item": "plan", "criterion": "objective_alignment", "reason": reason}
                     for reason in rejection_reasons
                 ] or [{"item": "plan", "criterion": "objective_alignment", "reason": "generator broke required rules"}],
                 "criteria": [],
                 "claim_verdicts": [],
+                "independence": INDEPENDENCE_UNIDENTIFIED,
+                "independent": False,
+                "research_status": research_run.status,
+                "facts_unverified": research_run.status == "unavailable",
+                "outcome": OUTCOME_REJECTED,
             }
 
-        applied = apply_support_verdicts(research_run.sources, verdict.get("claim_verdicts") or [])
+        # A same-model validator may not move the ledger: `independent` is the observed identity
+        # comparison, and the ledger additionally requires a verbatim evidence quote per source.
+        applied = apply_support_verdicts(
+            research_run.sources,
+            verdict.get("claim_verdicts") or [],
+            independent=bool(verdict.get("independent")),
+        )
         research_run.sources = applied
 
         digest = plan_hash(plan)
         plan_id = _new_id()
         timestamp = _now_iso(now)
-        generation_state = "draft" if verdict["verdict"] == "pass" else "needs_review"
+        # Only an independent pass with grounded facts is a draft a caller may present as
+        # validated. Everything else is parked for review with its provenance attached.
+        generation_state = "draft" if verdict["outcome"] == OUTCOME_INDEPENDENT else "needs_review"
         blueprint_plan = str(plan.get("plan_schema") or "") == PLAN_SCHEMA_V2_NAME
         # A blueprint plan authors no sections: the unit stage does, after approval. A v1 plan
         # keeps its bundled sections exactly as it shipped.
@@ -4975,6 +5319,10 @@ def run_plan_job(
             "validation_id": None,
             "validation_verdict": verdict["verdict"],
             "plan_schema": plan.get("plan_schema"),
+            "validation": _validation_block(verdict, response, validation_response),
+            # The approval surface reads this: a model-assessed or facts-unverified plan is not
+            # blocked, but it cannot be approved while carrying no warning.
+            "approval_provenance": _approval_provenance(verdict),
             "objectives": len(objectives),
             "sections": len(sections),
             "units": len(units),
@@ -5000,6 +5348,10 @@ def run_plan_job(
             ),
             "usage": usage.summary(),
         }
+        # The visible price of the second opinion: the validation calls' own spend, never folded
+        # silently into the authoring total.
+        result["validation"]["cost"] = usage.cost_for(".validate")
+        result["validation"]["cost_usd"] = result["validation"]["cost"]["cost_usd"]
 
         # One write transaction for the whole bundle: a plan must never exist without its document,
         # its ledger and its validation record. Provider calls already finished above.
@@ -5109,6 +5461,7 @@ def run_plan_job(
                     subject_id=plan_id,
                     subject_hash=digest,
                     generation_request=plan_request,
+                    generation_response=response,
                     validation_request=validation_request,
                     response=validation_response,
                     verdict=verdict,
@@ -5164,12 +5517,62 @@ def run_plan_job(
         raise
 
 
+def _validation_block(
+    verdict: dict[str, Any],
+    generator_response: LLMResponse | None,
+    validator_response: LLMResponse | None,
+) -> dict[str, Any]:
+    """The provenance block every caller reads before saying "validated"."""
+    generator = model_identity(generator_response)
+    validator = model_identity(validator_response)
+    independence = verdict.get("independence") or validation_independence(generator, validator)
+    outcome = verdict.get("outcome") or (
+        OUTCOME_REJECTED
+        if verdict["verdict"] != "pass"
+        else (OUTCOME_INDEPENDENT if independence == INDEPENDENCE_INDEPENDENT else OUTCOME_MODEL_ASSESSED)
+    )
+    facts_unverified = bool(verdict.get("facts_unverified"))
+    return {
+        "outcome": outcome,
+        "verdict": verdict["verdict"],
+        "independence": independence,
+        "independent": independence == INDEPENDENCE_INDEPENDENT,
+        "generator": generator,
+        "validator": validator,
+        "facts_unverified": facts_unverified,
+        "research_status": verdict.get("research_status"),
+        "waived_unknown": list(verdict.get("waived_unknown") or []),
+        "warning": _provenance_warning(outcome, independence, facts_unverified),
+        "cost_usd": None,
+    }
+
+
+def _approval_provenance(verdict: dict[str, Any]) -> dict[str, Any]:
+    """What an approver must be told, and whether the pass may be called independent."""
+    outcome = verdict.get("outcome") or (
+        OUTCOME_REJECTED if verdict["verdict"] != "pass" else OUTCOME_MODEL_ASSESSED
+    )
+    independence = verdict.get("independence") or INDEPENDENCE_UNIDENTIFIED
+    facts_unverified = bool(verdict.get("facts_unverified"))
+    return {
+        "outcome": outcome,
+        "independent": independence == INDEPENDENCE_INDEPENDENT,
+        "facts_unverified": facts_unverified,
+        "needs_review": outcome != OUTCOME_INDEPENDENT,
+        "warning": _provenance_warning(outcome, independence, facts_unverified),
+    }
+
+
 def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, Any]) -> list[str]:
     warnings: list[str] = []
     if research_run.status == "unavailable":
         warnings.append(
             "research unavailable: claims are labelled unverified and no citation is presented as "
             "fetched support"
+        )
+        warnings.append(
+            "facts unverified, no sources: research was unavailable, so this plan is not factually "
+            "validated. Approval is a human decision, not factual verification."
         )
     elif research_run.status == "degraded":
         # Partial failure is not silence: say which half is missing and keep citations bounded to
@@ -5185,8 +5588,23 @@ def _plan_warnings(recipe: str, research_run: ResearchRun, verdict: dict[str, An
         warnings.append("one-off brief: completion is instruction_complete plus a self-reported checklist")
     if verdict["verdict"] != "pass":
         warnings.append("independent validation did not pass: the plan is not approvable as-is")
+    elif verdict.get("outcome") != OUTCOME_INDEPENDENT:
+        warnings.append(
+            "model assessed, not independently validated: "
+            + (
+                "the validator is the author's own model"
+                if verdict.get("independence") == INDEPENDENCE_SAME_MODEL
+                else "the validator's model identity could not be established"
+            )
+            + ". Configure a second validator model to earn an independent pass."
+        )
     if verdict.get("unknown"):
         warnings.append("validator could not verify: " + ", ".join(verdict["unknown"]))
+    if verdict.get("waived_unknown"):
+        warnings.append(
+            "validator answered unknown for: " + ", ".join(verdict["waived_unknown"])
+            + " (waived only because research was unavailable; the factual gate stays closed)"
+        )
     return warnings
 
 
@@ -5632,6 +6050,10 @@ def run_unit_sections_job(
 
     resolved_budget = budget or unit_sections_cost_budget(brief_budget_usd=brief.get("budget_usd"))
     usage = _Usage(resolved_budget)
+    # The validator is the configured second-model route when one exists. When it does not, the
+    # call still happens with the author model, but the recorded identity makes that a
+    # model-assessed pass, never an independent one.
+    validator = validator_llm() or llm
     validation_request: LLMRequest | None = None
     validation_response: LLMResponse | None = None
     verdict: dict[str, Any] | None = None
@@ -5694,15 +6116,21 @@ def run_unit_sections_job(
             )
             assert request is not None
             assert_separate_pass(request, validation_request)
-            validation_response = _call_llm(llm, validation_request, usage)
+            validation_response = _call_llm(validator, validation_request, usage)
             report = _parse_structured(
                 validation_response,
                 VALIDATION_SCHEMA,
                 what="unit sections validation",
                 max_bytes=MAX_VALIDATION_BYTES,
             )
+            independence = validation_independence(
+                model_identity(response), model_identity(validation_response)
+            )
             verdict = validation_verdict(
-                report, research_status=research_status, ledger=sources
+                report,
+                research_status=research_status,
+                ledger=sources,
+                independence=independence,
             )
             if verdict["verdict"] == "pass":
                 authored = batch
@@ -5728,13 +6156,24 @@ def run_unit_sections_job(
                 or [{"item": "unit_sections", "criterion": "objective_alignment", "reason": "generator broke required rules"}],
                 "criteria": [],
                 "claim_verdicts": [],
+                "waived_unknown": [],
+                "independence": INDEPENDENCE_UNIDENTIFIED,
+                "independent": False,
+                "research_status": research_status,
+                "facts_unverified": research_status == "unavailable",
+                "outcome": OUTCOME_REJECTED,
             }
         if not authored:
             raise GenerationRejected(
                 f"unit {requested_unit} produced no sections"
             )
 
-        state = "validated" if verdict["verdict"] == "pass" else "needs_review"
+        # Only an independent pass with grounded facts certifies the authored sections. Everything
+        # else is parked for review with its provenance attached, exactly as the plan stage does.
+        outcome = verdict.get("outcome") or (
+            OUTCOME_REJECTED if verdict["verdict"] != "pass" else OUTCOME_MODEL_ASSESSED
+        )
+        state = "validated" if outcome == OUTCOME_INDEPENDENT else "needs_review"
         timestamp = _now_iso(now)
         # Global ordinals after the highest already stored for this plan, in unit order. The
         # writer assigns identity; the model's ordinal is advisory.
@@ -5795,6 +6234,7 @@ def run_unit_sections_job(
                     subject_id=f"{plan_id}:{requested_unit}",
                     subject_hash=sha256_of_text(canonical_json(authored)),
                     generation_request=request,
+                    generation_response=response,
                     validation_request=validation_request,
                     response=validation_response,
                     verdict=verdict,
@@ -6289,7 +6729,9 @@ def run_lesson_job(
         ),
         "sections_total": len(section_rows),
         "lessons": lesson_summaries,
-        "needs_review": [item["section_id"] for item in lesson_summaries if item["state"] == "needs_review"],
+        "needs_review": [
+            item["section_id"] for item in lesson_summaries if item["state"] in ("needs_review", "model_assessed")
+        ],
         "usage": usage.summary(),
         "preflight": preflight.to_dict(),
         "budget": resolved_budget.as_dict(),
@@ -6495,11 +6937,19 @@ def _author_section(
             subject_domain=subject_domain,
         )
         assert_separate_pass(request, validation_request)
-        validation_response = _call_llm(llm, validation_request, usage)
+        validation_response = _call_llm(validator_llm() or llm, validation_request, usage)
         report = _parse_structured(
             validation_response, VALIDATION_SCHEMA, what="lesson validation", max_bytes=MAX_VALIDATION_BYTES
         )
-        verdict = validation_verdict(report, research_status=research_status, ledger=sources)
+        independence = validation_independence(
+            model_identity(response), model_identity(validation_response)
+        )
+        verdict = validation_verdict(
+            report,
+            research_status=research_status,
+            ledger=sources,
+            independence=independence,
+        )
         if verdict["verdict"] == "pass":
             lesson = candidate
             break
@@ -6520,13 +6970,29 @@ def _author_section(
             "declared": "reject",
             "failed": [],
             "unknown": [],
+            "waived_unknown": [],
             "rejections": [{"item": "lesson", "criterion": "objective_alignment", "reason": reason} for reason in rejection_reasons],
             "criteria": [],
             "claim_verdicts": [],
+            "independence": INDEPENDENCE_UNIDENTIFIED,
+            "independent": False,
+            "research_status": research_status,
+            "facts_unverified": research_status == "unavailable",
+            "outcome": OUTCOME_REJECTED,
         }
 
     page = _build_learner_page(lesson, section, sources)
-    state = "validated" if verdict["verdict"] == "pass" else "needs_review"
+    outcome = verdict.get("outcome") or (
+        OUTCOME_REJECTED if verdict["verdict"] != "pass" else OUTCOME_MODEL_ASSESSED
+    )
+    if outcome == OUTCOME_INDEPENDENT:
+        state = "validated"
+    elif outcome == OUTCOME_MODEL_ASSESSED:
+        # A model-assessed page is readable (with its provenance warning) but its check is not
+        # enabled: a same-model pass cannot certify a graded answer.
+        state = "model_assessed"
+    else:
+        state = "needs_review"
     check_payloads = _check_payloads(lesson, locale=locale)
     lesson_id = _new_id()
     check_id = str(review_target["check_id"]) if review_target is not None else _new_id()
@@ -6575,7 +7041,7 @@ def _author_section(
                     _json(check_payloads["rubric"]),
                     _json(check_payloads["reference"]),
                     locale,
-                    "passed" if state == "validated" else "failed",
+                    "passed" if state == "validated" else ("pending" if state == "model_assessed" else "failed"),
                     "open" if state == "validated" else "closed",
                     timestamp,
                 ),
@@ -6593,6 +7059,7 @@ def _author_section(
                 subject_id=lesson_id,
                 subject_hash=sha256_of_text(canonical_json(page)),
                 generation_request=request,
+                generation_response=response,
                 validation_request=validation_request,
                 response=validation_response,
                 verdict=verdict,
@@ -6606,12 +7073,16 @@ def _author_section(
         "check_id": check_id,
         "state": state,
         "check_enabled": state == "validated",
-        "audit_state": "passed" if state == "validated" else "failed",
+        "audit_state": "passed" if state == "validated" else ("pending" if state == "model_assessed" else "failed"),
         "validation_id": validation_id,
         "validation_verdict": verdict["verdict"],
+        "validation": _validation_block(verdict, response, validation_response),
         "validation_model": validation_response.model if validation_response is not None else None,
         "reused": False,
     }
+    warning = summary["validation"].get("warning")
+    if warning:
+        summary["warning"] = warning
     if state == "needs_review":
         summary["rejection_reasons"] = rejection_reasons
     if verdict.get("provenance_flags"):
@@ -6634,7 +7105,7 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
     row = _row_dict(connection.execute("SELECT * FROM gen_lessons WHERE id = ?", (lesson_id,)).fetchone())
     if row is None:
         raise LessonNotAvailable(f"lesson {lesson_id!r} does not exist")
-    if row["state"] != "validated":
+    if row["state"] not in ("validated", "model_assessed"):
         raise LessonNotAvailable(
             f"lesson {lesson_id!r} is {row['state']!r}: no learner-facing check is enabled"
         )
@@ -6661,6 +7132,26 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
         for answer in [reference.get("reference_answer")] + list(reference.get("accepted_answers") or []):
             if answer and _normalize_answer(str(answer)) in page_text:
                 raise LessonNotAvailable("stored lesson page announces a check answer; refusing to serve it")
+    # A model-assessed page is readable, but the warning travels with it: a learner or parent
+    # must not read a same-model / no-research pass as validation.
+    validation = validation_record(connection, row.get("validation_id"))
+    if row["state"] == "model_assessed":
+        page["provenance"] = {
+            "outcome": OUTCOME_MODEL_ASSESSED,
+            "independent": False,
+            "facts_unverified": bool((validation or {}).get("facts_unverified")),
+            "check_enabled": False,
+            "warning": (validation or {}).get("warning")
+            or "model assessed, not independently validated: treat this page as a proposal.",
+        }
+    else:
+        page["provenance"] = {
+            "outcome": (validation or {}).get("outcome") or OUTCOME_INDEPENDENT,
+            "independent": True,
+            "facts_unverified": False,
+            "check_enabled": True,
+            "warning": None,
+        }
     return page
 
 

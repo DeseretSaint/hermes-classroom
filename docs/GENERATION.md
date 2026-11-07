@@ -23,14 +23,31 @@ Three different calls, three different prompts, three different schemas:
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
 generation schema, or the generation prompt version. The validation record stores both prompt
-hashes (`generator_prompt_sha256`, `validator_prompt_sha256`), the validator model, per-criterion
-verdicts and the exact rejections. It never stores a generator self-assessment, and the validator
-input never contains the author's rationale — only the artifact, the source ledger, the recipe and
-the dials.
+hashes (`generator_prompt_sha256`, `validator_prompt_sha256`), **both model identities**
+(`generator_model`/`generator_provider` and `validator_model`/`validator_provider`), the observed
+`independence` state, per-criterion verdicts and the exact rejections. It never stores a generator
+self-assessment, and the validator input never contains the author's rationale — only the artifact,
+the source ledger, the recipe and the dials.
+
+**Prompt separation is not independence.** The pipeline compares the identities the provider
+actually reported and records one typed state:
+
+| `independence` | Meaning | Consequence |
+|---|---|---|
+| `independent` | both identities known, model names differ | a criteria pass with research not `unavailable` is `independently_validated` |
+| `same_model` | validator model equals author model | a pass is `model_assessed`; never independent, never a source upgrade |
+| `unidentified` | the provider did not report a model on one side | a pass is `model_assessed`; independence cannot be claimed |
+
+The outcome is a separate typed field (`outcome`): `independently_validated`, `model_assessed` or
+`rejected`. Only `independently_validated` yields plan `generation_state = draft`; the other two
+park the artifact `needs_review`. A caller must read `outcome`/`independence`, not `verdict` alone.
 
 A validator cannot pass while a criterion failed, cannot omit a criterion, and cannot answer
 `unknown` outside the two criteria where missing research makes uncertainty the honest answer
-(`source_support`, `factual_correctness`). Ten criteria are mandatory:
+(`source_support`, `factual_correctness`). Those waived answers are recorded as `waived_unknown`
+and they close the factual gate: with `research_status = "unavailable"` the best possible outcome is
+`model_assessed`, even when every criterion is answered `pass`. There is no path from unavailable
+research to `independently_validated`. Ten criteria are mandatory:
 
 `objective_alignment`, `source_support`, `factual_correctness`, `answer_uniqueness`,
 `alternative_coverage`, `rubric_consistency`, `internal_contradiction`, `answer_leakage`,
@@ -58,8 +75,20 @@ falling back to any provider — failing closed is the intended behaviour.
 
 **Limits.**
 
-* No raw provider keys, no provider/model overrides: the call inherits whatever the user is using
-  and whatever the per-plugin trust policy allows.
+* No raw provider keys. Generation inherits whatever model the user is using. The **only**
+  override the plugin sends is the host-configured validator route (`validator_model` /
+  `validator_provider` in `plugins.entries.coursebook.settings`), passed as the documented
+  `complete_structured(provider=..., model=...)` keywords. The host's own per-plugin trust gate
+  (`plugins.entries.coursebook.llm.allow_model_override`, `allow_provider_override`,
+  `allowed_models`, `allowed_providers`) decides whether that override is allowed. A refused
+  override fails the job with a `GenerationRejected` naming the trust flags; it never silently
+  falls back to the author model and calls the result independent.
+* When no validator route is configured, `validator_llm()` is `None`: validation still runs on the
+  author model (a different prompt and schema), the record says `same_model`, and the artifact is
+  `model_assessed`. That is a documented refusal to claim independence, not a fake second opinion.
+* The cost of the second route is reported, not hidden: `result["validation"]["cost"]` is the spend
+  of the `.validate` calls (calls, known USD, `unknown_cost`) and `result["usage"]["by_purpose"]`
+  breaks the whole job down by purpose. Unknown provider cost stays `null`.
 * Usage is whatever the host reports. Unknown input/output tokens and unknown cost stay `None` and
   are recorded as `unknown_cost: true`. A spend total that mixes known and unknown cost reports the
   known part and flags the uncertainty; it never invents a number.
@@ -128,21 +157,24 @@ sources ≤ 24.
   nothing (`test_web_text_never_becomes_policy`). The excerpt reaches every model inside the
   explicit data envelope described in §4a, and an injected URL/title/publisher/DOI/ISBN in the
   generated artifact is refused by the provenance lint in §5.
-* **Provenance is not support.** Every fetched source starts `unverified`. Only *linked*
-  validator claim verdicts move it, via `apply_support_verdicts`, and a `contradictory` verdict
-  outranks `supported`. A verdict must name a ledger `source_id` and quote an `excerpt` of at
-  least 12 characters that occurs verbatim (whitespace collapsed) in that source's stored excerpt;
-  a source id alone, a missing quote or a quote the page never contained is ignored and the
-  source stays `unverified`. An accepted verdict appends its claim `item` to `claim_links`. The
-  four generation statuses map onto the frozen `cb.vocabulary`
-  `source_support_status`: `supported`/`partial` → `model_assessed`, `contradictory` →
-  `conflicting`, `unverified` → `unassessed`. The contract enum is not redefined here.
+* **Provenance is not support.** Every fetched source starts `unverified`. Two conditions must
+  both hold before `apply_support_verdicts` moves it: the validation pass is `independent` (a
+  different model identity), and the verdict carries an `evidence_quote` (or its older alias
+  `excerpt`) of at least 12 characters that occurs verbatim (whitespace collapsed) in that
+  source's stored excerpt. A same-model validator cannot move the ledger at any status, a source
+  id alone is ignored, and a quote the page never contained is ignored. A `contradictory` verdict
+  outranks `supported`. An accepted verdict appends its claim `item` to `claim_links`. The four
+  generation statuses map onto the frozen `cb.vocabulary` `source_support_status`:
+  `supported`/`partial` → `model_assessed`, `contradictory` → `conflicting`, `unverified` →
+  `unassessed`. The contract enum is not redefined here.
 * If no seam is wired, research returns `status: "unavailable"` with zero sources. If fetches
   fail, the surviving rows are kept and the run reports `status: "degraded"` with the failure
   list. The plan may still be proposed, but every objective must be `support: "unverified"`,
   `source_ids` must be empty when nothing was fetched, and the result carries a warning the UI
   can show. A plan that cites a source id absent from the ledger is rejected outright
-  (`plan cites sources that were never fetched`).
+  (`plan cites sources that were never fetched`). The no-research warning is also written into
+  `plan_document()["approval"]` and into the `provenance` block of every lesson served from such
+  a plan.
 
 ## 4a. Source trust boundary (round-2 P0-2)
 
@@ -216,8 +248,13 @@ check, and that too remains partly a model judgment.
   scope engine in this branch: `scope` is recorded on the course and in the plan document, stated
   in the plan prompt, and capped here. Objective counts follow the same table (4–5 / 4–6 / 4–8).
 
-The plan is persisted as `plans.state = 'draft'`. `approved_at` stays `NULL`; approval is
-`plan.approve`, i.e. the learner's or parent's command.
+The plan is persisted as `plans.state = 'draft'` (the kernel's approvable state). `approved_at`
+stays `NULL`; approval is `plan.approve`, i.e. the learner's or parent's command. What the caller
+must not confuse with approval is validation: the authored document records
+`generation_state = 'draft'` only for `independently_validated`; a `model_assessed` or `rejected`
+artifact records `needs_review`, and `plan_document()` carries both the validation provenance and
+the warning an approver needs. Approval of a `model_assessed` plan is a human decision, not
+factual verification, and that sentence is in the warning.
 
 **Prerequisites are not a v1 plan rule, by decision.** `OBJECTIVE_SCHEMA` and `SECTION_SCHEMA`
 carry no prerequisite field and must not gain one: the v1 plan is a flat list whose one section per
@@ -257,6 +294,20 @@ v10). They are their own fields; they are never written into `dials`, which stay
   to one course; an identical retry of the same brief is still free.
 * **Round-trip**: the job result, `plan_document` and `course.get` all return the declared values;
   a plan authored before v10 has none and returns `None` rather than inferring them from `locale`.
+
+### 5.1 No-research and same-model provenance reach approval and the learner
+
+* `run_plan_job` returns `validation` (`outcome`, `independence`, both identities, prompt hashes,
+  `facts_unverified`, `waived_unknown`, `cost`) and `approval_provenance` (`needs_review`,
+  `warning`).
+* `plan_document()` returns the same block plus `approval.needs_review` / `approval.warning`.
+  An older document with no validation row returns `validation: null`; it is never upgraded to
+  independent on read.
+* Lessons author under the plan's research status. A model-assessed lesson is stored in
+  `gen_lessons.state = 'model_assessed'`: `learner_page()` serves it with
+  `provenance = {outcome, independent: false, facts_unverified, check_enabled: false, warning}` and
+  its check stays `closed` with `audit_state = 'pending'`. A `needs_review` lesson is still
+  refused. No same-model pass can enable a graded check.
 
 ## 6. Lessons, checks and answer separation
 

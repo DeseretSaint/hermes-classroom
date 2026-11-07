@@ -178,7 +178,9 @@ class LearnerPlanFlowTest(KernelCase):
                 FakeLLM(
                     {
                         "coursebook.plan.generate": blueprint_response(learner_plan()),
-                        "coursebook.plan.validate": blueprint_response(validation_pass()),
+                        "coursebook.plan.validate": blueprint_response(
+                            validation_pass(), model="fake-independent-validator"
+                        ),
                     }
                 ),
                 FakeSearch(),
@@ -208,7 +210,9 @@ class LearnerPlanFlowTest(KernelCase):
                 FakeLLM(
                     {
                         "coursebook.plan.generate": blueprint_response(learner_plan()),
-                        "coursebook.plan.validate": blueprint_response(validation_pass()),
+                        "coursebook.plan.validate": blueprint_response(
+                            validation_pass(), model="fake-independent-validator"
+                        ),
                     }
                 ),
                 FakeSearch(),
@@ -312,7 +316,9 @@ class LearnerPlanFlowTest(KernelCase):
                         "coursebook.unit_sections.generate": blueprint_response(
                             unit_sections_document(unit=unit, objectives=objectives)
                         ),
-                        "coursebook.unit_sections.validate": blueprint_response(validation_pass()),
+                        "coursebook.unit_sections.validate": blueprint_response(
+                            validation_pass(), model="fake-independent-validator"
+                        ),
                     }
                 ),
                 plan_id=plan_id,

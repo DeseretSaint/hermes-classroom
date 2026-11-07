@@ -783,6 +783,37 @@ approval that covers the answer guide, so v6 carves one narrow exception:
 * `jobs.get` already returns the raw `brief` object (`_job_view`), but its v1 response schema is an
   open object; v6 does **not** tighten that preserved payload. `parent.brief.get` is the typed read.
 
+### Validation provenance at approval (H-15, no wire change)
+
+`plan.approve` still fences on the plan hash and the enrollment revision. What changed is what a
+caller is obliged to disclose before it sends that command, and the fact that a pass is no longer
+sufficient to call a plan validated:
+
+* The generation job records, per artifact, the `independence` state of the validation pass
+  (`independent`, `same_model`, `unidentified`) and an `outcome`
+  (`independently_validated`, `model_assessed`, `rejected`). Only `independently_validated` sets
+  `gen_plan_documents.generation_state = 'draft'`; the other outcomes record `needs_review`.
+* `plan_document()` returns `validation` (both model identities, prompt hashes, waived unknown
+  criteria, `facts_unverified`, cost) and `approval` (`needs_review`, `warning`). The job result
+  carries the same as `validation` / `approval_provenance`, and `warnings` includes the sentence
+  `facts unverified, no sources: ...` whenever research was not `ok`.
+* A `model_assessed` plan may still be approved by a human: that is the review the word
+  `needs_review` names. Approval is not factual verification, and the warning says so. The kernel
+  gate in `domain._plan_validation_source` therefore refuses only an unvalidated or `rejected`
+  artifact; a durable passing record whose validator was not independent approves as a
+  `model_assessed_pass`, never as `generated_validated`. A `rejected` outcome is a different case.
+* `plans.state` keeps its frozen enum (`draft`/`approved`/`superseded`). The distinction lives in
+  the authored document and the validation record, not in a new kernel state.
+
+This is documented rather than schemaed: no `cb.rpc` request/response field was added. The line is
+`cb.rpc` v11 (`cb.db` v7) and every H-15 addition lives in the plugin's own generation result and
+`plan_document()` projection, which the open job result already returns. A Desktop build that wants
+to render the provenance from a typed RPC field needs the next contract card: the exact additions
+would be `plan_read.plan.validation {outcome, independence, independent, generator, validator,
+facts_unverified, warning}` and `plan_read.plan.approval {needs_review, warning}`, both inside the
+strict `additionalProperties: false` plan object of `course.outline`/`parent.blueprint.read`. The
+plugin does not invent a surfaced field ahead of that contract.
+
 ### `parent.plan.edit`
 
 * **Draft only.** An edit against an `approved` plan is refused with `POLICY_VIOLATION` /

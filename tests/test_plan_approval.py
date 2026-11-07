@@ -17,6 +17,7 @@ The rule these cases pin:
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import unittest
 
@@ -194,6 +195,47 @@ class PlanApprovalIntegrityTest(KernelCase):
         self.assertEqual(
             int(self.scalar("SELECT COUNT(*) FROM transitions WHERE enrollment_id = ?", (enrollment_id,))),
             1,
+        )
+
+    def test_model_assessed_pass_is_approvable_by_a_human_with_its_warning(self) -> None:
+        """H-15 union: `needs_review` is the human review, not a refusal to ever approve.
+
+        A pass from the author's own model is a model assessment. It is never called independent
+        validation, but plan approval is the parent's decision (PREBUILD_SPEC §5), so it may be
+        approved with the warning attached rather than being blocked forever.
+        """
+        course_id, _first_plan = self.new_course()
+        job = plan_job(job_id=f"job-plan-{course_id}")
+        job["brief"]["course_id"] = course_id
+        independent = validation_from_fixture("validation_pass")
+
+        def same_model(request: generation.LLMRequest) -> generation.LLMResponse:
+            return dataclasses.replace(independent(request), model="fake-model")
+
+        script = {
+            "coursebook.plan.generate": plan_from_fixture("plan_ja"),
+            "coursebook.plan.validate": same_model,
+        }
+        connection = db.connect()
+        try:
+            generated = generation.run_plan_job(
+                connection, job, FakeLLM(script), FakeSearch(), now=NOW
+            )
+        finally:
+            connection.close()
+
+        self.assertEqual(generated["status"], "needs_review")
+        self.assertEqual(generated["validation"]["outcome"], "model_assessed")
+        self.assertFalse(generated["validation"]["independent"])
+        self.assertTrue(generated["approval_provenance"]["needs_review"])
+        self.assertTrue(generated["approval_provenance"]["warning"])
+
+        enrollment_id = self.new_enrollment(course_id)
+        approved = self.approve(enrollment_id, generated["plan_id"], 0)
+
+        self.assertEqual(approved["revision"], 1)
+        self.assertEqual(
+            self.scalar("SELECT state FROM plans WHERE id = ?", (generated["plan_id"],)), "approved"
         )
 
     # ── manually authored plan ──────────────────────────────────────────────
