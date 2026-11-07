@@ -1,0 +1,96 @@
+{
+  "backend_seam_note": "plugins CAN register a TranscriptionProvider, but it is a backend: it is dispatched only when stt.provider names it (built-ins always win) and it must implement speech recognition itself. It cannot borrow the host's configured STT.",
+  "host_checkout": "/home/deseretsaint/.hermes/hermes-agent",
+  "probes": {
+    "builtin_name_rejected": {
+      "pass": true,
+      "reason": "built-in STT names always win; registration is dropped with a warning"
+    },
+    "builtin_wins_over_plugin": {
+      "builtin_handler_calls": 1,
+      "envelope": {
+        "provider": "local",
+        "success": true,
+        "transcript": "builtin"
+      },
+      "note": "stt.provider=local (the default) never reaches a plugin",
+      "pass": true,
+      "plugin_provider_calls": 0
+    },
+    "ctx_has_no_stt_request": {
+      "audio_members": [
+        "register_transcription_provider"
+      ],
+      "member_count": 57,
+      "note": "ctx.register_transcription_provider only installs a backend (Probe B shows what that backend is handed); no ctx member performs a transcription and ctx.rest/ctx.socket are desktop-SDK facades to /api/plugins/<id>, not Python ctx members",
+      "pass": true,
+      "request_members": []
+    },
+    "ctx_rest_is_namespaced": {
+      "constructs": "/api/plugins/<id><suffix>",
+      "documented_limit": "'a plugin can't address another plugin's API or a core route through it' (apps/desktop/src/api/plugins.ts:64-70)",
+      "note": "no /api/audio/transcribe reachable through ctx.rest; the route is mounted on the host web app (hermes_cli/web_server.py:825) and its only client auth is the desktop main process bridge",
+      "pass": true,
+      "rejects_traversal": true
+    },
+    "no_transcription_rpc": {
+      "note": "host.request is the gateway JSON-RPC door; it exposes no audio-file -> transcript method",
+      "pass": true,
+      "rpc_method_count": 150,
+      "stt_rpc": []
+    },
+    "no_transcription_tool": {
+      "audio_like_tools": [
+        "text_to_speech"
+      ],
+      "dispatch_result": "{\"error\": \"Unknown tool: transcribe_audio\"}",
+      "note": "ctx.dispatch_tool is a thin wrapper over registry.dispatch (hermes_cli/plugins.py:676)",
+      "pass": true,
+      "tool_count": 22
+    },
+    "plugin_provider_dispatch": {
+      "call": {
+        "extra_keys": [],
+        "file_path_suffix": "probe.wav",
+        "language": "ja",
+        "model": "probe-model",
+        "prompt": null
+      },
+      "envelope": {
+        "provider": "coursebook_probe_stt",
+        "success": true,
+        "transcript": "probe transcript"
+      },
+      "note": "the provider receives the file path and hints ONLY \u2014 no stt_config, no credential, no host STT handle. To return a transcript it must run an STT backend itself.",
+      "pass": true
+    },
+    "private_import_is_flagged": {
+      "control_clean": true,
+      "flagged": [
+        "plugin_api.py:1 tools.transcription_tools.transcribe_audio"
+      ],
+      "note": "tools.transcription_tools is not on the plugin public-surface allowlist (hermes_cli/plugin_validate_private_imports.py); agent.transcription_provider is",
+      "pass": true
+    },
+    "provider_registers": {
+      "pass": true,
+      "registered_name": "coursebook_probe_stt"
+    },
+    "transcribe_audio_end_to_end": {
+      "envelope": {
+        "provider": "coursebook_probe_stt",
+        "success": true,
+        "transcript": "probe transcript"
+      },
+      "note": "the seam works only because a fake backend was registered; nothing in this path supplies real speech recognition",
+      "pass": true
+    }
+  },
+  "synthetic_wav": {
+    "bytes": 16044,
+    "format": "16000 Hz mono s16le, 0.5 s silence",
+    "path_name": "probe.wav",
+    "sha256": "358c6dcef4442790decb0a5c03fb320154f9d1dd5b4618e301f9e6661a413cb5"
+  },
+  "verdict": "no_documented_seam"
+}
