@@ -1,4 +1,16 @@
-# Ink & Field Notes: the Coursebook token contract (v1)
+# Ink & Field Notes: the Coursebook token contract (v1, superseded)
+
+Status: historical. v2, **Atlas Lamp**, is the direction now implemented in `desktop/plugin.js`:
+see `docs/COURSEBOOK-VISUAL-IDENTITY-V2.md` (frozen) and `contracts/cb.tokens.v2.json` (15 tokens,
+21 contrast gates). This file is kept because it records the scoped-seam decision and the honesty
+rules, which v2 carries forward unchanged. `contracts/cb.tokens.v1.json` is never mutated; v2 sits
+beside it.
+
+The one behavioural change to this contract: `cbLayoutFor(width)` now returns the four named ranges
+`wide` (1050+), `mid` (900-1049), `narrow` (460-899) and `phone` (below 460), measured from the
+Coursebook route and never from the app window.
+
+## Ink & Field Notes v1 body (unchanged)
 
 Status: implementation contract for M2-V1. It describes the layer that ships in
 `desktop/plugin.js`; the normative values live in `contracts/cb.tokens.v1.json`.
