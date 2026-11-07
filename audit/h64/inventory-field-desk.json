@@ -1,0 +1,362 @@
+{
+  "name": "field-desk",
+  "title": "Home / Field Desk (Courses landing)",
+  "reached": {
+    "hash": "#/coursebook",
+    "destination": "courses"
+  },
+  "screenshot": "audit/h64/00-field-desk.png",
+  "textExcerpt": "Coursebook Pick up where you left off, or open another course. New course Courses Library Parent Studio CONTINUE Find relative minors on the circle of fifths Derive the relative minor of a named major key using the circle of fifths Section 1 of 1 Session length not recorded Last touched 1 hr ago 1 SECTIONS 0 WITH EVIDENCE 0 DUE NOW FR Next · Review and approve the plan Review the plan Open the section PATH Course evidence · 0 of 1 sections have evidence 01 Derive the relative minor of a named major key using the circle of fifths Not started Show sources Sources for “Derive the relative minor of a named major key using the circle of fifths” FIELD NOTES All field notes Save an explanation, visual or quiz moment and it will appear here. Go to the current lesson ALL COURSES · 23 Search and manage courses Roadside flat repair RF Resume Replace the inner tube and inspect the tire for the cause of the flat 0 of 1 with evidence Open Order coffee in Japanese OC Resume Identify the correct replacement pad for the brake model 0 of 4 with evidence Open Japanese affection and register — an L0 demonstration classroom JA Resume Explain why register changes with the relationship 1 of 4 with eviden",
+  "dialogs": [],
+  "controls": [
+    {
+      "index": 0,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "New course",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 720,
+        "y": 58
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-000.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": "Choose one option above to continue. Nothing is generated until you review the plan on the last step.",
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 1,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Courses",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "true",
+      "selected": null,
+      "rect": {
+        "x": 311,
+        "y": 104
+      },
+      "outcome": "current-state",
+      "detail": "already pressed/selected; a click has no state left to change"
+    },
+    {
+      "index": 2,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Library",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 371,
+        "y": 104
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-002.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "library",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest courses->library"
+    },
+    {
+      "index": 3,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Parent Studio",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": "false",
+      "selected": null,
+      "rect": {
+        "x": 443,
+        "y": 104
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-003.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "studio",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "navigated",
+      "detail": "#/coursebook -> #/coursebook dest courses->studio"
+    },
+    {
+      "index": 4,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Review the plan",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 354,
+        "y": 1306
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-004.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 5,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open the section",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 357,
+        "y": 1340
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-005.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 6,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "01 Derive the relative minor of a named major key using the circle of fifths Not started",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 357,
+        "y": 2015
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-006.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 7,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Show sources",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 327,
+        "y": 2607
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-007.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 8,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "All field notes",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 693,
+        "y": 142
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-008.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 9,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Go to the current lesson",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 540,
+        "y": 219
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-009.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 10,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Search and manage courses",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 667,
+        "y": 272
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-010.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 11,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 718,
+        "y": 397
+      },
+      "screenshot": "audit/h64/controls/00-field-desk-011.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": null,
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 12,
+      "occurrence": 2,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 718,
+        "y": 535
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 11 / occurrence 1 on this surface (exercised once)"
+    },
+    {
+      "index": 13,
+      "occurrence": 3,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Open",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 718,
+        "y": 672
+      },
+      "outcome": "same-handler",
+      "detail": "same handler as index 11 / occurrence 1 on this surface (exercised once)"
+    }
+  ],
+  "index": 0
+}

@@ -1,0 +1,139 @@
+{
+  "name": "new-course-step1",
+  "title": "New course — step 1 (scope)",
+  "reached": {
+    "hash": "#/coursebook",
+    "destination": "courses"
+  },
+  "screenshot": "audit/h64/13-new-course-step1.png",
+  "textExcerpt": "Coursebook Pick up where you left off, or open another course. STEP 1 OF 3 What do you want to make? Cancel Pick how much course you want. You can change this before anything is created. A single lesson One lesson with one check — best when you have a task in front of you today. Choose A short course (a few sessions) A few sessions that build on each other, each with its own check. Choose A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choose Choose one option above to continue. Nothing is generated until you review the plan on the last step. Continue",
+  "dialogs": [],
+  "controls": [
+    {
+      "index": 0,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Cancel",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 733,
+        "y": 104
+      },
+      "screenshot": "audit/h64/controls/13-new-course-step1-000.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": "",
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 1,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": "option",
+      "label": "A single lesson One lesson with one check — best when you have a task in front of you today. Choose",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": "false",
+      "rect": {
+        "x": 520,
+        "y": 217
+      },
+      "screenshot": "audit/h64/controls/13-new-course-step1-001.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": "One lesson. Research and drafting may take several minutes; there is no progress percentage until the plan exists.",
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 2,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": "option",
+      "label": "A short course (a few sessions) A few sessions that build on each other, each with its own check. Choose",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": "false",
+      "rect": {
+        "x": 520,
+        "y": 293
+      },
+      "screenshot": "audit/h64/controls/13-new-course-step1-002.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": "A short course of a few sessions. Research and drafting may take several minutes.",
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 3,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": "option",
+      "label": "A full course (weeks or months) A longer course split into units; you review the plan before any lesson is written. Choo",
+      "disabled": false,
+      "disabledReason": null,
+      "pressed": null,
+      "selected": "false",
+      "rect": {
+        "x": 520,
+        "y": 368
+      },
+      "screenshot": "audit/h64/controls/13-new-course-step1-003.png",
+      "after": {
+        "hash": "#/coursebook",
+        "mounted": true,
+        "destination": "courses",
+        "dialog": null,
+        "notices": "A full course. Research and drafting may take several minutes and run longest; the plan carries its own estimate once it exists.",
+        "textChanged": true,
+        "controlStateChanged": true
+      },
+      "outcome": "state",
+      "detail": "surface text/state changed"
+    },
+    {
+      "index": 4,
+      "occurrence": 1,
+      "tag": "BUTTON",
+      "role": null,
+      "label": "Continue",
+      "disabled": true,
+      "disabledReason": "sdk disabled; no handler runs (see source guard)",
+      "pressed": null,
+      "selected": null,
+      "rect": {
+        "x": 313,
+        "y": 500
+      },
+      "outcome": "disabled",
+      "detail": "rendered disabled; not clickable"
+    }
+  ],
+  "index": 13
+}

@@ -1,0 +1,51 @@
+{
+  "actionsMenu": {
+    "before": {
+      "hash": "#/coursebook",
+      "menus": [],
+      "foci": [],
+      "active": "BODY:1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapab"
+    },
+    "after": {
+      "hash": "#/coursebook",
+      "menus": [
+        {
+          "role": "menu",
+          "text": "Archive course Delete enrollment…"
+        }
+      ],
+      "foci": [
+        "Archive course",
+        "Delete enrollment…"
+      ],
+      "active": "DIV:Archive course\nDelete enrollment…"
+    }
+  },
+  "openThisSection": {
+    "before": {
+      "hash": "#/coursebook",
+      "menus": [],
+      "foci": [],
+      "active": "BODY:1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapab"
+    },
+    "after": {
+      "hash": "#/coursebook",
+      "menus": [],
+      "foci": [],
+      "active": "BODY:1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapab"
+    },
+    "textBefore": "Coursebook What you are learning, what has been checked, and what to do next. New course Courses Library Parent Studio All courses Roadside flat repair One task I need to do now Plan update Replace th",
+    "textAfter": "Coursebook What you are learning, what has been checked, and what to do next. New course Courses Library Parent Studio All courses Roadside flat repair One task I need to do now Plan update Replace the inner tube and inspect the tire for the cause of the flat Export course… Resume lesson View Textbook COURSEBOOK Replace the inner tube and inspect the tire for the cause of the flat not_started · procedure · last opened 1 hr ago Lesson view Textbook only missing The check could not be opened. This",
+    "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_2019765e/audit/h64/evidence-open-section.png"
+  },
+  "resumeLesson": {
+    "hash": "#/coursebook",
+    "text": "Coursebook What you are learning, what has been checked, and what to do next. New course Courses Library Parent Studio All courses Roadside flat repair One task I need to do now Plan update Replace the inner tube and inspect the tire for the cause of the flat Export course… Resume lesson There is no saved lesson chat for this section yet. Read the section below, then start a new lesson when you are ready. View Textbook COURSEBOOK Replace the inner tube and inspect the tire for the cause of the flat not_started · procedure · last opened 1 hr ago Lesson view Textbook only missing The check could not be opened. This section has no teaching content yet. This section’s chat binding is detached. S",
+    "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_2019765e/audit/h64/evidence-resume-lesson.png"
+  },
+  "continue": {
+    "hash": "#/coursebook",
+    "text": "Coursebook Pick up where you left off, or open another course. New course Courses Library Parent Studio CONTINUE Find relative minors on the circle of fifths Derive the relative minor of a named major key using the circle of fifths Section 1 of 1 Session length not recorded Last touched 2 hr ago 1 SECTIONS 0 WITH EVIDENCE 0 DUE NOW FR Next · Review and approve the plan Review the plan Open the section PATH Course evidence · 0 of 1 sections have evidence 01 Derive the relative minor of a named major key using the circle of fifths Not started Show sources Sources for “Derive the relative minor of a named major key using the circle of fifths” FIELD NOTES All field notes Save an explanation, vis",
+    "shot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_2019765e/audit/h64/evidence-continue.png"
+  }
+}
