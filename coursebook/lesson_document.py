@@ -10,7 +10,10 @@ This module is deliberately **projection-only**. It never writes a row, never ca
 and never mints an id that claims new content:
 
 * :func:`document_from_page` projects a stored ``gen_lessons.page_json`` (the older v7 shape:
-  ``segments`` + ``worked_example`` + ``learner_explanation`` + ``media``) into blocks;
+  ``segments`` + ``worked_example`` + ``learner_explanation`` + ``media``) into blocks. A page
+  authored after the guided-writing change also carries a ``short`` beside each ``deep`` field
+  (``segments[].short``, ``worked_example.short``, ``learner_explanation_short``); when those are
+  present the projection publishes them and the document reaches ``complete``;
 * :func:`document_from_segments` projects the durable ``lesson_segments`` rows that
   ``lesson.page`` renders;
 * :func:`document_from_blocks` validates blocks that were authored directly (the v8 path), and
@@ -18,7 +21,9 @@ and never mints an id that claims new content:
 
 Old rows are never rewritten. A page projected from the v7 shapes has ``short = null`` on every
 block, so it reports ``state = "textbook_only"`` and ``views.guided = false`` with a human note —
-never a toggle that pretends a Guided view exists.
+never a toggle that pretends a Guided view exists. A page written by the lesson author after the
+guided-writing change stores the authored ``short`` next to each ``deep`` field, so the same
+projection publishes both and the document is ``complete``.
 
 Honesty rules encoded here:
 
@@ -290,6 +295,13 @@ def _attach_media(blocks: Sequence[dict[str, Any]], media: Sequence[dict[str, An
 
 
 def _page_segment_blocks(page: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Project a stored page into blocks, publishing only shorts the author wrote.
+
+    A v7 page has no ``short`` anywhere, so every block keeps ``short = None``. A page written
+    after the guided-writing change carries ``segments[].short``, ``worked_example.short`` and a
+    top-level ``learner_explanation_short``; each one is published beside its own ``deep`` text and
+    never generated here — this function has no licence to slice or summarise.
+    """
     blocks: list[dict[str, Any]] = []
     for segment in page.get("segments") or []:
         if not isinstance(segment, Mapping):
@@ -305,7 +317,7 @@ def _page_segment_blocks(page: Mapping[str, Any]) -> list[dict[str, Any]]:
                 index=len(blocks),
                 role=_PAGE_SEGMENT_ROLE[kind],
                 headline=_clean(segment.get("heading"))[:_HEADLINE_LIMIT] or _LABEL_FOR_ROLE[_PAGE_SEGMENT_ROLE[kind]],
-                short=None,
+                short=_clean(segment.get("short")) or None,
                 deep=deep,
             )
         )
@@ -320,7 +332,7 @@ def _page_segment_blocks(page: Mapping[str, Any]) -> list[dict[str, Any]]:
                     index=len(blocks),
                     role="example",
                     headline=_clean(example.get("prompt"))[:MAX_HEADLINE],
-                    short=None,
+                    short=_clean(example.get("short")) or None,
                     deep=body,
                 )
             )
@@ -331,7 +343,7 @@ def _page_segment_blocks(page: Mapping[str, Any]) -> list[dict[str, Any]]:
                 index=len(blocks),
                 role="recap",
                 headline="Recap",
-                short=None,
+                short=_clean(page.get("learner_explanation_short")) or None,
                 deep=explanation,
             )
         )
@@ -467,7 +479,9 @@ def document_from_page(page: Mapping[str, Any], *, check_id: str | None = None) 
 
     Deterministic and read-only: the same page and check id always produce the same document id
     and content hash. A page that already carries an authored ``document``/``blocks`` array is
-    validated and used; every older page is projected from its validated segments.
+    validated and used; a page that carries authored ``short`` text beside its segments is
+    projected from its segments **with** that text; every older page is projected without it and
+    reports ``textbook_only``.
     """
     if not isinstance(page, Mapping):
         raise LessonDocumentError(["page must be an object"])

@@ -18,7 +18,7 @@ Three different calls, three different prompts, three different schemas:
 |---|---|---|---|
 | Plan author | `coursebook.plan.generate` | `plan-prompt.v1` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v4` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v5` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v1` | `VALIDATION_SCHEMA` |
 
 `assert_separate_pass()` refuses a "validation" that reuses the generation system prompt, the
@@ -142,10 +142,17 @@ and a declarative media spec. After the lesson is validated, the media caller ge
 illustration, deterministic schematic or TTS narration through `ctx.dispatch_tool`, caches the
 artifact by spec/source hash, and leaves a complete text equivalent when the provider fails.
 
+Every deep field also carries an authored `short` for the Guided view: `segments[].short`,
+`worked_example.short` and a top-level `learner_explanation_short`. A short is a rendering of the
+*same* material, not a second lesson: it drops steps, asides and repetition, must be strictly
+shorter than the deep text it belongs to, and must not introduce a quantity, acronym or quotation
+that deep text does not contain. The writer never slices or summarises `deep` in code.
+
 The learner page is built from an allowlist, never by deleting keys:
 
 ```
-section_title, lesson_intent, segments, worked_example, learner_explanation,
+section_title, lesson_intent, segments[{kind, heading, body, short}],
+worked_example{prompt, steps, answer, short}, learner_explanation, learner_explanation_short,
 check{kind, stimulus{prompt,format,choices}, learner_instructions, evidence_target,
       scaffolds, assistance_policy}, sources, media, parent_notes, supervision_notes
 ```
@@ -155,7 +162,7 @@ The check's `reference_answer`, `accepted_answers`, `accepted_alternatives` and 
 enforce it: `assert_no_answer_leak` before validation, and `learner_page()` re-checks the stored
 page against the linked checks before serving.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v4`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v5`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
@@ -163,7 +170,7 @@ synthesised to reach the floor: a pack is exportable only when the author actual
 
 **Capability policy reaches the model.** Before the lesson prompt is built, the pipeline computes
 one immutable plan from the recipe, the objective's evidence target, the authored section intent,
-the locale/level and an advisory subject domain (`coursebook/policy.py`). `lesson-prompt.v4`
+the locale/level and an advisory subject domain (`coursebook/policy.py`). `lesson-prompt.v5`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all. The same plan is stamped on the authored lesson under
@@ -219,16 +226,27 @@ Two stored shapes project into the same `$defs/lesson_document`:
 * `generation.learner_page()` projects the stored `gen_lessons.page_json` (`segments`,
   `worked_example`, `learner_explanation`, `media`, `sources`) and attaches the linked check id.
   The row is not rewritten: an older page keeps its v7 bytes and gains `document` at read.
-* `lesson.page` projects the durable `lesson_segments` rows plus the course artifact index. Teaching
-  prose maps positionally to `orient`/`explain`/`recap`, a `check_prompt` segment becomes the
-  `practice` block, and a `media` segment becomes a media child of the preceding block.
+* `lesson.page` prefers the run's **authored** page: an objective whose plan has a
+  `gen_lessons` row in state `validated` is projected with `document_from_page`, which publishes
+  the authored `short` beside each `deep`. Every other section — a pack/composed section, a
+  chat-written transcript, a page that predates the guided writer, or a stored page that no longer
+  validates — keeps the durable `lesson_segments` projection and therefore reports
+  `textbook_only`. Teaching prose maps positionally to `orient`/`explain`/`recap`, a
+  `check_prompt` segment becomes the `practice` block, and a `media` segment becomes a media child
+  of the preceding block.
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. A projected v7 page therefore has
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v5`)
+  authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
+  projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
+  runs before the independent validator: it builds the document, re-runs `validate_blocks`
+  (empty, over-length, duplicate ids, the single-check rule), refuses a document whose state is not
+  `complete`, and `_short_problems` refuses a short that is not strictly shorter than its deep text
+  or that introduces a quantity, acronym or quotation its deep text does not contain. A v7 page has
   `short = null` everywhere, reports `state = "textbook_only"` and `views.guided = false`, and
   carries a human `view_note`: the Desktop disables the view and explains why instead of showing an
-  empty Guided pane. Only `document_from_blocks()` (the authored v8 path) reaches `complete`.
+  empty Guided pane. Only an authored page reaches `complete`.
 * One check attaches to exactly one block: the first `practice` block, else the page's terminal
   block. Two blocks claiming a check, or a check no block carries, is a `LessonDocumentError`, not
   a rendering decision.

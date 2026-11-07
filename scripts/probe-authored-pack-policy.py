@@ -114,19 +114,23 @@ def lesson_builder(rubric_criteria: int = 3):
                     "kind": "model",
                     "heading": "Name one of each",
                     "body": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.",
+                    "short": "Point at the kettle for hot water and the fridge for cold.",
                 },
                 {
                     "kind": "guided",
                     "heading": "Sort the cards",
                     "body": "Put each card under the warm or cold heading and say the word out loud.",
+                    "short": "Put each card under warm or cold and say the word out loud.",
                 },
             ],
             "worked_example": {
                 "prompt": "Which card belongs under warm?",
                 "steps": ["Look at the picture", "Say the object name", "Choose warm"],
                 "answer": "The pot card",
+                "short": "Look, name the object, then choose warm.",
             },
             "learner_explanation": "You will name warm and cold things, then sort the picture cards together.",
+            "learner_explanation_short": "Name warm and cold things, then sort the picture cards.",
             "check": {
                 "kind": "observation",
                 "stimulus": {

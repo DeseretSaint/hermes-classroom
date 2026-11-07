@@ -35,6 +35,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import secrets
 import sqlite3
 import time
@@ -104,7 +105,7 @@ PIPELINE_VERSION = "cb.gen.v1"
 logger = logging.getLogger("coursebook.generation")
 
 PLAN_PROMPT_VERSION = "plan-prompt.v1"
-LESSON_PROMPT_VERSION = "lesson-prompt.v4"
+LESSON_PROMPT_VERSION = "lesson-prompt.v5"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v1"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
@@ -703,6 +704,14 @@ POLICY_SCHEMA: dict[str, Any] = {
     },
 }
 
+#: The authored bound on a block ``short``. ``lesson_document.MAX_SHORT`` remains the hard ceiling a
+#: stored document must satisfy; the writer is asked for a genuinely short step rendering, and the
+#: prompt version is separate so an authored short can never be confused with a v4 page.
+LESSON_SHORT_MAX = 600
+#: The model is allowed to be over the authored bound by the schema so the rule pass can reject it
+#: with itemised feedback and one regeneration, instead of the whole job dying on a schema error.
+LESSON_SHORT_SCHEMA_MAX = 1200
+
 LESSON_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -711,6 +720,7 @@ LESSON_SCHEMA: dict[str, Any] = {
         "segments",
         "worked_example",
         "learner_explanation",
+        "learner_explanation_short",
         "check",
         "sources",
         "media",
@@ -724,18 +734,25 @@ LESSON_SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["kind", "heading", "body"],
+                "required": ["kind", "heading", "body", "short"],
                 "properties": {
                     "kind": {"type": "string", "enum": ["model", "explain", "guided", "retrieval"]},
                     "heading": {"type": "string", "minLength": 1, "maxLength": 120},
                     "body": {"type": "string", "minLength": 10, "maxLength": 2000},
+                    "short": {
+                        "type": "string",
+                        "minLength": 8,
+                        "maxLength": LESSON_SHORT_SCHEMA_MAX,
+                        "description": "The same material compressed for the guided view. Strictly "
+                        "shorter than body; drops detail and adds no fact, name, number or claim.",
+                    },
                 },
             },
         },
         "worked_example": {
             "type": "object",
             "additionalProperties": False,
-            "required": ["prompt", "steps", "answer"],
+            "required": ["prompt", "steps", "answer", "short"],
             "properties": {
                 "prompt": {"type": "string", "minLength": 3, "maxLength": 500},
                 "steps": {
@@ -745,9 +762,23 @@ LESSON_SCHEMA: dict[str, Any] = {
                     "items": {"type": "string", "minLength": 3, "maxLength": 500},
                 },
                 "answer": {"type": "string", "minLength": 1, "maxLength": 500},
+                "short": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": LESSON_SHORT_SCHEMA_MAX,
+                    "description": "The walkthrough compressed, drawn only from prompt, steps and "
+                    "answer. Never states a different answer than the steps reach.",
+                },
             },
         },
         "learner_explanation": {"type": "string", "minLength": 10, "maxLength": 1500},
+        "learner_explanation_short": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": LESSON_SHORT_SCHEMA_MAX,
+            "description": "The recap compressed: the same takeaway, strictly shorter than "
+            "learner_explanation, adding no claim.",
+        },
         "check": {
             "type": "object",
             "additionalProperties": False,
@@ -970,7 +1001,11 @@ LESSON_SYSTEM_PROMPT = (
     "check that measures the section objective's declared evidence target. Put the reference "
     "answer, accepted answers, accepted alternatives and rubric in the check fields — they are "
     "stored separately and never shown to the learner before an attempt. Never repeat the "
-    "reference answer inside the learner-facing explanation or segments. Respect the recipe: a "
+    "reference answer inside the learner-facing explanation or segments. Each segment, the worked "
+    "example and the learner explanation also carry a 'short': the same material compressed for a "
+    "one-block-at-a-time view. A short drops detail — steps, examples, asides — and adds nothing: "
+    "no fact, name, number, source or claim its own deep text does not already contain. Respect "
+    "the recipe: a "
     "one-off brief gets a verification checklist, not a quiz; a parent lesson is parent-led with "
     "observation notes and supervision. Every media item is a declarative spec with a complete "
     "text equivalent; the harness generates the image or audio, and you never claim that a "
@@ -1145,6 +1180,13 @@ def _lesson_instructions(
         f"Recipe: {recipe}.",
         "Segments: 2-6, at least one 'model' and one 'guided'.",
         "Include exactly one check.",
+        "Every segment, the worked example and the learner explanation also carries a 'short'. Each "
+        "short is the same material cut down for a one-block-at-a-time view: keep only what the "
+        "learner needs at that step, drop steps, asides and repetition, stay under 600 characters, "
+        "and stay strictly shorter than the deep text it belongs to.",
+        "A short must not add a claim. No number, date, name, acronym or quotation may appear in a "
+        "short unless the same string appears in the deep text beside it, and a short must never "
+        "state the check's reference answer, an accepted answer or rubric text.",
         "Write 3-6 rubric criteria in check.rubric, each a distinct observable aspect of the "
         "response; never restate one aspect in two criteria.",
     ]
@@ -1437,10 +1479,15 @@ def _narrative_text(page: dict[str, Any]) -> str:
     for segment in page.get("segments") or []:
         parts.append(str(segment.get("heading") or ""))
         parts.append(str(segment.get("body") or ""))
+        # A short sits on the same learner-facing surface as the body it was cut from: an answer
+        # smuggled into a guided step announces the key just as surely as the segment body would.
+        parts.append(str(segment.get("short") or ""))
     example = page.get("worked_example") or {}
     parts.extend([str(example.get("prompt") or ""), str(example.get("answer") or "")])
     parts.extend(str(step) for step in example.get("steps") or [])
+    parts.append(str(example.get("short") or ""))
     parts.append(str(page.get("learner_explanation") or ""))
+    parts.append(str(page.get("learner_explanation_short") or ""))
     parts.append(str(page.get("parent_notes") or ""))
     for item in page.get("media") or []:
         parts.append(str(item.get("purpose") or ""))
@@ -1466,6 +1513,82 @@ def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
     leaked_rubric = [term for term in rubric_terms if term and _normalize_answer(term) in narrative]
     if leaked_rubric:
         raise _RuleViolation(["learner-facing narrative contains rubric text"])
+
+
+#: Claim atoms: a quantity, a date/time, an acronym or a quoted phrase. A short may reuse one of
+#: these from its own deep text, but introducing one is introducing a claim about the material.
+_CLAIM_ATOM = re.compile(r"\d[\d.,:/%+-]*|[A-Z]{2,}|\"[^\"]{2,}\"|“[^”]{2,}”")
+
+
+def _claim_atoms(text: Any) -> list[str]:
+    return [match.group(0) for match in _CLAIM_ATOM.finditer(str(text or ""))]
+
+
+def _short_problems(blocks: Sequence[Any]) -> list[str]:
+    """Deterministic gate on authored short text: an omission, not a new claim.
+
+    ``lesson_document.validate_blocks`` already rejects a non-text or over-the-ceiling short and
+    duplicate block ids. This adds the two rules that need both halves of a block: a short that is
+    not shorter than its deep text restates rather than omits, and a short carrying a quantity,
+    acronym or quotation its own deep text does not contain has added a claim.
+    """
+    problems: list[str] = []
+    for index, block in enumerate(blocks or []):
+        if not isinstance(block, dict):
+            continue
+        short = str(block.get("short") or "").strip()
+        deep = str(block.get("deep") or "").strip()
+        if not short:
+            continue  # an empty short is refused by the document state, not double-reported here
+        if len(short) > LESSON_SHORT_MAX:
+            problems.append(
+                f"blocks[{index}].short is {len(short)} characters; the authored bound is "
+                f"{LESSON_SHORT_MAX}"
+            )
+        if len(short) >= len(deep):
+            problems.append(
+                f"blocks[{index}].short is not shorter than its deep text, so it omits nothing; "
+                "cut material out instead of restating the block"
+            )
+            continue
+        deep_text = _normalize_answer(deep)
+        added = [atom for atom in _claim_atoms(short) if _normalize_answer(atom) not in deep_text]
+        if added:
+            problems.append(
+                f"blocks[{index}].short introduces {', '.join(repr(atom) for atom in added[:3])}, "
+                "which its deep text does not contain"
+            )
+    return problems
+
+
+def _enforce_lesson_document(page: dict[str, Any]) -> dict[str, Any]:
+    """Build the document the learner will be served and refuse an incomplete or dishonest one.
+
+    The gate is the same validator the read path uses: ``document_from_page`` publishes the
+    authored shorts, ``validate_blocks`` re-checks the resulting block list (ids, lengths, roles,
+    the single-check rule) and the state check refuses a page whose Guided view would be
+    unreachable. Nothing here slices or summarises ``deep``.
+    """
+    try:
+        document = lesson_document.document_from_page(page)
+    except lesson_document.LessonDocumentError as exc:
+        raise _RuleViolation([f"lesson document: {problem}" for problem in exc.problems]) from exc
+    try:
+        lesson_document.validate_blocks(document["blocks"])
+    except lesson_document.LessonDocumentError as exc:
+        raise _RuleViolation([f"lesson document: {problem}" for problem in exc.problems]) from exc
+    problems: list[str] = []
+    if document["state"] != "complete":
+        missing = [str(index) for index, block in enumerate(document["blocks"]) if not block.get("short")]
+        problems.append(
+            "lesson document: every teaching block needs an authored short; block(s) "
+            + ", ".join(missing)
+            + " have none, so the Guided view would be unreachable"
+        )
+    problems.extend(f"lesson document: {problem}" for problem in _short_problems(document["blocks"]))
+    if problems:
+        raise _RuleViolation(problems)
+    return document
 
 
 # ── Response parsing and validation verdicts ────────────────────────────────
@@ -1687,6 +1810,9 @@ def build_lesson_request(
             "segments": [2, 6],
             "checks": 1,
             "rubric_criteria": [3, 6],
+            "shorts": "segments[].short, worked_example.short and learner_explanation_short are "
+            "authored: strictly shorter than their deep text and adding no claim, number, name or "
+            "quotation the deep text does not contain",
             "reference_answer": "stored separately; never inside segments, explanation or worked example",
             "media": "declarative spec with a complete text equivalent; only the roles the "
             "capability policy permits; the harness generates it and never treats an "
@@ -2821,15 +2947,22 @@ def _build_learner_page(lesson: dict[str, Any], section: dict[str, Any], sources
         "section_title": lesson["section_title"],
         "lesson_intent": section.get("lesson_intent"),
         "segments": [
-            {"kind": segment["kind"], "heading": segment["heading"], "body": segment["body"]}
+            {
+                "kind": segment["kind"],
+                "heading": segment["heading"],
+                "body": segment["body"],
+                "short": segment["short"],
+            }
             for segment in lesson["segments"]
         ],
         "worked_example": {
             "prompt": lesson["worked_example"]["prompt"],
             "steps": list(lesson["worked_example"]["steps"]),
             "answer": lesson["worked_example"]["answer"],
+            "short": lesson["worked_example"]["short"],
         },
         "learner_explanation": lesson["learner_explanation"],
+        "learner_explanation_short": lesson["learner_explanation_short"],
         "check": {
             "kind": check["kind"],
             "stimulus": {
@@ -3098,6 +3231,9 @@ def _author_section(
         candidate["policy"] = capability.to_dict()
         page = _build_learner_page(candidate, section, sources)
 
+        # Every gate runs before the attempt is judged, so a regeneration carries the whole list of
+        # problems instead of hiding a leaked answer behind a rubric complaint.
+        problems: list[str] = []
         try:
             enforce_lesson_rules(
                 candidate,
@@ -3109,13 +3245,26 @@ def _author_section(
                 rubric_profile=rubric_profile,
                 capability=capability,
             )
-            assert_no_answer_leak(page, candidate)
         except _RuleViolation as exc:
-            rejection_reasons = exc.reasons
+            problems.extend(exc.reasons)
+        # The document is the surface the learner actually reads in both views. Build it from the
+        # authored page and refuse a short that restates, invents or leaks, before any independent
+        # validation is asked for.
+        document: dict[str, Any] | None = None
+        try:
+            document = _enforce_lesson_document(page)
+        except _RuleViolation as exc:
+            problems.extend(exc.reasons)
+        try:
+            assert_no_answer_leak({**page, "document": document} if document is not None else page, candidate)
+        except _RuleViolation as exc:
+            problems.extend(exc.reasons)
+        if problems:
+            rejection_reasons = problems
             if attempt == 2:
                 lesson = candidate
                 break
-            feedback = "The lesson broke required rules:\n- " + "\n- ".join(exc.reasons)
+            feedback = "The lesson broke required rules:\n- " + "\n- ".join(problems)
             continue
 
         validation_request = build_lesson_validation_request(

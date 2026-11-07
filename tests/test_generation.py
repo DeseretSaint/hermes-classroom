@@ -853,7 +853,7 @@ class LessonJobTest(GenerationTestBase):
         ]
         self.assertTrue(generation_requests)
         for request in generation_requests:
-            self.assertEqual(request.prompt_version, "lesson-prompt.v4")
+            self.assertEqual(request.prompt_version, "lesson-prompt.v5")
             self.assertIn("Capability policy", request.instructions)
             payload = json.loads(request.input_text)
             self.assertIn("capability_policy", payload)
@@ -907,7 +907,7 @@ class LessonJobTest(GenerationTestBase):
         text = gen._lesson_instructions(recipe="parent", locale=None, scaffold_note="")
         self.assertIn("3-6", text)
         self.assertIn("distinct observable", text)
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v4")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v5")
 
     def test_a_lesson_with_fewer_than_three_rubric_criteria_is_retried_then_parked(self) -> None:
         plan_result = self.approved_plan()
@@ -1003,6 +1003,110 @@ class LessonJobTest(GenerationTestBase):
         self.assertTrue(
             any("reference answer" in reason for reason in result["lessons"][0]["rejection_reasons"])
         )
+
+    def test_a_generated_lesson_page_is_a_complete_block_document(self) -> None:
+        """The writer authors a short beside every deep field, so Guided is reachable end to end."""
+        plan_result = self.approved_plan()
+        result = self.run_lessons(plan_result, self.lesson_script(validation_from_fixture()))
+        for item in result["lessons"]:
+            page = gen.learner_page(self.connection, item["lesson_id"])
+            stored = json.loads(
+                self.rows("SELECT page_json FROM gen_lessons WHERE id = ?", (item["lesson_id"],))[0]["page_json"]
+            )
+            document = page["document"]
+            self.assertEqual(document["state"], "complete")
+            self.assertTrue(document["views"]["guided"])
+            self.assertTrue(all(block["short"] for block in document["blocks"]))
+            self.assertEqual(
+                [segment["short"] for segment in stored["segments"]],
+                [block["short"] for block in document["blocks"] if block["role"] in ("example", "explain", "practice")][: len(stored["segments"])],
+            )
+            self.assertTrue(stored["worked_example"]["short"])
+            self.assertTrue(stored["learner_explanation_short"])
+            # One check, one block: the Guided view never becomes a second grading surface.
+            self.assertEqual(len([block for block in document["blocks"] if block["check_id"]]), 1)
+
+    def test_a_short_that_introduces_a_number_is_retried_then_parked(self) -> None:
+        plan_result = self.approved_plan()
+        base = lesson_from_request()
+
+        def invented(request: gen.LLMRequest) -> gen.LLMResponse:
+            payload = dict(base(request).parsed or {})
+            segments = [dict(segment) for segment in payload["segments"]]
+            segments[0]["short"] = "Say 42 and wait for the reply."
+            payload["segments"] = segments
+            return response(payload, model="fake-author")
+
+        llm = self.lesson_script(validation_from_fixture(), generate=invented)
+        result = self.run_lessons(plan_result, llm)
+        for lesson in result["lessons"]:
+            self.assertEqual(lesson["state"], "needs_review")
+            self.assertFalse(lesson["check_enabled"])
+            self.assertTrue(
+                any("introduces '42'" in reason for reason in lesson["rejection_reasons"]),
+                lesson["rejection_reasons"],
+            )
+        self.assertEqual(llm.calls_for("coursebook.lesson.generate"), 2 * len(result["lessons"]))
+        self.assertEqual(llm.calls_for("coursebook.lesson.validate"), 0)
+
+    def test_a_short_that_restates_its_block_is_refused(self) -> None:
+        plan_result = self.approved_plan()
+        base = lesson_from_request()
+
+        def restated(request: gen.LLMRequest) -> gen.LLMResponse:
+            payload = dict(base(request).parsed or {})
+            segments = [dict(segment) for segment in payload["segments"]]
+            segments[0]["short"] = segments[0]["body"]
+            payload["segments"] = segments
+            return response(payload, model="fake-author")
+
+        llm = self.lesson_script(validation_from_fixture(), generate=restated)
+        result = self.run_lessons(plan_result, llm)
+        for lesson in result["lessons"]:
+            self.assertEqual(lesson["state"], "needs_review")
+            self.assertTrue(
+                any("not shorter than its deep text" in reason for reason in lesson["rejection_reasons"]),
+                lesson["rejection_reasons"],
+            )
+
+    def test_a_short_that_announces_the_answer_never_reaches_validation(self) -> None:
+        plan_result = self.approved_plan()
+        base = lesson_from_request()
+
+        def leaky_short(request: gen.LLMRequest) -> gen.LLMResponse:
+            payload = dict(base(request).parsed or {})
+            segments = [dict(segment) for segment in payload["segments"]]
+            segments[1]["short"] = "The answer you should pick is こんにちは."
+            payload["segments"] = segments
+            return response(payload, model="fake-author")
+
+        llm = self.lesson_script(validation_from_fixture(), generate=leaky_short)
+        result = self.run_lessons(plan_result, llm)
+        self.assertEqual(llm.calls_for("coursebook.lesson.validate"), 0)
+        for lesson in result["lessons"]:
+            self.assertEqual(lesson["state"], "needs_review")
+            self.assertTrue(
+                any("reference answer" in reason for reason in lesson["rejection_reasons"]),
+                lesson["rejection_reasons"],
+            )
+
+    def test_a_block_without_an_authored_short_is_refused(self) -> None:
+        """A projected page whose blocks have no short cannot claim a Guided view."""
+        page = lesson_fixture("lesson_ja")
+        for segment in page["segments"]:
+            segment.pop("short")
+        page["worked_example"].pop("short")
+        page.pop("learner_explanation_short")
+        with self.assertRaises(gen._RuleViolation) as caught:
+            gen._enforce_lesson_document(page)
+        self.assertTrue(any("authored short" in reason for reason in caught.exception.reasons))
+
+    def test_a_short_over_the_authored_bound_is_refused(self) -> None:
+        page = lesson_fixture("lesson_ja")
+        page["segments"][0]["short"] = "word " * 200  # passes the schema bound, fails the authored one
+        with self.assertRaises(gen._RuleViolation) as caught:
+            gen._enforce_lesson_document(page)
+        self.assertTrue(any("authored bound" in reason for reason in caught.exception.reasons))
 
     def test_missing_romaji_scaffold_for_an_l0_japanese_learner_is_parked(self) -> None:
         plan_result = self.approved_plan()

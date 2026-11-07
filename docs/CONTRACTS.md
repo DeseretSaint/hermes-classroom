@@ -1126,12 +1126,24 @@ as `textbook_only` with `views.guided = false` and a note that says so. A page p
 learner explanation to `recap`. A page projected from `lesson_segments` maps teaching prose
 positionally (first `orient`, last `recap`, middle `explain`), a `check_prompt` segment to the
 `practice` block and a `media` segment to a media child of the preceding block. `short` is never
-synthesised from `deep`: only an authored block document can reach `complete`.
+synthesised from `deep`: only an authored document can reach `complete`. The lesson writer authors
+`segments[].short`, `worked_example.short` and `learner_explanation_short` in
+`gen_lessons.page_json`, and `lesson.page` projects that validated page with `document_from_page`
+when it exists, so a generated section is `complete` with no wire change and no backfill.
 
 **Not in v8.** No authored-block columns and no prompt change to the lesson schema; the projection
 is ready for authored blocks (`document_from_blocks`) but this release does not ask the model for
 them. No UI change: the Desktop ignores a field it does not know, and older clients keep reading
 `segments`. No change to grading, attempts, evidence or mastery semantics.
+
+**After v8: the guided writer (M1-U2).** The lesson writer now authors a `short` beside every
+`deep` field — `segments[].short`, `worked_example.short`, `learner_explanation_short` — inside
+`gen_lessons.page_json`, and `lesson.page` projects that validated page with
+`document_from_page` instead of the linear segment rows. This is a change to stored page content
+and to one handler's choice of projection, **not** a contract change: the v8 method, payload and
+`$defs/lesson_document` shape are unchanged, `document_from_segments` remains the fallback for
+pack/composed sections and older rows, and no row is rewritten or backfilled. A page written before
+this change still reads `textbook_only`.
 
 ## Changing a contract
 
