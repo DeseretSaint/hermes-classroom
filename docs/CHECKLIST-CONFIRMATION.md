@@ -145,7 +145,9 @@ answer **only** if the wire could not express a confirmation. It can (§2.1).
 
 ### 3.2 Option (c1) — reuse `observation.record` for the checklist
 
-**Rejected, and this is the B-2 boundary.** `observation.record` (H-21, `cb.rpc` v12) writes a
+**Rejected, and this is the B-2 boundary.** `observation.record` — frozen as a `cb.rpc` **v14**
+method by H-53 (`t_6646238d`); the B-2/H-21 work named the kernel function but no version before v14
+declared the method, so an earlier draft that called it "v12" was wrong — writes a
 layer-1 evidence event with **no attempt row, no check state change and no revision bump**. That is
 right for a parent's observation of a child, and for a learner's free-standing remark. It is wrong
 for a checklist that is the objective's check: the check would never close, `attempt.submit` would
@@ -287,7 +289,7 @@ No provider, model or credential field. The reference itself is never returned.
 | Case | Path | Evidence class | Attempt row |
 |---|---|---|---|
 | Learner ticks a verification checklist that is an objective's check | `attempt.submit` (`selection`) — **this decision** | `self_reported` | yes |
-| Parent records an observation of a child | `observation.record` (v12, H-21) | `self_reported` / `parent_reported` | no |
+| Parent records an observation of a child | `observation.record` (v14, H-53; kernel path H-21/B-2) | `self_reported` / `parent_reported` | no |
 | Parent-authored observation check (`kind: observation`) | `observation.record`; the check surface shows no tick-list | `parent_reported` | no |
 | Pack `production`/`transfer` open response | open lane, unconfigured → `needs_retry` | — | persisted, nothing advances |
 
@@ -295,6 +297,13 @@ To keep that boundary, the confirmation lane is disabled when the enrollment's c
 `parent`. A parent lesson therefore does not gain a child-operated checklist by accident; B-2's
 recording seam is the only write path for a parent's observation. This is a two-line lookup
 (`courses.recipe`) in `attempt_submit`, not a new contract concept.
+
+**Unchanged by v14.** H-53 (`t_6646238d`) makes `observation.record` reachable on the wire at
+`cb.rpc` v14 and gives it a stored `note` (`cb.db` v9, nullable `evidence.note`). It does not move
+this boundary: an observation is never independent evidence, it writes no attempt and it closes no
+check, so a `verification` checklist that *is* the objective's check still submits through
+`attempt.submit` `selection`, and a parent-recipe course still records through `observation.record`
+only. The lane predicate in §4.1 is untouched.
 
 ---
 

@@ -1,7 +1,8 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v13** (H-08 authored-course export, the H-18 `lesson_document` `lang`/`direction`
-addition, and the H-26b syllabus read projection inside it; v12 = H-26 student syllabus intake,
+Status: **frozen at v14** (H-53 `observation.record`, additive over H-08 authored-course export at v13,
+the H-18 `lesson_document` `lang`/`direction`
+addition, and the H-26b syllabus read projection inside v13; v12 = H-26 student syllabus intake,
 v11 = H-21 slice A, v10 = H-01, v9 = M3-B1,
 v8 = M1-P4, v7 = CB-015 residual, v6 = CB-011, v5 = CB-026, v4 = CB-024, v3 = CB-022, v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
@@ -18,16 +19,18 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v13.json` | 13 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v8.json` | 8 | Cinder | migrations, every command, evidence views |
+| `cb.rpc` | `contracts/rpc.v14.json` | 14 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.db` | `contracts/db.v9.json` | 9 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v4.json` | 4 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
-The v1 **to v12** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json` and `rpc.v12.json`), the
-v1 **to v7** files for `cb.db` (including `db.v3.json`, `db.v5.json` and `db.v7.json`), and the v1
+The v1 **to v13** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
+`rpc.v12.json` and `rpc.v13.json`), the
+v1 **to v8** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json` and
+`db.v8.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v3 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v12.json`, `db.v7.json`,
+as immutable history: the superseded current files are `rpc.v13.json`, `db.v8.json`,
 `errors.v3.json` and `jobs.v3.json`.
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
@@ -73,6 +76,7 @@ its five commands are fenced as the table below says. v7 adds one command, fence
 | `parent.plan.edit`, `parent.final.approve` | `idempotency_key`, `expected_revision` |
 | `parent.brief.get`, `parent.blueprint.read`, `parent.reflection.list` | none — reads |
 | `source.revalidate` | `idempotency_key` (a double-submitted re-fetch must not record twice; the content-hash comparison is the fence, not a revision) |
+| `observation.record` (v14) | `idempotency_key` (a double click must not mint two evidence rows; the write cannot move the aggregate, so there is no `expected_revision`) |
 
 Two v6 commands deliberately carry **no** `expected_revision`: `parent.export` is fenced by the
 approved content hash instead (bumping the enrollment revision would refuse an answer that is being
@@ -1535,6 +1539,7 @@ v10. Every earlier payload still validates; nothing becomes required.
 | v12 | 2026-11-07 | H-26 additive amendment: the student syllabus import path. Seven `syllabus.*` methods; optional `syllabus_id`/`syllabus_revision` on `course.create` (companion recipes only); optional `syllabus_id`/`syllabus_revision`/`alignment_revision` on the closed `plan_brief`; a closed `import_brief` for `kind=import` with `stage=syllabus_parse`/`syllabus_align`. cb.db **v8** adds the eight syllabus tables via migration 0008, additive with no backfill and no change to `plan_units`. cb.errors **v4** adds the seven syllabus refusals and carries `PREREQUISITE_UNMET`. 61 RPC methods; no job kind, vocabulary value, transition or dial changes. Full scope plans through the v11 blueprint; `BLUEPRINT_UNAVAILABLE` remains only for a host without `coursebook.plan.v2`. `rpc.v11.json`, `db.v7.json` and `errors.v3.json` are pinned by sha256. |
 | v13 | 2026-11-07 | H-08 additive amendment: a learner-authored course packages itself. Two methods appended (`course.export.read`, `course.export`) to the 61 v12 methods, so a course created from a goal can export instead of only a pack-backed course or a Parent Studio blueprint; `pack.export` keeps the pack-backed bytes with its own allowlist and unchanged behaviour. The gate is an approved plan plus every lesson page in `validated` state; a stored active final approval is honoured as a hash fence, and the caller's reviewed `expected_content_hash` is the second. No new cb.db table, column, migration, error code, job kind or vocabulary value. Numbered v13 because v11 is H-21's unit contract and v12 is H-26's syllabus intake; `rpc.v12.json` is pinned by sha256. |
 | v13 (H-18) | 2026-11-07 | Additive inside v13: `$defs/lesson_document` gains optional `lang` (BCP-47-ish text tag, ≤ 35) and `direction` (`ltr`/`rtl`), both absent on documents projected from pages that never recorded a locale, so old documents keep their content hash and id (pinned by `test_legacy_document_hash_unchanged_by_locale`). `direction` is derived from the text's script, never from a claim about the learner, and it changes no block, check, media or evidence semantics. H-18b was authored against v11 and landed there on its own branch; in the union it lands inside v13 rather than opening a version, because v11 is the frozen H-21 unit contract, v12 is H-26a's syllabus intake and v13 is H-08b's authored export, and the change adds two optional properties to one existing definition — the same shape as the v10 (H-17) amendment. `contracts/rpc.v11.json` is byte-identical to its shipped snapshot. The generation-side `check.scaffolds` contract moves from the fixed Japanese triple to the bounded open list `[{kind, script?, gloss?, direction?}]` with the legacy object still read; that schema is not on the cb.rpc wire. No method, request/response field, table, column, migration, error code or job kind changes. |
+| v14 | 2026-11-07 | H-53 additive amendment (contract and migration only). One method appended, `observation.record`, so the layer-1 observation `domain.record_observation` has written since CB-002 is reachable from a client — `docs/ASSESSMENT-BREADTH.md` §11 **B-2**: `self_reported`/`parent_reported` are frozen classes that no learner could produce. Request: `enrollment_id`, `objective_id`, `evidence_class` (the full six-label vocabulary; the **kernel** refuses `cold`/`hinted`/`answer_shown`/`override` with `POLICY_VIOLATION`) and optional `note` (≤ 1000 characters). Response: `evidence_id`, `evidence_class`, `revision`. Envelope: `idempotency_key`, no `expected_revision`. cb.db **v9** adds nullable `evidence.note` via migration 0009, additive with no backfill and no row rewrite. 64 RPC methods; no new error code, job kind, vocabulary value, check kind, answer kind, upload path or learner-media retention. `rpc.v13.json` and `db.v8.json` are pinned by sha256. The handler, the API registration and the UI are follow-up cards; this card ships the contract, the migration and the tests that pin them. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
@@ -1664,3 +1669,65 @@ new error code: the guard is one branch, and it is the only relaxed request cons
 **Not in this delta.** No new method, error code, job kind, vocabulary value, table, column or
 migration; no removal or renumbering of the `(due)` placeholder row; no second parser in
 `syllabus.get`; no UI change (Vellum re-points H-27's adapter to `fields`).
+
+## v14 delta (H-53) — an observation is reachable from a client
+
+The kernel has recorded observations since CB-002 (`cde58c6`):
+`coursebook.domain.record_observation(enrollment_id, objective_id, *, evidence_class,
+kind="observation", note=None)` writes exactly one layer-1 `evidence` row and refuses anything but
+`self_reported`/`parent_reported`. No client could reach it. `observation.record` appeared in no
+`cb.rpc` snapshot, `coursebook/api.py` registered no handler, `desktop/plugin.js` had zero hits, and
+`evidence` had no `note` column — so the accepted `note=` was silently dropped. That is **B-2** in
+`docs/ASSESSMENT-BREADTH.md` §11: two declared, frozen evidence classes that no learner could
+produce.
+
+v14 appends exactly one method. Every v1-v13 method name and payload is preserved unchanged, the
+method enum grows from 63 to 64, and no error code, job kind, vocabulary value, check kind, answer
+kind, upload path or learner-media retention is added. `contracts/rpc.v13.json` is byte-identical to
+its shipped snapshot (pinned by sha256).
+
+| Method | Request | Envelope | Response | What it may never do |
+|---|---|---|---|---|
+| `observation.record` | `enrollment_id`, `objective_id`, `evidence_class`, `note?` (≤ 1000 chars) | `idempotency_key` | `evidence_id`, `evidence_class`, `revision` | write an attempt, a check state, a transition or a verdict; bump a revision; store an upload; make an observation independent evidence |
+
+**`evidence_class` is the full six-label vocabulary on the wire.** The schema accepts `cold`,
+`hinted`, `answer_shown`, `self_reported`, `parent_reported` and `override`; the *kernel* refuses
+four of them with `POLICY_VIOLATION`. Closure is a policy judgement that a client must not have to
+reverse-engineer from a schema, and a narrower enum would put the kernel's rule in the wrong
+authority. No value is added to `cb.vocabulary`.
+
+**The note is stored, not swallowed.** `cb.db` **v9** adds nullable `evidence.note` (TEXT) via
+`coursebook/migrations/0009_evidence_note.sql`: additive, forward-only, no backfill and no row
+rewrite. Every pre-v9 row keeps `note` NULL, which means "no prose was stored", not "the writer sent
+an empty string". The migration *documented* the alternative — refusing `note` on the wire — and
+rejected it: a parameter that the wire accepts and the kernel discards is the defect being repaired,
+and a bounded prose field on an evidence row is ordinary storage, not a new construct.
+
+**Idempotency lives in the envelope, and there is no revision fence.** The card that authorised this
+delta wrote the request as `{enrollment_id, objective_id, evidence_class, note?, idempotency_key?}`.
+`idempotency_key` is not a payload field in any `cb.rpc` method: it is an envelope property that
+`coursebook.domain` handlers read off the request, and a payload copy would be unenforced. v14
+therefore **requires** it at the envelope root, exactly like `parent.reflection.record`: a double
+click must not mint two evidence rows. It deliberately requires no `expected_revision` — recording an
+observation cannot move the enrollment aggregate, so a stale-revision refusal would invent a fence
+that protects nothing. The response echoes the enrollment revision it read.
+
+**Reconciliation with `docs/ASSESSMENT-BREADTH.md` §9.** That section lists `observation.record`
+among the methods 0.1.0 may not add. The supervisor's decision, recorded there as a dated paragraph
+on 2026-11-07, is that §11 B-2 wins: the §9 bullet was a drafting over-reach that grouped the B-2
+repair with three construct widenings (`artifact.submit`, `code.run`, `performance.submit`). This
+method adds no check kind, no answer kind, no evidence-class value, no learner upload and no
+learner-media retention; it exposes an existing kernel call under existing vocabulary. The other
+three stay frozen and unauthorised.
+
+**Regression guard.**
+`tests/test_contracts.py::V14AmendmentTest` fails if the method, its request/response shapes, the
+bounded `note`, the envelope fence, the `evidence.note` column, the migration or the version links
+disappear. The handler and its behavioural tests are Cinder's follow-up card, and the control that
+calls it is Vellum's; neither is in this delta.
+
+**Not in this delta.** No handler, no `coursebook/api.py` registration, no `desktop/plugin.js`
+change, no check kind or answer kind, no upload path, no `artifact.submit`/`code.run`/
+`performance.submit`. An observation is never independent evidence, and
+`docs/CHECKLIST-CONFIRMATION.md` §3.2/§6 is unchanged in substance: a checklist that *is* an
+objective's check still closes through `attempt.submit` `selection`.

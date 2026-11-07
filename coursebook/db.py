@@ -63,7 +63,7 @@ class SchemaDrift(RuntimeError):
 #: Schema version this build expects and writes. ``cb.db`` declares the same number; the
 #: migration runner refuses a package whose contract and constant disagree, so a half-done bump
 #: is a hard failure rather than a database two versions apart from its contract.
-DB_SCHEMA_VERSION = 8
+DB_SCHEMA_VERSION = 9
 
 
 def db_contract() -> dict[str, Any]:

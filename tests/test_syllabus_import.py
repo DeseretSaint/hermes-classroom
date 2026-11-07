@@ -212,9 +212,11 @@ class ContractDeltaTest(KernelCase):
 
     def test_db_v8_adds_eight_tables_and_keeps_the_old_inventory(self) -> None:
         v7 = json.loads((contracts.CONTRACT_DIR / "db.v7.json").read_text(encoding="utf-8"))
-        current = contracts.contract("cb.db")
+        # The v8 snapshot, not the live inventory: cb.db has since moved to v9 for H-53's nullable
+        # `evidence.note`, so this stays a v7-vs-v8 check on the file that shipped.
+        current = json.loads((contracts.CONTRACT_DIR / "db.v8.json").read_text(encoding="utf-8"))
         self.assertEqual(current["schema_version"], 8)
-        self.assertEqual(contracts.contract_version("cb.db"), 8)
+        self.assertEqual(current["x-contract-version"], 8)
         added = set(current["tables"]) - set(v7["tables"])
         self.assertEqual(added, {
             "syllabus_series", "syllabi", "syllabus_files", "syllabus_blocks",
@@ -241,7 +243,9 @@ class ContractDeltaTest(KernelCase):
             "SYLLABUS_UNREVIEWED", "SYLLABUS_IN_USE", "PARSER_UNAVAILABLE",
             "BLUEPRINT_UNAVAILABLE",
         })
-        self.assertEqual(db.target_schema_version(), 8)
+        # Syllabus intake needs cb.db v8 or later; H-53 took the inventory to v9 without touching
+        # any syllabus table, so the requirement is a floor, not an equality.
+        self.assertGreaterEqual(db.target_schema_version(), 8)
         self.assertGreaterEqual(db.applied_schema_version() or 0, 7)
 
 
