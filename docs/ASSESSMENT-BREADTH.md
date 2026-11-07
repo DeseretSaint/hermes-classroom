@@ -459,7 +459,7 @@ generation input.
 | ID | Severity | Owner | Summary |
 |---|---|---|---|
 | **B-1** | High | Cinder | Generated lesson checks store no reference `kind`, so `grading.grade` routes every generated check to the unconfigured open lane: the learner's answer is persisted and the verdict is `needs_retry`. Imported `production`/`transfer` checks do the same via `rubric_only`. |
-| **B-2** | High | Cinder | `domain.record_observation` has no RPC method, handler or UI. `self_reported`/`parent_reported` are declared contract classes that no learner can produce. |
+| **B-2** | High | Cinder | `domain.record_observation` has no RPC method, handler or UI. `self_reported`/`parent_reported` are declared contract classes that no learner can produce. **Closed at `bbebd96` (2026-11-07, H-58 `t_85135fc7`)** — declared in `cb.rpc` v14 (H-53 `b13890c`, merged `d20a7a6`), dispatched by a registered handler (H-54 `a729e36`, merged `b7ff866`), persisted with its note under `cb.db` v9, and mounted as the Desktop `ParentObservation` control (H-55 `76a59ed`, merged `bbebd96`). See the closure note below the reproduction block; the summary sentence is the state at `a12176b` and is kept as history. |
 | **B-3** | Low | Vellum | `EVIDENCE_CLASS_COPY` (`desktop/plugin.js:3690`) covers 4 of 6 contract evidence classes; `self_reported`/`parent_reported` render as raw enum text once B-2 makes them reachable. |
 
 Reproduction for B-1 (verbatim, `a12176b`):
@@ -474,6 +474,27 @@ PROBE_RESULT={"ok": true, "verdict": "pass", "next_action": "complete_objective"
 B-2 reproduction: `grep -rn "record_observation" --include=*.py .` returns
 `coursebook/domain.py:2998` plus two call sites in `tests/test_kernel_transitions.py`; no
 `api.py`, `contracts.py` or `desktop/plugin.js` reference exists.
+
+**B-2 closure — re-derived at `bbebd96` (2026-11-07, H-58 `t_85135fc7`).** The reproduction above is
+the state at `a12176b` and stays as written. Three work commits close it — `b13890c`, `a729e36`,
+`76a59ed` — carried by the merges `d20a7a6`, `b7ff866` and `bbebd96`, and all six are ancestors of
+`bbebd96` by `git merge-base --is-ancestor` (exit 0 for each):
+
+| commit | half of the defect it closes | merged by |
+|---|---|---|
+| `b13890c` (H-53) | `contracts/rpc.v14.json` declares `observation.record` — the method enum goes 63 → 64; `contracts/db.v9.json` plus `coursebook/migrations/0009_evidence_note.sql` add the `evidence.note` column | `d20a7a6` |
+| `a729e36` (H-54) | `coursebook/domain.py:3754` `@_handler("observation.record")`; `_record_observation` writes the note in the same transaction, so it round-trips instead of being dropped (`tests/test_kernel_transitions.py:361`) | `b7ff866` |
+| `76a59ed` (H-55) | `desktop/plugin.js` `ParentObservation` / `ParentObservationRecorded` on a parent-recipe `SectionPage`, calling `observation.record` | `bbebd96` |
+
+Re-run here, not copied: `jq '.["$defs"].method.enum|length' contracts/rpc.v14.json` → `64`;
+`grep -c 'observation.record' desktop/plugin.js` → `6` (it was `0` at `54dd2eb`);
+`sha256sum desktop/plugin.js` → `a850b2bf0aee89a9d6765bbdc4218e65ca900a523c8afc8a48c4b1f2c1f076f3`;
+and the handler registry has 64 of 64 with no gap once `coursebook.domain`, `coursebook.pack_flow`,
+`coursebook.pronunciation` and `coursebook.syllabus` have been imported (a bare `import
+coursebook.domain` reports 57, because `pack_flow` registers its seven `pack.*` / `course.export*`
+handlers on import). Full command transcript: `docs/AUDIT-INDEX.md` §14. The §9 authorization
+paragraph and the B-1/B-3 rows are untouched; §10's construct gates still have to be met, so the
+observation path being reachable is not evidence that code, performance or artifact breadth is.
 
 Follow-up cards are created by this card's completion (§12). They are not this card's work and do
 not block the construct decision: even with B-1 and B-2 closed, code, performance and artifact
