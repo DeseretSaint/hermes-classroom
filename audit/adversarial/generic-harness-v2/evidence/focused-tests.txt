@@ -1,0 +1,106 @@
+test_algebra_before_calculus (tests.test_prerequisite_gating.BlueprintStoryTest.test_algebra_before_calculus)
+R5/R5a/§14.3: a full, two-unit course gates calculus on algebra's independent ... ok
+test_safety_before_power_tool (tests.test_prerequisite_gating.BlueprintStoryTest.test_safety_before_power_tool)
+R5a: parent-led safety gates the power tool, and only independent evidence satisfies; ... ok
+test_prerequisite_cycle_refused (tests.test_prerequisite_gating.EdgeFenceTest.test_prerequisite_cycle_refused)
+R2: unit 2 -> 3 -> 2 is refused with ``prerequisite_cycle`` and the cycle listed. ... ok
+test_prerequisite_duplicate_ref_refused (tests.test_prerequisite_gating.EdgeFenceTest.test_prerequisite_duplicate_ref_refused)
+R1: a repeated prerequisite unit is refused. ... ok
+test_prerequisite_forward_ref_refused (tests.test_prerequisite_gating.EdgeFenceTest.test_prerequisite_forward_ref_refused)
+R2/R1: a forward reference is refused by the writer and by the reader. ... ok
+test_prerequisite_missing_unit_refused (tests.test_prerequisite_gating.EdgeFenceTest.test_prerequisite_missing_unit_refused)
+R1/R3: a ref that names no unit in this plan version is refused; a replan that drops ... ok
+test_prerequisite_self_ref_refused (tests.test_prerequisite_gating.EdgeFenceTest.test_prerequisite_self_ref_refused)
+R1/R2: a unit naming itself is refused; it is a one-node cycle. ... ok
+test_check_open_refuses_unmet_prerequisite (tests.test_prerequisite_gating.GatingTest.test_check_open_refuses_unmet_prerequisite)
+R5/R6: no ``checks`` row is written for the gated objective. ... ok
+test_lesson_begin_acknowledged_prerequisite_proceeds (tests.test_prerequisite_gating.GatingTest.test_lesson_begin_acknowledged_prerequisite_proceeds)
+R6: the run is created, ``unmet_acknowledged`` echoed, nothing else written. ... ok
+test_lesson_begin_refuses_unmet_prerequisite (tests.test_prerequisite_gating.GatingTest.test_lesson_begin_refuses_unmet_prerequisite)
+R5/R6: no ``lesson_runs`` row is written and the error carries the unmet list. ... ok
+test_legacy_outline_projects_one_unit (tests.test_prerequisite_gating.LegacyAndProjectionTest.test_legacy_outline_projects_one_unit)
+R9/R4: a pre-blueprint plan projects exactly one implicit unit. ... ok
+test_legacy_plan_hash_unchanged_after_0007 (tests.test_prerequisite_gating.LegacyAndProjectionTest.test_legacy_plan_hash_unchanged_after_0007)
+R4: a plan with no ``plan_units`` rows hashes byte-identically to the v6 kernel. ... ok
+test_projection_has_no_mastery_field (tests.test_prerequisite_gating.LegacyAndProjectionTest.test_projection_has_no_mastery_field)
+R7: the outline unit object's key set equals R9 exactly; no score or mastery field. ... ok
+test_continuation_prompt_carries_the_rule (tests.test_grading_lanes.FrozenChatDirectiveTest.test_continuation_prompt_carries_the_rule) ... ok
+test_lesson_author_instructions_carry_the_rule (tests.test_grading_lanes.FrozenChatDirectiveTest.test_lesson_author_instructions_carry_the_rule) ... ok
+test_an_accepted_alternative_also_passes (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_an_accepted_alternative_also_passes) ... ok
+test_every_generated_check_declares_a_known_lane (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_every_generated_check_declares_a_known_lane) ... ok
+test_selection_quiz_grades_the_typed_choice (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_selection_quiz_grades_the_typed_choice)
+The pane shows choices as text and submits what was typed; exact grades that. ... ok
+test_text_quiz_right_answer_passes_cold_and_completes (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_text_quiz_right_answer_passes_cold_and_completes) ... ok
+test_text_quiz_wrong_answer_is_not_yet_and_advances_nothing (tests.test_grading_lanes.GeneratedCheckIsClosedTest.test_text_quiz_wrong_answer_is_not_yet_and_advances_nothing) ... ok
+test_check_open_refuses_a_spec_without_a_lane (tests.test_grading_lanes.MissingKindIsImpossibleTest.test_check_open_refuses_a_spec_without_a_lane) ... ok
+test_generated_writer_seals_every_reference (tests.test_grading_lanes.MissingKindIsImpossibleTest.test_generated_writer_seals_every_reference)
+The generated write path always emits a sealed reference, even for a minimal check. ... ok
+test_grading_a_reference_without_a_kind_is_a_grader_failure (tests.test_grading_lanes.MissingKindIsImpossibleTest.test_grading_a_reference_without_a_kind_is_a_grader_failure) ... ok
+test_seal_reference_requires_a_declared_lane (tests.test_grading_lanes.MissingKindIsImpossibleTest.test_seal_reference_requires_a_declared_lane) ... ok
+test_closed_target_gets_an_exact_reference (tests.test_grading_lanes.PackImportLaneTest.test_closed_target_gets_an_exact_reference) ... ok
+test_production_and_transfer_declare_the_open_lane_explicitly (tests.test_grading_lanes.PackImportLaneTest.test_production_and_transfer_declare_the_open_lane_explicitly) ... ok
+test_a_self_report_answer_is_not_graded_and_advances_nothing (tests.test_grading_lanes.VerificationCheckIsSelfReportedTest.test_a_self_report_answer_is_not_graded_and_advances_nothing) ... ok
+test_verification_reference_declares_rubric_only (tests.test_grading_lanes.VerificationCheckIsSelfReportedTest.test_verification_reference_declares_rubric_only) ... ok
+test_the_blueprint_stage_writes_units_and_no_sections (tests.test_blueprint_units.BlueprintPlanJobTest.test_the_blueprint_stage_writes_units_and_no_sections) ... ok
+test_the_executor_never_chains_the_next_unit (tests.test_blueprint_units.BlueprintPlanJobTest.test_the_executor_never_chains_the_next_unit) ... /home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fdee7d4d6c0>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_a_blueprint_plan_projects_its_units (tests.test_blueprint_units.OutlineProjectionTest.test_a_blueprint_plan_projects_its_units) ... ok
+test_a_legacy_plan_projects_one_implicit_unit (tests.test_blueprint_units.OutlineProjectionTest.test_a_legacy_plan_projects_one_implicit_unit) ... ok
+test_check_plan_v2_has_no_count_or_independent_evidence (tests.test_blueprint_units.PlanSchemaV2RulesTest.test_check_plan_v2_has_no_count_or_independent_evidence) ... ok
+test_one_off_is_exactly_one_objective_and_one_verification (tests.test_blueprint_units.PlanSchemaV2RulesTest.test_one_off_is_exactly_one_objective_and_one_verification) ... ok
+test_prerequisite_edges_point_backwards (tests.test_blueprint_units.PlanSchemaV2RulesTest.test_prerequisite_edges_point_backwards) ... ok
+test_scope_boundary_matrix (tests.test_blueprint_units.PlanSchemaV2RulesTest.test_scope_boundary_matrix) ... ok
+test_target_lessons_must_fit_the_declared_schedule (tests.test_blueprint_units.PlanSchemaV2RulesTest.test_target_lessons_must_fit_the_declared_schedule) ... ok
+test_cancel_at_a_unit_boundary_leaves_durable_rows_and_starts_nothing (tests.test_blueprint_units.UnitScopedLessonsTest.test_cancel_at_a_unit_boundary_leaves_durable_rows_and_starts_nothing) ... ok
+test_lessons_cover_only_the_requested_unit (tests.test_blueprint_units.UnitScopedLessonsTest.test_lessons_cover_only_the_requested_unit) ... ok
+test_partial_unit_resume_reuses_authored_lessons (tests.test_blueprint_units.UnitScopedLessonsTest.test_partial_unit_resume_reuses_authored_lessons) ... ok
+test_rerunning_the_unit_reuses_every_row_and_spends_nothing (tests.test_blueprint_units.UnitSectionsStageTest.test_rerunning_the_unit_reuses_every_row_and_spends_nothing) ... ok
+test_unit_sections_are_stored_with_role_and_unit (tests.test_blueprint_units.UnitSectionsStageTest.test_unit_sections_are_stored_with_role_and_unit) ... /home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fdee74371f0>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fdee74372e0>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fdee7436c50>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fdee7437880>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fdee7437970>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fdee7437a60>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:201: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fdee7437790>
+  for key, value in x.items():
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_a_prerequisite_change_changes_the_hash (tests.test_plan_units.LegacyPlanHashInvarianceTest.test_a_prerequisite_change_changes_the_hash) ... ok
+test_a_unit_row_extends_the_hash_and_a_retitle_changes_it (tests.test_plan_units.LegacyPlanHashInvarianceTest.test_a_unit_row_extends_the_hash_and_a_retitle_changes_it) ... ok
+test_an_objective_unit_id_adds_only_that_objectives_unit_key (tests.test_plan_units.LegacyPlanHashInvarianceTest.test_an_objective_unit_id_adds_only_that_objectives_unit_key) ... ok
+test_legacy_plan_hash_is_byte_identical_after_0007 (tests.test_plan_units.LegacyPlanHashInvarianceTest.test_legacy_plan_hash_is_byte_identical_after_0007) ... ok
+test_the_legacy_payload_carries_no_units_and_no_unit_keys (tests.test_plan_units.LegacyPlanHashInvarianceTest.test_the_legacy_payload_carries_no_units_and_no_unit_keys) ... ok
+test_a_section_defaults_to_owner_with_no_unit (tests.test_plan_units.PlanUnitsSchemaTest.test_a_section_defaults_to_owner_with_no_unit) ... ok
+test_legacy_objectives_keep_a_null_unit (tests.test_plan_units.PlanUnitsSchemaTest.test_legacy_objectives_keep_a_null_unit) ... ok
+test_plan_unit_ordinals_are_unique_per_plan_and_fenced_by_the_plan (tests.test_plan_units.PlanUnitsSchemaTest.test_plan_unit_ordinals_are_unique_per_plan_and_fenced_by_the_plan) ... ok
+test_target_schema_version_is_pinned_to_v7 (tests.test_plan_units.PlanUnitsSchemaTest.test_target_schema_version_is_pinned_to_v7) ... ok
+test_unit_columns_match_the_contract_exactly (tests.test_plan_units.PlanUnitsSchemaTest.test_unit_columns_match_the_contract_exactly) ... ok
+test_edit_invalidates_the_generated_pass_and_old_hash_still_refuses (tests.test_plan_approval.PlanApprovalIntegrityTest.test_edit_invalidates_the_generated_pass_and_old_hash_still_refuses) ... ok
+test_empty_plan_is_refused_and_changes_nothing (tests.test_plan_approval.PlanApprovalIntegrityTest.test_empty_plan_is_refused_and_changes_nothing) ... ok
+test_generated_plan_without_a_validation_record_is_refused (tests.test_plan_approval.PlanApprovalIntegrityTest.test_generated_plan_without_a_validation_record_is_refused) ... ok
+test_idempotent_replay_returns_the_original_approval (tests.test_plan_approval.PlanApprovalIntegrityTest.test_idempotent_replay_returns_the_original_approval) ... ok
+test_legacy_generated_plan_without_a_content_binding_is_refused (tests.test_plan_approval.PlanApprovalIntegrityTest.test_legacy_generated_plan_without_a_content_binding_is_refused) ... ok
+test_manual_nonempty_plan_approves_without_claiming_validation (tests.test_plan_approval.PlanApprovalIntegrityTest.test_manual_nonempty_plan_approves_without_claiming_validation) ... ok
+test_rejected_generated_plan_is_refused (tests.test_plan_approval.PlanApprovalIntegrityTest.test_rejected_generated_plan_is_refused) ... ok
+test_replan_does_not_carry_validation_and_the_new_version_refuses (tests.test_plan_approval.PlanApprovalIntegrityTest.test_replan_does_not_carry_validation_and_the_new_version_refuses) ... ok
+test_stale_revision_still_refuses (tests.test_plan_approval.PlanApprovalIntegrityTest.test_stale_revision_still_refuses) ... ok
+test_validated_generated_plan_approves (tests.test_plan_approval.PlanApprovalIntegrityTest.test_validated_generated_plan_approves) ... ok
+
+----------------------------------------------------------------------
+Ran 62 tests in 21.063s
+
+OK

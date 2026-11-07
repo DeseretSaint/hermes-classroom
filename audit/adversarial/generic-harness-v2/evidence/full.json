@@ -1,0 +1,2695 @@
+{
+  "labels": {
+    "model": "FAKE — deterministic ScriptedLLM, no provider call",
+    "provider_calls": 0,
+    "provider_spend_usd": 0.0,
+    "research": "RECORDED in-memory page through the real search seam"
+  },
+  "observations": {
+    "attempt_rows": [
+      {
+        "check_id": "562fd5ceb78c61a0",
+        "evidence_class": "cold",
+        "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:82a58ffb0997e7506178050150778511bedaef1f9ce86249700178bbf5c6bcee\"}",
+        "id": "att_b7560d2eff46464e8078c67675629b05",
+        "state": "committed",
+        "verdict": "pass"
+      },
+      {
+        "check_id": "4bab213bed676f97",
+        "evidence_class": "cold",
+        "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:23ed2ddc116aa9b2e851b82a03fce88b851e94ce0b3f7639f7868f757e50ec99\"}",
+        "id": "att_faff465c2b794aeb8b1fcabacfa19264",
+        "state": "committed",
+        "verdict": "not_yet"
+      }
+    ],
+    "check_lanes": [
+      {
+        "objective_id": "d3d79c69f07367a8",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "56a24dacf74982cc",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "c048c3578d3759ed",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "53262307b3ca94c1",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "7a346caa0c44c6d7",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "07dc0030f546725f",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "276062d91b6866b5",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "f6bc3b55c8d24f57",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "720e732cad6a1b6b",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "212e77abec35ef74",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "62a470046b1566ca",
+        "reference_kind": "exact",
+        "state": "closed",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "c18e2e02a703a219",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "8fc8f6bd041f79d1",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "eac0e749a2e7b0e4",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "b0982da51ac50b69",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "e2a5283607c39271",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "5ec16d05253351d0",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "5a2663d4cd579640",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "9604c1b9446b9468",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "5140a2ba38a2f382",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "72e08b4fad5c1999",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "47aeb98f79f29609",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "0fdbfe16a6d5fbac",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "e21ae86ead78a3df",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      }
+    ],
+    "checks": 24,
+    "lessons": 24,
+    "objectives": 24,
+    "outline_unit_states": [
+      {
+        "objectives": 4,
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "prerequisite_state": "no_edges",
+        "unmet": 0
+      },
+      {
+        "objectives": 4,
+        "ordinal": 2,
+        "prereq_unit_ordinals": [
+          1
+        ],
+        "prerequisite_state": "unmet",
+        "unmet": 4
+      },
+      {
+        "objectives": 4,
+        "ordinal": 3,
+        "prereq_unit_ordinals": [
+          2
+        ],
+        "prerequisite_state": "unmet",
+        "unmet": 4
+      },
+      {
+        "objectives": 4,
+        "ordinal": 4,
+        "prereq_unit_ordinals": [
+          3
+        ],
+        "prerequisite_state": "unmet",
+        "unmet": 4
+      },
+      {
+        "objectives": 4,
+        "ordinal": 5,
+        "prereq_unit_ordinals": [
+          4
+        ],
+        "prerequisite_state": "unmet",
+        "unmet": 4
+      },
+      {
+        "objectives": 4,
+        "ordinal": 6,
+        "prereq_unit_ordinals": [
+          5
+        ],
+        "prerequisite_state": "unmet",
+        "unmet": 4
+      }
+    ],
+    "outline_units": 6,
+    "plan_scope": "full",
+    "plan_state_after_approval": "approved",
+    "plan_state_before_approval": "draft",
+    "prompt_version": "plan-prompt.v4",
+    "schema_name": "coursebook_plan_v2",
+    "section_rows": [
+      {
+        "objective_refs_json": "[1]",
+        "ordinal": 1,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[2]",
+        "ordinal": 2,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[3]",
+        "ordinal": 3,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[4]",
+        "ordinal": 4,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[5]",
+        "ordinal": 5,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[6]",
+        "ordinal": 6,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[7]",
+        "ordinal": 7,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[8]",
+        "ordinal": 8,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[9]",
+        "ordinal": 9,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[10]",
+        "ordinal": 10,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[11]",
+        "ordinal": 11,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[12]",
+        "ordinal": 12,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[13]",
+        "ordinal": 13,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[14]",
+        "ordinal": 14,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[15]",
+        "ordinal": 15,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[16]",
+        "ordinal": 16,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[17]",
+        "ordinal": 17,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[18]",
+        "ordinal": 18,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[19]",
+        "ordinal": 19,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[20]",
+        "ordinal": 20,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[21]",
+        "ordinal": 21,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[22]",
+        "ordinal": 22,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[23]",
+        "ordinal": 23,
+        "section_role": "owner"
+      },
+      {
+        "objective_refs_json": "[24]",
+        "ordinal": 24,
+        "section_role": "owner"
+      }
+    ],
+    "sections": 24,
+    "unit_rows": [
+      {
+        "ordinal": 1,
+        "prereq_unit_ordinals_json": "[]",
+        "target_lessons": 4,
+        "title": "Unit 1: Index an array and explain its constant-time access"
+      },
+      {
+        "ordinal": 2,
+        "prereq_unit_ordinals_json": "[1]",
+        "target_lessons": 4,
+        "title": "Unit 2: Resize a dynamic array and state the amortised cost"
+      },
+      {
+        "ordinal": 3,
+        "prereq_unit_ordinals_json": "[2]",
+        "target_lessons": 4,
+        "title": "Unit 3: Implement a stack and use it to reverse a sequence"
+      },
+      {
+        "ordinal": 4,
+        "prereq_unit_ordinals_json": "[3]",
+        "target_lessons": 4,
+        "title": "Unit 4: Implement a queue and explain FIFO order"
+      },
+      {
+        "ordinal": 5,
+        "prereq_unit_ordinals_json": "[4]",
+        "target_lessons": 4,
+        "title": "Unit 5: Traverse a linked list and insert at the head"
+      },
+      {
+        "ordinal": 6,
+        "prereq_unit_ordinals_json": "[5]",
+        "target_lessons": 4,
+        "title": "Unit 6: Remove a node from a singly linked list safely"
+      }
+    ],
+    "units": 6,
+    "validation_verdict": "pass"
+  },
+  "scenario": {
+    "goal": "A first-year college introduction to data structures: arrays, lists, stacks, queues, trees, hashing and graphs, with assessments and prerequisites.",
+    "level": "beginner",
+    "locale": "en-US",
+    "name": "full",
+    "recipe": "committed",
+    "scope": "full",
+    "subject_domain": "general",
+    "title": "Introduction to data structures"
+  },
+  "steps": {
+    "approve": {
+      "approval_provenance": null,
+      "plan_hash": "sha256:89b8ea9c4162056ccca1fc2845cdc5bc41e4f868d922d3b3c42b142ec830b2a9",
+      "revision": 1,
+      "state_after": "approved"
+    },
+    "approve_wrong_hash": {
+      "error_code": "VALIDATION_FAILED",
+      "ok": false,
+      "state_after": "draft"
+    },
+    "grading": [
+      {
+        "label": "correct",
+        "open": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-check-open-88c880",
+          "result": {
+            "check_id": "562fd5ceb78c61a0",
+            "check_version": 1,
+            "evidence_target": "recall",
+            "revision": 1
+          },
+          "revision": 1
+        },
+        "submit": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-attempt-submit-fae584",
+          "result": {
+            "attempt_id": "att_b7560d2eff46464e8078c67675629b05",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": true,
+                "observed": "matches an accepted answer"
+              }
+            ],
+            "evidence_class": "cold",
+            "next_action": "complete_objective",
+            "revision": 2,
+            "verdict": "pass"
+          },
+          "revision": 2
+        }
+      },
+      {
+        "label": "wrong",
+        "open": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-check-open-f3905b",
+          "result": {
+            "check_id": "4bab213bed676f97",
+            "check_version": 1,
+            "evidence_target": "comprehension",
+            "revision": 2
+          },
+          "revision": 2
+        },
+        "submit": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-attempt-submit-f63397",
+          "result": {
+            "attempt_id": "att_faff465c2b794aeb8b1fcabacfa19264",
+            "criteria": [
+              {
+                "id": "c1",
+                "met": false,
+                "observed": "does not match an accepted answer"
+              }
+            ],
+            "evidence_class": "cold",
+            "next_action": "retry_attempt",
+            "revision": 3,
+            "verdict": "not_yet"
+          },
+          "revision": 3
+        }
+      }
+    ],
+    "lesson_stages": [
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 8,
+        "jobs_before_run": 8,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_7d8da97e77884180b23f3641e3cc0bd2",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "562fd5ceb78c61a0",
+              "lesson_id": "e38855ae7559827b",
+              "reused": false,
+              "section_id": "488eb1dfae3ceb1a",
+              "state": "validated",
+              "validation_id": "a74c528945486f76",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "4bab213bed676f97",
+              "lesson_id": "a67cc3f0ce391a13",
+              "reused": false,
+              "section_id": "0d78625ec06099ca",
+              "state": "validated",
+              "validation_id": "9cc3d1cbc93da6bd",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "aa72c142afaa7e52",
+              "lesson_id": "f8cf5e419e3873ef",
+              "reused": false,
+              "section_id": "7ce7524dced42dca",
+              "state": "validated",
+              "validation_id": "dbf3d1da80591a30",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "feb9cf00510a40d4",
+              "lesson_id": "bffe5d0a4ae1f5e9",
+              "reused": false,
+              "section_id": "dc017f95a4db3f45",
+              "state": "validated",
+              "validation_id": "816ae8bc8e0a3311",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": 2,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 16,
+            "maximum_cost_usd": 0.64,
+            "minimum_calls": 8,
+            "minimum_cost_usd": 0.32,
+            "section_count": 4
+          },
+          "sections_total": 4,
+          "stage": "lessons",
+          "unit_ordinal": 1,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 8,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 10124,
+            "output_tokens": 3395,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 1
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 9,
+        "jobs_before_run": 9,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_ac10e71ce779495d9b605a4c6bffb543",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "57c48ae9e44b2b76",
+              "lesson_id": "fc0c3f276aea2358",
+              "reused": false,
+              "section_id": "0385ca9e3dc70364",
+              "state": "validated",
+              "validation_id": "32beb975d7768b4e",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "34f13e47b3e95eaf",
+              "lesson_id": "bdd7d68a685705e7",
+              "reused": false,
+              "section_id": "528465063df5a351",
+              "state": "validated",
+              "validation_id": "86dddd6e1e87fdc9",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "65f387c52143c479",
+              "lesson_id": "11344fc1df833328",
+              "reused": false,
+              "section_id": "bf9c71e97dd35200",
+              "state": "validated",
+              "validation_id": "221fe1e6d98662ae",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "716ad0a66dc43bbe",
+              "lesson_id": "3782ed7e2858ed71",
+              "reused": false,
+              "section_id": "f204a589260dd731",
+              "state": "validated",
+              "validation_id": "dac0543b62e211d2",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": 3,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 16,
+            "maximum_cost_usd": 0.64,
+            "minimum_calls": 8,
+            "minimum_cost_usd": 0.32,
+            "section_count": 4
+          },
+          "sections_total": 4,
+          "stage": "lessons",
+          "unit_ordinal": 2,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 8,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 10089,
+            "output_tokens": 3387,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 2
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 10,
+        "jobs_before_run": 10,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_a9635ca790024abcb1a759b25cb04bf2",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "ef6d2d72578c1839",
+              "lesson_id": "28cd49905f17a81b",
+              "reused": false,
+              "section_id": "15ff47cc691f043e",
+              "state": "validated",
+              "validation_id": "02ab342f8380ef8d",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "b822e9420d497ce0",
+              "lesson_id": "242d56d6cd5122c8",
+              "reused": false,
+              "section_id": "15a4343386ff14f5",
+              "state": "validated",
+              "validation_id": "15aa6545cc5c2962",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "23f1ab291590bab5",
+              "lesson_id": "71b60afacbb84ade",
+              "reused": false,
+              "section_id": "73ebdaf00368f086",
+              "state": "validated",
+              "validation_id": "cdaceaa6c7143eac",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "2b04fb51e70b4c6e",
+              "lesson_id": "0be3f9ac126f49a3",
+              "reused": false,
+              "section_id": "eff858c9b3a9b80d",
+              "state": "validated",
+              "validation_id": "fcf3f2bf3d48e724",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": 4,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 16,
+            "maximum_cost_usd": 0.64,
+            "minimum_calls": 8,
+            "minimum_cost_usd": 0.32,
+            "section_count": 4
+          },
+          "sections_total": 4,
+          "stage": "lessons",
+          "unit_ordinal": 3,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 8,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 10005,
+            "output_tokens": 3365,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 3
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 11,
+        "jobs_before_run": 11,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_bb57b66c337b455e968afaccc0974959",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "de1c1996f3e9d953",
+              "lesson_id": "8aeb8b3bfdf65be1",
+              "reused": false,
+              "section_id": "a4d739f60f0c4d1b",
+              "state": "validated",
+              "validation_id": "da3a36833e0bebeb",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "4403fbbe29d6b024",
+              "lesson_id": "578144f3dde0ade9",
+              "reused": false,
+              "section_id": "caf91f75c95556c9",
+              "state": "validated",
+              "validation_id": "7362e03b7b5394fd",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "475f8724af04b230",
+              "lesson_id": "eeb6fcb10a77a482",
+              "reused": false,
+              "section_id": "2a3635352a34f6b2",
+              "state": "validated",
+              "validation_id": "bfeeb5a79543f872",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "51e48e5a6f20bf25",
+              "lesson_id": "05ad105523215a1a",
+              "reused": false,
+              "section_id": "0ea96d2a2fddf885",
+              "state": "validated",
+              "validation_id": "6f21a61eb3705cd9",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": 5,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 16,
+            "maximum_cost_usd": 0.64,
+            "minimum_calls": 8,
+            "minimum_cost_usd": 0.32,
+            "section_count": 4
+          },
+          "sections_total": 4,
+          "stage": "lessons",
+          "unit_ordinal": 4,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 8,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 10036,
+            "output_tokens": 3373,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 4
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 12,
+        "jobs_before_run": 12,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_ce63fabe33f64920a0e156e937eafe88",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "815cd609cb7d42f3",
+              "lesson_id": "c0b0b8f16af27ca1",
+              "reused": false,
+              "section_id": "ae71aa6c4a622865",
+              "state": "validated",
+              "validation_id": "eabea717f2a4648f",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "7c45ec8aacfbf174",
+              "lesson_id": "dcaac9697a926b85",
+              "reused": false,
+              "section_id": "c94e0e4ab8bdd83e",
+              "state": "validated",
+              "validation_id": "0686398748499756",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "86961b9b8ac45712",
+              "lesson_id": "62130b02f98960f7",
+              "reused": false,
+              "section_id": "d4d28c840369d67c",
+              "state": "validated",
+              "validation_id": "2c36e2369610e885",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "463d250f390733f9",
+              "lesson_id": "4b56d18396f2e26a",
+              "reused": false,
+              "section_id": "614fd7ec8736e17e",
+              "state": "validated",
+              "validation_id": "134e917e5d0382fc",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": 6,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 16,
+            "maximum_cost_usd": 0.64,
+            "minimum_calls": 8,
+            "minimum_cost_usd": 0.32,
+            "section_count": 4
+          },
+          "sections_total": 4,
+          "stage": "lessons",
+          "unit_ordinal": 5,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 8,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 10044,
+            "output_tokens": 3374,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 5
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 13,
+        "jobs_before_run": 13,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_cc0508100109489c89216a463216f384",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "64a491422a0a9cac",
+              "lesson_id": "fc16acef2430e6f5",
+              "reused": false,
+              "section_id": "a368835d50ade139",
+              "state": "validated",
+              "validation_id": "b235818498fedeb2",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "d4a6462c8c197ce4",
+              "lesson_id": "be5dbdc5428cea46",
+              "reused": false,
+              "section_id": "9155aafdd3056864",
+              "state": "validated",
+              "validation_id": "caeeea7a3f6ebb77",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "23910c8ded0dee85",
+              "lesson_id": "2e7b84a204a3741c",
+              "reused": false,
+              "section_id": "9cbb5586030a7a0e",
+              "state": "validated",
+              "validation_id": "ca56d94a57bea5d4",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            },
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "282778cb709332af",
+              "lesson_id": "7fb13ed7f5a4301e",
+              "reused": false,
+              "section_id": "2c06f5b00d0a9363",
+              "state": "validated",
+              "validation_id": "89bf2baa2e604b85",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": null,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 16,
+            "maximum_cost_usd": 0.64,
+            "minimum_calls": 8,
+            "minimum_cost_usd": 0.32,
+            "section_count": 4
+          },
+          "sections_total": 4,
+          "stage": "lessons",
+          "unit_ordinal": 6,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 8,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 10056,
+            "output_tokens": 3377,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 6
+      }
+    ],
+    "outline": {
+      "enrollment_id": "enr_25059e7fa5a048d1b0110ae2cfbb0933",
+      "objectives": [
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "recall",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "62a470046b1566ca",
+          "ordinal": 1,
+          "state": "not_started",
+          "title": "Index an array and explain its constant-time access"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "720e732cad6a1b6b",
+          "ordinal": 2,
+          "state": "not_started",
+          "title": "Resize a dynamic array and state the amortised cost"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "discrimination",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "9604c1b9446b9468",
+          "ordinal": 3,
+          "state": "not_started",
+          "title": "Implement a stack and use it to reverse a sequence"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "transfer",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "e21ae86ead78a3df",
+          "ordinal": 4,
+          "state": "not_started",
+          "title": "Implement a queue and explain FIFO order"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "recall",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "c18e2e02a703a219",
+          "ordinal": 5,
+          "state": "not_started",
+          "title": "Traverse a linked list and insert at the head"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "7a346caa0c44c6d7",
+          "ordinal": 6,
+          "state": "not_started",
+          "title": "Remove a node from a singly linked list safely"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "discrimination",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "eac0e749a2e7b0e4",
+          "ordinal": 7,
+          "state": "not_started",
+          "title": "Insert and search in a binary search tree"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "transfer",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "b0982da51ac50b69",
+          "ordinal": 8,
+          "state": "not_started",
+          "title": "Traverse a tree in order and state the output order"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "recall",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "0fdbfe16a6d5fbac",
+          "ordinal": 9,
+          "state": "not_started",
+          "title": "Explain hash collisions and a collision strategy"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "5140a2ba38a2f382",
+          "ordinal": 10,
+          "state": "not_started",
+          "title": "Measure a hash table's load factor"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "discrimination",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "56a24dacf74982cc",
+          "ordinal": 11,
+          "state": "not_started",
+          "title": "Represent a graph as an adjacency list"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "transfer",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "53262307b3ca94c1",
+          "ordinal": 12,
+          "state": "not_started",
+          "title": "Breadth-first traverse a small graph"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "recall",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "47aeb98f79f29609",
+          "ordinal": 13,
+          "state": "not_started",
+          "title": "Depth-first traverse a small graph"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "07dc0030f546725f",
+          "ordinal": 14,
+          "state": "not_started",
+          "title": "Choose a structure for a stated access pattern"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "discrimination",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "f6bc3b55c8d24f57",
+          "ordinal": 15,
+          "state": "not_started",
+          "title": "Explain why a balanced tree bounds search cost"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "transfer",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "212e77abec35ef74",
+          "ordinal": 16,
+          "state": "not_started",
+          "title": "Implement a priority queue over a heap"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "recall",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "5ec16d05253351d0",
+          "ordinal": 17,
+          "state": "not_started",
+          "title": "Explain the cost of extracting the minimum"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "e2a5283607c39271",
+          "ordinal": 18,
+          "state": "not_started",
+          "title": "Trace insertion sort on six numbers"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "discrimination",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "5a2663d4cd579640",
+          "ordinal": 19,
+          "state": "not_started",
+          "title": "Trace merge sort and count its comparisons"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "transfer",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "276062d91b6866b5",
+          "ordinal": 20,
+          "state": "not_started",
+          "title": "State when a linear search is the honest choice"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "recall",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "8fc8f6bd041f79d1",
+          "ordinal": 21,
+          "state": "not_started",
+          "title": "Compare two structures on memory and speed"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "comprehension",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "72e08b4fad5c1999",
+          "ordinal": 22,
+          "state": "not_started",
+          "title": "Design a small index for a text search task"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "discrimination",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "d3d79c69f07367a8",
+          "ordinal": 23,
+          "state": "not_started",
+          "title": "Explain a cache's eviction effect on lookups"
+        },
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "transfer",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "c048c3578d3759ed",
+          "ordinal": 24,
+          "state": "not_started",
+          "title": "Justify one structure for a final project"
+        }
+      ],
+      "plan": {
+        "plan_hash": "sha256:89b8ea9c4162056ccca1fc2845cdc5bc41e4f868d922d3b3c42b142ec830b2a9",
+        "plan_id": "420cf94672e52a89",
+        "state": "approved",
+        "units": [
+          {
+            "goal": "Unit 1 makes the next body of work possible",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "recall",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "62a470046b1566ca",
+                "ordinal": 1,
+                "state": "not_started",
+                "title": "Index an array and explain its constant-time access"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "comprehension",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "720e732cad6a1b6b",
+                "ordinal": 2,
+                "state": "not_started",
+                "title": "Resize a dynamic array and state the amortised cost"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "discrimination",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "9604c1b9446b9468",
+                "ordinal": 3,
+                "state": "not_started",
+                "title": "Implement a stack and use it to reverse a sequence"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "transfer",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "e21ae86ead78a3df",
+                "ordinal": 4,
+                "state": "not_started",
+                "title": "Implement a queue and explain FIFO order"
+              }
+            ],
+            "ordinal": 1,
+            "prereq_unit_ordinals": [],
+            "prerequisite_state": "no_edges",
+            "title": "Unit 1: Index an array and explain its constant-time access",
+            "unmet": []
+          },
+          {
+            "goal": "Unit 2 makes the next body of work possible",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "recall",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "c18e2e02a703a219",
+                "ordinal": 5,
+                "state": "not_started",
+                "title": "Traverse a linked list and insert at the head"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "comprehension",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "7a346caa0c44c6d7",
+                "ordinal": 6,
+                "state": "not_started",
+                "title": "Remove a node from a singly linked list safely"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "discrimination",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "eac0e749a2e7b0e4",
+                "ordinal": 7,
+                "state": "not_started",
+                "title": "Insert and search in a binary search tree"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "transfer",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "b0982da51ac50b69",
+                "ordinal": 8,
+                "state": "not_started",
+                "title": "Traverse a tree in order and state the output order"
+              }
+            ],
+            "ordinal": 2,
+            "prereq_unit_ordinals": [
+              1
+            ],
+            "prerequisite_state": "unmet",
+            "title": "Unit 2: Resize a dynamic array and state the amortised cost",
+            "unmet": [
+              {
+                "objective_id": "62a470046b1566ca",
+                "ordinal": 1,
+                "state": "not_started",
+                "title": "Index an array and explain its constant-time access"
+              },
+              {
+                "objective_id": "720e732cad6a1b6b",
+                "ordinal": 2,
+                "state": "not_started",
+                "title": "Resize a dynamic array and state the amortised cost"
+              },
+              {
+                "objective_id": "9604c1b9446b9468",
+                "ordinal": 3,
+                "state": "not_started",
+                "title": "Implement a stack and use it to reverse a sequence"
+              },
+              {
+                "objective_id": "e21ae86ead78a3df",
+                "ordinal": 4,
+                "state": "not_started",
+                "title": "Implement a queue and explain FIFO order"
+              }
+            ]
+          },
+          {
+            "goal": "Unit 3 makes the next body of work possible",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "recall",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "0fdbfe16a6d5fbac",
+                "ordinal": 9,
+                "state": "not_started",
+                "title": "Explain hash collisions and a collision strategy"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "comprehension",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "5140a2ba38a2f382",
+                "ordinal": 10,
+                "state": "not_started",
+                "title": "Measure a hash table's load factor"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "discrimination",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "56a24dacf74982cc",
+                "ordinal": 11,
+                "state": "not_started",
+                "title": "Represent a graph as an adjacency list"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "transfer",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "53262307b3ca94c1",
+                "ordinal": 12,
+                "state": "not_started",
+                "title": "Breadth-first traverse a small graph"
+              }
+            ],
+            "ordinal": 3,
+            "prereq_unit_ordinals": [
+              2
+            ],
+            "prerequisite_state": "unmet",
+            "title": "Unit 3: Implement a stack and use it to reverse a sequence",
+            "unmet": [
+              {
+                "objective_id": "c18e2e02a703a219",
+                "ordinal": 5,
+                "state": "not_started",
+                "title": "Traverse a linked list and insert at the head"
+              },
+              {
+                "objective_id": "7a346caa0c44c6d7",
+                "ordinal": 6,
+                "state": "not_started",
+                "title": "Remove a node from a singly linked list safely"
+              },
+              {
+                "objective_id": "eac0e749a2e7b0e4",
+                "ordinal": 7,
+                "state": "not_started",
+                "title": "Insert and search in a binary search tree"
+              },
+              {
+                "objective_id": "b0982da51ac50b69",
+                "ordinal": 8,
+                "state": "not_started",
+                "title": "Traverse a tree in order and state the output order"
+              }
+            ]
+          },
+          {
+            "goal": "Unit 4 makes the next body of work possible",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "recall",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "47aeb98f79f29609",
+                "ordinal": 13,
+                "state": "not_started",
+                "title": "Depth-first traverse a small graph"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "comprehension",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "07dc0030f546725f",
+                "ordinal": 14,
+                "state": "not_started",
+                "title": "Choose a structure for a stated access pattern"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "discrimination",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "f6bc3b55c8d24f57",
+                "ordinal": 15,
+                "state": "not_started",
+                "title": "Explain why a balanced tree bounds search cost"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "transfer",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "212e77abec35ef74",
+                "ordinal": 16,
+                "state": "not_started",
+                "title": "Implement a priority queue over a heap"
+              }
+            ],
+            "ordinal": 4,
+            "prereq_unit_ordinals": [
+              3
+            ],
+            "prerequisite_state": "unmet",
+            "title": "Unit 4: Implement a queue and explain FIFO order",
+            "unmet": [
+              {
+                "objective_id": "0fdbfe16a6d5fbac",
+                "ordinal": 9,
+                "state": "not_started",
+                "title": "Explain hash collisions and a collision strategy"
+              },
+              {
+                "objective_id": "5140a2ba38a2f382",
+                "ordinal": 10,
+                "state": "not_started",
+                "title": "Measure a hash table's load factor"
+              },
+              {
+                "objective_id": "56a24dacf74982cc",
+                "ordinal": 11,
+                "state": "not_started",
+                "title": "Represent a graph as an adjacency list"
+              },
+              {
+                "objective_id": "53262307b3ca94c1",
+                "ordinal": 12,
+                "state": "not_started",
+                "title": "Breadth-first traverse a small graph"
+              }
+            ]
+          },
+          {
+            "goal": "Unit 5 makes the next body of work possible",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "recall",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "5ec16d05253351d0",
+                "ordinal": 17,
+                "state": "not_started",
+                "title": "Explain the cost of extracting the minimum"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "comprehension",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "e2a5283607c39271",
+                "ordinal": 18,
+                "state": "not_started",
+                "title": "Trace insertion sort on six numbers"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "discrimination",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "5a2663d4cd579640",
+                "ordinal": 19,
+                "state": "not_started",
+                "title": "Trace merge sort and count its comparisons"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "transfer",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "276062d91b6866b5",
+                "ordinal": 20,
+                "state": "not_started",
+                "title": "State when a linear search is the honest choice"
+              }
+            ],
+            "ordinal": 5,
+            "prereq_unit_ordinals": [
+              4
+            ],
+            "prerequisite_state": "unmet",
+            "title": "Unit 5: Traverse a linked list and insert at the head",
+            "unmet": [
+              {
+                "objective_id": "47aeb98f79f29609",
+                "ordinal": 13,
+                "state": "not_started",
+                "title": "Depth-first traverse a small graph"
+              },
+              {
+                "objective_id": "07dc0030f546725f",
+                "ordinal": 14,
+                "state": "not_started",
+                "title": "Choose a structure for a stated access pattern"
+              },
+              {
+                "objective_id": "f6bc3b55c8d24f57",
+                "ordinal": 15,
+                "state": "not_started",
+                "title": "Explain why a balanced tree bounds search cost"
+              },
+              {
+                "objective_id": "212e77abec35ef74",
+                "ordinal": 16,
+                "state": "not_started",
+                "title": "Implement a priority queue over a heap"
+              }
+            ]
+          },
+          {
+            "goal": "Unit 6 makes the next body of work possible",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "recall",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "8fc8f6bd041f79d1",
+                "ordinal": 21,
+                "state": "not_started",
+                "title": "Compare two structures on memory and speed"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "comprehension",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "72e08b4fad5c1999",
+                "ordinal": 22,
+                "state": "not_started",
+                "title": "Design a small index for a text search task"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "discrimination",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "d3d79c69f07367a8",
+                "ordinal": 23,
+                "state": "not_started",
+                "title": "Explain a cache's eviction effect on lookups"
+              },
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "transfer",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "c048c3578d3759ed",
+                "ordinal": 24,
+                "state": "not_started",
+                "title": "Justify one structure for a final project"
+              }
+            ],
+            "ordinal": 6,
+            "prereq_unit_ordinals": [
+              5
+            ],
+            "prerequisite_state": "unmet",
+            "title": "Unit 6: Remove a node from a singly linked list safely",
+            "unmet": [
+              {
+                "objective_id": "5ec16d05253351d0",
+                "ordinal": 17,
+                "state": "not_started",
+                "title": "Explain the cost of extracting the minimum"
+              },
+              {
+                "objective_id": "e2a5283607c39271",
+                "ordinal": 18,
+                "state": "not_started",
+                "title": "Trace insertion sort on six numbers"
+              },
+              {
+                "objective_id": "5a2663d4cd579640",
+                "ordinal": 19,
+                "state": "not_started",
+                "title": "Trace merge sort and count its comparisons"
+              },
+              {
+                "objective_id": "276062d91b6866b5",
+                "ordinal": 20,
+                "state": "not_started",
+                "title": "State when a linear search is the honest choice"
+              }
+            ]
+          }
+        ],
+        "version": 2
+      },
+      "total": 24,
+      "truncated": false
+    },
+    "plan_job": {
+      "request": {
+        "max_tokens": 12000,
+        "objective_count_rule": [
+          12,
+          40
+        ],
+        "prompt_version": "plan-prompt.v4",
+        "schema_name": "coursebook_plan_v2",
+        "unit_count_rule": [
+          2,
+          12
+        ]
+      },
+      "research": {
+        "fetches": 1,
+        "queries": 2,
+        "status": "ok"
+      },
+      "result": {
+        "course_id": "crs_8fa8bbeb66b84fcb990eab6f89463305",
+        "job_id": "job_7286bd1edf474ea0ac76410e3c79ee77",
+        "job_kind": "plan",
+        "level": "beginner",
+        "next_unit_ordinal": 1,
+        "objectives": 24,
+        "plan_content_hash": "sha256:89b8ea9c4162056ccca1fc2845cdc5bc41e4f868d922d3b3c42b142ec830b2a9",
+        "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+        "plan_id": "420cf94672e52a89",
+        "plan_schema": "coursebook.plan.v2",
+        "plan_version": 2,
+        "research": {
+          "queries": [
+            "A first-year college introduction to data structures: arrays, lists, stacks, queues, trees, hashing and graphs, with assessments and prerequisites.",
+            "A first-year college introduction to data structures: arrays, lists, stacks, queues, trees, hashing and graphs, with assessments and prerequisites. syllabus learning objectives"
+          ],
+          "reason": null,
+          "status": "ok"
+        },
+        "research_id": "ee9bd140e0ceeded",
+        "reused": false,
+        "scope": "full",
+        "scope_cap_weeks": 104,
+        "sections": 0,
+        "sources": 1,
+        "status": "draft",
+        "subject_domain": "general",
+        "units": 6,
+        "usage": {
+          "budget": {
+            "max_calls": 32,
+            "max_cost_usd": 0.75,
+            "source": "declared"
+          },
+          "calls": 2,
+          "cost_usd": 0.0,
+          "estimated_cost_usd": 0.0,
+          "input_tokens": 4097,
+          "output_tokens": 2892,
+          "unknown_calls": 0,
+          "unknown_cost": false
+        },
+        "validation_id": "9710891e006c48b8",
+        "validation_verdict": "pass",
+        "warnings": []
+      }
+    },
+    "stored_plan": {
+      "document": {
+        "check_plan": [
+          {
+            "evidence_target": "recall",
+            "kind": "quiz",
+            "objective_ref": 1
+          },
+          {
+            "evidence_target": "comprehension",
+            "kind": "quiz",
+            "objective_ref": 2
+          },
+          {
+            "evidence_target": "discrimination",
+            "kind": "quiz",
+            "objective_ref": 3
+          },
+          {
+            "evidence_target": "transfer",
+            "kind": "quiz",
+            "objective_ref": 4
+          },
+          {
+            "evidence_target": "recall",
+            "kind": "quiz",
+            "objective_ref": 5
+          },
+          {
+            "evidence_target": "comprehension",
+            "kind": "quiz",
+            "objective_ref": 6
+          },
+          {
+            "evidence_target": "discrimination",
+            "kind": "quiz",
+            "objective_ref": 7
+          },
+          {
+            "evidence_target": "transfer",
+            "kind": "quiz",
+            "objective_ref": 8
+          },
+          {
+            "evidence_target": "recall",
+            "kind": "quiz",
+            "objective_ref": 9
+          },
+          {
+            "evidence_target": "comprehension",
+            "kind": "quiz",
+            "objective_ref": 10
+          },
+          {
+            "evidence_target": "discrimination",
+            "kind": "quiz",
+            "objective_ref": 11
+          },
+          {
+            "evidence_target": "transfer",
+            "kind": "quiz",
+            "objective_ref": 12
+          },
+          {
+            "evidence_target": "recall",
+            "kind": "quiz",
+            "objective_ref": 13
+          },
+          {
+            "evidence_target": "comprehension",
+            "kind": "quiz",
+            "objective_ref": 14
+          },
+          {
+            "evidence_target": "discrimination",
+            "kind": "quiz",
+            "objective_ref": 15
+          },
+          {
+            "evidence_target": "transfer",
+            "kind": "quiz",
+            "objective_ref": 16
+          },
+          {
+            "evidence_target": "recall",
+            "kind": "quiz",
+            "objective_ref": 17
+          },
+          {
+            "evidence_target": "comprehension",
+            "kind": "quiz",
+            "objective_ref": 18
+          },
+          {
+            "evidence_target": "discrimination",
+            "kind": "quiz",
+            "objective_ref": 19
+          },
+          {
+            "evidence_target": "transfer",
+            "kind": "quiz",
+            "objective_ref": 20
+          },
+          {
+            "evidence_target": "recall",
+            "kind": "quiz",
+            "objective_ref": 21
+          },
+          {
+            "evidence_target": "comprehension",
+            "kind": "quiz",
+            "objective_ref": 22
+          },
+          {
+            "evidence_target": "discrimination",
+            "kind": "quiz",
+            "objective_ref": 23
+          },
+          {
+            "evidence_target": "transfer",
+            "kind": "quiz",
+            "objective_ref": 24
+          }
+        ],
+        "context_needs": [
+          "the actual equipment or textbook"
+        ],
+        "delivery": "self_study",
+        "evidence_note": null,
+        "exclusions": [
+          "Does not certify competence; a supervisor checks the first attempt."
+        ],
+        "learner_outcome": "The learner can do the task or explain the concept without notes.",
+        "objectives": [
+          {
+            "evidence_criteria": [
+              "States or performs step 1 without notes",
+              "Names the condition that would make step 1 unsafe"
+            ],
+            "evidence_target": "recall",
+            "ordinal": 1,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Index an array and explain its constant-time access",
+            "unit_ref": 1
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 2 without notes",
+              "Names the condition that would make step 2 unsafe"
+            ],
+            "evidence_target": "comprehension",
+            "ordinal": 2,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Resize a dynamic array and state the amortised cost",
+            "unit_ref": 1
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 3 without notes",
+              "Names the condition that would make step 3 unsafe"
+            ],
+            "evidence_target": "discrimination",
+            "ordinal": 3,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Implement a stack and use it to reverse a sequence",
+            "unit_ref": 1
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 4 without notes",
+              "Names the condition that would make step 4 unsafe"
+            ],
+            "evidence_target": "transfer",
+            "ordinal": 4,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Implement a queue and explain FIFO order",
+            "unit_ref": 1
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 5 without notes",
+              "Names the condition that would make step 5 unsafe"
+            ],
+            "evidence_target": "recall",
+            "ordinal": 5,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Traverse a linked list and insert at the head",
+            "unit_ref": 2
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 6 without notes",
+              "Names the condition that would make step 6 unsafe"
+            ],
+            "evidence_target": "comprehension",
+            "ordinal": 6,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Remove a node from a singly linked list safely",
+            "unit_ref": 2
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 7 without notes",
+              "Names the condition that would make step 7 unsafe"
+            ],
+            "evidence_target": "discrimination",
+            "ordinal": 7,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Insert and search in a binary search tree",
+            "unit_ref": 2
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 8 without notes",
+              "Names the condition that would make step 8 unsafe"
+            ],
+            "evidence_target": "transfer",
+            "ordinal": 8,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Traverse a tree in order and state the output order",
+            "unit_ref": 2
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 9 without notes",
+              "Names the condition that would make step 9 unsafe"
+            ],
+            "evidence_target": "recall",
+            "ordinal": 9,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Explain hash collisions and a collision strategy",
+            "unit_ref": 3
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 10 without notes",
+              "Names the condition that would make step 10 unsafe"
+            ],
+            "evidence_target": "comprehension",
+            "ordinal": 10,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Measure a hash table's load factor",
+            "unit_ref": 3
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 11 without notes",
+              "Names the condition that would make step 11 unsafe"
+            ],
+            "evidence_target": "discrimination",
+            "ordinal": 11,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Represent a graph as an adjacency list",
+            "unit_ref": 3
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 12 without notes",
+              "Names the condition that would make step 12 unsafe"
+            ],
+            "evidence_target": "transfer",
+            "ordinal": 12,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Breadth-first traverse a small graph",
+            "unit_ref": 3
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 13 without notes",
+              "Names the condition that would make step 13 unsafe"
+            ],
+            "evidence_target": "recall",
+            "ordinal": 13,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Depth-first traverse a small graph",
+            "unit_ref": 4
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 14 without notes",
+              "Names the condition that would make step 14 unsafe"
+            ],
+            "evidence_target": "comprehension",
+            "ordinal": 14,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Choose a structure for a stated access pattern",
+            "unit_ref": 4
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 15 without notes",
+              "Names the condition that would make step 15 unsafe"
+            ],
+            "evidence_target": "discrimination",
+            "ordinal": 15,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Explain why a balanced tree bounds search cost",
+            "unit_ref": 4
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 16 without notes",
+              "Names the condition that would make step 16 unsafe"
+            ],
+            "evidence_target": "transfer",
+            "ordinal": 16,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Implement a priority queue over a heap",
+            "unit_ref": 4
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 17 without notes",
+              "Names the condition that would make step 17 unsafe"
+            ],
+            "evidence_target": "recall",
+            "ordinal": 17,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Explain the cost of extracting the minimum",
+            "unit_ref": 5
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 18 without notes",
+              "Names the condition that would make step 18 unsafe"
+            ],
+            "evidence_target": "comprehension",
+            "ordinal": 18,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Trace insertion sort on six numbers",
+            "unit_ref": 5
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 19 without notes",
+              "Names the condition that would make step 19 unsafe"
+            ],
+            "evidence_target": "discrimination",
+            "ordinal": 19,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Trace merge sort and count its comparisons",
+            "unit_ref": 5
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 20 without notes",
+              "Names the condition that would make step 20 unsafe"
+            ],
+            "evidence_target": "transfer",
+            "ordinal": 20,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "State when a linear search is the honest choice",
+            "unit_ref": 5
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 21 without notes",
+              "Names the condition that would make step 21 unsafe"
+            ],
+            "evidence_target": "recall",
+            "ordinal": 21,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Compare two structures on memory and speed",
+            "unit_ref": 6
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 22 without notes",
+              "Names the condition that would make step 22 unsafe"
+            ],
+            "evidence_target": "comprehension",
+            "ordinal": 22,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Design a small index for a text search task",
+            "unit_ref": 6
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 23 without notes",
+              "Names the condition that would make step 23 unsafe"
+            ],
+            "evidence_target": "discrimination",
+            "ordinal": 23,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Explain a cache's eviction effect on lookups",
+            "unit_ref": 6
+          },
+          {
+            "evidence_criteria": [
+              "States or performs step 24 without notes",
+              "Names the condition that would make step 24 unsafe"
+            ],
+            "evidence_target": "transfer",
+            "ordinal": 24,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Justify one structure for a final project",
+            "unit_ref": 6
+          }
+        ],
+        "plan_schema": "coursebook.plan.v2",
+        "scope": "full",
+        "source_ids": [],
+        "spaced_review": true,
+        "time_estimate": {
+          "attainment_hours": null,
+          "basis": "none",
+          "benchmark": null,
+          "confidence": "low",
+          "minutes_per_session": 60,
+          "rationale": "Authored estimate; no benchmark transfer claim.",
+          "sessions_per_week": 2,
+          "weeks": 12
+        },
+        "title": "Full course on an arbitrary non-Japanese topic",
+        "units": [
+          {
+            "goal": "Unit 1 makes the next body of work possible",
+            "ordinal": 1,
+            "prereq_unit_ordinals": [],
+            "target_lessons": 4,
+            "title": "Unit 1: Index an array and explain its constant-time access"
+          },
+          {
+            "goal": "Unit 2 makes the next body of work possible",
+            "ordinal": 2,
+            "prereq_unit_ordinals": [
+              1
+            ],
+            "target_lessons": 4,
+            "title": "Unit 2: Resize a dynamic array and state the amortised cost"
+          },
+          {
+            "goal": "Unit 3 makes the next body of work possible",
+            "ordinal": 3,
+            "prereq_unit_ordinals": [
+              2
+            ],
+            "target_lessons": 4,
+            "title": "Unit 3: Implement a stack and use it to reverse a sequence"
+          },
+          {
+            "goal": "Unit 4 makes the next body of work possible",
+            "ordinal": 4,
+            "prereq_unit_ordinals": [
+              3
+            ],
+            "target_lessons": 4,
+            "title": "Unit 4: Implement a queue and explain FIFO order"
+          },
+          {
+            "goal": "Unit 5 makes the next body of work possible",
+            "ordinal": 5,
+            "prereq_unit_ordinals": [
+              4
+            ],
+            "target_lessons": 4,
+            "title": "Unit 5: Traverse a linked list and insert at the head"
+          },
+          {
+            "goal": "Unit 6 makes the next body of work possible",
+            "ordinal": 6,
+            "prereq_unit_ordinals": [
+              5
+            ],
+            "target_lessons": 4,
+            "title": "Unit 6: Remove a node from a singly linked list safely"
+          }
+        ]
+      },
+      "generation_state": "draft",
+      "state_before_approval": "draft",
+      "validation_id_present": true
+    },
+    "unit_stages": [
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 2,
+        "jobs_before_run": 2,
+        "offered_next_unit_ordinal": 2,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_2ad46eaca7a643b8b3d5d658c6c97a37",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": 2,
+          "owners": 4,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "488eb1dfae3ceb1a",
+            "0d78625ec06099ca",
+            "7ce7524dced42dca",
+            "dc017f95a4db3f45"
+          ],
+          "sections": 4,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 1,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 4892,
+            "output_tokens": 711,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "8d1e7126fdb2611d",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 1
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 3,
+        "jobs_before_run": 3,
+        "offered_next_unit_ordinal": 3,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_f17f30a6eadd4886a4e2d882f2f1b75a",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": 3,
+          "owners": 4,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "0385ca9e3dc70364",
+            "528465063df5a351",
+            "bf9c71e97dd35200",
+            "f204a589260dd731"
+          ],
+          "sections": 4,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 2,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 4888,
+            "output_tokens": 706,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "81f9b87d187a6efb",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 2
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 4,
+        "jobs_before_run": 4,
+        "offered_next_unit_ordinal": 4,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_8cb8ea76b21e4390822fcbefff3ad620",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": 4,
+          "owners": 4,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "15ff47cc691f043e",
+            "15a4343386ff14f5",
+            "73ebdaf00368f086",
+            "eff858c9b3a9b80d"
+          ],
+          "sections": 4,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 3,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 4866,
+            "output_tokens": 694,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "679f678590b69853",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 3
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 5,
+        "jobs_before_run": 5,
+        "offered_next_unit_ordinal": 5,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_4ff2b579be164b10a8db0fc84202ce77",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": 5,
+          "owners": 4,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "a4d739f60f0c4d1b",
+            "caf91f75c95556c9",
+            "2a3635352a34f6b2",
+            "0ea96d2a2fddf885"
+          ],
+          "sections": 4,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 4,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 4871,
+            "output_tokens": 699,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "3bf6ba936edda349",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 4
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 6,
+        "jobs_before_run": 6,
+        "offered_next_unit_ordinal": 6,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_6e91846ab74c4d969f8d360b00c347c9",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": 6,
+          "owners": 4,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "ae71aa6c4a622865",
+            "c94e0e4ab8bdd83e",
+            "d4d28c840369d67c",
+            "614fd7ec8736e17e"
+          ],
+          "sections": 4,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 5,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 4875,
+            "output_tokens": 700,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "2145b724853c76e1",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 5
+      },
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 7,
+        "jobs_before_run": 7,
+        "offered_next_unit_ordinal": null,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_dce72f8848ca4ce6a6ce2584e34224e6",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": null,
+          "owners": 4,
+          "plan_hash": "sha256:d6fa536297b41d2b38e139da79fda8defd0404b719cc09664b4712c7f6b27700",
+          "plan_id": "420cf94672e52a89",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "a368835d50ade139",
+            "9155aafdd3056864",
+            "9cbb5586030a7a0e",
+            "2c06f5b00d0a9363"
+          ],
+          "sections": 4,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 6,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 4880,
+            "output_tokens": 702,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "dc00b1fc0f42d170",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 6
+      }
+    ]
+  }
+}

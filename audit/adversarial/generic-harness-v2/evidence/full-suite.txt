@@ -1,0 +1,47 @@
+................................................../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b58e32e0>
+  memo[id(x)] = y
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+......../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b42d7880>
+  memo[id(x)] = y
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b42d75b0>
+  memo[id(x)] = y
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b42d6f20>
+  memo[id(x)] = y
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+......................../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/ast.py:46: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b58e32e0>
+  return compile(source, filename, mode, flags,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/ast.py:46: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b42d7c40>
+  return compile(source, filename, mode, flags,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/ast.py:46: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b42d7e20>
+  return compile(source, filename, mode, flags,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/ast.py:46: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b42d7880>
+  return compile(source, filename, mode, flags,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/ast.py:46: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b42d7f10>
+  return compile(source, filename, mode, flags,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/ast.py:46: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b42d6f20>
+  return compile(source, filename, mode, flags,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...................................................................................................................................................................................................................................................................................................................................................................................................................coursebook: ignoring COURSEBOOK_LESSON_VALIDATE_TIMEOUT_SECONDS='nonsense' (not a number); using 240.00s
+............................................................................................................................................................................................................................................................................................................../home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environments/01a8232f45b041799dff0b7dc6c09a44/workspace/hermes_cli/plugins_manifest.py:475: DeprecationWarning: 'maxsplit' is passed as positional argument
+  parts = re.split(r"[-+]", str(v).strip().lstrip("v"), 1)[0].split(".")
+................................../home/deseretsaint/Projects/hermes-classroom/.worktrees/t_9b6742f3/coursebook/pack_flow.py:572: PackAuthoringWarning: section file 'content/chapter-one.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
+  manifest = validate_and_audit(staged)
+......................................................................................................................................................................................................................................................................................................................................................................../home/deseretsaint/Projects/hermes-classroom/.worktrees/t_9b6742f3/coursebook/pack_flow.py:544: PackAuthoringWarning: section file 'content/too-long.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
+  manifest = validate_and_audit(staged)
+/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_9b6742f3/coursebook/pack_flow.py:572: PackAuthoringWarning: section file 'content/too-long.md' measures 4,000,001 characters, above the 4,000,000-character authoring bound for one lesson section (cb.rpc lesson.page returns at most 500 segments of 8,000 characters, so a section of 4,000,000 characters is the most one page can carry); the page budget also carries the objective's check prompts, so import may refuse a slightly shorter section. Import will refuse this pack before writing anything. Split the section into smaller files.
+  manifest = validate_and_audit(staged)
+.................................../home/deseretsaint/.hermes/tools/python-3.14.9+20261021-linux-x64/lib/python3.14/copy.py:200: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fd7b0055d50>
+  memo[id(x)] = y
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................
+----------------------------------------------------------------------
+Ran 1264 tests in 199.415s
+
+OK

@@ -1,0 +1,425 @@
+{
+  "labels": {
+    "model": "FAKE — deterministic ScriptedLLM, no provider call",
+    "provider_calls": 0,
+    "provider_spend_usd": 0.0,
+    "research": "RECORDED in-memory page through the real search seam"
+  },
+  "observations": {
+    "attempt_rows": [
+      {
+        "check_id": "cf70334a6ce31d88",
+        "evidence_class": "self_reported",
+        "grading_provenance_json": "{\"confirmed_items\":3,\"declared_items\":3,\"grader\":\"provider-free:confirmation\",\"reference_sha256\":\"sha256:ca0d7a3560a7577606a8c83b862edd9ff66a383a313316173c540ac479f3311f\"}",
+        "id": "att_cd15837ab62c462f8b66aac4ba80dd63",
+        "state": "committed",
+        "verdict": "pass"
+      }
+    ],
+    "check_lanes": [
+      {
+        "objective_id": "7bb0b9ef2f7dadff",
+        "reference_kind": "rubric_only",
+        "state": "closed",
+        "stimulus_format": "verification"
+      }
+    ],
+    "checks": 1,
+    "lessons": 1,
+    "objectives": 1,
+    "outline_unit_states": [
+      {
+        "objectives": 1,
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "prerequisite_state": "no_edges",
+        "unmet": 0
+      }
+    ],
+    "outline_units": 1,
+    "plan_scope": "single",
+    "plan_state_after_approval": "approved",
+    "plan_state_before_approval": "draft",
+    "prompt_version": "plan-prompt.v4",
+    "schema_name": "coursebook_plan_v2",
+    "section_rows": [
+      {
+        "objective_refs_json": "[1]",
+        "ordinal": 1,
+        "section_role": "owner"
+      }
+    ],
+    "sections": 1,
+    "unit_rows": [
+      {
+        "ordinal": 1,
+        "prereq_unit_ordinals_json": "[]",
+        "target_lessons": 1,
+        "title": "Unit 1: Replace the rear inner tube and verify the brakes"
+      }
+    ],
+    "units": 1,
+    "validation_verdict": "pass"
+  },
+  "scenario": {
+    "goal": "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today.",
+    "level": "beginner",
+    "locale": "en-US",
+    "name": "single",
+    "recipe": "one_off",
+    "scope": "single",
+    "subject_domain": "repair",
+    "title": "Replace a bicycle inner tube"
+  },
+  "steps": {
+    "approve": {
+      "approval_provenance": null,
+      "plan_hash": "sha256:9e8475e9fd6b5d096d75bb6f6c9020cda881e4a028b3bcc34d297a6c4f5da6b2",
+      "revision": 1,
+      "state_after": "approved"
+    },
+    "approve_wrong_hash": {
+      "error_code": "VALIDATION_FAILED",
+      "ok": false,
+      "state_after": "draft"
+    },
+    "grading": [
+      {
+        "label": "correct",
+        "open": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-check-open-1931d8",
+          "result": {
+            "check_id": "cf70334a6ce31d88",
+            "check_version": 1,
+            "evidence_target": "procedure",
+            "revision": 1
+          },
+          "revision": 1
+        },
+        "submit": {
+          "contract_version": 11,
+          "ok": true,
+          "operation_id": "op-h30b-attempt-submit-8c54a0",
+          "result": {
+            "attempt_id": "att_cd15837ab62c462f8b66aac4ba80dd63",
+            "criteria": [
+              {
+                "id": "item_1",
+                "met": true,
+                "observed": "Read the step and gathered the tool"
+              },
+              {
+                "id": "item_2",
+                "met": true,
+                "observed": "Performed the step without forcing a part"
+              },
+              {
+                "id": "item_3",
+                "met": true,
+                "observed": "Checked the result by hand"
+              }
+            ],
+            "evidence_class": "self_reported",
+            "next_action": "review_objective",
+            "revision": 2,
+            "verdict": "pass"
+          },
+          "revision": 2
+        }
+      }
+    ],
+    "lesson_stages": [
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 3,
+        "jobs_before_run": 3,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_917ab58dff26442fbc2bccd3d1a374da",
+          "job_kind": "lesson",
+          "lessons": [
+            {
+              "audit_state": "passed",
+              "check_enabled": true,
+              "check_id": "cf70334a6ce31d88",
+              "lesson_id": "f18b4ed344915297",
+              "reused": false,
+              "section_id": "1a2a9141c00109d7",
+              "state": "validated",
+              "validation_id": "6c59beb8519e1110",
+              "validation_model": "scripted-h30b",
+              "validation_verdict": "pass"
+            }
+          ],
+          "needs_review": [],
+          "next_unit_ordinal": null,
+          "plan_hash": "sha256:f4395f85c629611d837bf1a984712ea8ffbc57c501fe9017360c93dedf0ca50f",
+          "plan_id": "27fa0cedda0bbe3b",
+          "plan_schema": "coursebook.plan.v2",
+          "preflight": {
+            "budget_source": "caller",
+            "cost_per_call_usd": 0.04,
+            "fits_maximum": true,
+            "fits_minimum": true,
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "maximum_calls": 4,
+            "maximum_cost_usd": 0.16,
+            "minimum_calls": 2,
+            "minimum_cost_usd": 0.08,
+            "section_count": 1
+          },
+          "sections_total": 1,
+          "stage": "lessons",
+          "unit_ordinal": 1,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 2649,
+            "output_tokens": 890,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          }
+        },
+        "unit_ordinal": 1
+      }
+    ],
+    "outline": {
+      "enrollment_id": "enr_89648403e44a49c388cf2618e2877725",
+      "objectives": [
+        {
+          "attempt_count": 0,
+          "check_state": "open",
+          "evidence_target": "procedure",
+          "independent": false,
+          "last_opened_at": null,
+          "objective_id": "7bb0b9ef2f7dadff",
+          "ordinal": 1,
+          "state": "not_started",
+          "title": "Replace the rear inner tube and verify the brakes"
+        }
+      ],
+      "plan": {
+        "plan_hash": "sha256:9e8475e9fd6b5d096d75bb6f6c9020cda881e4a028b3bcc34d297a6c4f5da6b2",
+        "plan_id": "27fa0cedda0bbe3b",
+        "state": "approved",
+        "units": [
+          {
+            "goal": "Unit 1 makes the next body of work possible",
+            "objectives": [
+              {
+                "attempt_count": 0,
+                "check_state": "open",
+                "evidence_target": "procedure",
+                "independent": false,
+                "last_opened_at": null,
+                "objective_id": "7bb0b9ef2f7dadff",
+                "ordinal": 1,
+                "state": "not_started",
+                "title": "Replace the rear inner tube and verify the brakes"
+              }
+            ],
+            "ordinal": 1,
+            "prereq_unit_ordinals": [],
+            "prerequisite_state": "no_edges",
+            "title": "Unit 1: Replace the rear inner tube and verify the brakes",
+            "unmet": []
+          }
+        ],
+        "version": 2
+      },
+      "total": 1,
+      "truncated": false
+    },
+    "plan_job": {
+      "request": {
+        "max_tokens": 12000,
+        "objective_count_rule": [
+          1,
+          1
+        ],
+        "prompt_version": "plan-prompt.v4",
+        "schema_name": "coursebook_plan_v2",
+        "unit_count_rule": [
+          1,
+          1
+        ]
+      },
+      "research": {
+        "fetches": 1,
+        "queries": 2,
+        "status": "ok"
+      },
+      "result": {
+        "course_id": "crs_a61877176fe84fd9a3988b946e4845dc",
+        "job_id": "job_1c6fe90da7434b5a9534f52afa87b894",
+        "job_kind": "plan",
+        "level": "beginner",
+        "next_unit_ordinal": 1,
+        "objectives": 1,
+        "plan_content_hash": "sha256:9e8475e9fd6b5d096d75bb6f6c9020cda881e4a028b3bcc34d297a6c4f5da6b2",
+        "plan_hash": "sha256:f4395f85c629611d837bf1a984712ea8ffbc57c501fe9017360c93dedf0ca50f",
+        "plan_id": "27fa0cedda0bbe3b",
+        "plan_schema": "coursebook.plan.v2",
+        "plan_version": 2,
+        "research": {
+          "queries": [
+            "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today.",
+            "Walk me through replacing the inner tube on my road bike and checking the brakes before I ride it today. official procedure steps safety limits"
+          ],
+          "reason": null,
+          "status": "ok"
+        },
+        "research_id": "0ceb09009ec4a644",
+        "reused": false,
+        "scope": "single",
+        "scope_cap_weeks": 1,
+        "sections": 0,
+        "sources": 1,
+        "status": "draft",
+        "subject_domain": "repair",
+        "units": 1,
+        "usage": {
+          "budget": {
+            "max_calls": 32,
+            "max_cost_usd": 0.75,
+            "source": "declared"
+          },
+          "calls": 2,
+          "cost_usd": 0.0,
+          "estimated_cost_usd": 0.0,
+          "input_tokens": 1329,
+          "output_tokens": 613,
+          "unknown_calls": 0,
+          "unknown_cost": false
+        },
+        "validation_id": "6a8227296298e3b6",
+        "validation_verdict": "pass",
+        "warnings": [
+          "one-off brief: completion is instruction_complete plus a self-reported checklist"
+        ]
+      }
+    },
+    "stored_plan": {
+      "document": {
+        "check_plan": [
+          {
+            "evidence_target": "procedure",
+            "kind": "verification",
+            "objective_ref": 1
+          }
+        ],
+        "context_needs": [
+          "the actual equipment or textbook"
+        ],
+        "delivery": "self_study",
+        "evidence_note": null,
+        "exclusions": [
+          "Does not certify competence; a supervisor checks the first attempt."
+        ],
+        "learner_outcome": "The learner can do the task or explain the concept without notes.",
+        "objectives": [
+          {
+            "evidence_criteria": [
+              "States or performs step 1 without notes",
+              "Names the condition that would make step 1 unsafe"
+            ],
+            "evidence_target": "procedure",
+            "ordinal": 1,
+            "source_ids": [],
+            "support": "unverified",
+            "title": "Replace the rear inner tube and verify the brakes",
+            "unit_ref": 1
+          }
+        ],
+        "plan_schema": "coursebook.plan.v2",
+        "scope": "single",
+        "source_ids": [],
+        "spaced_review": false,
+        "time_estimate": {
+          "attainment_hours": null,
+          "basis": "none",
+          "benchmark": null,
+          "confidence": "low",
+          "minutes_per_session": 60,
+          "rationale": "Authored estimate; no benchmark transfer claim.",
+          "sessions_per_week": 1,
+          "weeks": 1
+        },
+        "title": "Single course on an arbitrary non-Japanese topic",
+        "units": [
+          {
+            "goal": "Unit 1 makes the next body of work possible",
+            "ordinal": 1,
+            "prereq_unit_ordinals": [],
+            "target_lessons": 1,
+            "title": "Unit 1: Replace the rear inner tube and verify the brakes"
+          }
+        ]
+      },
+      "generation_state": "draft",
+      "state_before_approval": "draft",
+      "validation_id_present": true
+    },
+    "unit_stages": [
+      {
+        "chained_a_job": false,
+        "jobs_after_run": 2,
+        "jobs_before_run": 2,
+        "offered_next_unit_ordinal": null,
+        "result": {
+          "budget": {
+            "max_calls": 400,
+            "max_cost_usd": 100.0,
+            "source": "caller"
+          },
+          "job_id": "job_c52c4ebb39454fa5893fc2c4c7ba2462",
+          "job_kind": "unit_sections",
+          "next_unit_ordinal": null,
+          "owners": 1,
+          "plan_hash": "sha256:f4395f85c629611d837bf1a984712ea8ffbc57c501fe9017360c93dedf0ca50f",
+          "plan_id": "27fa0cedda0bbe3b",
+          "rejection_reasons": [],
+          "reused": false,
+          "reviews": 0,
+          "section_ids": [
+            "1a2a9141c00109d7"
+          ],
+          "sections": 1,
+          "stage": "unit_sections",
+          "state": "validated",
+          "unit_ordinal": 1,
+          "usage": {
+            "budget": {
+              "max_calls": 400,
+              "max_cost_usd": 100.0,
+              "source": "caller"
+            },
+            "calls": 2,
+            "cost_usd": 0.0,
+            "estimated_cost_usd": 0.0,
+            "input_tokens": 1254,
+            "output_tokens": 406,
+            "unknown_calls": 0,
+            "unknown_cost": false
+          },
+          "validation_id": "afbf780c54f70287",
+          "validation_verdict": "pass"
+        },
+        "unit_ordinal": 1
+      }
+    ]
+  }
+}
