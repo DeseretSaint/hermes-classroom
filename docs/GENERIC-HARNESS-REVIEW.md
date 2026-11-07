@@ -64,7 +64,8 @@ Each has a non-Japanese subject so the prepared pack cannot stand in for the res
 
 A fourth shape is the user's new student mode: a **syllabus-backed companion course**. It is not
 the same as a full course because the external syllabus is the scope authority and Coursebook
-aligns to it. That path has no card yet; H-25/H-26/H-27 are created by this review.
+aligns to it. That path had no card until this review; H-25/H-26/H-27 are now the design, backend and
+UI cards.
 
 ## Evidence
 
