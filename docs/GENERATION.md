@@ -16,7 +16,7 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author | `coursebook.plan.generate` | `plan-prompt.v2` | `PLAN_SCHEMA` |
+| Plan author | `coursebook.plan.generate` | `plan-prompt.v3` | `PLAN_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
 | Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v6` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v2` | `VALIDATION_SCHEMA` |
@@ -259,14 +259,21 @@ observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
 synthesised to reach the floor: a pack is exportable only when the author actually declared them.
 
-**Capability policy reaches the model.** Before the lesson prompt is built, the pipeline computes
-one immutable plan from the recipe, the objective's evidence target, the authored section intent,
-the locale/level and an advisory subject domain (`coursebook/policy.py`). `lesson-prompt.v6`
+**Capability policy reaches the model.** The plan declares what each lesson needs before the lesson
+author runs: every `PLAN_SCHEMA` section carries a typed `media_need`
+(`construct`, `image {level, role}`, `audio {level, role}`), defaulting to `none` with an empty
+construct. `enforce_plan_rules` refuses a missing declaration and hands each declaration to
+`coursebook/policy.py`, which adopts the declared levels and rejects a role the lesson cannot carry
+(a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
+The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
+the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v6`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
-is told to emit no item of that kind at all. The same plan is stamped on the authored lesson under
-`policy`, stored in `gen_lessons.policy_json`, and handed to `enforce_lesson_rules`; a model cannot
-override it (the harness overwrites any echo before validation).
+is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
+The same plan is stamped on the authored lesson under `policy`, stored in `gen_lessons.policy_json`,
+and handed to `enforce_lesson_rules`; a model cannot override it (the harness overwrites any echo
+before validation).
 
 **Two media gates.** Generated media must pass both `policy.media_policy_problems` (is this
 kind/role permitted by the plan?) and `artifacts.media_problems` (is the spec complete and honest:

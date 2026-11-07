@@ -57,6 +57,7 @@
       "ordinal": 1,
       "title": "Identify the pad",
       "lesson_intent": "Match the pad model to the manufacturer's manual before touching the brake.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         1
       ],
@@ -69,6 +70,7 @@
       "ordinal": 2,
       "title": "Remove the worn pad",
       "lesson_intent": "Remove the worn pad with the fastener the manual names, without damaging the caliper.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         2
       ],
@@ -82,6 +84,7 @@
       "ordinal": 3,
       "title": "Seat and tighten",
       "lesson_intent": "Seat the new pad square and tighten the fastener to the manual's specification.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         3
       ],
@@ -95,6 +98,7 @@
       "ordinal": 4,
       "title": "Verify by hand",
       "lesson_intent": "Run the manual's hand-verification checklist before any ride.",
+      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         4
       ],

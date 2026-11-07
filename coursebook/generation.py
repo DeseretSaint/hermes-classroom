@@ -113,7 +113,7 @@ PIPELINE_VERSION = "cb.gen.v1"
 
 logger = logging.getLogger("coursebook.generation")
 
-PLAN_PROMPT_VERSION = "plan-prompt.v2"
+PLAN_PROMPT_VERSION = "plan-prompt.v3"
 LESSON_PROMPT_VERSION = "lesson-prompt.v6"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v2"
 
@@ -863,14 +863,47 @@ OBJECTIVE_SCHEMA: dict[str, Any] = {
     },
 }
 
+#: The plan's typed per-section media declaration. The planner names the construct the media must
+#: carry, and the levels/roles it needs; ``none`` is the default and the honest answer whenever the
+#: text already carries the teaching. The capability policy validates the role and remains the
+#: permission authority, so this object declares a need — it never grants one.
+MEDIA_NEED_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["construct", "image", "audio"],
+    "properties": {
+        "construct": {"type": "string", "maxLength": capability_policy.MAX_CONSTRUCT_CHARS},
+        "image": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["level", "role"],
+            "properties": {
+                "level": {"type": "string", "enum": list(capability_policy.MEDIA_LEVELS)},
+                "role": {"type": "string", "enum": ["none", *capability_policy.IMAGE_ROLES]},
+            },
+        },
+        "audio": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["level", "role"],
+            "properties": {
+                "level": {"type": "string", "enum": list(capability_policy.MEDIA_LEVELS)},
+                "role": {"type": "string", "enum": ["none", *capability_policy.AUDIO_ROLES]},
+            },
+        },
+    },
+}
+
 SECTION_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["ordinal", "title", "lesson_intent", "objective_refs", "context_needs"],
+    "required": ["ordinal", "title", "lesson_intent", "objective_refs", "context_needs", "media_need"],
     "properties": {
         "ordinal": {"type": "integer", "minimum": 1, "maximum": 8},
         "title": {"type": "string", "minLength": 3, "maxLength": 200},
         "lesson_intent": {"type": "string", "minLength": 10, "maxLength": 400},
+        "media_need": MEDIA_NEED_SCHEMA,
+
         "objective_refs": {
             "type": "array",
             "minItems": 1,
@@ -1027,6 +1060,8 @@ POLICY_SCHEMA: dict[str, Any] = {
             "maxItems": 8,
             "items": {"type": "string", "minLength": 5, "maxLength": 600},
         },
+        "declared": {"type": "boolean"},
+        "construct": {"type": ["string", "null"], "maxLength": capability_policy.MAX_CONSTRUCT_CHARS},
     },
 }
 
@@ -1513,6 +1548,9 @@ def lesson_capability_plan(
         locale=locale,
         level=str(level) if level else None,
         subject_domain=_subject_domain(plan=plan, section=section, dials=dials),
+        # The plan's own declaration. When it is present the policy adopts it (and may reject the
+        # declared role); the intent prose is then a description, not the media decision.
+        media_need=section.get("media_need"),
     )
 
 
@@ -1581,10 +1619,23 @@ def _plan_instructions(*, recipe: str, dials: dict[str, Any], locale: str | None
             "another check kind."
         )
     lines.append(
-        "Capability policy for media: media is not the default and this plan does not assign any. "
-        "A lesson may carry media only where its authored intent names the construct the media "
-        "has to carry; the lesson author decides the role under the same policy."
+        "Media policy: media is not the default. Every section carries a typed 'media_need' object "
+        "declaring what that lesson must show or say before the lesson author runs: "
+        '{"construct": string, "image": {"level": "none"|"optional"|"required", "role": '
+        '"none"|"illustration"|"schematic"|"sourced_reference"}, "audio": {"level": '
+        '"none"|"optional"|"required", "role": "none"|"narration"|"pronunciation_reference"}}. '
+        "Use level 'none' with role 'none' and an empty construct for any section whose text "
+        "already carries the teaching. Name a construct only when the lesson genuinely needs that "
+        "media; write the specific thing the media must carry (for example a torque sequence and "
+        "bolt labels, a cited recruitment poster, or a spoken greeting), never a decoration. "
+        "Never declare decorative media, and never declare media to fill a template. "
+        "A deterministic schematic or a cited source image may be required for a technical, "
+        "historical or one-off procedure. An illustration is optional context only and can never "
+        "be required. Audio may only be declared for a language lesson whose construct is spoken "
+        "or listened to. The capability policy re-checks every declaration and rejects a role "
+        "this lesson cannot carry."
     )
+
     if dials:
         lines.append(f"Learner dials: {canonical_json(dials)}.")
     if locale:
@@ -1877,6 +1928,32 @@ def enforce_plan_rules(
                 f"objective {ordinal} is covered by {count} sections; author exactly one section per objective"
             )
 
+    # Media is declared by the plan, not guessed from intent prose later. Every section must carry
+    # the typed declaration, and the capability policy (the deterministic authority) must accept
+    # every declared role. A missing declaration is refused rather than defaulted silently: the
+    # generated-plan path always declares, including "none".
+    objective_by_ordinal = {int(obj.get("ordinal", 0)): obj for obj in objectives}
+    for section in sections:
+        section_ordinal = int(section.get("ordinal", 0))
+        if "media_need" not in section:
+            reasons.append(
+                f"section {section_ordinal} must declare media_need, even when it needs no media"
+            )
+            continue
+        refs = section.get("objective_refs") or []
+        objective = objective_by_ordinal.get(int(refs[0])) if len(refs) == 1 else None
+        try:
+            lesson_capability_plan(
+                recipe=recipe,
+                section=section,
+                objective=objective,
+                locale=locale,
+                dials=dials,
+                plan=plan,
+            )
+        except capability_policy.CapabilityPolicyError as exc:
+            reasons.append(f"section {section_ordinal}: {exc}")
+
     # Time honesty (AUDIT R9).
     estimate = plan.get("time_estimate") or {}
     basis = estimate.get("basis")
@@ -2097,6 +2174,9 @@ def enforce_lesson_rules(
     # illustration never claiming technical authority).
     media_items = lesson.get("media") or []
     for problem in capability_policy.media_policy_problems(capability, media_items):
+        reasons.append(problem)
+    # A required media need the plan declared must actually be produced; optional/none never are.
+    for problem in capability_policy.missing_required_media(capability, media_items):
         reasons.append(problem)
     for media in media_items:
         if not isinstance(media, dict):
@@ -2405,6 +2485,11 @@ def build_plan_request(
             "section_count": [2, 8],
             "source_ids": "use only ids present in sources",
             "support": "unverified when no supplied source grounds the objective",
+            "media_need": (
+                "every section declares construct/image/audio; image and audio default to level "
+                "none with role none and an empty construct unless the lesson genuinely needs the "
+                "media"
+            ),
         },
     }
     if feedback:
@@ -2681,6 +2766,7 @@ _GENERATION_DDL: tuple[str, ...] = (
         plan_hash TEXT NOT NULL,
         title TEXT NOT NULL,
         lesson_intent TEXT NOT NULL,
+        media_need_json TEXT,
         objective_refs_json TEXT NOT NULL DEFAULT '[]',
         context_needs_json TEXT NOT NULL DEFAULT '[]',
         source_ids_json TEXT NOT NULL DEFAULT '[]',
@@ -2777,6 +2863,15 @@ def ensure_schema(connection: sqlite3.Connection) -> None:
             connection.execute(
                 "ALTER TABLE gen_research_runs ADD COLUMN failures_json TEXT NOT NULL DEFAULT '[]'"
             )
+        # H-05: the plan declares each section's media need. A plan table created before that
+        # declaration gains the column in place; legacy rows keep NULL and are explicitly the
+        # non-declaring path, rather than a silently defaulted "none".
+        section_columns = {
+            str(row[1]) for row in connection.execute("PRAGMA table_info(gen_plan_sections)").fetchall()
+        }
+        if "media_need_json" not in section_columns:
+            connection.execute("ALTER TABLE gen_plan_sections ADD COLUMN media_need_json TEXT")
+
 
 
 # ── Persistence helpers ─────────────────────────────────────────────────────
@@ -3177,7 +3272,8 @@ def carry_plan_outline(
     for section, target_ordinal in copied:
         connection.execute(
             "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title, lesson_intent,"
-            " objective_refs_json, context_needs_json, source_ids_json) VALUES (?,?,?,?,?,?,?,?,?)",
+            " media_need_json, objective_refs_json, context_needs_json, source_ids_json)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?)",
             (
                 _new_id(),
                 str(plan["id"]),
@@ -3185,6 +3281,7 @@ def carry_plan_outline(
                 digest,
                 section["title"],
                 section["lesson_intent"],
+                section.get("media_need_json"),
                 _json([int(target_ordinal)]),
                 section["context_needs_json"],
                 section["source_ids_json"],
@@ -3650,7 +3747,8 @@ def run_plan_job(
             for section in sections:
                 connection.execute(
                     "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title, lesson_intent, "
-                    "objective_refs_json, context_needs_json, source_ids_json) VALUES (?,?,?,?,?,?,?,?,?)",
+                    "media_need_json, objective_refs_json, context_needs_json, source_ids_json) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?)",
                     (
                         _new_id(),
                         plan_id,
@@ -3658,6 +3756,7 @@ def run_plan_job(
                         digest,
                         str(section["title"]),
                         str(section["lesson_intent"]),
+                        _json(section.get("media_need")),
                         _json(section.get("objective_refs") or []),
                         _json(section.get("context_needs") or []),
                         _json(section.get("source_ids") or []),
@@ -3778,6 +3877,7 @@ def _section_dict(row: dict[str, Any]) -> dict[str, Any]:
         "ordinal": row["ordinal"],
         "title": row["title"],
         "lesson_intent": row["lesson_intent"],
+        "media_need": _load_json(row.get("media_need_json"), None),
         "objective_refs": _load_json(row.get("objective_refs_json"), []),
         "context_needs": _load_json(row.get("context_needs_json"), []),
         "source_ids": _load_json(row.get("source_ids_json"), []),

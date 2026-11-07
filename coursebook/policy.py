@@ -132,6 +132,95 @@ AUDIO_SPEC_ROLE: dict[str, str] = {
 #: The media kinds a lesson spec may declare. Anything else is not a media item at all.
 SPEC_MEDIA_KINDS: tuple[str, ...] = ("visual", "audio")
 
+#: The plan's typed media declaration. The planner writes one per section; the policy validates
+#: and adopts it instead of guessing a construct from incidental ``lesson_intent`` prose. ``role``
+#: uses the literal ``"none"`` at the plan boundary (a JSON-friendly value) and is normalised to
+#: ``None`` here, so a plan never has to emit a null union.
+MEDIA_DECLARATION_KEYS: frozenset[str] = frozenset({"construct", "image", "audio"})
+MEDIA_DECLARATION_PART_KEYS: frozenset[str] = frozenset({"level", "role"})
+MAX_CONSTRUCT_CHARS = 160
+
+
+@dataclass(frozen=True, slots=True)
+class MediaNeed:
+    """One section's declared media need, exactly as the plan wrote it.
+
+    ``construct`` is the named thing the media has to carry (a torque sequence, a cited poster,
+    a spoken phrase). It is empty only when both media are ``none``; the policy refuses a
+    declaration that names a construct but no media, or media but no construct.
+    """
+
+    construct: str
+    image: str
+    image_role: str | None
+    audio: str
+    audio_role: str | None
+
+    @property
+    def declares_media(self) -> bool:
+        return self.image != "none" or self.audio != "none"
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "construct": self.construct,
+            "image": {"level": self.image, "role": self.image_role or "none"},
+            "audio": {"level": self.audio, "role": self.audio_role or "none"},
+        }
+
+
+def parse_media_need(declaration: object) -> MediaNeed:
+    """Validate the plan's typed ``media_need`` object and normalise it.
+
+    This is shape and boundedness only. Whether the declared role is possible for this domain is
+    decided by :func:`plan_lesson_capability`, which is the permission authority. Raises
+    :class:`CapabilityPolicyError` with a concrete reason on any malformed declaration.
+    """
+    if not isinstance(declaration, dict):
+        raise CapabilityPolicyError(
+            "media_need must be an object with construct/image/audio; got "
+            f"{type(declaration).__name__}"
+        )
+    unknown = set(declaration) - MEDIA_DECLARATION_KEYS
+    if unknown:
+        raise CapabilityPolicyError(f"media_need has unknown fields {sorted(unknown)}")
+    construct = declaration.get("construct")
+    if not isinstance(construct, str):
+        raise CapabilityPolicyError("media_need.construct must be a string (empty when no media)")
+    construct = " ".join(construct.split())
+    if len(construct) > MAX_CONSTRUCT_CHARS:
+        raise CapabilityPolicyError(
+            f"media_need.construct is {len(construct)} characters; the bound is {MAX_CONSTRUCT_CHARS}"
+        )
+
+    def part(kind: str, allowed_roles: tuple[str, ...]) -> tuple[str, str | None]:
+        value = declaration.get(kind)
+        if not isinstance(value, dict):
+            raise CapabilityPolicyError(f"media_need.{kind} must be an object with level/role")
+        extra = set(value) - MEDIA_DECLARATION_PART_KEYS
+        if extra:
+            raise CapabilityPolicyError(f"media_need.{kind} has unknown fields {sorted(extra)}")
+        level = value.get("level")
+        role = value.get("role")
+        if role == "none":
+            role = None
+        _check_media(kind, str(level), role, allowed_roles)
+        return str(level), role
+
+    image, image_role = part("image", IMAGE_ROLES)
+    audio, audio_role = part("audio", AUDIO_ROLES)
+    need = MediaNeed(construct, image, image_role, audio, audio_role)
+    if need.declares_media and not construct:
+        raise CapabilityPolicyError(
+            "media_need declares media but names no construct; media must carry a named construct"
+        )
+    if not need.declares_media and construct:
+        raise CapabilityPolicyError(
+            f"media_need names construct {construct!r} but declares no media; a construct is only "
+            "for a media item the lesson needs"
+        )
+    return need
+
+
 _DOMAIN_ALIASES: dict[str, str] = {
     "language": "language",
     "languages": "language",
@@ -267,6 +356,11 @@ class LessonCapabilityPlan:
     level: str | None = None
     subject_domain: str | None = None
     reasons: tuple[str, ...] = ()
+    #: True when the plan declared the need and the policy adopted it, rather than inferring a
+    #: construct from the authored intent. A declared plan is the product path; the inference path
+    #: remains only for a legacy/hand-built section with no declaration.
+    declared: bool = False
+    construct: str | None = None
 
     def __post_init__(self) -> None:
         if self.recipe not in RECIPES:
@@ -285,6 +379,15 @@ class LessonCapabilityPlan:
             )
         if not self.reasons:
             raise CapabilityPolicyError("a capability plan must record why it chose its media")
+        if self.declared:
+            if self.construct is None:
+                raise CapabilityPolicyError("a declared capability plan must carry its construct")
+            if (self.image != "none" or self.audio != "none") and not self.construct.strip():
+                raise CapabilityPolicyError(
+                    "a declared capability plan with media must name the construct it carries"
+                )
+        elif self.construct is not None:
+            raise CapabilityPolicyError("construct is only recorded for a declared media need")
 
     @property
     def carries_media(self) -> bool:
@@ -316,6 +419,8 @@ class LessonCapabilityPlan:
             "level": self.level,
             "subject_domain": self.subject_domain,
             "reasons": list(self.reasons),
+            "declared": self.declared,
+            "construct": self.construct,
         }
 
 
@@ -593,6 +698,108 @@ def _audio_decision(
     )
 
 
+def _declared_image_decision(
+    *, domain: str, recipe: str, need: MediaNeed
+) -> tuple[str, str | None, str]:
+    """Adopt a declared visual need, or reject a role this lesson cannot carry.
+
+    The construct text is the planner's own declaration, not incidental intent prose. It still has
+    to name the construct the declared role exists for; the domain rules still decide whether that
+    role is possible at all.
+    """
+    if need.image == "none" or need.image_role is None:
+        return "none", None, "the plan declares no visual need for this section"
+
+    role = need.image_role
+    text = _normalise_intent(need.construct)
+    if role == "illustration":
+        if need.image == "required":
+            raise CapabilityPolicyError(
+                "an AI illustration is context only and can never be a required visual need"
+            )
+        if domain in SYMBOLIC_DOMAINS:
+            raise CapabilityPolicyError(
+                f"a {domain} lesson is symbolic; an AI illustration is never evidence there, so "
+                "the declared illustration role is not permitted"
+            )
+        if recipe == "one_off":
+            raise CapabilityPolicyError(
+                "a one-off brief gets no decorative media; a declared illustration is not permitted"
+            )
+        if not _ILLUSTRATION_VISUAL.search(text):
+            raise CapabilityPolicyError(
+                f"the declared illustration need {need.construct!r} names no visual-aid construct"
+            )
+    elif role == "schematic":
+        if domain == "language":
+            raise CapabilityPolicyError(
+                "a language lesson may carry a visual aid but not a schematic; the declared "
+                "schematic role is not permitted"
+            )
+        if not _SCHEMATIC_VISUAL.search(text):
+            raise CapabilityPolicyError(
+                f"the declared schematic need {need.construct!r} names no sequence, wiring, "
+                "measurement, labelling or graph construct"
+            )
+    elif role == "sourced_reference":
+        if domain == "language" or domain in SYMBOLIC_DOMAINS:
+            raise CapabilityPolicyError(
+                f"a {domain} lesson cannot carry a cited source image; the declared "
+                "sourced_reference role is not permitted"
+            )
+        if not _SOURCED_VISUAL.search(text):
+            raise CapabilityPolicyError(
+                f"the declared sourced_reference need {need.construct!r} names no photograph, "
+                "poster, map, artefact or document image"
+            )
+    if recipe == "parent" and need.image == "required":
+        raise CapabilityPolicyError(
+            "recipe parent: the observation is the evidence, so a visual need can be optional but "
+            "never required"
+        )
+    return (
+        need.image,
+        role,
+        f"the plan declared a {need.image} {role} need for {need.construct!r}; the policy accepts "
+        f"that role for {domain}",
+    )
+
+
+def _declared_audio_decision(
+    *, domain: str, recipe: str, need: MediaNeed
+) -> tuple[str, str | None, str]:
+    """Adopt a declared audio need, or reject one this lesson cannot carry."""
+    if need.audio == "none" or need.audio_role is None:
+        return "none", None, "the plan declares no audio need for this section"
+    if recipe == "parent":
+        raise CapabilityPolicyError(
+            "recipe parent: the parent presents and observes, so a declared audio need is not "
+            "permitted"
+        )
+    if domain != "language":
+        raise CapabilityPolicyError(
+            f"domain {domain!r} is not a language lesson; generated audio is not permitted, so the "
+            "declared audio need is rejected"
+        )
+    text = _normalise_intent(need.construct)
+    if need.audio_role == "narration":
+        if not _LISTENING.search(text):
+            raise CapabilityPolicyError(
+                f"the declared narration need {need.construct!r} names no listening construct"
+            )
+    elif not _PRONUNCIATION.search(text):
+        raise CapabilityPolicyError(
+            f"the declared pronunciation_reference need {need.construct!r} names no spoken "
+            "construct"
+        )
+    return (
+        need.audio,
+        need.audio_role,
+        f"the plan declared a {need.audio} {need.audio_role} need for {need.construct!r}; the "
+        "transcript stays authoritative",
+    )
+
+
 def _rubric_profile(
     *,
     domain: str,
@@ -660,11 +867,18 @@ def plan_lesson_capability(
     locale: str | None = None,
     level: str | None = None,
     subject_domain: str | None = None,
+    media_need: object = None,
 ) -> LessonCapabilityPlan:
     """Map one lesson's declared facts to an immutable capability plan.
 
-    Raises :class:`CapabilityPolicyError` for an unknown recipe or evidence target. It never
-    raises for an ordinary lesson: the fallback is no media, never invented media.
+    When ``media_need`` is supplied (the plan's typed per-section declaration), the policy adopts
+    it and only decides whether each declared role is possible; it does not re-guess the construct
+    from ``lesson_intent``. Without a declaration the legacy construct detectors run, which is the
+    hand-built/legacy path, not the generated-plan path.
+
+    Raises :class:`CapabilityPolicyError` for an unknown recipe or evidence target, and for a
+    declaration that names a role this lesson cannot carry. It never raises for an ordinary
+    lesson: the fallback is no media, never invented media.
     """
     if recipe not in RECIPES:
         raise CapabilityPolicyError(f"unknown recipe {recipe!r}; expected one of {RECIPES}")
@@ -679,21 +893,30 @@ def plan_lesson_capability(
     forced_angle, angle_reason = recipe_check_angle(recipe)
     check_angle: str = forced_angle if forced_angle is not None else evidence_target
 
-    image, image_role, image_reason = _image_decision(
-        domain=domain,
-        recipe=recipe,
-        check_angle=check_angle,
-        evidence_target=evidence_target,
-        text=text,
-    )
-    audio, audio_role, audio_reason = _audio_decision(
-        domain=domain,
-        recipe=recipe,
-        check_angle=check_angle,
-        evidence_target=evidence_target,
-        text=text,
-        locale=locale,
-    )
+    need = parse_media_need(media_need) if media_need is not None else None
+    if need is not None:
+        image, image_role, image_reason = _declared_image_decision(
+            domain=domain, recipe=recipe, need=need
+        )
+        audio, audio_role, audio_reason = _declared_audio_decision(
+            domain=domain, recipe=recipe, need=need
+        )
+    else:
+        image, image_role, image_reason = _image_decision(
+            domain=domain,
+            recipe=recipe,
+            check_angle=check_angle,
+            evidence_target=evidence_target,
+            text=text,
+        )
+        audio, audio_role, audio_reason = _audio_decision(
+            domain=domain,
+            recipe=recipe,
+            check_angle=check_angle,
+            evidence_target=evidence_target,
+            text=text,
+            locale=locale,
+        )
     profile, profile_reason = _rubric_profile(
         domain=domain,
         recipe=recipe,
@@ -716,6 +939,8 @@ def plan_lesson_capability(
         level=level,
         subject_domain=domain,
         reasons=reasons,
+        declared=need is not None,
+        construct=need.construct if need is not None else None,
     )
 
 
@@ -806,3 +1031,32 @@ def media_policy_problems(plan: LessonCapabilityPlan, media: object) -> list[str
                 f"{audio_roles} (audio level {plan.audio!r})"
             )
     return problems
+
+
+def missing_required_media(plan: LessonCapabilityPlan, media: object) -> list[str]:
+    """Every required media item the lesson did not produce.
+
+    The permission half refuses an item the policy does not allow; this is the other direction:
+    a plan that declared a required visual or audio need must be honored by the authored lesson.
+    A ``none``/``optional`` level never produces a problem here.
+    """
+    items = [item for item in (media if isinstance(media, (list, tuple)) else []) if isinstance(item, dict)]
+    problems: list[str] = []
+    for kind, level, role, spec_role in (
+        ("visual", plan.image, plan.image_role, IMAGE_SPEC_ROLE.get(plan.image_role or "")),
+        ("audio", plan.audio, plan.audio_role, AUDIO_SPEC_ROLE.get(plan.audio_role or "")),
+    ):
+        if level != "required":
+            continue
+        present = any(
+            str(item.get("kind") or "") == kind and item.get("role") == spec_role for item in items
+        )
+        if present:
+            continue
+        construct = f" for {plan.construct!r}" if plan.construct else ""
+        problems.append(
+            f"the capability policy requires a {kind} item with role {spec_role!r}{construct}; "
+            "the lesson did not produce one"
+        )
+    return problems
+
