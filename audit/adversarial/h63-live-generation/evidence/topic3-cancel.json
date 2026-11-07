@@ -1,0 +1,525 @@
+{
+  "cancel_request": {
+    "job_id": "job_84e393160b994db78c345dd736d2a459",
+    "state": "cancel_requested"
+  },
+  "cancel_requested_at_s": 8.2,
+  "course": {
+    "course_id": "crs_8428eceaa7264646ace3b6d03c1aea0d",
+    "plan_id": "pln_26defeae3b2a4891bd29c5c4d107b204",
+    "revision": 0
+  },
+  "elapsed_to_terminal_s": 244.3,
+  "enrollment": {
+    "enrollment_id": "enr_3345f7af39434768a195b6982f9d6451",
+    "revision": 0
+  },
+  "final_job": {
+    "artifact_ids": [],
+    "attempt_id": "att_159434a6e3d9424bbb1f676272dab3a6",
+    "brief": {
+      "course_id": "crs_8428eceaa7264646ace3b6d03c1aea0d",
+      "dials": {
+        "assessment": "none",
+        "autonomy": "guided",
+        "depth": "survey",
+        "pace": "light"
+      },
+      "enrollment_id": "enr_3345f7af39434768a195b6982f9d6451",
+      "goal": "Sharpen a kitchen knife safely with a whetstone",
+      "recipe": "one_off",
+      "scope": "single",
+      "stage": "plan",
+      "subject_domain": "repair"
+    },
+    "cancel_requested_at": null,
+    "checkpoint": {
+      "domain_provenance": {
+        "declared_locale": null,
+        "declared_subject_domain": "repair",
+        "resolved_domain": "technical_procedure",
+        "source": "declared",
+        "target_language": null
+      },
+      "generation_state": "needs_review",
+      "last_stage": "plan",
+      "next_unit_ordinal": 1,
+      "objectives": 1,
+      "plan_hash": "sha256:410c5b1412477650821ae6f83b03e709579c1643b9878329ccefbb3264c123ef",
+      "plan_id": "59c7c6006e4df8b4",
+      "plan_schema": "coursebook.plan.v2",
+      "plan_version": 2,
+      "units": 1
+    },
+    "created_at": "2026-11-07T20:00:18Z",
+    "error": null,
+    "job_id": "job_84e393160b994db78c345dd736d2a459",
+    "kind": "plan",
+    "lease": null,
+    "operation_id": "h63-jobs-create-1794081618196918345",
+    "progress": {
+      "message": "plan authored (needs_review)",
+      "stage": "plan",
+      "steps_done": 1,
+      "steps_total": 1
+    },
+    "state": "completed_late",
+    "updated_at": "2026-11-07T20:04:21Z"
+  },
+  "finished_at": "2026-11-07T20:04:22Z",
+  "generation_result": {
+    "approval_provenance": {
+      "facts_unverified": false,
+      "independent": true,
+      "needs_review": true,
+      "outcome": "rejected",
+      "warning": "validation rejected this artifact: it is not approvable as validated."
+    },
+    "course_id": "crs_8428eceaa7264646ace3b6d03c1aea0d",
+    "domain_provenance": {
+      "declared_locale": null,
+      "declared_subject_domain": "repair",
+      "resolved_domain": "technical_procedure",
+      "source": "declared",
+      "target_language": null
+    },
+    "job_id": "job_84e393160b994db78c345dd736d2a459",
+    "job_kind": "plan",
+    "level": null,
+    "locale": null,
+    "next_unit_ordinal": 1,
+    "objectives": 1,
+    "plan_content_hash": "sha256:2239a37fc4436e665b518098949f44733b00dba8fde9999b4f21d88fa728cd03",
+    "plan_hash": "sha256:410c5b1412477650821ae6f83b03e709579c1643b9878329ccefbb3264c123ef",
+    "plan_id": "59c7c6006e4df8b4",
+    "plan_schema": "coursebook.plan.v2",
+    "plan_version": 2,
+    "rejection_reasons": [
+      "objective 1 / unit 1: The only objective verifies that a guide exists and never addresses the stated goal of sharpening a knife safely; presenting it as the plan for this goal leaves the goal unmet.",
+      "check_plan[0] verification checklist: The checklist collects a title, a publisher and a stated intention, which is attestation rather than comprehension, so it cannot evidence the declared comprehension target."
+    ],
+    "research": {
+      "queries": [
+        "Sharpen a kitchen knife safely with a whetstone"
+      ],
+      "reason": "1 fetch failure(s); first: https://www.foodandwine.com/how-to-sharpen-kitchen-knives-according-to-knife-makers-amazon-12140560: venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/instal\u2026",
+      "status": "degraded"
+    },
+    "research_id": "4dd184d8f0b23574",
+    "reused": false,
+    "scope": "single",
+    "scope_cap_weeks": 1,
+    "sections": 0,
+    "sources": 1,
+    "status": "needs_review",
+    "subject_domain": "repair",
+    "target_language": null,
+    "units": 1,
+    "usage": {
+      "budget": {
+        "max_calls": 32,
+        "max_cost_usd": 0.75,
+        "source": "declared"
+      },
+      "by_purpose": {
+        "coursebook.plan.generate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": true
+        },
+        "coursebook.plan.validate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": true
+        }
+      },
+      "calls": 4,
+      "cost_usd": null,
+      "estimated_cost_usd": 0.16,
+      "input_tokens": 11519,
+      "output_tokens": 24254,
+      "unknown_calls": 4,
+      "unknown_cost": true
+    },
+    "validation": {
+      "cost": {
+        "calls": 2,
+        "cost_usd": null,
+        "unknown_cost": true
+      },
+      "cost_usd": null,
+      "facts_unverified": false,
+      "generator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous"
+      },
+      "independence": "independent",
+      "independent": true,
+      "outcome": "rejected",
+      "research_status": "degraded",
+      "validator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "provider": "nous"
+      },
+      "verdict": "reject",
+      "waived_unknown": [],
+      "warning": "validation rejected this artifact: it is not approvable as validated."
+    },
+    "validation_id": "2bc22331fbfc3b7c",
+    "validation_verdict": "reject",
+    "warnings": [
+      "research degraded: 1 fetch(es) failed; only the 1 fetched source(s) are cited and their support comes from independent validation, not from the fetch",
+      "one-off brief: completion is instruction_complete plus a self-reported checklist",
+      "independent validation did not pass: the plan is not approvable as-is"
+    ]
+  },
+  "generation_status": "needs_review",
+  "isolated_home": "/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home",
+  "job": {
+    "job_id": "job_84e393160b994db78c345dd736d2a459",
+    "state": "queued"
+  },
+  "job_id": "job_84e393160b994db78c345dd736d2a459",
+  "ok": true,
+  "plan": {
+    "check_plan": [
+      {
+        "evidence_target": "comprehension",
+        "kind": "verification",
+        "notes": "Verification checklist only; no quiz. The learner confirms a verified guide and its safety stop condition are in hand before any sharpening attempt.",
+        "objective_ref": 1
+      }
+    ],
+    "document": {
+      "check_plan": [
+        {
+          "evidence_target": "comprehension",
+          "kind": "verification",
+          "notes": "Verification checklist only; no quiz. The learner confirms a verified guide and its safety stop condition are in hand before any sharpening attempt.",
+          "objective_ref": 1
+        }
+      ],
+      "context_needs": [
+        "A verified manufacturer or culinary-school whetstone sharpening guide",
+        "A stable, well-lit work surface for reading and checklist completion",
+        "Access to the knife owner or supervising adult for safety confirmation"
+      ],
+      "delivery": "self_study",
+      "evidence_note": "Research status degraded: the sole supplied source is unverified and its excerpt contains no procedure. This plan therefore verifies readiness to obtain a verified guide rather than teaching sharpening steps.",
+      "exclusions": [
+        "Does not teach or validate specific whetstone grit progression, sharpening angle, stroke count, or edge-testing steps.",
+        "Does not certify the learner as competent to sharpen knives.",
+        "Does not replace a verified manufacturer or culinary-school guide.",
+        "Does not cover powered sharpeners, serrated knives, or knife repair.",
+        "Does not claim the supplied unverified source supports any sharpening procedure."
+      ],
+      "learner_outcome": "The learner will complete a verification checklist confirming that a verified manufacturer or culinary-school whetstone sharpening guide and its safety stop condition are in hand before any sharpening attempt. This plan does not teach or validate the sharpening procedure itself.",
+      "objectives": [
+        {
+          "evidence_criteria": [
+            "Checklist records the title and publisher of a verified manufacturer or culinary-school whetstone sharpening guide obtained before any sharpening attempt.",
+            "Checklist states that no sharpening step will be performed until the guide's ordered steps, angle guidance and safety stop condition have been read.",
+            "Checklist records where the verified guide states its safety stop condition, without asserting an unverified sharpening procedure."
+          ],
+          "evidence_target": "comprehension",
+          "ordinal": 1,
+          "support": "unverified",
+          "title": "Verify a sourced safety basis before whetstone sharpening",
+          "unit_ref": 1
+        }
+      ],
+      "plan_schema": "coursebook.plan.v2",
+      "scope": "single",
+      "source_ids": [],
+      "spaced_review": false,
+      "time_estimate": {
+        "attainment_hours": null,
+        "basis": "none",
+        "confidence": "low",
+        "minutes_per_session": 20,
+        "rationale": "One-off verification checklist only. No attainment hours are claimed because no verified instructional source was supplied and the sole ledger row is unverified.",
+        "sessions_per_week": 1,
+        "weeks": 1
+      },
+      "title": "Whetstone Knife Sharpening: Safety Verification Before First Attempt",
+      "units": [
+        {
+          "goal": "Confirm that a verified instructional source and its safety stop condition are available before any attempt to sharpen a kitchen knife with a whetstone.",
+          "ordinal": 1,
+          "prereq_unit_ordinals": [],
+          "target_lessons": 1,
+          "title": "Pre-attempt verification for whetstone knife sharpening"
+        }
+      ]
+    },
+    "goal": null,
+    "learner_outcome": "The learner will complete a verification checklist confirming that a verified manufacturer or culinary-school whetstone sharpening guide and its safety stop condition are in hand before any sharpening attempt. This plan does not teach or validate the sharpening procedure itself.",
+    "objectives": [
+      {
+        "evidence_criteria": [
+          "Checklist records the title and publisher of a verified manufacturer or culinary-school whetstone sharpening guide obtained before any sharpening attempt.",
+          "Checklist states that no sharpening step will be performed until the guide's ordered steps, angle guidance and safety stop condition have been read.",
+          "Checklist records where the verified guide states its safety stop condition, without asserting an unverified sharpening procedure."
+        ],
+        "evidence_target": "comprehension",
+        "ordinal": 1,
+        "support": "unverified",
+        "title": "Verify a sourced safety basis before whetstone sharpening",
+        "unit_ref": 1
+      }
+    ],
+    "plan_schema": "coursebook.plan.v2",
+    "title": "Whetstone Knife Sharpening: Safety Verification Before First Attempt",
+    "units": [
+      {
+        "goal": "Confirm that a verified instructional source and its safety stop condition are available before any attempt to sharpen a kitchen knife with a whetstone.",
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "target_lessons": 1,
+        "title": "Pre-attempt verification for whetstone knife sharpening"
+      }
+    ]
+  },
+  "plan_id": "59c7c6006e4df8b4",
+  "pump": {
+    "done_at_s": 243.6,
+    "finished": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "att_159434a6e3d9424bbb1f676272dab3a6",
+        "brief": {
+          "course_id": "crs_8428eceaa7264646ace3b6d03c1aea0d",
+          "dials": {
+            "assessment": "none",
+            "autonomy": "guided",
+            "depth": "survey",
+            "pace": "light"
+          },
+          "enrollment_id": "enr_3345f7af39434768a195b6982f9d6451",
+          "goal": "Sharpen a kitchen knife safely with a whetstone",
+          "recipe": "one_off",
+          "scope": "single",
+          "stage": "plan",
+          "subject_domain": "repair"
+        },
+        "cancel_requested_at": null,
+        "checkpoint": {
+          "domain_provenance": {
+            "declared_locale": null,
+            "declared_subject_domain": "repair",
+            "resolved_domain": "technical_procedure",
+            "source": "declared",
+            "target_language": null
+          },
+          "generation_state": "needs_review",
+          "last_stage": "plan",
+          "next_unit_ordinal": 1,
+          "objectives": 1,
+          "plan_hash": "sha256:410c5b1412477650821ae6f83b03e709579c1643b9878329ccefbb3264c123ef",
+          "plan_id": "59c7c6006e4df8b4",
+          "plan_schema": "coursebook.plan.v2",
+          "plan_version": 2,
+          "units": 1
+        },
+        "created_at": "2026-11-07T20:00:18Z",
+        "error": null,
+        "job_id": "job_84e393160b994db78c345dd736d2a459",
+        "kind": "plan",
+        "lease": null,
+        "operation_id": "h63-jobs-create-1794081618196918345",
+        "progress": {
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "steps_done": 1,
+          "steps_total": 1
+        },
+        "state": "completed_late",
+        "updated_at": "2026-11-07T20:04:21Z"
+      }
+    ]
+  },
+  "pump_thread": "h63-pump",
+  "rejection_reasons": [
+    "objective 1 / unit 1: The only objective verifies that a guide exists and never addresses the stated goal of sharpening a knife safely; presenting it as the plan for this goal leaves the goal unmet.",
+    "check_plan[0] verification checklist: The checklist collects a title, a publisher and a stated intention, which is attestation rather than comprehension, so it cannot evidence the declared comprehension target."
+  ],
+  "research": {
+    "failures": [
+      {
+        "error": "venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environments/8f3bc04345f24c01aa16ba22c63df51d/venv); only an explicit install may change what later processe\u2026",
+        "query": "Sharpen a kitchen knife safely with a whetstone",
+        "url": "https://www.foodandwine.com/how-to-sharpen-kitchen-knives-according-to-knife-makers-amazon-12140560"
+      }
+    ],
+    "queries": [
+      {
+        "error": null,
+        "query": "Sharpen a kitchen knife safely with a whetstone",
+        "result_count": 4
+      }
+    ],
+    "reason": "1 fetch failure(s); first: https://www.foodandwine.com/how-to-sharpen-kitchen-knives-according-to-knife-makers-amazon-12140560: venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/instal\u2026",
+    "sources": [
+      {
+        "claim_links": [],
+        "content_hash": "sha256:e7be74b821fa1f4766cddcb1ab4406bfc16dbd63c0b435b440454226ee383e74",
+        "excerpt": "# How to Properly Sharpen a Kitchen Knife, According to Experts Keep your knives on the cutting edge with regular honing and sharpening. - Keeping your kitchen knives sharp makes cooking faster, safer, and more precise, improving both your efficiency and results. - Honing your knife regularly with a honing steel keeps the blade aligned and sharp without removing material. - For a sharper edge, use a whetstone, which offers better control and works for most types of knife steel. A [sharp knife](https://www.marthastewart.com/1086951/kitchen-knife-basics) is the most important tool in your kitche",
+        "fetched_at": "2026-11-07T20:00:18Z",
+        "published_at": null,
+        "publisher": "marthastewart.com",
+        "query": "Sharpen a kitchen knife safely with a whetstone",
+        "source_id": "8f958841acfe4214",
+        "source_type": "web_page",
+        "support_status": "unverified",
+        "title": "How to Sharpen a Knife the Right Way",
+        "truncated": true,
+        "url": "https://www.marthastewart.com/how-to-sharpen-a-knife-12075947"
+      }
+    ],
+    "status": "degraded"
+  },
+  "research_status": "degraded",
+  "schema_version": 9,
+  "source_commit": "ea5f15d",
+  "started_at": "2026-11-07T20:00:18Z",
+  "store_root": "/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home/plugin-data/coursebook",
+  "tag": "topic3-cancel",
+  "terminal_state": "completed_late",
+  "threads": [
+    "MainThread",
+    "coursebook-job-tick",
+    "asyncio_0"
+  ],
+  "timeline": [
+    {
+      "elapsed_s": 0.2,
+      "lease": null,
+      "message": "",
+      "stage": "queued",
+      "state": "queued"
+    },
+    {
+      "elapsed_s": 2.2,
+      "lease": {
+        "expires_at": "2026-11-07T20:02:18Z",
+        "owner": "worker-b645f1693879"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "running"
+    },
+    {
+      "elapsed_s": 4.2,
+      "lease": {
+        "expires_at": "2026-11-07T20:02:18Z",
+        "owner": "worker-b645f1693879"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "running"
+    },
+    {
+      "elapsed_s": 10.2,
+      "lease": {
+        "expires_at": "2026-11-07T20:02:18Z",
+        "owner": "worker-b645f1693879"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "cancel_requested"
+    },
+    {
+      "elapsed_s": 244.3,
+      "lease": null,
+      "message": "plan authored (needs_review)",
+      "stage": "plan",
+      "state": "completed_late"
+    }
+  ],
+  "total_elapsed_s": 244.3,
+  "usage_events": [
+    {
+      "duration_ms": 23524,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T20:04:21Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 3319, \"output_tokens\": 2540, \"prompt_version\": \"plan-prompt.v4\", \"purpose\": \"coursebook.plan.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 83845,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T20:04:21Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 2411, \"output_tokens\": 7898, \"prompt_version\": \"validation-prompt.v2\", \"purpose\": \"coursebook.plan.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 33393,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T20:04:21Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 3437, \"output_tokens\": 2506, \"prompt_version\": \"plan-prompt.v4\", \"purpose\": \"coursebook.plan.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 101012,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T20:04:21Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 2352, \"output_tokens\": 11310, \"prompt_version\": \"validation-prompt.v2\", \"purpose\": \"coursebook.plan.validate\", \"unknown_cost\": true}"
+    }
+  ],
+  "validation": {
+    "cost": {
+      "calls": 2,
+      "cost_usd": null,
+      "unknown_cost": true
+    },
+    "cost_usd": null,
+    "facts_unverified": false,
+    "generator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous"
+    },
+    "independence": "independent",
+    "independent": true,
+    "outcome": "rejected",
+    "research_status": "degraded",
+    "validator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous"
+    },
+    "verdict": "reject",
+    "waived_unknown": [],
+    "warning": "validation rejected this artifact: it is not approvable as validated."
+  },
+  "validation_record": {
+    "facts_unverified": false,
+    "generator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous"
+    },
+    "generator_prompt_sha256": "sha256:42949ff70638013a2a0ab6056f60d5d0f0961e91cdd3d68460b6d5fa28bbe8b5",
+    "independence": "independent",
+    "independent": true,
+    "outcome": "rejected",
+    "subject_id": "59c7c6006e4df8b4",
+    "subject_kind": "plan",
+    "validation_id": "2bc22331fbfc3b7c",
+    "validator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous"
+    },
+    "validator_prompt_sha256": "sha256:bc081f14d737f5d5a3bac372d0ca8b6df888bf1b6fe6adb429c8fd8d7f11caa6",
+    "verdict": "reject",
+    "waived_unknown": [],
+    "warning": "validation rejected this artifact: it is not approvable as validated."
+  },
+  "validation_verdict": "reject",
+  "wire_contract_version": 14,
+  "worker_id": "worker-b645f1693879"
+}

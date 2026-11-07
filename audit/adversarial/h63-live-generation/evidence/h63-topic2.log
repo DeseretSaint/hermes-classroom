@@ -1,0 +1,16 @@
+[12:54:56] seams bound; validator_config={"configured": true, "provider": "nous", "model": "deepseek/deepseek-v4.1-flash"}
+[12:54:56] schema before ensure: 9
+[12:54:56] schema after ensure: 9  store=/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home/plugin-data/coursebook
+[12:54:56] course.create: {"course_id": "crs_99290f8333ee496eb9d1d8f9502bdddd", "plan_id": "pln_cce8567c5be54ad4a0d82a0ec943b9d9", "revision": 0}
+[12:54:56] enrollment.create: {"enrollment_id": "enr_e75322998b7d4926af02c3e9dd8a063b", "revision": 0}
+[12:54:56] jobs.create: {"job_id": "job_ce74bba08e85405fbb21bb13001f57bc", "state": "queued"}
+[12:54:56] real executor.pump_once started (limit=1)
+[12:54:56] job state -> queued at 0.2s (stage=queued msg=)
+coursebook job tick started on its own thread: kind=plan interval=5.0s limit=5
+web_extract backend 'firecrawl' failed all 1 URL(s) (venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environme); one-shot keyless rescue
+web_extract backend 'firecrawl' failed all 1 URL(s) (venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environme); one-shot keyless rescue
+[12:54:58] job state -> running at 2.2s (stage=queued msg=)
+web_extract backend 'firecrawl' failed all 1 URL(s) (venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environme); one-shot keyless rescue
+web_extract backend 'firecrawl' failed all 1 URL(s) (venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environme); one-shot keyless rescue
+[12:59:58] job state -> completed at 302.3s (stage=plan msg=plan authored (needs_review))
+[12:59:58] result written to audit/adversarial/h63-live-generation/evidence/topic2-relative-minor.json

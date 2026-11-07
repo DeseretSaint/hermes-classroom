@@ -1,0 +1,516 @@
+{
+  "course": {
+    "course_id": "crs_962aa032433240a5a4c0ca49af83e021",
+    "plan_id": "pln_3ee39397fd3b462980964edab8f826ec",
+    "revision": 0
+  },
+  "elapsed_to_terminal_s": 270.3,
+  "enrollment": {
+    "enrollment_id": "enr_7bad3e1caf5f464b9c3d3de2488f5c52",
+    "revision": 0
+  },
+  "final_job": {
+    "artifact_ids": [],
+    "attempt_id": "att_4b43ea917c304228b54ecb030e4b4296",
+    "brief": {
+      "course_id": "crs_962aa032433240a5a4c0ca49af83e021",
+      "dials": {
+        "assessment": "none",
+        "autonomy": "guided",
+        "depth": "working",
+        "pace": "light"
+      },
+      "enrollment_id": "enr_7bad3e1caf5f464b9c3d3de2488f5c52",
+      "goal": "How does a bicycle derailleur index through its gears?",
+      "recipe": "one_off",
+      "scope": "single",
+      "stage": "plan",
+      "subject_domain": "repair"
+    },
+    "cancel_requested_at": null,
+    "checkpoint": {
+      "domain_provenance": {
+        "declared_locale": null,
+        "declared_subject_domain": "repair",
+        "resolved_domain": "technical_procedure",
+        "source": "declared",
+        "target_language": null
+      },
+      "generation_state": "needs_review",
+      "last_stage": "plan",
+      "next_unit_ordinal": 1,
+      "objectives": 1,
+      "plan_hash": "sha256:0f3cab63d2682c3262d37cb01c9295ae6ef081954856f7deb8d7cef3230eb558",
+      "plan_id": "02cad489af559a74",
+      "plan_schema": "coursebook.plan.v2",
+      "plan_version": 2,
+      "units": 1
+    },
+    "created_at": "2026-11-07T19:49:57Z",
+    "error": null,
+    "job_id": "job_0b8f30e6691c401a8c7baf191545816c",
+    "kind": "plan",
+    "lease": null,
+    "operation_id": "h63-jobs-create-1794080997031079567",
+    "progress": {
+      "message": "plan authored (needs_review)",
+      "stage": "plan",
+      "steps_done": 1,
+      "steps_total": 1
+    },
+    "state": "completed",
+    "updated_at": "2026-11-07T19:54:25Z"
+  },
+  "finished_at": "2026-11-07T19:54:27Z",
+  "generation_result": {
+    "approval_provenance": {
+      "facts_unverified": false,
+      "independent": true,
+      "needs_review": true,
+      "outcome": "rejected",
+      "warning": "validation rejected this artifact: it is not approvable as validated."
+    },
+    "course_id": "crs_962aa032433240a5a4c0ca49af83e021",
+    "domain_provenance": {
+      "declared_locale": null,
+      "declared_subject_domain": "repair",
+      "resolved_domain": "technical_procedure",
+      "source": "declared",
+      "target_language": null
+    },
+    "job_id": "job_0b8f30e6691c401a8c7baf191545816c",
+    "job_kind": "plan",
+    "level": null,
+    "locale": null,
+    "next_unit_ordinal": 1,
+    "objectives": 1,
+    "plan_content_hash": "sha256:88ea4a63a4bc9e5e744e5a868dbd92e8019e25bb2cebefb3226e7d2c05a5ccdc",
+    "plan_hash": "sha256:0f3cab63d2682c3262d37cb01c9295ae6ef081954856f7deb8d7cef3230eb558",
+    "plan_id": "02cad489af559a74",
+    "plan_schema": "coursebook.plan.v2",
+    "plan_version": 2,
+    "rejection_reasons": [
+      "objective 1 evidence_criteria[3] (indexing left open): Marks a learner wrong for stating the true cable-tension indexing mechanism; a correct answer from prior knowledge is scored as a failure, which teaches the learner that a true statement is false.",
+      "objective 1 evidence_criteria[4] (no cable tension/limit screw/adjustment claims: Penalises true statements about cable tension, limit screws and adjustment; scope discipline should not be a pass/fail tick that marks correct content as an error.",
+      "plan.learner_outcome: The outcome string is truncated mid-clause ('...do not establish,so'), so the plan's statement of what the learner will produce is incomplete and cannot be delivered or checked as written."
+    ],
+    "research": {
+      "queries": [
+        "How does a bicycle derailleur index through its gears?",
+        "How does a bicycle derailleur index through its gears? official procedure steps safety limits"
+      ],
+      "reason": null,
+      "status": "ok"
+    },
+    "research_id": "124fcca34669ba59",
+    "reused": false,
+    "scope": "single",
+    "scope_cap_weeks": 1,
+    "sections": 0,
+    "sources": 4,
+    "status": "needs_review",
+    "subject_domain": "repair",
+    "target_language": null,
+    "units": 1,
+    "usage": {
+      "budget": {
+        "max_calls": 32,
+        "max_cost_usd": 0.75,
+        "source": "declared"
+      },
+      "by_purpose": {
+        "coursebook.plan.generate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": true
+        },
+        "coursebook.plan.validate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": true
+        }
+      },
+      "calls": 4,
+      "cost_usd": null,
+      "estimated_cost_usd": 0.16,
+      "input_tokens": 15274,
+      "output_tokens": 27176,
+      "unknown_calls": 4,
+      "unknown_cost": true
+    },
+    "validation": {
+      "cost": {
+        "calls": 2,
+        "cost_usd": null,
+        "unknown_cost": true
+      },
+      "cost_usd": null,
+      "facts_unverified": false,
+      "generator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous"
+      },
+      "independence": "independent",
+      "independent": true,
+      "outcome": "rejected",
+      "research_status": "ok",
+      "validator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "provider": "nous"
+      },
+      "verdict": "reject",
+      "waived_unknown": [],
+      "warning": "validation rejected this artifact: it is not approvable as validated."
+    },
+    "validation_id": "a9a3dd5c3f2f4150",
+    "validation_verdict": "reject",
+    "warnings": [
+      "one-off brief: completion is instruction_complete plus a self-reported checklist",
+      "independent validation did not pass: the plan is not approvable as-is"
+    ]
+  },
+  "isolated_home": "/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home",
+  "job": {
+    "job_id": "job_0b8f30e6691c401a8c7baf191545816c",
+    "state": "queued"
+  },
+  "job_id": "job_0b8f30e6691c401a8c7baf191545816c",
+  "ok": true,
+  "plan": {
+    "check_plan": 0,
+    "document": {
+      "dials": {
+        "assessment": "none",
+        "autonomy": "guided",
+        "depth": "working",
+        "pace": "light"
+      },
+      "level": null,
+      "locale": null,
+      "parent_brief": null,
+      "pipeline_version": "cb.gen.v1",
+      "plan": {
+        "check_plan": [
+          {
+            "evidence_target": "comprehension",
+            "kind": "verification",
+            "notes": "Guided checklist read alongside the learner's written answer; each item is ticked only if the answer matches the supplied summary in substance. Items 4 and 5 are ticked when the learner correctly leaves the indexing mechanism open. No quiz, no homework.",
+            "objective_ref": 1
+          }
+        ],
+        "context_needs": [
+          "The supplied derailleur summary available to read on screen or on paper",
+          "Paper or a text file for the learner's short written answer",
+          "The five-item verification checklist visible while checking",
+          "About 30 uninterrupted minutes in a quiet spot"
+        ],
+        "delivery": "self_study",
+        "evidence_note": "Only the Velopedia derailleur summary carries usable body text in the supplied ledger; the two how-to pages are truncated boilerplate. The indexing mechanism is therefore left as an explicit open question rather than asserted, and the objective is grounded only in the summary's own statements.",
+        "exclusions": [
+          "No claim about how a shifter commands a derailleur to a specific gear (cable-tension indexing): the supplied excerpts do not contain it.",
+          "No derailleur adjustment procedure is taught or verified here: limit screws, cable tension, barrel adjusters and hanger alignment are out of scope.",
+          "No diagnosis of slipping, skipping or clunking gears, and no parts replacement, compatibility or buying advice.",
+          "No safety certification or mechanical competence claim: this is a comprehension brief, not a repair qualification.",
+          "No quiz, no homework and no spaced review; the single check is a verification checklist."
+        ],
+        "learner_outcome": "In one guided sitting the learner reads the supplied derailleur summary, then writes a short answer in their own words stating that a derailleur moves the chain between sprockets or chainrings to select different gear ratios, that a rear derailleur also maintains chain tension as the chain length needed by different gear combinations changes, and that modern units may be mechanically or electronically actuated across friction-shift to integrated wide-range and wireless designs. The learner then ticks a verification checklist and explicitly records that the supplied excerpts do not establish,so",
+        "objectives": [
+          {
+            "evidence_criteria": [
+              "Learner states that a derailleur moves the chain between sprockets or chainrings to select different gear ratios, matching the supplied summary.",
+              "Learner states that a rear derailleur also maintains chain tension as the amount of chain required by different gear combinations changes.",
+              "Learner names both actuation possibilities from the summary (mechanically or electronically actuated) and notes the range from simple friction-shift designs to integrated wide-range and wireless systems.",
+              "Learner records that how a shifter commands a derailleur to a specific gear (indexing) is not established by the supplied excerpts, rather than answering it from memory.",
+              "Learner's written answer contains no claim about cable tension, limit screws or adjustment steps, because the supplied excerpts do not cover them."
+            ],
+            "evidence_target": "comprehension",
+            "ordinal": 1,
+            "source_ids": [
+              "f79d95e6833077c7"
+            ],
+            "support": "sourced",
+            "title": "Explain what a derailleur does and mark indexing as not established by the supplied excerpts",
+            "unit_ref": 1
+          }
+        ],
+        "plan_schema": "coursebook.plan.v2",
+        "scope": "single",
+        "source_ids": [
+          "f79d95e6833077c7"
+        ],
+        "spaced_review": false,
+        "time_estimate": {
+          "attainment_hours": null,
+          "basis": "model",
+          "confidence": "low",
+          "minutes_per_session": 30,
+          "rationale": "One guided sitting of roughly 30 minutes: reading the supplied summary, writing a short answer, and ticking the verification checklist with the learner. This is a scheduling model for a single session, not a measured or benchmarked learning time, so no attainment hours are claimed.",
+          "sessions_per_week": 1,
+          "weeks": 1
+        },
+        "title": "How a Bicycle Derailleur Selects Gears: A One-Sitting Brief",
+        "units": [
+          {
+            "goal": "Read the supplied derailleur summary and produce a short written account of what a derailleur does and how it selects gears, keeping strictly to what the summary states and flagging the indexing mechanism as not established by the supplied excerpts.",
+            "ordinal": 1,
+            "prereq_unit_ordinals": [],
+            "target_lessons": 1,
+            "title": "Derailleur gear selection: what the supplied source establishes"
+          }
+        ]
+      },
+      "recipe": "one_off",
+      "scope": "single",
+      "subject_domain": "repair"
+    },
+    "goal": null,
+    "objectives": 0,
+    "plan_schema": null,
+    "title": null,
+    "units": 0
+  },
+  "plan_id": "02cad489af559a74",
+  "pump": {
+    "done_at_s": 268.9,
+    "finished": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "att_4b43ea917c304228b54ecb030e4b4296",
+        "brief": {
+          "course_id": "crs_962aa032433240a5a4c0ca49af83e021",
+          "dials": {
+            "assessment": "none",
+            "autonomy": "guided",
+            "depth": "working",
+            "pace": "light"
+          },
+          "enrollment_id": "enr_7bad3e1caf5f464b9c3d3de2488f5c52",
+          "goal": "How does a bicycle derailleur index through its gears?",
+          "recipe": "one_off",
+          "scope": "single",
+          "stage": "plan",
+          "subject_domain": "repair"
+        },
+        "cancel_requested_at": null,
+        "checkpoint": {
+          "domain_provenance": {
+            "declared_locale": null,
+            "declared_subject_domain": "repair",
+            "resolved_domain": "technical_procedure",
+            "source": "declared",
+            "target_language": null
+          },
+          "generation_state": "needs_review",
+          "last_stage": "plan",
+          "next_unit_ordinal": 1,
+          "objectives": 1,
+          "plan_hash": "sha256:0f3cab63d2682c3262d37cb01c9295ae6ef081954856f7deb8d7cef3230eb558",
+          "plan_id": "02cad489af559a74",
+          "plan_schema": "coursebook.plan.v2",
+          "plan_version": 2,
+          "units": 1
+        },
+        "created_at": "2026-11-07T19:49:57Z",
+        "error": null,
+        "job_id": "job_0b8f30e6691c401a8c7baf191545816c",
+        "kind": "plan",
+        "lease": null,
+        "operation_id": "h63-jobs-create-1794080997031079567",
+        "progress": {
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "steps_done": 1,
+          "steps_total": 1
+        },
+        "state": "completed",
+        "updated_at": "2026-11-07T19:54:25Z"
+      }
+    ]
+  },
+  "pump_thread": "h63-pump",
+  "research": {
+    "failures": [],
+    "queries": [
+      {
+        "error": null,
+        "query": "How does a bicycle derailleur index through its gears?",
+        "result_count": 5
+      },
+      {
+        "error": null,
+        "query": "How does a bicycle derailleur index through its gears? official procedure steps safety limits",
+        "result_count": 5
+      }
+    ],
+    "reason": null,
+    "sources": [
+      {
+        "claim_links": [],
+        "content_hash": "sha256:e75822fdf1349c65a2ce1bdece621a20903611eea3391738f05089bcfe2b5de6",
+        "excerpt": "# How to adjust bike gears | Index your gears and fix shifting problems URL: https://www.bikeradar.com/advice/workshop/how-to-adjust-the-gears-on-your-bike Published: 2026-03-09 Author: Oscar Huckle How to adjust bike gears | Index your gears and fix shifting problems # How to adjust and index bike gears: diagnosing and fixing common shifting problems Indexing gears, setting derailleur limits and replacing a rear derailleur explained with video walkthroughs Kaden Gardener / Our Media Oscar Huckle Published: March 9, 2026 at 4:00 pm If the gears on your bike slip when you\u2019re pedalling, or if yo",
+        "fetched_at": "2026-11-07T19:49:57Z",
+        "published_at": null,
+        "publisher": "bikeradar.com",
+        "query": "How does a bicycle derailleur index through its gears?",
+        "source_id": "6fd43d0155676737",
+        "source_type": "web_page",
+        "support_status": "unverified",
+        "title": "How to adjust bike gears | Index your gears and fix shifting problems",
+        "truncated": false,
+        "url": "https://www.bikeradar.com/advice/workshop/how-to-adjust-the-gears-on-your-bike"
+      },
+      {
+        "claim_links": [],
+        "content_hash": "sha256:34b2cd6caea700e96c526a62152673376aa966fa1f482dde492662bb77e40df2",
+        "excerpt": "* Newsletter [](https://www.bikeradar.com/) Home Advice Buying Guides The complete guide to bike gears \u2013 bicycle transmissions explained # The complete guide to bike gears \u2013 bicycle transmissions explained A beginner's primer on gears and how to use them You get an 11-42t cassette. Russell Burton / Our Media [Benedict Pfender](https://www.bikeradar.com/author/benedict-pfender) Published: April 30, 2025 at 8:00 am * * * All too often you will see people spinning their pedals manically or laboriously rinding their way along, barely able to move the bike. Life would be a little bit easier for the",
+        "fetched_at": "2026-11-07T19:49:57Z",
+        "published_at": null,
+        "publisher": "bikeradar.com",
+        "query": "How does a bicycle derailleur index through its gears?",
+        "source_id": "fd65513e7205b4db",
+        "source_type": "web_page",
+        "support_status": "unverified",
+        "title": "Bike gears explained | A complete guide to bicycle transmissions",
+        "truncated": false,
+        "url": "https://www.bikeradar.com/advice/buyers-guides/bike-gears"
+      },
+      {
+        "claim_links": [],
+        "content_hash": "sha256:dfd41c5ccafc49caf30520d92750edd3a4f14ff18169ad00a887c7ba6acb0c96",
+        "excerpt": "Get The Leadout Newsletter The latest race content, interviews, features, reviews and expert buying guides, direct to your inbox! Become a Member in Seconds Unlock instant access to exclusive member features. Contact me with news and offers from other Future brands Receive email from us on behalf of our trusted partners or sponsors There was a problem. Please refresh the page and try again. * * * By signing up, you agree to our [Terms of services](https://futureplc.com/terms-conditions/) and acknowledge that you have read our [Privacy Notice](https://futureplc.com/privacy-policy). You also agr",
+        "fetched_at": "2026-11-07T19:49:57Z",
+        "published_at": null,
+        "publisher": "cyclingweekly.com",
+        "query": "How does a bicycle derailleur index through its gears?",
+        "source_id": "36d59293068d5204",
+        "source_type": "web_page",
+        "support_status": "unverified",
+        "title": "Suffering with clunky bike gears? Follow our simple guide to diagnose problems and fix your shifting | Cycling Weekly",
+        "truncated": false,
+        "url": "https://www.cyclingweekly.com/video/adjust-bike-gears-142575"
+      },
+      {
+        "claim_links": [],
+        "content_hash": "sha256:e67067e24cfab31c26d76fe0583852b0980fdb15a2448fffc3d76bc3d6b4213e",
+        "excerpt": "## Summary A derailleur is a bicycle drivetrain component that moves the chain between sprockets or chainrings to select different gear ratios. Rear derailleurs also maintain chain tension as the amount of chain required by different gear combinations changes. Modern derailleurs may be mechanically or electronically actuated and range from simple friction-shift designs to integrated wide-range and wireless systems. ## Key Facts **Category:** [Component](https://velopedia.com/topic/components/) **Primary function:** Move the chain between gears **Main types:** Rear derailleur, front derailleur ",
+        "fetched_at": "2026-11-07T19:49:57Z",
+        "published_at": null,
+        "publisher": "velopedia.com",
+        "query": "How does a bicycle derailleur index through its gears?",
+        "source_id": "f79d95e6833077c7",
+        "source_type": "web_page",
+        "support_status": "unverified",
+        "title": "Derailleur - Velopedia",
+        "truncated": true,
+        "url": "https://velopedia.com/entry/derailleur/"
+      }
+    ],
+    "status": "ok"
+  },
+  "schema_version": 9,
+  "source_commit": "ea5f15d",
+  "started_at": "2026-11-07T19:49:56Z",
+  "store_root": "/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home/plugin-data/coursebook",
+  "tag": "topic1-derailleur",
+  "terminal_state": "completed",
+  "threads": [
+    "MainThread",
+    "coursebook-job-tick",
+    "asyncio_0"
+  ],
+  "timeline": [
+    {
+      "elapsed_s": 0.2,
+      "lease": null,
+      "message": "",
+      "stage": "queued",
+      "state": "queued"
+    },
+    {
+      "elapsed_s": 2.2,
+      "lease": {
+        "expires_at": "2026-11-07T19:51:57Z",
+        "owner": "worker-9b3acb930caf"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "running"
+    },
+    {
+      "elapsed_s": 4.2,
+      "lease": {
+        "expires_at": "2026-11-07T19:51:57Z",
+        "owner": "worker-9b3acb930caf"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "running"
+    },
+    {
+      "elapsed_s": 270.3,
+      "lease": null,
+      "message": "plan authored (needs_review)",
+      "stage": "plan",
+      "state": "completed"
+    }
+  ],
+  "total_elapsed_s": 270.3,
+  "usage_events": [
+    {
+      "duration_ms": 22156,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T19:54:25Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 4151, \"output_tokens\": 2793, \"prompt_version\": \"plan-prompt.v4\", \"purpose\": \"coursebook.plan.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 76334,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T19:54:25Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 3276, \"output_tokens\": 7875, \"prompt_version\": \"validation-prompt.v2\", \"purpose\": \"coursebook.plan.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 41818,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T19:54:25Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 4268, \"output_tokens\": 3297, \"prompt_version\": \"plan-prompt.v4\", \"purpose\": \"coursebook.plan.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 121693,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T19:54:25Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 3579, \"output_tokens\": 13211, \"prompt_version\": \"validation-prompt.v2\", \"purpose\": \"coursebook.plan.validate\", \"unknown_cost\": true}"
+    }
+  ],
+  "validation_record": {
+    "facts_unverified": false,
+    "generator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous"
+    },
+    "generator_prompt_sha256": "sha256:42949ff70638013a2a0ab6056f60d5d0f0961e91cdd3d68460b6d5fa28bbe8b5",
+    "independence": "independent",
+    "independent": true,
+    "outcome": "rejected",
+    "subject_id": "02cad489af559a74",
+    "subject_kind": "plan",
+    "validation_id": "a9a3dd5c3f2f4150",
+    "validator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous"
+    },
+    "validator_prompt_sha256": "sha256:bc081f14d737f5d5a3bac372d0ca8b6df888bf1b6fe6adb429c8fd8d7f11caa6",
+    "verdict": "reject",
+    "waived_unknown": [],
+    "warning": "validation rejected this artifact: it is not approvable as validated."
+  },
+  "wire_contract_version": 14,
+  "worker_id": "worker-9b3acb930caf"
+}

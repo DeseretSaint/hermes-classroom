@@ -1,0 +1,17 @@
+[13:00:18] seams bound; validator_config={"configured": true, "provider": "nous", "model": "deepseek/deepseek-v4.1-flash"}
+[13:00:18] schema before ensure: 9
+[13:00:18] schema after ensure: 9  store=/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home/plugin-data/coursebook
+[13:00:18] course.create: {"course_id": "crs_8428eceaa7264646ace3b6d03c1aea0d", "plan_id": "pln_26defeae3b2a4891bd29c5c4d107b204", "revision": 0}
+[13:00:18] enrollment.create: {"enrollment_id": "enr_3345f7af39434768a195b6982f9d6451", "revision": 0}
+[13:00:18] jobs.create: {"job_id": "job_84e393160b994db78c345dd736d2a459", "state": "queued"}
+[13:00:18] real executor.pump_once started (limit=1)
+[13:00:18] job state -> queued at 0.2s (stage=queued msg=)
+coursebook job tick started on its own thread: kind=plan interval=5.0s limit=5
+web_extract backend 'firecrawl' failed all 1 URL(s) (venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environme); one-shot keyless rescue
+web_extract backend 'firecrawl' failed all 1 URL(s) (venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environme); one-shot keyless rescue
+[13:00:20] job state -> running at 2.2s (stage=queued msg=)
+[13:00:26] requesting cancel at 8.2s
+[13:00:26] jobs.cancel -> {"job_id": "job_84e393160b994db78c345dd736d2a459", "state": "cancel_requested"}
+[13:00:28] job state -> cancel_requested at 10.2s (stage=queued msg=)
+[13:04:22] job state -> completed_late at 244.3s (stage=plan msg=plan authored (needs_review))
+[13:04:22] result written to audit/adversarial/h63-live-generation/evidence/topic3-cancel.json

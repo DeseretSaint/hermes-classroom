@@ -1,0 +1,8 @@
+[13:05:52] seams bound; validator_config={"configured": true, "provider": "nous", "model": "deepseek/deepseek-v4.1-flash"}
+[13:05:52] schema before ensure: 9
+[13:05:52] schema after ensure: 9  store=/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home/plugin-data/coursebook
+[13:05:52] using pre-created job job_1a348fd966c541bea02a270f4a591fb6 (brief from HTTP jobs.create)
+[13:05:52] real executor.pump_once started (limit=1)
+[13:05:52] job state -> running at 0.0s (stage=queued msg=)
+[13:07:26] job state -> completed at 94.1s (stage=plan msg=plan authored (needs_review))
+[13:07:26] result written to audit/adversarial/h63-live-generation/evidence/topic4-http.json

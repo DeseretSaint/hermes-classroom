@@ -1,0 +1,577 @@
+{
+  "course": {
+    "course_id": "crs_99290f8333ee496eb9d1d8f9502bdddd",
+    "plan_id": "pln_cce8567c5be54ad4a0d82a0ec943b9d9",
+    "revision": 0
+  },
+  "elapsed_to_terminal_s": 302.3,
+  "enrollment": {
+    "enrollment_id": "enr_e75322998b7d4926af02c3e9dd8a063b",
+    "revision": 0
+  },
+  "final_job": {
+    "artifact_ids": [],
+    "attempt_id": "att_8805f0270bd34446a6cdc4184a9d950e",
+    "brief": {
+      "course_id": "crs_99290f8333ee496eb9d1d8f9502bdddd",
+      "dials": {
+        "assessment": "none",
+        "autonomy": "guided",
+        "depth": "working",
+        "pace": "light"
+      },
+      "enrollment_id": "enr_e75322998b7d4926af02c3e9dd8a063b",
+      "goal": "Find the relative minor on the circle of fifths",
+      "recipe": "one_off",
+      "scope": "single",
+      "stage": "plan",
+      "subject_domain": "music"
+    },
+    "cancel_requested_at": null,
+    "checkpoint": {
+      "domain_provenance": {
+        "declared_locale": null,
+        "declared_subject_domain": "music",
+        "resolved_domain": "music",
+        "source": "declared",
+        "target_language": null
+      },
+      "generation_state": "needs_review",
+      "last_stage": "plan",
+      "next_unit_ordinal": 1,
+      "objectives": 1,
+      "plan_hash": "sha256:5a29b502af2293b49b521358a8a670422bc73fa33cf1ac3bd78771761a93837d",
+      "plan_id": "150f448ab59140a4",
+      "plan_schema": "coursebook.plan.v2",
+      "plan_version": 2,
+      "units": 1
+    },
+    "created_at": "2026-11-07T19:54:56Z",
+    "error": null,
+    "job_id": "job_ce74bba08e85405fbb21bb13001f57bc",
+    "kind": "plan",
+    "lease": null,
+    "operation_id": "h63-jobs-create-1794081296338646522",
+    "progress": {
+      "message": "plan authored (needs_review)",
+      "stage": "plan",
+      "steps_done": 1,
+      "steps_total": 1
+    },
+    "state": "completed",
+    "updated_at": "2026-11-07T19:59:57Z"
+  },
+  "finished_at": "2026-11-07T19:59:58Z",
+  "generation_result": {
+    "approval_provenance": {
+      "facts_unverified": false,
+      "independent": true,
+      "needs_review": true,
+      "outcome": "rejected",
+      "warning": "validation rejected this artifact: it is not approvable as validated."
+    },
+    "course_id": "crs_99290f8333ee496eb9d1d8f9502bdddd",
+    "domain_provenance": {
+      "declared_locale": null,
+      "declared_subject_domain": "music",
+      "resolved_domain": "music",
+      "source": "declared",
+      "target_language": null
+    },
+    "job_id": "job_ce74bba08e85405fbb21bb13001f57bc",
+    "job_kind": "plan",
+    "level": null,
+    "locale": null,
+    "next_unit_ordinal": 1,
+    "objectives": 1,
+    "plan_content_hash": "sha256:5b0f94ba5eed6b3cb360f247b00c4341faec119c8551a3e9f795895f6bcac3ea",
+    "plan_hash": "sha256:5a29b502af2293b49b521358a8a670422bc73fa33cf1ac3bd78771761a93837d",
+    "plan_id": "150f448ab59140a4",
+    "plan_schema": "coursebook.plan.v2",
+    "plan_version": 2,
+    "rejection_reasons": [
+      "plan.goal: The goal promises a general skill ('Find the relative minor on the circle of fifths') that the single C major objective and the exclusions cannot deliver; a learner would finish without the stated capability.",
+      "parent.reading_level: Value is corrupted: 'Plain English, short sentences; chart-l\u6279' contains a stray CJK character and an unfinished word, so it cannot be shown to a parent.",
+      "plan.evidence_note: The note is truncated mid-sentence ('...is excluded as a'), leaving the rationale incomplete and unusable.",
+      "check_plan[0]: A learner ticking their own checklist cannot produce evidence of comprehension, and two of the three criteria test recognition/recall; the stated evidence target is not met by the instrument."
+    ],
+    "research": {
+      "queries": [
+        "Find the relative minor on the circle of fifths",
+        "Find the relative minor on the circle of fifths official instructions safety"
+      ],
+      "reason": "1 fetch failure(s); first: https://paddystudio.com/tools/circle-of-fifths/?k=Gm: venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environments/8f3bc04345f24c\u2026",
+      "status": "degraded"
+    },
+    "research_id": "e21a249818c65cfe",
+    "reused": false,
+    "scope": "single",
+    "scope_cap_weeks": 1,
+    "sections": 0,
+    "sources": 3,
+    "status": "needs_review",
+    "subject_domain": "music",
+    "target_language": null,
+    "units": 1,
+    "usage": {
+      "budget": {
+        "max_calls": 32,
+        "max_cost_usd": 0.75,
+        "source": "declared"
+      },
+      "by_purpose": {
+        "coursebook.plan.generate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": true
+        },
+        "coursebook.plan.validate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": true
+        }
+      },
+      "calls": 4,
+      "cost_usd": null,
+      "estimated_cost_usd": 0.16,
+      "input_tokens": 14926,
+      "output_tokens": 27230,
+      "unknown_calls": 4,
+      "unknown_cost": true
+    },
+    "validation": {
+      "cost": {
+        "calls": 2,
+        "cost_usd": null,
+        "unknown_cost": true
+      },
+      "cost_usd": null,
+      "facts_unverified": false,
+      "generator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous"
+      },
+      "independence": "independent",
+      "independent": true,
+      "outcome": "rejected",
+      "research_status": "degraded",
+      "validator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash",
+        "provider": "nous"
+      },
+      "verdict": "reject",
+      "waived_unknown": [],
+      "warning": "validation rejected this artifact: it is not approvable as validated."
+    },
+    "validation_id": "c4df2b2fd14944ca",
+    "validation_verdict": "reject",
+    "warnings": [
+      "research degraded: 1 fetch(es) failed; only the 3 fetched source(s) are cited and their support comes from independent validation, not from the fetch",
+      "one-off brief: completion is instruction_complete plus a self-reported checklist",
+      "independent validation did not pass: the plan is not approvable as-is"
+    ]
+  },
+  "generation_status": "needs_review",
+  "isolated_home": "/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home",
+  "job": {
+    "job_id": "job_ce74bba08e85405fbb21bb13001f57bc",
+    "state": "queued"
+  },
+  "job_id": "job_ce74bba08e85405fbb21bb13001f57bc",
+  "ok": true,
+  "plan": {
+    "check_plan": [
+      {
+        "evidence_target": "comprehension",
+        "kind": "verification",
+        "notes": "Learner-led checklist, not a quiz. Learner works through the three evidence criteria against their own chart and ticks each one only when they can do it without prompting. Stop if the chart in use does not label relative minors; do not guess the pairing from memory.",
+        "objective_ref": 1
+      }
+    ],
+    "document": {
+      "check_plan": [
+        {
+          "evidence_target": "comprehension",
+          "kind": "verification",
+          "notes": "Learner-led checklist, not a quiz. Learner works through the three evidence criteria against their own chart and ticks each one only when they can do it without prompting. Stop if the chart in use does not label relative minors; do not guess the pairing from memory.",
+          "objective_ref": 1
+        }
+      ],
+      "context_needs": [
+        "A circle of fifths chart that labels relative minors (printed or on screen)",
+        "A flat surface to lay the chart on, or a screen at reading distance",
+        "A quiet space for one 20-minute sitting"
+      ],
+      "delivery": "self_study",
+      "evidence_note": "Research status was degraded (one fetch failure), and the three supplied sources are marked unverified. Only the C major / A minor pairing is grounded: one source shows C major with 'Relative: A minor' and no sharps or flats, and another labels the top of the circle 'C major / A minor'. The objective and checklist are narrowed to that instance; any wider rule about relative minors is excluded as a",
+      "exclusions": [
+        "Does not teach finding the relative minor for any major key other than C major; the supplied sources evidence only the C major / A minor pair.",
+        "Does not teach the 'minor third below' rule or counting three steps counter-clockwise, since no supplied source states that procedure.",
+        "Does not cover parallel minors, key-signature construction, chord function, or using the circle for modulation.",
+        "Does not include playing, singing or ear training, and makes no listening claim.",
+        "Does not assess, grade or certify the learner; the single check is a self-run verification checklist.",
+        "No claim is made that this plan was validated or that its time estimate reflects measured attainment."
+      ],
+      "learner_outcome": "In one short sitting, the learner can point to C major at the top of a circle of fifths chart, name A minor as its relative minor, and state that the pair shares the same key signature (no sharps or flats). This plan deliberately stops at the C major / A minor instance that the supplied sources show; it does not claim a general procedure for other keys.",
+      "objectives": [
+        {
+          "evidence_criteria": [
+            "Points to C major at the top of the chart and reads its 'Relative' entry as A minor.",
+            "States that C major and A minor share the same key signature: no sharps or flats.",
+            "Explains, in their own words, that the chart lists the relative minor alongside the major key rather than as a separate key signature."
+          ],
+          "evidence_target": "comprehension",
+          "ordinal": 1,
+          "source_ids": [
+            "43c63aa5e4b366da",
+            "7b9d2d86e6951af7"
+          ],
+          "support": "sourced",
+          "title": "Name A minor as the relative minor of C major on a circle of fifths chart",
+          "unit_ref": 1
+        }
+      ],
+      "parent": {
+        "age_band": "12-14",
+        "hazards": [
+          "Screen use: keep sessions short and take a break if the learner reports eye strain."
+        ],
+        "parent_facing_summary": "A single short session in which your child reads one labelled entry on a circle of fifths chart and explains that C major and A minor share a key signature with no sharps or flats.",
+        "reading_level": "Plain English, short sentences; chart-l\u6279",
+        "setting_materials": [
+          "Circle of fifths chart with relative minors labelled",
+          "Pencil to tick the checklist"
+        ],
+        "supervision_notes": [
+          "An adult should confirm the chart in use actually labels relative minors before the learner starts the checklist."
+        ]
+      },
+      "plan_schema": "coursebook.plan.v2",
+      "scope": "single",
+      "source_ids": [
+        "43c63aa5e4b366da",
+        "7b9d2d86e6951af7"
+      ],
+      "spaced_review": false,
+      "time_estimate": {
+        "attainment_hours": null,
+        "basis": "model",
+        "confidence": "low",
+        "minutes_per_session": 20,
+        "rationale": "A single 20-minute sitting is a light-pace estimate for reading one labelled entry on a chart and saying it back. This is an authoring estimate, not a measured attainment time; no benchmark was supplied and research was degraded, so confidence is low.",
+        "sessions_per_week": 1,
+        "weeks": 1
+      },
+      "title": "Reading the Relative Minor of C Major on the Circle of Fifths",
+      "units": [
+        {
+          "goal": "Read the C major entry on a circle of fifths chart and identify A minor as its relative minor, noting that the pair shares a key signature with no sharps or flats.",
+          "ordinal": 1,
+          "prereq_unit_ordinals": [],
+          "target_lessons": 1,
+          "title": "C Major and Its Relative Minor on the Chart"
+        }
+      ]
+    },
+    "goal": null,
+    "learner_outcome": "In one short sitting, the learner can point to C major at the top of a circle of fifths chart, name A minor as its relative minor, and state that the pair shares the same key signature (no sharps or flats). This plan deliberately stops at the C major / A minor instance that the supplied sources show; it does not claim a general procedure for other keys.",
+    "objectives": [
+      {
+        "evidence_criteria": [
+          "Points to C major at the top of the chart and reads its 'Relative' entry as A minor.",
+          "States that C major and A minor share the same key signature: no sharps or flats.",
+          "Explains, in their own words, that the chart lists the relative minor alongside the major key rather than as a separate key signature."
+        ],
+        "evidence_target": "comprehension",
+        "ordinal": 1,
+        "source_ids": [
+          "43c63aa5e4b366da",
+          "7b9d2d86e6951af7"
+        ],
+        "support": "sourced",
+        "title": "Name A minor as the relative minor of C major on a circle of fifths chart",
+        "unit_ref": 1
+      }
+    ],
+    "plan_schema": "coursebook.plan.v2",
+    "title": "Reading the Relative Minor of C Major on the Circle of Fifths",
+    "units": [
+      {
+        "goal": "Read the C major entry on a circle of fifths chart and identify A minor as its relative minor, noting that the pair shares a key signature with no sharps or flats.",
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "target_lessons": 1,
+        "title": "C Major and Its Relative Minor on the Chart"
+      }
+    ]
+  },
+  "plan_id": "150f448ab59140a4",
+  "pump": {
+    "done_at_s": 301.2,
+    "finished": [
+      {
+        "artifact_ids": [],
+        "attempt_id": "att_8805f0270bd34446a6cdc4184a9d950e",
+        "brief": {
+          "course_id": "crs_99290f8333ee496eb9d1d8f9502bdddd",
+          "dials": {
+            "assessment": "none",
+            "autonomy": "guided",
+            "depth": "working",
+            "pace": "light"
+          },
+          "enrollment_id": "enr_e75322998b7d4926af02c3e9dd8a063b",
+          "goal": "Find the relative minor on the circle of fifths",
+          "recipe": "one_off",
+          "scope": "single",
+          "stage": "plan",
+          "subject_domain": "music"
+        },
+        "cancel_requested_at": null,
+        "checkpoint": {
+          "domain_provenance": {
+            "declared_locale": null,
+            "declared_subject_domain": "music",
+            "resolved_domain": "music",
+            "source": "declared",
+            "target_language": null
+          },
+          "generation_state": "needs_review",
+          "last_stage": "plan",
+          "next_unit_ordinal": 1,
+          "objectives": 1,
+          "plan_hash": "sha256:5a29b502af2293b49b521358a8a670422bc73fa33cf1ac3bd78771761a93837d",
+          "plan_id": "150f448ab59140a4",
+          "plan_schema": "coursebook.plan.v2",
+          "plan_version": 2,
+          "units": 1
+        },
+        "created_at": "2026-11-07T19:54:56Z",
+        "error": null,
+        "job_id": "job_ce74bba08e85405fbb21bb13001f57bc",
+        "kind": "plan",
+        "lease": null,
+        "operation_id": "h63-jobs-create-1794081296338646522",
+        "progress": {
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "steps_done": 1,
+          "steps_total": 1
+        },
+        "state": "completed",
+        "updated_at": "2026-11-07T19:59:57Z"
+      }
+    ]
+  },
+  "pump_thread": "h63-pump",
+  "rejection_reasons": [
+    "plan.goal: The goal promises a general skill ('Find the relative minor on the circle of fifths') that the single C major objective and the exclusions cannot deliver; a learner would finish without the stated capability.",
+    "parent.reading_level: Value is corrupted: 'Plain English, short sentences; chart-l\u6279' contains a stray CJK character and an unfinished word, so it cannot be shown to a parent.",
+    "plan.evidence_note: The note is truncated mid-sentence ('...is excluded as a'), leaving the rationale incomplete and unusable.",
+    "check_plan[0]: A learner ticking their own checklist cannot produce evidence of comprehension, and two of the three criteria test recognition/recall; the stated evidence target is not met by the instrument."
+  ],
+  "research": {
+    "failures": [
+      {
+        "error": "venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environments/8f3bc04345f24c01aa16ba22c63df51d/venv); only an explicit install may change what later processe\u2026",
+        "query": "Find the relative minor on the circle of fifths",
+        "url": "https://paddystudio.com/tools/circle-of-fifths/?k=Gm"
+      }
+    ],
+    "queries": [
+      {
+        "error": null,
+        "query": "Find the relative minor on the circle of fifths",
+        "result_count": 5
+      },
+      {
+        "error": null,
+        "query": "Find the relative minor on the circle of fifths official instructions safety",
+        "result_count": 5
+      }
+    ],
+    "reason": "1 fetch failure(s); first: https://paddystudio.com/tools/circle-of-fifths/?k=Gm: venv: not installed and lazy installs are disabled: ['firecrawl']: this process is not running from the install's dependency environment (/home/deseretsaint/.hermes/installs/4d8bf4040d63cdfa/environments/8f3bc04345f24c\u2026",
+    "sources": [
+      {
+        "claim_links": [],
+        "content_hash": "sha256:41568a6841f57ea534dabc8e71cad0ff48752ec7804a64b8d02192066d6f39ad",
+        "excerpt": "# Circle of Fifths on Piano: Interactive Guide | piano.org URL: https://piano.org/theory/circle-of-fifths/ Circle of Fifths on Piano: Interactive Guide | piano.org # The Circle of Fifths C major No \u266f or \u266d Relative minors Numerals Staff Sound Signature : No sharps or flats Scale : C, D, E, F, G, A, B, C Relative : A minor Parallel : C minor A A sharp 0 B C C sharp 1 D D sharp 1 E F F sharp 1 G G sharp 1 A A sharp 1 B C C sharp 2 D D sharp 2 E F F sharp 2 G G sharp 2 A A sharp 2 B C C sharp 3 D D sharp 3 E F F sharp 3 G G sharp 3 A A sharp 3 B C C sharp 4 D D sharp 4 E F F sharp 4 G G sharp 4 A ",
+        "fetched_at": "2026-11-07T19:54:56Z",
+        "published_at": null,
+        "publisher": "piano.org",
+        "query": "Find the relative minor on the circle of fifths",
+        "source_id": "43c63aa5e4b366da",
+        "source_type": "organization",
+        "support_status": "unverified",
+        "title": "Circle of Fifths on Piano: Interactive Guide | piano.org",
+        "truncated": false,
+        "url": "https://piano.org/theory/circle-of-fifths/"
+      },
+      {
+        "claim_links": [],
+        "content_hash": "sha256:8971cf3034bd1db2f940a9c57ede3beaea3a282deb495ebe01d7f6a7bb177c7e",
+        "excerpt": "[Other sign in options Log in / Create account](https://www.native-instruments.com/customer_authentication/login?return_to=%2Fblogs%2Fblog%2Fcircle-of-fifths&locale=en&ui_hint=full&region_country=US) ... # How to use the circle of fifths in modern music production * [Music theory](https://www.native-instruments.com/blogs/blog/tagged/blog-topic-music-theory) Share [](https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fwww.native-instruments.com%2Fblogs%2Fblog%2Fcircle-of-fifths) [](https://twitter.com/intent/tweet?url=https%3A%2F%2Fwww.native-instruments.com%2Fblogs%2Fblog%2Fcircle-of-fi",
+        "fetched_at": "2026-11-07T19:54:56Z",
+        "published_at": null,
+        "publisher": "native-instruments.com",
+        "query": "Find the relative minor on the circle of fifths",
+        "source_id": "226d2c52b5c5cbee",
+        "source_type": "web_page",
+        "support_status": "unverified",
+        "title": "How to use the circle of fifths in modern music production \u2013 Native Instruments",
+        "truncated": true,
+        "url": "https://www.native-instruments.com/blogs/blog/circle-of-fifths"
+      },
+      {
+        "claim_links": [],
+        "content_hash": "sha256:fd9202d3d18c6b1d567a7d0781f8463bfbae2b07cdcc934deb142577879607e0",
+        "excerpt": "# Circle of Fifths: Interactive Chart for All 12 Keys Orchestra Central is reader-supported. When you buy through links on our site, we may earn an affiliate commission. Tap a key to see its key signature, chords and neighbors, and hear it played. Clockwise adds a sharp, counter-clockwise adds a flat. Keyboard: Tab to a key, Enter to select. ### C major / A minor **Key signature:** no sharps or flats. At the very top of the circle of fifths, with no sharps or flats. **Neighbors on the circle:** F major is the IV and G major is the V of C major. In A minor the iv is Dm and the v is Em. #### C m",
+        "fetched_at": "2026-11-07T19:54:56Z",
+        "published_at": null,
+        "publisher": "orchestracentral.com",
+        "query": "Find the relative minor on the circle of fifths",
+        "source_id": "7b9d2d86e6951af7",
+        "source_type": "web_page",
+        "support_status": "unverified",
+        "title": "Circle of Fifths: Interactive Chart With Key Signatures & Chords",
+        "truncated": true,
+        "url": "https://orchestracentral.com/circle-of-fifths/"
+      }
+    ],
+    "status": "degraded"
+  },
+  "research_status": "degraded",
+  "schema_version": 9,
+  "source_commit": "ea5f15d",
+  "started_at": "2026-11-07T19:54:56Z",
+  "store_root": "/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home/plugin-data/coursebook",
+  "tag": "topic2-relative-minor",
+  "terminal_state": "completed",
+  "threads": [
+    "MainThread",
+    "coursebook-job-tick",
+    "asyncio_0"
+  ],
+  "timeline": [
+    {
+      "elapsed_s": 0.2,
+      "lease": null,
+      "message": "",
+      "stage": "queued",
+      "state": "queued"
+    },
+    {
+      "elapsed_s": 2.2,
+      "lease": {
+        "expires_at": "2026-11-07T19:56:56Z",
+        "owner": "worker-7df596b299ce"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "running"
+    },
+    {
+      "elapsed_s": 4.2,
+      "lease": {
+        "expires_at": "2026-11-07T19:56:56Z",
+        "owner": "worker-7df596b299ce"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "running"
+    },
+    {
+      "elapsed_s": 302.3,
+      "lease": null,
+      "message": "plan authored (needs_review)",
+      "stage": "plan",
+      "state": "completed"
+    }
+  ],
+  "total_elapsed_s": 302.3,
+  "usage_events": [
+    {
+      "duration_ms": 31871,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T19:59:57Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 4068, \"output_tokens\": 3855, \"prompt_version\": \"plan-prompt.v4\", \"purpose\": \"coursebook.plan.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 92025,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T19:59:57Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 3116, \"output_tokens\": 10364, \"prompt_version\": \"validation-prompt.v2\", \"purpose\": \"coursebook.plan.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 11817,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T19:59:57Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 4224, \"output_tokens\": 1490, \"prompt_version\": \"plan-prompt.v4\", \"purpose\": \"coursebook.plan.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 101578,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T19:59:57Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 3518, \"output_tokens\": 11521, \"prompt_version\": \"validation-prompt.v2\", \"purpose\": \"coursebook.plan.validate\", \"unknown_cost\": true}"
+    }
+  ],
+  "validation": {
+    "cost": {
+      "calls": 2,
+      "cost_usd": null,
+      "unknown_cost": true
+    },
+    "cost_usd": null,
+    "facts_unverified": false,
+    "generator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous"
+    },
+    "independence": "independent",
+    "independent": true,
+    "outcome": "rejected",
+    "research_status": "degraded",
+    "validator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous"
+    },
+    "verdict": "reject",
+    "waived_unknown": [],
+    "warning": "validation rejected this artifact: it is not approvable as validated."
+  },
+  "validation_record": {
+    "facts_unverified": false,
+    "generator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous"
+    },
+    "generator_prompt_sha256": "sha256:42949ff70638013a2a0ab6056f60d5d0f0961e91cdd3d68460b6d5fa28bbe8b5",
+    "independence": "independent",
+    "independent": true,
+    "outcome": "rejected",
+    "subject_id": "150f448ab59140a4",
+    "subject_kind": "plan",
+    "validation_id": "c4df2b2fd14944ca",
+    "validator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous"
+    },
+    "validator_prompt_sha256": "sha256:bc081f14d737f5d5a3bac372d0ca8b6df888bf1b6fe6adb429c8fd8d7f11caa6",
+    "verdict": "reject",
+    "waived_unknown": [],
+    "warning": "validation rejected this artifact: it is not approvable as validated."
+  },
+  "validation_verdict": "reject",
+  "wire_contract_version": 14,
+  "worker_id": "worker-7df596b299ce"
+}

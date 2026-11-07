@@ -1,0 +1,438 @@
+{
+  "course": {
+    "course_id": "crs_2adca4c73ae54eeab722309497c28336",
+    "plan_id": null
+  },
+  "elapsed_to_terminal_s": 94.1,
+  "enrollment": {
+    "enrollment_id": "enr_94b9cc44e8ae4216a283b781b4c08383"
+  },
+  "final_job": {
+    "artifact_ids": [],
+    "attempt_id": "att_b2f567f3a3c246a5bce8feefcee1d866",
+    "brief": {
+      "course_id": "crs_2adca4c73ae54eeab722309497c28336",
+      "dials": {
+        "assessment": "none",
+        "autonomy": "guided",
+        "depth": "working",
+        "pace": "light"
+      },
+      "enrollment_id": "enr_94b9cc44e8ae4216a283b781b4c08383",
+      "goal": "How does a bicycle derailleur index through its gears?",
+      "recipe": "one_off",
+      "scope": "single",
+      "stage": "plan",
+      "subject_domain": "repair"
+    },
+    "cancel_requested_at": null,
+    "checkpoint": {
+      "domain_provenance": {
+        "declared_locale": null,
+        "declared_subject_domain": "repair",
+        "resolved_domain": "technical_procedure",
+        "source": "declared",
+        "target_language": null
+      },
+      "generation_state": "needs_review",
+      "last_stage": "plan",
+      "next_unit_ordinal": 1,
+      "objectives": 1,
+      "plan_hash": "sha256:fae4f4df3425b4d2cdee8291263b37c2ee06a11e599bf266aa8fbaa485f59451",
+      "plan_id": "603545bb8af1ad34",
+      "plan_schema": "coursebook.plan.v2",
+      "plan_version": 2,
+      "units": 1
+    },
+    "created_at": "2026-11-07T20:05:36Z",
+    "error": null,
+    "job_id": "job_1a348fd966c541bea02a270f4a591fb6",
+    "kind": "plan",
+    "lease": null,
+    "operation_id": "h63-http-jobs-create-1794081936137241510",
+    "progress": {
+      "message": "plan authored (needs_review)",
+      "stage": "plan",
+      "steps_done": 1,
+      "steps_total": 1
+    },
+    "state": "completed",
+    "updated_at": "2026-11-07T20:07:24Z"
+  },
+  "finished_at": "2026-11-07T20:07:26Z",
+  "generation_result": {
+    "approval_provenance": {
+      "facts_unverified": true,
+      "independent": false,
+      "needs_review": true,
+      "outcome": "rejected",
+      "warning": "validation rejected this artifact: it is not approvable as validated."
+    },
+    "course_id": "crs_2adca4c73ae54eeab722309497c28336",
+    "domain_provenance": {
+      "declared_locale": null,
+      "declared_subject_domain": "repair",
+      "resolved_domain": "technical_procedure",
+      "source": "declared",
+      "target_language": null
+    },
+    "job_id": "job_1a348fd966c541bea02a270f4a591fb6",
+    "job_kind": "plan",
+    "level": null,
+    "locale": null,
+    "next_unit_ordinal": 1,
+    "objectives": 1,
+    "plan_content_hash": "sha256:175d6d34c6f19700172af122c329149c0a5117f3c01cab4d9053fd6934d193cd",
+    "plan_hash": "sha256:fae4f4df3425b4d2cdee8291263b37c2ee06a11e599bf266aa8fbaa485f59451",
+    "plan_id": "603545bb8af1ad34",
+    "plan_schema": "coursebook.plan.v2",
+    "plan_version": 2,
+    "rejection_reasons": [
+      "a one-off brief is not a parent-led lesson"
+    ],
+    "research": {
+      "queries": [
+        "How does a bicycle derailleur index through its gears?",
+        "How does a bicycle derailleur index through its gears? official procedure steps safety limits"
+      ],
+      "reason": "no source could be fetched",
+      "status": "unavailable"
+    },
+    "research_id": "d75e9cf2b9ab3389",
+    "reused": false,
+    "scope": "single",
+    "scope_cap_weeks": 1,
+    "sections": 0,
+    "sources": 0,
+    "status": "needs_review",
+    "subject_domain": "repair",
+    "target_language": null,
+    "units": 1,
+    "usage": {
+      "budget": {
+        "max_calls": 32,
+        "max_cost_usd": 0.75,
+        "source": "declared"
+      },
+      "by_purpose": {
+        "coursebook.plan.generate": {
+          "calls": 2,
+          "cost_usd": 0.0,
+          "unknown_cost": true
+        },
+        "coursebook.plan.validate": {
+          "calls": 1,
+          "cost_usd": 0.0,
+          "unknown_cost": true
+        }
+      },
+      "calls": 3,
+      "cost_usd": null,
+      "estimated_cost_usd": 0.12,
+      "input_tokens": 8277,
+      "output_tokens": 11383,
+      "unknown_calls": 3,
+      "unknown_cost": true
+    },
+    "validation": {
+      "cost": {
+        "calls": 1,
+        "cost_usd": null,
+        "unknown_cost": true
+      },
+      "cost_usd": null,
+      "facts_unverified": true,
+      "generator": {
+        "known": true,
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous"
+      },
+      "independence": "unidentified",
+      "independent": false,
+      "outcome": "rejected",
+      "research_status": "unavailable",
+      "validator": {
+        "known": false,
+        "model": null,
+        "provider": null
+      },
+      "verdict": "reject",
+      "waived_unknown": [],
+      "warning": "validation rejected this artifact: it is not approvable as validated."
+    },
+    "validation_id": null,
+    "validation_verdict": "reject",
+    "warnings": [
+      "research unavailable: claims are labelled unverified and no citation is presented as fetched support",
+      "facts unverified, no sources: research was unavailable, so this plan is not factually validated. Approval is a human decision, not factual verification.",
+      "one-off brief: completion is instruction_complete plus a self-reported checklist",
+      "independent validation did not pass: the plan is not approvable as-is"
+    ]
+  },
+  "generation_status": "needs_review",
+  "isolated_home": "/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home",
+  "job": {
+    "job_id": "job_1a348fd966c541bea02a270f4a591fb6",
+    "state": "existing"
+  },
+  "job_id": "job_1a348fd966c541bea02a270f4a591fb6",
+  "ok": true,
+  "plan": {
+    "check_plan": [
+      {
+        "evidence_target": "comprehension",
+        "kind": "verification",
+        "notes": "Safety: adult supervisor required; learner must be at least 12. Keep hands and clothing clear of chain, cassette and derailleur. Lift rear wheel only on a stable stand; turn the crank only by the pedal, never by hand near the drivetrain. Stop if anything can contact the moving chain.",
+        "objective_ref": 1
+      }
+    ],
+    "document": {
+      "check_plan": [
+        {
+          "evidence_target": "comprehension",
+          "kind": "verification",
+          "notes": "Safety: adult supervisor required; learner must be at least 12. Keep hands and clothing clear of chain, cassette and derailleur. Lift rear wheel only on a stable stand; turn the crank only by the pedal, never by hand near the drivetrain. Stop if anything can contact the moving chain.",
+          "objective_ref": 1
+        }
+      ],
+      "context_needs": [
+        "A bicycle with a mechanical indexed rear derailleur",
+        "A stable bike stand or safe rear-wheel lift",
+        "An adult supervisor within arm's reach",
+        "Clean rag and optional nitrile gloves",
+        "The bicycle user manual if available"
+      ],
+      "delivery": "parent_led",
+      "evidence_note": "Research status unavailable and sources list is empty; the mechanism is presented only as an unverified hypothesis for the learner to test, not as established fact.",
+      "exclusions": [
+        "Will not claim the click-to-cog path is proven or sourced.",
+        "Will not cover friction shifting or electronic shifting except to name them as different cases.",
+        "Will not provide repair, adjustment, torque, cable replacement or derailleur hanger alignment instructions.",
+        "Will not certify safety, competence or roadworthiness.",
+        "Will not cover front derailleurs, hydraulic brakes or e-bike systems.",
+        "Will not replace an adult supervisor or the manufacturer manual."
+      ],
+      "learner_outcome": "By the end of one supervised sitting, the learner can explain as an unverified hypothesis how a mechanical indexed rear derailleur may index through gears, safely observe the drivetrain with hands and clothing clear, and state that friction and electronic shifting are different cases.",
+      "objectives": [
+        {
+          "evidence_criteria": [
+            "Learner states the click-to-cog path as a hypothesis for mechanical indexed systems only, and names friction and electronic shifting as cases where the relationship differs.",
+            "Learner points to the shifter, cable, rear derailleur and cassette on the actual bicycle without turning the cranks.",
+            "With the rear wheel safely lifted and an adult supervising, learner keeps hands and clothing clear of the drivetrain and turns the crank only by the pedal while a helper shifts one click.",
+            "Learner records one observation that supports or contradicts the hypothesis, without claiming the mechanism is proven."
+          ],
+          "evidence_target": "comprehension",
+          "ordinal": 1,
+          "source_ids": [],
+          "support": "unverified",
+          "title": "Test an unverified click-to-cog hypothesis on a mechanical indexed derailleur",
+          "unit_ref": 1
+        }
+      ],
+      "parent": {
+        "age_band": "12-14",
+        "hazards": [
+          "Rotating chain, cassette and derailleur can pinch or entangle fingers, clothing or hair.",
+          "Bicycle may fall if not on a stable stand.",
+          "Handling a dirty chain leaves grease; avoid eye contact."
+        ],
+        "parent_facing_summary": "This is a single supervised observation session. The learner tests an unverified explanation against the bicycle and does not perform repairs or adjustments.",
+        "reading_level": "age 12-14 / guided",
+        "setting_materials": [
+          "Bicycle with a mechanical indexed rear derailleur",
+          "Stable bike stand or safe rear-wheel lift",
+          "Adult supervisor",
+          "Clean rag and optional nitrile gloves",
+          "Bicycle user manual if available"
+        ],
+        "supervision_notes": [
+          "Adult must stay within arm's reach and control the rear-wheel lift and crank turning.",
+          "Learner must be at least 12 and demonstrate the hands-clear rule before starting.",
+          "Stop immediately if clothing, hair or fingers approach the drivetrain."
+        ]
+      },
+      "plan_schema": "coursebook.plan.v2",
+      "scope": "single",
+      "source_ids": [],
+      "spaced_review": false,
+      "time_estimate": {
+        "attainment_hours": null,
+        "basis": "none",
+        "confidence": "low",
+        "minutes_per_session": 30,
+        "rationale": "No source or benchmark was available, so this is a low-confidence single-sitting estimate of 30 minutes; it is not an attainment claim.",
+        "sessions_per_week": 1,
+        "weeks": 1
+      },
+      "title": "One-Sitting Verification: How a Mechanical Indexed Derailleur May Index Through Gears",
+      "units": [
+        {
+          "goal": "Investigate, as an unverified working hypothesis, whether one shifter click moves a mechanical indexed rear derailleur one cog; confirm the scope is mechanical indexed systems only and note that friction and electronic shifting differ.",
+          "ordinal": 1,
+          "prereq_unit_ordinals": [],
+          "target_lessons": 1,
+          "title": "Supervised Observation of a Mechanical Indexed Derailleur"
+        }
+      ]
+    },
+    "goal": null,
+    "learner_outcome": "By the end of one supervised sitting, the learner can explain as an unverified hypothesis how a mechanical indexed rear derailleur may index through gears, safely observe the drivetrain with hands and clothing clear, and state that friction and electronic shifting are different cases.",
+    "objectives": [
+      {
+        "evidence_criteria": [
+          "Learner states the click-to-cog path as a hypothesis for mechanical indexed systems only, and names friction and electronic shifting as cases where the relationship differs.",
+          "Learner points to the shifter, cable, rear derailleur and cassette on the actual bicycle without turning the cranks.",
+          "With the rear wheel safely lifted and an adult supervising, learner keeps hands and clothing clear of the drivetrain and turns the crank only by the pedal while a helper shifts one click.",
+          "Learner records one observation that supports or contradicts the hypothesis, without claiming the mechanism is proven."
+        ],
+        "evidence_target": "comprehension",
+        "ordinal": 1,
+        "source_ids": [],
+        "support": "unverified",
+        "title": "Test an unverified click-to-cog hypothesis on a mechanical indexed derailleur",
+        "unit_ref": 1
+      }
+    ],
+    "plan_schema": "coursebook.plan.v2",
+    "title": "One-Sitting Verification: How a Mechanical Indexed Derailleur May Index Through Gears",
+    "units": [
+      {
+        "goal": "Investigate, as an unverified working hypothesis, whether one shifter click moves a mechanical indexed rear derailleur one cog; confirm the scope is mechanical indexed systems only and note that friction and electronic shifting differ.",
+        "ordinal": 1,
+        "prereq_unit_ordinals": [],
+        "target_lessons": 1,
+        "title": "Supervised Observation of a Mechanical Indexed Derailleur"
+      }
+    ]
+  },
+  "plan_id": "603545bb8af1ad34",
+  "pump": {
+    "done_at_s": 0.0,
+    "finished": []
+  },
+  "pump_thread": "h63-pump",
+  "rejection_reasons": [
+    "a one-off brief is not a parent-led lesson"
+  ],
+  "research": {
+    "failures": [],
+    "queries": [
+      {
+        "error": null,
+        "query": "How does a bicycle derailleur index through its gears?",
+        "result_count": 0
+      },
+      {
+        "error": null,
+        "query": "How does a bicycle derailleur index through its gears? official procedure steps safety limits",
+        "result_count": 0
+      }
+    ],
+    "reason": "no source could be fetched",
+    "sources": [],
+    "status": "unavailable"
+  },
+  "research_status": "unavailable",
+  "schema_version": 9,
+  "source_commit": "ea5f15d",
+  "started_at": "2026-11-07T20:05:52Z",
+  "store_root": "/home/deseretsaint/.hermes/cbqa-h63-live-1794080841/home/plugin-data/coursebook",
+  "tag": "topic4-http",
+  "terminal_state": "completed",
+  "threads": [
+    "MainThread"
+  ],
+  "timeline": [
+    {
+      "elapsed_s": 0.0,
+      "lease": {
+        "expires_at": "2026-11-07T20:07:37Z",
+        "owner": "worker-e00435cbf616"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "running"
+    },
+    {
+      "elapsed_s": 2.0,
+      "lease": {
+        "expires_at": "2026-11-07T20:07:37Z",
+        "owner": "worker-e00435cbf616"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "running"
+    },
+    {
+      "elapsed_s": 4.0,
+      "lease": {
+        "expires_at": "2026-11-07T20:07:37Z",
+        "owner": "worker-e00435cbf616"
+      },
+      "message": "",
+      "stage": "queued",
+      "state": "running"
+    },
+    {
+      "elapsed_s": 94.1,
+      "lease": null,
+      "message": "plan authored (needs_review)",
+      "stage": "plan",
+      "state": "completed"
+    }
+  ],
+  "total_elapsed_s": 94.1,
+  "usage_events": [
+    {
+      "duration_ms": 16225,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T20:07:24Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 2957, \"output_tokens\": 1819, \"prompt_version\": \"plan-prompt.v4\", \"purpose\": \"coursebook.plan.generate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 70454,
+      "model": "deepseek/deepseek-v4.1-flash",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T20:07:24Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 2052, \"output_tokens\": 6211, \"prompt_version\": \"validation-prompt.v2\", \"purpose\": \"coursebook.plan.validate\", \"unknown_cost\": true}"
+    },
+    {
+      "duration_ms": 20173,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous",
+      "recorded_at": "2026-11-07T20:07:24Z",
+      "tokens_json": "{\"cost_usd\": null, \"input_tokens\": 3268, \"output_tokens\": 3353, \"prompt_version\": \"plan-prompt.v4\", \"purpose\": \"coursebook.plan.generate\", \"unknown_cost\": true}"
+    }
+  ],
+  "validation": {
+    "cost": {
+      "calls": 1,
+      "cost_usd": null,
+      "unknown_cost": true
+    },
+    "cost_usd": null,
+    "facts_unverified": true,
+    "generator": {
+      "known": true,
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "provider": "nous"
+    },
+    "independence": "unidentified",
+    "independent": false,
+    "outcome": "rejected",
+    "research_status": "unavailable",
+    "validator": {
+      "known": false,
+      "model": null,
+      "provider": null
+    },
+    "verdict": "reject",
+    "waived_unknown": [],
+    "warning": "validation rejected this artifact: it is not approvable as validated."
+  },
+  "validation_record": null,
+  "validation_verdict": "reject",
+  "wire_contract_version": 14,
+  "worker_id": "worker-705bcbbf5a51"
+}
