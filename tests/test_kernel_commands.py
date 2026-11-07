@@ -81,6 +81,7 @@ class PlanApprovalTest(KernelCase):
         from coursebook import domain
 
         course_id, plan_id = self.new_course()
+        self.seed_objective(plan_id)
         enrollment_id = self.new_enrollment(course_id)
         revision = self.ok(
             "plan.approve",
@@ -119,6 +120,7 @@ class PlanApprovalTest(KernelCase):
         from coursebook import domain
 
         course_id, plan_id = self.new_course()
+        self.seed_objective(plan_id)
         enrollment_id = self.new_enrollment(course_id)
         plan_hash = domain.plan_hash(plan_id)
         self.ok("plan.approve", {"enrollment_id": enrollment_id, "plan_id": plan_id, "plan_hash": plan_hash},
@@ -172,6 +174,7 @@ class PlanApprovalTest(KernelCase):
         from coursebook import domain
 
         course_id, plan_id = self.new_course()
+        self.seed_objective(plan_id)
         enrollment_id = self.new_enrollment(course_id)
         self.ok("plan.approve",
                 {"enrollment_id": enrollment_id, "plan_id": plan_id, "plan_hash": domain.plan_hash(plan_id)},

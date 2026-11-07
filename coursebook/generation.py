@@ -2230,6 +2230,73 @@ def _load_json(text: str | None, default: Any) -> Any:
         return default
 
 
+def _table_exists(connection: sqlite3.Connection, name: str) -> bool:
+    return connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)
+    ).fetchone() is not None
+
+
+def plan_content_hash(connection: sqlite3.Connection, plan_id: str) -> str | None:
+    """The kernel content hash of the plan as it exists in the database now.
+
+    This is the hash ``plan.approve`` binds. It is a **different function** from the generation
+    digest stored in ``gen_plan_documents.plan_hash`` (``plan_hash(document)``), so the two are
+    never compared: approval binds a durable snapshot of this value instead.
+    """
+    from . import parent_authoring
+
+    plan = _row_dict(connection.execute("SELECT * FROM plans WHERE id = ?", (str(plan_id),)).fetchone())
+    if plan is None:
+        return None
+    return parent_authoring.plan_hash(connection, plan)
+
+
+def invalidate_plan_validation(
+    connection: sqlite3.Connection,
+    plan_id: str,
+    *,
+    reason: str,
+    manual_authoring: bool = False,
+    now: datetime | None = None,
+) -> bool:
+    """Make the plan's recorded validation unusable for its current content (durable).
+
+    An edit, a direct objective authoring call or a replan changes the plan. The old pass was for
+    different bytes, so it must never approve the new content. The latest generation document is
+    marked ``needs_review`` with no ``validation_id`` and its content binding removed. When the
+    write comes from an explicit authoring command, ``manual_authoring = true`` records the
+    parent's decision to own the plan; approval may then proceed on the authored outline and is
+    reported as manual, never as validated.
+
+    No-op when the plan has no generation document (a purely manual plan) or the table has never
+    been created in this database. Returns whether a row was updated.
+    """
+    if not _table_exists(connection, "gen_plan_documents"):
+        return False
+    row = connection.execute(
+        "SELECT id, result_json FROM gen_plan_documents WHERE plan_id = ?"
+        " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (str(plan_id),),
+    ).fetchone()
+    if row is None:
+        return False
+    result = _load_json(row["result_json"], {})
+    if not isinstance(result, dict):
+        result = {}
+    result["validation_verdict"] = "not_validated"
+    result["invalidated_reason"] = str(reason)
+    result.pop("plan_content_hash", None)
+    result["manual_authoring"] = bool(manual_authoring)
+    if manual_authoring:
+        result["manual_authoring_at"] = _now_iso(now)
+    connection.execute(
+        "UPDATE gen_plan_documents SET generation_state = 'needs_review', validation_id = NULL,"
+        " result_json = ? WHERE id = ?",
+        (_json(result), row["id"]),
+    )
+    return True
+
+
 def _request_fingerprint(goal: str, recipe: str, dials: dict[str, Any], locale: str | None) -> str:
     return sha256_of_text(
         canonical_json(
@@ -2437,7 +2504,15 @@ def carry_plan_outline(
         "plan_id": str(plan["id"]),
         "plan_version": int(plan["version"]),
         "carried_from_plan_id": str(source["id"]),
+        # A carried outline is a copy, not a re-validation. The previous pass was bound to the
+        # source plan's exact content hash; this version's hash differs (at minimum by version),
+        # so the record becomes explicitly unvalidated. Approval refuses until revalidation or an
+        # explicit manual-authoring decision (``parent.plan.edit`` / direct objective authoring).
+        "validation_verdict": "not_validated",
+        "invalidated_reason": "plan_replanned",
+        "manual_authoring": False,
     }
+    result.pop("plan_content_hash", None)
     fingerprint = CARRY_FINGERPRINT_PREFIX + sha256_of_text(
         f"{document_row['request_fingerprint']}|{source['id']}|{plan['id']}"
     )
@@ -2453,8 +2528,8 @@ def carry_plan_outline(
             digest,
             document_row["document_json"],
             document_row["research_json"],
-            document_row["generation_state"],
-            document_row["validation_id"],
+            "needs_review",
+            None,
             _json(result),
             timestamp,
         ),
@@ -2895,6 +2970,11 @@ def run_plan_job(
                         timestamp,
                     ),
                 )
+            # Bind the independent verdict to the exact kernel content hash the approval command
+            # will recompute later. ``gen_plan_documents.plan_hash`` is the generation digest and a
+            # different function, so it cannot serve as that binding. The snapshot is durable and
+            # is removed by any later edit/replan (approval then fails closed as stale).
+            result["plan_content_hash"] = plan_content_hash(connection, plan_id)
             for section in sections:
                 connection.execute(
                     "INSERT INTO gen_plan_sections (id, plan_id, ordinal, plan_hash, title, lesson_intent, "

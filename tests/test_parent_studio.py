@@ -823,6 +823,37 @@ class ParentPipelineExportTest(KernelCase):
     def pump(self, llm: FakeLLM) -> None:
         executor.pump_once(llm=llm, search=FakeSearch(), now=NOW)
 
+    def manual_authoring_decision(self, enrollment_id: str, plan_id: str, revision: int, *, key: str) -> int:
+        """A carried outline is unvalidated; an explicit edit is the parent's manual decision.
+
+        H-12: ``plan.replan`` may carry the outline but never the validation. Approval refuses
+        until the parent authors the new version (``parent.plan.edit``), which records manual
+        provenance and never claims the generated pass.
+        """
+        refused = self.err(
+            "plan.approve",
+            {
+                "enrollment_id": enrollment_id,
+                "plan_id": plan_id,
+                "plan_hash": domain.plan_hash(plan_id),
+            },
+            expected_revision=revision,
+        )
+        self.assertEqual(refused["code"], "VALIDATION_FAILED")
+        self.assertEqual(refused["details"]["reason"], "plan_not_validated")
+        edited = self.ok(
+            "parent.plan.edit",
+            {
+                "enrollment_id": enrollment_id,
+                "plan_id": plan_id,
+                "expected_plan_hash": domain.plan_hash(plan_id),
+                "course_title": "Parent-authored replan",
+            },
+            expected_revision=revision,
+            idempotency_key=key,
+        )["result"]
+        return self.approve(enrollment_id, plan_id, edited["revision"])
+
     def test_a_real_generated_parent_course_exports_and_meets_the_pack_minima(self) -> None:
         created = self.ok(
             "parent.brief.create", {"brief": PARENT_BRIEF}, idempotency_key="key-brief-e2e"
@@ -1168,7 +1199,9 @@ class ParentPipelineExportTest(KernelCase):
         )
         self.assertEqual([row["ordinal"] for row in sections], [1, 2, 3])
         self.assertEqual([json.loads(row["objective_refs_json"]) for row in sections], [[1], [2], [3]])
-        self.approve(enrollment_id, new_plan_id, replanned["revision"])
+        self.manual_authoring_decision(
+            enrollment_id, new_plan_id, replanned["revision"], key="key-replan-remove-author"
+        )
         lesson_job_id = self.ok(
             "jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": new_plan_id}}
         )["result"]["job_id"]
@@ -1252,7 +1285,9 @@ class ParentPipelineExportTest(KernelCase):
         self.assertEqual(
             self.scalar("SELECT COUNT(*) FROM gen_plan_sections WHERE plan_id = ?", (last_plan_id,)), 4
         )
-        self.approve(enrollment_id, last_plan_id, second_replan["revision"])
+        self.manual_authoring_decision(
+            enrollment_id, last_plan_id, second_replan["revision"], key="key-chain-author"
+        )
         lesson_job_id = self.ok(
             "jobs.create", {"kind": "plan", "brief": {"stage": "lessons", "plan_id": last_plan_id}}
         )["result"]["job_id"]
