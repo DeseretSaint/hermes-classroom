@@ -779,7 +779,7 @@ sufficient to call a plan validated:
   `facts unverified, no sources: ...` whenever research was not `ok`.
 * A `model_assessed` plan may still be approved by a human: that is the review the word
   `needs_review` names. Approval is not factual verification, and the warning says so. A
-  `rejected` outcome is a different case; binding approval to the validation record is H-11's
+  `rejected` outcome is a different case; binding approval to the validation record is H-12's
   work, not silently redefined here.
 * `plans.state` keeps its frozen enum (`draft`/`approved`/`superseded`). The distinction lives in
   the authored document and the validation record, not in a new kernel state.
