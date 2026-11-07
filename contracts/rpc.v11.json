@@ -4833,17 +4833,6 @@
             "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
           }
         },
-        "lang": {
-          "type": "string",
-          "description": "Optional text language of the document (H-18). A document projected from a page that recorded a locale carries it; an older page omits it and keeps its old hash. It is the text's language, not a claim about the learner.",
-          "maxLength": 35,
-          "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
-        },
-        "direction": {
-          "type": "string",
-          "description": "Optional text direction (H-18). Derived from the text's script, never from a learning-style claim, and it changes no evidence semantics. ltr and rtl render the same blocks.",
-          "enum": ["ltr", "rtl"]
-        },
         "procedure": {
           "type": "object",
           "description": "Optional procedure layout (docs/VISUAL_MEDIA_PLAN.md §8). It is a header over the same blocks: steps are ordered references to this document's blocks plus an optional per-step verification cue, never a second copy of the teaching text and never a second check. Schematic rows are typed facts rendered deterministically; an illustration can never stand in for them.",

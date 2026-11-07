@@ -1,7 +1,7 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v13** (H-08 authored-course export; v12 = H-26 student syllabus intake, v11 = H-21 slice A
-plus the H-18 `lesson_document` `lang`/`direction` addition inside it, v10 = H-01, v9 = M3-B1,
+Status: **frozen at v13** (H-08 authored-course export plus the H-18 `lesson_document` `lang`/`direction`
+addition inside it; v12 = H-26 student syllabus intake, v11 = H-21 slice A, v10 = H-01, v9 = M3-B1,
 v8 = M1-P4, v7 = CB-015 residual, v6 = CB-011, v5 = CB-026, v4 = CB-024, v3 = CB-022, v2 = CB-018).
 Governed by `PREBUILD_SPEC.md` (architecture) and `UX_SPEC.md` (interface). Owner of every
 contract: **Atlas**. Implementers are the specialists named below.
@@ -1381,36 +1381,6 @@ here.
   pre-0007 plan therefore hashes byte-identically and every H-12 `plan_content_hash` keeps
   binding. `tests/test_plan_units.py::LegacyPlanHashInvarianceTest` pins the fixture hash.
 
-## v11 follow-up (H-18) — text language, direction and locale-aware scaffolds
-
-**Additive inside `cb.rpc` v11; no new version.** H-26a holds v12 and H-08b takes the line after
-it, so H-18b landed the two optional properties inside v11, exactly as H-17 landed `budget_usd`
-inside v10. Every earlier v11 payload still validates; nothing becomes required.
-
-* `$defs/lesson_document` gains optional `lang` (text language tag, ≤ 35 characters, BCP-47-ish
-  pattern `^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$`) and optional `direction` (`ltr` | `rtl`).
-  Both are **absent** unless the page the document is projected from recorded them, so a document
-  authored before H-18 keeps its bytes, `content_hash` and `document_id`
-  (`tests/test_locale_scaffolds.py::LegacyDocumentHashTest` pins the pre-H-18 hash).
-* `direction` is derived from the *script* of the text's language (`ar`, `fa`, `he`, `ur`, … are
-  `rtl`; every other known locale is `ltr`). It is never derived from a claim about the learner
-  and it changes no block, check, media, grading or evidence semantics — a direction is a
-  rendering fact, never evidence.
-* Both are projected through every view root of the Desktop half
-  (`data-cb-lesson-view` = `textbook` | `guided` | `field_quest` | `procedure`), so one document
-  renders in one direction in every view. A view that receives neither field adds no attribute.
-* **Not on the wire:** the generation-side `check.scaffolds` shape. It moves from the fixed
-  Japanese triple `{romaji, furigana, english_meaning}` to the bounded open list
-  `[{kind, script?, gloss?, direction?}]` over the vocabulary in `coursebook/localization.py`
-  (`romaji`, `furigana`, `gloss`, `transliteration`, `diacritics`, `pinyin`, `script_guide`), with
-  the legacy object still read so every stored page and lesson hash is unchanged. A scaffold
-  remains a task-mandated accessibility aid — never a learning-style diagnosis and never
-  unaided-skill evidence. Japanese at L0/L1 still mandates romaji, furigana and a gloss; Arabic
-  beginners get harakat diacritics; French is never asked for a Japanese scaffold.
-* No method, request/response field, table, column, migration, error code, job kind or vocabulary
-  value changes.
-
-
 ## v12 delta (H-26) — the student syllabus import path
 
 `docs/STUDENT-MODE.md` freezes a second import path: a learner uploads the syllabus of a class they
@@ -1501,6 +1471,39 @@ archive already carries the lesson text as Markdown), no upload or catalog submi
 `pack.export`'s allowlist, no new `cb.db` table, column or migration, and no `course.export` on a
 pack-backed course.
 
+## v13 follow-up (H-18) — text language, direction and locale-aware scaffolds
+
+**Additive inside `cb.rpc` v13; no new version.** H-18b was authored against v11, but on this line
+v11 is H-21's unit contract, v12 is H-26a's syllabus intake and v13 is H-08b's authored export, so
+the union lands the two optional properties inside v13 — exactly as H-17 landed `budget_usd` inside
+v10. Every earlier payload still validates; nothing becomes required.
+
+* `$defs/lesson_document` gains optional `lang` (text language tag, ≤ 35 characters, BCP-47-ish
+  pattern `^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$`) and optional `direction` (`ltr` | `rtl`).
+  Both are **absent** unless the page the document is projected from recorded them, so a document
+  authored before H-18 keeps its bytes, `content_hash` and `document_id`
+  (`tests/test_locale_scaffolds.py::LegacyDocumentHashTest` pins the pre-H-18 hash).
+* **`contracts/rpc.v11.json` is unchanged.** A shipped version file is a frozen snapshot: the H-18b
+  branch edited it in place, and the union reverts it to `origin/master`'s bytes and puts both
+  properties in `rpc.v13.json` instead. Clients that cache v11 see exactly the v11 they had.
+* `direction` is derived from the *script* of the text's language (`ar`, `fa`, `he`, `ur`, … are
+  `rtl`; every other known locale is `ltr`). It is never derived from a claim about the learner
+  and it changes no block, check, media, grading or evidence semantics — a direction is a
+  rendering fact, never evidence.
+* Both are projected through every view root of the Desktop half
+  (`data-cb-lesson-view` = `textbook` | `guided` | `field_quest` | `procedure`), so one document
+  renders in one direction in every view. A view that receives neither field adds no attribute.
+* **Not on the wire:** the generation-side `check.scaffolds` shape. It moves from the fixed
+  Japanese triple `{romaji, furigana, english_meaning}` to the bounded open list
+  `[{kind, script?, gloss?, direction?}]` over the vocabulary in `coursebook/localization.py`
+  (`romaji`, `furigana`, `gloss`, `transliteration`, `diacritics`, `pinyin`, `script_guide`), with
+  the legacy object still read so every stored page and lesson hash is unchanged. A scaffold
+  remains a task-mandated accessibility aid — never a learning-style diagnosis and never
+  unaided-skill evidence. Japanese at L0/L1 still mandates romaji, furigana and a gloss; Arabic
+  beginners get harakat diacritics; French is never asked for a Japanese scaffold.
+* No method, request/response field, table, column, migration, error code, job kind or vocabulary
+  value changes.
+
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
@@ -1530,7 +1533,7 @@ pack-backed course.
 | v11 | 2026-11-07 | H-21 slice A additive amendment (contract and migration only). `plan_brief.unit_ordinal` (1-12) and `stage = unit_sections`; optional `units` projection on `outline_plan` with `$defs/outline_unit` (R9 key set) and optional `unit` on `outline_objective`; `acknowledge_prerequisites` and `$defs/prerequisite_state` on `lesson.begin`/`check.open`; `PREREQUISITE_UNMET` in cb.errors **v3**. cb.db **v7** adds `plan_units`, `objectives.unit_id`, `gen_plan_sections.unit_id` and `section_role` via migration 0007, additive with no backfill. 54 RPC methods unchanged. R4: `parent_authoring.plan_hash` is byte-identical for every stored pre-0007 plan (pinned by `test_legacy_plan_hash_unchanged_after_0007`). `rpc.v10.json`, `db.v6.json` and `errors.v2.json` are pinned by sha256. Handlers for gating, unit stages and PLAN_SCHEMA v2 are explicitly out of this slice. |
 | v12 | 2026-11-07 | H-26 additive amendment: the student syllabus import path. Seven `syllabus.*` methods; optional `syllabus_id`/`syllabus_revision` on `course.create` (companion recipes only); optional `syllabus_id`/`syllabus_revision`/`alignment_revision` on the closed `plan_brief`; a closed `import_brief` for `kind=import` with `stage=syllabus_parse`/`syllabus_align`. cb.db **v8** adds the eight syllabus tables via migration 0008, additive with no backfill and no change to `plan_units`. cb.errors **v4** adds the seven syllabus refusals and carries `PREREQUISITE_UNMET`. 61 RPC methods; no job kind, vocabulary value, transition or dial changes. Full scope plans through the v11 blueprint; `BLUEPRINT_UNAVAILABLE` remains only for a host without `coursebook.plan.v2`. `rpc.v11.json`, `db.v7.json` and `errors.v3.json` are pinned by sha256. |
 | v13 | 2026-11-07 | H-08 additive amendment: a learner-authored course packages itself. Two methods appended (`course.export.read`, `course.export`) to the 61 v12 methods, so a course created from a goal can export instead of only a pack-backed course or a Parent Studio blueprint; `pack.export` keeps the pack-backed bytes with its own allowlist and unchanged behaviour. The gate is an approved plan plus every lesson page in `validated` state; a stored active final approval is honoured as a hash fence, and the caller's reviewed `expected_content_hash` is the second. No new cb.db table, column, migration, error code, job kind or vocabulary value. Numbered v13 because v11 is H-21's unit contract and v12 is H-26's syllabus intake; `rpc.v12.json` is pinned by sha256. |
-| v11 (H-18) | 2026-11-07 | Additive inside v11: `$defs/lesson_document` gains optional `lang` (BCP-47-ish text tag, ≤ 35) and `direction` (`ltr`/`rtl`), both absent on documents projected from pages that never recorded a locale, so old documents keep their content hash and id (pinned by `test_legacy_document_hash_unchanged_by_locale`). `direction` is derived from the text's script, never from a claim about the learner, and it changes no block, check, media or evidence semantics. H-18b landed this inside v11 rather than opening a version: H-26a holds v12 and H-08b the line after it, and the change adds two optional properties to one existing definition — the same shape as the v10 (H-17) amendment. The generation-side `check.scaffolds` contract moves from the fixed Japanese triple to the bounded open list `[{kind, script?, gloss?, direction?}]` with the legacy object still read; that schema is not on the cb.rpc wire. No method, request/response field, table, column, migration, error code or job kind changes. |
+| v13 (H-18) | 2026-11-07 | Additive inside v13: `$defs/lesson_document` gains optional `lang` (BCP-47-ish text tag, ≤ 35) and `direction` (`ltr`/`rtl`), both absent on documents projected from pages that never recorded a locale, so old documents keep their content hash and id (pinned by `test_legacy_document_hash_unchanged_by_locale`). `direction` is derived from the text's script, never from a claim about the learner, and it changes no block, check, media or evidence semantics. H-18b was authored against v11 and landed there on its own branch; in the union it lands inside v13 rather than opening a version, because v11 is the frozen H-21 unit contract, v12 is H-26a's syllabus intake and v13 is H-08b's authored export, and the change adds two optional properties to one existing definition — the same shape as the v10 (H-17) amendment. `contracts/rpc.v11.json` is byte-identical to its shipped snapshot. The generation-side `check.scaffolds` contract moves from the fixed Japanese triple to the bounded open list `[{kind, script?, gloss?, direction?}]` with the legacy object still read; that schema is not on the cb.rpc wire. No method, request/response field, table, column, migration, error code or job kind changes. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
