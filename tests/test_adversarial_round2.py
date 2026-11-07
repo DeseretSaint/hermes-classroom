@@ -110,9 +110,15 @@ def memory_connection() -> sqlite3.Connection:
 
 
 class PlanGateTest(unittest.TestCase):
-    """Finding H10-1: a validator-rejected plan is stored as an approvable draft."""
+    """Finding H10-1: a validator-rejected plan is stored as a draft.
 
-    def test_rejected_plan_rows_are_draft_and_the_domain_approves_them(self) -> None:
+    H-12 (merged after this audit) makes ``plan.approve`` fail closed. The audit-time defect is
+    still reproduced here — the pipeline stores the rejected plan as a ``draft`` kernel row and
+    the rejection lives only in the generation document — and the assertion now pins the fixed
+    behavior: approval refuses and changes nothing.
+    """
+
+    def test_rejected_plan_rows_are_draft_and_the_domain_refuses_approval(self) -> None:
         home = tempfile.mkdtemp(prefix="cb-h10-")
         old = os.environ.get("HERMES_HOME")
         os.environ["HERMES_HOME"] = home
@@ -141,15 +147,15 @@ class PlanGateTest(unittest.TestCase):
                 ).fetchone()
             finally:
                 connection.close()
-            # … but the kernel row it wrote is a normal, approvable draft, and the rejection
-            # lives only in the generation document.
+            # … the kernel row it wrote is a normal draft, and the rejection lives only in the
+            # generation document. H-12 makes exactly that combination unapprovable.
             self.assertEqual(row["state"], "draft")
             self.assertEqual(document["generation_state"], "needs_review")
             self.assertIsNotNone(document["validation_id"])
 
-            # The generation job already created the course row; enroll in it, then approve the
-            # rejected plan through the real handler. plan.approve only checks the hash and that
-            # state != 'approved'; it never consults the validation record.
+            # The generation job already created the course row; enroll in it, then attempt to
+            # approve the rejected plan through the real handler. H-12 consults the validation
+            # record, so this fails closed instead of accepting a rejected draft.
             enrollment = api.dispatch({
                 "contract": api.RPC_CONTRACT, "contract_version": api.RPC_CONTRACT_VERSION,
                 "method": "enrollment.create", "operation_id": "op-h10-enroll",
@@ -157,19 +163,34 @@ class PlanGateTest(unittest.TestCase):
                 "payload": {"course_id": result["course_id"]},
             })
             self.assertTrue(enrollment["ok"], enrollment)
+            enrollment_id = enrollment["result"]["enrollment_id"]
             current_hash = domain.plan_hash(result["plan_id"])
             approval = api.dispatch({
                 "contract": api.RPC_CONTRACT, "contract_version": api.RPC_CONTRACT_VERSION,
                 "method": "plan.approve", "operation_id": "op-h10-approve",
                 "idempotency_key": "idem-h10-approve", "expected_revision": 0,
-                "payload": {"enrollment_id": enrollment["result"]["enrollment_id"],
+                "payload": {"enrollment_id": enrollment_id,
                             "plan_id": result["plan_id"], "plan_hash": current_hash},
             })
-            self.assertTrue(approval["ok"], approval)
+            self.assertFalse(approval["ok"], approval)
+            self.assertEqual(approval["error"]["code"], "VALIDATION_FAILED")
+            self.assertEqual(approval["error"]["details"]["reason"], "plan_not_validated")
             with db.read() as readable:
-                approved = readable.execute("SELECT state FROM plans WHERE id = ?",
-                                            (result["plan_id"],)).fetchone()["state"]
-            self.assertEqual(approved, "approved")
+                plan_row = readable.execute(
+                    "SELECT state, approved_at FROM plans WHERE id = ?", (result["plan_id"],)
+                ).fetchone()
+                transitions = readable.execute(
+                    "SELECT COUNT(*) AS n FROM transitions WHERE enrollment_id = ?",
+                    (enrollment_id,),
+                ).fetchone()["n"]
+                revision = readable.execute(
+                    "SELECT revision FROM enrollments WHERE id = ?", (enrollment_id,)
+                ).fetchone()["revision"]
+            # A refusal writes no transition, no revision bump and no approval timestamp.
+            self.assertEqual(plan_row["state"], "draft")
+            self.assertIsNone(plan_row["approved_at"])
+            self.assertEqual(transitions, 0)
+            self.assertEqual(revision, 0)
         finally:
             if old is None:
                 os.environ.pop("HERMES_HOME", None)
