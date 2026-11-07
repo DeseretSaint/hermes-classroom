@@ -154,7 +154,8 @@ logger = logging.getLogger("coursebook.generation")
 PLAN_PROMPT_VERSION = "plan-prompt.v4"
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
-#: ``plan-prompt.v3`` (plan-time media needs, H-05), so the next honest number is v4. The frozen
+#: ``plan-prompt.v3`` (plan-time media needs, H-05), so the next honest number was v4. H-88 adds
+#: the curriculum brief and sequence rules, so the distinct v2 prompt advances to v5. The frozen
 #: requirement is "a distinct prompt version for the v2 schema", not a literal string that would
 #: collide with a shipped version and invalidate stored validation bindings.
 PLAN_PROMPT_VERSION_V2 = "plan-prompt.v5"
