@@ -224,6 +224,7 @@ H-numbers, and they were renamed from two accidental duplicate H-20/H-21 labels 
 | H-29 | `t_70686b14` | UX humanification — lesson index, results, progress | vellum | H-28 | `wt/harness-ux-learning` |
 | H-30 | `t_178dc615` | Independent generic-harness acceptance audit | sentinel | H-09 | `wt/harness-generic-audit` |
 | H-31 | `t_1c9d0ba6` | Refresh the audit index after merges and reviews | quill | H-12, H-14, H-02, H-03 | `wt/harness-audit-refresh` |
+| H-32 | `t_69873d4c` | Conflict repair — rebase H-07 onto H-13/H-14 | cinder | H-07, H-13, H-14 | `wt/harness-parent-brief-rebase` |
 
 **H-23 was seeded as a duplicate of B-1 and was closed without code.** Do not recreate it; the
 B-1 owner is `t_673155b0`. The board currently has two H-20/H-21 labels from Atlas's earlier
