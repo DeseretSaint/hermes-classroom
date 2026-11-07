@@ -79,6 +79,37 @@ class VisualMediaAuditTest(unittest.TestCase):
         self.assertEqual([frame["id"] for frame in self.frames if frame["keyboard_unnamed"]], [])
         self.assertEqual([frame["id"] for frame in self.frames if frame["positive_tabindex"]], [])
 
+    def test_the_keyboard_walk_counts_controls_not_key_presses(self) -> None:
+        """A keyboard count that moves without a code change is not evidence.
+
+        The walk must visit exactly the controls the DOM declares (no duplicates from wrapping
+        past the last control, no host-widget stops from the audio player's UA shadow parts),
+        leave none unreachable, and paint a focus ring on each.
+        """
+        walked = [frame for frame in self.frames if frame.get("keyboard_count") is not None]
+        self.assertTrue(walked, "no frame carries a keyboard walk")
+        for frame in walked:
+            self.assertEqual(frame["keyboard_declared"], frame["keyboard_count"],
+                             f"{frame['id']} counted {frame['keyboard_count']} stops for "
+                             f"{frame['keyboard_declared']} declared controls")
+            self.assertEqual(frame["keyboard_unreachable"], [], f"{frame['id']} left controls unreachable")
+            self.assertEqual(frame["keyboard_ring_missing"], 0, f"{frame['id']} moved focus with no visible ring")
+            shipped = {row["tab"] for row in frame["keyboard_order"]}
+            self.assertEqual(shipped, set(range(frame["keyboard_declared"])), frame["id"])
+
+    def test_the_fixture_clock_is_pinned(self) -> None:
+        """`Last touched 17 hr ago` must be a property of the fixture, not of the run."""
+        reference = self.evidence.get("reference_time")
+        self.assertTrue(reference, "the audit does not record the reference time it rendered against")
+        self.assertEqual(reference, self.evidence["summary"]["reference_time"])
+        touched = {
+            row["text"]
+            for frame in self.frames for row in frame.get("contrast_rows") or []
+            if "Last touched" in row.get("text", "")
+        }
+        self.assertEqual(touched, {"Last touched 17 hr ago"},
+                         "the field desk copy tracked the wall clock instead of the pinned reference time")
+
     def test_media_never_autoplays_and_always_has_text(self) -> None:
         for frame in self.frames:
             for audio in frame["audios"]:

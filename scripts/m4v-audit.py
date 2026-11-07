@@ -43,8 +43,15 @@ from tests.test_procedure_document import head_gasket_document  # noqa: E402
 from tests.test_desktop_field_desk import OUTLINE, library, library_row  # noqa: E402
 from coursebook import artifacts  # noqa: E402
 
-OUT = ROOT / "audit" / "visual" / "m4-visual"
+OUT = Path(os.environ.get("M4V_OUT") or (ROOT / "audit" / "visual" / "m4-visual"))
 SCRATCH = Path(os.environ.get("TMPDIR", tempfile.gettempdir())) / "coursebook-m4v"
+
+# The fixture clock. `whenLabel` in the module turns a timestamp into "17 hr ago", and the render
+# harness bakes that copy into the frame HTML. Left on the wall clock, every regeneration rewrote
+# eight PNGs and dozens of `contrast_rows` entries with the passage of time rather than a change in
+# the product, which is the opposite of evidence. The harness freezes Date.now to this instant
+# while it renders, so "Last touched" is a property of the fixture, not of the run.
+REFERENCE_TIME = "2026-11-07T10:00:00.000Z"
 
 IMAGE_ARTIFACT = "art_image00000001"
 AUDIO_ARTIFACT = "art_audio00000002"
@@ -265,6 +272,7 @@ def main() -> int:
         html_dir.mkdir(parents=True, exist_ok=True)
 
     base = scenarios()
+    base["referenceTime"] = REFERENCE_TIME
     if os.environ.get("M4V_SKIP_RENDER") == "1" and (SCRATCH / "frames.json").is_file():
         print("skipping render stage; reusing", SCRATCH / "frames.json")
     else:
@@ -298,9 +306,17 @@ def main() -> int:
                     return 1
                 print(f"rendered {render['key']}")
 
-        frames_doc = {"frames": FRAMES, "html_dir": str(html_dir)}
+        frames_doc = {"frames": FRAMES, "html_dir": str(html_dir), "reference_time": REFERENCE_TIME}
         (SCRATCH / "frames.json").write_text(json.dumps(frames_doc, indent=2), encoding="utf-8")
         print(json.dumps({"renders": len(RENDERS), "frames": len(FRAMES), "html_dir": str(html_dir)}))
+    if not (SCRATCH / "frames.json").is_file():
+        print("no frames.json — the render stage did not run", file=sys.stderr)
+        return 1
+    frames_doc = json.loads((SCRATCH / "frames.json").read_text(encoding="utf-8"))
+    if frames_doc.get("reference_time") != REFERENCE_TIME:
+        print("the cached frames were rendered against a different reference time; re-run without "
+              "M4V_SKIP_RENDER=1", file=sys.stderr)
+        return 1
 
     result = subprocess.run(
         ["node", str(ROOT / "scripts" / "m4v-audit.mjs"), str(SCRATCH / "frames.json"), str(OUT)],
@@ -379,7 +395,7 @@ def source_scan() -> dict:
         "hex_literals_outside_token_table": len(hex_outside),
         "sample": outside[:8],
         "tertiary_text_utility_uses": text.count("ui-text-tertiary"),
-        "contract_file": str(contract),
+        "contract_file": str(contract.relative_to(ROOT)),
         "contract_present": contract_tokens is not None,
         "contract_matches_shipped_table": (
             contract_tokens.get("modes") == shipped_palette
@@ -404,6 +420,10 @@ def aggregate() -> int:
     unnamed = sum(frame["ax_unnamed"] or 0 for frame in frames)
     controls = sum(frame["ax_controls"] or 0 for frame in frames)
     keyboard_unnamed = sum(frame["keyboard_unnamed"] or 0 for frame in frames)
+    keyboard_unreachable = sum(len(frame["keyboard_unreachable"] or []) for frame in frames)
+    keyboard_ring_missing = sum(frame["keyboard_ring_missing"] or 0 for frame in frames)
+    keyboard_stops = sum(frame["keyboard_count"] or 0 for frame in frames)
+    keyboard_shadow_stops = sum(frame["keyboard_shadow_stops"] or 0 for frame in frames)
     clipped = sum(frame["clipped_count"] for frame in frames)
     overflow = [frame["id"] for frame in frames if frame["horizontal_overflow"]]
     autoplay = sum(
@@ -466,11 +486,18 @@ def aggregate() -> int:
         },
         {
             "id": "C-04", "claim": "Every interactive control has an accessible name and is keyboard reachable.",
-            "verdict": verdict(unnamed == 0 and keyboard_unnamed == 0 and positive_tabindex == 0),
+            "verdict": verdict(unnamed == 0 and keyboard_unnamed == 0 and keyboard_unreachable == 0
+                                and keyboard_ring_missing == 0 and positive_tabindex == 0),
             "evidence": {"ax_controls": controls, "ax_unnamed": unnamed, "keyboard_unnamed": keyboard_unnamed,
+                          "keyboard_stops": keyboard_stops, "keyboard_unreachable": keyboard_unreachable,
+                          "keyboard_ring_missing": keyboard_ring_missing,
+                          "keyboard_host_widget_stops": keyboard_shadow_stops,
                           "positive_tabindex": positive_tabindex,
                           "keyboard_frames": sum(1 for frame in frames if frame["keyboard_count"]),
-                          "note": "audio player internals are UA shadow-DOM controls; the host carries the aria-label."},
+                          "note": "the walk presses Tab until every control the DOM declares has been "
+                                  "visited once and focus wraps, then counts distinct authored stops; the "
+                                  "audio player's UA shadow parts are host-widget stops and are counted "
+                                  "separately, never as Coursebook controls."},
         },
         {
             "id": "C-05", "claim": "Audio never autoplays.",
@@ -604,6 +631,7 @@ def aggregate() -> int:
         },
         "claims": {item["id"]: item["verdict"] for item in claims},
         "defects": defects,
+        "reference_time": evidence.get("reference_time"),
         "plugin_sha256": hashlib.sha256((ROOT / "desktop" / "plugin.js").read_bytes()).hexdigest(),
         "branch": subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=ROOT,
                                  capture_output=True, text=True).stdout.strip(),
