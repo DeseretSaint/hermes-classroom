@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atlas Lamp - Field Desk plate</title>
+<style>
+  :root{
+    --paper:#F7F1E4; --paper-raised:#FFFCF3; --ink:#1A1713; --ink-soft:#5C5347;
+    --rule:#D7CBB4; --accent:#2C4A8C; --accent-soft:#E2E8F7; --field:#2F6047;
+    --ochre:#7B4B0A; --coral:#9C2E1C; --lamp:#E8A93A; --lamp-soft:#FBEBCB;
+    --on-lamp:#1A1713; --plum:#6A3E74; --plum-soft:#F0E6F3;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink)}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+       -webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
+  .route{max-width:1360px;margin:0 auto;padding:28px 48px 64px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:24px;padding-bottom:20px}
+  .wordmark{display:flex;align-items:center;gap:10px;font-weight:600;font-size:13px;letter-spacing:.01em}
+  .wordmark svg{display:block}
+  .dest{display:flex;gap:4px;border:1px solid var(--rule);border-radius:2px;padding:2px}
+  .dest span{font-size:12px;padding:5px 12px;border-radius:2px;color:var(--ink-soft)}
+  .dest .on{background:var(--paper-raised);color:var(--ink);font-weight:600;outline:1px solid var(--rule);outline-offset:-1px}
+
+  .hero{position:relative;background:var(--lamp-soft);border-top:3px solid var(--lamp);
+        padding:36px 40px 32px;display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:28px;align-items:start}
+  .seal{width:84px;height:84px}
+  .eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ochre);margin:2px 0 10px}
+  h1{font-family:ui-serif,Georgia,"Iowan Old Style","Palatino Linotype",serif;font-weight:600;
+     font-size:44px;line-height:1.04;letter-spacing:-.015em;margin:0;max-width:19ch}
+  .herometa{display:flex;flex-wrap:wrap;gap:28px;margin-top:22px}
+  .num{font-variant-numeric:tabular-nums;font-weight:600;font-size:15px}
+  .num small{display:block;font-weight:400;font-size:12px;color:var(--ink-soft);margin-top:2px}
+  .cta{display:flex;flex-direction:column;gap:10px;align-items:stretch;min-width:212px;padding-top:26px}
+  .btn{font:inherit;font-size:13px;font-weight:600;border-radius:2px;padding:11px 18px;border:1px solid transparent;cursor:pointer}
+  .btn.primary{background:var(--lamp);color:var(--on-lamp);border-color:var(--lamp)}
+  .btn.quiet{background:transparent;color:var(--ink);border-color:var(--ink)}
+  .link{background:none;border:0;color:var(--ink);font:inherit;font-size:12.5px;padding:4px 0;
+        text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--rule);cursor:pointer}
+
+  .cols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,.7fr);gap:56px;margin-top:44px}
+  .platehead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+             border-bottom:1px solid var(--ink);padding-bottom:10px}
+  .platehead h2{font-family:ui-serif,Georgia,serif;font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .platehead .count{font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+
+  .tally{display:flex;flex-wrap:wrap;gap:4px;margin:16px 0 6px}
+  .tick{width:22px;height:6px;background:var(--rule)}
+  .tick.done{background:var(--field)} .tick.due{background:var(--ochre)}
+  .tick.open{background:var(--accent-soft);border:1px solid var(--accent)}
+  .tallycap{font-size:12px;color:var(--ink-soft);margin-bottom:22px}
+
+  ol.spine{list-style:none;margin:0;padding:0;position:relative}
+  ol.spine:before{content:"";position:absolute;left:13px;top:14px;bottom:18px;width:1px;background:var(--rule)}
+  .node{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:16px;align-items:start;
+        padding:14px 0;position:relative}
+  .dot{width:27px;height:27px;border-radius:50%;background:var(--paper);border:1.5px solid var(--rule);
+       display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;
+       font-variant-numeric:tabular-nums;position:relative;z-index:1;color:var(--ink-soft)}
+  .node.done .dot{background:var(--field);border-color:var(--field);color:var(--paper)}
+  .node.now .dot{border:2px solid var(--accent);color:var(--accent);outline:4px solid var(--paper);outline-offset:0}
+  .node.now .dot:after{content:"";position:absolute;inset:-8px;border:1px solid var(--accent);border-radius:50%}
+  .node.due .dot{border:2px solid var(--ochre);color:var(--ochre)}
+  .ntitle{font-family:ui-serif,Georgia,serif;font-size:18px;line-height:1.25;margin:2px 0 3px;font-weight:600}
+  .nsub{font-size:12.5px;color:var(--ink-soft)}
+  .chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--rule);color:var(--ink-soft);white-space:nowrap}
+  .chip.done{color:var(--field);border-color:var(--field)}
+  .chip.now{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+  .chip.due{color:var(--ochre);border-color:var(--ochre)}
+  .node.now{background:var(--accent-soft);margin:0 -14px;padding:14px;border-radius:2px}
+  .node.now .nsub{color:var(--ink)}
+
+  .rail{display:flex;flex-direction:column;gap:40px}
+  .railbox{border-top:1px solid var(--rule);padding-top:14px}
+  .railbox h3{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 14px}
+  .note{border-left:3px solid var(--field);padding:2px 0 2px 14px;margin-bottom:16px}
+  .note p{font-family:ui-serif,Georgia,serif;font-style:italic;font-size:15px;line-height:1.45;margin:0 0 4px}
+  .note span{font-size:11.5px;color:var(--ink-soft)}
+  .course{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--rule)}
+  .course:last-child{border-bottom:0}
+  .course .t{font-family:ui-serif,Georgia,serif;font-size:16px;font-weight:600;line-height:1.2}
+  .course .s{font-size:11.5px;color:var(--ink-soft);margin-top:2px}
+  .mini{width:40px;height:40px}
+  .foot{margin-top:48px;border-top:1px solid var(--ink);padding-top:12px;display:flex;justify-content:space-between;
+        font-size:11px;color:var(--ink-soft);letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div class="route">
+  <div class="topbar">
+    <div class="wordmark">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+        <rect x="1" y="1" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M1 12.5h16" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M9 1v11.5" stroke="currentColor" stroke-width="1.2"/>
+        <circle cx="9" cy="12.5" r="2.6" fill="var(--lamp)"/>
+      </svg>
+      Coursebook
+    </div>
+    <div class="dest" role="tablist" aria-label="Destination">
+      <span class="on" role="tab" aria-selected="true">Courses</span>
+      <span role="tab" aria-selected="false">Library</span>
+      <span role="tab" aria-selected="false">Parent Studio</span>
+    </div>
+  </div>
+
+  <section class="hero" aria-labelledby="desktitle">
+    <svg class="seal" viewBox="0 0 96 96" aria-hidden="true">
+      <rect x="4" y="4" width="88" height="88" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
+      <path d="M4 68a64 64 0 0 1 64-64" fill="none" stroke="var(--lamp)" stroke-width="7"/>
+      <path d="M22 4v88M4 46h88" stroke="var(--ink)" stroke-width="1" opacity=".38"/>
+      <circle cx="60" cy="36" r="7" fill="var(--accent)"/>
+      <circle cx="60" cy="36" r="13" fill="none" stroke="var(--accent)" stroke-width="1.4"/>
+      <path d="M68 74h14M68 68v12" stroke="var(--ink)" stroke-width="1.6"/>
+    </svg>
+    <div>
+      <div class="eyebrow">Continue</div>
+      <h1 id="desktitle">Diagnose a no-start</h1>
+      <div class="herometa">
+        <div class="num">Section 2 of 4<small>Engine fundamentals</small></div>
+        <div class="num">1 of 4<small>With evidence</small></div>
+        <div class="num">20 min<small>Recorded estimate</small></div>
+      </div>
+    </div>
+    <div class="cta">
+      <button class="btn primary">Start the review</button>
+      <button class="btn quiet">Open the section</button>
+      <button class="link">Why this is next</button>
+    </div>
+  </section>
+
+  <div class="cols">
+    <main>
+      <div class="platehead"><h2>The route</h2><span class="count">1 of 4 with evidence · 1 due</span></div>
+      <div class="tally" aria-hidden="true">
+        <span class="tick done"></span><span class="tick due"></span><span class="tick open"></span><span class="tick"></span>
+      </div>
+      <p class="tallycap">One tick per section, painted from that section's recorded state.</p>
+      <ol class="spine">
+        <li class="node done">
+          <span class="dot">1</span>
+          <div><div class="ntitle">Name the three things an engine needs</div><div class="nsub">You explained it without notes.</div></div>
+          <span class="chip done">Evidence</span>
+        </li>
+        <li class="node now" aria-current="step">
+          <span class="dot">2</span>
+          <div><div class="ntitle">Diagnose a no-start</div><div class="nsub">Next: review one objective, then open the section.</div></div>
+          <span class="chip now">Here</span>
+        </li>
+        <li class="node due">
+          <span class="dot">3</span>
+          <div><div class="ntitle">Replace a fouled plug</div><div class="nsub">Started on 2 November.</div></div>
+          <span class="chip">Started</span>
+        </li>
+        <li class="node">
+          <span class="dot">4</span>
+          <div><div class="ntitle">Check compression safely</div><div class="nsub">Not opened yet.</div></div>
+          <span class="chip">Not started</span>
+        </li>
+      </ol>
+    </main>
+
+    <aside class="rail">
+      <section class="railbox">
+        <h3>Field notes</h3>
+        <div class="note"><p>Compression tells you the shape of the problem before you touch a plug.</p><span>Saved from section 4 · 3 days ago</span></div>
+        <div class="note"><p>A no-start is air, fuel or spark. Say which one before testing.</p><span>Saved from this section · 11 hours ago</span></div>
+        <button class="link">All notes for this course</button>
+      </section>
+      <section class="railbox">
+        <h3>All courses · 2</h3>
+        <div class="course">
+          <svg class="mini" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" fill="none" stroke="var(--ink)" stroke-width="1.2"/><path d="M1 30a29 29 0 0 1 29-29" fill="none" stroke="var(--field)" stroke-width="3"/><circle cx="25" cy="15" r="3" fill="var(--field)"/></svg>
+          <div><div class="t">Japanese greetings (L0)</div><div class="s">Next: say the three greetings from memory</div></div>
+        </div>
+        <div class="course">
+          <svg class="mini" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" fill="none" stroke="var(--ink)" stroke-width="1.2"/><path d="M1 30a29 29 0 0 1 29-29" fill="none" stroke="var(--plum)" stroke-width="3"/><circle cx="25" cy="15" r="3" fill="var(--plum)"/></svg>
+          <div><div class="t">Fractions on a number line</div><div class="s">Next: place halves and quarters</div></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="foot"><span>ATLAS LAMP · concept plate, not product code</span><span>Light · wide</span></div>
+</div>
+</body>
+</html>

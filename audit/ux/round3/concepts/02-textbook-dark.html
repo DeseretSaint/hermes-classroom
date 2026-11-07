@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Atlas Lamp - Textbook and Field Quest plate</title>
+<style>
+  :root{
+    --paper:#131210; --paper-raised:#1D1B16; --ink:#F5EFE1; --ink-soft:#B9AE9A;
+    --rule:#3D382D; --accent:#A8C0F2; --accent-soft:#222A3B; --field:#9FC69A;
+    --ochre:#E0B25C; --coral:#EA9480; --lamp:#EFC06B; --lamp-soft:#33290F;
+    --on-lamp:#131210; --plum:#CDA0D8; --plum-soft:#2E2434;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink)}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .route{max-width:1360px;margin:0 auto;padding:28px 48px 60px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule);padding-bottom:16px}
+  .back{font-size:12px;color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--rule);padding-bottom:2px}
+  .dest{display:flex;gap:16px;font-size:12px;color:var(--ink-soft)}
+  .dest b{color:var(--ink);font-weight:600}
+
+  .hero{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:22px;align-items:start;padding:28px 0 22px}
+  .seal{width:58px;height:58px}
+  .eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ochre);font-weight:600;margin-bottom:8px}
+  h1{font-family:ui-serif,Georgia,"Iowan Old Style",serif;font-size:34px;line-height:1.08;letter-spacing:-.015em;font-weight:600;margin:0}
+  .sub{font-size:12.5px;color:var(--ink-soft);margin-top:7px}
+  .herometa{display:flex;gap:22px;align-items:center;padding-top:6px}
+  .num{font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;text-align:right}
+  .num small{display:block;font-weight:400;font-size:11px;color:var(--ink-soft);margin-top:2px}
+
+  .modes{display:flex;gap:26px;border-bottom:1px solid var(--rule);margin-bottom:34px}
+  .mode{font-size:12.5px;color:var(--ink-soft);padding:0 0 11px;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .mode.on{color:var(--ink);font-weight:600}
+  .mode.tb.on{border-color:var(--accent)}
+  .mode.gd.on{border-color:var(--field)}
+  .mode.fq.on{border-color:var(--ochre)}
+  .mode .sw{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:1px}
+  .tb .sw{background:var(--accent)} .gd .sw{background:var(--field)} .fq .sw{background:var(--ochre)}
+
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:64px}
+  .platehead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--ink);padding-bottom:10px;margin-bottom:26px}
+  .platehead h2{font-family:ui-serif,Georgia,serif;font-size:19px;font-weight:600;margin:0}
+  .platehead span{font-size:11.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .tally{display:flex;gap:4px;margin:0 0 4px}
+  .tick{width:26px;height:5px;background:var(--rule)}
+  .tick.done{background:var(--field)} .tick.due{background:var(--ochre)} .tick.open{background:var(--accent)}
+  .cap{font-size:11.5px;color:var(--ink-soft);margin:6px 0 30px}
+
+  .lesson{max-width:66ch}
+  .lesson .kicker{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:8px}
+  .lesson h3{font-family:ui-serif,Georgia,serif;font-size:25px;line-height:1.18;font-weight:600;letter-spacing:-.01em;margin:0 0 12px}
+  .lesson p{font-family:ui-serif,Georgia,serif;font-size:17px;line-height:1.65;margin:0 0 17px}
+  .lede{font-size:12.5px;color:var(--ink-soft);border-left:2px solid var(--accent);padding-left:12px;margin:0 0 22px;font-family:ui-sans-serif,sans-serif}
+  .term{border-bottom:1px solid var(--ochre);padding-bottom:1px}
+
+  .check{background:var(--lamp-soft);border-top:2px solid var(--lamp);padding:22px 24px 20px;margin:28px 0;max-width:66ch}
+  .check .label{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--ochre);margin-bottom:8px}
+  .check h4{font-family:ui-serif,Georgia,serif;font-size:19px;line-height:1.3;margin:0 0 6px;font-weight:600}
+  .check p{font-size:12.5px;color:var(--ink-soft);margin:0 0 14px}
+  .answer{border:1px solid var(--rule);background:var(--paper-raised);color:var(--ink-soft);
+          font-family:ui-serif,Georgia,serif;font-size:14px;padding:12px 14px;min-height:62px}
+  .checkrow{display:flex;gap:10px;align-items:center;margin-top:14px}
+  .btn{font:inherit;font-size:12.5px;font-weight:600;padding:9px 15px;border-radius:2px;border:1px solid transparent;cursor:pointer}
+  .btn.primary{background:var(--lamp);color:var(--on-lamp)}
+  .btn.quiet{background:transparent;color:var(--ink);border-color:var(--ink)}
+  .hint{font-size:11.5px;color:var(--ink-soft)}
+
+  .rail{display:flex;flex-direction:column;gap:32px}
+  .railbox{border-top:1px solid var(--rule);padding-top:13px}
+  .railbox h3{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:0 0 12px}
+  .src{display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--rule)}
+  .src:last-child{border-bottom:0}
+  .src .title{font-size:12.5px;line-height:1.35}
+  .src .meta{font-size:11px;color:var(--ink-soft);margin-top:2px}
+  .src .status{font-size:10.5px;color:var(--field);border:1px solid var(--field);border-radius:999px;padding:1px 7px;white-space:nowrap}
+  .mission{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;padding:8px 0}
+  .mnum{width:21px;height:21px;border-radius:50%;border:1.5px solid var(--rule);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink-soft)}
+  .mission.done .mnum{background:var(--field);border-color:var(--field);color:var(--paper)}
+  .mission.now .mnum{border:2px solid var(--ochre);color:var(--ochre)}
+  .mission .mt{font-size:12.5px;line-height:1.35}
+  .mission .ms{font-size:11px;color:var(--ink-soft);margin-top:1px}
+  .foot{margin-top:44px;border-top:1px solid var(--rule);padding-top:12px;display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-soft);letter-spacing:.03em}
+</style>
+</head>
+<body>
+<div class="route">
+  <div class="topbar">
+    <a class="back" href="#">All courses</a>
+    <div class="dest"><span>Courses</span><span>Library</span><span>Parent Studio</span><b>Course</b></div>
+  </div>
+
+  <header class="hero">
+    <svg class="seal" viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="2" y="2" width="60" height="60" fill="none" stroke="var(--ink)" stroke-width="1.3"/>
+      <path d="M2 44a42 42 0 0 1 42-42" fill="none" stroke="var(--ochre)" stroke-width="5"/>
+      <path d="M16 2v60M2 30h60" stroke="var(--ink)" stroke-width=".9" opacity=".3"/>
+      <circle cx="40" cy="24" r="4.5" fill="var(--accent)"/>
+      <circle cx="40" cy="24" r="8.5" fill="none" stroke="var(--accent)" stroke-width="1.1"/>
+    </svg>
+    <div>
+      <div class="eyebrow">Engine fundamentals</div>
+      <h1>Diagnose a no-start</h1>
+      <div class="sub">Section 2 of 4 · Textbook</div>
+    </div>
+    <div class="herometa">
+      <div class="num">3<small>objectives</small></div>
+      <div class="num">1<small>with evidence</small></div>
+      <div class="num">1<small>review due</small></div>
+    </div>
+  </header>
+
+  <nav class="modes" aria-label="Lesson views">
+    <span class="mode">Overview</span>
+    <span class="mode tb on"><span class="sw"></span>Textbook</span>
+    <span class="mode gd"><span class="sw"></span>Guided</span>
+    <span class="mode fq"><span class="sw"></span>Field Quest</span>
+    <span class="mode">Notebook</span>
+    <span class="mode">Quizzes</span>
+  </nav>
+
+  <div class="cols">
+    <main>
+      <div class="platehead"><h2>Reading</h2><span>Section 2 · 3 objectives</span></div>
+      <div class="tally" aria-hidden="true"><span class="tick done"></span><span class="tick due"></span><span class="tick open"></span></div>
+      <p class="cap">One tick per objective. 1 of 3 has independent evidence.</p>
+
+      <article class="lesson">
+        <div class="kicker">Objective 2 · Trace the cause</div>
+        <h3>Three things, in order</h3>
+        <p class="lede">A no-start is almost never a mystery. It is a missing one of three things, and the order you check them saves time.</p>
+        <p>An engine needs <span class="term">air</span>, <span class="term">fuel</span> and <span class="term">spark</span>. When it turns but does not catch, one of those three is absent or arriving at the wrong time. The skill is not knowing the list; it is choosing which one to test first so the next test is cheaper than the last.</p>
+        <p>Start with what you can hear. A single long crank with no cough points away from spark. A cough that dies points toward fuel delivery. Write down what you heard before you open anything, because the engine will not repeat the clue once it is warm.</p>
+        <p>Only then reach for a tool. The compression check at the end of this section exists to confirm a suspicion, not to replace listening.</p>
+      </article>
+
+      <section class="check" aria-labelledby="checktitle">
+        <div class="label">Checkpoint</div>
+        <h4 id="checktitle">A car cranks evenly but never catches. What do you test first, and why?</h4>
+        <p>Answer in your own words. The check is shared with Textbook, Guided and Field Quest.</p>
+        <div class="answer">Write what you would listen for, then what you would test…</div>
+        <div class="checkrow">
+          <button class="btn primary">Submit answer</button>
+          <button class="btn quiet">Read the section again</button>
+          <span class="hint">Hints are not recorded in this build.</span>
+        </div>
+      </section>
+    </main>
+
+    <aside class="rail">
+      <section class="railbox">
+        <h3>This section</h3>
+        <div class="mission done"><span class="mnum">1</span><div><div class="mt">Name the three inputs</div><div class="ms">Independent evidence</div></div></div>
+        <div class="mission now"><span class="mnum">2</span><div><div class="mt">Trace the cause</div><div class="ms">You are here</div></div></div>
+        <div class="mission"><span class="mnum">3</span><div><div class="mt">Confirm with compression</div><div class="ms">Not started</div></div></div>
+      </section>
+      <section class="railbox">
+        <h3>Sources</h3>
+        <div class="src"><div><div class="title">Engine fundamentals, ch. 4</div><div class="meta">Authored here · 2 November</div></div><span class="status">Supported</span></div>
+        <div class="src"><div><div class="title">Starting system diagnosis</div><div class="meta">Bundled pack · v2</div></div><span class="status">Supported</span></div>
+        <div class="src"><div><div class="title">Shop manual excerpt, p. 88</div><div class="meta">Local pack · v1</div></div><span class="status">Partial</span></div>
+      </section>
+      <section class="railbox">
+        <h3>Field notes</h3>
+        <p style="font-family:ui-serif,Georgia,serif;font-style:italic;font-size:14px;line-height:1.5;margin:0 0 6px">Listen before you test. Write the sound down.</p>
+        <span style="font-size:11px;color:var(--ink-soft)">Saved 11 hours ago</span>
+      </section>
+    </aside>
+  </div>
+
+  <div class="foot"><span>ATLAS LAMP · concept plate, not product code</span><span>Dark · wide · Textbook + check</span></div>
+</div>
+</body>
+</html>

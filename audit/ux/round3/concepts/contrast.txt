@@ -1,0 +1,26 @@
+| Pair | Light | Dark | Floor | Verdict | Why |
+|---|---|---|---|---|---|
+| `ink` on `paper` | 15.87 | 16.33 | 7.00 | PASS | reading text, AAA body |
+| `ink` on `paper-raised` | 17.41 | 15.01 | 7.00 | PASS | reading text in a raised frame |
+| `ink-soft` on `paper` | 6.70 | 8.54 | 4.50 | PASS | secondary text and captions |
+| `ink-soft` on `paper-raised` | 7.35 | 7.85 | 4.50 | PASS | secondary text in a raised frame |
+| `accent` on `paper` | 7.57 | 10.24 | 4.50 | PASS | path, links, Textbook mode |
+| `field` on `paper` | 6.47 | 9.82 | 4.50 | PASS | evidence, Guided mode, notes |
+| `ochre` on `paper` | 6.54 | 9.53 | 4.50 | PASS | review due, Field Quest, checkpoints |
+| `coral` on `paper` | 6.61 | 8.06 | 4.50 | PASS | attention text, never decoration |
+| `plum` on `paper` | 7.30 | 8.57 | 4.50 | PASS | Parent Studio identity |
+| `on-lamp` on `lamp` | 8.65 | 11.07 | 4.50 | PASS | label on the primary action |
+| `ink` on `accent-soft` | 14.56 | 12.53 | 4.50 | PASS | text on a selected row |
+| `ink` on `lamp-soft` | 15.18 | 12.50 | 4.50 | PASS | text on the hero and checkpoint field |
+| `ink` on `plum-soft` | 14.73 | 12.92 | 4.50 | PASS | text on a Parent Studio panel |
+| `ink-soft` on `accent-soft` | 6.15 | 6.55 | 4.50 | PASS | caption on a selected row |
+| `ink-soft` on `lamp-soft` | 6.41 | 6.54 | 4.50 | PASS | caption on the hero field |
+| `ink-soft` on `plum-soft` | 6.22 | 6.76 | 4.50 | PASS | caption on a Parent Studio panel |
+| `paper` on `field` | 6.47 | 9.82 | 4.50 | PASS | glyph on a done node |
+| `paper` on `accent` | 7.57 | 10.24 | 4.50 | PASS | glyph on an active node |
+| `rule` on `paper` | 1.43 | 1.61 | 1.25 | PASS | hairline visibility, non-text |
+| `rule` on `paper-raised` | 1.56 | 1.48 | 1.25 | PASS | hairline on a raised frame, non-text |
+| `lamp` on `paper` | 1.83 | 11.07 | 1.25 | PASS | primary fill edge, supported by a 1px on-lamp border |
+
+Failing pairs: 0
+Tokens: light=15 dark=15
