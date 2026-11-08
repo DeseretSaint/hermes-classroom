@@ -2,6 +2,8 @@
 
 Status: binding quality lens, 2026-11-08. Card: H-173 `t_c579dfa7`. This file defines what we
 mean by a good generated course. It changes no generation, validation, grading or UI behavior.
+Amended by H-173d `t_7f46fb7f`: the packet now states how much of the plan its one lesson covers,
+and a partial packet obliges the record to state that limit.
 
 Read with:
 
@@ -155,6 +157,12 @@ while D3 asks whether the task is as strong as the target the course claims.
 Does not count: the label `production` on a multiple-choice item, or a rubric weight as proof
 that the target was measured.
 
+Coverage in a packet: the packet supplies one lesson, and a plan may schedule more sessions than
+that. Score D3 against the objectives whose check you can read, and name the objectives that have
+no authored check to read. D3 is not a 3 while an objective's check cannot be read: an unread check
+has not been shown to measure the target it declares. Whether an uncovered objective is a 1 or a 2
+on those checks is decided by the anchors above, not by the packet's count.
+
 ### D4 `example_explanation_quality`
 
 Question: do the worked example and explanation teach this case, or restate one generic example?
@@ -172,6 +180,11 @@ answer agrees with the objective, the check and the reference answer.
   case is explained.
 
 Does not count: more prose, a second heading, or a worked example whose answer is never used.
+
+Coverage in a packet: D4 judges the lesson the record supplies. When the packet reports fewer
+lessons than scheduled sessions, score the example you read and say in the evidence which sections
+had no lesson to read. A session with no lesson is a coverage finding about the course; it is not
+evidence about the lesson that was read.
 
 ### D5 `cognitive_load_session_arc`
 
@@ -191,6 +204,10 @@ shape, and the transition from model to guided work to the check.
   returns the learner to the path with the recorded result.
 
 Does not count: a timer, a progress percentage, or "learn in 15 minutes" copy.
+
+Coverage in a packet: D5 judges the session arc of the lesson the record supplies. A plan whose
+other sessions have no lesson is a coverage finding under section 9, not a fact about this
+lesson's arc; say which sections you did not read.
 
 ### D6 `source_grounding_citation_honesty`
 
@@ -289,14 +306,16 @@ pass. If the validator passes, a low rubric dimension is still a real finding.
 
 ## 7. The 15-minute review protocol
 
-One course per record. The reviewer must not be the author of the course being reviewed.
+One course per record. The reviewer must not be the author of the course being reviewed. One
+lesson is one session: when the packet reports fewer lessons than the sessions the plan schedules,
+that is a coverage limit to state, not a course to skim.
 
 | Minutes | Action | Dimension |
 |---|---|---|
 | 0-2 | Read `learner_outcome`, scope and objective list. Ask what the learner can do at the end that they could not do before. | D1 |
 | 2-5 | Walk the objectives and units in order. Check one prerequisite and the schedule arithmetic. | D2 |
-| 5-8 | Compare every check to its objective's evidence target and criteria. | D3 |
-| 8-11 | Read one lesson end to end: segments, worked example, explanation, check. | D4, D5 |
+| 5-8 | Compare every authored check to its objective's evidence target and criteria. When the packet reports partial coverage, score D3 from the checks you can read and name the objectives with no check to read. | D3 |
+| 8-11 | Read one lesson end to end: segments, worked example, explanation, check. Say which sections that lesson covers and which had no lesson to read. | D4, D5 |
 | 11-13 | Trace every load-bearing claim to a source id or an honest `unverified`. | D6 |
 | 13-14 | Check each media decision against the construct, then the hints, scaffolds and stop conditions. | D7, D8 |
 | 14-15 | Write the eight verdicts with evidence, then run the record checker. | all |
@@ -307,7 +326,8 @@ reviewed in 15 minutes is not yet a 3 on D5, and probably not on D1.
 ## 8. The review record
 
 The bounded packet is `scripts/course_quality_review.py`. It is stdlib only, reads at most one
-plan, one lesson and one validation record, and never calls a model, the database or the network.
+plan, one lesson and one validation record, never calls a model, the database or the network, and
+reports how much of the plan that one lesson actually covers.
 
 ```bash
 python3 scripts/course_quality_review.py packet \
@@ -320,9 +340,9 @@ python3 scripts/course_quality_review.py packet \
 python3 scripts/course_quality_review.py check docs/reviews/S2-review.md
 ```
 
-The `packet` command writes the deterministic facts (input hashes, plan shape, objective and
-media counts, validator verdict and criteria, rejection reasons) plus eight empty dimension
-blocks. It does not fill a score. The reviewer writes each block:
+The `packet` command writes the deterministic facts (input hashes, coverage, plan shape,
+objective and media counts, validator verdict and criteria, rejection reasons) plus eight empty
+dimension blocks. It does not fill a score. The reviewer writes each block:
 
 ```markdown
 ### D3 evidence_target_fit
@@ -333,6 +353,20 @@ Evidence: The objective declares production but the check is a three-choice sele
 Follow-up: t_0123456789ab
 ```
 
+The `## Coverage` block is mechanical and is never a score. Coverage is counted against the
+sessions the plan schedules (`sessions_per_week` x `weeks`), not the raw section count: a plan
+whose four sections are steps inside one 45-minute session is covered by one lesson, and a plan
+that schedules one session per section is not. When the plan declares no schedule the packet counts
+authored sections instead and says so. The block prints that schedule arithmetic, the section the
+lesson's `section_title` matches (noting that the lesson document carries no `section_ordinal` or
+`objective_ref`, so a title match is all the packet has), and two lines:
+
+- `Lesson coverage:` how many authored sessions (or sections) have a lesson in this packet, and
+  how many objectives have no authored check the reviewer can read, named by ordinal.
+- `Coverage limit:` which dimensions that leaves partial. When the packet supplies a lesson for
+  every scheduled session the line reads `none`. Otherwise it is blank for the reviewer, and the
+  reviewer must fill it under Reviewer notes.
+
 Rules the checker enforces:
 
 - all eight ids appear exactly once, in D1 to D8 order;
@@ -341,6 +375,8 @@ Rules the checker enforces:
 - a score below 3 has a follow-up reference (`t_...` or `H-...`); a score of 3 or 4 says
   `Follow-up: none`;
 - the record names a reviewer and echoes the validator verdict from the packet;
+- a record whose packet reported fewer lessons than scheduled sessions states a `Coverage limit:`
+  of at least 40 characters that names at least one dimension (D1 to D8);
 - the record contains no aggregate score, mastery score, percentage, leaderboard or badge.
 
 A dimension below 3 is not smoothed into a pass. It becomes a follow-up card with a concrete
@@ -354,6 +390,20 @@ fix before the course is called ready.
 - The first recorded review (H-173) is an author-run dry run on fixtures because H-172's live
   outputs do not exist yet. It records that limitation and asks an independent reviewer to
   re-score the same samples.
-- Coverage is only as good as the artifact supplied. A plan without a lesson can score D1, D2
-  and part of D6; it cannot score D3, D4, D5, D7 or D8. The record must say which dimensions had
-  no lesson to read.
+- Coverage is only as good as the artifact supplied. The packet prints a `Lesson coverage:` line:
+  N of M scheduled sessions have a lesson in the record, and the objectives with no authored check
+  to read. A plan without a lesson can score D1, D2 and part of D6; it cannot score D3, D4, D5,
+  D7 or D8. When the packet reports partial coverage, the record must state a `Coverage limit:`
+  naming the dimensions it limits, and the checker rejects a record that leaves that line blank.
+- Partial coverage is priced, not scored by definition. The packet's count does not price a
+  one-lesson packet as a ceiling on D4 or D5: those dimensions judge the lesson that was read, and
+  the anchors decide the score. The count does stop a one-lesson packet from being read as a pass
+  on D3 across the course: D3 is not a 3 while an objective's check cannot be read, and the record
+  must name the objectives it could not read.
+- The count depends on a declared schedule. When `sessions_per_week` and `weeks` are absent the
+  packet counts sections, so a plan that schedules four sections inside one session without
+  declaring the schedule is reported as partial. That is a planning-fact gap, not a coverage
+  judgment; the record should say which arithmetic it relied on.
+- Records written before the coverage line existed carry no count. The checker does not
+  retro-charge them, because it cannot require a limitation the packet never asked for. Re-run the
+  packet on that course before citing the old record as coverage evidence.

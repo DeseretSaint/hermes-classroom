@@ -83,6 +83,37 @@ def valid_scores(follow_up: str = "t_c7fff5b4") -> dict:
     }
 
 
+#: plan_one_off.json authors four sections; the packet supplies one lesson, so the packet's
+#: coverage line is partial and the record owes a stated limit (H-173d).
+COVERAGE_LIMIT = (
+    "Coverage limit: D3 was read for 1 of 4 objectives only; D4, D5, D7 and D8 read one lesson, "
+    "not the course."
+)
+
+
+def with_coverage_limit(text: str, limit: str | None = None) -> str:
+    """Fill the packet's blank ``Coverage limit:`` line the way a reviewer must."""
+    value = COVERAGE_LIMIT if limit is None else limit
+    filled = text.replace("Coverage limit: \n", value + "\n", 1)
+    assert filled != text, "packet no longer prints a blank Coverage limit line"
+    return filled
+
+
+def partial_packet_text() -> str:
+    module = load_packet_module()
+    return module.render_packet(
+        plan_path=FIXTURES / "plan_ja.json",
+        plan=fixture("plan_ja"),
+        lesson_path=FIXTURES / "lesson_ja.json",
+        lesson=fixture("lesson_ja"),
+        validation_path=FIXTURES / "validation_reject_check.json",
+        validation=fixture("validation_reject_check"),
+        sample_id="TEST-S2",
+        scope="short",
+        reviewer="Test Reviewer",
+    )
+
+
 class RubricFileTest(unittest.TestCase):
     def test_rubric_exists_and_names_all_eight_dimensions(self) -> None:
         self.assertTrue(RUBRIC.is_file(), "docs/COURSE-QUALITY-RUBRIC.md is missing")
@@ -232,6 +263,8 @@ class RecordCheckTest(unittest.TestCase):
 
     def test_filled_record_passes_and_a_validator_verdict_is_echoed(self) -> None:
         module = load_packet_module()
+        # plan_one_off schedules one session that contains all four sections, so one lesson is
+        # full session coverage and the record owes no coverage limit.
         filled = module.fill_packet(packet_text("validation_reject_check"), valid_scores())
         self.assertEqual(module.check_record(filled), [])
         self.assertIn("Validator verdict: reject", filled)
@@ -248,6 +281,135 @@ class RecordCheckTest(unittest.TestCase):
         joined = "\n".join(errors)
         self.assertIn("overall score", joined)
         self.assertIn("leaderboard", joined)
+
+
+class CoverageTest(unittest.TestCase):
+    """H-173d: one lesson cannot cover a four-section plan, so the packet must price the gap.
+
+    The decision is (b): the packet prints how many authored sections the supplied lesson
+    actually covers, and the checker requires the record to state the limit that creates. The
+    fixture, the scores and the validator are untouched: this is a coverage statement, not a
+    rubric ceiling and not a re-score.
+    """
+
+    def test_packet_states_partial_coverage_and_names_the_unread_objectives(self) -> None:
+        text = partial_packet_text()
+        self.assertIn("## Coverage", text)
+        self.assertIn(
+            "- Lesson coverage: 1 of 4 authored session(s) have a lesson in this packet; "
+            "3 of 4 objective(s) have no authored check the reviewer can read (2, 3, 4)",
+            text,
+        )
+        self.assertIn("matches authored section 1 (objective_refs=[1])", text)
+        self.assertIn("- Coverage limit: D3 can be read for 1 of 4 objectives only", text)
+        # The packet still prints a blank score for every dimension and no aggregate.
+        self.assertEqual(text.count("Score: "), 8)
+        self.assertNotIn("overall score", text.lower())
+
+    def test_packet_without_a_lesson_prices_every_lesson_dimension_as_unread(self) -> None:
+        module = load_packet_module()
+        text = module.render_packet(
+            plan_path=FIXTURES / "plan_ja.json",
+            plan=fixture("plan_ja"),
+            lesson_path=None,
+            lesson=None,
+            validation_path=None,
+            validation=None,
+            sample_id="TEST-S2-plan-only",
+            scope="short",
+            reviewer="Test Reviewer",
+        )
+        self.assertIn(
+            "- Lesson coverage: 0 of 4 authored session(s) have a lesson in this packet",
+            text,
+        )
+        self.assertIn("D3, D4, D5, D7 and D8 have no lesson to read", text)
+
+    def test_complete_coverage_needs_no_limit_and_says_so(self) -> None:
+        module = load_packet_module()
+        text = module.render_packet(
+            plan_path=FIXTURES / "plan_one_off.json",
+            plan={
+                "objectives": [
+                    {
+                        "title": "Greet at the door",
+                        "evidence_target": "production",
+                        "evidence_criteria": ["Says a greeting"],
+                        "support": "sourced",
+                        "source_ids": ["SRC_A"],
+                    }
+                ],
+                "sections": [
+                    {"ordinal": 1, "title": "Greeting and opening", "objective_refs": [1]}
+                ],
+                "check_plan": [{"objective_ref": 1, "kind": "quiz", "evidence_target": "production"}],
+            },
+            lesson_path=FIXTURES / "lesson_ja.json",
+            lesson=fixture("lesson_ja"),
+            validation_path=None,
+            validation=None,
+            sample_id="TEST-complete",
+            scope="single",
+            reviewer="Test Reviewer",
+        )
+        self.assertIn(
+            "- Lesson coverage: 1 of 1 authored section(s) have a lesson in this packet", text
+        )
+        self.assertIn("Coverage limit: none; every authored section has a lesson", text)
+        self.assertNotIn("Coverage limit: \n", text)
+
+    def test_a_session_spanning_lesson_counts_as_full_coverage(self) -> None:
+        """plan_one_off: four sections are steps inside one scheduled session, so one lesson covers it."""
+        text = packet_text()
+        self.assertIn("sessions_per_week=1 x weeks=1 = 1 authored session(s)", text)
+        self.assertIn("- Lesson coverage: 1 of 1 authored session(s) have a lesson in this packet", text)
+        self.assertIn("the plan schedules 4 section(s) inside those session(s)", text)
+        self.assertIn("Coverage limit: none; every authored session has a lesson", text)
+        self.assertNotIn("Coverage limit: \n", text)
+
+    def test_partial_record_without_a_stated_limit_does_not_pass(self) -> None:
+        module = load_packet_module()
+        # fill refuses to build the record at all.
+        with self.assertRaises(module.PacketError) as raised:
+            module.fill_packet(partial_packet_text(), valid_scores())
+        self.assertIn("Coverage limit", str(raised.exception))
+        # And a record that loses the line afterwards fails the checker, not just fill.
+        filled = module.fill_packet(with_coverage_limit(partial_packet_text()), valid_scores())
+        blanked = filled.replace(COVERAGE_LIMIT + "\n", "Coverage limit: \n", 1)
+        joined = "\n".join(module.check_record(blanked))
+        self.assertIn("1 of 4 authored sessions supplied", joined)
+        self.assertIn("Coverage limit:", joined)
+        self.assertEqual(module.check_record(filled), [])
+
+    def test_partial_record_with_a_stated_limit_passes(self) -> None:
+        module = load_packet_module()
+        filled = module.fill_packet(with_coverage_limit(partial_packet_text()), valid_scores())
+        self.assertEqual(module.check_record(filled), [])
+
+    def test_a_limit_that_names_no_dimension_does_not_pass(self) -> None:
+        module = load_packet_module()
+        vague = "Coverage limit: the course was only partly readable from the one lesson supplied."
+        with self.assertRaises(module.PacketError) as raised:
+            module.fill_packet(with_coverage_limit(partial_packet_text(), vague), valid_scores())
+        self.assertIn("must name at least one dimension", str(raised.exception))
+        filled = module.fill_packet(with_coverage_limit(partial_packet_text()), valid_scores())
+        vague_record = filled.replace(COVERAGE_LIMIT + "\n", vague + "\n", 1)
+        self.assertIn(
+            "must name at least one dimension", "\n".join(module.check_record(vague_record))
+        )
+
+    def test_a_legacy_record_without_a_coverage_line_is_not_retro_charged(self) -> None:
+        module = load_packet_module()
+        legacy = (DOCS / "reviews" / "H173-S2-short-japanese-cafe.md").read_text(encoding="utf-8")
+        self.assertNotIn("- Lesson coverage:", legacy)
+        self.assertEqual(module.check_record(legacy), [])
+
+    def test_rubric_states_the_packet_coverage_decision(self) -> None:
+        text = " ".join(RUBRIC.read_text(encoding="utf-8").split())
+        self.assertIn("Lesson coverage:", text)
+        self.assertIn("Coverage limit:", text)
+        self.assertIn("does not price a one-lesson packet as a ceiling", text)
+
 
 
 class CommittedRecordTest(unittest.TestCase):
