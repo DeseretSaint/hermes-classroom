@@ -76,14 +76,15 @@ class WayfindingTest(unittest.TestCase):
             "destination === 'courses' && canCreate && !coursesEmpty && !openCourse",
             self.source,
         )
-        line = [
-            value
-            for value in self.source.splitlines()
-            if "children: 'New course'" in value
-        ]
-        self.assertEqual(len(line), 1, line)
-        nearby = self.source[self.source.index("children: 'New course'") - 220 : self.source.index("children: 'New course'")]
-        self.assertIn("variant: 'primary'", nearby)
+        # H-176 added a *secondary* "New course" control on the "Your other classrooms" shelf, so
+        # counting every literal would now fail while the invariant it protects still holds: the
+        # page header carries exactly one primary, and the shelf control is not it.
+        primary = [value for value in self.source.splitlines() if "children: 'New course'" in value and "variant: 'primary'" in value]
+        self.assertEqual(len(primary), 1, primary)
+        shelf = [value for value in self.source.splitlines() if "children: 'New course'" in value and "variant: 'primary'" not in value]
+        self.assertEqual(len(shelf), 1, shelf)
+        self.assertIn("'data-cb-shelf-new-course'", self.source)
+        self.assertIn("variant: 'primary', children: 'New course'", self.source)
         self.assertNotIn("variant: 'default', children: 'New course'", self.source)
 
     def test_host_entry_opens_the_route_and_carries_the_wordmark(self) -> None:

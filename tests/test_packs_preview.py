@@ -45,7 +45,10 @@ class PreviewTests(unittest.TestCase):
         self.assertIn("redistribution", shown["license"])
         self.assertTrue(shown["content_notes"])
         self.assertTrue(shown["accessibility_notes"])
-        self.assertEqual(shown["pack_version"], "1.0.0")
+        # H-186 shipped the demo pack as cb.pack v2; the preview carries whatever the pack
+        # manifest declares rather than a literal pinned to one revision of the fixture.
+        self.assertEqual(shown["pack_version"], self.manifest["pack_version"])
+        self.assertEqual(shown["pack_version"], "2.0.0")
         self.assertEqual(shown["minimum_coursebook_version"], "0.1.0")
         self.assertGreater(result["integrity"]["expanded_bytes"], 0)
         self.assertEqual(result["integrity"]["file_count"], len(shown["files"]))
