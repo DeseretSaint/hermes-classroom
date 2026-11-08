@@ -2115,12 +2115,25 @@ function mainlineObjective(row, objectives) {
   return list.find((entry) => !entry.independent) || list[list.length - 1]
 }
 
-/** "Estimated minutes" is either recorded by the backend or said to be missing. Never derived. */
+/**
+ * The estimate state, normalized for rendering. `error` means the read itself failed: the desk
+ * has no answer, so it must not say the author recorded none. `none` means the backend answered
+ * successfully and the answer carries no estimate. The two are never collapsed.
+ */
+function deskEstimateState(estimate) {
+  const status = estimate && estimate.status ? estimate.status : 'none'
+  if (status === 'loading' || status === 'idle') return 'loading'
+  if (status === 'error') return 'error'
+  if (status === 'ready' && Number(estimate.minutes) > 0) return 'ready'
+  return 'none'
+}
+
+/** "Estimated minutes" is either recorded, absent from a real answer, or unreadable. Never derived. */
 function deskEstimateLabel(estimate) {
-  if (estimate && (estimate.status === 'loading' || estimate.status === 'idle')) return 'Reading the estimate'
-  if (estimate && estimate.status === 'ready' && Number(estimate.minutes) > 0) {
-    return `≈ ${Number(estimate.minutes)} min`
-  }
+  const state = deskEstimateState(estimate)
+  if (state === 'loading') return 'Reading the estimate'
+  if (state === 'error') return 'Session length could not be read'
+  if (state === 'ready') return `≈ ${Number(estimate.minutes)} min`
   return 'Session length not recorded'
 }
 
@@ -2142,6 +2155,8 @@ function buildDeskModel({ library, outline, estimate }) {
       primaryLabel: null,
       primaryKind: null,
       estimateLabel: deskEstimateLabel(estimate),
+      estimateState: deskEstimateState(estimate),
+      estimateError: estimate && estimate.error ? estimate.error : null,
       lastTouched: null,
       touchedSource: null
     }
@@ -2167,6 +2182,8 @@ function buildDeskModel({ library, outline, estimate }) {
     primaryLabel: DESK_PRIMARY_LABEL[next.kind] || 'Open the lesson',
     primaryKind: next.kind || 'start_lesson',
     estimateLabel: deskEstimateLabel(estimate),
+    estimateState: deskEstimateState(estimate),
+    estimateError: estimate && estimate.error ? estimate.error : null,
     // `last_opened_at` is this section's newest lesson run; `updated_at` is the enrollment's own
     // write. The section wins when it exists, and the label says which clock was read.
     lastTouched: (current && current.last_opened_at) || row.updated_at || null,
@@ -2287,7 +2304,7 @@ function DeskStats({ desk }) {
 }
 
 /** One raised frame, not a card in a card: the Continue card is the only surface on the desk. */
-function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
+function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate }) {
   const current = desk.current
   const title = current ? current.title : desk.nextLabel
   const courseTitle = desk.row && desk.row.title ? desk.row.title : null
@@ -2360,7 +2377,25 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
                   desk.sectionLabel
                     ? jsx('span', { 'data-cb-continue-position': '', children: desk.sectionLabel })
                     : null,
-                  jsx('span', { 'data-cb-continue-minutes': '', children: desk.estimateLabel }),
+                  jsx('span', {
+                    'data-cb-continue-minutes': '',
+                    'data-cb-continue-minutes-state': desk.estimateState || 'none',
+                    title:
+                      desk.estimateState === 'error' && desk.estimateError && desk.estimateError.code
+                        ? `${desk.estimateError.code}: ${desk.estimateError.message || ''}`.trim()
+                        : undefined,
+                    style: desk.estimateState === 'error' ? { color: 'var(--cb-ochre)' } : undefined,
+                    children: desk.estimateLabel
+                  }),
+                  desk.estimateState === 'error'
+                    ? jsx(sdk.Button, {
+                        variant: 'text',
+                        size: 'sm',
+                        onClick: onRetryEstimate,
+                        'aria-label': 'Retry reading the session length',
+                        children: 'Retry'
+                      })
+                    : null,
                   jsx('span', {
                     'data-cb-continue-touched': desk.touchedSource || 'none',
                     children: desk.lastTouched ? `Last touched ${whenLabel(desk.lastTouched)}` : 'Nothing touched yet'
@@ -2942,6 +2977,7 @@ function FieldDeskHome({
   onSyllabus,
   onPrimary,
   onOpenSection,
+  onRetryEstimate,
   onOpen,
   onShowAll,
   sourcesOpen,
@@ -2990,7 +3026,7 @@ function FieldDeskHome({
     })
   }
 
-  const continueCard = jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection })
+  const continueCard = jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection, onRetryEstimate })
   const notesCard = jsx(FieldNotesStrip, {
     notes,
     courseTitle: desk.row && desk.row.title ? desk.row.title : null,
@@ -3060,8 +3096,11 @@ function FieldDeskHome({
 /**
  * The estimate the backend already recorded: a pack manifest's per-objective `estimated_minutes`,
  * or the parent brief's `duration_minutes`. It never computes one from a count of sections.
+ *
+ * A failed read is its own state (`error`), not `none`: the desk has no answer and must not tell
+ * the author they recorded none. `retryToken` re-runs the read for the desk's Retry control.
  */
-function useSessionEstimate({ row, current, enabled }) {
+function useSessionEstimate({ row, current, enabled, retryToken = 0 }) {
   const [state, setState] = useState({ status: 'none', minutes: null, source: null, error: null })
   const courseId = row ? row.course_id : null
   const packId = row && row.provenance ? row.provenance.pack_id : null
@@ -3076,10 +3115,14 @@ function useSessionEstimate({ row, current, enabled }) {
     }
     let cancelled = false
     setState({ status: 'loading', minutes: null, source: null, error: null })
+    // A refusal is not an empty answer: only `parent.brief.get`'s NOT_FOUND is a real answer
+    // ("this course has no parent brief"), so it alone collapses to `none`.
+    const refusalIsAnAnswer = (method, response) =>
+      method === 'parent.brief.get' && Boolean(response.error) && response.error.code === 'NOT_FOUND'
     let read
     if (packId && packVersion && backendSupports('pack.inspect')) {
       read = rpc('pack.inspect', { pack_id: packId, pack_version: packVersion }).then((response) => {
-        if (!response.ok) return null
+        if (!response.ok) return { failed: true, error: response.error || null }
         const manifest = response.result && response.result.manifest
         const entries = manifest && Array.isArray(manifest.objectives) ? manifest.objectives : []
         const match = entries.find((entry) => Number(entry.ordinal) === Number(ordinal))
@@ -3088,7 +3131,11 @@ function useSessionEstimate({ row, current, enabled }) {
       })
     } else if (backendSupports('parent.brief.get')) {
       read = rpc('parent.brief.get', { course_id: courseId }).then((response) => {
-        if (!response.ok) return null
+        if (!response.ok) {
+          return refusalIsAnAnswer('parent.brief.get', response)
+            ? null
+            : { failed: true, error: response.error || null }
+        }
         const brief = response.result && response.result.brief
         const minutes = brief && Number(brief.duration_minutes) > 0 ? Number(brief.duration_minutes) : null
         return minutes ? { minutes, source: 'parent_brief' } : null
@@ -3099,19 +3146,29 @@ function useSessionEstimate({ row, current, enabled }) {
     read
       .then((found) => {
         if (cancelled) return
+        if (found && found.failed) {
+          setState({ status: 'error', minutes: null, source: null, error: found.error || null })
+          return
+        }
         setState(
           found
             ? { status: 'ready', minutes: found.minutes, source: found.source, error: null }
             : { status: 'none', minutes: null, source: null, error: null }
         )
       })
-      .catch(() => {
-        if (!cancelled) setState({ status: 'none', minutes: null, source: null, error: null })
+      .catch((error) => {
+        if (cancelled) return
+        setState({
+          status: 'error',
+          minutes: null,
+          source: null,
+          error: { code: 'HOST_UNAVAILABLE', message: describeError(error) }
+        })
       })
     return () => {
       cancelled = true
     }
-  }, [enabled, courseId, packId, packVersion, ordinal, key])
+  }, [enabled, courseId, packId, packVersion, ordinal, key, retryToken])
 
   return state
 }
@@ -3137,7 +3194,14 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
   )
   const withOutline = buildDeskModel({ library: library.data, outline: outline.data, estimate: null })
   const current = withOutline.current
-  const estimate = useSessionEstimate({ row, current, enabled: Boolean(row) && Boolean(current) })
+  const [estimateTicket, setEstimateTicket] = useState(0)
+  const estimate = useSessionEstimate({
+    row,
+    current,
+    enabled: Boolean(row) && Boolean(current),
+    retryToken: estimateTicket
+  })
+  const onRetryEstimate = useCallback(() => setEstimateTicket((value) => value + 1), [])
   const desk = buildDeskModel({ library: library.data, outline: outline.data, estimate })
 
   const [sourcesOpen, setSourcesOpen] = useState(false)
@@ -3208,6 +3272,7 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     onSyllabus: onStartSyllabus,
     onPrimary,
     onOpenSection: (objectiveId, blockId) => onOpen(desk.row, objectiveId, blockId),
+    onRetryEstimate,
     notes,
     onShowNotebook: () => onOpen(desk.row, null, null, 'notebook'),
     onOpen,
@@ -17141,6 +17206,8 @@ export {
   CB_TOKEN_NAMES,
   COURSE_SCOPES,
   CREATE_RESULT_COPY,
+  FieldDesk,
+  deskEstimateState,
   CreateCourseFlow,
   FIRST_RUN_COPY,
   FirstRun,
