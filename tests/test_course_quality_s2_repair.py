@@ -23,7 +23,7 @@ import unittest
 from pathlib import Path
 
 from coursebook import generation as gen
-from coursebook import lesson_document, research
+from coursebook import grading, lesson_document, research
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = ROOT / "tests" / "fixtures" / "generation"
@@ -141,6 +141,55 @@ class RepairedReviewRecordTest(unittest.TestCase):
         self.assertEqual([item["criterion"] for item in record["rejections"]], ["answer_uniqueness"])
         # The repaired record must not turn that rejection into a pass.
         self.assertIn("Validator verdict: reject", REVIEW.read_text(encoding="utf-8"))
+
+
+class CriterionAnswerSetFitTest(unittest.TestCase):
+    """H-173d D3: the rubric names the act the stored reference actually scores.
+
+    The decision (recorded in ``docs/reviews/H173d-S2-D3-criterion.md``) is to keep romaji
+    acceptance — it is the fading scaffold at L0 — and to stop the rubric claiming a script
+    recognition the answer set never forces. These tests hold both halves of that decision: the
+    reference still passes both spellings, and no criterion claims script recognition.
+    """
+
+    def setUp(self) -> None:
+        self.check = fixture("lesson_ja")["check"]
+        self.reference = gen._reference_payload(self.check)
+
+    def test_the_stored_reference_is_exact_over_both_the_kana_and_romaji_spellings(self) -> None:
+        self.assertEqual(self.reference["kind"], "exact")
+        self.assertEqual(self.reference["answers"], [self.check["reference_answer"], "konnichiwa"])
+
+    def test_typing_either_spelling_passes_and_a_third_choice_does_not(self) -> None:
+        for typed in ("こんにちは", "konnichiwa"):
+            with self.subTest(typed=typed):
+                result = grading.grade_closed(
+                    reference=self.reference,
+                    rubric=None,
+                    answer={"kind": "text", "text": typed},
+                )
+                self.assertEqual(result.verdict, "pass")
+        result = grading.grade_closed(
+            reference=self.reference,
+            rubric=None,
+            answer={"kind": "text", "text": "ありがとうございます"},
+        )
+        self.assertEqual(result.verdict, "not_yet")
+
+    def test_no_rubric_criterion_claims_script_recognition_that_the_key_does_not_force(self) -> None:
+        text = " ".join(
+            f"{item.get('criterion', '')} {item.get('description', '')}"
+            for item in self.check["rubric"]
+        ).lower()
+        self.assertNotIn("script recognition", text)
+        # The honest statement must be present: the criterion says what it does not score.
+        self.assertIn("not script reading", text)
+        self.assertIn("romaji", text)
+        # And the reason it cannot claim script recognition: the romaji string is a passing answer.
+        self.assertTrue(
+            any(not re.search(r"[\u3040-\u30ff]", answer) for answer in self.reference["answers"]),
+            "a rubric may only be repaired away from 'script recognition' while a romaji answer passes",
+        )
 
 
 if __name__ == "__main__":

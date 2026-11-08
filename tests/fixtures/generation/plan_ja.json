@@ -159,7 +159,7 @@
   ],
   "exclusions": [
     "No claim of native-speaker naturalness: wording and usage still need fresh sourcing.",
-    "No pronunciation assessment from text or generic TTS.",
+    "No pronunciation assessment from text or generic TTS, and no model recording is shipped in this sample: the checks are typed selections and romaji is a reading scaffold, not a pronunciation target.",
     "No keigo beyond standard polite forms."
   ],
   "spaced_review": true,
