@@ -399,6 +399,17 @@ async function loadBackendWire() {
 /** The backend facts, loaded once per page (the registry is static for a mounted process). */
 let wireReady = null
 
+/**
+ * Forget the cached wire facts and probe again.
+ *
+ * Only an explicit control calls this: the registry is static for a mounted process, so a surface
+ * that says "this build cannot run it" offers one re-read rather than polling `/runtime`.
+ */
+function reloadBackendWire() {
+  wireReady = null
+  return ensureBackendWire()
+}
+
 function ensureBackendWire() {
   if (!wireReady) {
     wireReady = loadBackendWire().then((wire) => {
@@ -7779,6 +7790,585 @@ function ParentObservation({ enrollmentId, objectiveId, onRecorded }) {
 }
 
 /**
+ * A bounded conversation practice, rendered from the backend's own projection.
+ *
+ * `docs/CONVERSATION-PRACTICE.md` §5, §7.4 and §9 are the whole contract here:
+ *
+ * - the declaration comes from `check.get` → `stimulus.practice`, the projection that already
+ *   withholds a target label the learner was not shown. This surface never prints a label unless
+ *   `targets_visible` is true, even if one arrives in the payload;
+ * - the transcript, the turn counter, the attempt id, the verdict and the criteria come from
+ *   `practice.state` / `practice.end`. Nothing is graded in the pane: End practice is the only
+ *   path, and a plain `attempt.submit` is refused by the backend (`practice_requires_practice_end`);
+ * - the feedback is one compact line (§7.4) and the full criteria sit behind Review grading. No
+ *   score, percentage or verdict is rendered unless the backend returned that value. A verdict the
+ *   backend returns is printed as it is: the pane does not re-word `partial` or `not_yet`.
+ * - every envelope is built by `rpc`, so the version echo is the `/runtime` one the branch
+ *   declares, not a literal.
+ */
+const PRACTICE_UNSUPPORTED_COPY =
+  'This Desktop build cannot run a conversation practice: the backend does not implement practice.state. The section and its lesson chat still work; this card stays read-only.'
+const PRACTICE_START_COPY =
+  'Practice runs in the lesson chat. Start it here, answer the tutor there, then end it here to grade your own turns. Nothing the tutor says is graded.'
+
+/**
+ * What a learner reads when `practice.end` or `practice.cancel` refuses.
+ *
+ * `docs/CONVERSATION-PRACTICE.md` §5.4 and §8 name each refusal, and each one leaves the practice
+ * exactly where it was: the transcript, the session and the check are all kept. The copy says that
+ * and gives the one next move, so a refusal never reads as a lost practice.
+ */
+function practiceRefusalCopy(error) {
+  const reason = error && error.details ? error.details.reason : null
+  const details = (error && error.details) || {}
+  if (reason === 'practice_not_complete') {
+    const low = details.min_turns
+    const held = details.learner_turns
+    const need = Number.isFinite(Number(low)) ? `${low} learner turns` : 'the declared minimum of learner turns'
+    const have = Number.isFinite(Number(held)) ? `${held} ${Number(held) === 1 ? 'is' : 'are'} recorded` : 'fewer are recorded'
+    return `This practice needs at least ${need}; ${have}. Answer the tutor in the lesson chat, then press End practice again. Every turn is kept.`
+  }
+  if (reason === 'practice_empty_transcript') {
+    return 'No learner turn is recorded yet. Answer the tutor in the lesson chat, then end the practice. The check is still open.'
+  }
+  if (reason === 'practice_not_open') {
+    return 'There is no live practice to end. Press Start practice; the check is still open and every stored turn is kept.'
+  }
+  if (reason === 'practice_already_graded') {
+    return 'This practice was already graded. Review grading shows the result the backend stored.'
+  }
+  return null
+}
+
+/**
+ * The one compact feedback line (§7.4).
+ * It repeats the verdict the backend returned and two counts it also returned: target criteria met
+ * and learner turns. It never computes a percentage and never turns `partial`/`not_yet` into
+ * different words. `needs_retry` is the system's failure, so the line says what happened to the
+ * transcript rather than reading as a learner outcome.
+ */
+function practiceFeedback({ verdict, criteria, learnerTurns, targets }) {
+  if (!verdict) return null
+  const label = verdictLabel(verdict, null)
+  const turns = Number(learnerTurns) || 0
+  const turnText = `${turns} learner ${turns === 1 ? 'turn' : 'turns'}`
+  if (verdict === 'needs_retry') {
+    return `${label}: the transcript is saved, nothing advanced, and no verdict was recorded.`
+  }
+  const ids = new Set((targets || []).map((target) => String(target.id)))
+  const rows = (criteria || []).filter((item) => item && ids.has(String(item.id)))
+  const total = ids.size || rows.length
+  if (total === 0) return `${label}: over ${turnText}.`
+  const met = rows.filter((item) => item.met).length
+  return `${label}: ${met} of ${total} target ${total === 1 ? 'expression' : 'expressions'} used, over ${turnText}.`
+}
+
+function PracticeSurface({
+  enrollmentId,
+  objectiveId,
+  check,
+  revision,
+  implemented,
+  bindingState,
+  onCommitted
+}) {
+  const practice = check && check.stimulus && check.stimulus.practice ? check.stimulus.practice : {}
+  const declaration = practice || {}
+  const turnRange = declaration.turns || {}
+  const minTurns = Number(turnRange.min) || 0
+  const maxTurns = Number(turnRange.max) || 0
+  const targets = Array.isArray(declaration.targets)
+    ? declaration.targets.filter((target) => target && target.id)
+    : []
+  const labelsVisible = declaration.targets_visible === true
+  const [capabilities, setCapabilities] = useState(implemented || null)
+  const known = capabilities instanceof Set ? capabilities : null
+  const supports = (method) => (known ? known.has(method) : true)
+  const canState = supports('practice.state')
+  const detached = Boolean(bindingState && bindingState !== 'active')
+  const [state, setState] = useState({ status: canState ? 'loading' : 'unsupported', session: null, error: null })
+  const [phase, setPhase] = useState('idle')
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
+  const [notice, setNotice] = useState(null)
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [criteriaOpen, setCriteriaOpen] = useState(false)
+  const [ticket, setTicket] = useState(0)
+  const nonceRef = useRef(null)
+  const feedbackRef = useRef(null)
+
+  useEffect(() => {
+    if (!canState) {
+      setState((previous) => (previous.status === 'unsupported' ? previous : { status: 'unsupported', session: null, error: null }))
+      return undefined
+    }
+    let cancelled = false
+    setState((previous) => ({ ...previous, status: previous.session ? previous.status : 'loading', error: null }))
+    rpc('practice.state', { enrollment_id: enrollmentId, objective_id: objectiveId })
+      .then((response) => {
+        if (cancelled) return
+        if (!response || !response.ok) {
+          setState({ status: 'unavailable', session: null, error: (response && response.error) || null })
+          return
+        }
+        setState({ status: 'ready', session: response.result || null, error: null })
+      })
+      .catch((failure) => {
+        if (!cancelled) {
+          setState({
+            status: 'unavailable',
+            session: null,
+            error: { code: 'HOST_UNAVAILABLE', message: describeError(failure) }
+          })
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [enrollmentId, objectiveId, canState, ticket, check && check.check_id])
+
+  const reload = () => setTicket((value) => value + 1)
+
+  // A practice turn is written by the chat hook, not by this surface. Coming back to the pane
+  // refreshes the read; there is no timer and nothing that could steal focus from the chat.
+  const liveRef = useRef(false)
+  const session = state.session
+  const sessionState = session && session.state ? session.state : 'none'
+  liveRef.current = sessionState === 'active'
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return undefined
+    const refresh = () => {
+      if (liveRef.current) reload()
+    }
+    window.addEventListener('focus', refresh)
+    return () => window.removeEventListener('focus', refresh)
+  }, [])
+
+  const verdict = result && result.verdict ? result.verdict : session ? session.verdict : null
+  const criteria =
+    result && Array.isArray(result.criteria)
+      ? result.criteria
+      : session && Array.isArray(session.criteria)
+        ? session.criteria
+        : []
+  const learnerTurns =
+    result && Number.isFinite(Number(result.learner_turns))
+      ? Number(result.learner_turns)
+      : session
+        ? Number(session.learner_turns) || 0
+        : 0
+  const transcript = session && Array.isArray(session.transcript) ? session.transcript : []
+  const remaining = session && Number.isFinite(Number(session.remaining)) ? Number(session.remaining) : null
+  const feedback = practiceFeedback({ verdict, criteria, learnerTurns, targets })
+
+  // A verdict is the moment the learner waited for: put focus on the line that states it rather
+  // than leaving a keyboard user on a button that just disappeared.
+  useEffect(() => {
+    if (verdict && feedbackRef.current) feedbackRef.current.focus({ preventScroll: true })
+  }, [verdict])
+
+  const refreshCapabilities = async () => {
+    const wire = await reloadBackendWire()
+    setCapabilities(wire && wire.implemented ? wire.implemented : null)
+    reload()
+  }
+
+  const start = async () => {
+    setPhase('starting')
+    setError(null)
+    setNotice(null)
+    setResult(null)
+    const response = await rpc(
+      'practice.start',
+      { enrollment_id: enrollmentId, objective_id: objectiveId },
+      {
+        idempotencyKey: `cb-practice-start-${check.check_id}-${newOperationId('practice-start')}`,
+        expectedRevision: Number(revision) || 0
+      }
+    )
+    setPhase('idle')
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    nonceRef.current = null
+    setNotice('Practice started. Answer the tutor in the lesson chat; opening this card again shows the turns it stored.')
+    reload()
+  }
+
+  const end = async () => {
+    if (!session) return
+    if (!nonceRef.current) nonceRef.current = newOperationId('practice-end')
+    setPhase('ending')
+    setError(null)
+    setNotice(null)
+    const response = await rpc(
+      'practice.end',
+      {
+        enrollment_id: enrollmentId,
+        check_id: check.check_id,
+        check_version: check.check_version,
+        attempt_nonce: nonceRef.current
+      },
+      {
+        idempotencyKey: `cb-practice-end-${check.check_id}-${nonceRef.current}`,
+        expectedRevision: Number(revision) || 0
+      }
+    )
+    setPhase('idle')
+    if (!response.ok) {
+      // A refusal before the minimum is not a lost practice: the transcript, the session and the
+      // check all stay where they are, so the same End practice can be pressed again.
+      setError(response.error)
+      return
+    }
+    nonceRef.current = null
+    setResult(response.result)
+    // The graded line stays on screen: the check closes with the attempt, and a parent refresh
+    // would unmount this card before the learner read the verdict. Everything outside refreshes
+    // the next time the section is opened.
+  }
+
+  const cancel = async () => {
+    setCancelOpen(false)
+    setPhase('cancelling')
+    setError(null)
+    setNotice(null)
+    const response = await rpc(
+      'practice.cancel',
+      { enrollment_id: enrollmentId, check_id: check.check_id },
+      { expectedRevision: Number(revision) || 0 }
+    )
+    setPhase('idle')
+    if (!response.ok) {
+      setError(response.error)
+      return
+    }
+    nonceRef.current = null
+    setNotice('Practice cancelled. Every turn is kept, nothing was graded, and the check stayed open.')
+    reload()
+  }
+
+  const busy = phase !== 'idle'
+  const targetBlock = labelsVisible
+    ? targets.some((target) => target.label)
+      ? jsxs('div', {
+          className: 'flex flex-col gap-1',
+          'data-cb-practice-targets-list': String(targets.length),
+          children: [
+            jsx(CbLabel, { children: 'Expressions to practise' }),
+            jsx('ul', {
+              className: 'flex flex-col gap-1 text-sm leading-snug',
+              'aria-label': 'Expressions to practise',
+              children: targets
+                .filter((target) => target.label)
+                .map((target) =>
+                  jsx('li', { 'data-cb-practice-target': target.id, children: target.label }, target.id)
+                )
+            })
+          ]
+        })
+      : null
+    : jsx(QuietNote, {
+        children:
+          'The target expressions are not shown for this practice. Produce them from what you know; the tutor will not list them either.'
+      })
+
+  const stateBlock =
+    state.status === 'unsupported'
+      ? jsxs('div', {
+          className: 'flex flex-col gap-2',
+          'data-cb-practice-state-block': 'unsupported',
+          children: [
+            jsx(QuietNote, { children: PRACTICE_UNSUPPORTED_COPY }),
+            jsx(sdk.Button, {
+              variant: 'secondary',
+              size: 'sm',
+              className: 'self-start',
+              onClick: refreshCapabilities,
+              children: 'Re-read the backend'
+            })
+          ]
+        })
+      : state.status === 'unavailable'
+        ? jsxs('div', {
+            className: 'flex flex-col gap-2',
+            'data-cb-practice-state-block': 'unavailable',
+            children: [
+              jsx(sdk.ErrorState, {
+                title: 'This practice could not be read',
+                description: state.error
+                  ? `The backend refused practice.state (${state.error.code || 'ERROR'}). The check and its chat are unchanged.`
+                  : 'The backend returned no practice state. The check and its chat are unchanged.'
+              }),
+              jsx(sdk.Button, {
+                variant: 'secondary',
+                size: 'sm',
+                className: 'self-start',
+                onClick: reload,
+                children: 'Retry'
+              })
+            ]
+          })
+        : state.status === 'loading' && !session
+          ? jsxs('div', {
+              className: 'flex items-center gap-2 text-xs text-(--ui-text-secondary)',
+              'data-cb-practice-state-block': 'loading',
+              children: [jsx(sdk.Loader, { label: 'Reading the practice' }), jsx('span', { children: 'No control is offered until the stored transcript is here.' })]
+            })
+          : null
+
+  const transcriptBlock =
+    transcript.length > 0
+      ? jsxs('div', {
+          className: 'flex flex-col gap-1',
+          'data-cb-practice-transcript': String(transcript.length),
+          children: [
+            jsx(CbLabel, { children: 'Transcript' }),
+            jsx('ol', {
+              className: 'flex flex-col gap-1.5',
+              'aria-label': 'Practice transcript',
+              children: transcript.map((turn) =>
+                jsxs(
+                  'li',
+                  {
+                    className: 'flex flex-col gap-0.5',
+                    'data-cb-practice-turn': turn.ordinal,
+                    'data-cb-practice-speaker': turn.speaker,
+                    children: [
+                      jsx('span', {
+                        className: 'text-xs font-medium text-(--ui-text-secondary)',
+                        children: turn.speaker === 'learner' ? 'You' : 'Tutor'
+                      }),
+                      jsx('span', { className: 'text-sm leading-snug', children: turn.text })
+                    ]
+                  },
+                  turn.ordinal
+                )
+              )
+            })
+          ]
+        })
+      : null
+
+  const counterBlock =
+    session && (sessionState === 'active' || sessionState === 'graded') && maxTurns > 0
+      ? jsx('p', {
+          className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+          'data-cb-practice-counter': sessionState,
+          children:
+            sessionState === 'active'
+              ? remaining === 0
+                ? `Turn limit reached (${learnerTurns} of ${maxTurns} learner turns). End practice to grade the transcript.`
+                : `${learnerTurns} of ${maxTurns} learner turns used${
+                    session.awaiting_tutor ? '; waiting for the tutor to reply.' : `. ${remaining} left before the limit.`
+                  }`
+              : `Graded after ${learnerTurns} of at most ${maxTurns} learner turns.`
+        })
+      : null
+
+  const blendedState = result && result.verdict ? 'graded' : sessionState
+  const controls =
+    state.status !== 'ready'
+      ? null
+      : blendedState === 'active'
+        ? jsxs('div', {
+            className: 'flex flex-wrap items-center gap-2',
+            children: [
+              jsx(sdk.Button, {
+                variant: 'default',
+                size: 'sm',
+                disabled: busy || detached,
+                onClick: end,
+                children: phase === 'ending' ? 'Ending practice' : 'End practice'
+              }),
+              jsx(sdk.Button, {
+                variant: 'secondary',
+                size: 'sm',
+                disabled: busy || detached,
+                onClick: () => setCancelOpen(true),
+                children: 'Cancel practice'
+              }),
+              jsx(sdk.Button, {
+                variant: 'text',
+                size: 'sm',
+                disabled: busy,
+                onClick: reload,
+                children: 'Refresh transcript'
+              })
+            ]
+          })
+        : blendedState === 'none' || blendedState === 'cancelled' || blendedState === 'abandoned' || blendedState === 'graded'
+          ? jsxs('div', {
+              className: 'flex flex-wrap items-center gap-2',
+              children: [
+                jsx(sdk.Button, {
+                  variant: 'default',
+                  size: 'sm',
+                  disabled: busy || detached,
+                  onClick: start,
+                  children:
+                    phase === 'starting'
+                      ? 'Starting practice'
+                      : sessionState === 'none'
+                        ? 'Start practice'
+                        : 'Practice again'
+                }),
+                verdict
+                  ? jsx(sdk.Button, {
+                      variant: 'text',
+                      size: 'sm',
+                      'aria-expanded': criteriaOpen ? 'true' : 'false',
+                      onClick: () => setCriteriaOpen((open) => !open),
+                      children: criteriaOpen ? 'Hide grading' : 'Review grading'
+                    })
+                  : null
+              ]
+            })
+          : null
+
+  const endOfSessionBlock =
+    sessionState === 'cancelled'
+      ? jsx(QuietNote, {
+          children: 'Practice cancelled. Every turn is kept, nothing was graded, and the check is still open.'
+        })
+      : sessionState === 'abandoned'
+        ? jsx(QuietNote, {
+            children:
+              'This practice ended when its lesson chat detached or its run paused, so it cannot be graded from here. Start a new practice on a connected lesson.'
+          })
+        : null
+
+  const criteriaBlock =
+    criteriaOpen && verdict
+      ? jsxs('div', {
+          className: 'flex flex-col gap-1',
+          'data-cb-practice-criteria': String(criteria.length),
+          children: [
+            jsx(CbLabel, { children: 'Grading criteria' }),
+            criteria.length > 0
+              ? jsx('ul', {
+                  className: 'flex flex-col gap-1',
+                  'aria-label': 'Grading criteria',
+                  children: criteria.map((item, index) =>
+                    jsxs(
+                      'li',
+                      {
+                        className: 'flex items-start gap-2 text-sm leading-snug',
+                        'data-cb-practice-criterion': item.id,
+                        'data-cb-practice-criterion-met': item.met ? 'true' : 'false',
+                        children: [
+                          jsx('span', {
+                            'aria-hidden': 'true',
+                            className: 'text-(--ui-text-secondary)',
+                            children: item.met ? '✓' : '·'
+                          }),
+                          jsx('span', {
+                            children: item.observed ? String(item.observed) : item.met ? 'met' : 'not met'
+                          })
+                        ]
+                      },
+                      String(item.id || index)
+                    )
+                  )
+                })
+              : jsx(QuietNote, { children: 'The backend returned no criteria for this attempt.' })
+          ]
+        })
+      : null
+
+  return jsxs('div', {
+    className: 'flex flex-col gap-2',
+    'data-cb-practice': check.check_id,
+    'data-cb-practice-state': state.status === 'ready' ? blendedState : state.status,
+    'data-cb-practice-targets': labelsVisible ? 'visible' : 'hidden',
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-center gap-2',
+        children: [
+          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: `Check v${check.check_version}` }),
+          jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: 'Conversation practice' })
+        ]
+      }),
+
+      jsxs('div', {
+        className: 'flex flex-col gap-1',
+        'data-cb-practice-scenario': check.check_id,
+        children: [
+          jsx(CbLabel, { children: 'Scene' }),
+          jsx('p', {
+            className: 'max-w-prose text-sm leading-relaxed',
+            children: declaration.scenario || 'No scenario was declared for this practice.'
+          }),
+          declaration.learner_role || declaration.tutor_role
+            ? jsx('p', {
+                className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                children: `You are ${declaration.learner_role || 'the learner'}; the tutor plays ${
+                  declaration.tutor_role || 'the other speaker'
+                }. ${minTurns} to ${maxTurns} learner turns.`
+              })
+            : null
+        ]
+      }),
+
+      targetBlock,
+
+      sessionState === 'none' && declaration.opening
+        ? jsx(QuietNote, { children: `The tutor opens with: “${declaration.opening}”` })
+        : null,
+
+      sessionState === 'none' ? jsx(QuietNote, { children: PRACTICE_START_COPY }) : null,
+
+      stateBlock,
+      counterBlock,
+      transcriptBlock,
+      controls,
+      endOfSessionBlock,
+
+      feedback
+        ? jsx('p', {
+            className: 'max-w-prose text-sm font-medium leading-relaxed outline-none',
+            ref: feedbackRef,
+            role: 'status',
+            tabIndex: -1,
+            'data-cb-practice-feedback': verdict,
+            children: feedback
+          })
+        : null,
+
+      criteriaBlock,
+
+      notice
+        ? jsx('p', { className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)', role: 'status', children: notice })
+        : null,
+
+      error && practiceRefusalCopy(error)
+        ? jsx('p', {
+            className: 'max-w-prose text-sm leading-relaxed',
+            role: 'status',
+            'data-cb-practice-refusal': (error.details && error.details.reason) || 'refused',
+            children: practiceRefusalCopy(error)
+          })
+        : null,
+
+      error ? jsx(ErrorLine, { error }) : null,
+
+      jsx(FocusReturningDialog, {
+        open: cancelOpen,
+        title: 'Cancel this practice?',
+        description:
+          'Every turn you typed is kept, nothing is graded, and the check stays open. You can start another practice on this section afterwards.',
+        confirmLabel: 'Cancel practice',
+        destructive: true,
+        onClose: () => setCancelOpen(false),
+        onConfirm: cancel,
+        children: null
+      })
+    ]
+  })
+}
+
+/**
  * One attempt, started and finished in the pane or on the lesson page.
  *
  * Idempotency is enrollment + check + a per-view nonce: retrying a failed grade re-sends the SAME
@@ -7814,8 +8404,11 @@ function AttemptControls({
   const detached = Boolean(bindingState && bindingState !== 'active')
 
   // What this card is asking for. A `verification` stimulus with declared items is a checklist and
-  // is answered with the item ids; every other stimulus keeps the written-answer path.
+  // is answered with the item ids; a practice stimulus is a bounded conversation and is never
+  // answered with `attempt.submit` (the backend refuses that with `practice_requires_practice_end`),
+  // so it takes the one practice surface instead of the written-answer form.
   const stimulus = check ? check.stimulus || null : null
+  const practice = stimulus && stimulus.practice ? stimulus.practice : null
   // The form is only offered for a question the learner can actually see. `stimulusStatus` comes
   // from `useOpenCheck`; a direct render that does not pass it keeps the pre-existing behaviour
   // (a served stimulus is ready; otherwise the build speaks about the teaching chat).
@@ -7999,6 +8592,20 @@ function AttemptControls({
     nonceRef.current = null
     setError(null)
     setPhase('awaiting_input')
+  }
+
+  // A practice is answered by its own surface, after every hook above has run: the check can be
+  // replaced (v1 → v2) without changing which hooks this component called.
+  if (practice) {
+    return jsx(PracticeSurface, {
+      enrollmentId,
+      objectiveId,
+      check,
+      revision,
+      implemented,
+      bindingState,
+      onCommitted
+    })
   }
 
   return jsxs('div', {
@@ -18840,6 +19447,8 @@ function CoursebookSettings() {
 export {
   AttemptControls,
   AttemptVerdict,
+  PracticeSurface,
+  practiceFeedback,
   useOpenCheck,
   BackendUnavailable,
   CB_TOKENS,

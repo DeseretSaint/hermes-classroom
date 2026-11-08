@@ -1,0 +1,127 @@
+{
+  "generated_by": "scripts/audit-ux-practice.mjs capture",
+  "command": "CB015_CDP_PORT=9341 node scripts/audit-ux-practice.mjs capture",
+  "at": "2026-11-08T06:04:16.177Z",
+  "plugin": "desktop/plugin.js",
+  "plugin_sha256": "5958e82aec2c433c68b491d30f25c3ff17e129de49b63538c31fa13764ce8811",
+  "cdp": "9341",
+  "seed": {
+    "course_id": "crs_4c178f92730c45b88346e2d1420ad327",
+    "objective_id": "obj_da1ac79ad5a74a8f88e2dda2c48a5300",
+    "check_id": "chk_376ed60a9beb4889bf5e6af8d4b0ca97",
+    "session_id": "prc_d900df1582c74316bcffa0322c671724"
+  },
+  "seed_inputs": {
+    "course_title": "Buy a train ticket (practice)",
+    "objective_title": "Buy one train ticket at the station counter",
+    "turns_said": [
+      "One ticket to Kyoto, please.",
+      "How much is it?",
+      "Thank you. Where is platform four?"
+    ],
+    "check_id": "chk_376ed60a9beb4889bf5e6af8d4b0ca97",
+    "session_id": "prc_d900df1582c74316bcffa0322c671724"
+  },
+  "frames": [
+    {
+      "variant": "desktop-1049",
+      "shot": "audit/ux/practice-shots/practice-desktop-1049.png",
+      "footShot": "audit/ux/practice-shots/practice-desktop-1049-foot.png",
+      "viewport": {
+        "w": 1049,
+        "h": 900
+      },
+      "rootFont": "16px",
+      "practiceState": "active",
+      "controls": [
+        "End practice",
+        "Cancel practice",
+        "Refresh transcript"
+      ],
+      "feedback": null
+    },
+    {
+      "variant": "narrow-460",
+      "shot": "audit/ux/practice-shots/practice-narrow-460.png",
+      "footShot": "audit/ux/practice-shots/practice-narrow-460-foot.png",
+      "viewport": {
+        "w": 460,
+        "h": 900
+      },
+      "rootFont": "16px",
+      "practiceState": "active",
+      "controls": [
+        "End practice",
+        "Cancel practice",
+        "Refresh transcript"
+      ],
+      "feedback": null
+    },
+    {
+      "variant": "text200-1049",
+      "shot": "audit/ux/practice-shots/practice-text200-1049.png",
+      "footShot": "audit/ux/practice-shots/practice-text200-1049-foot.png",
+      "viewport": {
+        "w": 1049,
+        "h": 900
+      },
+      "rootFont": "32px",
+      "practiceState": "active",
+      "controls": [
+        "End practice",
+        "Cancel practice",
+        "Refresh transcript"
+      ],
+      "feedback": null
+    },
+    {
+      "variant": "text200-460",
+      "shot": "audit/ux/practice-shots/practice-text200-460.png",
+      "footShot": "audit/ux/practice-shots/practice-text200-460-foot.png",
+      "viewport": {
+        "w": 460,
+        "h": 900
+      },
+      "rootFont": "32px",
+      "practiceState": "active",
+      "controls": [
+        "End practice",
+        "Cancel practice",
+        "Refresh transcript"
+      ],
+      "feedback": null
+    },
+    {
+      "variant": "graded-1049",
+      "shot": "audit/ux/practice-shots/practice-graded-1049.png",
+      "footShot": "audit/ux/practice-shots/practice-graded-1049-foot.png",
+      "viewport": {
+        "w": 1049,
+        "h": 900
+      },
+      "rootFont": "16px",
+      "practiceState": "graded",
+      "controls": [
+        "Practice again",
+        "Review grading"
+      ],
+      "feedback": "Passed: 2 of 2 target expressions used, over 3 learner turns."
+    },
+    {
+      "variant": "graded-review-1049",
+      "shot": "audit/ux/practice-shots/practice-graded-review-1049.png",
+      "footShot": "audit/ux/practice-shots/practice-graded-review-1049-foot.png",
+      "viewport": {
+        "w": 1049,
+        "h": 900
+      },
+      "rootFont": "16px",
+      "practiceState": "graded",
+      "controls": [
+        "Practice again",
+        "Hide grading"
+      ],
+      "feedback": "Passed: 2 of 2 target expressions used, over 3 learner turns."
+    }
+  ]
+}

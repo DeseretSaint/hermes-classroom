@@ -14,7 +14,9 @@ export async function attach(port = process.env.CB015_CDP_PORT || '9351') {
 }
 
 export async function setRootText(cdp, px) {
-  await cdp.eval(`document.documentElement.style.fontSize = ${JSON.stringify(`${px}px`)}`)
+  // An inline `fontSize` assignment is reset to 16px by the shell's type-scale effect on the next
+  // render; the important flag is what keeps a 200% frame at 200%.
+  await cdp.eval(`document.documentElement.style.setProperty('font-size', ${JSON.stringify(`${px}px`)}, 'important')`)
 }
 
 /**
