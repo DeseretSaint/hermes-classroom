@@ -191,5 +191,13 @@ Follow-up: none
 - No dimension was moved to a score of 3 to make the sample pass, and the rubric was not edited.
   D2 was the one dimension the old fixture could not reach 3 on, because a v1 one-off plan can
   only author two or more sections; the repair states the four sections as steps of one session
-  and backs that reading with a lesson that walks all four, instead of rewriting the estimate.
+### Superseded bytes (H-173d D8 fix)
+
+The lesson bytes this record scored are superseded. `tests/fixtures/generation/lesson_one_off.json`
+now has sha256 `22e88f7d676c469d96dcc420cb4befbca24ced3db86d0e1b5ed699dffb40fd3a` (the recorded
+`a96a6559...` is the pre-fix lesson). The change is `check.learner_instructions` only: it now
+states the hint text that `assistance_policy.hint = available` claims and the next move after an
+item the learner cannot honestly tick. No score in this record is rewritten; the D8 re-score with
+new evidence is `docs/reviews/H173d-S1-D8-rescore.md`.
+
 
