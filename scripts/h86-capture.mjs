@@ -117,17 +117,7 @@ await wait(1200)
 await waitFor("!!document.querySelector('[data-cb-create-spine]')", 8000)
 for (const w of WIDTHS) await shot('02-new-course-step1', w)
 
-await evaluate(`(() => {
-  const el = document.querySelector('[data-cb-scope-option="short"]')
-  if (el) el.click()
-  return !!el
-})()`)
-await wait(600)
-await clickText("button", "Continue")
-await wait(900)
-for (const w of WIDTHS) await shot('03-new-course-step2', w)
-
-// fill the goal + name so step 3 is reachable, then advance
+// H-170: step 1 is the goal (the name is suggested from it and editable); step 2 is the size.
 await evaluate(`(() => {
   const setValue = (el, value) => {
     const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype
@@ -141,6 +131,16 @@ await evaluate(`(() => {
   return [!!goal, !!title]
 })()`)
 await wait(500)
+await clickText("button", "Continue")
+await wait(900)
+for (const w of WIDTHS) await shot('03-new-course-step2', w)
+
+await evaluate(`(() => {
+  const el = document.querySelector('[data-cb-scope-option="short"]')
+  if (el) el.click()
+  return !!el
+})()`)
+await wait(600)
 await clickText("button", "Continue")
 await wait(900)
 for (const w of WIDTHS) await shot('04-new-course-step3', w)

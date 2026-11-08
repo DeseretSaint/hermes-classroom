@@ -32,9 +32,13 @@ HARNESS = """
 import {
   COURSE_SCOPES,
   courseCreatePayload,
+  createStartStep,
+  effectiveDepth,
   planJobBrief,
   planTimingCopy,
-  startLearnerPlan
+  SCOPE_MIN_DEPTH,
+  startLearnerPlan,
+  suggestedTitle
 } from './plugin.js'
 
 const fs = await import('node:fs')
@@ -117,6 +121,33 @@ if (payload.kind === 'sequence') {
     scopes: COURSE_SCOPES,
     copy: Object.fromEntries(COURSE_SCOPES.map((scope) => [scope.id, planTimingCopy(scope.id)])),
     fallback: planTimingCopy(null)
+  }
+} else if (payload.kind === 'step') {
+  output = {
+    fresh: createStartStep(null),
+    emptyGoal: createStartStep({ goal: '   ', scope: 'short' }),
+    goalOnly: createStartStep({ goal: 'Wire a lamp safely' }),
+    goalAndScope: createStartStep({ goal: 'Wire a lamp safely', scope: 'single' }),
+    titles: {
+      empty: suggestedTitle(''),
+      plain: suggestedTitle('Hold a six-minute conversation in Spanish'),
+      firstSentence: suggestedTitle('Order coffee in Kyoto. Then ask for the bill.'),
+      whitespace: suggestedTitle('  Wire   a lamp   safely  '),
+      long: suggestedTitle('x'.repeat(100))
+    }
+  }
+} else if (payload.kind === 'depth') {
+  output = {
+    floor: SCOPE_MIN_DEPTH,
+    cases: [
+      ['single', 'survey'],
+      ['short', 'survey'],
+      ['full', 'survey'],
+      ['full', 'working'],
+      ['single', 'deep'],
+      ['full', 'deep'],
+      ['short', null]
+    ].map(([scope, depth]) => ({ scope, depth, effective: effectiveDepth(depth, scope) }))
   }
 } else {
   throw new Error(`unknown case ${payload.kind}`)
@@ -271,6 +302,53 @@ class CreateFlowSequenceTest(unittest.TestCase):
             self.assertNotRegex(copy, r"\d+\s*(min|minute|hour)", scope)
             self.assertIn("several minutes", copy.lower(), scope)
         self.assertNotRegex(out["fallback"], r"\d+\s*(min|minute|hour)")
+
+    # ── H-170: goal → size → review ─────────────────────────────────────────
+    def test_a_fresh_form_opens_on_the_goal_step(self) -> None:
+        out = self.run_case({"kind": "step"})
+        self.assertEqual(out["fresh"], 1)
+
+    def test_a_seed_opens_on_the_first_step_still_missing_an_answer(self) -> None:
+        out = self.run_case({"kind": "step"})
+        # A blanked goal is still a missing goal, even if a scope survived.
+        self.assertEqual(out["emptyGoal"], 1)
+        self.assertEqual(out["goalOnly"], 2)
+        # Both answers present: Review, where Create is still a press.
+        self.assertEqual(out["goalAndScope"], 3)
+
+    def test_the_title_is_suggested_from_the_goal_and_needs_no_invention(self) -> None:
+        out = self.run_case({"kind": "step"})
+        titles = out["titles"]
+        self.assertEqual(titles["empty"], "")
+        self.assertEqual(titles["plain"], "Hold a six-minute conversation in Spanish")
+        self.assertEqual(titles["firstSentence"], "Order coffee in Kyoto")
+        self.assertEqual(titles["whitespace"], "Wire a lamp safely")
+        self.assertLessEqual(len(titles["long"]), 64)
+        self.assertTrue(titles["long"].endswith("…"))
+
+    # ── H-168: the depth default mirrors the research floor ─────────────────
+    def test_the_depth_floor_matches_the_backend_by_scope(self) -> None:
+        out = self.run_case({"kind": "depth"})
+        self.assertEqual(out["floor"], {"single": "working", "short": "working", "full": "deep"})
+        by_case = {(row["scope"], row["depth"]): row["effective"] for row in out["cases"]}
+        self.assertEqual(by_case[("single", "survey")], "working")
+        self.assertEqual(by_case[("short", "survey")], "working")
+        self.assertEqual(by_case[("full", "survey")], "deep")
+        self.assertEqual(by_case[("full", "working")], "deep")
+        # A deeper pick is never lowered, and a missing depth is raised to the floor.
+        self.assertEqual(by_case[("single", "deep")], "deep")
+        self.assertEqual(by_case[("full", "deep")], "deep")
+        self.assertEqual(by_case[("short", None)], "working")
+
+    def test_submit_sends_the_four_dials_at_no_less_than_the_floor(self) -> None:
+        source = _source()
+        start = source.index("function CreateCourseFlow")
+        submit_at = source.index("const outcome = await startLearnerPlan({", start)
+        block = source[submit_at : start + 8000]
+        self.assertIn("dials: { ...dials, depth: effectiveDepth(dials.depth, scope) }", block)
+        # The payload keeps the closed four-dial object: no key is dropped or renamed here.
+        for key in ("pace", "depth", "assessment", "autonomy"):
+            self.assertIn(f"{key}:", source[source.index("const DIALS = {"):source.index("const DIALS = {") + 900])
 
 
 class CreateFlowWiringTest(unittest.TestCase):

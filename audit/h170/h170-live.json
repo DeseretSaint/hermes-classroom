@@ -1,0 +1,381 @@
+{
+  "steps": [
+    {
+      "label": "fresh-step1",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "scopeOptions": 0,
+      "goalValue": "",
+      "titleValue": "",
+      "titleInput": true,
+      "continueDisabled": true,
+      "describedBy": "cb-goal-help",
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "16px"
+    },
+    {
+      "label": "step1-1049",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "scopeOptions": 0,
+      "goalValue": "Fix a flat tyre on my bike without help",
+      "titleValue": "Fix a flat tyre on my bike without help",
+      "titleInput": true,
+      "continueDisabled": false,
+      "describedBy": null,
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "16px"
+    },
+    {
+      "label": "step1-900",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "scopeOptions": 0,
+      "goalValue": "Fix a flat tyre on my bike without help",
+      "titleValue": "Fix a flat tyre on my bike without help",
+      "titleInput": true,
+      "continueDisabled": false,
+      "describedBy": null,
+      "overflow": {
+        "scrollWidth": 257,
+        "clientWidth": 257
+      },
+      "innerWidth": 900,
+      "rootFont": "16px"
+    },
+    {
+      "label": "step1-460",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "scopeOptions": 0,
+      "goalValue": "Fix a flat tyre on my bike without help",
+      "titleValue": "Fix a flat tyre on my bike without help",
+      "titleInput": true,
+      "continueDisabled": false,
+      "describedBy": null,
+      "overflow": {
+        "scrollWidth": 214,
+        "clientWidth": 214
+      },
+      "innerWidth": 459,
+      "rootFont": "16px"
+    },
+    {
+      "label": "step1-1049-text200",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "scopeOptions": 0,
+      "goalValue": "Fix a flat tyre on my bike without help",
+      "titleValue": "Fix a flat tyre on my bike without help",
+      "titleInput": true,
+      "continueDisabled": false,
+      "describedBy": null,
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "32px"
+    },
+    {
+      "label": "step1-460-text200",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "scopeOptions": 0,
+      "goalValue": "Fix a flat tyre on my bike without help",
+      "titleValue": "Fix a flat tyre on my bike without help",
+      "titleInput": true,
+      "continueDisabled": false,
+      "describedBy": null,
+      "overflow": {
+        "scrollWidth": 214,
+        "clientWidth": 214
+      },
+      "innerWidth": 459,
+      "rootFont": "32px"
+    },
+    {
+      "label": "step2-size",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "scopeOptions": 3,
+      "goalValue": null,
+      "titleValue": null,
+      "titleInput": false,
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "16px"
+    },
+    {
+      "label": "step2-1049",
+      "measured": 1049,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "scopeOptions": 3,
+      "goalValue": null,
+      "titleValue": null,
+      "titleInput": false,
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "16px"
+    },
+    {
+      "label": "step2-900",
+      "measured": 900,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "scopeOptions": 3,
+      "goalValue": null,
+      "titleValue": null,
+      "titleInput": false,
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "overflow": {
+        "scrollWidth": 257,
+        "clientWidth": 257
+      },
+      "innerWidth": 900,
+      "rootFont": "16px"
+    },
+    {
+      "label": "step2-460",
+      "measured": 459,
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "scopeOptions": 3,
+      "goalValue": null,
+      "titleValue": null,
+      "titleInput": false,
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "overflow": {
+        "scrollWidth": 214,
+        "clientWidth": 214
+      },
+      "innerWidth": 459,
+      "rootFont": "16px"
+    },
+    {
+      "label": "step2-1049-text200",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "scopeOptions": 3,
+      "goalValue": null,
+      "titleValue": null,
+      "titleInput": false,
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "32px"
+    },
+    {
+      "label": "step2-460-text200",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "scopeOptions": 3,
+      "goalValue": null,
+      "titleValue": null,
+      "titleInput": false,
+      "continueDisabled": true,
+      "describedBy": "cb-scope-time",
+      "overflow": {
+        "scrollWidth": 214,
+        "clientWidth": 214
+      },
+      "innerWidth": 459,
+      "rootFont": "32px"
+    },
+    {
+      "label": "step2-size-chosen",
+      "hash": "#/coursebook",
+      "step": "2",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: review what will be created.",
+      "heading": "How much course do you want?",
+      "scopeOptions": 3,
+      "goalValue": null,
+      "titleValue": null,
+      "titleInput": false,
+      "continueDisabled": false,
+      "describedBy": null,
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "16px"
+    },
+    {
+      "label": "back-on-goal",
+      "hash": "#/coursebook",
+      "step": "1",
+      "spine": [
+        "1Goal",
+        "2Size",
+        "3Review"
+      ],
+      "next": "Next: choose how much course you want.",
+      "heading": "What do you want to be able to do?",
+      "scopeOptions": 0,
+      "goalValue": "Fix a flat tyre on my bike without help",
+      "titleValue": "Fix a flat tyre on my bike without help",
+      "titleInput": true,
+      "continueDisabled": false,
+      "describedBy": null,
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "16px"
+    }
+  ],
+  "started": true,
+  "plateClaim": [
+    "Understand the first month of a statistics class",
+    "Everyday:",
+    "Read a nutrition label for added sugar",
+    "Name this course (required)",
+    "Suggested from your goal — edit it if you like. This is the name you will see in your course list.",
+    "Continue"
+  ],
+  "afterGoal": {
+    "hash": "#/coursebook",
+    "step": "1",
+    "spine": [
+      "1Goal",
+      "2Size",
+      "3Review"
+    ],
+    "next": "Next: choose how much course you want.",
+    "heading": "What do you want to be able to do?",
+    "scopeOptions": 0,
+    "goalValue": "Fix a flat tyre on my bike without help",
+    "titleValue": "Fix a flat tyre on my bike without help",
+    "titleInput": true,
+    "continueDisabled": false,
+    "describedBy": null,
+    "overflow": {
+      "scrollWidth": 407,
+      "clientWidth": 407
+    },
+    "innerWidth": 1049,
+    "rootFont": "16px"
+  },
+  "continueClicked": true,
+  "scopeClicked": true,
+  "backClicked": true
+}

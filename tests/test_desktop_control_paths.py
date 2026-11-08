@@ -13,9 +13,11 @@ Three checks, all against the shipped module rather than a fixture:
    return; it must not call ``startLessonChat``. ``host.newChat`` swaps the route to ``#/`` by SDK
    design, which is exactly the dead end H-64 fixes.
 
-3. **The scope step is a real choice.** ``CreateCourseFlow`` step 1 renders the whole option card
-   as one ``role="option"`` control with a visible selected state, and its Continue button is
-   disabled — with a described reason — until a scope is chosen.
+3. **The create flow asks for the goal first and the scope second.** ``CreateCourseFlow`` step 1
+   renders the goal field (and the suggested name) with no scope options; step 2 renders the whole
+   option card as one ``role="option"`` control with a visible selected state, and its Continue
+   button is disabled — with a described reason — until a scope is chosen. H-170 reordered these:
+   the first-run plate promises "name one goal", so the goal must come first.
 
 What this does NOT prove: that the live Desktop window renders those nodes. That is
 ``scripts/h64-controls.mjs``'s job (``audit/h64/inventory.json``), which runs against CDP 9337.
@@ -41,13 +43,32 @@ BUTTON_PATTERN = re.compile(r"jsxs?\(\s*(sdk\.Button|CbAction|'button'|\"button\
 HANDLER_KEYS = ("onClick", "href", "asChild", "type: 'submit'", 'type: "submit"', "formAction")
 DISABLED_KEYS = ("disabled",)
 
+# ``SDK_STUB`` renders Input/Textarea as ``() => null`` because most surfaces under test must not
+# own text fields. The create flow's first step *is* a text field, so this file renders them for
+# real; otherwise "the first step contains the goal field" could not be asserted from the markup.
+RENDER_STUB = SDK_STUB.replace(
+    "export const Input = () => null",
+    "export const Input = (props) => el('input', { id: props.id || null, value: props.value || '', "
+    "'aria-describedby': props['aria-describedby'] || null })",
+).replace(
+    "export const Textarea = () => null",
+    "export const Textarea = (props) => el('textarea', { id: props.id || null, value: props.value || '', "
+    "'aria-describedby': props['aria-describedby'] || null })",
+)
+
 HARNESS = """
+import fs from 'node:fs'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { CreateCourseFlow } from './plugin.js'
 
+const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
 const html = renderToStaticMarkup(
-  React.createElement(CreateCourseFlow, { onCancel: () => {}, onCreated: () => {} })
+  React.createElement(CreateCourseFlow, {
+    onCancel: () => {},
+    onCreated: () => {},
+    seed: payload.seed || undefined
+  })
 )
 process.stdout.write(html)
 """
@@ -262,7 +283,9 @@ class LessonStartHasAVisibleResultTest(unittest.TestCase):
 
 
 class CreateFlowScopeChoiceTest(unittest.TestCase):
-    """Step 1 is one full-card option per scope, with a disabled, described Continue."""
+    """H-170: step 1 is the goal; step 2 is one full-card option per scope, with a described Continue."""
+
+    GOAL = "Order coffee and ask for the bill in Kyoto, politely."
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -288,28 +311,69 @@ class CreateFlowScopeChoiceTest(unittest.TestCase):
             encoding="utf-8",
         )
         (sdk / "index.js").write_text(
-            SDK_STUB.replace(
+            RENDER_STUB.replace(
                 "onClick: props.onClick",
                 "'aria-describedby': props['aria-describedby'] || null,\n    onClick: props.onClick",
             ),
             encoding="utf-8",
         )
         cls.root = root
+        # No seed: the flow's own first step. A seed that carries the goal (and no scope) opens on
+        # the size step, which is how the scope cards are rendered here without a live click.
+        cls.step_one = cls._render({})
+        cls.step_two = cls._render({"seed": {"goal": cls.GOAL}})
+        cls.html = cls.step_two
+
+    @classmethod
+    def _render(cls, payload: dict) -> str:
+        case = cls.root / "case.json"
+        case.write_text(json.dumps(payload), encoding="utf-8")
         result = subprocess.run(
-            ["node", str(root / "harness.mjs")],
-            cwd=root,
+            ["node", str(cls.root / "harness.mjs"), str(case)],
+            cwd=cls.root,
             capture_output=True,
             text=True,
             timeout=120,
         )
         if result.returncode != 0:
             raise AssertionError(result.stderr[-2000:])
-        cls.html = result.stdout
+        return result.stdout
 
     @classmethod
     def tearDownClass(cls) -> None:
         if hasattr(cls, "tmp"):
             cls.tmp.cleanup()
+
+    # ── the reorder: goal first ─────────────────────────────────────────────
+    def test_first_step_is_the_goal_field(self) -> None:
+        html = self.step_one
+        self.assertIn('id="cb-goal"', html)
+        self.assertIn('id="cb-title"', html)
+        self.assertIn("What do you want to be able to do?", html)
+        self.assertIn("Name this course (required)", html)
+
+    def test_first_step_offers_no_scope_options(self) -> None:
+        html = self.step_one
+        self.assertNotIn("data-cb-scope-option", html)
+        self.assertNotIn("A single lesson", html)
+        self.assertNotIn("A full course (weeks or months)", html)
+        self.assertNotIn("role=\"listbox\"", html)
+        self.assertNotIn("How much course", html.split("data-cb-create-next")[0])
+
+    def test_first_step_continue_is_disabled_until_the_goal_is_named(self) -> None:
+        html = self.step_one
+        self.assertIn('aria-describedby="cb-goal-help"', html)
+        self.assertRegex(html, r'<button[^>]*disabled[^>]*>Continue</button>')
+        # The spine names the new order, and the next line points at the size choice.
+        self.assertIn('data-cb-create-step="1" aria-current="step"', html)
+        self.assertIn("Next: choose how much course you want.", html)
+
+    def test_second_step_offers_all_three_scopes(self) -> None:
+        html = self.step_two
+        self.assertIn("data-cb-create-step=\"2\" aria-current=\"step\"", html)
+        self.assertIn("How much course do you want?", html)
+        for scope_id in ("single", "short", "full"):
+            self.assertIn(f'data-cb-scope-option="{scope_id}"', html)
 
     def test_each_scope_is_one_option_card(self) -> None:
         for scope_id in ("single", "short", "full"):

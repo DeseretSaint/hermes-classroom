@@ -6241,33 +6241,92 @@ async function startLearnerPlan({ call, key, title, goal, recipe, dials, locale,
  */
 const SCOPE_DEFAULT_RECIPE = { single: 'one_off', short: 'casual', full: 'committed' }
 
-/** The three steps, in the words a learner uses, each with the next thing that will happen. */
+/**
+ * H-168 mirror: the depth a course size actually gets. `coursebook.research.effective_depth()`
+ * floors the research pass by scope (single/short → working, full → deep); this is the same table
+ * so the create form's default dial agrees with the pass the backend will run. It is a default
+ * only — the learner can still pick a deeper pass in the tune control — and the backend remains
+ * the authority that applies the floor. The payload keeps the closed four-dial object.
+ */
+const SCOPE_MIN_DEPTH = Object.freeze({ single: 'working', short: 'working', full: 'deep' })
+const DEPTH_ORDER = Object.freeze(['survey', 'working', 'deep'])
+
+function effectiveDepth(depth, scope) {
+  const floor = SCOPE_MIN_DEPTH[scope] || 'survey'
+  const declared = DEPTH_ORDER.indexOf(depth) >= 0 ? depth : 'working'
+  return DEPTH_ORDER.indexOf(declared) >= DEPTH_ORDER.indexOf(floor) ? declared : floor
+}
+
+/**
+ * The three steps, in the words a learner uses, each with the next thing that will happen.
+ *
+ * H-170: the goal is first. The first-run plate promises "name one goal, review the plan", so the
+ * flow has to open on the goal field — a first-time learner should never be asked "a single
+ * lesson, a short course or a full course" before they have said what they want to learn. Size
+ * stays a required choice on step 2 (no default is preselected) and Review still gates the single
+ * mutation.
+ */
 const CREATE_STEP_SPINE = Object.freeze([
-  { n: 1, name: 'Size', next: 'Next: name the goal and the course.' },
-  { n: 2, name: 'Goal', next: 'Next: review what will be created.' },
+  { n: 1, name: 'Goal', next: 'Next: choose how much course you want.' },
+  { n: 2, name: 'Size', next: 'Next: review what will be created.' },
   { n: 3, name: 'Review', next: 'Create the course, then review the draft plan.' }
 ])
+
+/**
+ * Which step a seeded create form opens on: the first one whose answer is still missing. A rejected
+ * plan's own choices are prefilled, so re-answering them is not demanded — but the form never
+ * submits itself: with every answer present it opens on Review, where Create is still a press.
+ */
+function createStartStep(seed) {
+  if (!seed) return 1
+  if (!String(seed.goal || '').trim()) return 1
+  if (!String(seed.scope || '').trim()) return 2
+  return 3
+}
+
+/**
+ * A short course name derived from the goal, so naming the course is one keystroke of work rather
+ * than a second question. The learner can always edit it; the goal never changes because of it.
+ * No word is invented: the name is the goal's first sentence, clamped to a list-row width.
+ */
+function suggestedTitle(goal) {
+  const clean = String(goal || '').replace(/\s+/g, ' ').trim()
+  if (!clean) return ''
+  const firstClause = clean.split(/[.!?](\s|$)/)[0].trim()
+  const base = firstClause || clean
+  if (base.length <= 64) return base
+  return `${base.slice(0, 61).trimEnd()}…`
+}
 
 /** A compact staged create flow; every step is editable before the one mutation. */
 function CreateCourseFlow({ onCancel, onCreated, seed }) {
   // H-103: a rejected plan can hand its goal and choices back here. The seed is a starting point,
-  // never a silent submission: the learner still reviews and presses Create. Opening from the plan
-  // rejection lands on the Goal step, because size and recipe were already answered last time.
+  // never a silent submission: the learner still reviews and presses Create. H-170: it opens on the
+  // first step whose answer is still missing (goal, then size, then review), so a seed that already
+  // carries both answers starts at Review rather than re-asking what is known.
   const start = seed || {}
-  const [step, setStep] = useState(seed ? 2 : 1)
+  const [step, setStep] = useState(createStartStep(seed))
   const [goal, setGoal] = useState(start.goal || '')
-  const [title, setTitle] = useState(start.title || '')
+  const [title, setTitle] = useState(start.title || suggestedTitle(start.goal || ''))
+  // H-170: the title follows the goal until the learner edits it, so naming the course costs one
+  // glance instead of a second question. Once edited, it is theirs and stops following.
+  const [titleEdited, setTitleEdited] = useState(Boolean(String(start.title || '').trim()))
   const [recipe, setRecipe] = useState(start.recipe || 'casual')
-  // No scope is preselected: the first screen asks for intent, so "Continue" is only enabled once
+  // No scope is preselected: the size step asks a real question, so "Continue" is only enabled once
   // the learner has said whether this is one lesson, a short course or a full course (UX-09).
   const [scope, setScope] = useState(start.scope || '')
   const [recipeTouched, setRecipeTouched] = useState(Boolean(seed))
   const [level, setLevel] = useState(start.level || '')
   const [subjectDomain, setSubjectDomain] = useState(start.subjectDomain || '')
   const [locale, setLocale] = useState(start.locale || '')
-  const [dials, setDials] = useState(
-    start.dials || { pace: 'light', depth: 'survey', assessment: 'self_check', autonomy: 'guided' }
-  )
+  const [dials, setDials] = useState(() => {
+    const base = start.dials || { pace: 'light', depth: 'working', assessment: 'self_check', autonomy: 'guided' }
+    // A seeded scope raises a too-low stored depth to the floor the backend will actually run.
+    return { ...base, depth: effectiveDepth(base.depth, start.scope || '') }
+  })
+  // H-168: the depth default follows the scope until the learner opens the tune control and picks
+  // one. An explicit pick is kept, but never below the size's floor.
+  const [depthTouched, setDepthTouched] = useState(Boolean(start.dials))
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
   // The course/enrolment can already exist when the plan job fails. Those ids stay on screen so the
@@ -6277,15 +6336,31 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
   const [error, setError] = useState(null)
   const keyRef = useRef(null)
 
-  const goalInvalid = step >= 1 && goal.trim().length === 0
-  const canAdvance = step === 1 ? Boolean(scope) : goal.trim().length > 0 && title.trim().length > 0
+  const goalInvalid = step === 1 && goal.trim().length === 0
+  // Goal step needs the goal (the title is suggested from it), size step needs a scope. Review has
+  // everything, so it is never blocked by this gate.
+  const canAdvance = step === 1 ? goal.trim().length > 0 && title.trim().length > 0 : Boolean(scope)
+
+  const changeGoal = useCallback(
+    (next) => {
+      const value = String(next || '')
+      setGoal(value)
+      if (!titleEdited) setTitle(suggestedTitle(value))
+    },
+    [titleEdited]
+  )
 
   const chooseScope = useCallback(
     (id) => {
       setScope(id)
       if (!recipeTouched) setRecipe(SCOPE_DEFAULT_RECIPE[id] || 'casual')
+      // H-168: an untouched depth follows the size; an explicit one is raised to the size's floor.
+      setDials((current) => {
+        const next = depthTouched ? effectiveDepth(current.depth, id) : SCOPE_MIN_DEPTH[id] || current.depth
+        return next === current.depth ? current : { ...current, depth: next }
+      })
     },
-    [recipeTouched]
+    [depthTouched, recipeTouched]
   )
   const chooseRecipe = useCallback((id) => {
     setRecipeTouched(true)
@@ -6303,7 +6378,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
       title: title.trim(),
       goal: goal.trim(),
       recipe,
-      dials,
+      dials: { ...dials, depth: effectiveDepth(dials.depth, scope) },
       locale: locale.trim() || null,
       level: level.trim() || null,
       subjectDomain: subjectDomain.trim() || null,
@@ -6384,6 +6459,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 setStep(1)
                 setGoal('')
                 setTitle('')
+                setTitleEdited(false)
                 setLevel('')
                 setSubjectDomain('')
                 setLocale('')
@@ -6398,7 +6474,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     })
   }
 
-  const stepTitle = step === 1 ? 'What do you want to make?' : step === 2 ? 'What should it cover?' : 'Review and create'
+  const stepTitle = step === 1 ? 'What do you want to be able to do?' : step === 2 ? 'How much course do you want?' : 'Review and create'
 
   return jsxs('div', {
     className: 'mx-auto flex w-full max-w-2xl flex-col gap-4 py-2',
@@ -6454,7 +6530,60 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
       }),
       step === 1
         ? jsxs('div', {
-            className: 'flex flex-col gap-3',
+            className: 'flex flex-col gap-4',
+            children: [
+              jsxs('div', {
+                className: 'flex flex-col gap-1.5',
+                children: [
+                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-goal', children: 'What do you want to be able to do?' }),
+                  jsx(sdk.Textarea, {
+                    'aria-describedby': 'cb-goal-help',
+                    'aria-invalid': goalInvalid ? true : undefined,
+                    id: 'cb-goal',
+                    onChange: (event) => changeGoal(event.target.value),
+                    placeholder: GOAL_PLACEHOLDER,
+                    rows: 4,
+                    value: goal
+                  }),
+                  jsx('div', {
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    id: 'cb-goal-help',
+                    children:
+                      goal.trim().length === 0
+                        ? 'Say it as the situation you want to handle. The examples below are starting points, not a course yet.'
+                        : `${goal.trim().length} characters. Keep editing, or start from a different example.`
+                  }),
+                  jsx(GoalGallery, { onChoose: changeGoal })
+                ]
+              }),
+              jsxs('div', {
+                className: 'flex flex-col gap-1.5',
+                children: [
+                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Name this course (required)' }),
+                  jsx(sdk.Input, {
+                    id: 'cb-title',
+                    onChange: (event) => {
+                      setTitleEdited(true)
+                      setTitle(event.target.value)
+                    },
+                    placeholder: TITLE_PLACEHOLDER,
+                    value: title
+                  }),
+                  jsx('div', {
+                    'data-cb-title-hint': '',
+                    className: 'text-xs text-(--ui-text-secondary)',
+                    children: titleEdited
+                      ? 'This is the name you will see in your course list.'
+                      : 'Suggested from your goal — edit it if you like. This is the name you will see in your course list.'
+                  })
+                ]
+              })
+            ]
+          })
+        : null,
+      step === 2
+        ? jsxs('div', {
+            className: 'flex flex-col gap-4',
             children: [
               jsx('p', {
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -6512,53 +6641,6 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 children: scope
                   ? planTimingCopy(scope)
                   : 'Choose one option above to continue. Nothing is generated until you review the plan on the last step.'
-              })
-            ]
-          })
-        : null,
-      step === 2
-        ? jsxs('div', {
-            className: 'flex flex-col gap-4',
-            children: [
-              jsxs('div', {
-                className: 'flex flex-col gap-1.5',
-                children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-goal', children: 'What do you want to be able to do?' }),
-                  jsx(sdk.Textarea, {
-                    'aria-describedby': 'cb-goal-help',
-                    'aria-invalid': goalInvalid ? true : undefined,
-                    id: 'cb-goal',
-                    onChange: (event) => setGoal(event.target.value),
-                    placeholder: GOAL_PLACEHOLDER,
-                    rows: 4,
-                    value: goal
-                  }),
-                  jsx('div', {
-                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-                    id: 'cb-goal-help',
-                    children:
-                      goal.trim().length === 0
-                        ? 'Say it as the situation you want to handle. The examples below are starting points, not a course yet.'
-                        : `${goal.trim().length} characters. Keep editing, or start from a different example.`
-                  }),
-                  jsx(GoalGallery, { onChoose: setGoal })
-                ]
-              }),
-              jsxs('div', {
-                className: 'flex flex-col gap-1.5',
-                children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Name this course (required)' }),
-                  jsx(sdk.Input, {
-                    id: 'cb-title',
-                    onChange: (event) => setTitle(event.target.value),
-                    placeholder: TITLE_PLACEHOLDER,
-                    value: title
-                  }),
-                  jsx('div', {
-                    className: 'text-xs text-(--ui-text-secondary)',
-                    children: 'This is the name you will see in your course list.'
-                  })
-                ]
               }),
               jsxs('div', {
                 className: 'flex flex-col',
@@ -6640,11 +6722,30 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                           children: [
                             jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: DIALS[dial].label }),
                             jsx(sdk.SegmentedControl, {
-                              onChange: (value) => setDials((current) => ({ ...current, [dial]: value })),
+                              onChange: (value) => {
+                                if (dial === 'depth') {
+                                  // H-168: an explicit pick is honoured, but never below the size's
+                                  // research floor — the control shows the depth that will be sent,
+                                  // so what the learner sees is what the plan runs.
+                                  setDepthTouched(true)
+                                  setDials((current) => ({ ...current, depth: effectiveDepth(value, scope) }))
+                                  return
+                                }
+                                setDials((current) => ({ ...current, [dial]: value }))
+                              },
                               options: DIALS[dial].options,
                               sizing: 'content',
                               value: dials[dial]
-                            })
+                            }),
+                            // H-168: the size's research floor is stated, not hidden — the default
+                            // depth already follows it, and a lower pick is raised to it.
+                            dial === 'depth' && scope
+                              ? jsx('div', {
+                                  'data-cb-depth-floor': scope,
+                                  className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                                  children: `This size is researched at ${dialLabel('depth', SCOPE_MIN_DEPTH[scope])} depth or deeper.`
+                                })
+                              : null
                           ]
                         }, dial)
                       ),
@@ -6713,8 +6814,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
             : null,
           step < 3
             ? jsx(CbAction, {
-                'aria-describedby': step === 1 && !canAdvance ? 'cb-scope-time' : undefined,
-                disabled: step === 1 ? !canAdvance : false,
+                'aria-describedby':
+                  !canAdvance ? (step === 1 ? 'cb-goal-help' : 'cb-scope-time') : undefined,
+                disabled: !canAdvance,
                 onClick: () => setStep(step + 1),
                 variant: 'primary',
                 children: 'Continue'
@@ -22641,6 +22743,10 @@ export {
   FieldDesk,
   deskEstimateState,
   CreateCourseFlow,
+  createStartStep,
+  suggestedTitle,
+  effectiveDepth,
+  SCOPE_MIN_DEPTH,
   LessonPlayer,
   PlayerVerdict,
   PlayerClose,
