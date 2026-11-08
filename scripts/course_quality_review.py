@@ -8,8 +8,9 @@ dimension blocks. It never fills a score, never calls a model, a database or the
 never computes an aggregate, mastery or engagement number.
 
 The ``check`` subcommand validates a completed record: eight dimensions exactly once, integer
-scores 1 to 4, evidence of real length, a follow-up reference for every dimension below 3, a
-named reviewer and the echoed validator verdict. A record that fails is not a review.
+scores 1 to 4, evidence of real length, a routed follow-up for every dimension below 3, a named
+reviewer on the label's own line, the echoed validator verdict, and no aggregate, percentage or
+mastery claim anywhere in the reviewer's own prose. A record that fails is not a review.
 
 Usage::
 
@@ -76,25 +77,62 @@ MAX_SECTIONS = 64
 MAX_SEGMENTS = 8
 EVIDENCE_MIN_CHARS = 40
 
-#: Phrases a completed record may not contain. The rubric refuses these as evidence; a record
-#: that smuggles one back in is not a valid review.
+#: Patterns a completed record may not assert anywhere in the document. The rubric refuses these
+#: as evidence; a record that smuggles one back in is not a valid review. These are matched against
+#: the reviewer's own prose only (see :func:`_assertion_text`), so a quoted example of the checker's
+#: own holes is not mistaken for an aggregate the record is claiming.
 FORBIDDEN_PATTERNS: tuple[tuple[str, str], ...] = (
-    (r"\bmastery[ _]score\b", "mastery score"),
-    (r"\bmastery percentage\b", "mastery percentage"),
+    (r"\bmastery\b", "mastery claim"),
     (r"\bpercent_mastered\b", "percent mastered"),
-    (r"\boverall score\b", "overall score"),
-    (r"\baverage score\b", "average score"),
-    (r"\btotal score\b", "total score"),
+    (r"\b\d+(?:\.\d+)?[ \t]*%", "percentage"),
+    (
+        r"\b(?:aggregate|overall|total|average|mean|composite)\b[ _-]*"
+        r"(?:score|quality|rating|grade|percentage|mastery)\b",
+        "aggregate or overall score",
+    ),
     (r"\bleaderboard\b", "leaderboard"),
     (r"\bquality badge\b", "quality badge"),
     (r"\bpublic badge\b", "public badge"),
 )
 
+#: The disclaimer names the refused concepts; it is removed before the forbidden scan.
+DISCLAIMER = (
+    "This record is not a mastery score, an engagement metric, a badge or a leaderboard. "
+    "The eight 1-4 verdicts below are reviewer judgments about course design; they are never "
+    "summed, averaged or shown to a learner. The validator's structural pass remains the gate "
+    "(`docs/COURSE-QUALITY-RUBRIC.md`)."
+)
+
+#: Quoted spans are evidence the reviewer is quoting, not a claim they are making. This is how the
+#: H-173d records name the checker's own "Aggregate score: 24 out of 32" hole without failing it.
+QUOTED_SPAN_RE = re.compile(r"`[^`]{0,200}`|\"[^\"]{0,200}\"|“[^”]{0,200}”", re.DOTALL)
+#: A record may say mastery is not recorded; that is the refusal vocabulary, not a mastery claim.
+NEGATED_MASTERY_RE = re.compile(
+    r"\b(?:not|no|never)\s+(?:a\s+|an\s+)?mastery\b|\bmastery\s+(?:is|was|remains)\s+not\b",
+    re.IGNORECASE,
+)
+
+#: A forbidden claim that is the whole line is still forbidden when it is wrapped in quotation
+#: marks: quoting an aggregate does not turn the record's own headline number into a citation.
+STANDALONE_FORBIDDEN_RE = re.compile(
+    r"^[ \t]*(?:[-*+][ \t]+)?[`\"“]?"
+    r"(?:(?:aggregate|overall|total|average|mean|composite)\b[^\n]{0,40}"
+    r"\b(?:score|quality|rating|grade|percentage|mastery)\b"
+    r"|\d+(?:\.\d+)?[ \t]*%"
+    r"|mastery\b)",
+    re.IGNORECASE | re.MULTILINE,
+)
+
 FOLLOW_UP_RE = re.compile(r"^(t_[0-9a-f]{6,}|H-\d+[A-Za-z]?)$")
-REVIEWER_RE = re.compile(r"^Reviewer:\s*(\S.*)$", re.MULTILINE)
-VERDICT_RE = re.compile(r"^Validator verdict:\s*(\S.*)$", re.MULTILINE)
-SAMPLE_RE = re.compile(r"^Sample:\s*(\S.*)$", re.MULTILINE)
-SCOPE_RE = re.compile(r"^Scope:\s*(\S.*)$", re.MULTILINE)
+#: A header value is a single line: ``\s*`` would span the newline and capture the next header.
+REVIEWER_RE = re.compile(r"^Reviewer:[ \t]*(\S.*)$", re.MULTILINE)
+VERDICT_RE = re.compile(r"^Validator verdict:[ \t]*(\S.*)$", re.MULTILINE)
+SAMPLE_RE = re.compile(r"^Sample:[ \t]*(\S.*)$", re.MULTILINE)
+SCOPE_RE = re.compile(r"^Scope:[ \t]*(\S.*)$", re.MULTILINE)
+#: A captured reviewer value that is really the next header line is not a name.
+HEADER_PREFIX_RE = re.compile(
+    r"^(?:sample|scope|validator verdict|reviewer|score|evidence|follow-up|question)\s*:", re.I
+)
 HEADING_RE = re.compile(r"^### (D[1-8]) ([a-z_]+)\s*$", re.MULTILINE)
 SCORE_RE = re.compile(r"^Score:[ \t]*(\S.*)$", re.MULTILINE)
 EVIDENCE_RE = re.compile(r"^Evidence:[ \t]*(.*)$", re.MULTILINE)
@@ -514,6 +552,31 @@ def _dimension_blocks(text: str) -> list[tuple[str, str, str]]:
     return blocks
 
 
+def _without_disclaimer(text: str) -> str:
+    return text.replace(DISCLAIMER, "")
+
+
+def _assertion_text(text: str) -> str:
+    """Return the record's own claims: disclaimer, quotations and negated mastery removed."""
+    return NEGATED_MASTERY_RE.sub(" ", QUOTED_SPAN_RE.sub(" ", _without_disclaimer(text)))
+
+
+def forbidden_language(text: str) -> list[str]:
+    """Return the labels of every refused aggregate or engagement claim the record asserts."""
+    scan_text = _assertion_text(text)
+    standalone_text = NEGATED_MASTERY_RE.sub(" ", _without_disclaimer(text))
+    hits: list[str] = []
+    for pattern, label in FORBIDDEN_PATTERNS:
+        if re.search(pattern, scan_text, re.IGNORECASE) and label not in hits:
+            hits.append(label)
+    if (
+        not {"aggregate or overall score", "percentage", "mastery claim"} & set(hits)
+        and STANDALONE_FORBIDDEN_RE.search(standalone_text)
+    ):
+        hits.append("aggregate, percentage or mastery claim on its own line")
+    return hits
+
+
 def check_record(text: str) -> list[str]:
     """Return every problem with a completed record. Empty list means the record is valid."""
     errors: list[str] = []
@@ -521,30 +584,30 @@ def check_record(text: str) -> list[str]:
         return [f"record is {len(text)} characters, over the {MAX_RECORD_BYTES}-character cap"]
 
     reviewer_match = REVIEWER_RE.search(text)
-    if not reviewer_match or reviewer_match.group(1).strip().lower() in {"", "name", "reviewer"}:
-        errors.append("Reviewer: a named reviewer is required")
+    if not reviewer_match:
+        errors.append("Reviewer: a named reviewer is required on the same line as the label")
+    else:
+        reviewer = reviewer_match.group(1).strip()
+        if (
+            not reviewer
+            or reviewer.lower() in {"name", "reviewer"}
+            or HEADER_PREFIX_RE.match(reviewer)
+        ):
+            errors.append(
+                f"Reviewer: {reviewer!r} is not a named reviewer (blank, a placeholder or a "
+                "header line)"
+            )
     if not SAMPLE_RE.search(text):
         errors.append("Sample: a stable sample id is required")
     if not SCOPE_RE.search(text):
         errors.append("Scope: the reviewed scope is required")
     if not VERDICT_RE.search(text):
         errors.append("Validator verdict: echo the validator's recorded verdict")
-    disclaimer = (
-        "This record is not a mastery score, an engagement metric, a badge or a leaderboard. "
-        "The eight 1-4 verdicts below are reviewer judgments about course design; they are never "
-        "summed, averaged or shown to a learner. The validator's structural pass remains the gate "
-        "(`docs/COURSE-QUALITY-RUBRIC.md`)."
-    )
-    if disclaimer not in text:
+    if DISCLAIMER not in text:
         errors.append("the record must carry the not-a-mastery-score disclaimer")
-        scan_text = text
-    else:
-        # The disclaimer names the refused concepts; scan everything the reviewer wrote instead.
-        scan_text = text.replace(disclaimer, "")
 
-    for pattern, label in FORBIDDEN_PATTERNS:
-        if re.search(pattern, scan_text, re.IGNORECASE):
-            errors.append(f"forbidden aggregate or engagement language: {label}")
+    for label in forbidden_language(text):
+        errors.append(f"forbidden aggregate or engagement language: {label}")
 
     blocks = _dimension_blocks(text)
     seen: dict[str, list[tuple[str, str]]] = {}
@@ -598,11 +661,17 @@ def check_record(text: str) -> list[str]:
             if score < 3:
                 if not follow_match or not follow_match.group(1).strip():
                     errors.append(
-                        f"{dimension_id}: score {score} needs a follow-up reference (t_... or H-...)"
+                        f"{dimension_id}: score {score} needs a follow-up reference "
+                        "(t_... or H-...); 'none' does not route the finding"
                     )
                 else:
                     value = follow_match.group(1).strip()
-                    if value.lower() != "none" and not FOLLOW_UP_RE.match(value):
+                    if value.lower() == "none":
+                        errors.append(
+                            f"{dimension_id}: score {score} cannot say 'Follow-up: none'; a "
+                            "dimension below 3 must route to a task id or card id"
+                        )
+                    elif not FOLLOW_UP_RE.match(value):
                         errors.append(
                             f"{dimension_id}: follow-up {value!r} is not a task id or card id"
                         )
