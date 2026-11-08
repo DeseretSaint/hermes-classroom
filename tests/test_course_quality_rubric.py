@@ -93,6 +93,28 @@ class RubricFileTest(unittest.TestCase):
         for anchor in ("| 1 |", "| 2 |", "| 3 |", "| 4 |"):
             self.assertIn(anchor, text, f"rubric has no 1-4 scale anchor {anchor}")
 
+    def test_d3_states_the_0_1_0_ceiling_for_a_checklist_only_procedure_course(self) -> None:
+        """H-173f: D3 anchor 2 is the ceiling for a checklist-only procedure course.
+
+        The wording, not the validator's pass, must decide the case: a reviewer who reads D3 and
+        an artifact whose attempt stores ticked item ids as ``self_reported`` must land on 2.
+        """
+        text = RUBRIC.read_text(encoding="utf-8")
+        d3 = text.split("### D3 `evidence_target_fit`", 1)[1].split("### D4", 1)[0]
+        self.assertIn("0.1.0 ceiling on anchor 2", d3)
+        self.assertIn("scores at most 2 here", d3)
+        self.assertIn("evidence_target: procedure", d3)
+        self.assertIn("evidence_class = self_reported", d3)
+        self.assertIn("coursebook/grading.py:40", d3)
+        # Stated once at the anchor, not restated as a second lane decision.
+        self.assertEqual(text.count("0.1.0 ceiling on anchor 2"), 1)
+        # The question text, the 1-4 anchors and the refusal line survive the amendment.
+        self.assertIn(
+            "Question: does the check measure the evidence target the objective declares?", d3
+        )
+        self.assertIn("self-ticked checklist for a procedure", " ".join(d3.split()))
+        self.assertIn("Does not count:", d3)
+
     def test_rubric_forbids_score_as_mastery_and_engagement(self) -> None:
         text = RUBRIC.read_text(encoding="utf-8")
         self.assertIn("These are refused as evidence", text)
