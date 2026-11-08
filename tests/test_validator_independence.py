@@ -474,7 +474,9 @@ class RecordedIdentityTest(unittest.TestCase):
         self.assertEqual(record["independence"], "independent")
         self.assertEqual(record["facts_unverified"], 0)
         self.assertIsNotNone(result["validation"]["cost"])
-        self.assertEqual(result["validation"]["cost"]["calls"], 1)
+        self.assertEqual(
+            result["validation"]["cost"]["calls"], len(gen.VALIDATION_CRITERIA_PASSES)
+        )
         self.assertIn("coursebook.plan.validate", result["usage"]["by_purpose"])
 
 

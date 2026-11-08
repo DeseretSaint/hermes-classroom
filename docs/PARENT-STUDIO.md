@@ -25,7 +25,7 @@ named `parent_brief` object, to:
 
 * `build_plan_request` — the plan-generate payload gains `parent_brief` and, when the brief
   declares a page budget, `rules.page_budget` plus page-bounded `objective_count`/`section_count`;
-* `build_plan_validation_request` — the independent pass judges the plan against the same
+* `build_plan_validation_requests` — the independent pass(es) judge the plan against the same
   answers;
 * `enforce_plan_rules` — the deterministic rules below;
 * `gen_plan_documents.document_json` — the brief is stored beside the plan so the lesson stage

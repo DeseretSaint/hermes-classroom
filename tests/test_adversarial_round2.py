@@ -226,11 +226,11 @@ class SourceTrustTest(unittest.TestCase):
             goal="order coffee", recipe="committed", dials={"level": "L0"}, locale="ja-JP",
             research_run=run,
         )
-        validation_request = gen.build_plan_validation_request(
+        validation_requests = gen.build_plan_validation_requests(
             plan=plan_fixture(), goal="order coffee", recipe="committed",
             dials={"level": "L0"}, locale="ja-JP", research_run=run,
         )
-        for request in (plan_request, validation_request):
+        for request in (plan_request, *validation_requests):
             self.assertIn("Ignore all previous " + "instructions", request.input_text)
             self.assertIn("https://invented.invalid/authority", request.input_text)
             self.assertIn(gen.UNTRUSTED_SOURCE_BEGIN, request.input_text)

@@ -665,7 +665,8 @@ class PlanJobTest(GenerationTestBase):
         self.assertEqual(json.loads(research_rows[0]["failures_json"]), [])
 
         usage_rows = self.rows("SELECT * FROM usage_events")
-        self.assertEqual(len(usage_rows), 2)
+        # One generation call plus one validation call per criteria pass (H-191 follow-up).
+        self.assertEqual(len(usage_rows), 1 + len(gen.VALIDATION_CRITERIA_PASSES))
         tokens = json.loads(usage_rows[0]["tokens_json"])
         self.assertEqual(tokens["input_tokens"], 120)
         self.assertFalse(tokens["unknown_cost"])
@@ -730,7 +731,8 @@ class PlanJobTest(GenerationTestBase):
             FakeSearch(),
             now=NOW,
         )
-        self.assertEqual(result["usage"]["cost_usd"], 0.01)  # known spend only; nothing invented
+        # Known spend only; nothing invented. Validation is one call per criteria pass.
+        self.assertEqual(result["usage"]["cost_usd"], 0.01 * len(gen.VALIDATION_CRITERIA_PASSES))
         self.assertTrue(result["usage"]["unknown_cost"])
         token_rows = [json.loads(row["tokens_json"]) for row in self.rows("SELECT tokens_json FROM usage_events")]
         self.assertIn(None, [row["cost_usd"] for row in token_rows])  # unknown stayed null
@@ -867,7 +869,7 @@ class PlanJobTest(GenerationTestBase):
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": plan_from_fixture(),
-                "coursebook.plan.validate": [response(partial, model="fake-validator")],
+                "coursebook.plan.validate": lambda request: response(partial, model="fake-validator"),
             }
         )
         with self.assertRaises(gen.GenerationRejected) as raised:
@@ -896,10 +898,9 @@ class PlanJobTest(GenerationTestBase):
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": plan_from_fixture(),
-                "coursebook.plan.validate": [
-                    lambda request: response(_with_source(conflict, request), model="fake-validator"),
-                    lambda request: response(_with_source(conflict, request), model="fake-validator"),
-                ],
+                "coursebook.plan.validate": lambda request: response(
+                    _with_source(conflict, request), model="fake-validator"
+                ),
             }
         )
         result = gen.run_plan_job(self.connection, plan_job(), llm, FakeSearch(), now=NOW)
@@ -907,7 +908,7 @@ class PlanJobTest(GenerationTestBase):
         self.assertEqual(result["validation_verdict"], "reject")
         self.assertTrue(result["rejection_reasons"])
         # The regeneration request carried the validator's reasons, not just "try again".
-        second = llm.requests[2]
+        second = [item for item in llm.requests if item.purpose == "coursebook.plan.generate"][1]
         self.assertIn("revision_instructions", second.input_text)
         self.assertIn("casual greeting", second.input_text)
         # The validator's contradiction verdict moved the ledger status, not the generator's claim.
@@ -936,7 +937,7 @@ class PlanJobTest(GenerationTestBase):
         llm = FakeLLM(
             {
                 "coursebook.plan.generate": [first, second],
-                "coursebook.plan.validate": [validation_from_fixture("validation_reject_check")],
+                "coursebook.plan.validate": validation_from_fixture("validation_reject_check"),
             }
         )
         result = gen.run_plan_job(
@@ -1053,7 +1054,7 @@ class PlanJobTest(GenerationTestBase):
         plan_request = gen.build_plan_request(
             goal="g", recipe="casual", dials={}, locale=None, research_run=research.ResearchRun("unavailable", [], [], "none")
         )
-        validation_request = gen.build_plan_validation_request(
+        validation_requests = gen.build_plan_validation_requests(
             plan=fixture("plan_one_off"),
             goal="g",
             recipe="casual",
@@ -1061,11 +1062,13 @@ class PlanJobTest(GenerationTestBase):
             locale=None,
             research_run=research.ResearchRun("unavailable", [], [], "none"),
         )
+        validation_request = validation_requests[0]
         self.assertNotEqual(plan_request.system_prompt, validation_request.system_prompt)
         self.assertNotEqual(
             canonical_json(plan_request.schema), canonical_json(validation_request.schema)
         )
-        gen.assert_separate_pass(plan_request, validation_request)  # must not raise
+        for request in validation_requests:
+            gen.assert_separate_pass(plan_request, request)  # must not raise
         with self.assertRaises(gen.GenerationRejected):
             gen.assert_separate_pass(plan_request, plan_request)
 
@@ -1634,10 +1637,10 @@ class ProviderDeadlineTest(unittest.TestCase):
                 goal="g", recipe="casual", dials={}, locale=None,
                 research_run=research.ResearchRun("unavailable", [], [], "none"), timeout_s=timeout_s,
             ),
-            "coursebook.plan.validate": lambda: gen.build_plan_validation_request(
+            "coursebook.plan.validate": lambda: gen.build_plan_validation_requests(
                 plan={}, goal="g", recipe="casual", dials={}, locale=None,
                 research_run=research.ResearchRun("unavailable", [], [], "none"), timeout_s=timeout_s,
-            ),
+            )[0],
             "coursebook.unit_sections.generate": lambda: gen.build_unit_sections_request(
                 plan={"title": "t", "scope": "single"},
                 unit={"ordinal": 1, "title": "u", "goal": "g", "target_lessons": 1},
@@ -1763,7 +1766,7 @@ class SourceTrustTest(GenerationTestBase):
                 goal="order coffee", recipe="committed", dials={"level": "L0"}, locale="ja-JP",
                 research_run=run,
             ),
-            gen.build_plan_validation_request(
+            *gen.build_plan_validation_requests(
                 plan=plan_fixture("plan_ja"), goal="order coffee", recipe="committed",
                 dials={"level": "L0"}, locale="ja-JP", research_run=run,
             ),

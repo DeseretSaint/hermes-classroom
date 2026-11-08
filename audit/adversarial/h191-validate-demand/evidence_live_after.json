@@ -1,0 +1,175 @@
+{
+  "author_model_from_db": null,
+  "baseline_single_call": {
+    "completion_tokens": [
+      12356,
+      16060,
+      15499,
+      16188
+    ],
+    "declared_deadline_s": 180.0,
+    "elapsed_s": [
+      242.955,
+      283.606,
+      286.065,
+      282.507
+    ],
+    "source": "audit/adversarial/h191-validate-stall/STATUS.md"
+  },
+  "generated_at": "2026-11-08T12:21:34-0700",
+  "pass_count": 5,
+  "requests": [
+    {
+      "claims": [
+        "objective:1"
+      ],
+      "criteria": [
+        "objective_alignment",
+        "source_support"
+      ],
+      "declared_deadline_s": 180.0,
+      "input_text_bytes": 10237,
+      "instructions_bytes": 1382,
+      "max_tokens": 2000,
+      "prompt_version": "validation-prompt.v3",
+      "purpose": "coursebook.plan.validate",
+      "schema_bytes": 1881,
+      "schema_name": "coursebook_validation_v1",
+      "wire_messages_bytes": 14809
+    },
+    {
+      "claims": [
+        "unit:1"
+      ],
+      "criteria": [
+        "factual_correctness",
+        "answer_uniqueness"
+      ],
+      "declared_deadline_s": 180.0,
+      "input_text_bytes": 10237,
+      "instructions_bytes": 982,
+      "max_tokens": 2000,
+      "prompt_version": "validation-prompt.v3",
+      "purpose": "coursebook.plan.validate",
+      "schema_bytes": 1882,
+      "schema_name": "coursebook_validation_v1",
+      "wire_messages_bytes": 14410
+    },
+    {
+      "claims": [
+        "plan:learner_outcome"
+      ],
+      "criteria": [
+        "alternative_coverage",
+        "rubric_consistency"
+      ],
+      "declared_deadline_s": 180.0,
+      "input_text_bytes": 10237,
+      "instructions_bytes": 998,
+      "max_tokens": 2000,
+      "prompt_version": "validation-prompt.v3",
+      "purpose": "coursebook.plan.validate",
+      "schema_bytes": 1900,
+      "schema_name": "coursebook_validation_v1",
+      "wire_messages_bytes": 14444
+    },
+    {
+      "claims": [],
+      "criteria": [
+        "internal_contradiction",
+        "answer_leakage"
+      ],
+      "declared_deadline_s": 180.0,
+      "input_text_bytes": 10237,
+      "instructions_bytes": 548,
+      "max_tokens": 2000,
+      "prompt_version": "validation-prompt.v3",
+      "purpose": "coursebook.plan.validate",
+      "schema_bytes": 997,
+      "schema_name": "coursebook_validation_v1",
+      "wire_messages_bytes": 13091
+    },
+    {
+      "claims": [],
+      "criteria": [
+        "hazard_age_appropriateness",
+        "evidence_target_fit"
+      ],
+      "declared_deadline_s": 180.0,
+      "input_text_bytes": 10237,
+      "instructions_bytes": 557,
+      "max_tokens": 2000,
+      "prompt_version": "validation-prompt.v3",
+      "purpose": "coursebook.plan.validate",
+      "schema_bytes": 1015,
+      "schema_name": "coursebook_validation_v1",
+      "wire_messages_bytes": 13118
+    }
+  ],
+  "samples": [
+    {
+      "aggregate_elapsed_s": 180.103,
+      "attempt": 1,
+      "calls": [
+        {
+          "cost_usd": null,
+          "duration_ms": 48491,
+          "input_tokens": 3406,
+          "model": "z-ai/glm-5.3-flash",
+          "output_tokens": 3288,
+          "prompt_version": "validation-prompt.v3",
+          "provider": "nous",
+          "purpose": "coursebook.plan.validate"
+        },
+        {
+          "cost_usd": null,
+          "duration_ms": 61597,
+          "input_tokens": 3733,
+          "model": "z-ai/glm-5.3-flash",
+          "output_tokens": 3170,
+          "prompt_version": "validation-prompt.v3",
+          "provider": "nous",
+          "purpose": "coursebook.plan.validate"
+        },
+        {
+          "cost_usd": null,
+          "duration_ms": 75538,
+          "input_tokens": 3732,
+          "model": "z-ai/glm-5.3-flash",
+          "output_tokens": 5015,
+          "prompt_version": "validation-prompt.v3",
+          "provider": "nous",
+          "purpose": "coursebook.plan.validate"
+        },
+        {
+          "cost_usd": null,
+          "duration_ms": 87172,
+          "input_tokens": 3796,
+          "model": "z-ai/glm-5.3-flash",
+          "output_tokens": 5441,
+          "prompt_version": "validation-prompt.v3",
+          "provider": "nous",
+          "purpose": "coursebook.plan.validate"
+        }
+      ],
+      "ended": "12:24:34",
+      "error": "ProviderTimeout: coursebook.plan.validate exceeded its 180s deadline",
+      "outcome": "raised",
+      "started": "12:21:34",
+      "traceback_tail": [
+        "    result = self._invoke(request, kwargs)",
+        "  File \"/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_027b48f4/coursebook/generation.py\", line 1114, in _invoke",
+        "    raise ProviderTimeout(",
+        "    ...<3 lines>...",
+        "    ) from exc",
+        "coursebook.generation.ProviderTimeout: coursebook.plan.validate exceeded its 180s deadline"
+      ]
+    }
+  ],
+  "source_db": "/home/deseretsaint/.hermes/h187-live-gen/single/home/plugin-data/coursebook/data.db",
+  "source_worktree": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_027b48f4",
+  "validator_route": {
+    "model": "z-ai/glm-5.3-flash",
+    "provider": "nous"
+  }
+}
