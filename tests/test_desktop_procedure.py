@@ -179,7 +179,7 @@ class ProcedureRenderTest(unittest.TestCase):
         self.assertIn("Head bolt torque sequence", html)
         self.assertIn("Bolt 1", html)
         self.assertIn("40 Nm", html)
-        self.assertIn("Deterministic schematic · structured facts", html)
+        self.assertIn("Drawing from the steps below", html)
         self.assertIn(f'data-cb-procedure-schematic-source="{SCHEMATIC_SOURCE_ID}"', html)
         self.assertIn("Workshop manual — 1.8 L cylinder head replacement", html)
 
@@ -215,7 +215,7 @@ class ProcedureRenderTest(unittest.TestCase):
     def test_schematic_media_carries_its_deterministic_label(self) -> None:
         html = self.render(head_gasket_document())
         self.assertIn('data-cb-procedure-media="schematic"', html)
-        self.assertIn("Deterministic schematic drawn from the structured facts below.", html)
+        self.assertIn("Drawing made from the steps below.", html)
 
     def test_a_block_outside_the_step_list_is_still_taught(self) -> None:
         doc = head_gasket_document()

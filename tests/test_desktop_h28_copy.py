@@ -178,16 +178,35 @@ class FirstRunCopyTest(unittest.TestCase):
     def test_one_primary_action_and_one_secondary_path(self) -> None:
         html = self.out["html"]
         self.assertIn("Start with a goal", html)
-        self.assertIn("Use a course someone already made", html)
+        self.assertIn("Use a course I already have", html)
         # The primary action is a default-variant button: the only filled control on the screen.
         self.assertEqual(html.count('data-variant="default"'), 1, html)
         self.assertIn('data-variant="secondary"', html)
 
-    def test_the_welcome_says_what_happens_in_plain_words(self) -> None:
+    def test_the_start_plate_names_the_goal_and_what_pressing_does(self) -> None:
         html = self.out["html"]
-        for phrase in ("Learn something specific.", "researches", "checks your work"):
-            self.assertIn(phrase, html)
+        self.assertIn("What do you want to be able to do?", html)
+        self.assertIn("Name one goal, review the plan, then learn.", html)
+        self.assertIn("Nothing is created until you approve the plan.", html)
+        self.assertIn("Next you choose how big the course is.", html)
         self.assertIn("Nothing is marked complete without a check you can see.", html)
+
+    def test_the_path_is_three_numbered_rows_not_an_onboarding_flow(self) -> None:
+        html = self.out["html"]
+        self.assertIn("data-cb-first-run-path", html)
+        for ordinal, label in ((1, "Name a goal"), (2, "Review the plan"), (3, "Learn and adapt")):
+            self.assertIn(label, html)
+            self.assertIn('data-cb-first-run-step="%d"' % ordinal, html)
+        # One plate, no deck of cards, no welcome overlay, no current-step marker before a course exists.
+        self.assertNotIn('role="dialog"', html)
+        self.assertNotIn("Step 1 of 3", html)
+        self.assertNotIn("Welcome", html)
+
+    def test_no_decorative_eyebrow_above_the_heading(self) -> None:
+        # H-84 removed the uppercase kicker; H-86 keeps the plate opening on the question itself.
+        html = self.out["html"]
+        self.assertNotIn(">New course<", html)
+        self.assertLess(html.index("What do you want to be able to do?"), html.index("Start with a goal"))
 
     def test_governance_vocabulary_is_gone(self) -> None:
         html = self.out["html"]
@@ -197,6 +216,13 @@ class FirstRunCopyTest(unittest.TestCase):
     def test_the_pack_path_explains_itself_before_it_is_used(self) -> None:
         self.assertIn("who made it", self.out["html"])
         self.assertIn("before anything is added", self.out["html"])
+
+    def test_the_two_alternate_entries_say_what_they_do(self) -> None:
+        out = _run({"kind": "first-run-syllabus"})
+        html = out["html"]
+        self.assertIn("Use my college syllabus", html)
+        self.assertIn("Your syllabus sets the scope.", html)
+        self.assertIn("Coursebook writes its own lessons alongside it", html)
 
     def test_syllabus_path_appears_only_when_the_backend_implements_it(self) -> None:
         # H-27 ships the real flow as `syllabus.intake.create`; the welcome offers it exactly when the
@@ -316,6 +342,14 @@ class CreateFlowCompositionTest(unittest.TestCase):
         self.assertIn("What do you want to make?", html)
         for label in ("A single lesson", "A short course (a few sessions)", "A full course (weeks or months)"):
             self.assertIn(label, html)
+
+    def test_the_flow_states_the_step_and_what_happens_next(self) -> None:
+        html = self.out["html"]
+        self.assertIn("Step 1 of 3", html)
+        self.assertIn("data-cb-create-spine", html)
+        self.assertIn('aria-current="step"', html)
+        self.assertIn("Next: name the goal and the course.", html)
+        self.assertNotIn("STEP 1 OF 3", html)
 
     def test_step_one_has_no_goal_fields_and_no_recipe_choice(self) -> None:
         html = self.out["html"]

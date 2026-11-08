@@ -2,7 +2,7 @@
 
 The runtime plugin is one ESM file with no build step and no stylesheet, so the token layer ships
 as an embedded JSON table painted onto the Coursebook route root as CSS custom properties. These
-tests read the *shipped* module: the table is compared with ``contracts/cb.tokens.v1.json``, WCAG
+tests read the *shipped* module: the table is compared with ``contracts/cb.tokens.v2.json``, WCAG
 contrast is computed on the values that actually ship, the file is scanned for colour literals
 outside the table, and the shell is rendered through real React at a wide and a 460px viewport.
 

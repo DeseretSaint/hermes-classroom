@@ -659,7 +659,7 @@ process.stdout.write(JSON.stringify(output))
     def test_g_the_control_and_the_recorded_state_are_never_a_pass(self) -> None:
         out = self.run_case({"kind": "render"})
         editing = out["editing"]
-        self.assertIn("PARENT OBSERVATION", editing)
+        self.assertIn("Parent observation", editing)
         self.assertIn("not independent evidence", editing)
         self.assertIn("What did you observe? (optional note)", editing)
         self.assertIn('for="cb-observation-note"', editing)
@@ -691,16 +691,16 @@ process.stdout.write(JSON.stringify(output))
             with self.subTest(recipe=recipe):
                 html = self.run_case({"kind": "section", "recipe": recipe})["html"]
                 self.assertNotIn("data-cb-parent-observation", html)
-                self.assertNotIn("PARENT OBSERVATION", html)
+                self.assertNotIn("Parent observation", html)
                 self.assertNotIn("Record observation", html)
-                self.assertIn("CURRENT CHECK", html, "a learner page still shows its check surface")
+                self.assertIn("Current check", html, "a learner page still shows its check surface")
 
     def test_i_the_control_is_present_on_a_parent_lesson_surface(self) -> None:
         html = self.run_case({"kind": "section", "recipe": "parent"})["html"]
         self.assertIn('data-cb-parent-observation="obj_0123456789abcdef"', html)
-        self.assertIn("PARENT OBSERVATION", html)
+        self.assertIn("Parent observation", html)
         self.assertIn("Record observation", html)
-        self.assertNotIn("CURRENT CHECK", html, "a parent objective is observed, not answered")
+        self.assertNotIn("Current check", html, "a parent objective is observed, not answered")
         self.assertEqual(html.count("data-cb-parent-observation"), 1, "mounted once, never per block")
 
     def test_j_a_section_with_no_generated_blocks_still_lets_the_parent_record(self) -> None:
