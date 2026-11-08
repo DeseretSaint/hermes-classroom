@@ -29,10 +29,12 @@ two condition captures. The adversarial report on the previous candidate is `doc
 `master` has since advanced beyond `29bede7` with the M0 host-media slice (`3cead45`) and the
 M1-M3 product line (`d28e7e3`). The 0.1.0 evidence above is still the `29bede7` record and has not
 been re-run on the newer tree. The current release candidate is merged `master`
-`b7c53e46ea468157d91127890de1435a00bf5f47` (the UI batch union — H-145 Home launcher, H-146 classroom
+`d54c12417a2eb61c9cc5739ec8447246e117a923` (the integration slice that lands `cb.rpc` v17 —
+H-159a's six source-provenance fields on `lesson.page` — and the H-106/H-159b provenance pane that
+reads them, merged onto the UI batch union — H-145 Home launcher, H-146 classroom
 rail, H-147 Home settings, H-148 path truth, H-149 lesson player, H-150 library shelf, H-153 first run,
-H-154 mastery policy, H-156 parent/child defaults, H-157 course detail and Field Quest — merged onto
-the H-120b conversation-practice surface `625c939`, which sits on the H-105 + `cb.rpc` v16 union
+H-154 mastery policy, H-156 parent/child defaults, H-157 course detail and Field Quest — which sits on
+the H-120b conversation-practice surface `625c939`, on the H-105 + `cb.rpc` v16 union
 `39659b7` and the H-155 engagement audit `ac301a1`); every count, pin and health row
 in this README is measured there and recorded in `docs/RELEASE-EVIDENCE.md`, with
 `python3 scripts/check-docs-truth.py` failing when a document drifts from that record. It is not a
@@ -46,9 +48,10 @@ at `3cead45`, M1-M3 merged on `master` at `d28e7e3`, and the M4 visual/accessibi
 regenerated on the merged tree after H-91 (H-83's Atlas Lamp composition, H-84's plain-language pass,
 H-86's wayfinding pass and H-91's gate fixes) and again on the `cb.rpc` v16 tree after the
 P0 react-key sweep (`80b39b8`), H-144 (`14a6443`) and the H-105 + `cb.rpc` v16 union merge
-(`39659b7`), the H-120b conversation-practice merge `625c939` and the H-158 UI batch union `b7c53e4`,
-against `desktop/plugin.js` sha256
-`8347331f…f096711d` — reproducibility is
+(`39659b7`), the H-120b conversation-practice merge `625c939`, the H-158 UI batch union `b7c53e4`
+and again after the `cb.rpc` v17 + provenance-pane integration slice `d54c124`, against
+`desktop/plugin.js` sha256
+`0fceeb6…d672710` — reproducibility is
 checked with `python3 scripts/m4v-repro-check.py`, which reports 62/62 identical screenshots and an
 identical `audit.json` (modulo `generated_at`) on two consecutive runs at this pin; that output is
 pasted in `docs/M4-VISUAL-MEDIA-AUDIT.md`. Phase-to-commit mapping, per-phase evidence and the gated
@@ -65,7 +68,7 @@ describe this tree. The product-line rows are separate, and they use two weaker 
 
 | Product-line surface | State on this tree | Evidence |
 | --- | --- | --- |
-| Contracts `cb.rpc` v16 and `cb.db` v11, with `cb.jobs` v4, `cb.errors` v4 and the v1 `cb.pack`, `cb.projection` and `cb.vocabulary` | Working at this commit: 68 declared methods and 68 handlers. `observation.record` was frozen by `cb.rpc` v14 in H-53 and wired by H-54, so the registry test allows no gap: any declared method that loses its handler fails the suite. Schema 11 from migrations `0001`-`0011` | `contracts/rpc.v16.json`, `contracts/db.v11.json`; parity asserted by the suite (`2168 tests OK, 1 skipped`); `coursebook/api.py` `implemented_methods()` returns all 68 declared methods |
+| Contracts `cb.rpc` v17 and `cb.db` v11, with `cb.jobs` v4, `cb.errors` v4 and the v1 `cb.pack`, `cb.projection` and `cb.vocabulary` | Working at this commit: 68 declared methods and 68 handlers. `observation.record` was frozen by `cb.rpc` v14 in H-53 and wired by H-54, so the registry test allows no gap: any declared method that loses its handler fails the suite. `cb.rpc` v17 is additive over v16: six optional source-provenance fields on `lesson.page` (`excerpt`, `excerpt_state`, `content_hash`, `modality`, `licence`, `support_assessment`) and a populated `publisher`, no new method. Schema 11 from migrations `0001`-`0011` | `contracts/rpc.v17.json`, `contracts/db.v11.json`; parity asserted by the suite (`2196 tests OK, 1 skipped`); `coursebook/api.py` `implemented_methods()` returns all 68 declared methods |
 | Textbook view | Working (live): a real document served over the real RPC; the frame set covers Textbook and Guided (13 frames) | `audit/visual/m1-guided-authoring/README.md` |
 | Guided view | Working (live) on a newly authored document (`state=complete`, `views.guided=true`). The older demo course still reports `textbook_only` because its stored page predates `lesson-prompt.v5`; it was not rewritten | `audit/visual/m1-guided-authoring/` |
 | Field Desk cockpit (Continue, path, stats, Field Notes, sources, all courses) | Working (live): the cockpit, its opened sources drawer, and its backend-off, empty and loading states were read from an isolated window at plugin sha `638e0f5e…` | `audit/visual/m2-field-desk/README.md`, `live-evidence.json` |
@@ -74,7 +77,7 @@ describe this tree. The product-line rows are separate, and they use two weaker 
 | Procedure lens (typed header, numbered steps, hazard callout, schematic rows, source permission) | Authored and Rendered: the lesson schema and `lesson-prompt.v8` produce the typed `procedure` header, and `tests/test_procedure_authoring.py` drives the real lesson job with a fake model and asserts the served document renders the header, hazards, numbered steps, schematic rows and source card. The 7 visual frames and 28 validator/render tests remain fixture-based; no live provider run has authored one | `docs/M4-PROCEDURE-LAYOUT.md`, `docs/GENERATION.md`, `tests/test_procedure_authoring.py` |
 | Pronunciation Studio (listen, record, compare, dispute) | Rendered: 14 frames and 15 jsdom interaction tests. It is inert on every existing section because none has a narration media child; no live attempt was walked | `docs/M3-PRONUNCIATION-UI.md`, `tests/test_desktop_pronunciation.py`, `audit/visual/m3-pronunciation/` |
 | Media generation and preview | Working for the host adapter (one real PNG and one real MP3 through `docs/M0-MEDIA-PROBE.md`) and Rendered in the lesson (50 decoded images, 12 audio elements, 0 autoplay, text equivalent for each). The preview route is covered by tests, not driven live on this tree | `docs/M0-MEDIA-PROBE.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `audit/visual/m4-visual/audit.json` |
-| M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,416 text nodes (worst authored 5.93:1), 0 unnamed of 298 accessibility controls, no clipped text or horizontal overflow. Two consecutive `m4v-repro-check.py` runs at this module are identical: 62/62 screenshots and `audit.json` modulo `generated_at` | `audit/visual/m4-visual/audit.json` (pinned to plugin `8347331…` at the measured commit `b7c53e4`), `docs/M4-VISUAL-MEDIA-AUDIT.md`, `scripts/m4v-repro-check.py` |
+| M4 visual, contrast and accessibility gate | Rendered: 62 painted frames, 15/15 claims pass, 0 plugin-authored contrast failures over 2,416 text nodes (worst authored 5.93:1), 0 unnamed of 298 accessibility controls, no clipped text or horizontal overflow. Two consecutive `m4v-repro-check.py` runs at this module are identical: 62/62 screenshots and `audit.json` modulo `generated_at` | `audit/visual/m4-visual/audit.json` (pinned to plugin `0fceeb6…` at the measured commit `d54c124`), `docs/M4-VISUAL-MEDIA-AUDIT.md`, `scripts/m4v-repro-check.py` |
 | 460 px narrow width | Partial: the module itself reflows at 460 px with no horizontal overflow, but the shipped host still gives the route 101 px when the chat rail is docked. The host patch that fixes the grid is neither merged nor installed | `audit/visual/m1-narrow-width/DECISION.md` §Residuals; `audit/visual/m4-visual/*-460-*.png` |
 
 Nothing in the product line changes install status. The catalog entry pins this release candidate,
@@ -93,10 +96,10 @@ there is no code path at all. Unless a row names a later commit, the row describ
 | One installable package (agent half plus Desktop half) | Working: `scripts/install-local.sh` installs both halves; `hermes plugins validate` and `hermes plugins doctor` pass |
 | `coursebook_status` agent tool (read-only health) | Working: the single registered tool |
 | Backend routes `/health`, `/schema`, `/rpc`, `/runtime`, `/packs/*`, `/artifacts/<handle>`, `/media/<artifact_id>` | Implemented: the first six were re-driven by `scripts/probe-backend.py` (31/31). `/media/<artifact_id>` is an M0 addition (`3cead45`), covered by `tests/test_manifest.py` and `tests/test_media_generation.py`; it does not exist at `29bede7` |
-| Frozen contracts at `29bede7`: `cb.rpc` v7, `cb.db` v4, `cb.jobs` v2, `cb.errors` v2, `cb.pack` v1, `cb.projection` v1, `cb.vocabulary` v1 | Working in that build: 52 declared methods, 52 handlers, no contract problems from `/runtime`. This tree has moved to `cb.rpc` v16 and `cb.db` v11 with 68 declared methods and 68 handlers; the product-line row above carries the current numbers |
+| Frozen contracts at `29bede7`: `cb.rpc` v7, `cb.db` v4, `cb.jobs` v2, `cb.errors` v2, `cb.pack` v1, `cb.projection` v1, `cb.vocabulary` v1 | Working in that build: 52 declared methods, 52 handlers, no contract problems from `/runtime`. This tree has moved to `cb.rpc` v17 and `cb.db` v11 with 68 declared methods and 68 handlers; the product-line row above carries the current numbers |
 | Profile-scoped SQLite schema and migrations `0001`-`0004` at `29bede7` | Working: `health.get` answers `db.ready: true`, `schema_version: 4` on a fresh home. This tree ships migrations `0001`-`0011` and answers `db.ready: true`, `schema_version: 11` on a fresh home |
 | Desktop route `#/coursebook`, sidebar entry, pane, command palette, settings page | Working with a reachable backend: mounts the library, `New course`, Parent Studio and a course card (`docs/CB017-RELEASE-VERIFICATION.md` §2). A window with no gateway renders no route page for any hash — host shell degradation, reclassified P3-operational by Atlas (`docs/REVIEW_CB017-FINAL.md` §3.1) |
-| Course creation, plans, lessons, grading, transitions, evidence | Implemented, unverified in the UI: 685-test suite at `29bede7`, plus adversarial S01/S02/S10-S12 (duplicate submit, stale revision, invalid/hung/throwing grader) all pass in that build. The suite is 2168 tests on this tree (1 skipped) |
+| Course creation, plans, lessons, grading, transitions, evidence | Implemented, unverified in the UI: 685-test suite at `29bede7`, plus adversarial S01/S02/S10-S12 (duplicate submit, stale revision, invalid/hung/throwing grader) all pass in that build. The suite is 2196 tests on this tree (1 skipped) |
 | Replan of an approved plan, then lessons, then export | Working end to end for this tree: replan → plan approve (v10) → lessons job start → 4 lessons authored → lesson-set approve → export, with the UI and the backend agreeing on the approved content hash (`sha256:ccf69462…e5a5`), `export.ready: true` and no `blocked_reason`. Evidence: `docs/REVIEW_CB017-row9-ui.json`, `docs/REVIEW_CB017-FINAL.md` §10 |
 | Notebooks, quiz history, review queue, usage accounting | Implemented, unverified in the UI: `notebook.save/list/update/delete`, `quiz.history`, `review.queue/action` and `usage.summary` are in the mounted registry |
 | Pack import and export, Parent Studio authoring | Implemented, unverified in the UI: `pack.import/export/preview/inspect/list/delete` and eight `parent.*` methods; P17/P18/P20 pass, and export reproduces the reviewed content hash |
@@ -105,7 +108,7 @@ there is no code path at all. Unless a row names a later commit, the row describ
 | Reminders | Absent: no RPC, no job runner, no storage |
 
 Every method declared by `cb.rpc` v7 had a handler in the `29bede7` build. On this tree all 68 of
-`cb.rpc` v16's declared methods have handlers, `observation.record` included — frozen by H-53 and
+`cb.rpc` v17's declared methods have handlers, `observation.record` included — frozen by H-53 and
 wired by H-54, with the H-53→H-54 registry allowance removed. The count comes from
 `coursebook/api.py`'s `implemented_methods()` after importing `coursebook.domain` and
 `coursebook.pack_flow` (the modules that register handlers), not from a text search, and
@@ -314,7 +317,7 @@ bash scripts/validate-plugin.sh # release gate: admission on a git archive expor
 
 Run `scripts/validate.sh` before any merge into master. It is the pre-merge gate; it passed on the
 0.1.0 commit with 685 tests, node check OK and 31/31 backend expectations. On this tree the suite
-is 2168 tests (`python3 -m unittest discover -s tests -t .`, `Ran 2168 tests`, `OK (skipped=1)`). Its admission step validates
+is 2196 tests (`python3 -m unittest discover -s tests -t .`, `Ran 2196 tests`, `OK (skipped=1)`). Its admission step validates
 an export of the tracked tree (`scripts/lib/gate-export.sh`), not the checkout root, so the
 gitignored `.worktrees/` farm is never scanned and an uncommitted edit to a tracked file still fails
 that step. `scripts/validate-plugin.sh` is the release gate for one pinned commit.

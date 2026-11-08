@@ -1,18 +1,18 @@
 {
-  "measured_commit": "b7c53e46ea468157d91127890de1435a00bf5f47",
-  "measured_commit_short": "b7c53e4",
+  "measured_commit": "d54c12417a2eb61c9cc5739ec8447246e117a923",
+  "measured_commit_short": "d54c124",
   "measured_at": "2026-11-08",
   "branch": "master",
-  "merge_commit": "b7c53e46ea468157d91127890de1435a00bf5f47",
+  "merge_commit": "d54c12417a2eb61c9cc5739ec8447246e117a923",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "ran": 2168,
+    "ran": 2196,
     "skipped": 1,
     "verdict": "OK (skipped=1)"
   },
   "rpc": {
     "contract": "cb.rpc",
-    "version": 16,
+    "version": 17,
     "declared_methods": 68,
     "handlers": 68
   },
@@ -24,7 +24,7 @@
   },
   "plugin": {
     "path": "desktop/plugin.js",
-    "sha256": "8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d"
+    "sha256": "0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710"
   },
   "m4": {
     "frames": 62,
@@ -36,13 +36,13 @@
     "ax_controls": 298,
     "ax_unnamed": 0,
     "overflow_px": 0,
-    "source": "audit/visual/m4-visual/audit.json regenerated on the UI-batch union h158-union at c41ee83 (plugin 8347331f); text_nodes is the sum over the 56 non-forced-colour frames and ax_controls the sum over the 32 frames where the accessibility tree was measured (the other frames have no AX tree, as on every prior record)",
-    "repro": "PASS at 8347331f"
+    "source": "audit/visual/m4-visual/audit.json regenerated on the cb.rpc v17 + provenance integration slice merged as d54c124 (plugin 0fceeb64); the provenance pane is not mounted by any M4 frame, so text_nodes (the sum over the 56 non-forced-colour frames) and ax_controls (the sum over the 32 frames where the accessibility tree was measured) are unchanged from the b7c53e4 record; the other frames have no AX tree, as on every prior record",
+    "repro": "PASS at 0fceeb64"
   },
   "m4_repro": {
     "command": "python3 scripts/m4v-repro-check.py",
     "result": "PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots",
-    "plugin_sha256": "8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d"
+    "plugin_sha256": "0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710"
   },
   "adversarial_state": {
     "command": "python3 tests/adversarial/attack_state.py",
@@ -99,6 +99,11 @@
     {
       "sha256": "0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543",
       "commit": "625c939",
+      "path": "desktop/plugin.js"
+    },
+    {
+      "sha256": "8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d",
+      "commit": "b7c53e4",
       "path": "desktop/plugin.js"
     }
   ],

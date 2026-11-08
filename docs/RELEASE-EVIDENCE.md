@@ -1,9 +1,11 @@
 # Release evidence — what is measured, on which commit, and what is branch-only
 
 Status: the H-116 truth pass, re-derived on the merged release candidate `master`
-`b7c53e46ea468157d91127890de1435a00bf5f47` (the H-158 UI batch union —
-H-145/146/147/148/149/150/153/154/156/157 — merged onto the H-120b conversation-practice surface
-`625c939`, which sits on the H-105 + `cb.rpc` v16 union `39659b7` and H-155 `ac301a1`). Every
+`d54c12417a2eb61c9cc5739ec8447246e117a923` (the integration slice that lands `cb.rpc` v17 —
+H-159a's six source-provenance fields on `lesson.page` — and the H-106/H-159b provenance pane that
+reads them, merged onto the H-158 UI batch union —
+H-145/146/147/148/149/150/153/154/156/157 — which sits on the H-120b conversation-practice surface
+`625c939`, the H-105 + `cb.rpc` v16 union `39659b7` and H-155 `ac301a1`). Every
 number below was produced by a command in this pass on that commit unless a row names another
 commit. Machine-readable copy: `docs/release-evidence.json`, checked against the documents by
 `python3 scripts/check-docs-truth.py`.
@@ -13,17 +15,17 @@ blocked H-85 are fixed here, but no demo is recorded, no license exists, no live
 driven this exact commit, and the operator publication gate in `docs/SUBMISSION.md` §0 is closed.
 No tag, catalog pull request or announcement was made.
 
-## Measured on `b7c53e4`
+## Measured on `d54c124`
 
 | Fact | Value | Command |
 | --- | --- | --- |
-| Suite | `Ran 2168 tests in 263.082s`, `OK (skipped=1)` | `python3 -m unittest discover -s tests -t .` |
-| `cb.rpc` | v16, 68 declared methods | `contracts/rpc.v16.json` (`$defs.method.enum` length) |
+| Suite | `Ran 2196 tests in 283.340s`, `OK (skipped=1)` | `python3 -m unittest discover -s tests -t .` |
+| `cb.rpc` | v17, 68 declared methods | `contracts/rpc.v17.json` (`$defs.method.enum` length) |
 | Handlers | 68, asserted by the registry test inside the suite | registry test in the suite |
 | `cb.db` | v11, `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011` | `coursebook/db.py`, `contracts/db.v11.json` |
-| Shipped module | `desktop/plugin.js` sha256 `8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d` | `sha256sum desktop/plugin.js` |
+| Shipped module | `desktop/plugin.js` sha256 `0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710` | `sha256sum desktop/plugin.js` |
 | M4 audit | 62 frames, 15/15 claims PASS, 2,416 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 298 AX controls, 0 px overflow | `audit/visual/m4-visual/audit.json` |
-| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 8347331f…` | `python3 scripts/m4v-repro-check.py` |
+| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 0fceeb64…` | `python3 scripts/m4v-repro-check.py` |
 | Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `python3 tests/adversarial/attack_state.py` |
 | Catalog validity | `OK: 1 file(s) valid` | `python3 ~/.hermes/hermes-agent/scripts/validate_plugin_catalog.py catalog/coursebook.yaml` |
 
@@ -32,12 +34,11 @@ M4 row a claim about this commit rather than a stale pin. The 2,416 text-node co
 the 56 non-forced-colour frames; the six forced-colours frames repeat the same content and are
 counted in `C-09` instead. The value is re-derived from the regenerated file, not carried forward.
 
-Two measured deltas from the `625c939` record are reported rather than smoothed: the accessibility
-control total fell from 364 to 298 (with Tab stops 304 → 268), and the painted media set fell from 60
-images / 22 audio elements to 50 / 12. A per-frame comparison localises both to two surfaces — Quest
-(`images`/`audio` 1 → 0, text 49 → 32, AX 21 → 10) and Field Desk (text 43 → 81) — while every claim
-still passes. Which change inside the UI batch union caused the Quest frame to lose its media was not
-measured here; it is carded for the owner (`t_34149aa1` H-160's successor, H-161).
+The provenance slice moves **no** M4 measurement, and that was checked rather than assumed: the
+`audit.json` from `b7c53e4` and the one regenerated here were compared frame by frame, and apart from
+`generated_at` and the recorded branch name every frame row, every claim and every media-fixture hash
+is identical. The pane H-106 adds is not mounted by any M4 scenario, so the 2,416 nodes and 298 AX
+controls above are the same surface the UI batch union produced.
 
 ## Branch-only evidence (not release evidence)
 
@@ -53,11 +54,13 @@ evidence and do not cite their numbers as current.
 
 ## What this pass did not measure
 
-- No live Desktop window and no mounted backend trace on `625c939`; `scripts/validate.sh` step 5 was
+- No live Desktop window and no mounted backend trace on `d54c124`; `scripts/validate.sh` step 5 was
   not run here (it needs a mounted backend and an isolated home).
-- `bash scripts/validate-plugin.sh` (the export admission gate) and `hermes plugins doctor` were not
-  re-run in this docs pass. Rows that cite them cite the `29bede7` record or mark the gap.
-- `scripts/m4v-repro-check.py` was run here: two independent runs at `0312a9ea` produced identical
+- `bash scripts/validate-plugin.sh` (the export admission gate) **was** re-run here on the merged
+  commit: 4/4 checks PASS on a `git archive` export (admission and security scan, `node --check`,
+  26 desktop contract tests, `hermes plugins doctor`). `hermes plugins doctor` passed inside that
+  same export.
+- `scripts/m4v-repro-check.py` was run here: two independent runs at `0fceeb64` produced identical
   `audit.json` (modulo `generated_at`) and 62 identical screenshots; the verbatim output is in
   `docs/M4-VISUAL-MEDIA-AUDIT.md`.
 - No provider-spend generation, no demo capture, no recording.

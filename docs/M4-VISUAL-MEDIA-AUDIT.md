@@ -3,21 +3,22 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on the H-158 UI batch union (`h158-union` @ `c41ee83`: H-145/146/147/148/149/150/153/154/156/157
-merged onto merged `master` `71b01b8`) and is pinned to the module that union produces:
-`desktop/plugin.js` sha256
-`8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d`.
+regenerated on the integration slice that lands `cb.rpc` v17 (H-159a) and the H-106/H-159b provenance
+pane on the H-158 UI batch union (H-145/146/147/148/149/150/153/154/156/157), merged as `d54c124`,
+and is pinned to the module that merge produces: `desktop/plugin.js` sha256
+`0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710`.
 
-That module is the one that ships from the union merge `b7c53e4`, the commit this audit was regenerated
-for, so this is the audit of the shipping module, not of a branch. The previous
+That module is the one that ships from the merge commit `d54c124`, the commit this audit was
+regenerated for, so this is the audit of the shipping module, not of a branch. The previous
 pin, `desktop/plugin.js` sha256
-`0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543` (`625c939`), is history for the
-H-120b tree, as is
-`71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5` for the H-91 tree;
+`8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d` (`c41ee83`, merged as `b7c53e4`),
+is history for the UI batch union, as is
+`0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543` (`625c939`) for the H-120b tree
+and `71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5` for the H-91 tree;
 those `audit.json` files differ only in `generated_at`, the recorded branch name and the plugin pin.
 
 This is **not** publication evidence. Nothing here was published, tagged or opened as a catalog PR;
-the union it measures is merged to `master` (`b7c53e4`) and the audit makes no claim that Coursebook
+the slice it measures is merged to `master` (`d54c124`) and the audit makes no claim that Coursebook
 is installable.
 
 One command regenerates every number and every screenshot; a second proves the result is not a
@@ -39,26 +40,26 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 ### Reproducibility
 
-**Re-pin at `8347331f` (H-158 union, commit `c41ee83`, merged as `b7c53e4`).** `desktop/plugin.js`
-moved again with the UI batch union, so the audit was regenerated on the union tree:
+**Re-pin at `0fceeb64` (provenance integration slice, merge commit `d54c124`).** `desktop/plugin.js`
+moved again with the H-106/H-159b provenance pane, so the audit was regenerated on the merged tree:
 `python3 scripts/m4v-audit.py` → 15 PASS, 0 not PASS, 62 frames,
-`plugin_sha256: 8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d`. The 56
-non-forced frames now measure **2,416** text nodes and the 32 frames with an accessibility tree
-measure **298** AX controls — fewer controls than the `625c939` record's 364, a difference this pass
-measured but did **not** attribute to a specific module change; minimum authored contrast is
+`plugin_sha256: 0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710`. The 56
+non-forced frames still measure **2,416** text nodes and the 32 frames with an accessibility tree
+still measure **298** AX controls: the provenance pane is not mounted by any M4 frame, so the
+measured surface is unchanged even though the module hash moved. Minimum authored contrast is
 unchanged at 5.93:1 with 0 plugin-authored failures, 0 clipped text and 0 px horizontal overflow. The
 reproducibility pair quoted below was re-run at this pin as part of the same pass.
 
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
-Run back to back on this pin (`8347331f…`), verbatim (scratch roots elided):
+Run back to back on this pin (`0fceeb64…`), verbatim (scratch roots elided):
 
 ```
 $ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-gz4l7rsm/run-a
-run B → …/cb-m4v-repro-gz4l7rsm/run-b
+run A → …/cb-m4v-repro-kt_5q9k1/run-a
+run B → …/cb-m4v-repro-kt_5q9k1/run-b
 PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d
+  plugin_sha256: 0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710
   reference_time: 2026-11-07T10:00:00.000Z
 ```
 
