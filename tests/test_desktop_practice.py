@@ -143,6 +143,23 @@ const ctx = {
       return ok(session)
     }
     if (body.method === 'practice.start') {
+      // A start refusal can be scripted one-per-press, so a stale fence and its recovery are both
+      // driven through the real click path.
+      const startErrors = Array.isArray(payload.startErrors)
+        ? payload.startErrors
+        : payload.startError
+          ? [payload.startError]
+          : []
+      const startCount = calls.filter((call) => call.method === 'practice.start').length
+      const startError = startErrors[startCount - 1]
+      if (startError) {
+        return {
+          ok: false,
+          contract_version: wireVersion,
+          operation_id: body.operation_id,
+          error: startError
+        }
+      }
       state.session = payload.started || null
       return ok(payload.started || null)
     }
@@ -190,7 +207,7 @@ root.render(
     enrollmentId: 'enr_0123456789abcdef',
     objectiveId: 'obj_0123456789abcdef',
     check,
-    revision: 3,
+    revision: payload.revision === undefined ? 3 : payload.revision,
     implemented,
     bindingState: 'active',
     onCommitted: () => {}
@@ -233,6 +250,24 @@ if (payload.mode === 'start') {
   await waitFor(() => document.querySelector('[data-cb-practice-feedback]'))
   click('Review grading')
   await waitFor(() => document.querySelector('[data-cb-practice-criteria]'))
+} else if (payload.mode === 'again') {
+  // Grade once, then press the retry on the graded card itself: the second write must fence on the
+  // revision the end returned, not on the one this card mounted with.
+  click('End practice')
+  await waitFor(() => document.querySelector('[data-cb-practice-feedback]'))
+  click('Practice again')
+  await sleep(120)
+} else if (payload.mode === 'stale') {
+  // The refusal names the revision the backend wants next; the following press must use it.
+  click('End practice')
+  await waitFor(() => document.querySelector('[data-cb-practice-feedback]'))
+  click('Practice again')
+  await waitFor(() => document.querySelector('[data-cb-practice-refusal]'))
+  click('Practice again')
+  await sleep(120)
+} else if (payload.mode === 'pass') {
+  click('End practice')
+  await waitFor(() => document.querySelector('[data-cb-practice-feedback]'))
 } else if (payload.mode === 'refuse') {
   click('End practice')
   await waitFor(() => document.querySelector('[data-cb-practice-refusal]'))
@@ -435,6 +470,9 @@ class PracticeSurfaceTest(unittest.TestCase):
         "learner_turns": 3,
         "transcript_sha256": "a" * 64,
         "session_revision": 4,
+        # `practice.end` commits one transition, so the backend answers with the *next* enrollment
+        # revision while the graded card stays mounted on the old prop.
+        "revision": 4,
         "criteria": [
             {"id": "t1", "met": True, "observed": "one ticket to Kyoto, please"},
             {"id": "t2", "met": True, "observed": "how much is it?"},
@@ -547,6 +585,119 @@ class PracticeSurfaceTest(unittest.TestCase):
         self.assertEqual(result["feedbackCount"], 0)
         self.assertIn("End practice", result["buttons"])
         self.assertEqual(result["text"].count("One ticket to Kyoto, please."), 1)
+
+    # -- the graded card's own retry (H-120c) --------------------------------------------------
+    def test_practice_again_after_a_graded_end_fences_on_the_returned_revision(self) -> None:
+        result = self.live(
+            {
+                "mode": "again",
+                "revision": 3,
+                "stimulus": self.stimulus(self.visible_practice()),
+                "session": self.active_session(),
+                "endResult": self.END_RESULT,
+                "started": self.active_session(
+                    learner_turns=0,
+                    remaining=5,
+                    awaiting_tutor=False,
+                    transcript=[
+                        {"ordinal": 1, "speaker": "tutor",
+                         "text": "Welcome. Where are you travelling today?"}
+                    ],
+                ),
+            }
+        )
+        kinds = [call["method"] for call in result["calls"]]
+        self.assertEqual(kinds.count("practice.end"), 1, result["html"])
+        starts = [call for call in result["calls"] if call["method"] == "practice.start"]
+        self.assertEqual(len(starts), 1, result["html"])
+        # The card mounted on revision 3; the end returned revision 4. The retry must send the new one.
+        self.assertEqual(starts[0]["expected_revision"], 4, result["html"])
+        self.assertTrue(starts[0]["idempotency_key"].startswith("cb-practice-start-"))
+        self.assertEqual(result["state"], "active")
+        self.assertEqual(result["feedbackCount"], 0, result["html"])
+
+    def test_a_stale_refusal_is_adopted_so_the_next_press_is_not_refused(self) -> None:
+        result = self.live(
+            {
+                "mode": "stale",
+                "revision": 3,
+                "stimulus": self.stimulus(self.visible_practice()),
+                "session": self.active_session(),
+                "endResult": self.END_RESULT,
+                "startErrors": [
+                    {
+                        "code": "STALE_REVISION",
+                        "category": "conflict",
+                        "message": "the enrollment moved on before this practice started.",
+                        "retryable": False,
+                        "current_revision": 5,
+                        "details": {"current_revision": 5},
+                    }
+                ],
+                "started": self.active_session(
+                    learner_turns=0,
+                    remaining=5,
+                    awaiting_tutor=False,
+                    transcript=[
+                        {"ordinal": 1, "speaker": "tutor",
+                         "text": "Welcome. Where are you travelling today?"}
+                    ],
+                ),
+            }
+        )
+        starts = [call for call in result["calls"] if call["method"] == "practice.start"]
+        self.assertEqual([call["expected_revision"] for call in starts], [4, 5], result["html"])
+        # The stale refusal is words, not a wire code, and it does not read as a lost practice.
+        self.assertNotIn("STALE_REVISION", result["text"])
+        self.assertEqual(result["state"], "active")
+
+    def test_a_pass_does_not_offer_a_retry_the_backend_would_refuse(self) -> None:
+        result = self.live(
+            {
+                "mode": "pass",
+                "revision": 3,
+                "stimulus": self.stimulus(self.visible_practice()),
+                "session": self.active_session(),
+                "endResult": dict(
+                    self.END_RESULT, verdict="pass", next_action="complete_objective"
+                ),
+            }
+        )
+        self.assertEqual(result["feedbackCount"], 1)
+        # The pass closed the check: no button that would be refused with `practice_not_open`.
+        self.assertNotIn("Practice again", result["buttons"])
+        self.assertNotIn("Start practice", result["buttons"])
+        self.assertIn("Review grading", result["buttons"])
+        self.assertIn("This section is finished", result["text"])
+        # The counter follows the graded card, not the still-`active` stored session.
+        self.assertIn("Graded after 3 of at most 5 learner turns.", result["text"])
+        self.assertNotIn("waiting for the tutor", result["text"])
+        self.assertNotIn("CHECK_STALE", result["text"])
+
+    def test_a_graded_card_does_not_answer_a_refusal_with_raw_wire_words(self) -> None:
+        result = self.live(
+            {
+                "mode": "again",
+                "revision": 3,
+                "stimulus": self.stimulus(self.visible_practice()),
+                "session": self.active_session(),
+                "endResult": self.END_RESULT,
+                "startErrors": [
+                    {
+                        "code": "CHECK_STALE",
+                        "category": "conflict",
+                        "message": "that practice check is not open for work.",
+                        "retryable": False,
+                        "details": {"reason": "practice_not_open", "check_state": "closed"},
+                    }
+                ],
+            }
+        )
+        self.assertEqual(result["refusal"], "practice_not_open")
+        self.assertIn("already graded", result["text"])
+        # A learner on a graded card is never told to press Start practice, and never shown the code.
+        self.assertNotIn("Press Start practice", result["text"])
+        self.assertNotIn("CHECK_STALE", result["text"])
 
     def test_cancel_keeps_every_turn_and_is_never_graded(self) -> None:
         result = self.live(
