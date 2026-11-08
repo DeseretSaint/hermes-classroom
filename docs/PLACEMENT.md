@@ -245,7 +245,7 @@ flow's state:
 2. Failure after the course row exists (enrollment or jobs stage, recoverable id present). The
    course already stores the earlier level. The level field becomes read-only with the `locked`
    copy, the check entry is not offered, and the retry repeats the same payload and the same
-   stored level. H-119 must not invent a level-edit RPC to escape this: `cb.rpc` v14 has no
+   stored level. H-119 must not invent a level-edit RPC to escape this: `cb.rpc` v16 has no
    `course.update`, and adding one is a contract decision, not part of this card.
 
 The result screen never invents a score to explain a refusal, and the refusal message never claims

@@ -2,11 +2,12 @@
 
 Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
 
-**Current release candidate (measured by the H-111 truth pass on 2026-11-08):** merged `master`
-`b33a42f5756b4cb1065c5384929f520a81d0f629` (merge of `e564e07` and `ce9fcab`, H-135). On that commit `cb.rpc` is
-v14 with 64 declared methods and 64 handlers, `cb.db` is v10 (`contracts/db.v10.json`, migrations
-`0001`-`0010`), the suite is `Ran 1779 tests … OK (skipped=1)`, and `desktop/plugin.js` is sha256
-`71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`. The row-by-row body below is
+**Current release candidate (measured by the H-116 truth pass on 2026-11-08):** merged `master`
+`c6b658ea923f1fe14f1e342e9fb816097e3727ea` (H-120a `wt/h120a-contracts` @ `28b5346` merged onto
+`origin/master` `14a6443`). On that commit `cb.rpc` is
+v16 with 68 declared methods and 68 handlers, `cb.db` is v11 (`contracts/db.v11.json`, migrations
+`0001`-`0011`), the suite is `Ran 1968 tests … OK (skipped=1)`, and `desktop/plugin.js` is sha256
+`035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d`. The row-by-row body below is
 the older `498b1da` snapshot it was written against; where a row says "on `master`" or quotes a
 contract version, read it as `498b1da`, not as the current tree.
 

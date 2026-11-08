@@ -300,13 +300,13 @@ once (opening the pane does that), the observed shape is:
 | Field | Value | Meaning |
 | --- | --- | --- |
 | `plugin_version` | `0.1.0` | The package on disk is the one that answered |
-| `contract_version` | `14` | `cb.rpc` v14 is loaded |
+| `contract_version` | `16` | `cb.rpc` v16 is loaded |
 | `db.ready` | `true` | The store is provisioned and migrated |
 | `db.schema_version` | `11` | Migrations `0001`-`0011` applied |
-| `implemented_methods` | 64 names | Every method `cb.rpc` v14 declares has a handler |
+| `implemented_methods` | 68 names | Every method `cb.rpc` v16 declares has a handler |
 | `contracts` | 7 entries | Each frozen contract with its version and hash |
 
-The pane reports the same health block: backend `cb.rpc v14`, plugin 0.1.0, database ready at schema
+The pane reports the same health block: backend `cb.rpc v16`, plugin 0.1.0, database ready at schema
 v11, and `Courses: none yet` until you create or import one. With no chat bound to an enrollment it
 offers `Open Coursebook` and says no durable chat is bound yet.
 
@@ -314,7 +314,7 @@ Provisioning is deliberate and narrow: `GET /health` (and `health.get` over RPC)
 and applies migrations on first contact. Enabling the plugin, loading it, and the three chat hooks do
 not create anything (CB-014-R1). So on a brand-new home, `coursebook_status` asked **before** any
 health check reports `db.ready: false` and `schema_version: null`; that is an unprovisioned profile,
-not a broken install. Open the pane, or call `health.get`, once and it reports ready at v10.
+not a broken install. Open the pane, or call `health.get`, once and it reports ready at v11.
 
 The route mount depends on the window reaching a backend, which is why the demo gate stays open:
 on this host an isolated home cannot start a gateway, and a shell with no gateway renders the
@@ -382,8 +382,8 @@ app is the scoped, previewed data deletion (`enrollment.delete`).
 | `$TARGET already exists and is not a symlink; refusing to replace it.` | A real directory already occupies the plugin slot | Inspect and remove that directory yourself; the script will not do it |
 | Pane says "Coursebook needs its agent plugin" | Desktop half is on, backend half is not enabled or the gateway has not restarted | `hermes plugins enable coursebook`, `hermes gateway restart` |
 | `#/coursebook` shows the session list instead of Coursebook | The window has no gateway: on an isolated home the gateway cannot start (one gateway per host) and the shell then renders the session list for every route | Check the window log for `Gateway inaccessible (runtime_exited)`; point the window at a backend that can serve the session. Evidence: `docs/CB016-RELEASE-VERIFICATION.md` §3 |
-| `VALIDATION_FAILED` naming a method as "not one of [...]" | The method is not in `cb.rpc` v14. Unknown methods are refused before any handler runs | Use one of the 64 declared methods; the error lists them |
-| `NOT_IMPLEMENTED` from an RPC call | A method declared in `cb.rpc` has no handler in this process. Not expected when all 64 are mounted | Check `/runtime` for the mounted list; a partial install or a stale gateway is the usual cause |
+| `VALIDATION_FAILED` naming a method as "not one of [...]" | The method is not in `cb.rpc` v16. Unknown methods are refused before any handler runs | Use one of the 68 declared methods; the error lists them |
+| `NOT_IMPLEMENTED` from an RPC call | A method declared in `cb.rpc` has no handler in this process. Not expected when all 68 are mounted | Check `/runtime` for the mounted list; a partial install or a stale gateway is the usual cause |
 | `db.ready: false` in the status tool | Either the store is unprovisioned (no `/health` call yet) or a migration did not complete | Call `health.get` once; if it stays false, check the gateway log for the migration error |
 | `hermes plugins validate` fails the capability probe | `jsonschema` is missing from the Hermes interpreter | `hermes plugins validate . --install-deps` |
 | `security scan — dangerous` naming a file you never wrote, e.g. `REVIEW_CB003.md:32` | Someone ran `hermes plugins validate` at the checkout root, so the validator read the gitignored `.worktrees/` tree of other kanban tasks | Run `bash scripts/validate.sh` or `bash scripts/validate-plugin.sh`, which validate an export and never scan the checkout root |
