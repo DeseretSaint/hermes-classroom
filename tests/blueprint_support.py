@@ -85,6 +85,15 @@ def blueprint_plan(
         "scope": scope,
         "title": "A scoped course",
         "learner_outcome": "The learner can do the thing this course is about.",
+        # H-195: a plan states its arc and its starting assumptions.
+        "through_line": (
+            "Each unit adds one observable move, and every later unit uses the move the previous "
+            "unit taught."
+        ),
+        "prerequisite_assumptions": [
+            "The learner can read the course's own language of delivery.",
+            "No prior knowledge of the subject is assumed.",
+        ],
         "delivery": "self_study",
         "time_estimate": {
             "sessions_per_week": 2,

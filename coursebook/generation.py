@@ -152,27 +152,34 @@ __all__ = [
 
 #: Bumped when the shape of a plan/lesson/validation artifact changes. Part of every idempotency
 #: fingerprint, so an old result is never silently reused under new rules.
-PIPELINE_VERSION = "cb.gen.v1"
+#: v2 (H-195): a plan carries its through-line and prerequisite assumptions, and the lesson
+#: author is held to the teaching-arc floor (`teaching_quality_problems`).
+PIPELINE_VERSION = "cb.gen.v2"
 
 logger = logging.getLogger("coursebook.generation")
 
-PLAN_PROMPT_VERSION = "plan-prompt.v6"
+#: The v1 plan prompt. H-195 adds the through-line and prerequisite-assumption requirements, so
+#: the label advances past every label already shipped (v6 here, v7 for the blueprint prompt).
+PLAN_PROMPT_VERSION = "plan-prompt.v8"
+
 #: The blueprint prompt. The design (``docs/COURSE-BLUEPRINT.md`` §5) names it
 #: ``plan-prompt.v2`` because it was written against ``plan-prompt.v1``; master already shipped
 #: ``plan-prompt.v3`` (plan-time media needs, H-05), so the next honest number was v4. H-88 adds
 #: the curriculum brief and sequence rules (v5); H-89 adds the declared frequency inventory and
 #: target-item rules, so the distinct v2 prompt advances to v7 after the v1 prompt's v6. The
 #: frozen requirement is "a distinct prompt version for the v2 schema", not a literal string that
-#: would collide with a shipped version and invalidate stored validation bindings.
-PLAN_PROMPT_VERSION_V2 = "plan-prompt.v7"
+#: would collide with a shipped version and invalidate stored validation bindings. H-195 adds the
+#: through-line and prerequisite-assumption requirements here too, so it advances to v9.
+PLAN_PROMPT_VERSION_V2 = "plan-prompt.v9"
 #: The unit-sections authoring stage. One unit per call, so its own version.
 UNIT_SECTIONS_PROMPT_VERSION = "unit-sections-prompt.v1"
 #: The lesson author prompt. H-06 adds the procedure header block to the instruction text; master's
 #: ``lesson-prompt.v7`` (the rubric-profile fix) shipped a *different* instruction text under the
 #: same label, and the label is recorded in stored validation bindings and the idempotency
 #: fingerprint. Merging the two v7 texts must not reuse a label another prompt already wore, so the
-#: merged line advances to v8 rather than claiming v7 for a third, different prompt.
-LESSON_PROMPT_VERSION = "lesson-prompt.v9"
+#: merged line advances to v8 rather than claiming v7 for a third, different prompt. H-195 adds the
+#: teaching-arc and audience requirements, so it advances to v10.
+LESSON_PROMPT_VERSION = "lesson-prompt.v10"
 VALIDATION_PROMPT_VERSION = "validation-prompt.v3"
 
 #: The ten checks the independent pass owes the pipeline. A validation that omits any of them is
@@ -193,6 +200,22 @@ VALIDATION_CRITERIA: tuple[str, ...] = (
 RECIPES = ("one_off", "casual", "committed", "companion", "parent")
 EVIDENCE_TARGETS = ("recall", "comprehension", "production", "discrimination", "procedure", "transfer")
 SUPPORT_VALUES = ("sourced", "unverified")
+
+#: H-195: bounded phrase list for the "generic study skills" drift check. A plan whose objectives
+#: or section intents talk about how to study rather than about the owner's goal is a different
+#: course. The check only fires when the goal itself does not name the same phrase, so a course
+#: genuinely about note-taking or time management is never refused.
+GENERIC_STUDY_PHRASES: tuple[str, ...] = (
+    "time management",
+    "note-taking",
+    "note taking",
+    "study skills",
+    "study habits",
+    "learning how to learn",
+    "how to study",
+    "motivation and mindset",
+    "procrastination",
+)
 
 #: Plan-brief scopes (cb.rpc v10). A scope is the *breadth and time expectation* the brief
 #: declares for the course. This module owns the cap; there is no separate scope engine in this
@@ -493,6 +516,27 @@ def model_identity(response: LLMResponse | None) -> dict[str, Any]:
     provider = str(provider).strip() if provider else None
     model = str(model).strip() if model else None
     return {"provider": provider, "model": model, "known": bool(model)}
+
+
+def generation_provenance(
+    response: LLMResponse | None, request: LLMRequest | None = None
+) -> dict[str, Any]:
+    """What built this artifact, from the provider's own report (H-195).
+
+    The plugin never chooses a model: the host owns the route and this records the identity the
+    provider actually returned. ``prompt_version`` and ``pipeline_version`` come from the request
+    and the module constant, so an artifact always names the instruction text that wrote it. No
+    field here is inferred from configuration — an unreported model is ``known: false``.
+    """
+    identity = model_identity(response)
+    return {
+        "provider": identity["provider"],
+        "model": identity["model"],
+        "known": identity["known"],
+        "prompt_version": getattr(request, "prompt_version", None),
+        "pipeline_version": PIPELINE_VERSION,
+    }
+
 
 
 def validation_independence(
@@ -1378,6 +1422,24 @@ CHECK_PLAN_SCHEMA: dict[str, Any] = {
     },
 }
 
+#: H-195: the plan's own statement of the course through-line and what it assumes the learner
+#: already has. These are authoring requirements, not decoration: `enforce_plan_rules` refuses a
+#: plan that omits either, and the validator judges objective alignment against them.
+THROUGH_LINE_SCHEMA: dict[str, Any] = {
+    "type": "string",
+    "minLength": 20,
+    "maxLength": 600,
+    "description": "One paragraph: the single arc every objective serves, in the owner's terms.",
+}
+
+PREREQUISITE_ASSUMPTIONS_SCHEMA: dict[str, Any] = {
+    "type": "array",
+    "minItems": 1,
+    "maxItems": 6,
+    "items": {"type": "string", "minLength": 3, "maxLength": 200},
+    "description": "What the learner must already have before objective 1; no invented mastery.",
+}
+
 TIME_ESTIMATE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -1439,6 +1501,8 @@ PLAN_SCHEMA_V1: dict[str, Any] = {
     "required": [
         "title",
         "learner_outcome",
+        "through_line",
+        "prerequisite_assumptions",
         "delivery",
         "time_estimate",
         "objectives",
@@ -1452,6 +1516,9 @@ PLAN_SCHEMA_V1: dict[str, Any] = {
     "properties": {
         "title": {"type": "string", "minLength": 3, "maxLength": 200},
         "learner_outcome": {"type": "string", "minLength": 10, "maxLength": 600},
+        # H-195: the course's own through-line and what it assumes the learner already has.
+        "through_line": THROUGH_LINE_SCHEMA,
+        "prerequisite_assumptions": PREREQUISITE_ASSUMPTIONS_SCHEMA,
         "delivery": {"type": "string", "enum": ["self_study", "parent_led", "instructor_led"]},
         "time_estimate": TIME_ESTIMATE_SCHEMA,
         "objectives": {"type": "array", "minItems": 4, "maxItems": 8, "items": OBJECTIVE_SCHEMA},
@@ -1562,6 +1629,8 @@ PLAN_SCHEMA_V2: dict[str, Any] = {
         "scope",
         "title",
         "learner_outcome",
+        "through_line",
+        "prerequisite_assumptions",
         "delivery",
         "time_estimate",
         "units",
@@ -1577,6 +1646,9 @@ PLAN_SCHEMA_V2: dict[str, Any] = {
         "scope": {"type": "string", "enum": list(SCOPES)},
         "title": {"type": "string", "minLength": 3, "maxLength": 200},
         "learner_outcome": {"type": "string", "minLength": 10, "maxLength": 600},
+        # H-195: the arc the units build, and the standing the learner starts from.
+        "through_line": THROUGH_LINE_SCHEMA,
+        "prerequisite_assumptions": PREREQUISITE_ASSUMPTIONS_SCHEMA,
         "delivery": {"type": "string", "enum": ["self_study", "parent_led", "instructor_led"]},
         "time_estimate": TIME_ESTIMATE_SCHEMA,
         "units": {"type": "array", "minItems": 1, "maxItems": 12, "items": UNIT_SCHEMA},
@@ -2705,6 +2777,21 @@ def _plan_instructions(
         "1-3 observable evidence criteria.",
         "Produce one section per objective: exactly one section for each objective, and each "
         "section names exactly one objective it serves plus its lesson intent.",
+        # H-195: the course's own through-line and starting assumptions are authored fields, not
+        # a mood; a plan without them has no stated reason for its order.
+        "State the course 'through_line': one paragraph naming the single arc every objective "
+        "serves, in the owner's own terms. State 'prerequisite_assumptions': what the learner "
+        "must already have before objective 1. Never invent prior mastery the goal does not "
+        "state.",
+        # H-195: faithfulness to the goal. A plan that drifts into generic study skills is a
+        # different course from the one the owner asked for.
+        "Every objective and section must serve the goal in the input. Do not add generic "
+        "study-skills objectives or sections (time management, note-taking, motivation, "
+        "'learning how to learn'); those are not this course unless the goal itself names them.",
+        "Each section's lesson_intent must name the specific thing that section teaches in this "
+        "course - one objective, taught as why it matters, then a concrete worked example, then "
+        "a second example or counterexample, then a check on the same target. Never write a "
+        "generic heading or a generic intent that would fit any course.",
         "Produce a check plan covering every objective at least once, with the recipe-appropriate "
         "kind and whether it collects independent evidence.",
         "State explicit exclusions: what this course will not cover or claim.",
@@ -2907,6 +2994,16 @@ def _plan_instructions_v2(
         "Produce exactly one check plan entry per objective with objective_ref, kind and "
         "evidence_target, plus optional notes. Do not emit count or independent_evidence: one "
         "owner lesson writes exactly one check, and independence is an evidence class.",
+        # H-195: the arc the units build and the standing the learner starts from.
+        "State the course 'through_line': one paragraph naming the single arc every unit and "
+        "objective serves, in the owner's own terms. State 'prerequisite_assumptions': what the "
+        "learner must already have before unit 1. Never invent prior mastery the goal does not "
+        "state.",
+        "Every unit and objective must serve the goal in the input. Do not add generic "
+        "study-skills units or objectives (time management, note-taking, motivation, 'learning "
+        "how to learn'); those are not this course unless the goal itself names them.",
+        "Each unit goal and objective title must name the specific capability this course "
+        "teaches, never a generic template phrase that would fit any course.",
         "State explicit exclusions: what this course will not cover or claim.",
     ]
     if level:
@@ -3050,6 +3147,23 @@ def _lesson_instructions(
         "Write the lesson page for the section in the input.",
         f"Recipe: {recipe}.",
         "Segments: 2-6, at least one 'model' and one 'guided'.",
+        # H-195: the teaching arc. A section teaches ONE objective, in order, and every segment
+        # earns its place: why it matters, a worked example, a second example or counterexample,
+        # then a check on the same target. These are requirements, not a suggestion to pad.
+        "Teach exactly the section's one objective, in this arc: (1) why this matters for the "
+        "learner's goal, (2) a concrete worked example the learner can follow step by step, "
+        "(3) a second example or a counterexample that shows where the first would mislead, "
+        "(4) one check that tests the same target as the worked example. A definition is "
+        "followed immediately by a use of it.",
+        "No listicle padding, no bullet wall, no repeated summary, no restating the objective as "
+        "content, and no placeholder prose ('TODO', 'TBD', 'Lorem ipsum', 'this section will "
+        "cover'). Every sentence must tell the learner something they did not have before.",
+        "Write plainly for the declared learner level in the input: short sentences, one idea per "
+        "sentence, a term defined the first time it is used and then used. A beginner does not "
+        "need fewer words, they need fewer ideas per sentence.",
+        "Each segment heading must name this lesson's own content ('Why cable tension decides "
+        "the shift', not 'Introduction', 'Overview', 'Key points' or 'Summary'). A heading that "
+        "would fit any lesson is refused.",
         "Include exactly one check.",
         "Every segment, the worked example and the learner explanation also carries a 'short'. Each "
         "short is the same material cut down for a one-block-at-a-time view: keep only what the "
@@ -3446,6 +3560,7 @@ def enforce_plan_rules(
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
+    goal: str | None = None,
 ) -> None:
     """Dispatch on the document's own schema marker, never on a caller's guess.
 
@@ -3499,6 +3614,7 @@ def _enforce_plan_rules_v1(
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
+    goal: str | None = None,
 ) -> None:
     """Deterministic plan rules. Runs *before* the validator and never replaces it.
 
@@ -3581,6 +3697,7 @@ def _enforce_plan_rules_v1(
         parent_brief=parent_brief,
         reasons=reasons,
         require_independent_declaration=True,
+        goal=goal,
     )
 
     # H-89: vocabulary targets must come from the declared inventory, in band order, with no
@@ -3613,6 +3730,7 @@ def _enforce_plan_tail(
     parent_brief: dict[str, Any] | None,
     reasons: list[str],
     require_independent_declaration: bool,
+    goal: str | None = None,
 ) -> None:
     """The rules every plan document shares, v1 and v2.
 
@@ -3621,6 +3739,42 @@ def _enforce_plan_tail(
     v1 checks carried ``independent_evidence``, v2 removed it, so that one branch is gated.
     """
     ordinals = [int(obj.get("ordinal", 0)) for obj in objectives]
+
+    # H-195: the plan states its own arc and starting assumptions. A plan that cannot say what
+    # the course builds toward, or what it assumes the learner already has, has not planned it.
+    through_line = str(plan.get("through_line") or "").strip()
+    if len(through_line) < 20:
+        reasons.append(
+            "plan.through_line is missing or too short: state the one arc every objective "
+            "serves, in the owner's terms"
+        )
+    prerequisites = [
+        str(item).strip()
+        for item in plan.get("prerequisite_assumptions") or []
+        if str(item or "").strip()
+    ]
+    if not prerequisites:
+        reasons.append(
+            "plan.prerequisite_assumptions is empty: state what the learner must already have "
+            "before the first objective"
+        )
+    # H-195: no drift into generic study skills. The check is a bounded phrase list and it only
+    # fires when the goal itself does not name the same thing, so a real course about
+    # note-taking or time management is never refused.
+    goal_text = str(goal or plan.get("goal") or "").casefold()
+    if goal_text:
+        for field_name, texts in (
+            ("objectives[].title", [obj.get("title") for obj in objectives]),
+            ("sections[].lesson_intent", [section.get("lesson_intent") for section in sections]),
+        ):
+            for text in texts:
+                token = str(text or "").casefold()
+                for phrase in GENERIC_STUDY_PHRASES:
+                    if phrase in token and phrase not in goal_text:
+                        reasons.append(
+                            f"{field_name} drifts into generic study skills ({phrase!r}) that "
+                            "the goal does not ask for"
+                        )
 
     # Time honesty (AUDIT R9).
     estimate = plan.get("time_estimate") or {}
@@ -3817,6 +3971,7 @@ def _enforce_plan_rules_v2(
     scope: str | None = None,
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
+    goal: str | None = None,
 ) -> None:
     """The §5 blueprint rules. Structure first, then the shared tail.
 
@@ -3979,6 +4134,7 @@ def _enforce_plan_rules_v2(
         parent_brief=parent_brief,
         reasons=reasons,
         require_independent_declaration=False,
+        goal=goal,
     )
 
     # H-89: same deterministic vocabulary-sequence rules on the blueprint schema. H-187: gated on
@@ -4313,6 +4469,132 @@ def lesson_procedure_problems(
                     f"{schematic.get('source_id')!r}"
                 )
     return problems
+
+
+#: H-195 teaching-floor constants. They are deliberately structural: they refuse an outline
+#: dressed as a lesson, and they never score prose quality (that is the validator's and the
+#: quality rubric's job). A floor below them is not a pass — the attempt is retried with the
+#: reasons and, on a second failure, parked ``needs_review`` with no learner-facing check.
+MIN_TEACHING_PROSE_CHARS = 400
+MIN_SINGLE_SEGMENT_CHARS = 120
+
+#: Headings that would fit any lesson. A heading must name this lesson's own content; one of
+#: these tokens (after case/space/punctuation folding) is treated as template filler.
+GENERIC_LESSON_HEADINGS: tuple[str, ...] = (
+    "introduction",
+    "intro",
+    "overview",
+    "lesson overview",
+    "summary",
+    "conclusion",
+    "key points",
+    "key takeaways",
+    "what you will learn",
+    "what youll learn",
+    "getting started",
+    "background",
+    "main content",
+    "exercises",
+    "practice",
+    "review",
+    "wrap up",
+    "next steps",
+    "definitions",
+    "the lesson",
+)
+
+#: Phrases that are boilerplate in any language. They are matched case-folded on the authored
+#: teaching text only; a real word ("todo" in Spanish) is never on this list.
+PLACEHOLDER_LESSON_PHRASES: tuple[str, ...] = (
+    "lorem ipsum",
+    "to be determined",
+    "placeholder text",
+    "click here to edit",
+    "insert content",
+    "insert your text",
+    "your text here",
+    "as an ai language model",
+    "i cannot assist with that",
+)
+
+
+def _heading_key(text: Any) -> str:
+    """Fold a heading for the template test: case, spacing and punctuation ignored."""
+    return " ".join(
+        re.sub(r"[^0-9a-z]+", " ", str(text or "").casefold()).split()
+    )
+
+
+def teaching_quality_problems(lesson: dict[str, Any]) -> list[str]:
+    """The deterministic depth-and-simplicity floor for one authored section (H-195).
+
+    It answers four observable questions, not four adjectives:
+
+    * is there a teaching arc (a modelled target and a guided second pass)?
+    * is the worked example actually worked (at least two steps)?
+    * do the headings name this lesson, and is none of them template filler?
+    * is there enough authored teaching to be a lesson rather than an outline, and no
+      boilerplate standing in for prose?
+
+    Every message names the field so the regeneration attempt can fix it. This function never
+    claims the prose is good; it only refuses what is plainly not a lesson.
+    """
+    reasons: list[str] = []
+    segments = [seg for seg in lesson.get("segments") or [] if isinstance(seg, Mapping)]
+    kinds = [_segment_kind(seg) for seg in segments]
+    if "model" not in kinds:
+        reasons.append(
+            "teaching arc: no 'model' segment presents the target the lesson teaches"
+        )
+    if "guided" not in kinds:
+        reasons.append(
+            "teaching arc: no 'guided' segment gives the learner a second, worked pass at the "
+            "same target"
+        )
+    example = lesson.get("worked_example") or {}
+    steps = [step for step in example.get("steps") or [] if str(step or "").strip()]
+    if len(steps) < 2:
+        reasons.append(
+            "worked example: fewer than two steps, so it states an answer instead of showing "
+            "how one is reached"
+        )
+    headings = [str(seg.get("heading") or "") for seg in segments]
+    seen: set[str] = set()
+    for heading in headings:
+        key = _heading_key(heading)
+        if key in GENERIC_LESSON_HEADINGS:
+            reasons.append(
+                f"segment heading {heading!r} is a generic template heading; it must name this "
+                "lesson's own content"
+            )
+        if key and key in seen:
+            reasons.append(f"two segments share the heading {heading!r}; each step is its own")
+        seen.add(key)
+    prose = [str(seg.get("body") or "") for seg in segments]
+    total = sum(len(body.strip()) for body in prose)
+    longest = max((len(body.strip()) for body in prose), default=0)
+    if total < MIN_TEACHING_PROSE_CHARS:
+        reasons.append(
+            f"teaching prose is {total} characters across the segments; a lesson needs at least "
+            f"{MIN_TEACHING_PROSE_CHARS} and an outline is not a lesson"
+        )
+    if longest < MIN_SINGLE_SEGMENT_CHARS:
+        reasons.append(
+            "no segment explains anything in depth: the longest segment body is "
+            f"{longest} characters, under the {MIN_SINGLE_SEGMENT_CHARS}-character floor"
+        )
+    authored = " ".join(
+        [*prose]
+        + [str(example.get("prompt") or ""), *(str(step) for step in steps),
+           str(example.get("answer") or ""), str(lesson.get("learner_explanation") or "")]
+    ).casefold()
+    for phrase in PLACEHOLDER_LESSON_PHRASES:
+        if phrase in authored:
+            reasons.append(
+                f"authored text contains the boilerplate phrase {phrase!r}; placeholder prose "
+                "is refused"
+            )
+    return reasons
 
 
 def enforce_lesson_rules(
@@ -5731,6 +6013,9 @@ def plan_document(connection: sqlite3.Connection, plan_id: str) -> dict[str, Any
         # Provenance is part of the plan read, not a separate call an approver can skip. An older
         # document with no validation record returns ``validation: null`` and cannot be upgraded.
         "validation": validation,
+        # H-195: the model, provider, prompt and pipeline that wrote this plan. A document
+        # authored before H-195 carries no such key and reads as ``None`` rather than invented.
+        "generation": document.get("generation"),
         "approval": {
             "outcome": (validation or {}).get("outcome"),
             "independent": bool((validation or {}).get("independent")),
@@ -6482,6 +6767,7 @@ def run_plan_job(
                     scope=scope,
                     parent_brief=parent_brief,
                     frequency_selection=frequency_selection,
+                    goal=planning_goal,
                 )
             except _RuleViolation as exc:
                 rejection_reasons = exc.reasons
@@ -6617,9 +6903,16 @@ def run_plan_job(
             "validation_verdict": verdict["verdict"],
             "plan_schema": plan.get("plan_schema"),
             "validation": _validation_block(verdict, response, validation_response),
+            # H-195: what actually wrote this plan, from the provider's own report, plus the
+            # instruction label. The plan review prints it as "Writing model: provider/model".
+            "generation": generation_provenance(response, plan_request),
             # The approval surface reads this: a model-assessed or facts-unverified plan is not
             # blocked, but it cannot be approved while carrying no warning.
-            "approval_provenance": _approval_provenance(verdict),
+            "approval_provenance": {
+                **_approval_provenance(verdict),
+                "generator": model_identity(response),
+                "prompt_version": getattr(plan_request, "prompt_version", None),
+            },
             "objectives": len(objectives),
             "sections": len(sections),
             "units": len(units),
@@ -6828,6 +7121,9 @@ def run_plan_job(
                             # media preferences the planner saw. Absent for non-parent recipes.
                             "parent_brief": parent_brief,
                             "pipeline_version": PIPELINE_VERSION,
+                            # H-195: what wrote this plan, recorded beside the artifact so a
+                            # later read never has to guess the model or the prompt label.
+                            "generation": generation_provenance(response, plan_request),
                         }
                     ),
                     _json(research_run.to_dict()),
@@ -8435,6 +8731,10 @@ def _author_section(
         # Every gate runs before the attempt is judged, so a regeneration carries the whole list of
         # problems instead of hiding a leaked answer behind a rubric complaint.
         problems: list[str] = []
+        # H-195: the depth-and-simplicity floor runs before the independent validator, on the
+        # real authoring path only. A thin draft is refused for being thin; attempt 1 is retried
+        # with these reasons and attempt 2 parks the lesson needs_review (never a served lesson).
+        problems.extend(teaching_quality_problems(candidate))
         try:
             enforce_lesson_rules(
                 candidate,
@@ -8631,6 +8931,8 @@ def _author_section(
         "validation_verdict": verdict["verdict"],
         "validation": _validation_block(verdict, response, validation_response),
         "validation_model": validation_response.model if validation_response is not None else None,
+        # H-195: which model and prompt label wrote this lesson, from the provider's report.
+        "generation": generation_provenance(response, request),
         "reused": False,
     }
     warning = summary["validation"].get("warning")

@@ -1,6 +1,11 @@
 {
   "title": "Kitchen science: warm and cold",
   "learner_outcome": "With a parent, the child names and sorts warm and cold things, says why the kettle is a grown-up job, and explains one example in their own words.",
+  "through_line": "Warm or cold, then who may touch it: the child sorts real things by temperature, watches one safe example, then says why the kettle stays a grown-up job.",
+  "prerequisite_assumptions": [
+    "The child can sort familiar objects into two groups with an adult nearby.",
+    "The parent is present for every step and handles anything hot."
+  ],
   "delivery": "parent_led",
   "time_estimate": {
     "sessions_per_week": 2,
