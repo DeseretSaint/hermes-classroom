@@ -428,7 +428,8 @@ class LibraryActionTest(unittest.TestCase):
         header = header[: header.index("// H-91 P2-4")]
         self.assertIn("SYLLABUS_COPY.action", header)
         self.assertIn("children: 'Import pack'", header)
-        self.assertIn("variant: 'default'", header)
+        # H-151: the header's one filed action is the Coursebook primary, not the host default.
+        self.assertIn("variant: 'primary'", header)
         self.assertIn("variant: 'secondary'", header)
 
     def test_trust_copy_is_a_real_disclosure(self) -> None:

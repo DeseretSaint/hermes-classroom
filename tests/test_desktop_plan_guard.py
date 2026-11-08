@@ -43,7 +43,7 @@ class PlanDocumentGuardTest(unittest.TestCase):
     def test_generate_lessons_is_withheld_on_the_proven_gap(self) -> None:
         source = _source()
         guarded = re.search(
-            r"!isDraft && !editing && !lessonDocumentGap\s*\?\s*jsx\(sdk\.Button,\s*\{[^}]*onClick: generateLessons",
+            r"!isDraft && !editing && !lessonDocumentGap\s*\?\s*jsx\((?:sdk\.Button|CbAction),\s*\{[^}]*onClick: generateLessons",
             source,
             flags=re.DOTALL,
         )
