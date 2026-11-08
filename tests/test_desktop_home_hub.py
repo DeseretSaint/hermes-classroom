@@ -575,8 +575,9 @@ class HubProjectionTest(Harness):
         html = self.render([row()], outline=OUTLINE_A, selectedCourseId="crs_aaaaaaaaaaaaaaaa")
         self.assertIn('data-cb-path-state="review_due"', html)
         self.assertIn('data-cb-path-state="independent_evidence"', html)
-        # H-148 owns the checkpoint marker; this card must not invent one or a lock/percentage.
-        for forbidden in ("Checkpoint 1", "Locked", "locked", "XP", "% complete"):
+        # H-148 owns the checkpoint marker, so "Checkpoint N" is its label now; this card must
+        # still not invent a lock or a percentage.
+        for forbidden in ("Locked", "locked", "XP", "% complete"):
             self.assertNotIn(forbidden, html)
 
     def test_hub_paints_only_token_layer_values(self) -> None:
