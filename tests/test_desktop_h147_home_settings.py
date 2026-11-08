@@ -249,6 +249,18 @@ const snapshot = () => {
       return { id: node.getAttribute('aria-labelledby'), text: text(heading), headingId: heading ? heading.id : null }
     }),
     scopeLabel: text(q('[data-cb-settings-scope]')),
+    // H-156 — the child-safe floor, its four rules, and the parent-set session length.
+    childSafe: q('[data-cb-child-safe]') ? q('[data-cb-child-safe]').getAttribute('data-cb-child-safe') : null,
+    childSafeText: text(q('[data-cb-child-safe]')),
+    sessionMinutes: q('[data-cb-session-minutes]') ? q('[data-cb-session-minutes]').getAttribute('data-cb-session-minutes') : null,
+    childSafeRules: [...document.querySelectorAll('[data-cb-child-safe-rule]')].map((node) => ({
+      id: node.getAttribute('data-cb-child-safe-rule'),
+      state: node.getAttribute('data-cb-child-safe-state'),
+      text: text(node)
+    })),
+    parentEvidence: text(q('[data-cb-parent-evidence]')),
+    bodyText: text(q('[data-cb-main]')),
+    destination: q('[data-cb-destination]') ? q('[data-cb-destination]').getAttribute('data-cb-destination') : null,
     homeDefaults: q('[data-cb-home-defaults]') ? q('[data-cb-home-defaults]').getAttribute('data-cb-home-defaults') : null,
     homeEffective: q('[data-cb-home-defaults]') ? q('[data-cb-home-defaults]').getAttribute('data-cb-home-effective') : null,
     homeOverride: q('[data-cb-home-override]') ? q('[data-cb-home-override]').getAttribute('data-cb-home-override') : null,
@@ -293,7 +305,13 @@ const click = async (node, label) => {
 }
 
 for (const action of payload.actions || []) {
-  if (action.kind === 'open') {
+  if (action.kind === 'destination') {
+    await click(q('[data-cb-nav-item="' + action.value + '"]'), 'destination ' + action.value)
+    steps.push({ step: 'destination ' + action.value, ...snapshot() })
+  } else if (action.kind === 'text-click') {
+    await click(buttonNamed(action.text), action.text)
+    steps.push({ step: 'click ' + action.text, ...snapshot() })
+  } else if (action.kind === 'open') {
     await click(q('[data-cb-settings-open]'), 'settings trigger')
     steps.push({ step: 'open', ...snapshot() })
   } else if (action.kind === 'option') {
@@ -470,7 +488,7 @@ class HomeSettingsSheetTest(Harness):
         self.assertEqual(opened["scopeLabel"], "On this device")
         self.assertEqual(
             opened["sections"],
-            ["appearance", "default-view", "classroom", "sound", "haptics", "reduced-motion"],
+            ["appearance", "default-view", "classroom", "child-safe", "sound", "haptics", "reduced-motion"],
         )
         for label in opened["sectionLabels"]:
             self.assertEqual(label["id"], label["headingId"])
@@ -780,7 +798,14 @@ class SettingsModelTest(Harness):
         out = self.run_model({"raw": None})
         self.assertEqual(
             out["defaults"],
-            {"appearance": "system", "defaultMode": "game", "sound": False, "reducedMotion": "system", "classrooms": {}},
+            {
+                "appearance": "system",
+                "defaultMode": "game",
+                "sound": False,
+                "reducedMotion": "system",
+                "sessionMinutes": 15,
+                "classrooms": {},
+            },
         )
         dirty = self.run_model(
             {

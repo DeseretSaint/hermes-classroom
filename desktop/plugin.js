@@ -150,6 +150,9 @@ const CB_HOME_PREF_DEFAULTS = Object.freeze({
   defaultMode: 'game',
   sound: false,
   reducedMotion: 'system',
+  // H-156 — the one number a parent sets for a child-facing lesson. It is a calm default, not a
+  // timer: nothing counts down and no session is ended by it.
+  sessionMinutes: 15,
   classrooms: Object.freeze({})
 })
 const CB_APPEARANCE_OPTIONS = Object.freeze([
@@ -169,6 +172,27 @@ const CB_REDUCED_MOTION_OPTIONS = Object.freeze([
   { id: 'system', label: 'Follow system' },
   { id: 'reduce', label: 'Reduce motion' }
 ])
+/**
+ * H-156 — the child-safe floor and the session length a parent can set.
+ *
+ * The four rules are fixed facts about this build, not switches: Coursebook has no reminder
+ * scheduler, no ranking, no random reward and no XP or streak store to turn on. They are listed
+ * with their state so a parent can read the floor, and a test scans the shipped copy so the
+ * floors cannot regress into a feature quietly.
+ */
+const CB_CHILD_SAFE_RULES = Object.freeze([
+  { id: 'reminders', label: 'Loss-framed reminders', state: 'Never' },
+  { id: 'leaderboard', label: 'Public leaderboard', state: 'Never' },
+  { id: 'rewards', label: 'Loot or random rewards', state: 'Never' },
+  { id: 'xp', label: 'XP and streaks', state: 'Never' }
+])
+const CB_SESSION_OPTIONS = Object.freeze([
+  { id: '10', label: '10 min' },
+  { id: '15', label: '15 min' },
+  { id: '20', label: '20 min' },
+  { id: '30', label: '30 min' }
+])
+const CB_SESSION_CHOICES = CB_SESSION_OPTIONS.map((option) => Number(option.id))
 const CB_SETTINGS_TITLE_ID = 'cb-home-settings-title'
 
 /** One listener set, one cache: every mounted Coursebook surface reads the same document. */
@@ -208,6 +232,9 @@ function sanitizeCbHomePrefs(raw) {
     ),
     sound: source.sound === true,
     reducedMotion: oneOf(source.reducedMotion, ['system', 'reduce'], CB_HOME_PREF_DEFAULTS.reducedMotion),
+    sessionMinutes: CB_SESSION_CHOICES.indexOf(Number(source.sessionMinutes)) >= 0
+      ? Number(source.sessionMinutes)
+      : CB_HOME_PREF_DEFAULTS.sessionMinutes,
     classrooms
   }
 }
@@ -4247,6 +4274,92 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
           jsx(
             CbSettingsSection,
             {
+              id: 'child-safe',
+              title: 'Child-safe defaults',
+              description:
+                'For any lesson a child uses. These four do not exist in Coursebook, and they do not exist to be switched on later.',
+              resetLabel: 'Reset the session length to 15 minutes',
+              atDefault: prefs.sessionMinutes === CB_HOME_PREF_DEFAULTS.sessionMinutes,
+              onReset: () => onReset('sessionMinutes'),
+              children: jsxs('div', {
+                'data-cb-child-safe': 'on',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0 },
+                children: [
+                  jsx('ul', {
+                    'data-cb-child-safe-rules': '',
+                    style: {
+                      listStyle: 'none',
+                      margin: 0,
+                      padding: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.3rem'
+                    },
+                    children: CB_CHILD_SAFE_RULES.map((rule) =>
+                      jsxs(
+                        'li',
+                        {
+                          'data-cb-child-safe-rule': rule.id,
+                          'data-cb-child-safe-state': rule.state.toLowerCase(),
+                          style: {
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            justifyContent: 'space-between',
+                            gap: '0.75rem',
+                            fontSize: CB_TYPE.meta,
+                            lineHeight: 1.45,
+                            color: 'var(--cb-ink-soft)'
+                          },
+                          children: [
+                            jsx('span', { children: rule.label }),
+                            jsx('strong', {
+                              style: { color: 'var(--cb-ink)', fontWeight: 600, whiteSpace: 'nowrap' },
+                              children: rule.state
+                            })
+                          ]
+                        },
+                        rule.id
+                      )
+                    )
+                  }),
+                  jsxs('div', {
+                    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+                    children: [
+                      jsx('span', {
+                        id: 'cb-settings-session-length-label',
+                        style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
+                        children: 'Session length'
+                      }),
+                      jsx('div', {
+                        'data-cb-settings-control': 'session-length',
+                        'data-cb-settings-value': String(prefs.sessionMinutes),
+                        'aria-labelledby': 'cb-settings-session-length-label',
+                        style: { minWidth: 0 },
+                        children: jsx(sdk.SegmentedControl, {
+                          options: CB_SESSION_OPTIONS,
+                          value: String(prefs.sessionMinutes),
+                          onChange: (id) => {
+                            const minutes = Number(id)
+                            if (CB_SESSION_CHOICES.indexOf(minutes) >= 0) onUpdate({ sessionMinutes: minutes })
+                          },
+                          className: 'min-h-11 items-stretch'
+                        })
+                      }),
+                      jsx('p', {
+                        style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                        children:
+                          'A plan the parent writes, not a countdown. No reminder is sent when a session is missed.'
+                      })
+                    ]
+                  })
+                ]
+              })
+            },
+            'child-safe'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
               id: 'sound',
               title: 'Sound',
               description: 'A short tone when a check is scored. Off by default.',
@@ -4349,6 +4462,57 @@ function HomeDefaultsLine({ prefs, classroom, onOpenSettings, triggerRef }) {
             ]
           })
         : null,
+      // H-156 — the child-safe floor and the parent-set session length are visible on Home before
+      // the sheet is opened, so nobody has to find Settings to learn what the defaults are.
+      jsx('span', {
+        'data-cb-child-safe': 'on',
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: '· Child-safe defaults'
+      }),
+      jsx('span', {
+        'data-cb-session-minutes': String(prefs.sessionMinutes),
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: `· Session · ${prefs.sessionMinutes} min`
+      }),
+      jsx('span', {
+        ref: triggerRef,
+        style: { display: 'inline-flex', alignItems: 'center' },
+        children: jsx(sdk.Button, {
+          size: 'sm',
+          variant: 'ghost',
+          'data-cb-settings-open': '',
+          'aria-label': 'Open Coursebook settings',
+          'aria-haspopup': 'dialog',
+          style: { minHeight: '44px' },
+          onClick: onOpenSettings,
+          children: 'Settings'
+        })
+      })
+    ]
+  })
+}
+
+/**
+ * H-156 — the same child-safe line in Parent Studio, where a parent prepares the lesson.
+ *
+ * It names the session length and the fixed floor, and it opens the one settings sheet. Two
+ * destinations never mount at once, so the route's single trigger ref belongs to whichever line
+ * is on screen; Escape returns focus to that line's own Settings button.
+ */
+function ChildSafeLine({ sessionMinutes, onOpenSettings, triggerRef }) {
+  return jsxs('div', {
+    'data-cb-child-safe': 'on',
+    'data-cb-session-minutes': String(sessionMinutes),
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', minHeight: '2.75rem' },
+    children: [
+      jsx('span', {
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: 'Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks'
+      }),
+      jsx('span', {
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: `· Session · ${sessionMinutes} min`
+      }),
       jsx('span', {
         ref: triggerRef,
         style: { display: 'inline-flex', alignItems: 'center' },
@@ -17326,7 +17490,7 @@ function StudioJobLine({ jobId, job: providedJob, onSettled, onRunAgain }) {
 }
 
 /** The studio list: lesson plans the parent prepared. Imported packs stay in Library. */
-function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
+function StudioList({ implemented, onCreate, onOpen, reloadSignal, sessionMinutes, onOpenSettings, triggerRef }) {
   const supported = Boolean(implemented && implemented.has('library.list'))
   const query = useRpcQuery(
     'library.list',
@@ -17368,7 +17532,7 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
     })
   }
 
-  return jsx(StudioLanding, { rows, onCreate, onOpen })
+  return jsx(StudioLanding, { rows, onCreate, onOpen, sessionMinutes, onOpenSettings, triggerRef })
 }
 
 /**
@@ -17376,7 +17540,7 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
  * carries no create action, so this in-page primary is the only `variant=default` control on the
  * surface (H-94 V2-4; H-91 P2-4 removed the duplicate header button).
  */
-function StudioLanding({ rows, onCreate, onOpen }) {
+function StudioLanding({ rows, onCreate, onOpen, sessionMinutes, onOpenSettings, triggerRef }) {
   const groups = groupShelfRows(rows)
   return jsxs('div', {
     'data-cb-studio-landing': '',
@@ -17394,9 +17558,11 @@ function StudioLanding({ rows, onCreate, onOpen }) {
       jsx(PlateHead, {
         label: 'Parent Studio',
         title: 'Plans for your child',
-        caption: 'Each brief you write is kept as its own plan, so you can compare versions without losing the first.',
+        caption:
+          'Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first.',
         actions: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'New lesson plan' })
       }),
+      jsx(ChildSafeLine, { sessionMinutes, onOpenSettings, triggerRef }),
       ...groups.map((group) =>
         jsx(
           CourseCover,
@@ -17484,7 +17650,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
           jsx('h2', { className: 'text-sm font-semibold', children: initial ? 'Duplicate this brief' : 'Write a lesson brief' }),
           jsx(QuietNote, {
             children:
-              'You are the operator. Coursebook prepares the material for you to teach: there is no child chat, no child persona and no grading of the child. Everything here is a plan you review before any page is generated.'
+              'Prepare a lesson for a child. You are the operator: Coursebook prepares the material for you to teach, and there is no child chat, no child persona and no grading of the child. Everything here is a plan you review before any page is generated.'
           }),
           note
             ? jsx('div', {
@@ -19825,6 +19991,14 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
                     ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: 'Export ready' })
                     : null
                 ]
+              }),
+              // H-156 — what this view reports. The parent sees evidence and their own reports;
+              // there is no XP, level or ranking to read here, and the line says so.
+              jsx('div', {
+                'data-cb-parent-evidence': 'parent_reported',
+                className: 'text-xs text-(--ui-text-secondary)',
+                children:
+                  'Parent view · what your child did and what you observed, never points, levels or rankings.'
               })
             ]
           }),
@@ -20155,6 +20329,9 @@ function CoursebookPage() {
       body = jsx(StudioList, {
         implemented,
         reloadSignal: studioReload,
+        sessionMinutes: homePrefs.sessionMinutes,
+        onOpenSettings: openSettings,
+        triggerRef: settingsTriggerRef,
         onCreate: () => setStudioSeed({ initial: null, note: null }),
         onOpen: (row) => {
           setStudioCourse(row)
