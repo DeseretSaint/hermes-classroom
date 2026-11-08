@@ -16,9 +16,10 @@ from . import api, db
 
 STATUS_TOOL_NAME = "coursebook_status"
 STATUS_TOOL_DESCRIPTION = (
-    "Report Coursebook backend health: plugin version, wire contract version and SQLite schema "
-    "state for the active profile. Read-only; use it to diagnose why the Coursebook pane is "
-    "degraded instead of guessing."
+    "Report Coursebook backend health: plugin version, wire contract version, SQLite schema "
+    "state for the active profile, and whether a cross-model validator route is configured. "
+    "Read-only; use it to diagnose why the Coursebook pane is degraded or whether a generated "
+    "course can be checked by a different model instead of guessing."
 )
 
 #: Manifest ``config_schema`` keys this build actually reads. Declaring a setting nothing
@@ -80,6 +81,7 @@ def status_handler(args: dict[str, Any] | None = None, **_kwargs: Any) -> str:
         "plugin_version": __version__,
         "contract_version": api.RPC_CONTRACT_VERSION,
         "db": _db_health(),
+        "validator": _validator_status(),
         "implemented_methods": list(api.implemented_methods()),
     }
     if bool(_setting("status_include_contracts", DEFAULT_STATUS_INCLUDE_CONTRACTS)):
@@ -92,3 +94,33 @@ def _db_health() -> dict[str, Any]:
         return db.health()
     except Exception as exc:  # noqa: BLE001 - a status tool reports failure, it never raises
         return {"ready": False, "schema_version": None, "error": type(exc).__name__}
+
+
+def _validator_status() -> dict[str, Any]:
+    """Report whether a cross-model validator route is *declared*, and never more than that.
+
+    The values come from ``generation.validator_config()`` — the same settings ``register`` used
+    to bind the route. This says nothing about whether the provider answered; a configured route
+    still fails loudly at call time if the host trust gate refuses the override. Read locally: no
+    secret is involved, and the block is exactly ``{configured, provider, model, reason}``.
+    """
+    try:
+        from . import generation
+
+        config = generation.validator_config()
+        return {
+            "configured": bool(config.get("configured")),
+            "provider": config.get("provider"),
+            "model": config.get("model"),
+            "reason": str(config.get("reason") or ""),
+        }
+    except Exception as exc:  # noqa: BLE001 - a status read must never take the tool down
+        return {
+            "configured": False,
+            "provider": None,
+            "model": None,
+            "reason": (
+                "the validator configuration could not be read "
+                f"({type(exc).__name__}); treat the route as unconfigured"
+            ),
+        }

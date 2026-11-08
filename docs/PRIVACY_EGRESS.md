@@ -146,6 +146,14 @@ allowlists). A refused override fails the job loudly; the plugin never silently 
 model and labels the result independent. When both keys are empty there is **no second egress**:
 validation runs on the model already in use and the record says `same_model` / `model_assessed`.
 
+`coursebook_status` reports this configuration as a `validator` block
+(`{configured, provider, model, reason}`), read from `generation.validator_config()`. It is a local
+read of the declared settings: it contains no credential, sends nothing, and never claims the
+route answered. `configured: false` — the shipped default — is the honest statement that no
+different checking model is configured, and its `reason` names
+`plugins.entries.coursebook.settings.validator_model` / `validator_provider` and the trust-gate
+paths above, so the fix is visible in the product's own diagnostic.
+
 ## Parent and child boundary
 
 Parent mode means a parent prepares a lesson for a child. Children do not chat with Coursebook, and

@@ -224,6 +224,70 @@ class SycophanticPassTest(unittest.TestCase):
         self.assertFalse(document["approval"]["independent"])
         self.assertIn("model assessed", document["approval"]["warning"])
 
+    def test_a_same_model_pass_cannot_upgrade_support_or_open_a_check(self) -> None:
+        """H-167: the recorded identity is the gate, even when research succeeded."""
+        plan = plan_fixture("plan_ja")
+        llm = ScriptedLLM(plan, validation_report(verdict="pass"), model="same-host-model")
+        result = gen.run_plan_job(self.connection, plan_job(), llm, FakeSearch(), now=NOW)
+
+        validation = result["validation"]
+        self.assertEqual(validation["independence"], gen.INDEPENDENCE_SAME_MODEL)
+        self.assertFalse(validation["independent"])
+
+        source = SourceRecord(
+            source_id="src_1",
+            url="https://example.test",
+            title="T",
+            publisher="example.test",
+            source_type="web_page",
+            fetched_at="2026-11-06T12:00:00Z",
+            published_at=None,
+            content_hash="sha256:0",
+            excerpt=EXCERPT,
+        )
+        upgraded = research.apply_support_verdicts(
+            [source],
+            [
+                {
+                    "source_id": "src_1",
+                    "support": "supported",
+                    "evidence_quote": "A polite greeting when entering a shop is こんにちは",
+                    "reason": "quoted",
+                }
+            ],
+            independent=bool(validation["independent"]),
+        )
+        self.assertEqual(upgraded[0].support_status, "unverified")
+
+        self.connection.execute(
+            "UPDATE plans SET state = 'approved', approved_at = ? WHERE id = ?",
+            ("2026-11-06T12:05:00Z", result["plan_id"]),
+        )
+        lessons = gen.run_lesson_job(
+            self.connection,
+            {
+                "job_id": "job-lesson-h167",
+                "kind": "plan",
+                "brief": {"plan_id": result["plan_id"]},
+            },
+            FakeLLM(
+                {
+                    "coursebook.lesson.generate": lesson_from_request(),
+                    # Same identity on both lesson passes: model_assessed, never a graded check.
+                    "coursebook.lesson.validate": lambda request: response(
+                        validation_from_fixture()(request).parsed, model="fake-author"
+                    ),
+                }
+            ),
+            now=NOW,
+            budget=gen.CostBudget(max_calls=32),
+        )
+        self.assertEqual(lessons["lessons"][0]["state"], "model_assessed")
+        self.assertFalse(lessons["lessons"][0]["check_enabled"])
+        page = gen.learner_page(self.connection, lessons["lessons"][0]["lesson_id"])
+        self.assertEqual(page["provenance"]["outcome"], "model_assessed")
+        self.assertFalse(page["provenance"]["check_enabled"])
+
     def test_same_model_validator_cannot_upgrade_support_even_with_a_verbatim_quote(self) -> None:
         source = SourceRecord(
             source_id="src_1",

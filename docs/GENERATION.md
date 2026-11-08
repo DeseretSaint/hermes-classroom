@@ -81,11 +81,12 @@ credential pool — both bypass the per-plugin trust gate that makes `ctx.llm` s
 does not call a model at all: the job executor (agent half) performs the bounded calls and hands
 the results to the pipeline, which persists them.
 
-**Wiring.** `coursebook.generation.bind_host_llm(ctx.llm)` is called once from `register(ctx)` in
-`__init__.py:59`; `bind_validator_llm(...)` follows at `__init__.py:67` with the
-`validator_provider` / `validator_model` settings read from the plugin config there and nowhere
-else. Before binding, `host_llm()` raises a typed `GenerationRejected` instead of falling back to
-any provider — failing closed is the intended behaviour.
+**Wiring (verified on this tree).** `register(ctx)` calls `bind_host_llm(ctx.llm)` and
+`bind_validator_llm(ctx.llm, provider=..., model=...)` once, in `__init__.py`; the
+`validator_provider` / `validator_model` settings are read there from the plugin config and
+nowhere else. A host without `ctx.llm` leaves both unbound; `host_llm()` then raises a typed
+`GenerationRejected` instead of falling back to any provider, so failing closed is the intended
+behaviour.
 
 **Limits.**
 
@@ -100,6 +101,15 @@ any provider — failing closed is the intended behaviour.
 * When no validator route is configured, `validator_llm()` is `None`: validation still runs on the
   author model (a different prompt and schema), the record says `same_model`, and the artifact is
   `model_assessed`. That is a documented refusal to claim independence, not a fake second opinion.
+* The declared route is visible without running a course. `coursebook_status` returns a
+  `validator` block, `{configured, provider, model, reason}`, read from
+  `generation.validator_config()` and nothing else. `configured` is the exact condition
+  `validator_llm()` uses, so the block can never advertise a route the pipeline would not call;
+  it reports the declared configuration, never that the provider answered or that the host trust
+  gate will allow the override. On `configured: false` the `reason` names
+  `plugins.entries.coursebook.settings.validator_model` / `validator_provider` and the trust gate
+  (`plugins.entries.coursebook.llm.allow_model_override` / `allow_provider_override`, with
+  `allowed_models` / `allowed_providers`), so the fix is readable from the diagnostic itself.
 * The cost of the second route is reported, not hidden: `result["validation"]["cost"]` is the spend
   of the `.validate` calls (calls, known USD, `unknown_cost`) and `result["usage"]["by_purpose"]`
   breaks the whole job down by purpose. Unknown provider cost stays `null`.
@@ -295,11 +305,16 @@ that could not be identified" otherwise; and "No validator record is stored for 
 no record is bound to the plan id on screen (a `plan.replan` carry is a copy, not a re-check, so it
 does not borrow the source version's record). The configured `validator_provider`/`validator_model`
 appears only when the runtime reported it — an empty `validator_model` therefore renders as the
-same model, not as a missing second opinion. The raw `outcome`/`independence` values, both model
-identities and the backend warning stay in the "Technical detail" disclosure. Nothing on that
-surface may say "independently validated" for a `model_assessed` pass. This is the rule in the
-status table in `docs/HARNESS-STATUS.md` §3 read from the other side: a branch commit is not a
-merge, and a same-model pass is a limitation, never an independence badge.
+same model, not as a missing second opinion. A `same_model` or `unidentified` pass also carries the
+actionable hint: it names `plugins.entries.coursebook.settings.validator_model` /
+`validator_provider` and the host trust gate (`allow_model_override` / `allow_provider_override`
+with the allowlists), and points at `coursebook_status`, whose `validator` block says whether such
+a route is declared. A genuinely `independent` pass and a missing record get no such hint. The raw
+`outcome`/`independence` values, both model identities and the backend warning stay in the
+"Technical detail" disclosure. Nothing on that surface may say "independently validated" for a
+`model_assessed` pass, and no same-model surface may use "fresh eyes" or "subagent". This is the
+rule in the status table in `docs/HARNESS-STATUS.md` §3 read from the other side: a branch commit
+is not a merge, and a same-model pass is a limitation, never an independence badge.
 
 **Prerequisites are not a v1 plan rule, by decision.** `OBJECTIVE_SCHEMA` and `SECTION_SCHEMA`
 carry no prerequisite field and must not gain one: the v1 plan is a flat list whose one section per

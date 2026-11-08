@@ -1135,9 +1135,66 @@ def validator_llm() -> LLM | None:
     return _VALIDATOR_LLM
 
 
+#: The two settings that create the second route, and the host trust gate that must allow the
+#: override. Kept as constants so the status reason, the plan-review hint and the tests name the
+#: same strings the host actually reads (`__init__.py::register`, `agent/plugin_llm.py`).
+VALIDATOR_MODEL_SETTING = "plugins.entries.coursebook.settings.validator_model"
+VALIDATOR_PROVIDER_SETTING = "plugins.entries.coursebook.settings.validator_provider"
+VALIDATOR_TRUST_GATE = (
+    "plugins.entries.coursebook.llm.allow_model_override / allow_provider_override"
+)
+
+
+def _validator_reason(configured: bool, provider: str | None, model: str | None) -> str:
+    """Say whether a route is *declared*, never that it works or that it answered.
+
+    This text is user-facing (``coursebook_status``), so it names the settings and the trust gate a
+    person can act on. It never includes a credential: the two overrides are model/provider names.
+    """
+    if configured:
+        return (
+            "A validator route is configured from "
+            f"{VALIDATOR_MODEL_SETTING} / {VALIDATOR_PROVIDER_SETTING} "
+            f"(provider: {provider or 'host default'}, model: {model or 'host default'}). "
+            "This reports the declared route, not that it answered and not that the host trust "
+            f"gate will allow it: the override needs {VALIDATOR_TRUST_GATE} "
+            "(with allowed_models / allowed_providers). A refused override fails the job loudly "
+            "instead of reusing the author model."
+        )
+    if provider or model:
+        return (
+            "A validator model or provider is named in "
+            f"{VALIDATOR_MODEL_SETTING} / {VALIDATOR_PROVIDER_SETTING}, but no host LLM route is "
+            "bound in this context, so no different checking model exists here: validation runs "
+            "on the author model and every pass is recorded as model_assessed, never independent."
+        )
+    return (
+        "No validator route is configured: "
+        f"{VALIDATOR_MODEL_SETTING} and {VALIDATOR_PROVIDER_SETTING} are empty, so validation "
+        "runs on the author model and every pass is recorded as model_assessed, never "
+        "independent. To use a different checking model, set "
+        f"{VALIDATOR_MODEL_SETTING} (and optionally {VALIDATOR_PROVIDER_SETTING}) and enable the "
+        f"host trust gate {VALIDATOR_TRUST_GATE} with allowed_models / allowed_providers."
+    )
+
+
 def validator_config() -> dict[str, Any]:
-    """Report the configured validator route (settings values, not observed identities)."""
-    return {"configured": _VALIDATOR_LLM is not None, **_VALIDATOR_OVERRIDES}
+    """Report the declared validator route (settings values, not observed identities).
+
+    ``configured`` is true only when a host LLM is bound *and* at least one override is set; that
+    is the same condition ``validator_llm()`` uses, so this can never advertise a route the
+    pipeline would not call. ``reason`` explains the declared state and the settings that change
+    it; it is not a health check of the provider.
+    """
+    provider = _VALIDATOR_OVERRIDES.get("provider")
+    model = _VALIDATOR_OVERRIDES.get("model")
+    configured = _VALIDATOR_LLM is not None
+    return {
+        "configured": configured,
+        "provider": provider,
+        "model": model,
+        "reason": _validator_reason(configured, provider, model),
+    }
 
 
 def host_llm() -> LLM:
