@@ -64,9 +64,9 @@
         "description": "Sets aside the thanks and farewell options"
       },
       {
-        "criterion": "script recognition",
+        "criterion": "phrase selection",
         "weight": 1.0,
-        "description": "Matches the chosen phrase to Japanese script"
+        "description": "Selects the phrase the model presents as the greeting, out of the three options; the kana form and its printed romaji reading are both accepted, so this scores selection, not script reading."
       }
     ],
     "reference_answer": "こんにちは",
