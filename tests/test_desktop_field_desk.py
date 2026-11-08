@@ -208,6 +208,7 @@ const pass = (props) => {
 }
 
 export const Button = (props) => el('button', pass(props), textOf(props))
+export const RowButton = (props) => el('button', pass(props), textOf(props))
 export const Badge = (props) => el('span', { className: 'badge', 'data-variant': props.variant || null }, textOf(props))
 export const PanelSectionLabel = (props) => el('div', { className: 'panel-label' }, textOf(props))
 export const PanelEmpty = (props) => el('div', { className: 'panel-empty' }, textOf(props))
@@ -666,10 +667,18 @@ class FieldDeskRenderTest(unittest.TestCase):
 
     def test_path_summary_counts_real_states_not_vanity(self) -> None:
         html = self.render()
+        # H-145 / ENG-D5: one evidence caption on the path, not the plate caption and the tally.
+        self.assertEqual(html.count("with evidence"), 1, html)
         self.assertIn("1 of 4 sections with evidence", html)
         self.assertIn("1 due", html)
-        # One evidence count on the path, not a plate caption plus a tally caption.
-        self.assertEqual(html.count("with evidence"), 1)
+        self.assertNotIn("Course evidence ·", html)
+
+    def test_a_single_section_reads_as_one_section(self) -> None:
+        # ENG-D4: no "1 of 1 sections".
+        outline = {"revision": 0, "objectives": OUTLINE["objectives"][:1], "plan": {"units": []}}
+        html = self.render(outline=outline)
+        self.assertIn("1 of 1 section with evidence", html)
+        self.assertNotIn("1 sections", html)
 
     def test_path_is_not_a_table(self) -> None:
         html = self.render()

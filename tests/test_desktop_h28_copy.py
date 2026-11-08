@@ -382,7 +382,10 @@ class LearnerVocabularyTest(unittest.TestCase):
     def test_library_copy_moves_the_absence_into_a_disclosure(self) -> None:
         library = self.out["copy"]["library"]
         self.assertNotIn("provenance", library["lead"].lower())
-        self.assertIn("Courses made by other people", library["lead"])
+        # H-150: the lead must not claim every pack was made by someone else — bundled packs are
+        # on the same shelf. It names both provenances the filters actually return.
+        self.assertIn("ship with Coursebook", library["lead"])
+        self.assertIn("from someone else", library["lead"])
         self.assertIn("no marketplace ranking and no verified badge", library["whatWeDoNotCheck"].lower())
         self.assertIn("What we check", library["whatWeCheck"])
         self.assertIn("hashes", library["whatWeCheck"].lower())

@@ -37,11 +37,11 @@ class PackRowsTest(unittest.TestCase):
         self.assertNotIn("data-cb-seal", row)
         self.assertIn("data-cb-pack-row", row)
 
-    def test_empty_pack_is_named_and_offers_preview_without_a_path(self) -> None:
+    def test_empty_pack_is_named_once_and_offers_preview_without_a_path(self) -> None:
         row = _function("PackShelfRow", "DeskProgress")
         self.assertIn("data-cb-pack-empty", row)
-        self.assertIn("This pack has no sections yet.", row)
-        self.assertIn("Preview it to see the manifest", row)
+        self.assertEqual(row.count("'No sections yet'"), 1, "the empty state is said once, not repeated in the note")
+        self.assertIn("Nothing to open yet. Preview it to see the manifest.", row)
         # The empty branch returns before CoursePath; a missing pack must not imply progress.
         empty_branch = row[row.index("empty\n        ?"):row.index("        : jsxs('div'")]
         self.assertNotIn("CoursePath", empty_branch)

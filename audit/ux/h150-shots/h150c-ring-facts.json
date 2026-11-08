@@ -1,0 +1,242 @@
+[
+  {
+    "width": 1600,
+    "scale": 0.896875,
+    "focusRow": {
+      "focused": true,
+      "ringState": "none",
+      "rowRect": {
+        "x": 301,
+        "y": 323,
+        "w": 477,
+        "h": 152
+      },
+      "mainRect": {
+        "x": 301,
+        "w": 830,
+        "scrollW": 830,
+        "clientW": 830
+      },
+      "outline": "rgb(26, 23, 19) none 2.2312px",
+      "outlineColor": "rgb(26, 23, 19)",
+      "outlineOffset": "-1.1156px",
+      "innerWidth": 1600,
+      "dpr": 0.8963781595230103,
+      "routeWidth": 958,
+      "split": "stacked"
+    },
+    "ringAfterFocus": {
+      "state": "visible",
+      "outline": "rgb(44, 74, 140) solid 1.1156px",
+      "color": "rgb(44, 74, 140)",
+      "offset": "-1.1156px"
+    },
+    "expectedBox": {
+      "x": 270,
+      "y": 290,
+      "w": 428,
+      "h": 136
+    },
+    "diff": {
+      "changed": 1124,
+      "box": {
+        "x": 270,
+        "y": 290,
+        "w": 427,
+        "h": 135
+      },
+      "bands": {
+        "top": 439,
+        "bottom": 439,
+        "left": 147,
+        "right": 147,
+        "middle": 0
+      },
+      "sideCoverage": {
+        "leftRows": 135,
+        "rightRows": 135
+      }
+    },
+    "crop": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-ring-1600.png"
+  },
+  {
+    "width": 1049,
+    "scale": 0.8970448045757865,
+    "focusRow": {
+      "focused": true,
+      "ringState": "none",
+      "rowRect": {
+        "x": 248,
+        "y": 381,
+        "w": 377,
+        "h": 196
+      },
+      "mainRect": {
+        "x": 248,
+        "w": 384,
+        "scrollW": 377,
+        "clientW": 377
+      },
+      "outline": "rgb(26, 23, 19) none 2.2312px",
+      "outlineColor": "rgb(26, 23, 19)",
+      "outlineOffset": "-1.1156px",
+      "innerWidth": 1049,
+      "dpr": 0.8963781595230103,
+      "routeWidth": 407,
+      "split": "stacked"
+    },
+    "ringAfterFocus": {
+      "state": "visible",
+      "outline": "rgb(44, 74, 140) solid 1.1156px",
+      "color": "rgb(44, 74, 140)",
+      "offset": "-1.1156px"
+    },
+    "expectedBox": {
+      "x": 222,
+      "y": 342,
+      "w": 338,
+      "h": 176
+    },
+    "diff": {
+      "changed": 1026,
+      "box": {
+        "x": 222,
+        "y": 343,
+        "w": 338,
+        "h": 175
+      },
+      "bands": {
+        "top": 350,
+        "bottom": 350,
+        "left": 187,
+        "right": 187,
+        "middle": 0
+      },
+      "sideCoverage": {
+        "leftRows": 175,
+        "rightRows": 175
+      }
+    },
+    "crop": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-ring-1049.png"
+  },
+  {
+    "width": 900,
+    "scale": 0.8966666666666666,
+    "focusRow": {
+      "focused": true,
+      "ringState": "none",
+      "rowRect": {
+        "x": 248,
+        "y": 548,
+        "w": 227,
+        "h": 241
+      },
+      "mainRect": {
+        "x": 248,
+        "w": 235,
+        "scrollW": 249,
+        "clientW": 227
+      },
+      "outline": "rgb(26, 23, 19) none 2.2312px",
+      "outlineColor": "rgb(26, 23, 19)",
+      "outlineOffset": "-1.1156px",
+      "innerWidth": 900,
+      "dpr": 0.8963781595230103,
+      "routeWidth": 257,
+      "split": "one-pane"
+    },
+    "ringAfterFocus": {
+      "state": "visible",
+      "outline": "rgb(44, 74, 140) solid 1.1156px",
+      "color": "rgb(44, 74, 140)",
+      "offset": "-1.1156px"
+    },
+    "expectedBox": {
+      "x": 222,
+      "y": 491,
+      "w": 204,
+      "h": 216
+    },
+    "diff": {
+      "changed": 836,
+      "box": {
+        "x": 222,
+        "y": 493,
+        "w": 204,
+        "h": 214
+      },
+      "bands": {
+        "top": 216,
+        "bottom": 216,
+        "left": 226,
+        "right": 226,
+        "middle": 0
+      },
+      "sideCoverage": {
+        "leftRows": 214,
+        "rightRows": 214
+      }
+    },
+    "crop": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-ring-900.png"
+  },
+  {
+    "width": 460,
+    "scale": 0.8978260869565218,
+    "focusRow": {
+      "focused": true,
+      "ringState": "none",
+      "rowRect": {
+        "x": 11,
+        "y": 597,
+        "w": 185,
+        "h": 264
+      },
+      "mainRect": {
+        "x": 11,
+        "w": 192,
+        "scrollW": 249,
+        "clientW": 185
+      },
+      "outline": "rgb(26, 23, 19) none 2.2312px",
+      "outlineColor": "rgb(26, 23, 19)",
+      "outlineOffset": "-1.1156px",
+      "innerWidth": 460,
+      "dpr": 0.8963781595230103,
+      "routeWidth": 215,
+      "split": "one-pane"
+    },
+    "ringAfterFocus": {
+      "state": "visible",
+      "outline": "rgb(44, 74, 140) solid 1.1156px",
+      "color": "rgb(44, 74, 140)",
+      "offset": "-1.1156px"
+    },
+    "expectedBox": {
+      "x": 10,
+      "y": 536,
+      "w": 166,
+      "h": 237
+    },
+    "diff": {
+      "changed": 802,
+      "box": {
+        "x": 10,
+        "y": 536,
+        "w": 165,
+        "h": 236
+      },
+      "bands": {
+        "top": 177,
+        "bottom": 177,
+        "left": 248,
+        "right": 248,
+        "middle": 0
+      },
+      "sideCoverage": {
+        "leftRows": 236,
+        "rightRows": 236
+      }
+    },
+    "crop": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-ring-460.png"
+  }
+]
