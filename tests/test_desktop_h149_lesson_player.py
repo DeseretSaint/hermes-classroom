@@ -86,7 +86,7 @@ if (payload.kind === 'section') {
       sources: index,
       checkSlot: checkNode,
       checkLabels: payload.checkLabels || [],
-      section: { objective_id: payload.document.objective_id, title: payload.document.section_title, ordinal: 2 },
+      section: { objective_id: payload.document.objective_id, title: payload.document.section_title, ordinal: 2, evidence_target: 'discrimination' },
       progress: payload.progress || { total_objectives: 4, independent: 2, review_due: 1 },
       playerState: payload.playerState || { phase: 'awaiting_input', canCheck: false, verdict: null },
       playerController: { current: null },
@@ -188,13 +188,19 @@ class PlayerSurfaceTest(H149RenderTest):
         self.assertIn('data-cb-lesson-view="player"', html)
         self.assertIn('data-cb-player-bar', html)
 
-    def test_the_header_names_section_mode_check_count_and_exit(self) -> None:
+    def test_the_field_stop_header_names_the_stop_the_title_and_the_step(self) -> None:
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
         html = self.player(doc)
-        self.assertIn("Section 2", html)
+        self.assertIn('data-cb-player-stop="2/4"', html)
+        self.assertIn("STOP 2 OF 4", html)
+        self.assertIn('data-cb-player-title=""', html)
+        self.assertIn("Affection and register", html)
+        self.assertIn('data-cb-player-objective=""', html)
+        self.assertIn("By the end of this stop you can show: tell the difference.", html)
+        # H-178: the course metadata strip and the check-count strip are gone from the stop.
+        self.assertNotIn("1 check in this section", html)
+        self.assertNotIn("data-cb-player-check-count", html)
         self.assertIn('data-cb-player-mode="game"', html)
-        self.assertIn(">Game<", html)
-        self.assertIn("1 check in this section", html)
         self.assertIn("Step 1 of 4", html)
         self.assertIn('data-cb-player-exit=""', html)
         self.assertIn(">Exit<", html)
@@ -335,7 +341,7 @@ class PlayerCloseTest(H149RenderTest):
         self.assertIn("You finished Section 2", html)
         self.assertIn("2 of 4 with evidence", html)
         self.assertIn("1 to review", html)
-        self.assertIn("Back to the path", html)
+        self.assertIn("Return to the trail", html)
         self.assertEqual(html.count('data-variant="default"'), 1)
         for word in ("%", "XP", "streak", "confetti", "score"):
             self.assertNotIn(word, html)

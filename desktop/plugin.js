@@ -9363,6 +9363,97 @@ const EVIDENCE_CLASS_NOTICE = {
   cold: 'Independent evidence is worth more: it shows what you can do without help.'
 }
 
+/*
+ * H-178 · the integrity chip.
+ *
+ * The chip is the product's one original mechanic made legible: the evidence class is *how the
+ * answer was produced*, not how good it was. Labels stay the frozen learner vocabulary
+ * (`EVIDENCE_CLASS_COPY`) except for two authored overrides: `answer_shown` prints the spec's full
+ * sentence because "Answer shown" alone reads like a neutral fact rather than a downgrade, and
+ * `self_reported` prints the learner's own voice ("you told us") rather than the report register of
+ * "Reported by you — not independently verified." Both still say, in words, that the attempt is not
+ * independent evidence — the meaning is the frozen one, only the register differs.
+ *
+ * The sentence under the label says what the class means for *this* answer. Nothing here is
+ * computed: every value is the backend's own `evidence_class` from `attempt.submit`,
+ * `lesson.assist`, or the uncommitted event `evidence.inspect` returns.
+ */
+const EVIDENCE_CHIP_LABEL = {
+  ...EVIDENCE_CLASS_COPY,
+  self_reported: 'Self-reported — you told us',
+  answer_shown: 'Answer shown — this attempt is no longer independent'
+}
+
+const EVIDENCE_CHIP_SENTENCE = {
+  cold: 'No hint and no shown answer went into this answer, so it can count as independent evidence for the objective.',
+  hinted: 'A hint was recorded before this answer. The attempt is still recorded, but it cannot count as independent evidence.',
+  answer_shown: 'The answer was shown before this attempt. It records what you did after seeing the answer, not what you can do unaided.',
+  self_reported: 'It cannot count as independent evidence.',
+  parent_reported: 'An adult recorded this observation. Coursebook did not grade it, so it is not independent evidence.',
+  override: 'You moved on without a grade. Access advanced; the objective is not counted as independent evidence.'
+}
+
+/** Everything the chip prints for one backend evidence class, or nothing for an unknown value. */
+function evidenceChipView(value) {
+  if (!value) return null
+  const label = EVIDENCE_CHIP_LABEL[value] || String(value).replaceAll('_', ' ')
+  const sentence = EVIDENCE_CHIP_SENTENCE[value] || null
+  return { value, label, sentence }
+}
+
+/**
+ * The chip itself: a bordered label, never a score, plus one plain-language sentence.
+ *
+ * `pending` marks the class the *next* committed attempt will carry. It is rendered before the
+ * learner submits (so the rule is visible at the moment of effort) and after the verdict (so the
+ * record and the claim agree). The class is always passed in from a backend field; this component
+ * has no default and prints nothing when it is given none.
+ */
+function EvidenceChip({ value, pending = false }) {
+  const view = evidenceChipView(value)
+  if (!view) return null
+  return jsxs('div', {
+    'data-cb-evidence-chip': view.value,
+    'data-cb-evidence-pending': pending ? 'true' : 'false',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.2rem',
+      maxWidth: CB_MEASURE,
+      padding: '0.45rem 0.6rem',
+      borderLeft: '2px solid var(--cb-ochre)',
+      background: 'var(--cb-lamp-soft)',
+      boxSizing: 'border-box'
+    },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap' },
+        children: [
+          jsx('span', {
+            'data-cb-evidence-chip-label': view.value,
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, fontWeight: 600, lineHeight: 1.35, color: 'var(--cb-ink)' },
+            children: view.label
+          }),
+          pending
+            ? jsx('span', {
+                'data-cb-evidence-chip-pending': '',
+                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                children: 'if you submit now'
+              })
+            : null
+        ]
+      }),
+      view.sentence
+        ? jsx('p', {
+            'data-cb-evidence-chip-sentence': '',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: view.sentence
+          })
+        : null
+    ]
+  })
+}
+
 /**
  * The learner-facing words for the rubric's evidence target.
  *
@@ -9732,17 +9823,29 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemente
               })
               return
             }
-            const stimulus = detail.result && detail.result.stimulus ? detail.result.stimulus : null
-            if (!stimulus) {
-              settleStimulus(opened.check_id, { stimulusStatus: 'unavailable', stimulusError: null })
-              return
+            // `check.open` returns identity only; `check.get` is where the facts the surface needs
+            // already live: the stimulus, the check's state, and `attempt_count`. Keeping the last
+            // two is not bookkeeping — the pending integrity chip reads `attempt_count` to tell a
+            // first try from a retry on the same check, and a dropped field made the chip print
+            // "First try, no hints" while the backend committed the answer as `hinted`.
+            const detailResult = (detail.result || {})
+            const facts = {}
+            if (detailResult.attempt_count !== undefined && detailResult.attempt_count !== null && Number.isFinite(Number(detailResult.attempt_count))) {
+              facts.attempt_count = Math.max(0, Number(detailResult.attempt_count))
             }
-            settleStimulus(opened.check_id, { stimulusStatus: 'ready', stimulusError: null })
+            if (detailResult.state) facts.state = detailResult.state
+            const stimulus = detailResult.stimulus || null
             setState((previous) =>
               previous.check && previous.check.check_id === opened.check_id
-                ? { ...previous, check: { ...previous.check, stimulus } }
+                ? {
+                    ...previous,
+                    ...(stimulus ? {} : { stimulusStatus: 'unavailable', stimulusError: null }),
+                    check: { ...previous.check, ...facts, ...(stimulus ? { stimulus } : {}) }
+                  }
                 : previous
             )
+            if (!stimulus) return
+            settleStimulus(opened.check_id, { stimulusStatus: 'ready', stimulusError: null })
           })
           .catch((error) => {
             if (cancelled) return
@@ -9772,6 +9875,61 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemente
 }
 
 /**
+ * The evidence class the learner's *next* committed attempt will carry, read from the backend.
+ *
+ * `attempt.submit` classifies an answer by how it was produced, and the classification is made
+ * when the answer is committed — so the rule must be visible before then. Two backend facts give
+ * it without guessing:
+ *
+ *   * `evidence.inspect` (L1) lists the assist events (`hint_request` / `answer_shown`) that have
+ *     not been consumed by an attempt yet (`attempt_id = null`). The newest one names the class
+ *     the next answer inherits, exactly as `lesson.assist` states in its own response and exactly
+ *     as `coursebook/domain.py::_classify_evidence` reads it.
+ *   * `check.get` reports `attempt_count`. A second committed answer to the same check follows
+ *     feedback, so the backend classifies it at least `hinted`
+ *     (`docs/CONTRACTS.md` §lesson.assist; `_classify_evidence`).
+ *
+ * When neither fact exists the attempt really is `cold`: no hint, no shown answer, no prior
+ * attempt on this check. A build without either read prints no pending class rather than assuming.
+ */
+function usePendingEvidence({ enrollmentId, objectiveId, revision, enabled, implemented, refreshKey }) {
+  const [pending, setPending] = useState(null)
+  const canInspect = Boolean(implemented && implemented.has('evidence.inspect'))
+  useEffect(() => {
+    if (!enabled || !enrollmentId || !objectiveId || !canInspect) {
+      setPending(null)
+      return undefined
+    }
+    let cancelled = false
+    rpc('evidence.inspect', { enrollment_id: enrollmentId, objective_id: objectiveId })
+      .then((response) => {
+        if (cancelled) return
+        if (!response || !response.ok) {
+          setPending(null)
+          return
+        }
+        const events = (response.result && response.result.l1 && response.result.l1.events) || []
+        // Newest first (h-178: `evidence.layer1` orders by created_at DESC, rowid DESC). Only an
+        // unconsumed assist event changes the class of the next answer.
+        const open = events.find(
+          (event) =>
+            event &&
+            event.attempt_id === null &&
+            (event.kind === 'hint_request' || event.kind === 'answer_shown')
+        )
+        setPending(open ? open.evidence_class || (open.kind === 'answer_shown' ? 'answer_shown' : 'hinted') : null)
+      })
+      .catch(() => {
+        // A read-only lane probe never replaces the surface's real state.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [enrollmentId, objectiveId, revision, enabled, canInspect, refreshKey])
+  return pending
+}
+
+/**
  * The answer object sent to `attempt.submit`.
  *
  * `text` carries the written answer (contract max 8000). `selection` is the closed-form channel and
@@ -9784,6 +9942,19 @@ function attemptAnswer(answer) {
   const payload = { kind: 'text', text: answer }
   if (answer.length <= SELECTION_MAX_CHARS) payload.selection = [answer]
   return payload
+}
+
+/**
+ * The answer object for a selected choice.
+ *
+ * A selection check stores its accepted forms in the closed-form lane, and a matching check may
+ * declare a `selection` reference. The learner picked an authored choice, so the answer is a
+ * selection; the chosen text also travels on `text` so a check graded over accepted forms reads the
+ * same pick. Both fields are declared by `attempt.submit`'s own answer schema.
+ */
+function choiceAnswer(choice) {
+  const text = String(choice == null ? '' : choice).slice(0, 8000)
+  return { kind: 'selection', selection: [text.slice(0, SELECTION_MAX_CHARS)], text }
 }
 
 /**
@@ -9808,6 +9979,7 @@ function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewE
     'data-cb-verdict': result.verdict,
     'data-cb-evidence-class': result.evidence_class || null,
     children: [
+      jsx(EvidenceChip, { value: result.evidence_class || null }),
       selfReportedPass
         ? jsx('strong', {
             className: 'max-w-prose text-sm font-medium',
@@ -10813,8 +10985,21 @@ function AttemptControls({
   onPlayerState = null
 }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
+  const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
   const [text, setText] = useState('')
   const [ticked, setTicked] = useState([])
+  // H-178: a selection check is answered by picking an authored choice, not by typing its text.
+  // The index is the only local answer state; the value that travels to `attempt.submit` is the
+  // served choice string, never a label the pane invented.
+  const [selected, setSelected] = useState(-1)
+  const [assistClass, setAssistClass] = useState(null)
+  const [assistBusy, setAssistBusy] = useState(false)
+  // H-178: `lesson.assist` bumps the enrollment revision (`docs/CONTRACTS.md` §lesson.assist), and
+  // its response states the new revision. Adopting it locally means pressing "I used a hint" and
+  // then "Check" inside the refresh window still carries the current fence instead of losing the
+  // submit to STALE_REVISION. Revisions only increase, so the larger of the page's and the assist's
+  // is always the newest fact this card holds.
+  const [assistRevision, setAssistRevision] = useState(0)
   const [phase, setPhase] = useState('awaiting_input')
   const [result, setResult] = useState(null)
   const [resultCheck, setResultCheck] = useState(null)
@@ -10845,6 +11030,26 @@ function AttemptControls({
   // A parent-led lesson is observed by an adult through the observation control (H-21), never ticked here.
   const checklist = parentLed ? [] : checklistItems(stimulus)
   const readOnlyItems = parentLed ? [] : checklist.length > 0 ? [] : servedItems
+  // H-178: the authored check decides the answer surface. A `selection` stimulus with declared
+  // choices is a choice check; every other authored format keeps the written answer. The pane never
+  // upgrades a text check into a choice (the backend would have nothing to grade the pick against).
+  const choices = !parentLed && stimulus && Array.isArray(stimulus.choices) ? stimulus.choices.filter((choice) => String(choice || '').trim()) : []
+  const choiceMode = checklist.length === 0 && stimulus && stimulus.format === 'selection' && choices.length > 0
+  const selectedChoice = choiceMode && selected >= 0 && selected < choices.length ? choices[selected] : null
+  // The pending class: an unconsumed assist event for this objective, else a prior committed
+  // attempt on this check (a second answer follows feedback), else the answer is a first try.
+  const uncommittedClass = usePendingEvidence({
+    enrollmentId,
+    objectiveId,
+    revision,
+    enabled: Boolean(check) && !parentLed,
+    implemented,
+    refreshKey: phase
+  })
+  const attemptCount = check && Number(check.attempt_count) > 0 ? Number(check.attempt_count) : 0
+  const nextEvidenceClass = assistClass || uncommittedClass || (attemptCount > 0 ? 'hinted' : 'cold')
+  // The fence this card submits against. See `assistRevision`.
+  const fenceRevision = Math.max(Number(revision) || 0, Number(assistRevision) || 0)
 
   // The answer form unmounts when a verdict arrives; put focus on the verdict itself so a keyboard
   // user is not dropped back on <body> with no idea whether the submission went through.
@@ -10861,6 +11066,8 @@ function AttemptControls({
     if (result) return
     setText('')
     setTicked([])
+    setSelected(-1)
+    setAssistClass(null)
     setPhase('awaiting_input')
     setResult(null)
     setResultCheck(null)
@@ -10893,12 +11100,24 @@ function AttemptControls({
   const submit = useCallback(async () => {
     if (!check) return
     // A checklist submits the ticked item ids, never the labels and never the typed text (§9.2).
-    const answer = checklist.length > 0 ? checklistAnswer(ticked) : attemptAnswer(text.trim())
+    // A selection check submits the chosen served choice; a written check submits what was typed.
+    const answer =
+      checklist.length > 0
+        ? checklistAnswer(ticked)
+        : choiceMode
+          ? selectedChoice !== null
+            ? choiceAnswer(selectedChoice)
+            : null
+          : attemptAnswer(text.trim())
     if (checklist.length > 0 && ticked.length === 0) {
       setError({ code: 'VALIDATION_FAILED', message: 'Tick at least one step before submitting.' })
       return
     }
-    if (checklist.length === 0 && !text.trim()) {
+    if (choiceMode && selectedChoice === null) {
+      setError({ code: 'VALIDATION_FAILED', message: 'Pick one of the choices before submitting.' })
+      return
+    }
+    if (!choiceMode && checklist.length === 0 && !text.trim()) {
       setError({ code: 'VALIDATION_FAILED', message: 'Write an answer before submitting.' })
       return
     }
@@ -10917,7 +11136,7 @@ function AttemptControls({
       },
       {
         idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
-        expectedRevision: Number(revision) || 0
+        expectedRevision: fenceRevision
       }
     )
     if (!response.ok) {
@@ -10934,7 +11153,7 @@ function AttemptControls({
     cbPlayCheckCue(graded.verdict)
     if (graded.verdict === 'needs_retry') void resolveNeedsRetryLane(graded.attempt_id)
     if (onCommitted) onCommitted(graded)
-  }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
+  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, fenceRevision, onCommitted, resolveNeedsRetryLane])
 
   const retryGrading = useCallback(async () => {
     if (!check || !nonceRef.current) return
@@ -10947,11 +11166,11 @@ function AttemptControls({
         check_id: check.check_id,
         check_version: check.check_version,
         attempt_nonce: nonceRef.current,
-        answer: answerRef.current || (checklist.length > 0 ? checklistAnswer(ticked) : attemptAnswer(text.trim()))
+        answer: answerRef.current || (checklist.length > 0 ? checklistAnswer(ticked) : choiceMode && selectedChoice !== null ? choiceAnswer(selectedChoice) : attemptAnswer(text.trim()))
       },
       {
         idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
-        expectedRevision: Number(revision) || 0
+        expectedRevision: fenceRevision
       }
     )
     if (!response.ok) {
@@ -10966,7 +11185,7 @@ function AttemptControls({
     cbPlayCheckCue(response.result.verdict)
     if (response.result.verdict === 'needs_retry') void resolveNeedsRetryLane(response.result.attempt_id)
     if (onCommitted) onCommitted(response.result)
-  }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
+  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, fenceRevision, onCommitted, resolveNeedsRetryLane])
 
   const moveOn = useCallback(async () => {
     if (!check) return
@@ -11000,12 +11219,76 @@ function AttemptControls({
   const newExample = useCallback(() => {
     setText('')
     setTicked([])
+    setSelected(-1)
     setResult(null)
     setResultCheck(null)
     setError(null)
     setPhase('awaiting_input')
     nonceRef.current = null
   }, [])
+
+  /**
+   * Record that the learner used help, before — never after — the answer that inherits it.
+   *
+   * This is the pane's own `lesson.assist`: the same layer-1 event the chat hook writes, with the
+   * same `hint_request` / `answer_shown` kinds. The response states the class the next committed
+   * attempt will carry, and the enrollment revision moves so an in-flight submit loses its fence
+   * instead of being committed as cold (`docs/CONTRACTS.md` §lesson.assist). Nothing is revealed and
+   * nothing is graded: the control records the learner's own statement.
+   */
+  const recordAssist = useCallback(
+    async (kind) => {
+      if (!check || assistBusy) return
+      setAssistBusy(true)
+      setError(null)
+      const response = await rpc(
+        'lesson.assist',
+        { enrollment_id: enrollmentId, objective_id: objectiveId, kind },
+        {
+          idempotencyKey: newOperationId('assist'),
+          expectedRevision: fenceRevision
+        }
+      )
+      setAssistBusy(false)
+      if (!response.ok) {
+        setError(response.error)
+        return
+      }
+      const recorded = response.result && response.result.evidence_class
+      setAssistClass(recorded || (kind === 'answer_shown' ? 'answer_shown' : 'hinted'))
+      // The assist moved the enrollment revision; adopt it before the async page refresh lands so
+      // a hint followed immediately by a submit cannot be refused as STALE_REVISION.
+      const bumped = response.result ? Number(response.result.revision) : NaN
+      if (Number.isFinite(bumped) && bumped > 0) setAssistRevision(bumped)
+      if (onCommitted) onCommitted(response.result)
+    },
+    [check, assistBusy, enrollmentId, objectiveId, fenceRevision, onCommitted]
+  )
+
+  /** Radio-group keys: 1–8 pick by number, arrows move and select, Home/End jump. */
+  const choiceKeyDown = (event) => {
+    if (locked || detached || event.altKey || event.ctrlKey || event.metaKey) return
+    const count = choices.length
+    if (count === 0) return
+    const key = event.key
+    let next = null
+    if (key === 'ArrowDown' || key === 'ArrowRight') next = (Math.max(selected, -1) + 1) % count
+    else if (key === 'ArrowUp' || key === 'ArrowLeft') next = selected <= 0 ? count - 1 : selected - 1
+    else if (key === 'Home') next = 0
+    else if (key === 'End') next = count - 1
+    else if (/^[1-9]$/.test(key)) {
+      const index = Number(key) - 1
+      if (index < count) next = index
+    }
+    if (next === null) return
+    event.preventDefault()
+    setSelected(next)
+    const root = event.currentTarget
+    if (root && typeof root.querySelector === 'function') {
+      const option = root.querySelector(`[data-cb-choice="${next + 1}"]`)
+      if (option && typeof option.focus === 'function') option.focus()
+    }
+  }
 
   /**
    * The player bridge.
@@ -11021,13 +11304,19 @@ function AttemptControls({
       ? false
       : Boolean(
           stimulusState === 'unsupported' ||
-            (stimulusState === 'ready' && (checklist.length > 0 ? ticked.length > 0 : text.trim().length > 0))
+            (stimulusState === 'ready' &&
+              (checklist.length > 0
+                ? ticked.length > 0
+                : choiceMode
+                  ? selectedChoice !== null
+                  : text.trim().length > 0))
         ) && phase === 'awaiting_input' && !detached,
     verdict: result ? result.verdict : null,
     evidenceClass: result ? result.evidence_class || null : null,
-    answerKind: checklist.length > 0 ? 'selection' : 'text'
+    nextEvidenceClass,
+    answerKind: checklist.length > 0 || choiceMode ? 'selection' : 'text'
   }
-  const playerSnapshotKey = `${playerSnapshot.phase}|${playerSnapshot.canCheck}|${playerSnapshot.verdict}|${playerSnapshot.answerKind}`
+  const playerSnapshotKey = `${playerSnapshot.phase}|${playerSnapshot.canCheck}|${playerSnapshot.verdict}|${playerSnapshot.answerKind}|${playerSnapshot.nextEvidenceClass}`
   useEffect(() => {
     if (!playerMode || !onPlayerState) return
     onPlayerState(playerSnapshot)
@@ -11055,7 +11344,6 @@ function AttemptControls({
   const criteria = (result && result.criteria) || []
   // The learner-facing question, projected by `check.get`. `check.open` carries identity only, so a
   // build without that read simply has no stimulus here and shows the answer form alone.
-  const choices = stimulus && Array.isArray(stimulus.choices) ? stimulus.choices : []
   const toggleItem = (id, next) => {
     setTicked((previous) => {
       const already = previous.includes(id)
@@ -11111,7 +11399,7 @@ function AttemptControls({
                     children: stimulus.learner_instructions
                   })
                 : null,
-              choices.length > 0
+              choices.length > 0 && !choiceMode
                 ? jsx('ul', {
                     className: 'flex flex-col gap-1 text-sm leading-snug',
                     'aria-label': 'Choices',
@@ -11220,10 +11508,14 @@ function AttemptControls({
           })
         : null,
 
+      showForm && mayAnswer && !parentLed
+        ? jsx(EvidenceChip, { value: nextEvidenceClass, pending: true })
+        : null,
+
       showForm && mayAnswer
         ? jsxs('div', {
             className: 'flex flex-col gap-2',
-            'data-cb-answer-kind': checklist.length > 0 ? 'selection' : 'text',
+            'data-cb-answer-kind': checklist.length > 0 || choiceMode ? 'selection' : 'text',
             children: [
               checklist.length > 0
                 ? jsx('p', {
@@ -11232,23 +11524,118 @@ function AttemptControls({
                     children:
                       'Tick every step you actually completed. Your ticks are recorded as your own report, not as an independent check.'
                   })
-                : jsx('label', {
-                    className: 'text-xs font-medium text-(--ui-text-secondary)',
-                    htmlFor: 'cb-attempt-answer',
-                    children: 'Your answer'
-                  }),
+                : choiceMode
+                  ? jsx('p', {
+                      id: 'cb-attempt-help',
+                      className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                      children: 'Pick one answer. Press 1–' + String(Math.min(choices.length, 8)) + ' or use the arrow keys, then submit.'
+                    })
+                  : jsx('label', {
+                      className: 'text-xs font-medium text-(--ui-text-secondary)',
+                      htmlFor: 'cb-attempt-answer',
+                      children: 'Your answer'
+                    }),
               checklist.length > 0
                 ? null
-                : jsx(sdk.Textarea, {
-                    id: 'cb-attempt-answer',
-                    'aria-describedby': 'cb-attempt-help',
-                    disabled: locked || detached,
-                    onChange: (event) => setText(event.target.value),
-                    placeholder: 'Type the answer you would give in the lesson.',
-                    rows: 3,
-                    value: text
-                  }),
-              checklist.length > 0
+                : choiceMode
+                  ? jsxs('div', {
+                      role: 'radiogroup',
+                      'aria-label': 'Answers',
+                      'aria-describedby': 'cb-attempt-help',
+                      'data-cb-choice-group': String(choices.length),
+                      'data-cb-choice-selected': selected >= 0 ? String(selected + 1) : '',
+                      onKeyDown: choiceKeyDown,
+                      style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: CB_MEASURE },
+                      children: [
+                        choices.map((choice, index) => {
+                          const active = index === selected
+                          return jsxs(
+                            'div',
+                            {
+                              role: 'radio',
+                              'aria-checked': active ? 'true' : 'false',
+                              tabIndex: active || (selected < 0 && index === 0) ? 0 : -1,
+                              'data-cb-choice': String(index + 1),
+                              'data-cb-choice-state': active ? 'selected' : 'available',
+                              'aria-disabled': locked || detached ? 'true' : undefined,
+                              onClick: () => {
+                                if (locked || detached) return
+                                setSelected(index)
+                              },
+                              style: {
+                                display: 'flex',
+                                alignItems: 'baseline',
+                                gap: '0.55rem',
+                                minHeight: '2.75rem',
+                                padding: '0.6rem 0.7rem',
+                                cursor: locked || detached ? 'default' : 'pointer',
+                                border: `1px solid ${active ? 'var(--cb-accent)' : 'var(--cb-rule)'}`,
+                                background: active ? 'var(--cb-lamp-soft)' : 'var(--cb-paper)',
+                                boxSizing: 'border-box',
+                                outlineOffset: '2px'
+                              },
+                              children: [
+                                jsx('span', {
+                                  'aria-hidden': 'true',
+                                  style: {
+                                    fontFamily: CB_SANS,
+                                    fontSize: CB_TYPE.caption,
+                                    fontWeight: 600,
+                                    fontVariantNumeric: 'tabular-nums',
+                                    color: active ? 'var(--cb-accent)' : 'var(--cb-ink-soft)',
+                                    minWidth: '1.1rem'
+                                  },
+                                  children: String(index + 1)
+                                }),
+                                jsx('span', {
+                                  style: {
+                                    flex: '1 1 auto',
+                                    minWidth: 0,
+                                    fontFamily: CB_SERIF,
+                                    fontSize: phone ? CB_TYPE.body : CB_TYPE.lead,
+                                    lineHeight: 1.4,
+                                    color: 'var(--cb-ink)',
+                                    overflowWrap: 'anywhere'
+                                  },
+                                  children: choice
+                                }),
+                                jsx('span', {
+                                  'data-cb-choice-word': active ? 'selected' : 'available',
+                                  style: {
+                                    fontFamily: CB_SANS,
+                                    fontSize: CB_TYPE.caption,
+                                    lineHeight: 1.3,
+                                    color: active ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
+                                    whiteSpace: 'nowrap'
+                                  },
+                                  children: active ? 'Selected' : ''
+                                })
+                              ]
+                            },
+                            `choice-${index}`
+                          )
+                        }),
+                        jsx('p', {
+                          'data-cb-choice-answer': '',
+                          'aria-live': 'polite',
+                          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                          children:
+                            selectedChoice !== null
+                              ? `Selected: ${selected + 1}. ${selectedChoice}`
+                              : 'Nothing selected yet.'
+                        })
+                      ]
+                    })
+                  : jsx(sdk.Textarea, {
+                      id: 'cb-attempt-answer',
+                      'aria-describedby': 'cb-attempt-help',
+                      disabled: locked || detached,
+                      onChange: (event) => setText(event.target.value),
+                      placeholder: 'Type the answer you would give in the lesson.',
+                      rows: playerMode ? 5 : 3,
+                      value: text
+                    }),
+              checklist.length > 0 || choiceMode
                 ? null
                 : jsx('p', {
                     id: 'cb-attempt-help',
@@ -11263,6 +11650,32 @@ function AttemptControls({
                     children: 'This lesson is no longer connected to its chat, so Submit is off. Open a new lesson run to connect a new chat.'
                   })
                 : null,
+              supports('lesson.assist') && !detached
+                ? jsxs('div', {
+                    'data-cb-assist': 'available',
+                    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem' },
+                    children: [
+                      jsx(sdk.Button, {
+                        variant: 'text',
+                        size: 'sm',
+                        disabled: locked || assistBusy,
+                        onClick: () => recordAssist('hint_request'),
+                        children: 'I used a hint'
+                      }),
+                      jsx(sdk.Button, {
+                        variant: 'text',
+                        size: 'sm',
+                        disabled: locked || assistBusy,
+                        onClick: () => recordAssist('answer_shown'),
+                        children: 'I saw the answer'
+                      }),
+                      jsx('span', {
+                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                        children: 'Said honestly, this changes what the next answer can count for.'
+                      })
+                    ]
+                  })
+                : null,
               // The player carries the one footer primary (`Check`), so the answer card paints no
               // button of its own there. The reference views keep their inline actions unchanged.
               playerMode
@@ -11272,9 +11685,9 @@ function AttemptControls({
                 children: [
                   jsx(CbAction, {
                     variant: 'primary',
-                    disabled: locked || detached || (checklist.length > 0 ? checklistEmpty : !text.trim()),
+                    disabled: locked || detached || (checklist.length > 0 ? checklistEmpty : choiceMode ? selectedChoice === null : !text.trim()),
                     onClick: submit,
-                    children: locked ? 'Submitting' : checklist.length > 0 ? 'Submit confirmation' : 'Submit answer'
+                    children: locked ? 'Submitting' : checklist.length > 0 ? 'Submit confirmation' : choiceMode ? 'Submit choice' : 'Submit answer'
                   }),
                   checklist.length > 0
                     ? jsx(sdk.Button, {
@@ -11287,16 +11700,27 @@ function AttemptControls({
                         },
                         children: 'Clear ticks'
                       })
-                    : jsx(sdk.Button, {
-                        variant: 'text',
-                        size: 'sm',
-                        disabled: locked || !text,
-                        onClick: () => {
-                          setText('')
-                          setError(null)
-                        },
-                        children: 'Edit answer'
-                      })
+                    : choiceMode
+                      ? jsx(sdk.Button, {
+                          variant: 'text',
+                          size: 'sm',
+                          disabled: locked || selected < 0,
+                          onClick: () => {
+                            setSelected(-1)
+                            setError(null)
+                          },
+                          children: 'Clear choice'
+                        })
+                      : jsx(sdk.Button, {
+                          variant: 'text',
+                          size: 'sm',
+                          disabled: locked || !text,
+                          onClick: () => {
+                            setText('')
+                            setError(null)
+                          },
+                          children: 'Edit answer'
+                        })
                 ]
               })
             ]
@@ -11327,7 +11751,9 @@ function AttemptControls({
                     answer:
                       checklist.length > 0
                         ? checklist.filter((item) => ticked.includes(item.id)).map((item) => item.label)
-                        : text.trim()
+                        : choiceMode
+                          ? selectedChoice || ''
+                          : text.trim()
                   })
                 : jsx(AttemptVerdict, {
                     result,
@@ -13010,7 +13436,7 @@ function FieldRail({ next, facts, sources, notes }) {
  * live viewport width rather than a media query, because a runtime plugin cannot ship a stylesheet;
  * the rail stacks under the reading column at 460px instead of shrinking the text.
  */
-function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, children }) {
+function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, header = true, children }) {
   const width = useCbViewportWidth()
   const layout = cbLayoutFor(width)
   const wide = cbIsWide(layout)
@@ -13018,7 +13444,8 @@ function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, childre
     'data-cb-workspace-shell': wide ? 'wide' : 'stacked',
     style: { display: 'flex', flexDirection: 'column', gap: '0.85rem', minHeight: 0 },
     children: [
-      jsxs('header', {
+      header
+        ? jsxs('header', {
         'data-cb-workspace-header': '',
         style: {
           display: 'flex',
@@ -13058,8 +13485,16 @@ function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, childre
               })
             : null
         ]
-      }),
-      meta && meta.length
+      })
+        : null,
+      !header && actions
+        ? jsx('div', {
+            'data-cb-workspace-actions': '',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: '0.35rem' },
+            children: actions
+          })
+        : null,
+      header && meta && meta.length
         ? jsx('div', {
             'data-cb-route-meta': '',
             style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
@@ -13140,12 +13575,16 @@ function MediaFrame({ artifactId, kind, label, caption, provenance, textEquivale
         ]
       }),
       textEquivalent
-        ? jsxs('details', {
+        ? jsxs('div', {
             'data-cb-media-text-equivalent': '',
-            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            'data-cb-media-transcript': kind === 'audio' ? 'true' : null,
+            style: { fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink)' },
             children: [
-              jsx('summary', { style: { cursor: 'pointer' }, children: 'Text equivalent' }),
-              jsx('div', { style: { paddingTop: '0.25rem', lineHeight: 1.5 }, children: textEquivalent })
+              jsx('div', {
+                style: { fontWeight: 600, color: 'var(--cb-ink-soft)' },
+                children: 'Text equivalent'
+              }),
+              jsx('div', { style: { paddingTop: '0.15rem' }, children: textEquivalent })
             ]
           })
         : null
@@ -15235,6 +15674,7 @@ function PlayerVerdict({ result, criteria, checklist, answer }) {
     'data-cb-player-beat': motion.reduced ? 'static' : 'verdict',
     style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: CB_MEASURE, ...verdictBeat },
     children: [
+      jsx(EvidenceChip, { value: result && result.evidence_class ? result.evidence_class : null }),
       jsxs('div', {
         style: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
         children: [
@@ -15294,11 +15734,14 @@ function PlayerVerdict({ result, criteria, checklist, answer }) {
 }
 
 /** The close: the section is finished, and every number is the enrollment row's own count. */
-function PlayerClose({ section, progress, onBack }) {
+function PlayerClose({ section, progress, onBack, onReadSection, evidenceClass, companionEnabled = true }) {
   const motion = useCbMotion()
   // Completion is one beat, once: the result mark settles in 600 ms or not at all. Nothing is
   // celebrated, counted up or replayed, and the title is readable on the first frame.
   const completeBeat = useCbSettle(motion, { beat: 'complete', props: 'opacity, transform', from: 'scale(0.995)', fromOpacity: 0.88 })
+  // The learner's own pet, through the supported seam only. Absent, disabled, still loading and
+  // unreachable all resolve to no companion; no placeholder face is invented (H-176/H-177).
+  const companion = useStudyCompanion(companionEnabled && !(motion && motion.reduced))
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
   const summary = progress || {}
   const total = Math.max(0, Number(summary.total_objectives || 0))
@@ -15320,6 +15763,13 @@ function PlayerClose({ section, progress, onBack }) {
       ...completeBeat
     },
     children: [
+      companion
+        ? jsx('div', {
+            'data-cb-player-gate': 'companion',
+            style: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+            children: jsx(StudyCompanion, { info: companion, size: 40, label: 'companion' })
+          })
+        : null,
       jsx('h3', {
         style: {
           margin: 0,
@@ -15333,6 +15783,7 @@ function PlayerClose({ section, progress, onBack }) {
         },
         children: ordinal ? `You finished Section ${ordinal}` : 'You finished this section'
       }),
+      jsx(EvidenceChip, { value: evidenceClass || null }),
       facts.length > 0
         ? jsx('p', {
             style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.lead, lineHeight: 1.5, color: 'var(--cb-ink)' },
@@ -15346,13 +15797,28 @@ function PlayerClose({ section, progress, onBack }) {
           }),
       jsx('p', {
         style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
-        children: 'The path shows which section is next. Nothing is lost when you leave.'
+        children: 'The trail shows this stop as recorded, and which stop is next. Nothing is lost when you leave.'
       }),
-      jsx(CbAction, {
-        'data-cb-player-close-primary': '',
-        variant: 'primary',
-        onClick: onBack,
-        children: 'Back to the path'
+      jsxs('div', {
+        'data-cb-player-close-actions': '',
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' },
+        children: [
+          jsx(CbAction, {
+            'data-cb-player-close-primary': '',
+            variant: 'primary',
+            onClick: onBack,
+            children: 'Return to the trail'
+          }),
+          onReadSection
+            ? jsx(sdk.Button, {
+                'data-cb-player-close-textbook': '',
+                variant: 'secondary',
+                size: 'sm',
+                onClick: onReadSection,
+                children: 'Read the section'
+              })
+            : null
+        ]
       })
     ]
   })
@@ -15375,6 +15841,7 @@ function LessonPlayer({
   playerController,
   onExit,
   onReload,
+  onReadSection,
   onSaveBlock,
   pronunciation
 }) {
@@ -15395,7 +15862,18 @@ function LessonPlayer({
     if (last) setClosed(true)
     else setIndex(current.index + 1)
   }
-  if (closed) return jsx(PlayerClose, { section, progress, onBack: onExit })
+  if (closed) {
+    return jsx(PlayerClose, {
+      section,
+      progress,
+      onBack: onExit,
+      onReadSection,
+      // Only a *recorded* class belongs on the close. A stop whose document carries no check is
+      // finished without an attempt, so `nextEvidenceClass` (a prediction) must not become the
+      // claim that something was earned. With nothing recorded the close renders without a chip.
+      evidenceClass: state.evidenceClass || null
+    })
+  }
 
   const passed = state.verdict === 'pass' || state.verdict === 'overridden'
   let action
@@ -15422,8 +15900,15 @@ function LessonPlayer({
     event.preventDefault()
     action.run()
   }
-  const checks = playerCheckCount(document)
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
+  const stopTotal = progress && Number(progress.total_objectives) > 0 ? String(progress.total_objectives) : null
+  const stopLabel = ordinal && stopTotal ? `STOP ${ordinal} OF ${stopTotal}` : ordinal ? `STOP ${ordinal}` : 'STOP'
+  // One objective sentence, composed only from recorded fields: the section's own evidence target,
+  // in learner words. A section that records no target gets the title alone rather than a slogan.
+  const objective =
+    section && section.evidence_target
+      ? `By the end of this stop you can show: ${String(learnerEvidenceTarget(section.evidence_target) || '').toLowerCase()}.`
+      : null
   return jsxs('div', {
     'data-cb-lesson-view': 'player',
     'data-cb-player': '',
@@ -15433,50 +15918,78 @@ function LessonPlayer({
     style: { display: 'flex', flexDirection: 'column', gap: '0.85rem', minWidth: 0 },
     ...lessonTextAttrs(document),
     children: [
-      jsxs('div', {
+      jsxs('header', {
         'data-cb-player-bar': '',
+        'data-cb-player-stop': `${ordinal || ''}/${stopTotal || ''}`,
         style: {
           display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: '0.35rem 0.9rem',
-          paddingBottom: '0.5rem',
+          flexDirection: 'column',
+          gap: '0.3rem',
+          paddingBottom: '0.6rem',
           borderBottom: '1px solid var(--cb-rule)',
-          fontFamily: CB_SANS,
-          fontSize: CB_TYPE.caption,
-          color: 'var(--cb-ink-soft)'
+          minWidth: 0
         },
         children: [
-          jsx('span', {
-            'data-cb-player-section': ordinal || 'section',
-            style: { fontWeight: 600, color: 'var(--cb-ink)' },
-            children: ordinal ? `Section ${ordinal}` : 'Section'
+          jsxs('div', {
+            style: {
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '0.35rem 0.9rem',
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              color: 'var(--cb-ink-soft)'
+            },
+            children: [
+              jsx('span', {
+                'data-cb-player-section': ordinal || 'section',
+                style: { fontWeight: 600, letterSpacing: '0.06em', color: 'var(--cb-ink)' },
+                children: stopLabel
+              }),
+              jsxs('span', {
+                'data-cb-player-mode': 'game',
+                style: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem' },
+                children: [jsx(ModeDot, { mode: 'game' }), 'Game']
+              }),
+              jsx('span', {
+                'data-cb-player-step': `${current.index + 1}/${steps.length}`,
+                'aria-live': 'polite',
+                style: { fontVariantNumeric: 'tabular-nums', marginLeft: 'auto' },
+                children: `Step ${current.index + 1} of ${steps.length}`
+              }),
+              jsx(sdk.Button, {
+                'data-cb-player-exit': '',
+                variant: 'text',
+                size: 'sm',
+                onClick: onExit,
+                children: 'Exit'
+              })
+            ]
           }),
-          jsxs('span', {
-            'data-cb-player-mode': 'game',
-            style: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem' },
-            children: [jsx(ModeDot, { mode: 'game' }), 'Game']
-          }),
-          checks > 0
-            ? jsx('span', {
-                'data-cb-player-check-count': String(checks),
-                style: { fontVariantNumeric: 'tabular-nums' },
-                children: current.check ? `Check 1 of ${checks}` : `${checks} ${checks === 1 ? 'check' : 'checks'} in this section`
+          section && section.title
+            ? jsx('h2', {
+                'data-cb-player-title': '',
+                style: {
+                  margin: 0,
+                  minWidth: 0,
+                  fontFamily: CB_SERIF,
+                  fontSize: CB_TYPE.heading,
+                  fontWeight: 600,
+                  lineHeight: 1.15,
+                  letterSpacing: '-0.015em',
+                  color: 'var(--cb-ink)',
+                  overflowWrap: 'anywhere'
+                },
+                children: section.title
               })
             : null,
-          jsx('span', {
-            'data-cb-player-step': `${current.index + 1}/${steps.length}`,
-            'aria-live': 'polite',
-            style: { fontVariantNumeric: 'tabular-nums', marginLeft: 'auto' },
-            children: `Step ${current.index + 1} of ${steps.length}`
-          }),
-          jsx(sdk.Button, {
-            'data-cb-player-exit': '',
-            variant: 'text',
-            size: 'sm',
-            onClick: onExit,
-            children: 'Exit'
-          })
+          objective
+            ? jsx('p', {
+                'data-cb-player-objective': '',
+                style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                children: objective
+              })
+            : null
         ]
       }),
       jsxs('section', {
@@ -15654,6 +16167,7 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
         playerController: player.controller,
         onExit: player.onExit,
         onReload: player.onReload,
+        onReadSection: player.onReadSection,
         onSaveBlock,
         pronunciation
       },
@@ -16263,6 +16777,10 @@ function SectionPage({
   // The player owns the screen's one primary (`Check`), so the chat action beside it is secondary
   // while the player is on screen. It keeps its handler: nothing becomes a dead control.
   const playerSurface = Boolean(document) && lessonView === 'player'
+  // The Field Stop header lives inside the player (STOP n OF m, title, objective, step, exit). The
+  // shell's own title block and metadata strip step aside there so the surface has one header; the
+  // view switcher stays in `shellActions` because the learner must be able to leave for Textbook.
+  const shellHeader = !playerSurface
 
   let body
   if (!page) {
@@ -16409,7 +16927,13 @@ function SectionPage({
                       controller: playerController,
                       section,
                       onExit: onBack,
-                      onReload: onRetryPage
+                      onReload: onRetryPage,
+                      // `Read the section` opens the same document in Textbook without leaving the
+                      // page: it is the reference view of this stop, not a second surface.
+                      onReadSection: () => {
+                        setFocusBlockId(null)
+                        setLessonView('textbook')
+                      }
                     }
               },
               objectiveId
@@ -16610,38 +17134,40 @@ function SectionPage({
         ]
       })
     : null
-  const shellActions = page ? [switcher] : []
+  // The breadcrumb is the course the section belongs to. H-160: the course title is a long token at
+  // 460 px / 200% text and the host text button is `shrink-0 whitespace-nowrap`, so it measured
+  // 790 px inside a 154 px reading column — the reading column scrolled sideways at 460 px even at
+  // a 16 px root. A breadcrumb is prose: it may shrink to the column and wrap like the rest.
+  const crumbAction = jsx(CbAction, {
+    variant: 'tertiary',
+    'data-cb-breadcrumb': 'sections',
+    className: 'self-start',
+    onClick: onBack,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'flex-start',
+      gap: '0.25rem',
+      flexShrink: 1,
+      minWidth: 0,
+      maxWidth: '100%',
+      height: 'auto',
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
+      textAlign: 'left'
+    },
+    children: [jsx(sdk.Codicon, { name: 'chevron-left', size: CB_ICON_UI }), row.title || 'All sections']
+  }, 'back')
+  // On the Field Stop the shell header stands down, so the breadcrumb and the view switcher travel
+  // together in one slim row above the reading column. Navigation is not metadata; it stays.
+  const shellActions = page ? (playerSurface ? [crumbAction, switcher] : [switcher]) : []
 
-  // The breadcrumb is the course the section belongs to, and the section's place in it: one calm
-  // line above the reading column, never a second navigation bar.
+  // The section's place in the course, printed only where the shell header is shown.
   const ordinal = section && section.ordinal ? String(section.ordinal) : null
   const total = row.evidence_summary && row.evidence_summary.total_objectives ? String(row.evidence_summary.total_objectives) : null
   const place = ordinal && total ? `Section ${ordinal} of ${total}` : ordinal ? `Section ${ordinal}` : null
   const metaLine = section
     ? [
-        // H-160: the course title is a long token at 460 px / 200% text and the host text button
-        // is `shrink-0 whitespace-nowrap`, so it measured 790 px inside a 154 px reading column —
-        // the reading column scrolled sideways at 460 px even at a 16 px root. A breadcrumb is
-        // prose: it may shrink to the column and wrap like the rest of the meta line.
-        jsx(CbAction, {
-          variant: 'tertiary',
-          'data-cb-breadcrumb': 'sections',
-          className: 'self-start',
-          onClick: onBack,
-          style: {
-            display: 'inline-flex',
-            alignItems: 'flex-start',
-            gap: '0.25rem',
-            flexShrink: 1,
-            minWidth: 0,
-            maxWidth: '100%',
-            height: 'auto',
-            whiteSpace: 'normal',
-            overflowWrap: 'anywhere',
-            textAlign: 'left'
-          },
-          children: [jsx(sdk.Codicon, { name: 'chevron-left', size: CB_ICON_UI }), row.title || 'All sections']
-        }, 'back'),
+        crumbAction,
         jsx('span', {
           style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
           children: [place, activeViewLabel].filter(Boolean).join(' · ')
@@ -16666,6 +17192,7 @@ function SectionPage({
     eyebrow: null,
     title: section && section.title ? section.title : 'Section',
     subtitle: null,
+    header: shellHeader,
     meta: metaLine,
     actions: shellActions,
     rail: page
@@ -23829,6 +24356,11 @@ export {
   LessonPlayer,
   PlayerVerdict,
   PlayerClose,
+  EvidenceChip,
+  evidenceChipView,
+  EVIDENCE_CHIP_LABEL,
+  EVIDENCE_CHIP_SENTENCE,
+  choiceAnswer,
   playerSteps,
   playerCheckCount,
   playerConcept,
