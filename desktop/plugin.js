@@ -2401,7 +2401,7 @@ function CoursePath({ row }) {
       }),
       jsx('div', {
         'data-cb-course-path-caption': '',
-        style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
+        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
         children: cbCoursePathCaption(row)
       })
     ]
@@ -2427,7 +2427,7 @@ function ShelfDisclosure({ group, onOpen, label }) {
           gap: '0.3rem',
           minHeight: '1.75rem',
           fontFamily: CB_SANS,
-          fontSize: '0.75rem',
+          fontSize: CB_TYPE.caption,
           fontWeight: 600,
           color: 'var(--cb-ink-soft)'
         },
@@ -2456,7 +2456,7 @@ function ShelfDisclosure({ group, onOpen, label }) {
                 justifyContent: 'space-between',
                 gap: '0.25rem 0.5rem',
                 fontFamily: CB_SANS,
-                fontSize: '0.75rem',
+                fontSize: CB_TYPE.caption,
                 lineHeight: 1.45,
                 color: 'var(--cb-ink-soft)'
               }
@@ -2526,7 +2526,7 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
             'aria-hidden': 'true',
             style: {
               fontFamily: CB_SERIF,
-              fontSize: '1.25rem',
+              fontSize: CB_TYPE.lead,
               fontWeight: 600,
               letterSpacing: '0.02em',
               lineHeight: 1,
@@ -2540,7 +2540,7 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
         style: {
           margin: 0,
           fontFamily: CB_SERIF,
-          fontSize: '1.0625rem',
+          fontSize: CB_TYPE.lead,
           fontWeight: 600,
           lineHeight: 1.3,
           color: 'var(--cb-ink)',
@@ -2550,7 +2550,7 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
       }),
       jsx('p', {
         'data-cb-course-goal': '',
-        style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
         children: cbCourseGoalLine(row)
       }),
       jsx(CoursePath, { row }),
@@ -5774,7 +5774,6 @@ function SyllabusValue({ item, label, onAnchor }) {
             jsx(
               sdk.Button,
               {
-                key: `${label}-${index}`,
                 size: 'sm',
                 variant: 'text',
                 'aria-label': `${label} — show the source at ${anchorLabel}`,
@@ -5857,7 +5856,7 @@ function SyllabusWeekRow({ week, onAnchor }) {
           jsx('div', { className: 'text-sm font-medium', children: ordinal.unknown ? label.text : `Week ${ordinal.text}` }),
           label.unknown ? null : jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: label.text }),
           ...topic.anchorLabels.map((anchorLabel, index) =>
-            jsx(sdk.Button, { key: `w-${index}`, size: 'sm', variant: 'text', onClick: () => onAnchor && onAnchor({ anchors: [topic.anchors[index]], label: 'the week' }), children: anchorLabel }, `w-${index}`)
+            jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: () => onAnchor && onAnchor({ anchors: [topic.anchors[index]], label: 'the week' }), children: anchorLabel }, `w-${index}`)
           )
         ]
       }),
@@ -5909,7 +5908,7 @@ function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, bu
           })
         : null,
       ...warnings.slice(0, 6).map((warning, index) =>
-        jsx('div', { key: `warning-${index}`, className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: String(warning) }, `warning-${index}`)
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: String(warning) }, `warning-${index}`)
       ),
       jsxs('div', {
         className: 'grid grid-cols-1 gap-x-8 gap-y-1 min-[47.5rem]:grid-cols-2',
@@ -6035,7 +6034,6 @@ function SyllabusAlignmentReview({ alignment, onDecision, onApprove, onRealign, 
                 jsxs('div', { className: 'flex flex-wrap items-center gap-2', children: [
                   row.anchorLabels.map((label, position) =>
                     jsx(sdk.Button, {
-                      key: `anchor-${position}`,
                       size: 'sm',
                       variant: 'text',
                       onClick: () => setAnchor({ anchors: [row.anchors[position]], label: row.title }),
@@ -6043,7 +6041,6 @@ function SyllabusAlignmentReview({ alignment, onDecision, onApprove, onRealign, 
                     }, `anchor-${position}`)),
                   row.actions.map((entry) =>
                     jsx(sdk.Button, {
-                      key: entry.action,
                       size: 'sm',
                       variant: 'secondary',
                       disabled: Boolean(busy),
@@ -7950,7 +7947,7 @@ function AttemptControls({
                     className: 'flex flex-col gap-1 text-sm leading-snug',
                     'aria-label': 'Choices',
                     children: choices.map((choice, index) =>
-                      jsx('li', { key: `choice-${index}`, children: choice })
+                      jsx('li', { children: choice }, `choice-${index}`)
                     )
                   })
                 : null,
@@ -8007,11 +8004,10 @@ function AttemptControls({
                           'aria-label': 'Checklist',
                           children: readOnlyItems.map((item) =>
                             jsx('li', {
-                              key: item.id,
                               className: 'text-sm leading-snug',
                               'data-cb-check-item': item.id,
                               children: item.label
-                            })
+                            }, item.id)
                           )
                         })
                       ]
@@ -8972,13 +8968,13 @@ function SurveyMark({ courseId, identity, size }) {
     focusable: 'false',
     style: { display: 'block', flex: '0 0 auto' },
     children: [
-      jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1.6, key: 'frame' }),
-      jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: hue, strokeWidth: 7, key: 'arc' }),
-      jsx('path', { d: 'M4 36.5 H92', stroke: 'var(--cb-rule)', strokeWidth: 1, key: 'meridian-h' }),
-      jsx('path', { d: 'M59.5 4 V92', stroke: 'var(--cb-rule)', strokeWidth: 1, key: 'meridian-v' }),
-      jsx('circle', { cx, cy, r: 13, fill: 'none', stroke: hue, strokeWidth: 1.6, key: 'ring' }),
-      jsx('circle', { cx, cy, r: 7, fill: hue, key: 'station' }),
-      jsx('path', { d: tick[0], fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1, key: 'tick' })
+      jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1.6 }, 'frame'),
+      jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: hue, strokeWidth: 7 }, 'arc'),
+      jsx('path', { d: 'M4 36.5 H92', stroke: 'var(--cb-rule)', strokeWidth: 1 }, 'meridian-h'),
+      jsx('path', { d: 'M59.5 4 V92', stroke: 'var(--cb-rule)', strokeWidth: 1 }, 'meridian-v'),
+      jsx('circle', { cx, cy, r: 13, fill: 'none', stroke: hue, strokeWidth: 1.6 }, 'ring'),
+      jsx('circle', { cx, cy, r: 7, fill: hue }, 'station'),
+      jsx('path', { d: tick[0], fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1 }, 'tick')
     ]
   })
 }
@@ -9130,7 +9126,6 @@ function RouteSpine({ objectives, currentId, onSelect, phone, ariaLabel }) {
       return jsx(
         'li',
         {
-          key: objective.objective_id,
           style: { position: 'relative', display: 'flex', flexDirection: 'column' },
           children: jsx(sdk.Button, {
             variant: 'text',
@@ -9167,9 +9162,8 @@ function RouteSpine({ objectives, currentId, onSelect, phone, ariaLabel }) {
                     bottom: 0,
                     width: '1px',
                     background: 'var(--cb-rule)'
-                  },
-                  key: 'line'
-                }),
+                  }
+                }, 'line'),
                 jsx('span', {
                   style: cbSpineNodeStyle(tone, isCurrent, phone),
                   children: String(objective.ordinal).padStart(2, '0')
@@ -9237,9 +9231,8 @@ function EvidenceTally({ objectives, caption, phone }) {
                         ? 'var(--cb-accent)'
                         : 'var(--cb-rule)'
               return jsx('span', {
-                style: { width: phone ? '18px' : '22px', height: '6px', borderRadius: 0, background: paint },
-                key: `${objective.objective_id}-${index}`
-              })
+                style: { width: phone ? '18px' : '22px', height: '6px', borderRadius: 0, background: paint }
+              }, `${objective.objective_id}-${index}`)
             })
           })
         : null,
@@ -9294,8 +9287,8 @@ function BlankPlate({ title, caption, action, tertiary }) {
           height: 40,
           'aria-hidden': 'true',
           children: [
-            jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-rule)', strokeWidth: 1.6, key: 'f' }),
-            jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: 'var(--cb-rule)', strokeWidth: 7, key: 'a' })
+            jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-rule)', strokeWidth: 1.6 }, 'f'),
+            jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: 'var(--cb-rule)', strokeWidth: 7 }, 'a')
           ]
         })
       }),
@@ -11323,7 +11316,6 @@ function ProcedureHeader({ procedure, sectionTitle }) {
   if (tools.length > 0) {
     columns.push(
       jsxs('div', {
-        key: 'tools',
         'data-cb-procedure-tools': String(tools.length),
         style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: '12rem', flex: '1 1 12rem' },
         children: [
@@ -11333,13 +11325,12 @@ function ProcedureHeader({ procedure, sectionTitle }) {
             children: tools.map((item, index) => jsx('li', { children: item }, `${sectionTitle}-tool-${index}`))
           })
         ]
-      })
+      }, 'tools')
     )
   }
   if (parts.length > 0) {
     columns.push(
       jsxs('div', {
-        key: 'parts',
         'data-cb-procedure-parts': String(parts.length),
         style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: '12rem', flex: '1 1 12rem' },
         children: [
@@ -11349,7 +11340,7 @@ function ProcedureHeader({ procedure, sectionTitle }) {
             children: parts.map((item, index) => jsx('li', { children: item }, `${sectionTitle}-part-${index}`))
           })
         ]
-      })
+      }, 'parts')
     )
   }
   return jsxs('section', {
@@ -11567,7 +11558,6 @@ function ProcedureStepCard({ step, index, block, sources, checkSlot, checkLabels
     return jsxs(
       'div',
       {
-        key: `${block.id}-procedure-media-${ordinal}`,
         'data-cb-procedure-media': item.role || 'media',
         style: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
         children: [
@@ -11580,7 +11570,8 @@ function ProcedureStepCard({ step, index, block, sources, checkSlot, checkLabels
             : null,
           jsx(BlockMedia, { media: item, blockId: block.id, ordinal })
         ]
-      }
+      },
+      `${block.id}-procedure-media-${ordinal}`
     )
   })
   return jsxs('li', {
@@ -12337,19 +12328,16 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         'data-cb-view-unavailable': unavailableViews.map((choice) => choice.id).join(' '),
         children: [
           jsxs('span', {
-            key: 'label',
             style: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: [jsx(ModeDot, { mode: activeMode }), 'Lesson view']
-          }),
+          }, 'label'),
           jsx('div', {
-            key: 'choices',
             'data-cb-view-choice-row': '',
             style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem', minWidth: 0 },
             children: viewChoices.map((choice) =>
               jsx(
                 sdk.Button,
                 {
-                  key: choice.id,
                   size: 'xs',
                   variant: choice.id === activeView ? 'secondary' : 'ghost',
                   disabled: !choice.available,
@@ -12368,17 +12356,15 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 choice.id
               )
             )
-          }),
+          }, 'choices'),
           unavailableViews.length > 0
             ? jsx('span', {
-                key: 'reasons',
                 'data-cb-view-reasons': '',
-                style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.35, color: 'var(--cb-ink-soft)', minWidth: 0, overflowWrap: 'anywhere' },
+                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.35, color: 'var(--cb-ink-soft)', minWidth: 0, overflowWrap: 'anywhere' },
                 children: unavailableViews.map((choice, index) =>
                   jsx(
                     'span',
                     {
-                      key: choice.id,
                       id: `cb-view-reason-${choice.id}`,
                       'data-cb-view-reason': choice.id,
                       children: `${index === 0 ? '' : ' '}${choice.reason}`
@@ -12386,7 +12372,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                     choice.id
                   )
                 )
-              })
+              }, 'reasons')
             : null
         ]
       })
@@ -12401,36 +12387,32 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const metaLine = section
     ? [
         jsx(sdk.Button, {
-          key: 'back',
           variant: 'text',
           size: 'sm',
           'data-cb-breadcrumb': 'sections',
           className: 'self-start',
           onClick: onBack,
           children: [jsx(sdk.Codicon, { name: 'chevron-left', size: '0.8rem' }), row.title || 'All sections']
-        }),
+        }, 'back'),
         jsx('span', {
-          key: 'place',
           style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
           children: [place, activeView === 'textbook' ? 'Textbook' : activeView === 'guided' ? 'Guided' : 'Field Quest'].filter(Boolean).join(' · ')
-        }),
-        jsx(CbStatePill, { key: 'state', state: section.state }),
+        }, 'place'),
+        jsx(CbStatePill, { state: section.state }, 'state'),
         section.evidence_target
           ? jsx('span', {
-              key: 'evidence',
               style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
               children: learnerEvidenceTarget(section.evidence_target) || 'Evidence target not recorded'
-            })
+            }, 'evidence')
           : null,
         section.last_opened_at
           ? jsx('span', {
-              key: 'opened',
               style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
               children: `Last opened ${whenLabel(section.last_opened_at)}`
-            })
+            }, 'opened')
           : null
       ]
-    : [jsx(sdk.Button, { key: 'back', variant: 'text', size: 'sm', onClick: onBack, children: 'All sections' })]
+    : [jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onBack, children: 'All sections' }, 'back')]
 
   return jsx(WorkspaceShell, {
     eyebrow: null,
@@ -15529,6 +15511,7 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
  * surface (H-94 V2-4; H-91 P2-4 removed the duplicate header button).
  */
 function StudioLanding({ rows, onCreate, onOpen }) {
+  const groups = groupShelfRows(rows)
   return jsxs('div', {
     'data-cb-studio-landing': '',
     style: {
@@ -16202,7 +16185,7 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
     },
     children: [
       jsx('div', {
-        style: { fontSize: '0.875rem', fontWeight: 600, color: 'var(--cb-ink)' },
+        style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
         children: model.title
       }),
       jsx('p', { className: 'max-w-prose', children: model.body }),
@@ -16230,7 +16213,7 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
           jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }),
           jsx('div', {
             className: 'mt-1 flex flex-col gap-1',
-            children: model.detail.map((line, index) => jsx('div', { key: `detail-${index}`, children: line }))
+            children: model.detail.map((line, index) => jsx('div', { children: line }, `detail-${index}`))
           })
         ]
       })
