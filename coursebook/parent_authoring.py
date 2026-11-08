@@ -33,6 +33,7 @@ import json
 import re
 from typing import Any, Iterable, Mapping, Sequence
 
+from . import lesson_document
 from . import packs
 
 #: The roles an authored parent pack may declare. All four exist in ``cb.pack``'s role enum.
@@ -769,20 +770,111 @@ def _pack_id(course_id: str, prefix: str = "parent") -> str:
     return f"{prefix}-{suffix}"[:128].rstrip("-")
 
 
-def _assert_no_answer_leak(manifest: Mapping[str, Any], files: Mapping[str, bytes], composed: Sequence[Mapping[str, Any]]) -> None:
-    """Defence in depth: no reference answer may be announced in learner-facing narrative.
+#: The one authored learner surface where a lesson presents the form it later checks. A
+#: ``model`` segment (and the narration that reads it) teaches the target; naming the function in
+#: the explain step is not presentation. Same boundary as ``generation._narrative_text``; see
+#: docs/DECISION-TAUGHT-TARGET.md.
+_PRESENTING_SEGMENT_KIND = "model"
+_PRESENTING_MEDIA_ROLE = "narration"
 
-    The selection choices are excluded on purpose (``generation._narrative_text``'s rule): the
-    correct option necessarily appears in a multiple-choice page. What must not appear is the
-    *key* — the narrative never states which answer is correct.
+
+def _is_presenting_segment(segment: Mapping[str, Any]) -> bool:
+    return str(segment.get("kind") or "").strip().casefold() == _PRESENTING_SEGMENT_KIND
+
+
+def _is_presenting_media(item: Mapping[str, Any]) -> bool:
+    return str(item.get("role") or "").strip().casefold() == _PRESENTING_MEDIA_ROLE
+
+
+def _learner_scan_text(page: Mapping[str, Any]) -> str:
+    """The learner-page strings where an answer must not be *announced*, normalised.
+
+    Mirrors ``generation._narrative_text`` on the fields an authored page carries: ``model``
+    segments and ``narration`` media are the presenting surface and are skipped; every other
+    segment, the worked example, the explanation and non-narration media are scanned. A ``model``
+    segment's projected ``document`` block is skipped by its ``deep`` text, never by role, because
+    the worked example is also an ``example`` block. An authored ``document`` with no model
+    segment has no presenting block: all of it is scanned.
+    """
+    parts: list[str] = []
+    presented: set[str] = set()
+    for segment in page.get("segments") or []:
+        if not isinstance(segment, Mapping):
+            continue
+        if _is_presenting_segment(segment):
+            body = _normalized(str(segment.get("body") or ""))
+            if body:
+                presented.add(body)
+            continue
+        parts.extend(
+            [
+                str(segment.get("heading") or ""),
+                str(segment.get("body") or ""),
+                str(segment.get("short") or ""),
+            ]
+        )
+    worked = page.get("worked_example") or {}
+    parts.extend(
+        [
+            str(worked.get("prompt") or ""),
+            str(worked.get("answer") or ""),
+            str(worked.get("short") or ""),
+        ]
+    )
+    parts.extend(str(step) for step in worked.get("steps") or [])
+    parts.extend(
+        [
+            str(page.get("learner_explanation") or ""),
+            str(page.get("learner_explanation_short") or ""),
+        ]
+    )
+    for item in page.get("media") or []:
+        if not isinstance(item, Mapping) or _is_presenting_media(item):
+            continue
+        parts.extend(
+            [
+                str(item.get("purpose") or ""),
+                str(item.get("text_equivalent") or ""),
+                str(item.get("label") or ""),
+            ]
+        )
+    document = page.get("document")
+    if isinstance(document, Mapping):
+        parts.append(
+            lesson_document.narrative_text(
+                document,
+                skip_block=lambda block: _normalized(str(block.get("deep") or "")) in presented,
+                skip_media=_is_presenting_media,
+            )
+        )
+    return _normalized("\n".join(parts))
+
+
+def _assert_no_answer_leak(manifest: Mapping[str, Any], files: Mapping[str, bytes], composed: Sequence[Mapping[str, Any]]) -> None:
+    """Defence in depth: no reference answer may be *announced* in learner-facing narrative.
+
+    The rule is the one ``generation._narrative_text`` applies (docs/DECISION-TAUGHT-TARGET.md):
+    a lesson has to be able to teach the item it checks, so the one authored presenting
+    surface — ``kind: model`` segments and ``role: narration`` media — is exempt from the key
+    scan. Every other learner surface is scanned: explain/guided/retrieval segments, the worked
+    example, the explanation, non-narration media, and an authored ``document`` (which carries no
+    segment kind, so none of its blocks is presenting).
+
+    The scan reads ``page`` rather than the rendered learner page: the segment kinds live there,
+    and the exported text is composed from it. The ``narration`` file is a reading of the segment
+    bodies, so it is a presenting surface and is not scanned on its own; a leak in an explain or
+    guided body is caught on that segment. The check's stimulus and choices stay out of the scan:
+    in a selection check the correct option necessarily appears in the page.
+
+    ``files`` is kept in the signature because the guard runs at manifest-build time; the bytes
+    are derived from ``page`` and add no surface the page does not carry.
     """
     narrative_parts: list[str] = []
     for section in composed:
-        if section.get("page") is None:
+        page = section.get("page")
+        if not isinstance(page, Mapping):
             continue
-        text = str((section.get("files") or {}).get("learner_page") or "")
-        narrative_parts.append(text.split("## Your turn")[0])
-        narrative_parts.append(str((section.get("files") or {}).get("narration") or ""))
+        narrative_parts.append(_learner_scan_text(page))
     narrative = _normalized("\n".join(narrative_parts))
     for objective in manifest.get("objectives") or []:
         for check in objective.get("checks") or []:
