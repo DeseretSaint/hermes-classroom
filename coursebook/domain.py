@@ -42,6 +42,7 @@ from . import (
     jobs as jobs_contract,
     lesson_document,
     parent_authoring as authoring,
+    progress as progress_view,
     review,
     sources as source_ledger,
     validators,
@@ -1917,7 +1918,7 @@ def notebook_delete(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[
 # ── jobs ────────────────────────────────────────────────────────────────────
 
 
-def _job_view(row) -> dict[str, Any]:
+def _job_view(connection, row, *, strict: bool = False) -> dict[str, Any]:
     progress = _json_load(row["progress_json"], {})
     if not isinstance(progress, dict):
         progress = {}
@@ -1931,6 +1932,18 @@ def _job_view(row) -> dict[str, Any]:
     lease = None
     if row["lease_owner"] and row["lease_expires_at"]:
         lease = {"owner": str(row["lease_owner"])[:120], "expires_at": row["lease_expires_at"]}
+    # H-139: the one read a waiting pane needs. ``jobs.get`` is strict — a durable column it
+    # cannot parse raises so the caller gets a typed error, not ``queued``/0%. ``jobs.list`` is
+    # not strict: one corrupt row must not blank the whole list, so it is reported unreadable.
+    try:
+        activity = progress_view.activity_with_usage(connection, row)
+    except progress_view.JobRecordUnreadable:
+        if strict:
+            raise
+        activity = progress_view.unreadable_activity(
+            terminal=jobs_contract.is_terminal(str(row["state"]))
+            or str(row["state"]) in ("failed", "interrupted_requires_retry")
+        )
     return {
         "job_id": row["id"],
         "kind": row["kind"],
@@ -1940,6 +1953,7 @@ def _job_view(row) -> dict[str, Any]:
         "brief": _json_load(row["brief_json"], {}),
         "checkpoint": _json_load(row["checkpoint_json"], {}),
         "progress": progress,
+        "activity": activity,
         "lease": lease,
         "artifact_ids": artifact_ids,
         "error": error,
@@ -1989,11 +2003,30 @@ def jobs_create(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
 @_handler("jobs.get")
 def jobs_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     db.ensure_schema()
-    with db.read() as connection:
-        job = _row(connection, "SELECT * FROM jobs WHERE id = ?", (payload["job_id"],))
-    if job is None:
-        raise _not_found("job", payload["job_id"])
-    return 0, {"job": _job_view(job)}
+    job_id = payload["job_id"]
+    try:
+        with db.read() as connection:
+            job = _row(connection, "SELECT * FROM jobs WHERE id = ?", (job_id,))
+            if job is None:
+                raise _not_found("job", job_id)
+            view = _job_view(connection, job, strict=True)
+    except progress_view.JobRecordUnreadable as exc:
+        # H-139: answering with an empty progress object here would render as "queued / 0%",
+        # which is a statement this build cannot make. Name the read that failed instead.
+        raise RpcError.of(
+            "INTERNAL_ERROR",
+            f"job {job_id} progress state could not be read ({exc.column}); no progress is reported.",
+            retryable=True,
+            reason="job_progress_unreadable",
+            column=exc.column,
+        ) from exc
+    except sqlite3.Error as exc:
+        raise RpcError.of(
+            "INTERNAL_ERROR",
+            "the job store could not be read; this job's state is unknown.",
+            reason="job_store_unreadable",
+        ) from exc
+    return 0, {"job": view}
 
 
 @_handler("jobs.cancel")
@@ -2788,9 +2821,10 @@ def jobs_list(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, d
             f" FROM jobs WHERE {base_where}",
             tuple(params),
         ).fetchone()
+        views = [_job_view(connection, row) for row in rows]
     total = int(counts_row["total"] or 0)
     return 0, {
-        "jobs": [_job_view(row) for row in rows],
+        "jobs": views,
         "next_cursor": _encode_cursor(offset + limit) if offset + limit < total else None,
         "counts": {
             "queued": int(counts_row["queued"] or 0),

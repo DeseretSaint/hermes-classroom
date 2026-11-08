@@ -1,0 +1,410 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.coursebook.hermes/jobs/v5",
+  "title": "Coursebook job lifecycle v4",
+  "description": "Backend job service contract. POST-style creation returns an operation/job id quickly; Desktop polls by job id; the socket is an optional optimization and a no-op on OAuth remotes. Workers hold persistent job-attempt ids and leases with fencing. ctx.spawn_task is only a best-effort in-process runner and its loss never implies successful cancellation. v5 is additive over v4: the job object gains a required `activity` object carrying the durable stage, elapsed time, cancel/retry affordances and the usage recorded against this job id. No job kind, state, transition or progress percentage is added; `activity` restates only facts already durable in `cb.jobs`/`usage_events`, and `steps_total` may stay null when the plan is not known.",
+  "x-contract-id": "cb.jobs",
+  "x-contract-version": 5,
+  "x-owner": "atlas",
+  "x-implementer": "cinder",
+  "x-status": "frozen",
+  "states": [
+    "queued",
+    "running",
+    "cancel_requested",
+    "cancelling",
+    "cancelled",
+    "completed",
+    "completed_late",
+    "failed",
+    "interrupted_requires_retry"
+  ],
+  "terminal_states": [
+    "cancelled",
+    "completed",
+    "completed_late"
+  ],
+  "resting_states": {
+    "failed": "Failed is retryable, not terminal: a retry re-enters `queued` with a NEW job-attempt id and the persisted resume checkpoint. It is excluded from terminal_states so `terminal` keeps its only meaning — nothing further will run."
+  },
+  "transitions": {
+    "queued": [
+      "running",
+      "cancelled"
+    ],
+    "running": [
+      "cancel_requested",
+      "completed",
+      "completed_late",
+      "failed",
+      "interrupted_requires_retry"
+    ],
+    "cancel_requested": [
+      "cancelling",
+      "cancelled",
+      "completed_late"
+    ],
+    "cancelling": [
+      "cancelled",
+      "completed_late"
+    ],
+    "interrupted_requires_retry": [
+      "queued",
+      "cancelled"
+    ],
+    "failed": [
+      "queued"
+    ],
+    "completed": [],
+    "completed_late": [],
+    "cancelled": []
+  },
+  "transition_notes": {
+    "cancelled_from_queued": "A job cancelled before it starts spent nothing; no artifact or evidence may exist.",
+    "completed_late": "A provider call already in flight finished after cancellation. Its result is reconciled by operation/artifact key; it never duplicates spend or artifacts.",
+    "failed_to_queued": "Retry keeps the same job id only with a NEW job-attempt id and a persisted resume checkpoint. Never blindly re-run an uncertain non-idempotent call.",
+    "interrupted_requires_retry": "Restart reconciliation found the job mid-stage. The brief and checkpoint are preserved so the user edits and retries instead of re-entering the form."
+  },
+  "progress_rule": "Progress is reported from real completed stages. Percentages are never invented; steps_total may be null until the plan is known.",
+  "job": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "job_id",
+      "kind",
+      "state",
+      "attempt_id",
+      "created_at",
+      "updated_at"
+    ],
+    "properties": {
+      "job_id": {
+        "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+      },
+      "kind": {
+        "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/job_kind"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "cancel_requested",
+          "cancelling",
+          "cancelled",
+          "completed",
+          "completed_late",
+          "failed",
+          "interrupted_requires_retry"
+        ]
+      },
+      "operation_id": {
+        "oneOf": [
+          {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/identifier"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "attempt_id": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 64
+      },
+      "brief": {
+        "type": "object",
+        "maxProperties": 40
+      },
+      "checkpoint": {
+        "type": "object",
+        "maxProperties": 40
+      },
+      "progress": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "stage": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "steps_done": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "steps_total": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 300
+          }
+        }
+      },
+      "lease": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "owner": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "expires_at": {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"
+          }
+        }
+      },
+      "artifact_ids": {
+        "type": "array",
+        "maxItems": 200,
+        "items": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "error": {
+        "oneOf": [
+          {
+            "$ref": "https://contracts.coursebook.hermes/errors/v4#/$defs/error"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "created_at": {
+        "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"
+      },
+      "updated_at": {
+        "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"
+      },
+      "cancel_requested_at": {
+        "oneOf": [
+          {
+            "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "activity": {
+        "type": "object",
+        "description": "What a polling client may render while the job waits. Every value is read from the job row or from `usage_events` for this job id; there is no computed percentage. `readable` is false only when a durable JSON column for this row cannot be parsed, in which case `stage` is null and the step counts are null rather than a zero that would read as progress.",
+        "additionalProperties": false,
+        "required": [
+          "stage",
+          "stage_source",
+          "steps_done",
+          "steps_total",
+          "elapsed_seconds",
+          "elapsed_basis",
+          "can_cancel",
+          "can_retry",
+          "terminal",
+          "readable",
+          "message",
+          "last_progress_at",
+          "usage"
+        ],
+        "properties": {
+          "stage": {
+            "oneOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stage_source": {
+            "type": "string",
+            "enum": [
+              "checkpoint",
+              "brief",
+              "queued",
+              "none"
+            ],
+            "description": "`checkpoint` = the last completed stage durably recorded; `brief` = the stage the queued brief names but no stage has checkpointed yet; `queued` = no stage named, job not started; `none` = no stage can be named."
+          },
+          "steps_done": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "null only when the durable progress column is unreadable (readable=false); never fabricated as 0"
+          },
+          "steps_total": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "elapsed_seconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "null only when created_at is unparseable; the basis still travels in elapsed_basis"
+          },
+          "elapsed_basis": {
+            "type": "string",
+            "enum": [
+              "created_to_now",
+              "created_to_updated"
+            ],
+            "description": "`created_to_now` for a live job, `created_to_updated` once the job rests; the basis travels with the number so a client never has to guess what it measured."
+          },
+          "can_cancel": {
+            "type": "boolean"
+          },
+          "can_retry": {
+            "type": "boolean"
+          },
+          "terminal": {
+            "type": "boolean"
+          },
+          "readable": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "last_progress_at": {
+            "oneOf": [
+              {
+                "$ref": "https://contracts.coursebook.hermes/vocabulary/v1#/$defs/timestamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage": {
+            "type": "object",
+            "description": "Usage recorded against this job id only. A token field stays null when no recorded call exposed it; `unknown_cost_calls` counts calls whose cost was not recorded. Nothing is zero-filled or estimated.",
+            "additionalProperties": false,
+            "required": [
+              "calls",
+              "tokens",
+              "cost_usd",
+              "unknown_cost_calls",
+              "artifacts",
+              "providers",
+              "models"
+            ],
+            "properties": {
+              "calls": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "tokens": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "input",
+                  "output",
+                  "cache_read",
+                  "cache_write"
+                ],
+                "properties": {
+                  "input": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "output": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "cache_read": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "cache_write": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                }
+              },
+              "cost_usd": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "unknown_cost_calls": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "artifacts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "providers": {
+                "type": "array",
+                "maxItems": 10,
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                }
+              },
+              "models": {
+                "type": "array",
+                "maxItems": 10,
+                "items": {
+                  "type": "string",
+                  "maxLength": 120
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-supersedes": "https://contracts.coursebook.hermes/jobs/v4",
+  "$defs": {
+    "job_state": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "cancel_requested",
+        "cancelling",
+        "cancelled",
+        "completed",
+        "completed_late",
+        "failed",
+        "interrupted_requires_retry"
+      ],
+      "description": "Authoritative job-state enum, referenced by jobs.list filters. Kept in sync with `states`."
+    }
+  }
+}

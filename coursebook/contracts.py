@@ -30,9 +30,9 @@ CONTRACT_DIR = Path(__file__).resolve().parent.parent / "contracts"
 CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v4.json",
-    "cb.rpc": "rpc.v14.json",
+    "cb.rpc": "rpc.v15.json",
     "cb.db": "db.v10.json",
-    "cb.jobs": "jobs.v4.json",
+    "cb.jobs": "jobs.v5.json",
     "cb.pack": "pack-manifest.v1.json",
     "cb.projection": "projection.v1.json",
     # H-89: declared, hash-pinned frequency inventories for language courses. Describes an
@@ -42,7 +42,7 @@ CONTRACT_FILES: dict[str, str] = {
 
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
-WIRE_CONTRACT_VERSION = 14
+WIRE_CONTRACT_VERSION = 15
 
 
 class ContractError(Exception):

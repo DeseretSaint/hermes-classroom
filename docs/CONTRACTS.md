@@ -1,6 +1,7 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v14** (H-53 `observation.record`, additive over H-08 authored-course export at v13,
+Status: **frozen at v15** (H-139 job `activity` read model: `cb.rpc` v15 is a reference refresh over
+v14 and `cb.jobs` v5 additively adds `job.activity`; v14 = H-53 `observation.record`, additive over H-08 authored-course export at v13,
 the H-18 `lesson_document` `lang`/`direction`
 addition, and the H-26b syllabus read projection inside v13; v12 = H-26 student syllabus intake,
 v11 = H-21 slice A, v10 = H-01, v9 = M3-B1,
@@ -19,20 +20,20 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v14.json` | 14 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v15.json` | 15 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v10.json` | 10 | Cinder | migrations, every command, evidence views |
-| `cb.jobs` | `contracts/jobs.v4.json` | 4 | Cinder | job service, Activity view |
+| `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
-The v1 **to v13** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
-`rpc.v12.json` and `rpc.v13.json`), the
+The v1 **to v14** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
+`rpc.v12.json`, `rpc.v13.json` and `rpc.v14.json`), the
 v1 **to v9** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
 `db.v8.json` and `db.v9.json`), and the v1
-**to v3** files for `cb.errors` and the v1 to v3 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v13.json`, `db.v9.json`,
-`errors.v3.json` and `jobs.v3.json`.
+**to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
+as immutable history: the superseded current files are `rpc.v14.json`, `db.v9.json`,
+`errors.v3.json` and `jobs.v4.json`.
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 `tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so
@@ -1817,3 +1818,47 @@ evidence genuinely could not be persisted, and it is stated rather than implied.
 asserts the turn still returns `None`, the loss is attributed to the run, `binding.get` reports it,
 a transient failure recovers without a row, and a normal turn still writes exactly one segment.
 `tests/test_contracts.py::DbV10AmendmentTest` pins the additive schema and the open binding object.
+
+## v15 delta (H-139) — a waiting pane can read the durable job stage
+
+The Pane says "may take several minutes" and then shows nothing, so a long generation is
+indistinguishable from breakage (H-117, `docs/SILENT-FAILURES.md` F9/F18). Every fact the pane
+needs was already durable — `jobs.state`, `jobs.progress_json`, `jobs.created_at`/`updated_at`
+and the `usage_events` rows whose `operation_id` is the job id — but no single read exposed it.
+**The wire does not gain a method.** `jobs.get` already returns the job; `cb.jobs` v5 adds one
+required object to it:
+
+| Field | Source (all durable) |
+|---|---|
+| `activity.stage` | the last checkpointed stage (`progress_json.stage`), else the queued brief's `stage`, else `null` |
+| `activity.stage_source` | `checkpoint` / `brief` / `queued` / `none` — which of those answered |
+| `activity.steps_done`, `steps_total` | `progress_json`; `steps_total` stays `null` until the backend knows it |
+| `activity.elapsed_seconds` + `elapsed_basis` | `created_at` to now while live; `created_at` to `updated_at` once the row rests |
+| `activity.can_cancel`, `can_retry`, `terminal` | the frozen `cb.jobs` transition table, not a UI guess |
+| `activity.message`, `last_progress_at` | the checkpoint message and the instant it was written |
+| `activity.usage` | `usage_events` for this `operation_id`: calls, the four token counts, `cost_usd`, `unknown_cost_calls`, artifacts, providers, models |
+
+**No percentage.** There is no `percent` field and no computed rate: `steps_done`/`steps_total`
+are the real counts, and the total is `null` when the plan is not known. A client that wants a
+bar must handle `steps_total: null` honestly.
+
+**`readable` and the named failure.** `activity.readable` is `false` only when a durable JSON
+column for the row cannot be parsed; `stage` and both step counts are then `null` (never `0`,
+which would read as "not started"). `jobs.get` is stricter than `jobs.list`: an unreadable
+`progress_json`/`brief_json` raises `INTERNAL_ERROR` with `details.reason =
+"job_progress_unreadable"` and `details.column` naming the column, and an unreadable store raises
+`details.reason = "job_store_unreadable"`. `jobs.list` keeps its shape and marks the single row
+`readable: false`, because one corrupt job must not blank the whole list.
+
+**No storage change.** `cb.db` stays **v10**: activity is a read of existing columns and rows.
+
+**Wire refresh.** `jobs.list`'s item `$ref` moves from `cb.jobs/v4#/job` to `cb.jobs/v5#/job`,
+which is why `cb.rpc` is **v15**. v15 is v14 byte-for-byte apart from `$id`, `x-contract-version`,
+`x-supersedes`, the description and that one `$ref`; the method enum, every request and every
+other response field are unchanged. `cb.errors` stays **v4**. The method count does not move.
+
+**Tests.** `tests/test_job_progress.py` covers every stage (`plan`, `unit_sections`, `lessons`,
+`syllabus_parse`, a checkpointed stage), a finished job, a provider failure, an interrupted job,
+a cancelled job, idempotent cancellation, backend-sourced usage (including unknown token/cost
+fields) and both named read failures. `tests/test_contracts.py::V15AmendmentTest` pins the
+superseded v14 bytes and the additive v5 job shape.

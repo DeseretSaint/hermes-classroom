@@ -53,7 +53,7 @@ HERE = Path(__file__).resolve().parent
 TRANSCRIPTS = HERE / "transcripts"
 EVIDENCE = HERE / "evidence"
 MANIFEST = HERE / "manifest.json"
-CONTRACT = HERE.parents[2] / "contracts" / "rpc.v14.json"
+CONTRACT = HERE.parents[2] / "contracts" / "rpc.v15.json"
 NOW = datetime(2026, 11, 7, 12, 0, tzinfo=timezone.utc)
 
 #: Two distinct recorded identities: a validator that reports the author's own model name is
