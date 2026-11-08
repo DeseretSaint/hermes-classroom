@@ -1,0 +1,46 @@
+{
+ "pid": 188768,
+ "register": {
+  "multiplex_active": false,
+  "scope_bound": false,
+  "scope_key_count": 0
+ },
+ "stage": "done",
+ "steps": [
+  {
+   "host_tools_imported": true,
+   "step": "import_tools.web_tools"
+  },
+  {
+   "non_empty": false,
+   "ok": true,
+   "step": "get_provider_env(FIRECRAWL_API_KEY)"
+  },
+  {
+   "error": "",
+   "first_url": "https://www.seriouseats.com/how-to-season-cast-iron-pans-skillets-cookware",
+   "ok": true,
+   "result_count": 3,
+   "step": "web_search"
+  },
+  {
+   "chars": 4523,
+   "documents": 1,
+   "error": "",
+   "ok": true,
+   "step": "web_extract"
+  }
+ ],
+ "thread": "h68probe-tick",
+ "thread_scope_at_call": {
+  "multiplex_active": true,
+  "scope_bound": false,
+  "scope_key_count": 0
+ },
+ "thread_scope_at_start": {
+  "multiplex_active": false,
+  "scope_bound": false,
+  "scope_key_count": 0
+ },
+ "waited_s": 1.0
+}
