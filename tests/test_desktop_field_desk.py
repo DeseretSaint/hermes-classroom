@@ -767,6 +767,8 @@ class FieldDeskRenderTest(unittest.TestCase):
         html = self.render(library=None, libraryStatus="loading")
         self.assertIn('data-cb-desk="loading"', html)
         self.assertIn("Reading your courses", html)
+        # H-153: the spinner carries a visible line, not only an aria-label.
+        self.assertIn("Reading your courses.</p>", html)
         self.assertNotIn("data-cb-continue", html)
 
     def test_a_failed_read_keeps_its_code_and_retry(self) -> None:
