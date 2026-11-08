@@ -197,8 +197,10 @@ from §8. No card is created for a recommendation that only changes styling.
 ## 5. Anti-patterns: this is what "not high quality" looks like
 
 - A page made of a heading, a bordered box, a row of three equal stat cards and two buttons.
-- A full RPG world map, open exploration, avatars, currencies or a game engine. The Hollow Knight
-  reference is a launcher home, not an RPG.
+- A full RPG world map, open exploration, invented avatar systems, currencies or a game engine. The Hollow Knight
+  reference is a launcher home, not an RPG. The learner's existing Hermes pet sprite may appear as
+  identity and a study companion (owner amendment 2026-11-08); that is not an avatar system, a new
+  progression track, or an invitation to build one.
 - Adding colour, a gradient or a decorative seal and calling the result "designed".
 - A seal/monogram that requires the owner to ask what it means.
 - A home screen that is a dashboard of counts before it is a place to continue learning.
@@ -280,16 +282,19 @@ the cost of the next repetition; if it creates a number the backend does not rec
 | No card rows vs the shelf | Rows on rules, one featured element, one line of labelled facts. Cards only for a small heterogeneous shelf; never nested. |
 | "No motion by default" vs "motion must read as the intended physical act" | No decorative motion; every state change gets next-frame feedback and at most one authored functional beat. |
 | Plain language vs college-level subject matter | The plain-language rule governs chrome, instructions and errors; the subject keeps its register. |
-| A "profile slot" vs the existing data model | A classroom slot is course + active enrollment. Do not invent a learner profile or avatar; true multi-learner evidence is a later data-model card. |
+- A "profile slot" vs the existing data model | A classroom slot is course + active enrollment. Do not invent a learner profile or avatar; true multi-learner evidence is a later data-model card. The host's existing pet sprite may be displayed as the learner's identity/companion; it carries no learner data and no progress claim.
 | The seal as identity vs the owner's confusion | Retire it from primary surfaces. A mark that needs explanation is not doing an identity job. |
 
 ## 7. Required shape of the first experience redesign
 
-Owner clarification: the Hollow Knight reference means **a home/launcher screen only**, not an RPG
-world map. The intended read is: open Coursebook, hit Continue, choose which classroom/save file
-to continue, change a few settings if wanted, and get on with learning. The learning path stays a
-Duolingo-like linear route with checkpoints. No open exploration, avatars, currencies or game
-engine.
+Owner clarification (amended 2026-11-08): the Hollow Knight reference means **a home/launcher
+screen only**, not an RPG world map. The intended read is: open Coursebook, hit Continue, choose
+which classroom/save file to continue, change a few settings if wanted, and get on with learning.
+The learning path stays a Duolingo-like linear route with checkpoints. No open exploration, new
+avatar system, currencies or game engine. The learner's **existing Hermes pet sprite** may appear
+as identity and a study companion on the launcher, path and completion moments, because the owner
+asked for the product to feel personal; it is the host's asset, not a new progression mechanic and
+not a reason to build an avatar editor.
 
 This is a direction, not a frozen implementation. The research pass may refine it.
 
@@ -316,9 +321,10 @@ This is a direction, not a frozen implementation. The research pass may refine i
 7. **Library remains the pack shelf.** It is not the home and does not pretend a pack is a course.
 
 The first vertical slice is Home → Continue → Path → one lesson step → check → return, plus the
-Home settings sheet with the default-view control. Do not start with a world map, avatars,
-leagues, currencies or generated art pipelines. Those are not part of the Hollow Knight reference;
-they are later roadmap ideas only if they serve the loop.
+Home settings sheet with the default-view control. Do not start with a world map, a new avatar
+system, leagues, currencies or generated art pipelines. Those are not part of the Hollow Knight
+reference; they are later roadmap ideas only if they serve the loop. The existing Hermes pet sprite
+is the one identity asset that may be used without opening that door.
 
 ## 8. Definition of done for a card
 
