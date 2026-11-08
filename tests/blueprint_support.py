@@ -188,3 +188,27 @@ def validation_pass() -> dict[str, Any]:
         ],
         "rejections": [],
     }
+
+
+def validation_answer(request: gen.LLMRequest) -> dict[str, Any]:
+    """Answer exactly the pass handed in (H-192 splits large plans into bounded passes).
+
+    A claim-only pass has no criteria in its narrowed schema, so the ten-criterion document is not
+    a legal answer for it; this derives the claim set from the request like the live validator.
+    """
+    properties = (request.schema or {}).get("properties", {})
+    if "criteria" in properties:
+        return validation_pass()
+    labels = (
+        ((properties.get("claim_verdicts") or {}).get("items") or {})
+        .get("properties", {})
+        .get("item", {})
+        .get("enum")
+        or []
+    )
+    return {
+        "claim_verdicts": [
+            {"item": label, "support": "unverified", "reason": "not assessed by this fixture"}
+            for label in labels
+        ]
+    }

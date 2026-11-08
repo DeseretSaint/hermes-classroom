@@ -432,7 +432,22 @@ class RecordedLLM:
         }
 
     # ── validation ──────────────────────────────────────────────────────────
-    def _validation(self) -> dict:
+    def _validation(self, request=None) -> dict:
+        properties = ((request.schema if request is not None else None) or {}).get("properties", {})
+        if request is not None and "criteria" not in properties:
+            labels = (
+                ((properties.get("claim_verdicts") or {}).get("items") or {})
+                .get("properties", {})
+                .get("item", {})
+                .get("enum")
+                or []
+            )
+            return {
+                "claim_verdicts": [
+                    {"item": label, "support": "unverified", "reason": "recorded fixture"}
+                    for label in labels
+                ]
+            }
         return {
             "verdict": "pass",
             "criteria": [
@@ -450,15 +465,15 @@ class RecordedLLM:
         if request.purpose == "coursebook.plan.generate":
             document = self._plan(payload)
         elif request.purpose == "coursebook.plan.validate":
-            document = self._validation()
+            document = self._validation(request)
         elif request.purpose == "coursebook.unit_sections.generate":
             document = self._unit_sections(payload)
         elif request.purpose == "coursebook.unit_sections.validate":
-            document = self._validation()
+            document = self._validation(request)
         elif request.purpose == "coursebook.lesson.generate":
             document = self._lesson(payload)
         elif request.purpose == "coursebook.lesson.validate":
-            document = self._validation()
+            document = self._validation(request)
         else:
             raise AssertionError(f"unexpected provider call {request.purpose!r}")
         validator = request.purpose.endswith(".validate")

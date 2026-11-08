@@ -26,6 +26,30 @@ from tests.test_generation import FakeLLM, lesson_from_request, validation_from_
 T0 = NOW
 
 
+def _validation_answer(request: gen.LLMRequest) -> dict:
+    """Answer exactly the pass handed in: H-192 splits large plans across bounded passes.
+
+    A claim-only pass carries no criteria, so the ten-criterion fixture answer is not schema-valid
+    for it; this helper derives the claim set from the request the way the live validator does.
+    """
+    properties = (request.schema or {}).get("properties", {})
+    if "criteria" in properties:
+        return validation_pass()
+    labels = (
+        ((properties.get("claim_verdicts") or {}).get("items") or {})
+        .get("properties", {})
+        .get("item", {})
+        .get("enum")
+        or []
+    )
+    return {
+        "claim_verdicts": [
+            {"item": label, "support": "unverified", "reason": "not assessed by this fixture"}
+            for label in labels
+        ]
+    }
+
+
 def _plan_rules(plan: dict, *, recipe: str = "casual", ledger=(), locale=None, scope=None) -> None:
     gen.enforce_plan_rules(
         plan,
@@ -430,7 +454,7 @@ class BlueprintPlanJobTest(UnitStageCase):
         return FakeLLM(
             {
                 "coursebook.plan.generate": response(plan),
-                "coursebook.plan.validate": response(validation_pass()),
+                "coursebook.plan.validate": _validation_answer,
             }
         )
 

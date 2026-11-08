@@ -637,6 +637,34 @@ explanations belong in `reason`, and the same `ITEM_REFERENCE_MAX_CHARS` constan
 the limit it is checked against. Widening it would have accepted a claim where a locator is
 expected and still failed on the next 250-character prose label.
 
+### 7.2 Validation demand is bounded per pass, independent of plan size
+
+H-192 measured the remaining failure on master `127cce1`: the plan validator judged the ten
+criteria **and** every claim in one answer. `plan_claim_labels` emits one label per objective, one
+per unit and the learner outcome, so a full-scope plan (12–40 objectives) demanded 13–42 claim
+verdicts on top of the ten criteria: 376 896 ms / 29 386 completion tokens, then a schema
+violation. A single-scope plan exceeded 600 s with no answer at all. The H-191 bound was per claim
+label, not in the total number of labels.
+
+The demand is now cut into fixed-size batches (`CLAIM_VERDICTS_PER_PASS = 6` on a criteria pass,
+`CLAIM_ONLY_VERDICTS_PER_PASS = 12` on a claim-only pass):
+
+* the criteria pass takes at most one batch of claim labels and still judges all ten criteria;
+* the remaining labels become **claim-only** passes, each with a narrowed schema that carries
+  `claim_verdicts` and nothing else — no `criteria`, no `rejections`, no artifact `verdict`;
+* `merge_validation_reports` merges the ten criteria from the owning pass(es) and the claim
+  verdicts from every pass; a claim-only pass cannot reject the artifact or widen the review;
+* `_run_validation_passes` submits all passes together, so wall time stays at the slowest pass.
+
+Consequently no single answer's output grows with plan size. A small plan (single/short, 3–5
+labels measured live) still makes exactly one call. The deadline is unchanged: the repair is a
+smaller answer demand, not more time.
+
+A validator answer that violates its own narrowed schema is `ModelOutputInvalid` →
+`VALIDATION_FAILED` (`retryable: false`) at the plan, unit-sections and lesson stages, and a
+validator *content* rejection (`GenerationRejected`) carries `code = "VALIDATION_FAILED"` too — a
+refusal that repeats on every retry is not an `INTERNAL_ERROR` and not retryable.
+
 ## 8. The lesson document: one validated document, many views
 
 `docs/VISUAL_MEDIA_PLAN.md` §5 replaces the linear segment contract with a block document. The

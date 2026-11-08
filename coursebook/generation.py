@@ -144,8 +144,11 @@ __all__ = [
     "VALIDATION_PROMPT_VERSION",
     "VALIDATION_CRITERIA",
     "VALIDATION_CRITERIA_PASSES",
+    "CLAIM_VERDICTS_PER_PASS",
+    "CLAIM_ONLY_VERDICTS_PER_PASS",
     "build_plan_validation_requests",
     "validation_pass_schema",
+    "validation_claim_schema",
     "validation_pass_instructions",
     "validation_pass_criteria",
     "plan_claim_labels",
@@ -310,7 +313,17 @@ class GenerationError(RuntimeError):
 
 
 class GenerationRejected(GenerationError):
-    """Provider output was malformed, empty, oversized, or violated a hard rule."""
+    """Provider output was malformed, empty, oversized, or violated a hard rule.
+
+    H-192: a *content* rejection is not a backend failure. When the validator refuses a plan
+    because the artifact itself is wrong (``self_study`` delivery contradicting its own
+    ``evidence_note``), the same request will be refused again — so the job must report the
+    contract's non-retryable ``VALIDATION_FAILED`` and carry the reasons, instead of
+    ``INTERNAL_ERROR`` / ``retryable: true``. The job service reads ``code`` before falling back
+    to the exception name.
+    """
+
+    code = "VALIDATION_FAILED"
 
 
 class SyllabusPlanRefused(GenerationError):
@@ -2519,6 +2532,32 @@ VALIDATION_SCHEMA: dict[str, Any] = {
 #: narrowed schema and the merge are the same code for one pass or for several.
 VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (VALIDATION_CRITERIA,)
 
+#: Most claim-support verdicts one validation pass may demand.
+#:
+#: H-192: the criteria pass also judged the plan's own claims, so the answer demand was bounded
+#: per claim *label* but not in total. ``plan_claim_labels`` emits one label per objective, one
+#: per unit and the learner outcome; a full-scope plan (12–40 objectives) therefore demanded
+#: 13–42 claim verdicts **plus** ten criterion verdicts in a single answer. Measured live on
+#: master ``127cce1``: 376 896 ms / 29 386 completion tokens, and the answer then violated its
+#: own ``claim_verdicts`` schema (job failed ``INTERNAL_ERROR``). No deadline widening repairs
+#: that; the per-call demand has to stop growing with plan size.
+#:
+#: The criteria pass now takes at most this many claims; the rest go to claim-only passes, which
+#: carry no criteria reasoning and therefore take a larger fixed batch
+#: (``CLAIM_ONLY_VERDICTS_PER_PASS``). Every pass answers a bounded number of verdicts, however
+#: large the plan is. Six keeps a single/short plan in one call (the measured claim set was 3–5
+#: labels) while a full plan becomes a handful of small concurrent passes instead of one unbounded
+#: one.
+CLAIM_VERDICTS_PER_PASS = 6
+
+#: Most claim-support verdicts one *claim-only* pass may demand.
+#:
+#: A claim-only pass rules on no criterion, so its answer is a short support verdict per claim
+#: rather than criterion reasoning. Twelve keeps a maximum-band full plan (40 objectives, 12
+#: units, the learner outcome = 53 labels) to five claim-only passes while staying far below the
+#: unbounded 29 386-token answer H-192 measured.
+CLAIM_ONLY_VERDICTS_PER_PASS = 12
+
 #: Criteria whose pass also judges actions that "must not reach a learner" and the curriculum
 #: sequence; the plan-specific addendum belongs to the pass that actually rules on alignment.
 _PLAN_SEQUENCE_CRITERION = "objective_alignment"
@@ -2545,6 +2584,29 @@ def plan_claim_labels(plan: Mapping[str, Any]) -> list[str]:
     return labels
 
 
+def validation_claim_schema(claim_labels: Sequence[str]) -> dict[str, Any]:
+    """A claim-only pass's answer: one bounded set of claim verdicts, nothing else.
+
+    The pass owns no criterion and no artifact verdict, so its schema carries neither
+    ``criteria`` nor ``rejections`` nor ``verdict``: ``additionalProperties: False`` turns a
+    stray answer of any of those into a schema violation. What it does carry is pinned to exactly
+    the labels it was given, so the answer can neither grow nor shrink with plan size.
+    """
+    claim_schema = copy.deepcopy(VALIDATION_SCHEMA["properties"]["claim_verdicts"])
+    claim_schema["minItems"] = len(claim_labels)
+    claim_schema["maxItems"] = len(claim_labels)
+    claim_schema["items"]["properties"]["item"] = {
+        "type": "string",
+        "enum": list(claim_labels),
+    }
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["claim_verdicts"],
+        "properties": {"claim_verdicts": claim_schema},
+    }
+
+
 def validation_pass_schema(
     criteria: Sequence[str], claim_labels: Sequence[str] = ()
 ) -> dict[str, Any]:
@@ -2557,8 +2619,11 @@ def validation_pass_schema(
 
     A pass with no claim labels does not carry ``claim_verdicts`` at all: the top-level
     ``additionalProperties: False`` then turns a stray claim verdict into a schema violation, so a
-    criteria pass cannot spend its budget re-judging support that another pass owns.
+    criteria pass cannot spend its budget re-judging support that another pass owns. A pass with
+    no criteria is a claim-only pass and gets :func:`validation_claim_schema`.
     """
+    if not criteria:
+        return validation_claim_schema(claim_labels)
     schema = copy.deepcopy(VALIDATION_SCHEMA)
     properties = schema["properties"]
     criteria_schema = properties["criteria"]
@@ -2583,6 +2648,21 @@ def validation_pass_instructions(
     *, subject: str, criteria: Sequence[str], claim_labels: Sequence[str] = ()
 ) -> str:
     """One pass's instruction text: its criteria, its claims, and nothing else to write about."""
+    if not criteria:
+        return (
+            f"Independently judge support for exactly {len(claim_labels)} plan "
+            f"claim/claims: {', '.join(claim_labels)}. Return exactly one claim_verdicts entry "
+            "for each claim named here and no others; return no criteria, no rejections and no "
+            "overall verdict — another pass rules on the plan itself. Keep each reason to one "
+            "sentence (at most 200 characters). Use source_id only when the supplied source "
+            "ledger actually contains that source. Support is not the same as provenance: to "
+            "mark a claim 'supported' or 'partial' you must set source_id and quote in 'excerpt' "
+            "the exact words from that source that carry the claim. Without an exact quoted "
+            "excerpt the harness keeps the claim 'unverified', and a title, publisher, URL, DOI "
+            "or ISBN you cite must appear in the ledger or the verdict is flagged. 'item' is a "
+            f"short locator of at most {ITEM_REFERENCE_MAX_CHARS} characters; every explanation "
+            "goes in 'reason'."
+        )
     text = (
         f"Independently validate this {subject}. This pass judges exactly {len(criteria)} "
         f"criterion/criteria: {', '.join(criteria)}. Return exactly one entry for each criterion "
@@ -2621,15 +2701,19 @@ def validation_pass_criteria(request: LLMRequest) -> tuple[str, ...]:
     The request is the record of what the validator was asked to judge, so the merge reads
     ownership from there instead of from a second list that could drift.
     """
+    properties = (request.schema or {}).get("properties", {})
+    criteria_block = properties.get("criteria") or {}
     enum = (
-        request.schema.get("properties", {})
-        .get("criteria", {})
-        .get("items", {})
+        criteria_block.get("items", {})
         .get("properties", {})
         .get("id", {})
         .get("enum")
     )
-    return tuple(enum or VALIDATION_CRITERIA)
+    if not enum:
+        # A claim-only pass owns no criterion. Returning the full set here would let the merge
+        # treat it as a second owner of every criterion and drop the real pass's reports.
+        return ()
+    return tuple(enum)
 
 
 def merge_validation_reports(
@@ -2645,6 +2729,10 @@ def merge_validation_reports(
     here). Rejections are concatenated, and a pass that declared ``reject`` makes the whole
     validation declare ``reject``.
 
+    A pass that owns no criterion is a claim-only pass (H-192): it contributes its claim verdicts
+    and nothing else. It carries no artifact verdict and no rejections, so it can neither reject
+    the artifact nor widen the reviewed criterion set.
+
     A pass's answer is filtered to the criteria it owns. On the real route the host rejects an
     out-of-pass answer against the narrowed schema before it reaches this function, so the filter
     only matters for a caller that hands in raw reports (tests, replays): it can never widen the
@@ -2658,23 +2746,24 @@ def merge_validation_reports(
     declared = "pass"
     for owned, report in passes:
         owned_ids = {str(criterion) for criterion in owned}
-        if str(report.get("verdict")) != "pass":
-            declared = "reject"
-        for entry in report.get("criteria") or []:
-            criterion = str(entry.get("id"))
-            if criterion not in owned_ids:
-                continue
-            if criterion in by_criterion:
-                raise GenerationRejected(
-                    f"validator reported criterion {criterion!r} more than once"
-                )
-            by_criterion[criterion] = dict(entry)
-        for entry in report.get("rejections") or []:
-            key = (entry.get("item"), entry.get("criterion"), entry.get("reason"))
-            if key in seen_rejections:
-                continue
-            seen_rejections.add(key)
-            rejections.append(dict(entry))
+        if owned_ids:
+            if str(report.get("verdict")) != "pass":
+                declared = "reject"
+            for entry in report.get("criteria") or []:
+                criterion = str(entry.get("id"))
+                if criterion not in owned_ids:
+                    continue
+                if criterion in by_criterion:
+                    raise GenerationRejected(
+                        f"validator reported criterion {criterion!r} more than once"
+                    )
+                by_criterion[criterion] = dict(entry)
+            for entry in report.get("rejections") or []:
+                key = (entry.get("item"), entry.get("criterion"), entry.get("reason"))
+                if key in seen_rejections:
+                    continue
+                seen_rejections.add(key)
+                rejections.append(dict(entry))
         for entry in report.get("claim_verdicts") or []:
             item = str(entry.get("item"))
             if item in seen_claims:
@@ -5372,6 +5461,38 @@ def _parse_structured(response: LLMResponse, schema: dict[str, Any], *, what: st
     return copy.deepcopy(parsed)
 
 
+def _parse_validation_answer(
+    response: LLMResponse, request: LLMRequest, *, what: str
+) -> dict[str, Any]:
+    """Parse one validator answer, typing a shape violation as a contract failure.
+
+    H-192: a validator answer that violates its own narrowed schema at the plan stage used to
+    surface as ``INTERNAL_ERROR`` / retryable (see ``jobs.error_json`` for the full-scope sample).
+    The answer arrived and the host was healthy; the *payload* violated the frozen contract, so
+    the honest label is :class:`ModelOutputInvalid` → ``VALIDATION_FAILED``, non-retryable. A
+    blind re-run spends the same call to get the same malformed answer.
+
+    The schema checked is the pass's own narrowed schema when the pass is claim-only (it has no
+    criteria and must not be judged against the wide schema); a criteria pass keeps the wide
+    ``VALIDATION_SCHEMA`` it has always been parsed against, because the host gate already
+    enforced the narrowed claim set before this module saw the answer.
+    """
+    properties = (request.schema or {}).get("properties", {})
+    claim_only = "claim_verdicts" in properties and "criteria" not in properties
+    schema = request.schema if claim_only and request.schema is not None else VALIDATION_SCHEMA
+    try:
+        return _parse_structured(
+            response, schema, what=what, max_bytes=MAX_VALIDATION_BYTES
+        )
+    except GenerationRejected as exc:
+        raise ModelOutputInvalid(
+            str(exc),
+            purpose=request.purpose,
+            schema_name=request.schema_name,
+            violation=str(exc),
+        ) from exc
+
+
 def assert_separate_pass(generation: LLMRequest, validation: LLMRequest) -> None:
     """Structural guarantee that validation is a second, different call.
 
@@ -5779,14 +5900,14 @@ def build_plan_validation_requests(
     frequency_selection: frequency.InventorySelection | None = None,
     frequency_status: dict[str, Any] | None = None,
 ) -> list[LLMRequest]:
-    """The plan's independent validation, as one request per criteria pass.
+    """The plan's independent validation, as one request per validation pass.
 
     H-191 follow-up: one call demanding ten verdicts *and* a support verdict per claim did not
-    finish inside the declared deadline on the measured route. The same reviewed set is now judged
-    by ``VALIDATION_CRITERIA_PASSES`` — each pass carries its own narrowed schema, all passes carry
-    the same payload and prompt version, and they run together (see
-    :func:`_run_validation_passes`). The claim labels are distributed across the passes so no
-    single pass owns the whole support judgement.
+    finish inside the declared deadline on the measured route. H-192: the plan's claim set is
+    unbounded by plan size, so it cannot ride on one pass either. ``_validation_pass_plan`` gives
+    each criteria pass one fixed-size batch of claims and turns the remainder into claim-only
+    passes; each pass carries its own narrowed schema, all passes carry the same payload and
+    prompt version, and they run together (see :func:`_run_validation_passes`).
 
     Every pass has the same ``purpose`` and the same declared deadline: the purpose still means
     "the plan's validation", the usage record still attributes the spend to it, and an operator's
@@ -5849,20 +5970,22 @@ def build_plan_validation_requests(
 def _validation_pass_plan(
     claim_labels: Sequence[str],
 ) -> list[tuple[tuple[str, ...], tuple[str, ...]]]:
-    """Pair each criteria pass with its share of the claim labels, in a stable order.
+    """Pair each criteria pass with one bounded batch of claim labels, in a stable order.
 
-    Claims are distributed round-robin so a plan with many objectives (a full-course plan) does not
-    load the whole support judgement onto one pass. A pass with no share carries no
-    ``claim_verdicts`` at all, which the narrowed schema enforces.
+    H-192: claims no longer all ride on one pass. Each criteria pass takes at most
+    ``CLAIM_VERDICTS_PER_PASS`` labels; the remaining labels are cut into fixed batches of
+    ``CLAIM_ONLY_VERDICTS_PER_PASS`` and become claim-only passes. Consequently no answer's claim
+    count grows with plan size: a full-scope plan is a handful of bounded passes instead of one
+    13–42-verdict answer.
     """
-    passes = len(VALIDATION_CRITERIA_PASSES)
-    shares: list[list[str]] = [[] for _ in range(passes)]
-    for index, label in enumerate(claim_labels):
-        shares[index % passes].append(label)
-    return [
-        (VALIDATION_CRITERIA_PASSES[index], tuple(shares[index]))
-        for index in range(passes)
-    ]
+    plan: list[tuple[tuple[str, ...], tuple[str, ...]]] = []
+    remaining = list(claim_labels)
+    for criteria in VALIDATION_CRITERIA_PASSES:
+        plan.append((criteria, tuple(remaining[:CLAIM_VERDICTS_PER_PASS])))
+        del remaining[:CLAIM_VERDICTS_PER_PASS]
+    for index in range(0, len(remaining), CLAIM_ONLY_VERDICTS_PER_PASS):
+        plan.append(((), tuple(remaining[index : index + CLAIM_ONLY_VERDICTS_PER_PASS])))
+    return plan
 
 
 def build_lesson_request(
@@ -7296,9 +7419,8 @@ def run_plan_job(
             reports = [
                 (
                     validation_pass_criteria(validation_request),
-                    _parse_structured(
-                        validation_response, VALIDATION_SCHEMA, what="plan validation",
-                        max_bytes=MAX_VALIDATION_BYTES,
+                    _parse_validation_answer(
+                        validation_response, validation_request, what="plan validation"
                     ),
                 )
                 for validation_request, validation_response in zip(
@@ -8288,11 +8410,8 @@ def run_unit_sections_job(
             assert request is not None
             assert_separate_pass(request, validation_request)
             validation_response = _call_llm(validator, validation_request, usage)
-            report = _parse_structured(
-                validation_response,
-                VALIDATION_SCHEMA,
-                what="unit sections validation",
-                max_bytes=MAX_VALIDATION_BYTES,
+            report = _parse_validation_answer(
+                validation_response, validation_request, what="unit sections validation"
             )
             independence = validation_independence(
                 model_identity(response), model_identity(validation_response)
@@ -9298,8 +9417,8 @@ def _author_section(
         )
         assert_separate_pass(request, validation_request)
         validation_response = _call_llm(validator_llm() or llm, validation_request, usage)
-        report = _parse_structured(
-            validation_response, VALIDATION_SCHEMA, what="lesson validation", max_bytes=MAX_VALIDATION_BYTES
+        report = _parse_validation_answer(
+            validation_response, validation_request, what="lesson validation"
         )
         independence = validation_independence(
             model_identity(response), model_identity(validation_response)
