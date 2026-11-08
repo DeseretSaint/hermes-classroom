@@ -33,6 +33,12 @@ CONTRACT_FILES: dict[str, str] = {
     "cb.rpc": "rpc.v15.json",
     "cb.db": "db.v10.json",
     "cb.jobs": "jobs.v5.json",
+    # H-137 (H-73 §4): ``cb.pack`` is the one contract that accepts more than one document
+    # version. v2 adds the optional root ``media[]`` link; v1 stays byte-identical and is still
+    # the inventory current, because every frozen ``cb.rpc`` file (v4…v14) and ``cb.projection``
+    # v1 resolve ``$ref`` targets to ``pack-manifest/v1``. Bumping the inventory would either
+    # break those refs or require editing a frozen wire contract, so v2 is an *accepted document
+    # version* (``CONTRACT_VERSION_FILES``) while cross-document refs keep pointing at v1.
     "cb.pack": "pack-manifest.v1.json",
     "cb.projection": "projection.v1.json",
     # H-89: declared, hash-pinned frequency inventories for language courses. Describes an
@@ -43,6 +49,43 @@ CONTRACT_FILES: dict[str, str] = {
 #: The contract whose version the plugin speaks on the wire.
 WIRE_CONTRACT_ID = "cb.rpc"
 WIRE_CONTRACT_VERSION = 15
+
+
+#: Version -> file name for every contract that accepts more than one document version.
+#: ``CONTRACT_FILES`` names the current one; the older file is immutable history, kept on disk and
+#: reachable only by an explicit version. A document that declares ``contract_version`` selects the
+#: schema it is validated against, so a v1 pack keeps the v1 allowlist and never inherits v2 fields.
+CONTRACT_VERSION_FILES: dict[str, dict[int, str]] = {
+    "cb.pack": {1: "pack-manifest.v1.json", 2: "pack-manifest.v2.json"},
+}
+
+
+def version_files(contract_id: str) -> dict[int, str]:
+    """Known versions for *contract_id*; exactly one entry for a single-version contract."""
+    known = CONTRACT_VERSION_FILES.get(contract_id)
+    if known is not None:
+        return dict(known)
+    if contract_id not in CONTRACT_FILES:
+        raise ContractError(f"unknown contract id {contract_id!r}", contract_id=contract_id)
+    return {contract_version(contract_id): CONTRACT_FILES[contract_id]}
+
+
+def contract_as(contract_id: str, version: int) -> dict[str, Any]:
+    """The parsed document for one explicit *version* of a contract."""
+    known = version_files(contract_id)
+    filename = known.get(int(version))
+    if filename is None:
+        raise ContractError(
+            f"{contract_id} has no version {version!r}; known versions are {sorted(known)}",
+            contract_id=contract_id,
+        )
+    document = _read_file(contract_id, filename)
+    if int(document["x-contract-version"]) != int(version):
+        raise ContractError(
+            f"{filename} declares x-contract-version {document['x-contract-version']!r}, expected {version!r}",
+            contract_id=contract_id,
+        )
+    return document
 
 
 class ContractError(Exception):
@@ -62,6 +105,10 @@ def _read(contract_id: str) -> dict[str, Any]:
     filename = CONTRACT_FILES.get(contract_id)
     if filename is None:
         raise ContractError(f"unknown contract id {contract_id!r}", contract_id=contract_id)
+    return _read_file(contract_id, filename)
+
+
+def _read_file(contract_id: str, filename: str) -> dict[str, Any]:
     path = CONTRACT_DIR / filename
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
@@ -124,12 +171,35 @@ def _validator(contract_id: str) -> Draft202012Validator:
 
 def validate(contract_id: str, instance: Any, *, what: str = "value") -> None:
     """Validate *instance* against a contract, raising :class:`ContractError` on the first error."""
-    errors = sorted(_validator(contract_id).iter_errors(instance), key=lambda e: list(e.absolute_path))
+    _validate_document(_validator(contract_id), contract_id, instance, what=what)
+
+
+def validate_as(contract_id: str, version: int, instance: Any, *, what: str = "value") -> None:
+    """Validate *instance* against one explicit contract *version*.
+
+    Used by a versioned contract (``cb.pack`` v1/v2) so an older document keeps its own frozen
+    schema instead of being judged by the current one.
+    """
+    document = contract_as(contract_id, version)
+    validator = Draft202012Validator(document, registry=registry())
+    _validate_document(validator, contract_id, instance, what=what, version=version)
+
+
+def _validate_document(
+    validator: Draft202012Validator,
+    contract_id: str,
+    instance: Any,
+    *,
+    what: str,
+    version: int | None = None,
+) -> None:
+    errors = sorted(validator.iter_errors(instance), key=lambda e: list(e.absolute_path))
     if errors:
         first = errors[0]
         location = "/".join(str(part) for part in first.absolute_path) or "<root>"
+        label = contract_id if version is None else f"{contract_id} v{version}"
         raise ContractError(
-            f"{what} violates {contract_id} at {location}: {first.message}",
+            f"{what} violates {label} at {location}: {first.message}",
             contract_id=contract_id,
             path=location,
         )

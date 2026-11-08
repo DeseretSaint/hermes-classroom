@@ -23,7 +23,7 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | `cb.rpc` | `contracts/rpc.v15.json` | 15 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v10.json` | 10 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
-| `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
+| `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
@@ -34,6 +34,22 @@ v1 **to v9** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.jso
 **to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
 as immutable history: the superseded current files are `rpc.v14.json`, `db.v9.json`,
 `errors.v3.json` and `jobs.v4.json`.
+
+`cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`) and v2
+(`pack-manifest.v2.json`) both live on disk, and a pack is validated, exported and allowlisted
+against the `contract_version` it declares. v2 adds one optional root `media[]` array that links a
+declared `narration`/`visual` file to the section that may play it, with a short caption; a file
+not named there stays stored evidence only, exactly as every v1 pack behaves. No `cb.rpc` method,
+`cb.db` column or migration changes (H-137 implements `docs/PACK-MEDIA-PLAYBACK.md` §4, §8).
+
+The inventory current stays **v1** because every frozen `cb.rpc` file (v4…v14) and
+`cb.projection` v1 resolve `$ref` targets to `pack-manifest/v1`; naming v2 current would either
+break those references or require editing a frozen wire contract. v2 is therefore an accepted
+*document* version, selected per pack by `contract_version`, not a change to the cross-document
+inventory. Only v2 documents may carry `media[]` (v1's `additionalProperties: false` refuses it).
+A pack author who wants playback writes `contract_version: 2`; `packs.build_manifest` accepts that
+explicitly, while its default stays v1 so the bundled demo packs keep shipping v1
+(`docs/PACK-MEDIA-PLAYBACK.md` §13 ordering).
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
 `tests/test_contracts.py` pins the sha256 of every superseded `rpc.v*.json` **and** `db.v*.json`, so

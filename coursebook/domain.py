@@ -196,6 +196,17 @@ def _row(connection, sql: str, params: tuple = ()) -> Any:
     return connection.execute(sql, params).fetchone()
 
 
+def _labelled_digest(value: Any) -> str:
+    """``sha256:<hex>`` for an artifact row, whatever form the row stored.
+
+    ``artifacts.ArtifactStore.record`` stores the bare hex digest; ``pack.export`` writes the
+    labelled form. cb.rpc's ``artifacts[].content_hash`` is always the labelled form, so the read
+    projection normalises instead of leaking either storage convention onto the wire.
+    """
+    text = str(value or "")
+    return text if text.startswith("sha256:") else f"sha256:{text}"
+
+
 def _one(connection, sql: str, params: tuple = ()) -> dict[str, Any]:
     row = connection.execute(sql, params).fetchone()
     if row is None:
@@ -2584,6 +2595,28 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         artifacts = connection.execute(
             "SELECT * FROM artifacts WHERE course_id = ? ORDER BY created_at DESC LIMIT 200", (course["id"],)
         ).fetchall()
+        # H-137 (H-73 §2.4.1): ``artifacts`` is unique on (content_hash, kind), not per course,
+        # so a second course importing the same pack reuses a row whose ``course_id`` names the
+        # first one. Resolving only ``WHERE course_id = ?`` would miss it, the media child would
+        # degrade to prose, and the page would silently lose the player. Add exactly the artifact
+        # ids this run's own media segments reference — no wire change, the segments already carry
+        # ``artifact_id``.
+        by_id = {str(row["id"]): row for row in artifacts}
+        referenced = sorted(
+            {
+                str(row["artifact_id"])
+                for row in segments
+                if str(row["kind"]) == "media" and row["artifact_id"] and str(row["artifact_id"]) not in by_id
+            }
+        )
+        for start in range(0, len(referenced), 200):
+            chunk = referenced[start : start + 200]
+            placeholders = ",".join("?" for _ in chunk)
+            for row in connection.execute(
+                f"SELECT * FROM artifacts WHERE id IN ({placeholders})", chunk
+            ).fetchall():
+                by_id[str(row["id"])] = row
+        artifacts = list(by_id.values())
         checks = connection.execute(
             "SELECT c.*, (SELECT COUNT(*) FROM attempts a WHERE a.check_id = c.id) AS attempt_count"
             " FROM checks c WHERE c.objective_id = ? ORDER BY c.version DESC LIMIT 100",
@@ -2687,7 +2720,11 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                 "kind": row["kind"],
                 "mime": row["mime"],
                 "bytes": int(row["bytes"]),
-                "content_hash": row["content_hash"],
+                # H-137: the row stores a bare hex digest (``artifacts.ArtifactStore.record``),
+                # while cb.rpc's ``artifacts[].content_hash`` is the labelled sha256 string. Label
+                # it here; a row that already carries the prefix (pack export writes it) is left
+                # untouched, so no reader sees a doubled prefix.
+                "content_hash": _labelled_digest(row["content_hash"]),
             }
             for row in artifacts
         ],

@@ -469,6 +469,11 @@ def japanese_manifest() -> dict:
         locale="ja-JP",
         level_label="CEFR A1 · ab initio (L0)",
         minimum_coursebook_version="0.1.0",
+        # H-73 §13 ordering: the bundled pack stays at ``cb.pack`` v1 until the release that
+        # ships v2 media playback is the version this demo names. Re-issuing v2 first would make
+        # the bundled pack unimportable on every build that only knows v1 — a worse defect than
+        # an unplayed file.
+        contract_version=1,
         license={
             **UNSPECIFIED_LICENSE,
             "per_artifact": [
@@ -607,6 +612,11 @@ def parent_manifest() -> dict:
         locale="en-US",
         level_label="Age 8-10 · parent-led",
         minimum_coursebook_version="0.1.0",
+        # H-73 §13 ordering: the bundled pack stays at ``cb.pack`` v1 until the release that
+        # ships v2 media playback is the version this demo names. Re-issuing v2 first would make
+        # the bundled pack unimportable on every build that only knows v1 — a worse defect than
+        # an unplayed file.
+        contract_version=1,
         license=UNSPECIFIED_LICENSE,
         attribution=ORIGINAL,
         contributors=[{"name": "Coursebook demo pack", "role": "author"}],

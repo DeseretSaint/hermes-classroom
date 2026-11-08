@@ -693,5 +693,10 @@ def preview_artifact(artifact_id: str) -> dict[str, Any]:
         # cited sources, exactly as the artifact store recorded them at generation time.
         "permission": provenance.get("permission"),
         "source_ids": list(provenance.get("source_ids") or []),
+        # H-137 (H-73 §7): additive rights keys. ``null`` when the artifact recorded no licence;
+        # an older Desktop ignores both. A pack-authored narration carries the pack's own licence
+        # and attribution, so the reader can see whose bytes these are.
+        "license_id": provenance.get("license_id") or None,
+        "attribution": provenance.get("attribution") or None,
         "data_url": f"data:{detected};base64," + base64.b64encode(data).decode("ascii"),
     }

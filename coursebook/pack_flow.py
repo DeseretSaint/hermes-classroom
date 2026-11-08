@@ -396,6 +396,11 @@ def validate_and_audit(staged: archive.StagedPack) -> dict[str, Any]:
     # are split at import; a lesson that could never fit the page's segment budget is refused here,
     # before the first database write, naming the file and its length (D1).
     segments.audit_objective_texts(manifest, staged.directory)
+    # H-73 §8.4: a linked file must be the render-safe type its role claims. Checked here, before
+    # the artifact store is touched, so a mislabelled link refuses the pack instead of staging it.
+    media_problems = _media_byte_problems(manifest, staged.directory)
+    if media_problems:
+        raise PackRejected("linked pack media is not playable: " + "; ".join(media_problems))
     # A pack may not hold content for a role it does not declare, and no manifest may carry a
     # private field. Both are checked on the document itself, not only on the archive.
     leaked = packs.contains_private_fields(manifest)
@@ -405,6 +410,124 @@ def validate_and_audit(staged: archive.StagedPack) -> dict[str, Any]:
 
 
 _RECIPES = ("one_off", "casual", "committed", "companion", "parent")
+
+#: The honesty label a pack-authored narration carries on the media route (H-73 §8.3). It is
+#: distinct from generated narration: the pack author supplied both the bytes and the transcript,
+#: and no provider was called.
+_PACK_NARRATION_LABEL = (
+    "Narration — the pack author's transcript is the authoritative text; "
+    "this is not pronunciation assessment."
+)
+
+#: ``media[].path`` role -> ``artifacts.kind`` (``artifacts.ARTIFACT_KINDS`` accepts both).
+_MEDIA_ROLE_KIND = {"narration": "audio", "visual": "visual"}
+
+
+def _media_links(manifest: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Every resolvable ``media[]`` link, joined to its ``files[]`` record and licence.
+
+    Returns an empty list for a v1 pack (or any pack without ``media``), which is why a v1
+    import stays byte-for-byte the behaviour it had before H-137.
+    """
+    files = {str(entry["path"]): entry for entry in manifest.get("files") or []}
+    per_artifact = {
+        str(record["path"]): record
+        for record in (manifest.get("license") or {}).get("per_artifact") or []
+    }
+    links: list[dict[str, Any]] = []
+    for entry in manifest.get("media") or []:
+        path = str(entry["path"])
+        file_entry = files[path]
+        role = str(file_entry["role"])
+        licence = per_artifact.get(path) or {}
+        links.append(
+            {
+                "path": path,
+                "section_path": str(entry["section_path"]),
+                "caption": str(entry["caption"]),
+                "role": role,
+                "kind": _MEDIA_ROLE_KIND[role],
+                "mime": str(file_entry["mime"]),
+                "text_equivalent": str(file_entry.get("text_equivalent") or ""),
+                "license_id": licence.get("license_id"),
+                "attribution": licence.get("attribution"),
+                "sha256": str(file_entry["sha256"]),
+                "bytes": int(file_entry["bytes"]),
+            }
+        )
+    return links
+
+
+def _media_by_section(links: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """Links grouped by section path, in ``media[]`` order (the placement rule of H-73 §8.2)."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for link in links:
+        grouped.setdefault(link["section_path"], []).append(link)
+    return grouped
+
+
+def _media_provenance(manifest: Mapping[str, Any], link: Mapping[str, Any]) -> dict[str, Any]:
+    """The provenance record a pack-authored artifact carries (H-73 §8.3)."""
+    label = _PACK_NARRATION_LABEL if link["role"] == "narration" else artifacts.ILLUSTRATION_LABEL
+    return {
+        "generator": "coursebook.pack_import",
+        "model": None,
+        "prompt_hash": None,
+        "source_ids": [],
+        "notes": "pack-authored media played from pack content; no provider call",
+        "label": label,
+        "text_equivalent": link["text_equivalent"],
+        "license_id": link["license_id"],
+        "attribution": link["attribution"],
+        "pack_id": str(manifest["pack_id"]),
+        "pack_version": str(manifest["pack_version"]),
+        "pack_content_hash": str(manifest["content_hash"]),
+        "pack_file": link["path"],
+        "pack_file_sha256": link["sha256"],
+    }
+
+
+def _discard_adopted_objects(paths: list[Path]) -> None:
+    """Remove artifact objects an import adopted when its transaction did not commit.
+
+    Only a file no ``artifacts`` row claims is removed: identical bytes already adopted by another
+    course (or a concurrent import) must survive. ``ArtifactStore.reconcile`` at startup is the
+    backstop for anything this misses.
+    """
+    if not paths:
+        return
+    try:
+        with db.read() as connection:
+            for path in paths:
+                row = connection.execute(
+                    "SELECT 1 FROM artifacts WHERE content_hash = ? LIMIT 1", (path.name,)
+                ).fetchone()
+                if row is None:
+                    path.unlink(missing_ok=True)
+    except Exception:  # noqa: BLE001 - cleanup must never mask the original failure
+        return
+
+
+def _media_byte_problems(manifest: Mapping[str, Any], root: Path) -> list[str]:
+    """Refuse a linked file whose bytes are not the render-safe type its role claims.
+
+    Runs in the pre-write gate, so a pack whose narration is really an HTML file is refused with
+    nothing staged into the artifact store and no database row written.
+    """
+    problems: list[str] = []
+    for index, link in enumerate(_media_links(manifest)):
+        target = root / link["path"]
+        try:
+            data = target.read_bytes()
+        except OSError:
+            continue  # audit_bundle already names a missing declared file
+        try:
+            detected = artifacts.sniff_mime(data, link["mime"])
+            artifacts.assert_render_safe(data, detected)
+        except artifacts.UnsafeMedia as exc:
+            problems.append(f"media[{index}] {link['path']!r}: {exc}")
+    return problems
+
 
 
 def _pack_row_id(pack_id: str, version: str) -> str:
@@ -480,6 +603,8 @@ def _write_lesson_page(
     objective_row_id: str,
     objective: Mapping[str, Any],
     staged_directory: Path,
+    media_by_section: Mapping[str, list[dict[str, Any]]] | None = None,
+    artifact_ids: Mapping[str, str] | None = None,
 ) -> None:
     """Materialize the pack's own section text as a durable lesson page.
 
@@ -487,7 +612,14 @@ def _write_lesson_page(
     section file longer than the ``cb.rpc`` per-segment cap is cut into ordered pieces at paragraph
     (then line, then word) boundaries — see :mod:`coursebook.segments` — because one segment over
     the cap made the whole lesson page unreadable.
+
+    H-137: a section's declared ``media[]`` links are written immediately after that section's
+    teaching pieces, in ``media[]`` order (H-73 §8.2). Each media segment carries the pack's short
+    caption as ``text`` and the artifact row id, so the document projector attaches it to the
+    teaching block just written and the media route can serve it.
     """
+    grouped = media_by_section or {}
+    ids = artifact_ids or {}
     run_id = _new_id("run")
     now = _now()
     connection.execute(
@@ -511,6 +643,23 @@ def _write_lesson_page(
                 "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, created_at)"
                 " VALUES (?, ?, ?, 'teaching', ?, ?)",
                 (_new_id("seg"), run_id, ordinal, piece, now),
+            )
+        for link in grouped.get(path, []):
+            artifact_id = ids.get(str(link["path"]))
+            if not artifact_id:
+                # Pre-write validation guarantees a row per link; a missing one here is a bug in
+                # this module, and writing a media segment with no artifact would degrade the page
+                # to prose. Refuse rather than emit a child the route cannot serve.
+                raise RpcError.of(
+                    "INTERNAL_ERROR",
+                    "a linked pack media artifact was not recorded before its segment",
+                    pack_file=link["path"],
+                )
+            ordinal += 1
+            connection.execute(
+                "INSERT INTO lesson_segments (id, lesson_run_id, ordinal, kind, text, artifact_id,"
+                " created_at) VALUES (?, ?, ?, 'media', ?, ?, ?)",
+                (_new_id("seg"), run_id, ordinal, str(link["caption"]), artifact_id, now),
             )
     for check in objective.get("checks") or []:
         ordinal += 1
@@ -603,10 +752,33 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             )
 
     job_id = _import_job_start(manifest, mode)
+    # H-137: stage linked pack media outside the transaction (filesystem first, never inside a
+    # transaction — the same rule the pack library already follows). A v1 pack has no links, so
+    # this is a no-op for every pack written before v2.
+    media_links = _media_links(manifest)
+    media_by_section = _media_by_section(media_links)
+    media_store = artifacts.ArtifactStore()
+    staged_media: dict[str, artifacts.Staged] = {}
+    adopted_objects: list[Path] = []
     try:
         # Filesystem first (never inside a transaction): adopt is atomic and idempotent.
         record = library().adopt(staged, source="local")
         adopted_directory = Path(str(record["directory"]))
+        try:
+            for link in media_links:
+                if link["path"] in staged_media:
+                    continue
+                data = (adopted_directory / link["path"]).read_bytes()
+                prepared = media_store.stage(data, kind=link["kind"], mime=link["mime"])
+                object_path = media_store.objects_dir / prepared.content_hash[:2] / prepared.content_hash
+                already_stored = object_path.exists()
+                media_store.adopt(prepared)
+                if not already_stored:
+                    adopted_objects.append(object_path)
+                staged_media[link["path"]] = prepared
+        except artifacts.UnsafeMedia as exc:
+            _discard_adopted_objects(adopted_objects)
+            raise PackRejected(f"linked pack media could not be adopted: {exc}") from exc
         with db.transaction() as connection:
             replay = _idempotent_lookup(connection, key, method, payload_hash)
             if replay is not None:
@@ -669,6 +841,22 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             )
             _write_sources(connection, course_id, manifest)
 
+            # H-137: record one artifact row per linked file (reusing an existing
+            # ``(content_hash, kind)`` row across courses and bumping ``ref_count``), then the
+            # media segment below carries the row id. This is the only place pack bytes become
+            # learner-visible media, and it happens inside the import transaction.
+            artifact_ids: dict[str, str] = {}
+            for link in media_links:
+                if link["path"] in artifact_ids:
+                    continue
+                view = media_store.record(
+                    connection,
+                    course_id=course_id,
+                    staged=staged_media[link["path"]],
+                    provenance=_media_provenance(manifest, link),
+                )
+                artifact_ids[link["path"]] = str(view["artifact_id"])
+
             plan_id = _new_id("pln")
             connection.execute(
                 "INSERT INTO plans (id, course_id, version, state, plan_hash, schedule_json, created_at,"
@@ -709,6 +897,8 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                     objective_row_id=objective_row_id,
                     objective=objective,
                     staged_directory=adopted_directory,
+                    media_by_section=media_by_section,
+                    artifact_ids=artifact_ids,
                 )
 
             result = {
@@ -721,12 +911,15 @@ def pack_import(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         _import_job_finish(job_id, "completed")
         return 0, result
     except RpcError:
+        _discard_adopted_objects(adopted_objects)
         _import_job_finish(job_id, "failed", "refused before completion")
         raise
     except PackRejected as exc:
+        _discard_adopted_objects(adopted_objects)
         _import_job_finish(job_id, "failed", str(exc))
         raise _rejected(str(exc), "pack_not_importable") from exc
     except Exception as exc:  # noqa: BLE001 - journal it, then let the dispatcher shape the error
+        _discard_adopted_objects(adopted_objects)
         _import_job_finish(job_id, "failed", type(exc).__name__)
         raise
 
