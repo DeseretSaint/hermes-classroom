@@ -1035,6 +1035,37 @@ rewriting the document snapshot. Request/response shapes, error codes and file f
 — this is a behaviour note for a frozen v6 method, not a version bump. `require_revision`,
 idempotency replay and `plan.approve`'s hash fence are untouched.
 
+### A lessons brief without `unit_ordinal` authors the next unit (behaviour note, no wire change)
+
+H-184. `generateLessons` in the Desktop posts the closed brief `{stage: 'lessons', plan_id,
+enrollment_id}` and never a `unit_ordinal`. For a PLAN_SCHEMA v2 plan the lesson stage used to
+refuse that brief ("a lessons job needs a unit_ordinal"), so the user reached an approved plan and
+could not open a single page. The executor now resolves the unit from the stored plan: the stage
+list for that brief is `unit_sections` then `lessons`, under the one leased job with one checkpoint
+and one cancellation boundary per stage. Both stages read the same rule, so a retry resumes the unit
+it was authoring rather than advancing past it:
+
+* a unit is complete when it has exactly its `target_lessons` section rows at the stored plan digest
+  and every one of those sections has a stored lesson at that digest; `unit_authoring_state()`
+  returns the lowest-ordinal incomplete unit, or `None` when every unit is complete;
+* a plan with no unit dimension (a pre-blueprint v1 plan) keeps the original one-stage path and
+  authors every bundled section; `unit_sections` is an honest no-op for it;
+* a brief that *does* name `unit_ordinal` keeps the original single-stage `lessons` shape.
+
+The approval gate is unchanged: both stages still require `plans.state = 'approved'`, and
+`plan.approve` still fences on the kernel plan hash. Nothing is auto-approved and no second plan is
+written. The job checkpoint carries the honest unit facts — `unit_ordinal`, `next_unit_ordinal`,
+`next_unit_to_author`, `units_total`, `units_complete` (ordinals whose lessons are stored) and
+`units_complete_all` — read from the rows, never from a percentage. A brief for a plan whose every
+unit is already authored completes as a no-op that spends nothing and says so.
+
+The jobs preflight counts the unit the brief would author (the named `unit_ordinal`, else the
+resolved next unit) rather than the whole plan, so a unit-sized `brief.budget_usd` is not refused
+as insufficient for a multi-unit course. No method, job kind, state, error code or brief field
+moves. To author a later unit the client posts the same brief with a **fresh** idempotency key and
+reads `next_unit_ordinal` from the completed job; the existing `cb-lessons-<plan_id>` key replays
+the first unit's job, which is the spend guarantee, not a bug.
+
 ### Cost ceilings and the `CostCeilingExceeded` recovery checkpoint (behaviour note + one additive brief field)
 
 The dollar ceiling is now sized from the plan, not flat, and a mid-course abort is a recoverable

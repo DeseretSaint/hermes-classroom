@@ -92,6 +92,28 @@ def _rejecting_stage(stage: str) -> Callable[[job_service.Lease], job_service.St
     return run
 
 
+def _unit_state_checkpoint(state: dict[str, Any]) -> dict[str, Any]:
+    """The ``cb.jobs`` checkpoint facts a no-op lessons stage reports.
+
+    Nothing is authored here, so these are reads of the stored plan and generation rows: which
+    units already have their lessons, how many units the plan has, and that no unit is left to
+    author. A caller renders "everything is authored" from these facts, never from a percentage.
+    """
+    return {
+        "plan_id": state.get("plan_id"),
+        "plan_hash": state.get("plan_hash"),
+        "plan_schema": state.get("plan_schema"),
+        "unit_ordinal": None,
+        "next_unit_ordinal": None,
+        "next_unit_to_author": state.get("next_unit_ordinal"),
+        "units_total": state.get("units_total"),
+        "units_complete": list(state.get("units_complete") or []),
+        "units_complete_all": bool(state.get("complete")),
+        "sections": 0,
+        "lessons": 0,
+    }
+
+
 class _Resolvers:
     """Builds stages from a persisted brief. One resolver, dispatched on ``brief.stage``."""
 
@@ -116,8 +138,33 @@ class _Resolvers:
                 )
             ]
         if stage == LESSONS_STAGE:
-            return [job_service.Stage(LESSONS_STAGE, self._lessons_stage(dict(brief or {})))]
+            typed = dict(brief or {})
+            if typed.get("unit_ordinal") is not None:
+                # A brief that names its unit keeps the one-stage shape (the harness and the
+                # unit-stage tests drive it that way); nothing is resolved for it.
+                return [job_service.Stage(LESSONS_STAGE, self._lessons_stage(typed))]
+            return self._lessons_path(typed)
         return [job_service.Stage(stage or "invalid", _rejecting_stage(stage))]
+
+    def _lessons_path(self, brief: dict[str, Any]) -> list[job_service.Stage]:
+        """The Desktop's lessons brief names no unit: resolve it, then author sections + lessons.
+
+        H-184: ``generateLessons`` posts ``{stage:'lessons', plan_id, enrollment_id}``. For an
+        approved blueprint plan that brief used to fail with "a lessons job needs a unit_ordinal",
+        so the user reached an approved plan and could never open a page. This path resolves the
+        next unit from the stored plan and runs the two stages the plan already has, in the one
+        job model: each keeps its own budget, checkpoint and cancellation boundary, and the lesson
+        stage still refuses a plan that is not approved.
+
+        The unit is resolved at each stage's own start from the stored rows, so a retry after a
+        failure resumes the unit that is still incomplete rather than advancing past it.
+        """
+        return [
+            job_service.Stage(
+                UNIT_SECTIONS_STAGE, self._unit_sections_stage(brief, resolve_unit=True)
+            ),
+            job_service.Stage(LESSONS_STAGE, self._lessons_stage(brief, resolve_unit=True)),
+        ]
 
     # ── stage bodies ────────────────────────────────────────────────────────
 
@@ -170,39 +217,79 @@ class _Resolvers:
         return run
 
     def _unit_sections_stage(
-        self, brief: dict[str, Any]
+        self, brief: dict[str, Any], *, resolve_unit: bool = False
     ) -> Callable[[job_service.Lease], job_service.StageResult]:
-        """One unit's sections. The stage boundary is the unit, never the course."""
+        """One unit's sections. The stage boundary is the unit, never the course.
+
+        With ``resolve_unit`` the brief names no unit (the Desktop's payload), so the unit is read
+        from the stored plan: the next blueprint unit without its full lesson set. A plan with no
+        unit dimension (a v1 plan) or a fully authored course is an honest no-op stage — it
+        authors nothing and says so.
+        """
 
         def run(lease: job_service.Lease) -> job_service.StageResult:
             if job_service.cancel_requested(lease.job_id):
                 raise job_service.JobCancelled("cancelled before the unit_sections stage")
             connection = db.connect()
             try:
+                requested_unit: Any = brief.get("unit_ordinal")
+                unit_state: dict[str, Any] | None = None
+                if resolve_unit:
+                    unit_state = generation.unit_authoring_state(
+                        connection, str(brief.get("plan_id") or "")
+                    )
+                    if unit_state is None:
+                        return job_service.StageResult(
+                            checkpoint={
+                                "plan_id": brief.get("plan_id"),
+                                "plan_schema": None,
+                                "unit_ordinal": None,
+                                "next_unit_ordinal": None,
+                                "units_total": None,
+                                "units_complete": [],
+                                "units_none": True,
+                            },
+                            message=(
+                                "this plan has no unit dimension: its sections, if any, were "
+                                "authored with the plan"
+                            ),
+                        )
+                    if unit_state["next_unit_ordinal"] is None:
+                        return job_service.StageResult(
+                            checkpoint=_unit_state_checkpoint(unit_state),
+                            message="every unit already has its lessons; no sections were authored",
+                        )
+                    requested_unit = int(unit_state["next_unit_ordinal"])
                 result = generation.run_unit_sections_job(
                     connection,
                     {"job_id": lease.job_id, "brief": brief},
                     self._llm(),
                     plan_id=brief.get("plan_id"),
-                    unit_ordinal=brief.get("unit_ordinal"),
+                    unit_ordinal=requested_unit,
                     now=self.now,
                 )
             finally:
                 connection.close()
+            checkpoint = {
+                "plan_id": result.get("plan_id"),
+                "plan_hash": result.get("plan_hash"),
+                "unit_ordinal": result.get("unit_ordinal"),
+                "sections": result.get("sections"),
+                "owners": result.get("owners"),
+                "reviews": result.get("reviews"),
+                "state": result.get("state"),
+                "next_unit_ordinal": result.get("next_unit_ordinal"),
+                "budget": result.get("budget"),
+            }
+            if unit_state is not None:
+                # The truth as the rows read it *before* this stage: the unit just authored is
+                # still incomplete (its lessons do not exist yet), and earlier units' lessons do.
+                checkpoint["units_total"] = unit_state["units_total"]
+                checkpoint["units_complete"] = unit_state["units_complete"]
             return job_service.StageResult(
                 artifacts=[],
                 usage=[],  # generation recorded the real usage against this job id
-                checkpoint={
-                    "plan_id": result.get("plan_id"),
-                    "plan_hash": result.get("plan_hash"),
-                    "unit_ordinal": result.get("unit_ordinal"),
-                    "sections": result.get("sections"),
-                    "owners": result.get("owners"),
-                    "reviews": result.get("reviews"),
-                    "state": result.get("state"),
-                    "next_unit_ordinal": result.get("next_unit_ordinal"),
-                    "budget": result.get("budget"),
-                },
+                checkpoint=checkpoint,
                 message=(
                     f"unit {result.get('unit_ordinal')} sections authored "
                     f"({result.get('sections')} sections)"
@@ -211,18 +298,35 @@ class _Resolvers:
 
         return run
 
-    def _lessons_stage(self, brief: dict[str, Any]) -> Callable[[job_service.Lease], job_service.StageResult]:
+    def _lessons_stage(
+        self, brief: dict[str, Any], *, resolve_unit: bool = False
+    ) -> Callable[[job_service.Lease], job_service.StageResult]:
         def run(lease: job_service.Lease) -> job_service.StageResult:
             if job_service.cancel_requested(lease.job_id):
                 raise job_service.JobCancelled("cancelled before the lessons stage")
             connection = db.connect()
             try:
+                unit_ordinal: Any = brief.get("unit_ordinal")
+                unit_state: dict[str, Any] | None = None
+                if resolve_unit:
+                    unit_state = generation.unit_authoring_state(
+                        connection, str(brief.get("plan_id") or "")
+                    )
+                    if unit_state is not None:
+                        if unit_state["next_unit_ordinal"] is None:
+                            # Nothing left to author: the job is an honest no-op, not a failure
+                            # and not a fabricated pass. Every unit's lessons are already stored.
+                            return job_service.StageResult(
+                                checkpoint=_unit_state_checkpoint(unit_state),
+                                message="every unit already has its lessons; nothing was authored",
+                            )
+                        unit_ordinal = int(unit_state["next_unit_ordinal"])
                 result = generation.run_lesson_job(
                     connection,
                     {"job_id": lease.job_id, "brief": brief},
                     self._llm(),
                     plan_id=brief.get("plan_id"),
-                    unit_ordinal=brief.get("unit_ordinal"),
+                    unit_ordinal=unit_ordinal,
                     now=self.now,
                 )
                 lesson_ids = [
@@ -247,6 +351,12 @@ class _Resolvers:
                     media_error = f"{type(exc).__name__}: {exc}"
                 else:
                     media_error = None
+                if resolve_unit:
+                    # Re-read the stored rows: this reports which units now have their lessons,
+                    # including the unit just authored, without claiming a state the rows lack.
+                    unit_state = generation.unit_authoring_state(
+                        connection, str(brief.get("plan_id") or "")
+                    )
             finally:
                 connection.close()
             media_usage = [
@@ -277,6 +387,16 @@ class _Resolvers:
                 checkpoint["preflight"] = result["preflight"]
             if media_error:
                 checkpoint["media"]["error"] = media_error
+            if resolve_unit:
+                if unit_state is None:
+                    checkpoint.update(
+                        {"units_total": None, "units_complete": [], "units_none": True}
+                    )
+                else:
+                    checkpoint["units_total"] = unit_state["units_total"]
+                    checkpoint["units_complete"] = unit_state["units_complete"]
+                    checkpoint["units_complete_all"] = bool(unit_state["complete"])
+                    checkpoint["next_unit_to_author"] = unit_state["next_unit_ordinal"]
             return job_service.StageResult(
                 artifacts=list(media_result.artifact_ids),
                 usage=media_usage,
