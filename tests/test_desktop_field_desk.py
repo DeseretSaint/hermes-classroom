@@ -25,7 +25,7 @@ PLUGIN_JS = ROOT / "desktop" / "plugin.js"
 HARNESS = """
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { FieldDeskHome, buildDeskModel, deskEstimateLabel, mainlineObjective } from './plugin.js'
+import { FieldDeskHome, buildDeskModel, deskEstimateLabel, mainlineObjective, cbCourseContour } from './plugin.js'
 
 const fs = await import('node:fs')
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
@@ -35,7 +35,8 @@ if (payload.kind === 'model') {
   process.stdout.write(JSON.stringify({
     desk,
     label: deskEstimateLabel(payload.estimate),
-    mainline: mainlineObjective(payload.row, payload.outline ? payload.outline.objectives : [])
+    mainline: mainlineObjective(payload.row, payload.outline ? payload.outline.objectives : []),
+    contour: cbCourseContour(payload.courseId, payload.title)
   }))
 } else {
   const desk = buildDeskModel({ library: payload.library, outline: payload.outline, estimate: payload.estimate })
@@ -52,6 +53,7 @@ if (payload.kind === 'model') {
         onCreate: () => {},
         onPrimary: () => {},
         onOpenSection: () => {},
+        onSeePlan: () => {},
         onRetryEstimate: () => {},
         onOpen: () => {},
         onShowAll: () => {},
@@ -155,6 +157,13 @@ const read = () => {
       (button) => button.getAttribute('aria-label') === 'Retry reading the session length'
     ).length,
     retryLabels: buttons.map((button) => (button.textContent || '').trim()).filter((text) => text === 'Retry'),
+    companion: document.querySelector('[data-cb-companion]')
+      ? {
+          name: (document.querySelector('[data-cb-companion-name]') || {}).textContent || null,
+          canvas: Boolean(document.querySelector('[data-cb-companion] canvas')),
+          motion: document.querySelector('[data-cb-companion]').getAttribute('data-cb-companion-motion')
+        }
+      : null,
     rpc: calls.filter((call) => call.path === '/rpc').length,
     methods: rpcMethods.slice()
   }
@@ -261,7 +270,31 @@ export const host = {
   navigate: () => {},
   notify: () => {},
   openSession: async () => ({ ok: true }),
-  newChat: async () => ({ ok: true })
+  newChat: async () => ({ ok: true }),
+  ...(process.env.CB_TEST_PET === '1'
+    ? {
+        request: async (method) => {
+          if (method === 'pet.info.meta') {
+            const missing = new Error('Method not found')
+            missing.code = -32601
+            throw missing
+          }
+          if (method !== 'pet.info') throw new Error('unexpected host.request ' + method)
+          return {
+            enabled: true,
+            slug: 'ada',
+            displayName: 'Ada',
+            mime: 'image/png',
+            spritesheetBase64:
+              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+            spritesheetRevision: 'r1',
+            frameW: 1,
+            frameH: 1,
+            stateRows: ['idle']
+          }
+        }
+      }
+    : {})
 }
 """
 
@@ -456,6 +489,7 @@ class FieldDeskRenderTest(unittest.TestCase):
         case.write_text(json.dumps(payload), encoding="utf-8")
         env = dict(os.environ)
         env["CB_TEST_WIDTH"] = str(payload.get("width", 1280))
+        env["CB_TEST_PET"] = "1" if payload.get("pet") else "0"
         result = subprocess.run(
             ["node", str(self.root / "dom.mjs"), str(case)],
             cwd=self.root,
@@ -467,10 +501,11 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr[-3000:])
         return json.loads(result.stdout)
 
-    def desk_dom(self, responses: dict, *, script: str = "none", row: dict | None = None) -> dict:
+    def desk_dom(self, responses: dict, *, script: str = "none", row: dict | None = None, pet: bool = False) -> dict:
         return self.run_dom(
             {
                 "script": script,
+                "pet": pet,
                 "library": library(row or library_row()),
                 "outline": OUTLINE,
                 "responses": {
@@ -484,6 +519,17 @@ class FieldDeskRenderTest(unittest.TestCase):
 
     def first_step(self, observed: dict) -> dict:
         return observed["observed"]["steps"][0]
+
+    def test_the_companion_appears_only_when_a_real_pet_answers(self) -> None:
+        without = self.first_step(self.desk_dom({}))
+        self.assertIsNone(without["companion"])
+        # The scripted host knows `pet.info` but refuses `pet.info.meta` with -32601, so this also
+        # proves the meta-first fall-through.
+        with_pet = self.first_step(self.desk_dom({}, pet=True))
+        self.assertIsNotNone(with_pet["companion"], with_pet)
+        self.assertTrue(with_pet["companion"]["canvas"])
+        self.assertEqual(with_pet["companion"]["motion"], "static")
+        self.assertIn("Ada", with_pet["companion"]["name"])
 
     # -- the Continue card ------------------------------------------------------------------
     def test_continue_names_the_section_the_next_action_and_the_position(self) -> None:
@@ -504,7 +550,7 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertNotIn("data-cb-course-stamp", html)
         # The title is not being squeezed into a term-per-line column; the full row remains.
         self.assertIn("Diagnose a no-start", html)
-        self.assertIn("Open the section", html)
+        self.assertIn("Open section", html)
 
     def test_the_continue_plate_has_no_seal_at_any_width(self) -> None:
         # H-145: the 64 px seal read as an avatar and needed an explanation. The plate carries the
@@ -775,9 +821,9 @@ class FieldDeskRenderTest(unittest.TestCase):
     def test_loading_renders_a_loader_and_no_course(self) -> None:
         html = self.render(library=None, libraryStatus="loading")
         self.assertIn('data-cb-desk="loading"', html)
-        self.assertIn("Reading your courses", html)
+        self.assertIn("Reading the trail", html)
         # H-153: the spinner carries a visible line, not only an aria-label.
-        self.assertIn("Reading your courses.</p>", html)
+        self.assertIn("Reading the trail… nothing already saved is lost.</p>", html)
         self.assertNotIn("data-cb-continue", html)
 
     def test_a_failed_read_keeps_its_code_and_retry(self) -> None:
@@ -839,18 +885,43 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertEqual(html.count("<option"), 6)
         self.assertNotIn("data-cb-slot-tab", html)
 
-    def test_the_wide_desk_is_a_two_column_reading_surface(self) -> None:
+    def test_the_wide_desk_is_one_trailhead_not_a_card_grid(self) -> None:
         html = self.render()
-        self.assertIn("minmax(0, 1.2fr)", html)
-        self.assertIn("minmax(19rem, 0.8fr)", html)
+        # H-176: one content column, not a rail beside a table.
+        self.assertNotIn("minmax(0, 1.2fr)", html)
+        self.assertIn('data-cb-trailhead', html)
+        self.assertIn('data-cb-course-contour', html)
+        self.assertIn('data-cb-trailhead-actions', html)
         # H-94 V2-5: the desk carries one facts line, not a three-cell stat strip.
         self.assertEqual(html.count('data-cb-desk-facts='), 1, html)
         self.assertNotIn('data-cb-desk-stats', html)
         self.assertNotIn('data-cb-desk-stat=', html)
         self.assertNotIn('data-cb-course-stamp', html)
-        # H-146: the classroom rail sits above Continue; the course grid does not exist on Home.
-        self.assertLess(html.index('data-cb-slot-rail-section'), html.index('data-cb-continue'))
+        # H-176: the plate leads, the path is joined directly below it, and the classroom shelf
+        # follows the trail instead of sitting above it.
+        self.assertLess(html.index('data-cb-continue'), html.index('data-cb-path'))
+        self.assertLess(html.index('data-cb-path'), html.index('data-cb-slot-rail-section'))
+        self.assertIn('data-cb-classroom-shelf', html)
+        self.assertIn('data-cb-shelf-new-course', html)
         self.assertNotIn('data-cb-all-courses', html)
+
+    def test_the_trailhead_falls_back_without_a_pet_and_keeps_continue(self) -> None:
+        # The harness SDK exposes no `host.request`, exactly like an older host: the plate must
+        # render no companion and still carry the one recorded primary action.
+        html = self.render()
+        self.assertIn('data-cb-trailhead', html)
+        self.assertNotIn('data-cb-companion', html)
+        self.assertIn('data-cb-trailhead-actions', html)
+        self.assertIn('Start the review', html)
+        self.assertIn('See the plan', html)
+
+    def test_a_course_contour_is_stable_and_distinct_per_course(self) -> None:
+        first = self.model(courseId='crs_0123456789abcdef', title='Small-engine maintenance')['contour']
+        again = self.model(courseId='crs_0123456789abcdef', title='Small-engine maintenance')['contour']
+        other = self.model(courseId='crs_fedcba9876543210', title='Register and affection')['contour']
+        self.assertEqual(first, again)
+        self.assertNotEqual(first, other)
+        self.assertEqual(len(first), 3)
 
     def test_resume_without_a_binding_opens_the_section_instead_of_a_blank_chat(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")

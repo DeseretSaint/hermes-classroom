@@ -658,7 +658,7 @@ class HubRouteTest(Harness):
         self.assertEqual(initial["profileRouteReads"], switched["profileRouteReads"])
         self.assertEqual(initial["runtimeReads"], switched["runtimeReads"])
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        rail = source.split("function SlotRail(", 1)[1].split("/** One raised frame", 1)[0]
+        rail = source.split("function SlotRail(", 1)[1].split("/* ── H-176", 1)[0]
         for forbidden in ("profileRoutes", "?profile=", "currentScope", "host.navigate"):
             self.assertNotIn(forbidden, rail)
 
