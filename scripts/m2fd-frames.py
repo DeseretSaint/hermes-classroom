@@ -60,6 +60,8 @@ if (payload.kind === 'backend-off') {
     outline: payload.outline,
     estimate: payload.estimate
   })
+  const abilities = ['library.list', 'course.outline', 'lesson.page', 'parent.brief.get', 'pack.inspect']
+  if (payload.firstUse) abilities.push('course.create', 'syllabus.intake.create')
   body = React.createElement(mod.FieldDeskHome, {
     desk,
     libraryStatus: payload.libraryStatus || 'ready',
@@ -68,20 +70,20 @@ if (payload.kind === 'backend-off') {
     busy: false,
     notice: null,
     onRetry: () => {},
-    onCreate: () => {},
+    onCreate: payload.firstUse ? () => {} : undefined,
     onPrimary: () => {},
     onOpenSection: () => {},
+    onSeePlan: () => {},
     onOpen: () => {},
     onShowAll: () => {},
+    onBrowseLibrary: payload.firstUse ? () => {} : undefined,
     sourcesOpen: Boolean(payload.sourcesOpen),
     onToggleSources: () => {},
     sourcesStatus: payload.sourcesStatus || 'idle',
     sourcesError: payload.sourcesError || null,
     sources: payload.sources || null,
     onRetrySources: () => {},
-    implemented: new Set([
-      'library.list', 'course.outline', 'lesson.page', 'parent.brief.get', 'pack.inspect'
-    ])
+    implemented: new Set(abilities)
   })
 }
 
@@ -224,6 +226,7 @@ def main() -> int:
                     "CB_TEST_PAYLOAD": json.dumps(frame["payload"]),
                     "CB_TEST_MODE": frame["mode"],
                     "CB_TEST_MOTION": "full",
+                    "CB_TEST_WIDTH": str(frame["width"]),
                 }
             )
             result = subprocess.run(

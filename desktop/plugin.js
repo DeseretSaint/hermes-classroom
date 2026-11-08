@@ -153,6 +153,9 @@ const CB_HOME_PREF_DEFAULTS = Object.freeze({
   // H-156 — the one number a parent sets for a child-facing lesson. It is a calm default, not a
   // timer: nothing counts down and no session is ended by it.
   sessionMinutes: 15,
+  // H-176 — the learner's own Hermes pet may stand at the trailhead. It is identity, not an
+  // avatar system: when the host has no pet sprite the plate simply carries no companion.
+  companion: true,
   classrooms: Object.freeze({})
 })
 const CB_APPEARANCE_OPTIONS = Object.freeze([
@@ -235,6 +238,9 @@ function sanitizeCbHomePrefs(raw) {
     sessionMinutes: CB_SESSION_CHOICES.indexOf(Number(source.sessionMinutes)) >= 0
       ? Number(source.sessionMinutes)
       : CB_HOME_PREF_DEFAULTS.sessionMinutes,
+    // Only an explicit `false` hides the companion; an absent or hand-edited value keeps the
+    // default of showing the pet the learner already installed.
+    companion: source.companion !== false,
     classrooms
   }
 }
@@ -1371,7 +1377,7 @@ const FIRST_RUN_COPY = {
   retry: 'Try again'
 }
 
-function FirstRun({ implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry }) {
+function FirstRun({ implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry, companionEnabled }) {
   const online = useOnline()
   const connected = online !== false
   const canCreate = Boolean(connected && implemented && implemented.has('course.create')) && typeof onCreate === 'function'
@@ -1395,6 +1401,11 @@ function FirstRun({ implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry 
   const showAction = connected ? canCreate : canRetry
   const width = useCbViewportWidth()
   const compact = width > 0 && width < 520
+  // FINAL-POLISH-SPEC §3 first-run: the same plate with no course, a contour ghost, and the
+  // learner's own companion at the threshold. The ghost is decorative (`aria-hidden`); the pet is
+  // only drawn when the host answers with a real sheet, and never on a surface that is not Home.
+  const pet = useStudyCompanion(companionEnabled === true)
+  const ghostHeight = width > 0 && width < 380 ? 48 : 96
   // At 460 px the route column is ~215 px; at 200% text that is the width a phone browser gives a
   // 320 px layout, so the headline steps down and the plate's own inset stops eating the measure.
   // (The column width is the host shell's; the plate must not make it worse.)
@@ -1442,6 +1453,19 @@ function FirstRun({ implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry 
       boxSizing: 'border-box'
     },
     children: [
+      jsx('div', {
+        'data-cb-first-run-contour': '',
+        'aria-hidden': 'true',
+        style: {
+          width: '100%',
+          maxWidth: ghostHeight > 48 ? '240px' : '100%',
+          height: `${ghostHeight}px`,
+          alignSelf: ghostHeight > 48 ? 'flex-end' : 'stretch',
+          opacity: 0.3,
+          overflow: 'hidden'
+        },
+        children: jsx(CourseContour, { height: ghostHeight })
+      }, 'ghost'),
       jsx('h2', {
         'data-cb-first-run-title': '',
         style: {
@@ -1469,6 +1493,7 @@ function FirstRun({ implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry 
         },
         children: line
       }),
+      pet ? jsx(StudyCompanion, { info: pet, size: compact ? 36 : 44 }) : null,
       showAction || secondary
         ? jsxs('div', {
             'data-cb-first-run-actions': '',
@@ -3144,10 +3169,12 @@ function focusRingVisible(node) {
   }
 }
 
-/** One classroom tab: a text target that keeps the identity's ring while it is keyboard-focused. */
+/** One classroom tile on the shelf: its own contour, name, next stop and last touch. */
 function SlotTab({ slot, isCurrent, onSelect }) {
   const [focused, setFocused] = useState(false)
-  return jsx('button', {
+  const row = slot.row || {}
+  const next = row.next_step && row.next_step.label ? row.next_step.label : null
+  return jsxs('button', {
     type: 'button',
     'data-cb-slot-tab': slot.course_id,
     'data-cb-slot-state': isCurrent ? 'current' : 'available',
@@ -3161,33 +3188,58 @@ function SlotTab({ slot, isCurrent, onSelect }) {
     style: {
       minHeight: '44px',
       maxWidth: '100%',
-      padding: '0.3rem 0.1rem',
-      background: 'none',
+      flex: '1 1 10rem',
+      padding: '0.5rem 0.6rem 0.55rem',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.3rem',
+      alignItems: 'stretch',
+      textAlign: 'left',
+      background: isCurrent ? 'var(--cb-paper-raised)' : 'transparent',
       border: 'none',
-      borderBottom: `2px solid ${isCurrent ? 'var(--cb-lamp)' : 'transparent'}`,
+      borderTop: `2px solid ${isCurrent ? 'var(--cb-lamp)' : 'var(--cb-rule)'}`,
       borderRadius: '2px',
       outline: focused ? CB_FOCUS_RING : 'none',
       outlineOffset: '2px',
       cursor: isCurrent ? 'default' : 'pointer',
       fontFamily: CB_SANS,
       fontSize: CB_TYPE.meta,
-      fontWeight: isCurrent ? 600 : 400,
       color: isCurrent ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
-      textAlign: 'left',
       overflowWrap: 'anywhere'
     },
-    children: slot.name
+    children: [
+      jsx('span', {
+        'aria-hidden': 'true',
+        style: { height: '34px', overflow: 'hidden' },
+        children: jsx(CourseContour, { row, title: slot.name, height: 34, opacity: isCurrent ? 0.7 : 0.4 })
+      }, 'contour'),
+      jsx('span', {
+        style: { fontWeight: isCurrent ? 600 : 400, lineHeight: 1.35 },
+        children: slot.name
+      }, 'name'),
+      jsx('span', {
+        'data-cb-slot-next': next ? 'recorded' : 'none',
+        style: { fontSize: CB_TYPE.caption, lineHeight: 1.35, color: 'var(--cb-ink-soft)' },
+        children: next || 'Next step not recorded'
+      }, 'next'),
+      jsx('span', {
+        style: { fontSize: CB_TYPE.caption, lineHeight: 1.35, color: 'var(--cb-ink-soft)' },
+        children: slot.updated_at ? `Last touched ${whenLabel(slot.updated_at)}` : 'Nothing touched yet'
+      }, 'touched')
+    ]
   })
 }
 
+
 /**
- * H-146 — the classroom rail. It is navigation, not a dashboard: up to four text tabs, one
- * `aria-current`, and the active classroom named in words underneath. Above four, the rail becomes
- * one labelled select rather than a wrapping card grid. A switch changes only shell state:
+ * H-146 — the classroom rail, kept as the classroom shelf: up to four tiles, one `aria-current`,
+ * and the active classroom named in words underneath. Above four, the shelf becomes one labelled
+ * select rather than a wrapping card grid. A switch changes only shell state:
  * `onSelect(course_id)` is a local selection, never `?profile=`, a host route read, or a backend
- * write. There are no avatars, covers or per-slot cards.
+ * write. Each tile carries only its own deterministic contour, name, recorded next stop and last
+ * touch.
  */
-function SlotRail({ hub, selected, onSelect, onShowAll }) {
+function SlotRail({ hub, selected, onSelect, onShowAll, onCreate }) {
   const all = hub && Array.isArray(hub.all) ? hub.all : []
   if (all.length === 0) return null
   const active = selected || all[0]
@@ -3204,10 +3256,28 @@ function SlotRail({ hub, selected, onSelect, onShowAll }) {
   const heading = (key) => jsxs('div', {
     style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
     children: [
-      jsx(DeskLabel, { children: 'Classroom' }, 'label'),
-      onShowAll
-        ? jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'All courses' }, 'all')
-        : null
+      jsx(DeskLabel, { children: 'Your other classrooms' }, 'label'),
+      jsxs('div', {
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem 0.75rem' },
+        children: [
+          onCreate
+            ? jsx('span', {
+                'data-cb-shelf-new-course': '',
+                style: { display: 'inline-flex', alignItems: 'center' },
+                children: jsx(sdk.Button, {
+                  variant: 'secondary',
+                  size: 'sm',
+                  style: { minHeight: '44px' },
+                  onClick: onCreate,
+                  children: 'New course'
+                })
+              }, 'new')
+            : null,
+          onShowAll
+            ? jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'All courses' }, 'all')
+            : null
+        ]
+      }, 'doors')
     ]
   }, key)
   const current = (key) => jsx('p', {
@@ -3227,23 +3297,34 @@ function SlotRail({ hub, selected, onSelect, onShowAll }) {
 
   let control
   if (all.length === 1) {
-    // One classroom is named, not turned into a control that can only select itself.
+    // One classroom is named, not turned into a control that can only select itself. It still
+    // carries its own cover, because one classroom is still a place.
     control = jsxs('div', {
       'data-cb-slot-rail': 'single',
       'data-cb-slot-single': active.course_id,
-      style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+      style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
       children: [
         heading('heading'),
-        jsx('span', {
-          style: {
-            fontFamily: CB_SANS,
-            fontSize: CB_TYPE.body,
-            fontWeight: 600,
-            color: 'var(--cb-ink)',
-            overflowWrap: 'break-word'
-          },
-          children: active.name
-        }, 'name'),
+        jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem', minWidth: 0 },
+          children: [
+            jsx('span', {
+              'aria-hidden': 'true',
+              style: { width: '5.5rem', height: '2.4rem', overflow: 'hidden', flex: '0 0 auto' },
+              children: jsx(CourseContour, { row: active.row, title: active.name, height: 38, opacity: 0.55 })
+            }, 'contour'),
+            jsx('span', {
+              style: {
+                fontFamily: CB_SANS,
+                fontSize: CB_TYPE.body,
+                fontWeight: 600,
+                color: 'var(--cb-ink)',
+                overflowWrap: 'break-word'
+              },
+              children: active.name
+            }, 'name')
+          ]
+        }, 'identity'),
         current('current'),
         disclosure('disclosure')
       ]
@@ -3300,7 +3381,7 @@ function SlotRail({ hub, selected, onSelect, onShowAll }) {
         jsx('nav', {
           'data-cb-classroom-tabs': '',
           'aria-label': 'Classrooms',
-          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.1rem 1.1rem', minWidth: 0 },
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.4rem', minWidth: 0 },
           children: all.map((slot) => {
             const isCurrent = slot.course_id === active.course_id
             return jsx(SlotTab, { slot, isCurrent, onSelect }, slot.course_id)
@@ -3314,137 +3395,501 @@ function SlotRail({ hub, selected, onSelect, onShowAll }) {
 
   return jsx('section', {
     'data-cb-slot-rail-section': '',
-    'aria-label': 'Classroom selection',
+    'data-cb-classroom-shelf': '',
+    'aria-label': 'Classroom shelf',
     style: { maxWidth: CB_MEASURE, minWidth: 0 },
     children: control
   })
 }
 
-/** One raised frame, not a card in a card: the Continue card is the only surface on the desk. */
-function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate }) {
+/* ── H-176 — the trailhead: course identity, companion and the trail ───────────────────────
+ * The plate is one object, not a card grid: a deterministic contour derived from the course id
+ * and title (so two classrooms never share a beige rectangle), the learner's own Hermes pet at
+ * the edge, one sentence naming the next stop, then one primary Continue. The contour is inline
+ * SVG and `aria-hidden`; the pet is drawn from the host's own `pet.info` seam and is absent when
+ * the host has no pet. Nothing here invents a fact, an avatar or a count.
+ */
+
+/** Deterministic ridge geometry: same course id/title paints the same three ridgelines. */
+function cbCourseContour(courseId, title) {
+  const seed = cbStableHash(`${courseId || ''}|${title || ''}`)
+  const ridges = []
+  for (let line = 0; line < 3; line += 1) {
+    const points = []
+    for (let step = 0; step <= 6; step += 1) {
+      const bit = (seed >>> ((line * 7 + step * 3) % 29)) & 7
+      const x = (200 / 6) * step
+      const y = 30 + line * 22 + (bit - 3) * 3 + (step % 2 ? 3 : -2)
+      points.push(`${x.toFixed(1)},${y.toFixed(1)}`)
+    }
+    ridges.push(`M${points.join(' L')}`)
+  }
+  return ridges
+}
+
+/** One course's contour. Decorative: the title beside it is the identity, not the drawing. */
+function CourseContour({ row, title, height, opacity }) {
+  const ridges = cbCourseContour(row && row.course_id, title || (row && row.title) || '')
+  const h = Number(height) || 120
+  return jsxs('svg', {
+    'data-cb-course-contour': row && row.course_id ? String(row.course_id) : '',
+    'aria-hidden': 'true',
+    focusable: 'false',
+    viewBox: '0 0 200 120',
+    preserveAspectRatio: 'none',
+    style: { display: 'block', width: '100%', height: `${h}px`, overflow: 'hidden' },
+    children: [
+      jsx('line', {
+        x1: 0,
+        y1: 102,
+        x2: 200,
+        y2: 102,
+        stroke: 'var(--cb-rule)',
+        strokeWidth: '1'
+      }, 'horizon'),
+      jsx('circle', {
+        cx: 170,
+        cy: 24,
+        r: 8,
+        fill: 'none',
+        stroke: 'var(--cb-lamp)',
+        strokeWidth: '1.5'
+      }, 'mark'),
+      ...ridges.map((d, index) =>
+        jsx('path', {
+          d,
+          fill: 'none',
+          stroke: index === 0 ? 'var(--cb-field)' : 'var(--cb-ink-soft)',
+          strokeWidth: index === 0 ? '1.5' : '1',
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          opacity: opacity === undefined ? 0.55 - index * 0.13 : opacity
+        }, `ridge-${index}`)
+      )
+    ]
+  })
+}
+
+/** Profile-scoped cache: one `pet.info` read and one decoded sheet per app session. */
+const CB_COMPANION_INFO = new Map()
+const CB_COMPANION_SHEETS = new Map()
+
+function cbCompanionProfile() {
+  // The live host profile wins; the plugin scope is only the fallback for an older host.
+  try {
+    const atom = sdk.host && sdk.host.state ? sdk.host.state.profile : null
+    const live = atom && typeof atom.get === 'function' ? atom.get() : null
+    if (live) return String(live)
+  } catch (error) {
+    // Fall through to the plugin scope.
+  }
+  try {
+    return currentScope().profile || 'default'
+  } catch (error) {
+    return 'default'
+  }
+}
+
+/** -32601 is "no such method": the host predates `pet.info.meta`, so ask the full method. */
+function cbHostMethodMissing(error) {
+  if (!error) return false
+  const code = error.code !== undefined ? error.code : error.error && error.error.code
+  if (code === -32601 || code === '-32601') return true
+  return /method not found|-32601/i.test(String(error.message || ''))
+}
+
+/**
+ * The learner's own Hermes pet, through the one supported host seam.
+ *
+ * Meta first (`pet.info.meta`), then the sheet (`pet.info`). A host without `host.request`, a
+ * disabled or absent pet, an unsupported older gateway and a failed read all resolve to `null`,
+ * and the plate simply carries no companion. The response is cached per live profile so a route
+ * change does not re-fetch a spritesheet.
+ */
+function useStudyCompanion(enabled) {
+  const profile = cbCompanionProfile()
+  const [pet, setPet] = useState(null)
+  useEffect(() => {
+    if (enabled === false) {
+      setPet(null)
+      return undefined
+    }
+    const request = sdk.host && typeof sdk.host.request === 'function' ? sdk.host.request : null
+    if (!request) {
+      setPet(null)
+      return undefined
+    }
+    if (CB_COMPANION_INFO.has(profile)) {
+      setPet(CB_COMPANION_INFO.get(profile))
+      return undefined
+    }
+    let cancelled = false
+    // Meta first: the lightweight answer says whether a pet is enabled without moving a sheet.
+    // A gateway that does not know `pet.info.meta` (-32601) falls through to the full read.
+    const read = (async () => {
+      let meta = null
+      try {
+        meta = await request('pet.info.meta', { profile })
+      } catch (error) {
+        if (!cbHostMethodMissing(error)) return null
+      }
+      if (meta && meta.enabled === false) return null
+      try {
+        return await request('pet.info', { profile })
+      } catch (error) {
+        return null
+      }
+    })()
+    read
+      .then((info) => {
+        const usable =
+          info &&
+          info.enabled === true &&
+          Boolean(info.spritesheetBase64) &&
+          Number(info.frameW) > 0 &&
+          Number(info.frameH) > 0
+            ? info
+            : null
+        CB_COMPANION_INFO.set(profile, usable)
+        if (!cancelled) setPet(usable)
+      })
+      .catch(() => {
+        CB_COMPANION_INFO.set(profile, null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [enabled, profile])
+  return pet
+}
+
+/**
+ * One frame of the real sheet: frame 0 of the row named `idle` in `stateRows` (row 0 when the
+ * host names no rows). Static by construction, so reduced motion needs no branch. The canvas is
+ * `aria-hidden`; the pet's own display name is the visible adjacent copy.
+ */
+function StudyCompanion({ info, size }) {
+  const canvasRef = useRef(null)
+  const px = Number(size) || 64
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !info) return undefined
+    const frameW = Number(info.frameW) || 0
+    const frameH = Number(info.frameH) || 0
+    if (!frameW || !frameH) return undefined
+    const rows = Array.isArray(info.stateRows) ? info.stateRows : []
+    const idle = rows.findIndex((row) => String(row).toLowerCase() === 'idle')
+    const row = idle >= 0 ? idle : 0
+    let cancelled = false
+    const paint = (image) => {
+      if (cancelled) return
+      try {
+        const ratio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1
+        canvas.width = Math.max(1, Math.round(px * ratio))
+        canvas.height = Math.max(1, Math.round(px * ratio))
+        const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null
+        if (!ctx) return
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(image, 0, row * frameH, frameW, frameH, 0, 0, canvas.width, canvas.height)
+      } catch (error) {
+        // A canvas that cannot paint is not a reason to lose the Continue action.
+      }
+    }
+    // The decoded sheet is the cache: once the image is in memory the base64 payload is dropped,
+    // so a spritesheet is not held twice for the life of the route.
+    const key = `${info.slug || ''}|${info.spritesheetRevision || ''}|${frameW}x${frameH}`
+    let image = CB_COMPANION_SHEETS.get(key)
+    if (!image) {
+      if (!info.spritesheetBase64 || typeof Image === 'undefined') return undefined
+      image = new Image()
+      image.onload = () => {
+        paint(image)
+        try {
+          delete info.spritesheetBase64
+        } catch (error) {
+          // A frozen response stays as-is; the image cache still owns the decode.
+        }
+      }
+      image.src = `data:${info.mime || 'image/webp'};base64,${info.spritesheetBase64}`
+      CB_COMPANION_SHEETS.set(key, image)
+    } else if (image.complete && image.naturalWidth > 0) {
+      paint(image)
+    } else if (typeof image.addEventListener === 'function') {
+      const onLoad = () => paint(image)
+      image.addEventListener('load', onLoad)
+      return () => {
+        cancelled = true
+        image.removeEventListener('load', onLoad)
+      }
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [info, px])
+  return jsxs('div', {
+    'data-cb-companion': 'ready',
+    'data-cb-companion-motion': 'static',
+    style: { display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 },
+    children: [
+      jsx('canvas', {
+        ref: canvasRef,
+        'aria-hidden': 'true',
+        width: px,
+        height: px,
+        style: { width: `${px}px`, height: `${px}px`, flex: '0 0 auto' }
+      }, 'canvas'),
+      jsx('span', {
+        'data-cb-companion-name': '',
+        style: {
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.caption,
+          lineHeight: 1.35,
+          color: 'var(--cb-ink-soft)',
+          maxWidth: '12ch'
+        },
+        children: info.displayName ? `${info.displayName} · study companion` : 'Your study companion'
+      }, 'name')
+    ]
+  })
+}
+
+/** What the learner will actually do at the recorded stop, in the backend's own term. */
+function cbNextStopSentence(kind) {
+  if (kind === 'resolve_review_due') return ' is due for another check. Answer it once to bring the evidence up to date.'
+  if (kind === 'resume_lesson') return '. Pick up where you stopped and finish this section.'
+  if (kind === 'start_lesson') return '. Work through this section, then finish its check.'
+  if (kind === 'review_plan') return '. Read the recorded plan before the first lesson starts.'
+  if (kind === 'review_pack') return '. Check the imported pack before it becomes a course.'
+  return '. Open it to see what this course records next.'
+}
+
+/** The one empty/error state plate: same field, same top edge, exactly one next action. */
+function TrailheadStatePlate({ state, children }) {
+  return jsxs('section', {
+    'data-cb-trailhead-state': state,
+    style: {
+      width: '100%',
+      maxWidth: '46rem',
+      margin: '0 auto',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.8rem',
+      padding: '1rem 1.1rem 1.1rem',
+      background: 'var(--cb-lamp-soft)',
+      borderTop: '3px solid var(--cb-lamp)',
+      boxSizing: 'border-box'
+    },
+    children: [
+      jsx('div', {
+        'aria-hidden': 'true',
+        style: { height: '56px', opacity: 0.45, pointerEvents: 'none' },
+        children: jsx(CourseContour, { height: 56 })
+      }, 'ghost'),
+      children
+    ]
+  })
+}
+
+function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetryEstimate, companionEnabled }) {
   const current = desk.current
   const title = current ? current.title : desk.nextLabel
   const courseTitle = desk.row && desk.row.title ? desk.row.title : null
-  // At a genuinely narrow route the stamp would steal the last usable line length from the title.
-  // Keep it on the wide desk, where it reads as a course cover; drop it when the text must lead.
   const viewportWidth = useCbViewportWidth()
   const compact = viewportWidth > 0 && viewportWidth < 620
   // A lesson start needs a section id. Plan/review/pack next steps open Course Detail and do not,
   // so a failed outline read never disables the one primary action.
   const needsSection = desk.primaryKind === 'start_lesson' || desk.primaryKind === 'resume_lesson'
   const canPrimary = Boolean(desk.row) && (Boolean(current) || !needsSection)
-  return jsxs('section', {
-    'data-cb-continue': '',
-    'data-cb-continue-compact': compact ? 'true' : 'false',
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.65rem',
-      padding: compact ? '0.9rem 0.95rem' : '1.1rem 1.2rem 1.15rem',
-      background: 'var(--cb-lamp-soft)',
-      border: 'none',
-      borderTop: '1px solid var(--cb-lamp)',
-      maxWidth: '100%',
-      boxSizing: 'border-box'
-    },
+  // A parent-authored classroom is still a classroom: the plate takes the plum seal and the
+  // same composition. The companion is the adult's own pet, never an invented child avatar.
+  const isParent = Boolean(desk.row && desk.row.recipe === 'parent')
+  const pet = useStudyCompanion(companionEnabled !== false)
+  const companion = pet ? jsx(StudyCompanion, { info: pet, size: compact ? 44 : 64 }, 'companion') : null
+  const label = desk.primaryKind === 'resolve_review_due' ? 'THE REVIEW IS DUE' : 'CONTINUE THE TRAIL'
+  const sentence = cbNextStopSentence(desk.primaryKind)
+  const plateField = isParent ? 'var(--cb-plum-soft)' : 'var(--cb-lamp-soft)'
+  const plateEdge = isParent ? 'var(--cb-plum)' : 'var(--cb-lamp)'
+  const copy = jsxs('div', {
+    style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0 },
     children: [
       jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem 1rem' },
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.75rem', minWidth: 0 },
         children: [
-          jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', minWidth: 0, flex: '1 1 16rem' },
-            children: [
-              jsx(DeskLabel, { children: desk.primaryKind === 'resolve_review_due' ? 'Review due' : desk.primaryKind === 'start_lesson' ? 'Start here' : 'Continue' }),
-              courseTitle
-                ? jsx('div', {
-                    'data-cb-desk-course': '',
-                    style: {
-                      fontFamily: CB_SANS,
-                      fontSize: CB_TYPE.caption,
-                      fontWeight: 600,
-                      letterSpacing: '0.02em',
-                      lineHeight: 1.4,
-                      color: 'var(--cb-ink-soft)',
-                      overflowWrap: 'break-word'
-                    },
-                    children: courseTitle
-                  })
-                : null,
-              jsx('h2', {
-                'data-cb-continue-section': '',
-                style: {
-                  margin: 0,
-                  fontFamily: CB_SERIF,
-                  fontSize: compact ? CB_TYPE.heading : CB_TYPE.heading,
-                  fontWeight: 600,
-                  lineHeight: 1.12,
-                  letterSpacing: '-0.015em',
-                  color: 'var(--cb-ink)',
-                  maxWidth: '20ch',
-                  overflowWrap: 'break-word'
-                },
-                children: title
-              }),
-              jsxs('div', {
-                style: {
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  alignItems: 'baseline',
-                  gap: '0.2rem 0.85rem',
-                  fontSize: CB_TYPE.caption,
-                  color: 'var(--cb-ink-soft)'
-                },
-                children: [
-                  desk.sectionLabel
-                    ? jsx('span', { 'data-cb-continue-position': '', children: desk.sectionLabel })
-                    : null,
-                  jsx('span', {
-                    'data-cb-continue-minutes': '',
-                    'data-cb-continue-minutes-state': desk.estimateState || 'none',
-                    title:
-                      desk.estimateState === 'error' && desk.estimateError && desk.estimateError.code
-                        ? `${desk.estimateError.code}: ${desk.estimateError.message || ''}`.trim()
-                        : undefined,
-                    style: desk.estimateState === 'error' ? { color: 'var(--cb-ochre)' } : undefined,
-                    children: desk.estimateLabel
-                  }),
-                  desk.estimateState === 'error'
-                    ? jsx(CbAction, {
-                        variant: 'tertiary',
-                        onClick: onRetryEstimate,
-                        'aria-label': 'Retry reading the session length',
-                        children: 'Retry'
-                      })
-                    : null,
-                  jsx('span', {
-                    'data-cb-continue-touched': desk.touchedSource || 'none',
-                    children: desk.lastTouched ? `Last touched ${whenLabel(desk.lastTouched)}` : 'Nothing touched yet'
-                  })
-                ]
-              }),
-              jsx(DeskProgress, { objectives: desk.objectives }),
-              jsx(DeskFacts, { desk })
-            ]
-          })
+          jsx('span', {
+            'data-cb-trailhead-label': '',
+            style: {
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              color: isParent ? 'var(--cb-plum)' : 'var(--cb-ink-soft)'
+            },
+            children: label
+          }, 'label'),
+          compact ? companion : null
         ]
       }),
+      // The course title is the identity; the next stop is the sentence underneath. Two lines is
+      // the ceiling at every width (FINAL-POLISH-SPEC §3) so a long authored name cannot push the
+      // one action off the plate; at narrow the title takes the copy width before it clamps.
+      jsx('h2', {
+        'data-cb-desk-course': '',
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: compact ? CB_TYPE.lead : CB_TYPE.heading,
+          fontWeight: 600,
+          letterSpacing: '-0.015em',
+          color: 'var(--cb-ink)',
+          maxWidth: compact ? '100%' : '26ch',
+          overflowWrap: 'break-word',
+          lineHeight: 1.3,
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden'
+        },
+        children: courseTitle || title
+      }, 'title'),
+      jsxs('p', {
+        'data-cb-trailhead-next': '',
+        style: {
+          margin: 0,
+          maxWidth: '54ch',
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.body,
+          lineHeight: 1.55,
+          color: 'var(--cb-ink)',
+          overflowWrap: 'break-word'
+        },
+        children: [
+          desk.sectionLabel
+            ? jsx('span', { 'data-cb-continue-position': '', children: desk.sectionLabel }, 'position')
+            : null,
+          desk.sectionLabel ? jsx('span', { children: ' · ' }, 'dot') : null,
+          jsx('span', { 'data-cb-continue-section': '', style: { fontWeight: 600 }, children: title }, 'stop'),
+          jsx('span', { children: sentence }, 'rest')
+        ]
+      }, 'next'),
       jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem', paddingTop: '0.2rem' },
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'baseline',
+          gap: '0.2rem 0.85rem',
+          fontSize: CB_TYPE.caption,
+          color: 'var(--cb-ink-soft)'
+        },
+        children: [
+          jsx('span', {
+            'data-cb-continue-minutes': '',
+            'data-cb-continue-minutes-state': desk.estimateState || 'none',
+            title:
+              desk.estimateState === 'error' && desk.estimateError && desk.estimateError.code
+                ? `${desk.estimateError.code}: ${desk.estimateError.message || ''}`.trim()
+                : undefined,
+            style: desk.estimateState === 'error' ? { color: 'var(--cb-ochre)' } : undefined,
+            children: desk.estimateLabel
+          }, 'estimate'),
+          desk.estimateState === 'error'
+            ? jsx(CbAction, {
+                variant: 'tertiary',
+                onClick: onRetryEstimate,
+                'aria-label': 'Retry reading the session length',
+                children: 'Retry'
+              }, 'retry')
+            : null,
+          jsx('span', {
+            'data-cb-continue-touched': desk.touchedSource || 'none',
+            children: desk.lastTouched ? `Last touched ${whenLabel(desk.lastTouched)}` : 'Nothing touched yet'
+          }, 'touched')
+        ]
+      }, 'meta'),
+      jsxs('div', {
+        'data-cb-trailhead-actions': '',
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', paddingTop: '0.15rem' },
         children: [
           jsx(CbAction, {
             variant: 'primary',
             disabled: Boolean(busy) || !canPrimary,
             onClick: onPrimary,
             children: busy ? 'Opening' : desk.primaryLabel
-          }),
+          }, 'primary'),
           jsx(CbAction, {
             variant: 'secondary',
             disabled: !current,
             onClick: () => onOpenSection(current ? current.objective_id : null),
-            children: 'Open the section'
-          })
+            children: 'Open section'
+          }, 'section'),
+          onSeePlan
+            ? jsx(CbAction, {
+                variant: 'tertiary',
+                'data-cb-trailhead-see-plan': '',
+                onClick: onSeePlan,
+                children: 'See the plan'
+              }, 'plan')
+            : null
         ]
-      })
+      }, 'actions'),
+      // Counts come after the action, and only the counts the backend recorded.
+      jsx(DeskFacts, { desk }, 'facts')
+    ]
+  }, 'copy')
+  return jsxs('section', {
+    'data-cb-continue': '',
+    'data-cb-trailhead': '',
+    'data-cb-continue-compact': compact ? 'true' : 'false',
+    'data-cb-trail-palette': isParent ? 'parent' : 'learner',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.7rem',
+      padding: compact ? '0.9rem 0.95rem' : '1.1rem 1.2rem 1.15rem',
+      background: plateField,
+      border: 'none',
+      borderTop: `3px solid ${plateEdge}`,
+      maxWidth: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box'
+    },
+    children: [
+      compact
+        ? jsx('div', {
+            'aria-hidden': 'true',
+            style: { height: '26px', opacity: 0.5 },
+            children: jsx(CourseContour, { row: desk.row, title: courseTitle, height: 26 })
+          }, 'band')
+        : null,
+      jsxs('div', {
+        style: compact
+          ? { display: 'flex', flexDirection: 'column', gap: '0.7rem', minWidth: 0 }
+          : {
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) minmax(9rem, 14rem)',
+              gap: '1rem',
+              alignItems: 'start',
+              minWidth: 0
+            },
+        children: [
+          copy,
+          compact
+            ? null
+            : jsxs('div', {
+                'data-cb-trailhead-edge': '',
+                style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem', minWidth: 0 },
+                children: [
+                  jsx('div', {
+                    'aria-hidden': 'true',
+                    style: { width: '100%', height: '88px', opacity: 0.6 },
+                    children: jsx(CourseContour, { row: desk.row, title: courseTitle, height: 88 })
+                  }, 'contour'),
+                  companion
+                ]
+              }, 'edge')
+        ]
+      }, 'body')
     ]
   })
 }
@@ -4462,6 +4907,28 @@ function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose 
           jsx(
             CbSettingsSection,
             {
+              id: 'companion',
+              title: 'Study companion',
+              description:
+                'The Hermes pet already installed in this profile can stand at the trailhead. Coursebook never draws a different avatar, and the companion is never a progress marker.',
+              resetLabel: 'Reset the study companion to shown',
+              atDefault: prefs.companion === CB_HOME_PREF_DEFAULTS.companion,
+              onReset: () => onReset('companion'),
+              children: jsx('div', {
+                'data-cb-settings-toggle': 'companion',
+                children: jsx(sdk.ToggleRow, {
+                  checked: prefs.companion === true,
+                  label: 'Show my study companion',
+                  description: 'Your own Hermes pet beside the trailhead. Off leaves the plate without a companion.',
+                  onChange: (on) => onUpdate({ companion: on === true })
+                })
+              })
+            },
+            'companion'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
               id: 'haptics',
               title: 'Haptics',
               description:
@@ -4554,21 +5021,9 @@ function HomeDefaultsLine({ prefs, classroom, onOpenSettings, triggerRef }) {
         'data-cb-session-minutes': String(prefs.sessionMinutes),
         style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
         children: `· Session · ${prefs.sessionMinutes} min`
-      }),
-      jsx('span', {
-        ref: triggerRef,
-        style: { display: 'inline-flex', alignItems: 'center' },
-        children: jsx(sdk.Button, {
-          size: 'sm',
-          variant: 'ghost',
-          'data-cb-settings-open': '',
-          'aria-label': 'Open Coursebook settings',
-          'aria-haspopup': 'dialog',
-          style: { minHeight: '44px' },
-          onClick: onOpenSettings,
-          children: 'Settings'
-        })
       })
+      // H-176: Settings is the route header's small labelled control now, not a third item on
+      // this line. The line still names the effective defaults without opening anything.
     ]
   })
 }
@@ -4645,7 +5100,9 @@ function FieldDeskHome({
   onRetryOutline,
   implemented,
   onBrowseLibrary,
-  onEmptyChange
+  onEmptyChange,
+  companionEnabled,
+  onSeePlan
 }) {
   const width = useCbViewportWidth()
   const wide = cbLayoutFor(width) === 'wide'
@@ -4658,18 +5115,23 @@ function FieldDeskHome({
   }, [emptyFirstRun, onEmptyChange])
 
   if (libraryStatus === 'loading' && !desk.row) {
-    // A spinner alone says nothing a cold learner can name; the visible line says what is being
-    // read and that nothing is lost while it is read (H-153, Q7/Q10).
-    return jsxs('div', {
+    // The plate keeps its geometry while the read is in flight: one restrained line, no shimmer.
+    return jsx('div', {
       'data-cb-desk': 'loading',
-      className: 'flex flex-col items-center gap-3 py-10',
-      children: [
-        jsx(sdk.Loader, { label: 'Reading your courses' }),
-        jsx('p', {
-          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
-          children: 'Reading your courses.'
+      children: jsx(TrailheadStatePlate, {
+        state: 'loading',
+        children: jsxs('div', {
+          className: 'flex flex-col items-center gap-3 py-8',
+          children: [
+            jsx(sdk.Loader, { label: 'Reading the trail' }),
+            jsx('p', {
+              'data-cb-trailhead-loading-line': '',
+              style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+              children: 'Reading the trail… nothing already saved is lost.'
+            })
+          ]
         })
-      ]
+      })
     })
   }
   if (libraryStatus === 'idle' && !desk.row) {
@@ -4677,22 +5139,18 @@ function FieldDeskHome({
     // of the route going blank (UX_SPEC §13 unsupported backend, H-153).
     return jsx('div', {
       'data-cb-desk': 'unavailable',
-      children: jsx(FirstRun, { implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry })
+      children: jsx(FirstRun, { implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry, companionEnabled })
     })
   }
   if (libraryStatus === 'error' && !desk.row) {
     return jsx('div', {
       'data-cb-desk': 'error',
-      className: 'mx-auto w-full max-w-xl py-6',
-      children: jsxs(sdk.ErrorState, {
-        title: 'The Field Desk could not read your courses',
-        description: `${libraryError && libraryError.code ? libraryError.code + ': ' : ''}${describeError(libraryError)} This desk will not show an empty course in place of a failed read.`,
-        children: jsxs('div', {
-          className: 'flex flex-wrap items-center justify-center gap-2',
-          children: [
-            jsx(CbAction, { variant: 'primary', onClick: onRetry, children: 'Try again' }),
-            jsx(CbAction, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
-          ]
+      children: jsx(TrailheadStatePlate, {
+        state: 'error',
+        children: jsxs(sdk.ErrorState, {
+          title: 'The trailhead could not read your courses',
+          description: `${libraryError && libraryError.code ? libraryError.code + ': ' : ''}${describeError(libraryError)} This desk will not show an empty course in place of a failed read.`,
+          children: jsx(CbAction, { variant: 'primary', onClick: onRetry, children: 'Try again' })
         })
       })
     })
@@ -4704,15 +5162,17 @@ function FieldDeskHome({
     if (desk.hub.rowTotal > 0) {
       return jsx('div', {
         'data-cb-desk': 'parent-only',
-        className: 'py-6',
-        children: jsxs(EmptyState, {
-          title: 'Parent Studio holds your lesson plans.',
-          description:
-            'This profile has parent-led lesson plans, not a learner classroom. Continue belongs to a learner classroom.',
-          children: jsx(CbAction, {
-            variant: 'primary',
-            onClick: onOpenStudio,
-            children: 'Open Parent Studio'
+        children: jsx(TrailheadStatePlate, {
+          state: 'parent-only',
+          children: jsxs(EmptyState, {
+            title: 'Parent Studio holds your lesson plans.',
+            description:
+              'This profile has parent-led lesson plans, not a learner classroom. Continue belongs to a learner classroom.',
+            children: jsx(CbAction, {
+              variant: 'primary',
+              onClick: onOpenStudio,
+              children: 'Open Parent Studio'
+            })
           })
         })
       })
@@ -4720,11 +5180,13 @@ function FieldDeskHome({
     if (libraryEmptyReason === 'all_archived') {
       return jsx('div', {
         'data-cb-desk': 'archived',
-        className: 'py-6',
-        children: jsxs(EmptyState, {
-          title: 'Every classroom here is archived.',
-          description: 'Archived courses keep their evidence. Unarchive one in Courses to continue it.',
-          children: jsx(sdk.Button, { variant: 'secondary', onClick: onShowAll, children: 'Open courses' })
+        children: jsx(TrailheadStatePlate, {
+          state: 'archived',
+          children: jsxs(EmptyState, {
+            title: 'Every classroom here is archived.',
+            description: 'Archived courses keep their evidence. Unarchive one in Courses to continue it.',
+            children: jsx(CbAction, { variant: 'primary', onClick: onShowAll, children: 'Open courses' })
+          })
         })
       })
     }
@@ -4735,18 +5197,24 @@ function FieldDeskHome({
         onCreate,
         onSyllabus,
         onBrowseLibrary,
-        onRetry
+        onRetry,
+        companionEnabled
       })
     })
   }
 
-  const railCard = jsx(SlotRail, {
+  const shelfCard = jsx(SlotRail, {
     hub: desk.hub,
     selected: desk.selected,
     onSelect: onSelectCourse,
-    onShowAll
+    onShowAll,
+    onCreate
   }, 'rail')
-  const continueCard = jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection, onRetryEstimate }, 'continue')
+  const continueCard = jsx(
+    ContinueCard,
+    { desk, busy, onPrimary, onOpenSection, onSeePlan, onRetryEstimate, companionEnabled },
+    'continue'
+  )
   const notesCard = jsx(FieldNotesStrip, {
     notes,
     courseTitle: desk.row && desk.row.title ? desk.row.title : null,
@@ -4773,15 +5241,17 @@ function FieldDeskHome({
     sources,
     onRetry: onRetrySources
   }, 'sources')
-  const mainColumn = jsxs('div', {
+  const trailColumn = jsxs('div', {
+    'data-cb-trail': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: 0, width: '100%' },
+    children: [continueCard, pathCard]
+  }, 'trail')
+  // The shelf and the field notes are below the first viewport; sources stay a drawer. One
+  // content column, not a rail beside a table: the trail is one object.
+  const belowColumn = jsxs('div', {
     style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, maxWidth: CB_MEASURE },
-    children: [railCard, continueCard, pathCard, sourcesCard]
-  }, 'main')
-  const sideColumn = jsxs('aside', {
-    'aria-label': 'Field notes',
-    style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, maxWidth: CB_MEASURE },
-    children: [notesCard]
-  }, 'side')
+    children: [shelfCard, notesCard, sourcesCard]
+  }, 'below')
 
   return jsxs('div', {
     'data-cb-desk': 'ready',
@@ -4815,20 +5285,10 @@ function FieldDeskHome({
           }, 'selection')
         : null,
       notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }, 'notice') : null,
-      wide
-        ? jsxs('div', {
-            style: {
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1.2fr) minmax(19rem, 0.8fr)',
-              gap: '1rem',
-              alignItems: 'start'
-            },
-            children: [mainColumn, sideColumn]
-          }, 'layout')
-        : jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
-            children: [railCard, continueCard, notesCard, pathCard, sourcesCard]
-          }, 'layout')
+      jsxs('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: '1.1rem', minWidth: 0, width: '100%' },
+        children: [trailColumn, belowColumn]
+      }, 'layout')
     ]
   })
 }
@@ -4932,7 +5392,8 @@ function FieldDesk({
   onOpenStudio,
   onBrowseLibrary,
   onSelectedClassroom,
-  online
+  online,
+  prefs
 }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const payload = { filter: 'all', limit: 50, sort: 'recent' }
@@ -5064,6 +5525,8 @@ function FieldDesk({
     onSyllabus: onStartSyllabus,
     onPrimary,
     onOpenSection: (objectiveId, blockId) => onOpen(desk.row, objectiveId, blockId),
+    onSeePlan: () => onOpen(desk.row),
+    companionEnabled: !prefs || prefs.companion !== false,
     onRetryEstimate,
     onSelectCourse,
     onOpenStudio,
@@ -22620,6 +23083,7 @@ function CoursebookPage() {
       implemented,
       profile: currentScope().profile,
       online,
+      prefs: homePrefs,
       selectedCourseId,
       onSelectCourse: setSelectedCourseId,
       onSelectedClassroom: setHomeClassroom,
@@ -22704,6 +23168,24 @@ function CoursebookPage() {
                 children: [
                   online ? null : jsx(sdk.Badge, { variant: 'warn', children: 'Offline' }),
                   statusCopy ? jsx(sdk.Badge, { variant: health.status === 'unavailable' ? 'warn' : 'muted', children: statusCopy }) : null,
+                  // H-176 — Settings is a small labelled control in the top-right of the
+                  // trailhead, outside the action row. It is not a second primary.
+                  destination === 'home' && !openCourse
+                    ? jsx('span', {
+                        ref: settingsTriggerRef,
+                        style: { display: 'inline-flex', alignItems: 'center' },
+                        children: jsx(sdk.Button, {
+                          size: 'sm',
+                          variant: 'ghost',
+                          'data-cb-settings-open': '',
+                          'aria-label': 'Open Coursebook settings',
+                          'aria-haspopup': 'dialog',
+                          style: { minHeight: '44px' },
+                          onClick: openSettings,
+                          children: 'Settings'
+                        })
+                      }, 'settings')
+                    : null,
                   // H-160: UX_SPEC §4 names Courses' page-header primary as **New course**; H-151
                   // measured zero primaries here because this call site was still `secondary`.
                   // Only one eligibility check owns it (non-empty catalog, so FirstRun's own
@@ -23283,6 +23765,10 @@ export {
   cbShelfFingerprint,
   cbShelfGroupKey,
   cbStableHash,
+  cbCourseContour,
+  CourseContour,
+  cbNextStopSentence,
+  StudyCompanion,
   CourseCover,
   PackShelfRow,
   PackShelfSplit,

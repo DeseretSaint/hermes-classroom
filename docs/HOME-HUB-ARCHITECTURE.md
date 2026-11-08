@@ -212,7 +212,9 @@ Existing suites that must stay green: `test_desktop_field_desk.py`, `test_deskto
 
 ## 10. Refusals
 
-The hub will not: invent a learner profile, account or avatar; show two slots for one course;
+The hub will not: invent a learner profile, account or avatar (the only companion is the learner's
+own Hermes pet, read through `host.request('pet.info')`; if the host has none, the plate shows no
+avatar); show two slots for one course;
 count override as evidence; show a mastery percentage, ring, streak, XP, level or badge; lock a
 section; draw a cumulative checkpoint the backend cannot record; call the newest row “last played”;
 persist a selection as progress; move a parent course into the learner rail; or switch the Hermes

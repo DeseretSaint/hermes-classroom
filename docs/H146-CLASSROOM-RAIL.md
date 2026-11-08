@@ -29,7 +29,10 @@ started capturing.
 - a switch is shell state only (`onSelect(course_id)`); it re-keys Continue, `course.outline` and
   `lesson.page`, and never touches `?profile=` or the backend. `Showing <name>` states the active
   classroom in words beneath the control;
-- no avatars, covers, seals or card grid.
+- no invented avatars, monogram-only covers, seals or card grid. Each classroom carries a
+  deterministic `aria-hidden` contour derived from its id/title, and the learner's own Hermes pet
+  may stand beside the trailhead through `host.request('pet.info')`; when the host has no pet
+  nothing is drawn (2026-11-08 amendment, H-176).
 
 ## Capture method
 

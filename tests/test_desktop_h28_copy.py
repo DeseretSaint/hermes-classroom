@@ -250,9 +250,16 @@ class FirstRunCopyTest(unittest.TestCase):
                 self.assertNotIn(banned, html, kind)
 
     def test_the_plate_carries_no_seal_or_decorative_mark(self) -> None:
+        # H-176 (FINAL-POLISH-SPEC §3) amends H-28: first-run carries one deterministic,
+        # `aria-hidden` contour ghost so the empty trailhead still reads as a place. It is not a
+        # seal, a monogram cover or an avatar image, and it is never the only identity on screen.
         html = self.out["html"]
-        self.assertNotIn("<svg", html)
         self.assertNotIn("data-cb-seal", html)
+        self.assertNotIn("<img", html)
+        self.assertEqual(html.count("data-cb-first-run-contour"), 1, html)
+        self.assertEqual(html.count("<svg"), 1, html)
+        self.assertIn('data-cb-first-run-contour="" aria-hidden="true"', html)
+        self.assertIn('data-cb-course-contour', html)
 
     def test_no_tour_no_sample_course_no_praise(self) -> None:
         html = self.out["html"]

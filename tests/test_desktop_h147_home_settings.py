@@ -488,7 +488,7 @@ class HomeSettingsSheetTest(Harness):
         self.assertEqual(opened["scopeLabel"], "On this device")
         self.assertEqual(
             opened["sections"],
-            ["appearance", "default-view", "classroom", "child-safe", "sound", "haptics", "reduced-motion"],
+            ["appearance", "default-view", "classroom", "child-safe", "sound", "companion", "haptics", "reduced-motion"],
         )
         for label in opened["sectionLabels"]:
             self.assertEqual(label["id"], label["headingId"])
@@ -804,6 +804,7 @@ class SettingsModelTest(Harness):
                 "sound": False,
                 "reducedMotion": "system",
                 "sessionMinutes": 15,
+                "companion": True,
                 "classrooms": {},
             },
         )

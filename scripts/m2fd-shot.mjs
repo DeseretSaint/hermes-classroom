@@ -106,6 +106,28 @@ const MEASURE = `(() => {
     desk_state: desk ? desk.getAttribute('data-cb-desk') : null,
     continue_present: Boolean(cont),
     continue_width_px: cont ? Math.round(cont.getBoundingClientRect().width) : null,
+    trailhead_label: (document.querySelector('[data-cb-trailhead-label]') || {}).innerText || null,
+    course_title: (document.querySelector('[data-cb-desk-course]') || {}).innerText || null,
+    course_title_lines: (() => {
+      const node = document.querySelector('[data-cb-desk-course]')
+      if (!node) return null
+      const size = parseFloat(getComputedStyle(node).lineHeight)
+      return size ? Math.round(node.getBoundingClientRect().height / size) : null
+    })(),
+    next_stop: (document.querySelector('[data-cb-trailhead-next]') || {}).innerText || null,
+    trailhead_actions: [...document.querySelectorAll('[data-cb-trailhead-actions] button')].map((b) => (b.innerText || '').trim()),
+    trailhead_action_rows: document.querySelectorAll('[data-cb-trailhead-actions]').length,
+    contours: document.querySelectorAll('[data-cb-course-contour]').length,
+    first_run_contour: Boolean(document.querySelector('[data-cb-first-run-contour]')),
+    companion_present: Boolean(document.querySelector('[data-cb-companion] canvas')),
+    companion_motion: (document.querySelector('[data-cb-companion]') || {}).getAttribute?.('data-cb-companion-motion') || null,
+    shelf_courses: document.querySelectorAll('[data-cb-slot-tab]').length,
+    trailhead_order: (() => {
+      const path = document.querySelector('[data-cb-path]')
+      const shelf = document.querySelector('[data-cb-slot-rail-section]')
+      const top = (node) => (node ? Math.round(node.getBoundingClientRect().top) : null)
+      return { plate: top(cont), path: top(path), shelf: top(shelf) }
+    })(),
     continue_section: title ? (title.innerText || '').trim() : null,
     continue_section_font_px: titleStyle ? titleStyle.fontSize : null,
     continue_section_line_height: titleStyle ? titleStyle.lineHeight : null,

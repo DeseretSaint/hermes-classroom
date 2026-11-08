@@ -110,7 +110,12 @@ const facts = () =>
       parentLeak: /Parent demo|H103 live reject check/.test(main ? main.innerText : ''),
       allCourses: document.querySelectorAll('[data-cb-all-courses]').length,
       covers: document.querySelectorAll('[data-cb-course-cover],[data-cb-course-stamp]').length,
-      avatars: document.querySelectorAll('img[alt=""], .avatar').length,
+      // H-176: a course contour is identity, not a generated cover; the companion is the learner's
+      // own Hermes pet drawn to a canvas, not an invented avatar image. Record both so a visual
+      // gate does not read either as the old H-145 "seal/avatar" regression.
+      contours: document.querySelectorAll('[data-cb-course-contour]').length,
+      companions: document.querySelectorAll('[data-cb-companion]').length,
+      avatars: document.querySelectorAll('img[alt=""]:not([data-cb-companion] img), .avatar').length,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       h1: document.querySelectorAll('h1').length,
       emptyOrError: main ? main.getAttribute('data-cb-desk') : null,

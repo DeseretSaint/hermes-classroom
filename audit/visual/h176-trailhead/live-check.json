@@ -1,0 +1,185 @@
+{
+  "rig": "9376",
+  "generated_at": "2026-11-08T16:04:56.507Z",
+  "steps": [
+    {
+      "step": "settings-companion",
+      "open": true,
+      "label": "Show my study companionYour own Hermes pet beside the trailhead. Off leaves the plate without a companion.",
+      "checked": "true"
+    },
+    {
+      "step": "home",
+      "width": 1049,
+      "desk": "ready",
+      "plate": true,
+      "label": "THE REVIEW IS DUE",
+      "course": "Japanese affection and register — an L0 demonstration classroom",
+      "titleLines": 2,
+      "sentence": "Section 1 of 4 · Tell everyday affection from a direct romantic declaration is due for another check. Answer it once to bring the evidence up to date.",
+      "background": "rgb(51, 41, 15)",
+      "routeWidth": 567,
+      "titleMeasure": {
+        "height": 47,
+        "lineHeight": "23.4px",
+        "clamp": "2",
+        "display": "flow-root",
+        "scrollHeight": 47,
+        "clientHeight": 47
+      },
+      "topEdge": "2.2312px rgb(239, 192, 107)",
+      "actionRows": 1,
+      "buttons": [
+        {
+          "label": "Start the review",
+          "disabled": false
+        },
+        {
+          "label": "Open section",
+          "disabled": false
+        },
+        {
+          "label": "See the plan",
+          "disabled": false
+        }
+      ],
+      "companion": false,
+      "companionMotion": null,
+      "pathItems": 4,
+      "order": {
+        "plateTop": 196,
+        "pathTop": 541,
+        "shelfTop": 1296
+      },
+      "shelfCourses": 2,
+      "courseDetail": false,
+      "detailView": null,
+      "lessonView": null,
+      "nav": [
+        "Skip to course contentCoursebookHomeDefault view · Game· Child-safe defaults· Session · 15 minSettingsHomeCoursesLibraryParent StudioTHE REVIEW IS DUEJapanese affection and register — an L0 demonstration classroomSection 1 of 4 · Tell everyday affection from a direct romantic declaration is due for another check. Answer it once to bring the evidence up to date.≈ 8 minLast touched 9 hr agoStart the reviewOpen sectionSee the planNeeds reviewThis section·0 of 4With evidence·3Due nowThe routeJapanese affection and register — an L0 demonstration classroom0 of 4 sections with evidence · 3 due01Tell everyday affection from a direct romantic declarationNeeds reviewCheck openDetails for checkpoint 1Evidence targetTell the differenceCommitted attempts23 committed attemptsLast opened9 hr agoCheckCheck open02Choose the polite expression for a first confessionNeeds reviewCheck openDetails for checkpoint 2Evidence targetExplain itCommitted attempts2 committed attemptsLast opened2 d agoCheckCheck open03Recall the intimate declaration in a new contextNeeds reviewCheck openDetails for checkpoint 3Evidence targetRemember itCommitted attempts2 committed attemptsLast opened2 d agoCheckCheck open04Explain why register changes with the relationshipOverriddenCheck openDetails for checkpoint 4Evidence targetUse it somewhere newCommitted attempts1 committed attemptLast opened2 d agoCheckCheck openYour other classroomsNew courseAll coursesJapanese affection and register — an L0 demonstration classroomReview 3 objective(s)Last touched 9 hr agoH103 live failure checkReview and approve the planLast touched 12 hr agoShowing Japanese affection and register — an L0 demonstration classroomField Notes11 saved · showing the last 4All field notesLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession.lesson_segmentloop-proof-d7d0leditedSection · Choose the polite expression for a first confessionJapanese affection and register — an L0 demonstration classroomsaved 2 d agoOpen in textbookLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection.lesson_segmentloop-proof-d3xq2Section · Choose the polite expression for a first confessionJapanese affection and register — an L0 demonstration classroomsaved 2 d agoOpen in textbookLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession.lesson_segmentloop-proof-ci4creditedSection · Choose the polite expression for a first confessionJapanese affection and register — an L0 demonstration classroomsaved 2 d agoOpen in textbookSection 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a…cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession.lesson_segmentloop-proof-bxkg6editedSection · Recall the intimate declaration in a new contextJapanese affection and register — an L0 demonstration classroomsaved 2 d agoOpen in textbookShow sourcesSources for “Tell everyday affection from a direct romantic declaration”"
+      ],
+      "animations": 0,
+      "overflow": 0
+    },
+    {
+      "step": "primary-opened",
+      "width": 1049,
+      "desk": null,
+      "plate": false,
+      "label": null,
+      "course": null,
+      "titleLines": null,
+      "sentence": null,
+      "background": null,
+      "routeWidth": 567,
+      "titleMeasure": null,
+      "topEdge": null,
+      "actionRows": 0,
+      "buttons": [],
+      "companion": false,
+      "companionMotion": null,
+      "pathItems": 0,
+      "order": {
+        "plateTop": null,
+        "pathTop": null,
+        "shelfTop": null
+      },
+      "shelfCourses": 0,
+      "courseDetail": true,
+      "detailView": "overview",
+      "lessonView": null,
+      "nav": [
+        "Skip to course contentCoursebookCourseHomeCoursesLibraryParent StudioAll coursesJapanese affection and register — an L0 demonstration classroomNeeds reviewA little at a timeSource staleSection 1 of 4Tell everyday affection from a direct romantic declaration·0 of 4With independent evidence·2Due for reviewThis lesson page is incompleteThe page exists but has no teaching blocks yet. The lessons job owns the page; re-run it from Plan to replace this placeholder.Open the planOverviewLearnNotebookEvidenceMoreAttemptsPlanSourcesExportA source behind this course changed. Old evidence is kept; the source needs review.Japanese affection and register — an L0 demonstration classroom0 of 4 objectives have independent evidenceNext ·Tell everyday affection from a direct romantic declaration Next01Tell everyday affection from a direct romantic declarationNeeds reviewTell the differenceNext: Review 3 objective(s)Start a fresh runRead this section4 sections01Tell everyday affection from a direct romantic declarationNeeds review02Choose the polite expression for a first confessionNeeds review03Recall the intimate declaration in a new contextNeeds review04Explain why register changes with the relationshipOverriddenRecent evidence2 sections are due for review.We could not grade this answer · 1 d agoFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.Not yet · 2 d agoFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.Not yet · 2 d agoFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.Start with the oldest: Recall the intimate declaration in a new contextCourse detailsHow you will use itA little at a timeEnrolmentrevision 51ActiveEvidence4 objectives · 3 due0 independentWhere it came fromjapanese-affection-context-l0 v1.0.0Local packExporting the pack is a Library action; it never includes your answers or notes."
+      ],
+      "animations": 0,
+      "overflow": 0
+    },
+    {
+      "step": "open-section",
+      "clicked": "Open section",
+      "width": 1049,
+      "desk": null,
+      "plate": false,
+      "label": null,
+      "course": null,
+      "titleLines": null,
+      "sentence": null,
+      "background": null,
+      "routeWidth": 567,
+      "titleMeasure": null,
+      "topEdge": null,
+      "actionRows": 0,
+      "buttons": [],
+      "companion": false,
+      "companionMotion": null,
+      "pathItems": 0,
+      "order": {
+        "plateTop": null,
+        "pathTop": null,
+        "shelfTop": null
+      },
+      "shelfCourses": 0,
+      "courseDetail": true,
+      "detailView": "textbook",
+      "lessonView": null,
+      "nav": [
+        "Skip to course contentCoursebookCourseHomeCoursesLibraryParent StudioAll coursesJapanese affection and register — an L0 demonstration classroomNeeds reviewA little at a timeSource staleSection 1 of 4Tell everyday affection from a direct romantic declaration·0 of 4With independent evidence·2Due for reviewThis lesson page is incompleteThe page exists but has no teaching blocks yet. The lessons job owns the page; re-run it from Plan to replace this placeholder.Open the planOverviewLearnNotebookEvidenceMoreAttemptsPlanSourcesExportReview due2 sections are due for review.See what is dueTell everyday affection from a direct romantic declarationLesson viewGameGuidedTextbookField QuestThis lesson has no guided version. This lesson has no Field Quest version.Japanese affection and register — an L0 demonstration classroomSection 1 of 4 · GameNeeds reviewTell the differenceLast opened 9 hr ago23 attempts recorded on this section · last 2 d ago2 d agoNot yetFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedHinted2 d agoNot yetHinted2 d agoNot yetHinted2 d agoNot yetFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoPassedHinted2 d agoNot yetHinted2 d agoNot yetHinted2 d agoNot yetHinted2 d agoNot yetFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.2 d agoNot yetOverride — not independent evidence2 d agoNot yetFirst try, no hintsIndependent evidence is worth more: it shows what you can do without help.Back to the section indexNext actionReview 3 objective(s)This sectionStateNeeds reviewEvidenceTell the differenceAttempts23Source cardsMarugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contentsstaleHow to teach with Marugoto (teacher FAQ)authoritative_documentationWiktionary — 好き (suki)model_assessedWiktionary — 愛する (aisuru)model_assessedSaved notesNothing saved from this section yet."
+      ],
+      "animations": 0,
+      "overflow": 0
+    },
+    {
+      "step": "reduced-motion-460",
+      "width": 459,
+      "desk": "ready",
+      "plate": true,
+      "label": "THE REVIEW IS DUE",
+      "course": "Japanese affection and register — an L0 demonstration classroom",
+      "titleLines": 2,
+      "sentence": "Section 1 of 4 · Tell everyday affection from a direct romantic declaration is due for another check. Answer it once to bring the evidence up to date.",
+      "background": "rgb(51, 41, 15)",
+      "routeWidth": 214,
+      "titleMeasure": {
+        "height": 47,
+        "lineHeight": "23.4px",
+        "clamp": "2",
+        "display": "flow-root",
+        "scrollHeight": 117,
+        "clientHeight": 47
+      },
+      "topEdge": "2.2312px rgb(239, 192, 107)",
+      "actionRows": 1,
+      "buttons": [
+        {
+          "label": "Start the review",
+          "disabled": false
+        },
+        {
+          "label": "Open section",
+          "disabled": false
+        },
+        {
+          "label": "See the plan",
+          "disabled": false
+        }
+      ],
+      "companion": false,
+      "companionMotion": null,
+      "pathItems": 4,
+      "order": {
+        "plateTop": 304,
+        "pathTop": 1001,
+        "shelfTop": 2334
+      },
+      "shelfCourses": 2,
+      "courseDetail": false,
+      "detailView": null,
+      "lessonView": null,
+      "nav": [
+        "Skip to course contentCoursebookHomeDefault view · Game· Child-safe defaults· Session · 15 minSettingsHomeCoursesLibraryParent StudioTHE REVIEW IS DUEJapanese affection and register — an L0 demonstration classroomSection 1 of 4 · Tell everyday affection from a direct romantic declaration is due for another check. Answer it once to bring the evidence up to date.≈ 8 minLast touched 9 hr agoStart the reviewOpen sectionSee the planNeeds reviewThis section·0 of 4With evidence·3Due nowThe routeJapanese affection and register — an L0 demonstration classroom0 of 4 sections with evidence · 3 due01Tell everyday affection from a direct romantic declarationNeeds reviewCheck openDetails for checkpoint 1Evidence targetTell the differenceCommitted attempts23 committed attemptsLast opened9 hr agoCheckCheck open02Choose the polite expression for a first confessionNeeds reviewCheck openDetails for checkpoint 2Evidence targetExplain itCommitted attempts2 committed attemptsLast opened2 d agoCheckCheck open03Recall the intimate declaration in a new contextNeeds reviewCheck openDetails for checkpoint 3Evidence targetRemember itCommitted attempts2 committed attemptsLast opened2 d agoCheckCheck open04Explain why register changes with the relationshipOverriddenCheck openDetails for checkpoint 4Evidence targetUse it somewhere newCommitted attempts1 committed attemptLast opened2 d agoCheckCheck openYour other classroomsNew courseAll coursesJapanese affection and register — an L0 demonstration classroomReview 3 objective(s)Last touched 9 hr agoH103 live failure checkReview and approve the planLast touched 12 hr agoShowing Japanese affection and register — an L0 demonstration classroomField Notes11 saved · showing the last 4All field notesLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…cb-loop-note-mw5d7d0l v2 — edited: です adds deliberate distance; the request makes it a confession.lesson_segmentloop-proof-d7d0leditedSection · Choose the polite expression for a first confessionJapanese affection and register — an L0 demonstration classroomsaved 2 d agoOpen in textbookLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…cb-loop-note-mw5d3xq2 v1 — polite form carries distance, not more affection.lesson_segmentloop-proof-d3xq2Section · Choose the polite expression for a first confessionJapanese affection and register — an L0 demonstration classroomsaved 2 d agoOpen in textbookLesson 2 — choosing by addressee, relationship and setting There is no single Japanese line that means \"I love you\". The same feeling is carried by different lines depending on who is listening, how close you are, and where you are standin…cb-loop-note-mw5ci4cr v2 — edited: です adds deliberate distance; the request makes it a confession.lesson_segmentloop-proof-ci4creditedSection · Choose the polite expression for a first confessionJapanese affection and register — an L0 demonstration classroomsaved 2 d agoOpen in textbookSection 3 of 4 — \"Recall the intimate declaration in a new context\" (recall) The reminder, from a different angle: a distance ladder, not a politeness dial Casual vs polite is not weaker vs stronger feeling. です doesn't add affection — it a…cb-loop-note-mw5bxkg6 v2 — edited: です adds deliberate distance; the request makes it a confession.lesson_segmentloop-proof-bxkg6editedSection · Recall the intimate declaration in a new contextJapanese affection and register — an L0 demonstration classroomsaved 2 d agoOpen in textbookShow sourcesSources for “Tell everyday affection from a direct romantic declaration”"
+      ],
+      "animations": 0,
+      "overflow": 0
+    }
+  ]
+}
