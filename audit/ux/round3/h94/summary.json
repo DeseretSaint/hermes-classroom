@@ -1,0 +1,289 @@
+{
+  "task": "H-94",
+  "claim": "one variant=default primary on Parent Studio and the Field Desk; one facts line on the desk; no three-cell stat strip",
+  "frames": [
+    {
+      "surface": "desk",
+      "width": 1049,
+      "theme": "light",
+      "primaries": [
+        {
+          "label": "Resume the lesson",
+          "width": 129,
+          "height": 36
+        }
+      ],
+      "headerPrimaries": [],
+      "factsLines": 1,
+      "factsCount": 2,
+      "factLabels": [
+        "This section",
+        "With evidence"
+      ],
+      "factValues": [
+        "Not started",
+        "0 of 2"
+      ],
+      "statCells": 0,
+      "tripletGrid": false,
+      "overflowX": 0,
+      "keyboard": [
+        "Skip to course content",
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "Resume the lesson",
+        "Open the section",
+        "All field notes",
+        "Go to the current lesson",
+        "01Read the marks on a measuring jugNot s",
+        "02Double a recipe quantity and explain t",
+        "Show sources",
+        "Search and manage courses",
+        "Open"
+      ]
+    },
+    {
+      "surface": "studio",
+      "width": 1049,
+      "theme": "light",
+      "primaries": [
+        {
+          "label": "New lesson plan",
+          "width": 112,
+          "height": 28
+        }
+      ],
+      "headerPrimaries": [],
+      "factsLines": 0,
+      "factsCount": 0,
+      "factLabels": [],
+      "factValues": [],
+      "statCells": 0,
+      "tripletGrid": false,
+      "overflowX": 0,
+      "keyboard": [
+        "Skip to course content",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "New lesson plan",
+        "Open plan"
+      ]
+    },
+    {
+      "surface": "desk",
+      "width": 460,
+      "theme": "light",
+      "primaries": [
+        {
+          "label": "Resume the lesson",
+          "width": 129,
+          "height": 36
+        }
+      ],
+      "headerPrimaries": [],
+      "factsLines": 1,
+      "factsCount": 2,
+      "factLabels": [
+        "This section",
+        "With evidence"
+      ],
+      "factValues": [
+        "Not started",
+        "0 of 2"
+      ],
+      "statCells": 0,
+      "tripletGrid": false,
+      "overflowX": 0,
+      "keyboard": [
+        "Skip to course content",
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "Resume the lesson",
+        "Open the section",
+        "All field notes",
+        "Go to the current lesson",
+        "01Read the marks on a measuring jugNot s",
+        "02Double a recipe quantity and explain t",
+        "Show sources",
+        "Search and manage courses",
+        "Open"
+      ]
+    },
+    {
+      "surface": "studio",
+      "width": 460,
+      "theme": "light",
+      "primaries": [
+        {
+          "label": "New lesson plan",
+          "width": 112,
+          "height": 28
+        }
+      ],
+      "headerPrimaries": [],
+      "factsLines": 0,
+      "factsCount": 0,
+      "factLabels": [],
+      "factValues": [],
+      "statCells": 0,
+      "tripletGrid": false,
+      "overflowX": 0,
+      "keyboard": [
+        "Skip to course content",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "New lesson plan",
+        "Open plan"
+      ]
+    },
+    {
+      "surface": "desk",
+      "width": 1049,
+      "theme": "dark",
+      "primaries": [
+        {
+          "label": "Resume the lesson",
+          "width": 129,
+          "height": 36
+        }
+      ],
+      "headerPrimaries": [],
+      "factsLines": 1,
+      "factsCount": 2,
+      "factLabels": [
+        "This section",
+        "With evidence"
+      ],
+      "factValues": [
+        "Not started",
+        "0 of 2"
+      ],
+      "statCells": 0,
+      "tripletGrid": false,
+      "overflowX": 0,
+      "keyboard": [
+        "Skip to course content",
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "Resume the lesson",
+        "Open the section",
+        "All field notes",
+        "Go to the current lesson",
+        "01Read the marks on a measuring jugNot s",
+        "02Double a recipe quantity and explain t",
+        "Show sources",
+        "Search and manage courses",
+        "Open"
+      ]
+    },
+    {
+      "surface": "studio",
+      "width": 1049,
+      "theme": "dark",
+      "primaries": [
+        {
+          "label": "New lesson plan",
+          "width": 112,
+          "height": 28
+        }
+      ],
+      "headerPrimaries": [],
+      "factsLines": 0,
+      "factsCount": 0,
+      "factLabels": [],
+      "factValues": [],
+      "statCells": 0,
+      "tripletGrid": false,
+      "overflowX": 0,
+      "keyboard": [
+        "Skip to course content",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "New lesson plan",
+        "Open plan"
+      ]
+    },
+    {
+      "surface": "desk",
+      "width": 460,
+      "theme": "dark",
+      "primaries": [
+        {
+          "label": "Resume the lesson",
+          "width": 129,
+          "height": 36
+        }
+      ],
+      "headerPrimaries": [],
+      "factsLines": 1,
+      "factsCount": 2,
+      "factLabels": [
+        "This section",
+        "With evidence"
+      ],
+      "factValues": [
+        "Not started",
+        "0 of 2"
+      ],
+      "statCells": 0,
+      "tripletGrid": false,
+      "overflowX": 0,
+      "keyboard": [
+        "Skip to course content",
+        "New course",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "Resume the lesson",
+        "Open the section",
+        "All field notes",
+        "Go to the current lesson",
+        "01Read the marks on a measuring jugNot s",
+        "02Double a recipe quantity and explain t",
+        "Show sources",
+        "Search and manage courses",
+        "Open"
+      ]
+    },
+    {
+      "surface": "studio",
+      "width": 460,
+      "theme": "dark",
+      "primaries": [
+        {
+          "label": "New lesson plan",
+          "width": 112,
+          "height": 28
+        }
+      ],
+      "headerPrimaries": [],
+      "factsLines": 0,
+      "factsCount": 0,
+      "factLabels": [],
+      "factValues": [],
+      "statCells": 0,
+      "tripletGrid": false,
+      "overflowX": 0,
+      "keyboard": [
+        "Skip to course content",
+        "Courses",
+        "Library",
+        "Parent Studio",
+        "New lesson plan",
+        "Open plan"
+      ]
+    }
+  ],
+  "verdict": "PASS",
+  "assertions": 58,
+  "source": "CB009_CDP_PORT=9364 node scripts/h94-primary-verify.mjs [--dark]"
+}

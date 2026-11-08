@@ -2363,52 +2363,22 @@ function DeskProgress({ objectives }) {
   })
 }
 
-/** Three counts the backend actually recorded. No percentage, no streak, no invented goal. */
-function DeskStats({ desk }) {
-  const stats = [
-    { key: 'sections', label: 'Sections', value: desk.total },
-    { key: 'evidence', label: 'With evidence', value: desk.settled },
-    { key: 'due', label: 'Due now', value: desk.dueCount }
-  ]
+/**
+ * The desk's facts, in the same voice as course detail's hero line: one line, the value then its
+ * caption, separated by a rule. It replaces the three equal stat cards (H-94 V2-5): there is no
+ * percentage, no streak and no invented goal, only counts the backend actually recorded.
+ */
+function DeskFacts({ desk }) {
+  const current = desk.current
+  const facts = [
+    current ? { value: DESK_STATE_WORD[current.state] || 'Not started', label: 'This section' } : null,
+    { value: `${desk.settled} of ${desk.total}`, label: 'With evidence' },
+    desk.dueCount > 0 ? { value: String(desk.dueCount), label: 'Due now' } : null
+  ].filter(Boolean)
   return jsx('div', {
-    'data-cb-desk-stats': '',
-    style: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-      gap: '0.4rem',
-      borderTop: '1px solid var(--cb-rule)',
-      paddingTop: '0.55rem'
-    },
-    children: stats.map((stat) =>
-      jsxs(
-        'div',
-        {
-          'data-cb-desk-stat': stat.key,
-          style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
-          children: [
-            jsx('span', {
-              style: {
-                fontSize: CB_TYPE.body,
-                lineHeight: 1.15,
-                fontVariantNumeric: 'tabular-nums',
-                color:
-                  stat.key === 'due' && Number(stat.value) > 0
-                    ? 'var(--cb-ochre)'
-                    : stat.key === 'evidence' && Number(stat.value) > 0
-                      ? 'var(--cb-field)'
-                      : 'var(--cb-ink)'
-              },
-              children: String(stat.value)
-            }),
-            jsx('span', {
-              style: { fontSize: CB_TYPE.caption, letterSpacing: '0.01em', color: 'var(--cb-ink-soft)' },
-              children: stat.label
-            })
-          ]
-        },
-        stat.key
-      )
-    )
+    'data-cb-desk-facts': String(facts.length),
+    style: { borderTop: '1px solid var(--cb-rule)', paddingTop: '0.55rem' },
+    children: jsx(HeroFacts, { facts })
   })
 }
 
@@ -2494,7 +2464,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
                 ]
               }),
               jsx(DeskProgress, { objectives: desk.objectives }),
-              jsx(DeskStats, { desk })
+              jsx(DeskFacts, { desk })
             ]
           }),
           compact ? null : jsx(CourseStamp, { title: courseTitle || title, large: true, courseId: desk.row ? desk.row.course_id : null })
@@ -14737,6 +14707,15 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
     })
   }
 
+  return jsx(StudioLanding, { rows, onCreate, onOpen })
+}
+
+/**
+ * The Parent Studio landing plate: the one place a parent starts a new plan. The route header
+ * carries no create action, so this in-page primary is the only `variant=default` control on the
+ * surface (H-94 V2-4; H-91 P2-4 removed the duplicate header button).
+ */
+function StudioLanding({ rows, onCreate, onOpen }) {
   return jsxs('div', {
     'data-cb-studio-landing': '',
     style: {
@@ -17417,11 +17396,13 @@ export {
   FieldRail,
   FieldDeskHome,
   FieldNotesStrip,
+  DeskFacts,
   FieldQuestView,
   LESSON_VIEWS,
   LEARNING_VIEWS,
   SELF_REPORTED_CONFIRM_COPY,
   SELF_REPORTED_EVIDENCE_COPY,
+  StudioLanding,
   SYLLABUS_ACCEPT,
   SYLLABUS_COPY,
   SYLLABUS_LIMITS,

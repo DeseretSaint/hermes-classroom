@@ -551,8 +551,10 @@ class FieldDeskRenderTest(unittest.TestCase):
         html = self.render()
         self.assertIn("minmax(0, 1.2fr)", html)
         self.assertIn("minmax(19rem, 0.8fr)", html)
-        self.assertIn('data-cb-desk-stats', html)
-        self.assertIn('data-cb-desk-stat="sections"', html)
+        # H-94 V2-5: the desk carries one facts line, not a three-cell stat strip.
+        self.assertEqual(html.count('data-cb-desk-facts='), 1, html)
+        self.assertNotIn('data-cb-desk-stats', html)
+        self.assertNotIn('data-cb-desk-stat=', html)
         self.assertIn('data-cb-course-stamp', html)
         # The next move and the path come before the secondary course shelf in reading order.
         self.assertLess(html.index('data-cb-continue'), html.index('data-cb-all-courses'))
