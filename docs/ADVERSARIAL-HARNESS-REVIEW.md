@@ -163,8 +163,9 @@ The only demonstrated "course" is a **prepared Japanese pack**:
 `bundled/packs/japanese-affection-context-l0`, imported by `scripts/seed-demo-course.py`.
 `docs/DEMO.md` says the script "proves a governed loop on one prepared pack" and "does not prove
 behavior with other packs". The demo is not recordable: the isolated backend has no inference
-provider, the default-profile gateway still has not loaded the plugin Python half
-(`t_6a32ffe9`), and the M1–M4 evidence is fixture, static render or precomputed media.
+provider, the default-profile gateway has not loaded the plugin Python half
+(`t_6a32ffe9`, blocked awaiting an operator pass on the gateway-owning default profile), and
+the M1–M4 evidence is fixture, static render or precomputed media.
 
 Therefore there is no empirical evidence that a prompt for an arbitrary subject produces a
 comparable-quality course. The green tests prove the kernel's rules, not the harness's output.
