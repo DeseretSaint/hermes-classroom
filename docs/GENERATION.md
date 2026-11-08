@@ -265,6 +265,20 @@ artifact records `needs_review`, and `plan_document()` carries both the validati
 the warning an approver needs. Approval of a `model_assessed` plan is a human decision, not
 factual verification, and that sentence is in the warning.
 
+**What plan review shows.** The Desktop plan-review surface reads that same record from the plan
+job's checkpoint (`jobs.get` / `jobs.list` → `checkpoint.validation`, bound to
+`checkpoint.plan_id`) and prints one plain line: "Checked by a second model" only when
+`independence = independent`; "Checked by the same model" for `same_model`; "Checked by a model
+that could not be identified" otherwise; and "No validator record is stored for this version" when
+no record is bound to the plan id on screen (a `plan.replan` carry is a copy, not a re-check, so it
+does not borrow the source version's record). The configured `validator_provider`/`validator_model`
+appears only when the runtime reported it — an empty `validator_model` therefore renders as the
+same model, not as a missing second opinion. The raw `outcome`/`independence` values, both model
+identities and the backend warning stay in the "Technical detail" disclosure. Nothing on that
+surface may say "independently validated" for a `model_assessed` pass. This is the rule in the
+status table in `docs/HARNESS-STATUS.md` §3 read from the other side: a branch commit is not a
+merge, and a same-model pass is a limitation, never an independence badge.
+
 **Prerequisites are not a v1 plan rule, by decision.** `OBJECTIVE_SCHEMA` and `SECTION_SCHEMA`
 carry no prerequisite field and must not gain one: the v1 plan is a flat list whose one section per
 objective is already rendered in ordinal order, so an edge there would gate nothing and reorder

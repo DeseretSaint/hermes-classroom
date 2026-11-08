@@ -28,7 +28,7 @@ class StartPlateTest(unittest.TestCase):
         self.assertNotIn("DeskLabel", body)
         self.assertIn("'data-cb-first-run-title'", body)
         self.assertIn("children: FIRST_RUN_COPY.title", body)
-        self.assertEqual(body.count("variant: 'default'"), 1, body)
+        self.assertEqual(body.count("variant: 'primary'"), 1, body)
 
     def test_plate_is_a_flat_field_not_a_thick_bar(self) -> None:
         start = self.source.index("function FirstRun({")
@@ -74,12 +74,14 @@ class WayfindingTest(unittest.TestCase):
         self.assertIn("variant: 'secondary'", nearby)
         self.assertNotIn("variant: 'default', children: 'New course'", self.source)
 
-    def test_host_entry_opens_the_route_and_carries_the_seal(self) -> None:
+    def test_host_entry_opens_the_route_and_carries_the_wordmark(self) -> None:
         self.assertIn("data: { path: ROUTE_PATH, label: ROUTE_TITLE, codicon: 'book' }", self.source)
         header = self.source[self.source.index("'data-cb-route': ROUTE_PATH") :]
         header = header[: header.index("PageBody")]
-        self.assertIn("SurveyMark", header)
-        # H-92: the route header's heading is the destination's page title, so the wordmark a
+        # H-145: the chrome carries the product name as type, never the seal.
+        self.assertIn("CoursebookWordmark", header)
+        self.assertNotIn("SurveyMark", header)
+        # H-92: the route header's heading is the destination's page title, so the first heading a
         # reader sees is the page they are on; the sidebar still registers ROUTE_TITLE above.
         self.assertIn("children: pageTitle", header)
         self.assertNotIn("children: ROUTE_TITLE", header)
@@ -98,7 +100,7 @@ class LessonStartTest(unittest.TestCase):
 
     def test_section_has_exactly_one_start_button(self) -> None:
         block = self._section_actions()
-        self.assertEqual(block.count("sdk.Button"), 1, block)
+        self.assertEqual(block.count("jsx(CbAction"), 1, block)
         self.assertNotIn("Start a fresh run instead", self.source)
 
     def test_no_chat_sentence_and_action_agree_with_the_desk(self) -> None:

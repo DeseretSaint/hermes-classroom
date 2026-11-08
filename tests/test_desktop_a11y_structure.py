@@ -158,13 +158,25 @@ const skipProbe = async () => {
 
 const snapshot = async (name) => {
   await flush()
+  const titleNode = document.querySelector('[data-cb-page-title]')
   const surface = {
     name,
     headings: headings(),
     landmarks: landmarks(),
     skip: await skipProbe(),
-    title: text(document.querySelector('[data-cb-page-title]')),
-    destination: document.querySelector('[data-cb-route]') && document.querySelector('[data-cb-route]').getAttribute('data-cb-destination')
+    title: text(titleNode),
+    titleFontSize: titleNode ? titleNode.getAttribute('style') : null,
+    destination: document.querySelector('[data-cb-route]') && document.querySelector('[data-cb-route]').getAttribute('data-cb-destination'),
+    wordmarks: [...document.querySelectorAll('[data-cb-wordmark]')].map((node) => ({ text: text(node), tag: node.tagName.toLowerCase() })),
+    navItems: [...document.querySelectorAll('[data-cb-nav-item]')].map((node) => ({
+      id: node.getAttribute('data-cb-nav-item'),
+      current: node.getAttribute('aria-current'),
+      text: text(node)
+    })),
+    continued: document.querySelectorAll('[data-cb-continue]').length,
+    stamps: document.querySelectorAll('[data-cb-course-stamp]').length,
+    nextSentences: [...document.querySelectorAll('[data-cb-continue-next]')].length,
+    routePadding: document.querySelector('[data-cb-route]') ? document.querySelector('[data-cb-route]').style.paddingLeft : null
   }
   return surface
 }
@@ -186,7 +198,7 @@ if (payload.kind === 'prose') {
   }))
   process.stdout.write(JSON.stringify({ prose, proseH1Count: prose.length, routeH1Count: document.querySelectorAll('h1[data-cb-page-title]').length }))
 } else {
-surfaces.push(await snapshot('courses-desk'))
+surfaces.push(await snapshot('home-desk'))
 
 if (payload.firstRun) {
   process.stdout.write(JSON.stringify({ surfaces }))
@@ -203,7 +215,7 @@ await navTo('library')
 surfaces.push(await snapshot('library'))
 await navTo('studio')
 surfaces.push(await snapshot('studio'))
-await navTo('courses')
+await navTo('home')
 
 // The desk path is the same route a learner takes into a section: path row -> course -> textbook
 // open section -> WorkspaceShell reading column.
@@ -401,11 +413,11 @@ class A11yStructureTest(unittest.TestCase):
                     self.assertEqual(levels[0], 1, f"first heading is not h1: {surface['headings']}")
 
     def test_first_run_still_has_one_h1_first(self) -> None:
-        surface = self.surface("courses-desk", first_run=True)
+        surface = self.surface("home-desk", first_run=True)
         levels = [heading["level"] for heading in surface["headings"]]
         self.assertEqual(levels[0], 1)
         self.assertEqual(levels.count(1), 1, surface["headings"])
-        self.assertEqual(surface["headings"][0]["text"], "Courses")
+        self.assertEqual(surface["headings"][0]["text"], "Home")
 
     def test_no_heading_level_is_skipped(self) -> None:
         for name in [item["name"] for item in self.all_surfaces()]:
@@ -417,7 +429,7 @@ class A11yStructureTest(unittest.TestCase):
                     previous = level
 
     def test_first_run_heading_is_an_h2_under_the_page_title(self) -> None:
-        levels = [heading["level"] for heading in self.surface("courses-desk", first_run=True)["headings"]]
+        levels = [heading["level"] for heading in self.surface("home-desk", first_run=True)["headings"]]
         self.assertIn(2, levels, levels)
         previous = levels[0]
         for level in levels[1:]:
@@ -425,13 +437,13 @@ class A11yStructureTest(unittest.TestCase):
             previous = level
 
     def test_the_desks_first_heading_is_the_page_title(self) -> None:
-        surface = self.surface("courses-desk")
-        self.assertEqual(surface["title"], "Courses")
-        self.assertEqual(surface["headings"][0]["text"], "Courses")
+        surface = self.surface("home-desk")
+        self.assertEqual(surface["title"], "Home")
+        self.assertEqual(surface["headings"][0]["text"], "Home")
         self.assertNotEqual(surface["headings"][0]["text"], "Register and affection")
 
     def test_landmarks_are_named(self) -> None:
-        for name in ("courses-desk", "library", "studio", "section"):
+        for name in ("home-desk", "library", "studio", "section"):
             with self.subTest(surface=name):
                 surface = self.surface(name)
                 navs = [item for item in surface["landmarks"] if item["tag"] == "nav"]
@@ -441,7 +453,7 @@ class A11yStructureTest(unittest.TestCase):
                 self.assertEqual(len(mains), 1, surface["landmarks"])
                 self.assertTrue(mains[0]["label"], "the main landmark is unnamed")
                 self.assertIn(surface["title"], mains[0]["label"])
-                if name in ("courses-desk", "section"):
+                if name in ("home-desk", "section"):
                     asides = [item for item in surface["landmarks"] if item["tag"] == "aside"]
                     if name == "section" or asides:
                         self.assertTrue(asides, f"{name} has no complementary landmark")
@@ -458,7 +470,7 @@ class A11yStructureTest(unittest.TestCase):
                 self.assertTrue(skip["revealedOnFocus"], f"{name} skip link stays clipped while focused")
 
     def test_skip_link_moves_focus_into_content_never_the_header(self) -> None:
-        for name in ("courses-desk", "library", "studio"):
+        for name in ("home-desk", "library", "studio"):
             with self.subTest(surface=name):
                 skip = self.surface(name)["skip"]
                 self.assertTrue(skip["focusedIsMain"], f"{name} skip focus landed on {skip['focusedTag']}")
@@ -470,15 +482,52 @@ class A11yStructureTest(unittest.TestCase):
     def test_library_and_studio_have_their_own_page_title(self) -> None:
         self.assertEqual(self.surface("library")["title"], "Library")
         self.assertEqual(self.surface("studio")["title"], "Parent Studio")
-        self.assertEqual(self.surface("section")["title"], "Courses")
+        self.assertEqual(self.surface("section")["title"], "Course")
 
     def test_each_destination_heading_regions_are_h2(self) -> None:
         library = [h["level"] for h in self.surface("library")["headings"]]
         self.assertIn(2, library, library)
         studio = [h["level"] for h in self.surface("studio")["headings"]]
         self.assertIn(2, studio, studio)
-        desk = self.surface("courses-desk")["headings"]
+        desk = self.surface("home-desk")["headings"]
         self.assertTrue(any(h["level"] == 2 for h in desk), desk)
+
+    def test_the_header_carries_the_wordmark_not_the_seal(self) -> None:
+        for name in ("home-desk", "library", "studio"):
+            with self.subTest(surface=name):
+                surface = self.surface(name)
+                self.assertEqual([item["text"] for item in surface["wordmarks"]], ["Coursebook"])
+                # It is type, not a heading: the page h1 stays the only page label.
+                self.assertEqual(surface["wordmarks"][0]["tag"], "div")
+
+    def test_destination_nav_is_home_first_then_the_catalog(self) -> None:
+        surface = self.surface("home-desk")
+        self.assertEqual([item["id"] for item in surface["navItems"]], ["home", "courses", "library", "studio"])
+        self.assertEqual([item["text"] for item in surface["navItems"]], ["Home", "Courses", "Library", "Parent Studio"])
+        self.assertEqual(surface["navItems"][0]["current"], "page")
+
+    def test_the_page_title_uses_the_display_step(self) -> None:
+        # jsdom drops `clamp()` from inline styles, so the wiring is pinned at the source and the
+        # live frames prove the rendered size. One heading, one display step, no per-route value.
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        header = source[source.index("'data-cb-route': ROUTE_PATH") :]
+        header = header[: header.index("PageBody")]
+        self.assertIn("fontSize: CB_TYPE.display", header)
+        self.assertIn('"display":"clamp(2.25rem, 1.9rem + 0.7vw, 2.5rem)"', source)
+
+    def test_home_has_one_continue_surface_and_no_duplicate_next_step_or_seal(self) -> None:
+        surface = self.surface("home-desk")
+        self.assertEqual(surface["continued"], 1)
+        self.assertEqual(surface["stamps"], 0)
+        self.assertEqual(surface["nextSentences"], 0)
+
+    def test_the_measured_route_gutter_is_applied(self) -> None:
+        # The narrow branch is a plain rem value jsdom can keep; the wide branch is a clamp() that
+        # jsdom drops, so it is pinned at the source and measured in the live frames.
+        self.assertEqual(self.surface("home-desk", 460)["routePadding"], "0.7rem")
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        self.assertIn("const routePad = measuredRoute > 0 && measuredRoute < 760 ? '0.7rem' : 'clamp(1.25rem, 4vw, 4rem)'", source)
+        self.assertIn("paddingLeft: routePad, paddingRight: routePad", source)
 
     def test_authored_prose_h1_is_announced_as_level_two(self) -> None:
         """The reading body may carry its own `#` title; the page stays the only h1."""

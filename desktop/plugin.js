@@ -121,7 +121,13 @@ const FILTERS = [
   { id: 'review_due', label: 'Review due' },
   { id: 'archived', label: 'Archived' }
 ]
+/**
+ * H-145 — Home is the launcher (the selected classroom's Continue plate); Courses is the
+ * all-courses catalog. Home is first because it is the only destination that answers "what do I do
+ * now?" without a choice.
+ */
 const DESTINATIONS = [
+  { id: 'home', label: 'Home' },
   { id: 'courses', label: 'Courses' },
   { id: 'library', label: 'Library' },
   { id: 'studio', label: 'Parent Studio' }
@@ -277,7 +283,7 @@ function useRouteIntent(handler) {
 }
 
 /** The destination survives leaving the route; it is a view preference, not navigation state. */
-let rememberedDestination = 'courses'
+let rememberedDestination = 'home'
 
 function requireContext() {
   if (!pluginContext) throw new Error('Coursebook is not registered')
@@ -1006,8 +1012,8 @@ function BackendUnavailable({ error, reload }) {
         children: jsxs('div', {
           className: 'flex flex-wrap items-center justify-center gap-2',
           children: [
-            jsx(sdk.Button, { variant: 'default', onClick: openCapabilities, children: 'Open Capabilities' }),
-            jsx(sdk.Button, { variant: 'secondary', onClick: reload, children: 'Check again' })
+            jsx(CbAction, { variant: 'primary', onClick: openCapabilities, children: 'Open Capabilities' }),
+            jsx(CbAction, { variant: 'secondary', onClick: reload, children: 'Check again' })
           ]
         })
       }),
@@ -1036,8 +1042,8 @@ function DegradedBody({ result, reload }) {
         children: jsxs('div', {
           className: 'flex flex-wrap items-center justify-center gap-2',
           children: [
-            jsx(sdk.Button, { variant: 'default', onClick: reload, children: 'Check again' }),
-            jsx(sdk.Button, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
+            jsx(CbAction, { variant: 'primary', onClick: reload, children: 'Check again' }),
+            jsx(CbAction, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
           ]
         })
       }),
@@ -1137,7 +1143,6 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
       jsxs('div', {
         style: { display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' },
         children: [
-          jsx(SurveyMark, { courseId: 'first-run', size: compact ? 40 : 56 }),
           jsx('h2', {
             'data-cb-first-run-title': '',
             style: {
@@ -1145,7 +1150,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
               flex: '1 1 12rem',
               minWidth: 0,
               fontFamily: CB_SERIF,
-              fontSize: compact ? CB_TYPE.heading : CB_TYPE.display,
+              fontSize: CB_TYPE.heading,
               fontWeight: 600,
               lineHeight: 1.08,
               letterSpacing: '-0.015em',
@@ -1172,18 +1177,10 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
         ? jsxs('div', {
             style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-start' },
             children: [
-              jsx(sdk.Button, {
+              jsx(CbAction, {
                 'data-cb-first-run-primary': '',
-                variant: 'default',
+                variant: 'primary',
                 onClick: onCreate,
-                style: {
-                  background: 'var(--cb-lamp)',
-                  color: 'var(--cb-on-lamp)',
-                  border: '1px solid var(--cb-on-lamp)',
-                  borderRadius: '2px',
-                  minHeight: '44px',
-                  fontSize: CB_TYPE.body
-                },
                 children: FIRST_RUN_COPY.primary
               }),
               jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.primaryNext })
@@ -1239,7 +1236,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
                 ? jsxs('div', {
                     style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', alignItems: 'flex-start', padding: '0.65rem 0' },
                     children: [
-                      jsx(sdk.Button, {
+                      jsx(CbAction, {
                         variant: 'secondary',
                         onClick: onImportPlaceholder,
                         children: FIRST_RUN_COPY.secondary
@@ -1259,7 +1256,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
                       borderTop: '1px solid var(--cb-rule)'
                     },
                     children: [
-                      jsx(sdk.Button, {
+                      jsx(CbAction, {
                         variant: 'secondary',
                         onClick: onSyllabus,
                         children: FIRST_RUN_COPY.syllabus
@@ -1725,11 +1722,10 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
         jsxs('div', {
           className: 'flex flex-wrap items-center gap-2',
           children: [
-            jsx(sdk.Button, {
+            jsx(CbAction, {
               disabled: busy || !files,
               onClick: chooseFolder,
-              size: 'sm',
-              variant: 'default',
+              variant: 'primary',
               children: folder ? 'Choose another folder' : 'Choose folder…'
             }),
             folder ? jsx('span', { className: 'text-xs text-(--ui-text-secondary)', children: folder.name }) : null,
@@ -1779,10 +1775,9 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
                 'from. Its checks are observations, never graded child answers, and the recipe cannot be changed here.'
             })
           : null,
-        jsx(sdk.Button, {
+        jsx(CbAction, {
           onClick: () => setStep('mode'),
-          size: 'sm',
-          variant: 'default',
+          variant: 'primary',
           children: parentPack ? 'Continue to Parent Studio import' : 'Continue'
         })
       ]
@@ -1809,10 +1804,10 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
               className: 'text-xs text-(--ui-text-secondary)',
               children: 'No classroom for this pack is on this profile yet, so there is nothing to resume.'
             }),
-        jsx(sdk.Button, {
+        jsx(CbAction, {
           disabled: busy,
           onClick: () => runImport('fresh'),
-          variant: 'default',
+          variant: 'primary',
           children: existing.length ? 'Start fresh progress' : 'Import and start learning'
         }),
         jsx(sdk.Button, { onClick: () => setStep('review'), size: 'sm', variant: 'text', children: 'Back to the review' })
@@ -1838,7 +1833,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
             ? 'It appears under Parent Studio with the parent guide and answer guide; learner pages carry no answers.'
             : 'It appears in Courses and Library. Lesson pages are the pack’s own text, not a rephrasing.'
         }),
-        jsx(sdk.Button, { onClick: onImported, size: 'sm', variant: 'default', children: 'Back to the library' })
+        jsx(CbAction, { onClick: onImported, size: 'sm', variant: 'primary', children: 'Back to the library' })
       ]
     })
   }
@@ -1947,11 +1942,10 @@ function PackExportPanel({ row, onClose }) {
           jsx(PackReviewLine, { label: 'Content hash', value: jsx('code', { className: 'text-xs', children: manifest.content_hash }) })
         ]
       }),
-      jsx(sdk.Button, {
+      jsx(CbAction, {
         disabled: busy || !confirmed,
         onClick: run,
-        size: 'sm',
-        variant: 'default',
+        variant: 'primary',
         children: 'Export exactly these files'
       }),
       jsxs('label', {
@@ -2088,7 +2082,7 @@ function PackDeletePanel({ row, onClose, onDeleted }) {
           }),
       error ? jsx('div', { className: 'text-xs', children: error.message }) : null,
       scope
-        ? jsx(sdk.Button, { disabled: busy, onClick: remove, size: 'sm', variant: 'default', children: 'Freeze this pack' })
+        ? jsx(CbAction, { disabled: busy, onClick: remove, size: 'sm', variant: 'primary', children: 'Freeze this pack' })
         : null,
       jsx(sdk.Button, { onClick: onClose, size: 'sm', variant: 'text', children: 'Close' })
     ]
@@ -2132,7 +2126,7 @@ function CourseMenu({ row, supports, onArchive, onDelete }) {
           'aria-label': `Actions for ${row.title}`,
           size: 'icon-sm',
           variant: 'ghost',
-          children: jsx(sdk.Codicon, { name: 'kebab-vertical', size: '0.875rem' })
+          children: jsx(sdk.Codicon, { name: 'kebab-vertical', size: CB_ICON_UI })
         })
       }),
       jsx(sdk.DropdownMenuContent, { align: 'end', children: items })
@@ -2170,12 +2164,11 @@ function CourseRow({ row, group, implemented, onResume, onArchive, onDelete, onO
       className: 'flex flex-wrap items-center gap-1',
       children: [
         canResume
-          ? jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: () => onResume(row), children: 'Resume lesson' })
+          ? jsx(CbAction, { variant: 'secondary', onClick: () => onResume(row), children: 'Resume lesson' })
           : null,
         onOpen
-          ? jsx(sdk.Button, {
-              variant: 'text',
-              size: 'sm',
+          ? jsx(CbAction, {
+              variant: 'tertiary',
               onClick: () => onOpen(row),
               children: 'Open'
             })
@@ -2352,14 +2345,23 @@ function courseStampText(title) {
   return cbCourseMonogram(title)
 }
 
-/** The course cover: the Atlas Lamp seal, deterministic per course, with the title adjacent. */
+/** The course cover: deterministic monogram as type, with the title adjacent. */
 function CourseStamp({ title, large, courseId, identity }) {
   return jsx('div', {
     'data-cb-course-stamp': '',
     title: title || 'Course',
     'aria-hidden': 'true',
     style: { flex: '0 0 auto', display: 'flex', alignItems: 'center' },
-    children: jsx(SurveyMark, { courseId: courseId || title || 'Coursebook', identity, size: large ? 64 : 28 })
+    children: jsx('span', {
+      style: {
+        fontFamily: CB_SERIF,
+        fontSize: large ? CB_TYPE.heading : CB_TYPE.meta,
+        fontWeight: 600,
+        letterSpacing: '0.04em',
+        color: 'var(--cb-ink-soft)'
+      },
+      children: courseStampText(title || 'Course')
+    })
   })
 }
 
@@ -2437,7 +2439,7 @@ function ShelfDisclosure({ group, onOpen, label }) {
           color: 'var(--cb-ink-soft)'
         },
         children: [
-          jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+          jsx(sdk.Codicon, { name: 'chevron-right', size: CB_ICON_UI }),
           jsx('span', { children: group.label })
         ]
       }),
@@ -2473,9 +2475,8 @@ function ShelfDisclosure({ group, onOpen, label }) {
                 jsx('span', { children: ` · ${cbShelfFingerprint(member)}` })
               ] }),
               onOpen
-                ? jsx(sdk.Button, {
-                    size: 'sm',
-                    variant: 'text',
+                ? jsx(CbAction, {
+                    variant: 'tertiary',
                     'aria-label': `Open ${member.title || 'record'} from ${whenLabel(member.updated_at)}`,
                     onClick: () => onOpen(member),
                     children: 'Open'
@@ -2526,7 +2527,6 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
           overflow: 'hidden'
         },
         children: [
-          jsx(SurveyMark, { courseId: row.course_id || row.title || 'Coursebook', identity, size: 40 }),
           jsx('div', {
             'aria-hidden': 'true',
             style: {
@@ -2585,6 +2585,7 @@ function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
   return jsxs('article', {
     'data-cb-pack-row': cbShelfFingerprint(row),
     'data-cb-pack-empty': empty ? 'true' : 'false',
+    'data-cb-pack-selected': selected ? 'true' : 'false',
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -2629,11 +2630,10 @@ function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
             ]
           }),
           onPreview
-            ? jsx(sdk.Button, {
+            ? jsx(CbAction, {
                 'aria-label': `Preview ${row.title || 'pack'}`,
                 onClick: () => onPreview(row),
-                size: 'sm',
-                variant: selected ? 'secondary' : 'text',
+                variant: 'tertiary',
                 children: 'Preview'
               })
             : null
@@ -2792,9 +2792,8 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
                     children: desk.estimateLabel
                   }),
                   desk.estimateState === 'error'
-                    ? jsx(sdk.Button, {
-                        variant: 'text',
-                        size: 'sm',
+                    ? jsx(CbAction, {
+                        variant: 'tertiary',
                         onClick: onRetryEstimate,
                         'aria-label': 'Retry reading the session length',
                         children: 'Retry'
@@ -2809,39 +2808,22 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
               jsx(DeskProgress, { objectives: desk.objectives }),
               jsx(DeskFacts, { desk })
             ]
-          }),
-          compact ? null : jsx(CourseStamp, { title: courseTitle || title, large: true, courseId: desk.row ? desk.row.course_id : null })
-        ]
-      }),
-      jsxs('p', {
-        'data-cb-continue-next': '',
-        style: { margin: 0, maxWidth: CB_MEASURE, fontSize: CB_TYPE.body, lineHeight: 1.55, color: 'var(--cb-ink)' },
-        children: [
-          jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: 'Next · ' }),
-          desk.nextLabel
+          })
         ]
       }),
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem', paddingTop: '0.2rem' },
         children: [
-          jsx(sdk.Button, {
-            variant: 'default',
+          jsx(CbAction, {
+            variant: 'primary',
             disabled: Boolean(busy) || !current,
             onClick: onPrimary,
-            style: {
-              background: busy || !current ? 'var(--cb-paper)' : 'var(--cb-lamp)',
-              color: busy || !current ? 'var(--cb-ink-soft)' : 'var(--cb-on-lamp)',
-              border: `1px solid ${busy || !current ? 'var(--cb-rule)' : 'var(--cb-on-lamp)'}`,
-              borderRadius: '2px',
-              minHeight: '36px'
-            },
             children: busy ? 'Opening' : desk.primaryLabel
           }),
-          jsx(sdk.Button, {
+          jsx(CbAction, {
             variant: 'secondary',
             disabled: !current,
             onClick: () => onOpenSection(current ? current.objective_id : null),
-            style: { border: '1px solid var(--cb-ink)', borderRadius: '2px', minHeight: '36px' },
             children: 'Open the section'
           })
         ]
@@ -3171,9 +3153,8 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
     'data-cb-sources-drawer': open ? 'open' : 'closed',
     style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', maxWidth: '100%' },
     children: [
-      jsx(sdk.Button, {
-        variant: 'text',
-        size: 'sm',
+      jsx(CbAction, {
+        variant: 'tertiary',
         className: 'self-start',
         'aria-expanded': open ? 'true' : 'false',
         'aria-controls': 'cb-desk-sources',
@@ -3200,7 +3181,7 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
                         jsx('span', {
                           children: `${error && error.code ? error.code + ': ' : ''}${describeError(error)} The sources were not read.`
                         }),
-                        jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: onRetry, children: 'Try again' })
+                        jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Try again' })
                       ]
                     })
                   : items.length === 0
@@ -3245,7 +3226,7 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
         children: [
           jsx(DeskLabel, { as: 'h2', children: `All courses · ${groups.length}` }),
-          jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'Search and manage courses' })
+          jsx(CbAction, { variant: 'tertiary', onClick: onShowAll, children: 'Search and manage courses' })
         ]
       }),
       others.length === 0
@@ -3267,9 +3248,8 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
                   group,
                   testId: group.primary.enrollment_id,
                   onOpenMember: onOpen,
-                  action: jsx(sdk.Button, {
-                    variant: 'secondary',
-                    size: 'sm',
+                  action: jsx(CbAction, {
+                    variant: 'tertiary',
                     onClick: () => onOpen(group.primary),
                     children: 'Open'
                   })
@@ -3545,8 +3525,8 @@ function FieldDeskHome({
         children: jsxs('div', {
           className: 'flex flex-wrap items-center justify-center gap-2',
           children: [
-            jsx(sdk.Button, { variant: 'default', onClick: onRetry, children: 'Try again' }),
-            jsx(sdk.Button, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
+            jsx(CbAction, { variant: 'primary', onClick: onRetry, children: 'Try again' }),
+            jsx(CbAction, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
           ]
         })
       })
@@ -3604,7 +3584,7 @@ function FieldDeskHome({
                 className: 'text-xs text-(--ui-text-secondary)',
                 children: 'Reconnecting. Showing the courses that were last read; the desk is paused.'
               }),
-              jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onRetry, children: 'Retry now' })
+              jsx(CbAction, { variant: 'tertiary', onClick: onRetry, children: 'Retry now' })
             ]
           })
         : null,
@@ -3968,8 +3948,8 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
         children: jsxs('div', {
           className: 'flex flex-wrap items-center justify-center gap-2',
           children: [
-            jsx(sdk.Button, { variant: 'default', onClick: reload, children: 'Try again' }),
-            jsx(sdk.Button, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
+            jsx(CbAction, { variant: 'primary', onClick: reload, children: 'Try again' }),
+            jsx(CbAction, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
           ]
         })
       })
@@ -4011,7 +3991,7 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
                   className: 'text-xs text-(--ui-text-secondary)',
                   children: 'Reconnecting. Showing the last courses that were read; changes are paused.'
                 }),
-                jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: reload, children: 'Retry now' })
+                jsx(CbAction, { variant: 'tertiary', onClick: reload, children: 'Retry now' })
               ]
             })
           : null,
@@ -4033,9 +4013,8 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
                             className: 'min-w-0 break-words text-(--ui-text-secondary)',
                             children: `${group.primary.title} · ${groupReviewDue(group)} due`
                           }),
-                          jsx(sdk.Button, {
-                            variant: 'text',
-                            size: 'sm',
+                          jsx(CbAction, {
+                            variant: 'tertiary',
                             onClick: () => onOpen(group.primary),
                             children: 'Review'
                           })
@@ -4077,10 +4056,9 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
     className: 'flex flex-col',
     children: [
       onShowDesk
-        ? jsx(sdk.Button, {
+        ? jsx(CbAction, {
             className: 'mb-2 self-start',
-            variant: 'text',
-            size: 'sm',
+            variant: 'tertiary',
             onClick: onShowDesk,
             children: 'Back to the Field Desk'
           })
@@ -4173,7 +4151,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
     className: 'flex min-w-0 flex-1 flex-col gap-3',
     children: [
       showBack
-        ? jsx(sdk.Button, { className: 'self-start', onClick: onBack, size: 'sm', variant: 'text', children: 'All packs' })
+        ? jsx(CbAction, { className: 'self-start', onClick: onBack, variant: 'tertiary', children: 'All packs' })
         : null,
       jsxs('div', {
         className: 'flex flex-col',
@@ -4225,24 +4203,23 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
         className: 'flex flex-wrap items-center gap-2 pt-1',
         children: [
           next.kind === 'resume_lesson' && supports('binding.get')
-            ? jsx(sdk.Button, { onClick: () => onResume(row), size: 'sm', variant: 'default', children: 'Resume lesson' })
+            ? jsx(CbAction, { onClick: () => onResume(row), variant: 'secondary', children: 'Resume lesson' })
             : null,
           supports('enrollment.update')
-            ? jsx(sdk.Button, {
+            ? jsx(CbAction, {
                 onClick: () => onArchive(row, row.enrollment_status === 'archived' ? 'unarchive' : 'archive'),
-                size: 'sm',
-                variant: 'secondary',
+                variant: 'tertiary',
                 children: row.enrollment_status === 'archived' ? 'Unarchive' : 'Archive'
               })
             : null,
           supports('enrollment.delete')
-            ? jsx(sdk.Button, { onClick: () => onDelete(row), size: 'sm', variant: 'secondary', children: 'Delete enrollment…' })
+            ? jsx(CbAction, { onClick: () => onDelete(row), variant: 'tertiary', children: 'Delete enrollment…' })
             : null,
           row.provenance && row.provenance.pack_id && supports('pack.export')
-            ? jsx(sdk.Button, { onClick: () => onExportPack(row), size: 'sm', variant: 'secondary', children: 'Export pack…' })
+            ? jsx(CbAction, { onClick: () => onExportPack(row), variant: 'tertiary', children: 'Export pack…' })
             : null,
           row.provenance && row.provenance.pack_id && supports('pack.delete') && row.warning !== 'pack_frozen'
-            ? jsx(sdk.Button, { onClick: () => onDeletePack(row), size: 'sm', variant: 'secondary', children: 'Remove pack…' })
+            ? jsx(CbAction, { onClick: () => onDeletePack(row), variant: 'tertiary', children: 'Remove pack…' })
             : null
         ]
       }),
@@ -4398,7 +4375,7 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
           title: 'Installed packs could not be read',
           description: `${error && error.code ? error.code + ': ' : ''}${describeError(error)}`
         }),
-        jsx(sdk.Button, { className: 'self-start', onClick: reload, size: 'sm', variant: 'secondary', children: 'Try again' })
+        jsx(CbAction, { className: 'self-start', onClick: reload, variant: 'tertiary', children: 'Try again' })
       ]
     })
   } else if (rows.length === 0) {
@@ -4488,7 +4465,7 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
                 className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
                 style: { listStyle: 'none', minHeight: '1.75rem' },
                 children: [
-                  jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+                  jsx(sdk.Codicon, { name: 'chevron-right', size: CB_ICON_UI }),
                   jsx('span', { children: 'What we check / what we do not check' })
                 ]
               }),
@@ -5267,19 +5244,17 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
             ? jsx(sdk.Button, { onClick: () => setStep(step - 1), size: 'sm', variant: 'secondary', disabled: submitting, children: 'Back' })
             : null,
           step < 3
-            ? jsx(sdk.Button, {
+            ? jsx(CbAction, {
                 'aria-describedby': step === 1 && !canAdvance ? 'cb-scope-time' : undefined,
                 disabled: step === 1 ? !canAdvance : false,
                 onClick: () => setStep(step + 1),
-                size: 'sm',
-                variant: 'default',
+                variant: 'primary',
                 children: 'Continue'
               })
-            : jsx(sdk.Button, {
+            : jsx(CbAction, {
                 disabled: submitting,
                 onClick: submit,
-                size: 'sm',
-                variant: 'default',
+                variant: 'primary',
                 children: submitting ? 'Creating course' : recoverable ? 'Retry the plan job' : 'Create course'
               })
         ]
@@ -6232,9 +6207,8 @@ function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, bu
       jsxs('div', { className: 'flex flex-wrap items-center gap-2 border-t border-(--ui-stroke-tertiary) pt-3', children: [
         jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: onBack, children: 'Back' }),
         onReparse ? jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: onReparse, disabled: Boolean(busy), children: 'Read it again' }) : null,
-        jsx(sdk.Button, {
-          size: 'sm',
-          variant: 'default',
+        jsx(CbAction, {
+          variant: 'primary',
           disabled: Boolean(busy) || needsReview,
           onClick: onContinue,
           children: continueLabel || 'Confirm these details'
@@ -6309,9 +6283,8 @@ function SyllabusAlignmentReview({ alignment, onDecision, onApprove, onRealign, 
         : jsx(sdk.PanelEmpty, { children: 'Nothing has been mapped yet. Run the alignment against a draft plan first.' }),
       anchor ? jsx(SyllabusAnchorPanel, { open: true, anchors: anchor.anchors, blocks: alignment && alignment.blocks, label: anchor.label, onClose: () => setAnchor(null) }) : null,
       jsxs('div', { className: 'flex flex-wrap items-center gap-2 border-t border-(--ui-stroke-tertiary) pt-3', children: [
-        jsx(sdk.Button, {
-          size: 'sm',
-          variant: 'default',
+        jsx(CbAction, {
+          variant: 'primary',
           disabled: Boolean(busy) || !view.approveReady,
           onClick: onApprove,
           children: 'Approve this mapping'
@@ -6540,10 +6513,9 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
         ? jsxs('div', { className: 'flex flex-col gap-2', children: [
             jsx('div', { className: 'text-sm font-semibold', children: 'Map this plan to your syllabus' }),
             jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.alignmentGate }),
-            jsx(sdk.Button, {
+            jsx(CbAction, {
               className: 'self-start',
-              size: 'sm',
-              variant: 'default',
+              variant: 'primary',
               disabled: busy || stale,
               onClick: mapPlan,
               children: 'Map the plan to my syllabus'
@@ -6802,10 +6774,9 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
           children: SYLLABUS_COPY.storage
         })
       ] }),
-      jsx(sdk.Button, {
+      jsx(CbAction, {
         className: 'self-start',
-        size: 'sm',
-        variant: 'default',
+        variant: 'primary',
         disabled: busy || !ack || pasted.trim().length === 0,
         onClick: submitPasted,
         children: busy ? 'Reading your syllabus' : 'Use this text'
@@ -7026,9 +6997,8 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
       failure ? jsx(sdk.ErrorState, { title: failure.code, description: failure.message }) : null,
       jsxs('div', { className: 'flex flex-wrap gap-2 border-t border-(--ui-stroke-tertiary) pt-3', children: [
         jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: () => setStep('review'), disabled: submitting, children: 'Back to the details' }),
-        jsx(sdk.Button, {
-          size: 'sm',
-          variant: 'default',
+        jsx(CbAction, {
+          variant: 'primary',
           disabled: submitting,
           onClick: async () => {
             if (!keyRef.current) keyRef.current = `cb-companion-${newOperationId('companion')}`
@@ -7662,7 +7632,7 @@ function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewE
                   {
                     className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                     children: [
-                      jsx(sdk.Codicon, { name: item.met ? 'pass' : 'circle-slash', size: '0.75rem' }),
+                      jsx(sdk.Codicon, { name: item.met ? 'pass' : 'circle-slash', size: CB_ICON_UI }),
                       jsx('span', { className: 'ml-1', children: item.observed || item.id })
                     ]
                   },
@@ -7686,9 +7656,8 @@ function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewE
             className: 'flex flex-wrap items-center gap-2',
             children: [
               confirmed.length > 0
-                ? jsx(sdk.Button, {
-                    variant: 'default',
-                    size: 'sm',
+                ? jsx(CbAction, {
+                    variant: 'primary',
                     onClick: onResumeChecklist,
                     children: 'Tick the remaining steps'
                   })
@@ -7937,9 +7906,8 @@ function ParentObservation({ enrollmentId, objectiveId, onRecorded }) {
               error ? jsx(ErrorLine, { error }) : null,
               jsx('div', {
                 className: 'flex flex-wrap items-center gap-2',
-                children: jsx(sdk.Button, {
-                  variant: 'default',
-                  size: 'sm',
+                children: jsx(CbAction, {
+                  variant: 'primary',
                   disabled: phase === 'saving' || overLimit,
                   onClick: submit,
                   children: phase === 'saving' ? 'Recording…' : error ? 'Try again' : 'Record observation'
@@ -8414,9 +8382,8 @@ function AttemptControls({
                 : jsxs('div', {
                 className: 'flex flex-wrap items-center gap-2',
                 children: [
-                  jsx(sdk.Button, {
-                    variant: 'default',
-                    size: 'sm',
+                  jsx(CbAction, {
+                    variant: 'primary',
                     disabled: locked || detached || (checklist.length > 0 ? checklistEmpty : !text.trim()),
                     onClick: submit,
                     children: locked ? 'Submitting' : checklist.length > 0 ? 'Submit confirmation' : 'Submit answer'
@@ -8904,9 +8871,18 @@ const CB_TYPE_SCALE_JSON =
 const CB_TYPE = JSON.parse(CB_TYPE_SCALE_JSON)
 const CB_TYPE_STEPS = Object.freeze(['caption', 'meta', 'body', 'lead', 'heading', 'display'])
 
+/** One plural rule for every count the learner reads: `plural(1,'section','sections')`. */
+function plural(count, one, many) {
+  return `${count} ${Number(count) === 1 ? one : many}`
+}
+
 /** The host cannot ship a font file, so the voices are OS-resident stacks only. */
 const CB_SERIF = 'ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif'
 const CB_SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif'
+
+/** Codicon only, two sizes: 16px beside UI text, 20px on a plate mark. Never a per-row icon. */
+const CB_ICON_UI = '1rem'
+const CB_ICON_PLATE = '1.25rem'
 
 /** Four named ranges, measured from the route, never from a media query. */
 const CB_WIDE_BREAKPOINT = 1050
@@ -9259,46 +9235,10 @@ function cbCourseGoalLine(row) {
 }
 
 /**
- * The course seal: a surveyed square, an identity arc, meridians and one station mark. It is
- * decorative (`aria-hidden`); the course title is always adjacent as text.
+ * H-145 — the course seal was retired from every surface it appeared on. The owner asked twice
+ * what it meant; a mark that needs an explanation is not identity. `cbSealStation` stays exported
+ * because the visual-identity probes address it, but nothing in the route renders an SVG seal.
  */
-function SurveyMark({ courseId, identity, size }) {
-  const station = cbSealStation(courseId)
-  const hue = identity === 'plum' ? 'var(--cb-plum)' : 'var(--cb-accent)'
-  const points = [
-    [26, 26],
-    [70, 26],
-    [26, 70],
-    [70, 70]
-  ]
-  const [cx, cy] = points[station]
-  const ticks = [
-    ['M4 18 H4 V4 H18', 'tl'],
-    ['M78 4 H92 V18', 'tr'],
-    ['M92 78 V92 H78', 'br'],
-    ['M18 92 H4 V78', 'bl']
-  ]
-  const tick = station <= 1 ? ticks[3] : ticks[0]
-  return jsxs('svg', {
-    'data-cb-seal': String(station),
-    'data-cb-seal-identity': identity === 'plum' ? 'plum' : 'accent',
-    viewBox: '0 0 96 96',
-    width: size || 96,
-    height: size || 96,
-    'aria-hidden': 'true',
-    focusable: 'false',
-    style: { display: 'block', flex: '0 0 auto' },
-    children: [
-      jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1.6 }, 'frame'),
-      jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: hue, strokeWidth: 7 }, 'arc'),
-      jsx('path', { d: 'M4 36.5 H92', stroke: 'var(--cb-rule)', strokeWidth: 1 }, 'meridian-h'),
-      jsx('path', { d: 'M59.5 4 V92', stroke: 'var(--cb-rule)', strokeWidth: 1 }, 'meridian-v'),
-      jsx('circle', { cx, cy, r: 13, fill: 'none', stroke: hue, strokeWidth: 1.6 }, 'ring'),
-      jsx('circle', { cx, cy, r: 7, fill: hue }, 'station'),
-      jsx('path', { d: tick[0], fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1 }, 'tick')
-    ]
-  })
-}
 
 /** Segment kinds are internal enums; the learner sees a plain word. */
 const CB_SEGMENT_WORD = {
@@ -9651,15 +9591,113 @@ function cbModeFor(view) {
 }
 
 /**
- * The lamp fill for the one primary action on a screen. The SDK button supplies behaviour, focus
- * and disabled handling; the identity fill comes from the scoped tokens so the primary is the
- * brand field and not the host's default accent (§4.12 of the v2 spec).
+ * Coursebook's one action primitive (H-151). `sdk.Button` supplies behaviour, focus and disabled
+ * semantics; this table supplies the Coursebook control language so a route never inherits the
+ * host's settings-page button (the default fill is the host accent, which is not a Coursebook
+ * colour). Four variants and no fifth: `primary` is the single lamp field a screen is allowed,
+ * `secondary` is a peer action beside it, `tertiary` is a text action inside prose or a meta line,
+ * and `row` is a full-width list-row action that keeps its own 44px target.
+ *
+ * Targets: primary and secondary are 44px, row is 44px, tertiary is 24px. Type: body on the two
+ * filled variants and the row, meta on the text action, so a route never gains a seventh size.
  */
-const CB_PRIMARY_STYLE = {
-  background: 'var(--cb-lamp)',
-  color: 'var(--cb-on-lamp)',
-  border: '1px solid var(--cb-on-lamp)',
-  borderRadius: '2px'
+const CB_ACTION_VARIANTS = Object.freeze(['primary', 'secondary', 'tertiary', 'row'])
+
+const CB_ACTION_STYLES = {
+  primary: {
+    variant: 'default',
+    minHeight: '44px',
+    fontSize: CB_TYPE.body,
+    className: undefined,
+    style: {
+      background: 'var(--cb-lamp)',
+      color: 'var(--cb-on-lamp)',
+      border: '1px solid var(--cb-on-lamp)',
+      borderRadius: '2px',
+      fontFamily: CB_SANS,
+      fontWeight: 600
+    }
+  },
+  secondary: {
+    variant: 'secondary',
+    minHeight: '44px',
+    fontSize: CB_TYPE.body,
+    className: undefined,
+    style: {
+      background: 'var(--cb-paper)',
+      color: 'var(--cb-ink)',
+      border: '1px solid var(--cb-ink)',
+      borderRadius: '2px',
+      fontFamily: CB_SANS,
+      fontWeight: 600
+    }
+  },
+  tertiary: {
+    variant: 'text',
+    minHeight: '24px',
+    fontSize: CB_TYPE.meta,
+    className: undefined,
+    style: {
+      background: 'transparent',
+      color: 'var(--cb-ink)',
+      border: 'none',
+      borderRadius: 0,
+      padding: '0.15rem 0',
+      fontFamily: CB_SANS,
+      fontWeight: 600
+    }
+  },
+  row: {
+    variant: 'text',
+    minHeight: '44px',
+    fontSize: CB_TYPE.body,
+    className: 'w-full justify-start',
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      textAlign: 'left',
+      background: 'transparent',
+      color: 'var(--cb-ink)',
+      border: 'none',
+      borderRadius: 0,
+      padding: '0.35rem 0',
+      fontFamily: CB_SANS,
+      fontWeight: 500
+    }
+  }
+}
+
+/**
+ * One wrapper around `sdk.Button`, so every migrated call site speaks the same control language.
+ * The host `size` prop is accepted and dropped: the Coursebook variant owns the target and the
+ * type step, so a caller cannot accidentally shrink a primary below 44px. A disabled primary
+ * keeps the fill honest: it drops to paper and soft ink rather than pretending it is still live.
+ */
+function CbAction({ variant, className, style, disabled, children, ...rest }) {
+  // The Coursebook variant owns the target and the type step; a caller's host `size` cannot
+  // shrink a primary below 44px.
+  delete rest.size
+  const kind = Object.prototype.hasOwnProperty.call(CB_ACTION_STYLES, variant) ? variant : 'secondary'
+  const spec = CB_ACTION_STYLES[kind]
+  const palette = disabled && kind === 'primary'
+    ? { background: 'var(--cb-paper)', color: 'var(--cb-ink-soft)', border: '1px solid var(--cb-rule)' }
+    : null
+  return jsx(sdk.Button, {
+    ...rest,
+    'data-cb-action': kind,
+    disabled: Boolean(disabled),
+    variant: spec.variant,
+    className: [spec.className, className].filter(Boolean).join(' ') || undefined,
+    style: {
+      ...spec.style,
+      ...(style || {}),
+      ...(palette || {}),
+      minHeight: spec.minHeight,
+      fontSize: spec.fontSize
+    },
+    children
+  })
 }
 
 /**
@@ -10634,9 +10672,8 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
         children: [
           phase === 'recording'
             ? jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: stop, children: 'Stop' })
-            : jsx(sdk.Button, {
-                variant: 'default',
-                size: 'sm',
+            : jsx(CbAction, {
+                variant: 'primary',
                 disabled: !canRecord,
                 onClick: start,
                 'aria-describedby': 'cb-pronunciation-availability',
@@ -11284,9 +11321,8 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
             onClick: onBack,
             children: 'Back'
           }),
-          jsx(sdk.Button, {
-            variant: 'default',
-            size: 'sm',
+          jsx(CbAction, {
+            variant: 'primary',
             disabled: last,
             onClick: onNext,
             children: 'Continue'
@@ -11547,7 +11583,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
             style: {
               margin: 0,
               fontFamily: CB_SERIF,
-              fontSize: phone ? CB_TYPE.heading : CB_TYPE.display,
+              fontSize: CB_TYPE.heading,
               fontWeight: 600,
               lineHeight: 1.1,
               letterSpacing: '-0.015em',
@@ -12699,6 +12735,9 @@ function SectionPage({
         })
     : null
 
+  // When a live check is mounted it is the learner's action on this surface; the chat-run action
+  // steps back to secondary so the screen still has exactly one primary (H-151).
+  const checkOwnsPrimary = Boolean(!parentLed && check && check.check)
   const checkNode =
     check.status === 'error'
       ? jsx(QuietNote, {
@@ -12906,8 +12945,8 @@ function SectionPage({
               jsxs('div', {
                 style: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', paddingTop: '0.2rem' },
                 children: [
-                  jsx(sdk.Button, { variant: 'default', size: 'sm', onClick: onRetryPage, children: 'Try again' }),
-                  jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCapabilities, children: 'Open Capabilities' })
+                  jsx(CbAction, { variant: 'primary', onClick: onRetryPage, children: 'Try again' }),
+                  jsx(CbAction, { variant: 'secondary', onClick: openCapabilities, children: 'Open Capabilities' })
                 ]
               })
             ]
@@ -13209,7 +13248,7 @@ function SectionPage({
           'data-cb-breadcrumb': 'sections',
           className: 'self-start',
           onClick: onBack,
-          children: [jsx(sdk.Codicon, { name: 'chevron-left', size: '0.8rem' }), row.title || 'All sections']
+          children: [jsx(sdk.Codicon, { name: 'chevron-left', size: CB_ICON_UI }), row.title || 'All sections']
         }, 'back'),
         jsx('span', {
           style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
@@ -13379,17 +13418,14 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
           jsxs('div', {
             style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
             children: [
-              jsx(sdk.Button, {
-                variant: 'default',
-                size: 'sm',
-                style: CB_PRIMARY_STYLE,
+              jsx(CbAction, {
+                variant: 'primary',
                 disabled: !section,
                 onClick: () => onResume(section ? section.objective_id : null),
                 children: next.kind === 'resume_lesson' ? 'Resume the lesson' : 'Start a fresh run'
               }),
-              jsx(sdk.Button, {
-                variant: 'text',
-                size: 'sm',
+              jsx(CbAction, {
+                variant: 'tertiary',
                 disabled: !section,
                 onClick: () => onOpenSection(section ? section.objective_id : null),
                 children: 'Read this section'
@@ -13892,7 +13928,9 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
       review,
       onBack: onCloseSection,
       onChanged,
-      targetBlockId: targetBlockId || null
+      targetBlockId: targetBlockId || null,
+      // Inside Course Detail the page hero owns the primary; the embedded section does not repeat it.
+      embedded: true
     })
   }
 
@@ -14317,7 +14355,7 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                             jsxs('div', {
                               className: 'flex items-center gap-2',
                               children: [
-                                jsx(sdk.Button, { variant: 'default', size: 'sm', onClick: saveEdit, children: 'Save changes' }),
+                                jsx(CbAction, { variant: 'primary', size: 'sm', onClick: saveEdit, children: 'Save changes' }),
                                 jsx(sdk.Button, {
                                   variant: 'text',
                                   size: 'sm',
@@ -15094,11 +15132,10 @@ function CourseExportView({ row, implemented }) {
           })
         ]
       }),
-      jsx(sdk.Button, {
+      jsx(CbAction, {
         disabled: busy || !confirmed,
         onClick: run,
-        size: 'sm',
-        variant: 'default',
+        variant: 'primary',
         children: busy ? 'Packaging' : 'Export these files'
       }),
       error ? jsx('div', { className: 'text-xs', children: error.message }) : null,
@@ -15443,7 +15480,6 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
             gap: phone ? '0.75rem' : '1.75rem'
           },
           children: [
-            jsx(SurveyMark, { courseId: row.course_id, identity: parentIdentity, size: phone ? 40 : 64 }),
             jsxs('div', {
               style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, flex: compactHero ? '1 1 100%' : '1 1 16rem' },
               children: [
@@ -15452,7 +15488,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
                   style: {
                     margin: 0,
                     fontFamily: CB_SERIF,
-                    fontSize: CB_TYPE.display,
+                    fontSize: CB_TYPE.heading,
                     fontWeight: 600,
                     lineHeight: 1.12,
                     letterSpacing: '-0.015em',
@@ -15489,14 +15525,13 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
                 minWidth: 0
               },
               children: [
-                jsx(sdk.Button, {
-                  variant: 'default',
-                  style: CB_PRIMARY_STYLE,
+                view === 'overview' || openSectionId ? null : jsx(CbAction, {
+                  variant: 'primary',
                   disabled: busy,
                   onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
                   children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start a fresh run'
                 }),
-                jsx(sdk.Button, {
+                jsx(CbAction, {
                   variant: 'secondary',
                   onClick: () => {
                     setView('textbook')
@@ -16314,7 +16349,7 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
         'A lesson plan starts from a short brief: the child’s age and reading level, where you will teach, what you have, ' +
         'what to leave out, and what you want them to be able to do. Coursebook drafts a plan for you to review before any ' +
         'lesson page is written.',
-      children: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'New lesson plan' })
+      children: jsx(CbAction, { onClick: onCreate, variant: 'primary', children: 'New lesson plan' })
     })
   }
 
@@ -16345,7 +16380,7 @@ function StudioLanding({ rows, onCreate, onOpen }) {
         label: 'Parent Studio',
         title: 'Plans for your child',
         caption: 'Each brief you write is kept as its own plan, so you can compare versions without losing the first.',
-        actions: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'New lesson plan' })
+        actions: jsx(CbAction, { onClick: onCreate, variant: 'primary', children: 'New lesson plan' })
       }),
       ...groups.map((group) =>
         jsx(
@@ -16644,8 +16679,8 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
       jsxs('div', {
         className: 'flex flex-wrap items-center gap-2',
         children: [
-          jsx(sdk.Button, {
-            variant: 'default',
+          jsx(CbAction, {
+            variant: 'primary',
             disabled: busy || problems.length > 0 || !supported,
             onClick: submit,
             children: busy ? 'Saving the brief' : 'Create the course and queue the plan'
@@ -16794,7 +16829,7 @@ function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplic
       jsxs('div', {
         className: 'flex flex-wrap items-center gap-2',
         children: [
-          jsx(sdk.Button, { variant: 'default', onClick: () => onDuplicate(brief, null), children: 'Duplicate brief' }),
+          jsx(CbAction, { variant: 'primary', onClick: () => onDuplicate(brief, null), children: 'Duplicate brief' }),
           latestProposal
             ? jsx(sdk.Button, {
                 variant: 'secondary',
@@ -16869,6 +16904,173 @@ const RESEARCH_STATUS_COPY = {
   available: 'Research fetched its sources.',
   degraded: 'Research returned only part of its sources.',
   unavailable: 'Research was unavailable, so no source could be checked.'
+}
+
+/**
+ * H-105: the validator record, said plainly.
+ *
+ * `model_assessed` is a limitation, not a badge. The one line only names *who* checked; the words
+ * "independently validated" are reserved for a record whose `independence` is `independent` — both
+ * model identities were reported by the provider and the model names differ. A same-model or
+ * unidentified pass, and a pass with research unavailable, can never be presented as independent.
+ * The rule and its consequences are the same as `docs/GENERATION.md` §1 and the status table in
+ * `docs/HARNESS-STATUS.md`; the technical provenance stays behind the disclosure.
+ *
+ * The record travels on the plan job's checkpoint (`checkpoint.validation`), bound to the plan id
+ * that job wrote. A carried plan version (`plan.replan`) has no validation record of its own, so
+ * this model says no check is recorded for this version rather than borrowing the previous one's.
+ */
+const PLAN_VALIDATION_LINES = Object.freeze({
+  independent: 'Checked by a second model',
+  same_model: 'Checked by the same model',
+  unidentified: 'Checked by a model that could not be identified',
+  unrecorded: 'No validator record is stored for this version'
+})
+
+/** Read the recorded independence, or derive it exactly as the backend does. Never upgrade. */
+function planValidationIndependence(validation) {
+  const declared = validation && validation.independence
+  if (declared === 'independent' || declared === 'same_model' || declared === 'unidentified') {
+    return declared
+  }
+  const generator = (validation && validation.generator) || {}
+  const validator = (validation && validation.validator) || {}
+  if (!generator.model || !validator.model) return 'unidentified'
+  return String(generator.model) === String(validator.model) ? 'same_model' : 'independent'
+}
+
+/** `provider/model` only from what the runtime reported; a missing half is not invented. */
+function planValidationModelName(identity) {
+  const model = identity && identity.model ? String(identity.model) : ''
+  const provider = identity && identity.provider ? String(identity.provider) : ''
+  if (model && provider) return `${provider}/${model}`
+  return model || null
+}
+
+/**
+ * The plan-review provenance model.
+ *
+ * `null` means the screen is still reading the job that owns the record: a line is not shown until
+ * the record is, so a pending read can never look like "no check". A record whose `plan_id` names
+ * another version is discarded, because a carried plan is a copy, not a re-validation.
+ */
+function planValidationView({ job, jobHint, plan, reading }) {
+  const planId = plan && plan.plan_id ? String(plan.plan_id) : null
+  const sources = [job, jobHint].filter(Boolean)
+  let checkpoint = null
+  let mismatched = false
+  for (const source of sources) {
+    const candidate = source.checkpoint || {}
+    if (!candidate.validation) continue
+    if (planId && candidate.plan_id && String(candidate.plan_id) !== planId) {
+      mismatched = true
+      continue
+    }
+    checkpoint = candidate
+    break
+  }
+  if (!checkpoint) {
+    // While the owning job is still being read, stay silent rather than claim "no record".
+    if (reading && !mismatched) return null
+    return {
+      state: 'unrecorded',
+      line: PLAN_VALIDATION_LINES.unrecorded,
+      validatorModel: null,
+      generatorModel: null,
+      factsUnverified: false,
+      warning: null,
+      note: null,
+      detail: [
+        'No validation record is bound to this exact plan version, so nothing here claims a second model.',
+        mismatched
+          ? 'The plan job read here checked an earlier plan version; a carried version is a copy, not a re-check.'
+          : null
+      ].filter(Boolean)
+    }
+  }
+  const validation = checkpoint.validation
+  const independence = planValidationIndependence(validation)
+  const outcome = String(validation.outcome || checkpoint.validation_verdict || '')
+  const generatorModel = planValidationModelName(validation.generator)
+  const validatorModel = planValidationModelName(validation.validator)
+  const factsUnverified = Boolean(validation.facts_unverified)
+  const detail = []
+  if (VALIDATION_OUTCOME_COPY[outcome]) detail.push(VALIDATION_OUTCOME_COPY[outcome])
+  else if (outcome === 'pass') detail.push('The validator passed this draft.')
+  if (generatorModel) detail.push(`Writing model: ${generatorModel}.`)
+  detail.push(
+    validatorModel
+      ? `Checking model: ${validatorModel}.`
+      : 'The runtime did not report the checking model.'
+  )
+  if (factsUnverified) detail.push('The sources were not checked, so a pass is not factual verification.')
+  if (validation.warning) detail.push(String(validation.warning))
+  return {
+    // `state` carries the rejection for the screen; the line itself only ever names who checked.
+    state: outcome === 'rejected' ? 'rejected' : independence,
+    independence,
+    outcome,
+    line: PLAN_VALIDATION_LINES[independence],
+    validatorModel,
+    generatorModel,
+    factsUnverified,
+    warning: validation.warning || null,
+    note: factsUnverified
+      ? 'The facts were not checked against sources, so this is not factual verification.'
+      : null,
+    detail
+  }
+}
+
+/**
+ * One plain line plus a disclosure. Never a badge, never an "independently validated" claim for a
+ * same-model pass; the model/provider names appear only when the runtime reported them.
+ */
+function PlanValidationLine({ job, jobHint, plan, reading, learner }) {
+  const model = planValidationView({ job, jobHint, plan, reading })
+  if (!model) return null
+  return jsxs('div', {
+    'data-cb-plan-validation': model.state,
+    className: 'flex max-w-prose flex-col gap-1 text-xs leading-relaxed text-(--ui-text-secondary)',
+    children: [
+      jsx('div', {
+        'data-cb-plan-validation-line': model.independence || model.state,
+        style: { color: 'var(--cb-ink)', fontWeight: 600 },
+        children: model.line
+      }),
+      model.validatorModel
+        ? jsx('div', {
+            'data-cb-plan-validation-model': model.validatorModel,
+            children: `Checking model: ${model.validatorModel}`
+          })
+        : null,
+      model.note
+        ? jsx('div', { 'data-cb-plan-validation-facts': 'unverified', children: model.note })
+        : null,
+      jsxs('details', {
+        'data-cb-plan-validation-detail': '',
+        children: [
+          jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }),
+          jsx('div', {
+            className: 'mt-1 flex flex-col gap-1',
+            children: [
+              ...model.detail.map((line, index) =>
+                jsx('div', { children: line }, `validation-detail-${index}`)
+              ),
+              learner
+                ? null
+                : jsx('div', {
+                    'data-cb-plan-validation-source': 'docs/GENERATION.md',
+                    children:
+                      'Provenance rule: docs/GENERATION.md §1 (validator independence) and ' +
+                      'docs/HARNESS-STATUS.md.'
+                  })
+            ]
+          })
+        ]
+      })
+    ]
+  })
 }
 
 /**
@@ -17014,9 +17216,8 @@ function PlanRejectPanel({ model, busy, error, onAction }) {
       }),
       jsx('div', {
         className: 'flex flex-wrap items-center gap-2',
-        children: jsx(sdk.Button, {
-          size: 'sm',
-          variant: 'default',
+        children: jsx(CbAction, {
+          variant: 'primary',
           disabled: busy,
           onClick: onAction,
           children: busy ? 'Starting' : model.action.label
@@ -17050,6 +17251,7 @@ function StudioPlanView({
   book,
   brief,
   planJobId,
+  planJobHint,
   onChangeGoal,
   onJobSettled,
   onChanged,
@@ -17479,22 +17681,20 @@ function StudioPlanView({
                 ? jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: startEditing, children: 'Edit plan' })
                 : null,
               editing
-                ? jsx(sdk.Button, { size: 'sm', variant: 'default', disabled: busy, onClick: savePlan, children: busy ? 'Saving' : 'Save changes' })
+                ? jsx(CbAction, { size: 'sm', variant: 'primary', disabled: busy, onClick: savePlan, children: busy ? 'Saving' : 'Save changes' })
                 : null,
               editing ? jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: cancelEditing, children: 'Cancel' }) : null,
               isDraft && !editing
-                ? jsx(sdk.Button, {
-                    size: 'sm',
-                    variant: 'default',
+                ? jsx(CbAction, {
+                    variant: 'primary',
                     disabled: busy || !supported('plan.approve') || Boolean(syllabusGate && syllabusGate.required && !syllabusGate.ready),
                     onClick: approvePlan,
                     children: 'Approve plan'
                   })
                 : null,
               !isDraft && !editing && !lessonDocumentGap
-                ? jsx(sdk.Button, {
-                    size: 'sm',
-                    variant: 'default',
+                ? jsx(CbAction, {
+                    variant: 'primary',
                     disabled: busy || !supported('jobs.create'),
                     onClick: generateLessons,
                     children: contentReady ? 'Generate missing lessons' : 'Generate lessons'
@@ -17521,6 +17721,17 @@ function StudioPlanView({
             error: rejectError,
             onAction: runPlanRepair
           })
+        : jsx(PlanValidationLine, {
+            // H-105: who checked this exact plan version, read from the job that wrote it. The
+            // line never claims more than the stored record says; the enums stay in the disclosure.
+            job: planRun,
+            jobHint: planJobHint,
+            plan,
+            reading: Boolean(activePlanJobId && !planRun),
+            learner
+          }),
+      shownRejection
+        ? null
         : jsx(QuietNote, {
             children:
               'Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.'
@@ -17915,9 +18126,8 @@ function LearnerPlanView({
             className: 'flex flex-wrap items-center gap-2',
             children: [
               lessonsReady && onStartLesson
-                ? jsx(sdk.Button, {
-                    size: 'sm',
-                    variant: 'default',
+                ? jsx(CbAction, {
+                    variant: 'primary',
                     onClick: () => onStartLesson(objectives[0].objective_id),
                     children: 'Start the first lesson'
                   })
@@ -17968,6 +18178,9 @@ function LearnerPlanView({
         book,
         brief: null,
         planJobId: showJob ? jobId : null,
+        // H-105: a finished plan job is not re-polled, but its checkpoint already carries the
+        // validator record, so a revisit still shows who checked this version.
+        planJobHint: planJob,
         onChangeGoal,
         onJobSettled: reloadAll,
         onChanged: reloadAll,
@@ -18249,8 +18462,8 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
         onChange: (value) => setFormats((previous) => ({ ...previous, pdf: value })),
         children: 'Printable PDF: selectable text, low-ink layout, no color-only answers.'
       }),
-      jsx(sdk.Button, {
-        variant: 'default',
+      jsx(CbAction, {
+        variant: 'primary',
         disabled: busy || !status.ready || chosen.length === 0 || !supported('parent.export'),
         onClick: run,
         children: busy ? 'Exporting' : 'Export the approved files'
@@ -18432,8 +18645,8 @@ function StudioReflectionView({ course, reflections, supported, onDuplicate, onS
       jsxs('div', {
         className: 'flex flex-wrap items-center gap-2',
         children: [
-          jsx(sdk.Button, {
-            variant: 'default',
+          jsx(CbAction, {
+            variant: 'primary',
             disabled: busy || !supported('parent.reflection.record'),
             onClick: record,
             children: busy ? 'Saving' : 'Record reflection'
@@ -18654,6 +18867,27 @@ function FocusReturningDialog({ open, ...props }) {
   return jsx(sdk.ConfirmDialog, dialogProps)
 }
 
+/**
+ * H-145 — the product wordmark. It is type, not an ornament: the seal read as an avatar or a
+ * refresh glyph and needed an explanation, so the route header carries the name instead. It is a
+ * plain div, never a heading, so the page `h1` stays the only page label.
+ */
+function CoursebookWordmark() {
+  return jsx('div', {
+    'data-cb-wordmark': '',
+    style: {
+      fontFamily: CB_SERIF,
+      fontSize: CB_TYPE.meta,
+      fontWeight: 600,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+      lineHeight: 1.2,
+      color: 'var(--cb-ink-soft)'
+    },
+    children: 'Coursebook'
+  })
+}
+
 function CoursebookPage() {
   const { state: health, reload: reloadHealth } = useHealth()
   const implemented = useRuntime(health.status)
@@ -18662,7 +18896,6 @@ function CoursebookPage() {
   const cbMode = useCbMode()
   const cbMotion = useCbMotion()
   const [destination, setDestination] = useState(rememberedDestination)
-  const [coursesMode, setCoursesMode] = useState('desk')
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
   const [syllabusFlow, setSyllabusFlow] = useState(false)
@@ -18691,7 +18924,6 @@ function CoursebookPage() {
     setCreating(false)
     setImporting(false)
     setSyllabusFlow(false)
-    setCoursesMode('desk')
     setOpenCourse(null)
     setStudioCourse(null)
     setStudioSeed(null)
@@ -18911,7 +19143,7 @@ function CoursebookPage() {
       },
       onNewSyllabus: openNewSyllabusRevision
     })
-  } else if (coursesMode === 'list') {
+  } else if (destination === 'courses') {
     body = jsx(CoursesView, {
       createOpen: creating,
       implemented,
@@ -18919,16 +19151,18 @@ function CoursebookPage() {
       onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
       onOpen: (row) => setOpenCourse({ row, objectiveId: null }),
-      onShowDesk: () => setCoursesMode('desk')
+      onShowDesk: () => changeDestination('home')
     })
   } else {
+    // H-145: Home is the launcher. It carries exactly one Continue surface for the selected
+    // classroom; the all-courses catalog lives behind the Courses destination, not here.
     body = jsx(FieldDesk, {
       implemented,
       profile: currentScope().profile,
       onEmptyChange: setCoursesEmpty,
       onOpen: (row, objectiveId, blockId, view) =>
         setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null }),
-      onShowAll: () => setCoursesMode('list'),
+      onShowAll: () => changeDestination('courses'),
       onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null
     })
@@ -18937,10 +19171,13 @@ function CoursebookPage() {
   const statusCopy = backendCopy(health.status)
   const online = useOnline()
   const showDestinationNav = health.status === 'ready' && !creating && !importing && !syllabusFlow
-  // One stable page title per destination. It is the route's only `h1` in every health and flow
+  // One stable page title per surface. It is the route's only `h1` in every health and flow
   // state, so the first heading is the page title and never a card's objective; every surface
-  // below it is an `h2` region.
-  const pageTitle = ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
+  // below it is an `h2` region. An open course is its own page ("Course"), not a second "Home"
+  // or a second course title (CourseDetail already prints the course name at h2).
+  const pageTitle = openCourse
+    ? 'Course'
+    : ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
 
   return jsxs('div', {
     className: 'relative flex h-full min-h-0 flex-col',
@@ -18958,13 +19195,20 @@ function CoursebookPage() {
             className: 'flex flex-wrap items-start justify-between gap-3',
             children: [
               jsxs('div', {
-                className: 'flex min-w-0 items-center gap-2',
+                className: 'flex min-w-0 flex-col gap-1',
                 children: [
-                  jsx(SurveyMark, { courseId: 'coursebook', size: 24 }),
+                  jsx(CoursebookWordmark, {}),
                   jsx('h1', {
                     'data-cb-page-title': '',
-                    className: 'text-base font-semibold',
-                    style: { margin: 0 },
+                    style: {
+                      margin: 0,
+                      fontFamily: CB_SERIF,
+                      fontSize: CB_TYPE.display,
+                      fontWeight: 600,
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.02em',
+                      color: 'var(--cb-ink)'
+                    },
                     children: pageTitle
                   })
                 ]
@@ -18978,13 +19222,13 @@ function CoursebookPage() {
                   online ? null : jsx(sdk.Badge, { variant: 'warn', children: 'Offline' }),
                   statusCopy ? jsx(sdk.Badge, { variant: health.status === 'unavailable' ? 'warn' : 'muted', children: statusCopy }) : null,
                   health.status === 'ready' && online && !creating && !importing && destination === 'courses' && canCreate && !coursesEmpty && !openCourse
-                    ? jsx(sdk.Button, { onClick: () => beginCreate(), size: 'sm', variant: 'secondary', children: 'New course' })
+                    ? jsx(CbAction, { onClick: () => beginCreate(), variant: 'secondary', children: 'New course' })
                     : null,
                   health.status === 'ready' && !creating && !importing && !syllabusFlow && destination === 'library' && canSyllabus
-                    ? jsx(sdk.Button, { onClick: () => setSyllabusFlow(true), size: 'sm', variant: 'secondary', children: SYLLABUS_COPY.action })
+                    ? jsx(CbAction, { onClick: () => setSyllabusFlow(true), variant: 'secondary', children: SYLLABUS_COPY.action })
                     : null,
                   health.status === 'ready' && !creating && !importing && !syllabusFlow && destination === 'library' && canImport
-                    ? jsx(sdk.Button, { onClick: onImportPlaceholder, size: 'sm', variant: 'default', children: 'Import pack' })
+                    ? jsx(CbAction, { onClick: onImportPlaceholder, variant: 'primary', children: 'Import pack' })
                     : null,
                   // H-91 P2-4: the Parent Studio landing plate already carries the one
                   // "New lesson plan" primary, so the route header must not repeat it (the gate
@@ -19522,6 +19766,9 @@ export {
   planJobBrief,
   planRejectView,
   PlanRejectPanel,
+  PLAN_VALIDATION_LINES,
+  planValidationView,
+  PlanValidationLine,
   planTimingCopy,
   startLearnerPlan,
   courseCreatePayload,

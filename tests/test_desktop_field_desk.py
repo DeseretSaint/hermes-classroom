@@ -491,8 +491,9 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn('data-cb-continue-section', html)
         # `resolve_review_due` in the row's next_step makes the due review the section to continue.
         self.assertIn("Diagnose a no-start", html)
-        self.assertIn("Review 1 objective(s)", html)
-        self.assertIn("Next · ", html)
+        self.assertIn("Start the review", html)
+        # H-145: the section title is the next step; the duplicate "Next ·" sentence is gone.
+        self.assertNotIn("Next · ", html)
         self.assertIn("Section 2 of 4", html)
 
     def test_a_narrow_desk_stacks_and_drops_the_course_stamp(self) -> None:
@@ -504,11 +505,14 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn("Diagnose a no-start", html)
         self.assertIn("Open the section", html)
 
-    def test_a_wide_desk_keeps_the_course_stamp(self) -> None:
-        html = self.render(width=1280)
-        self.assertIn('data-cb-desk-layout="wide"', html)
-        self.assertIn('data-cb-continue-compact="false"', html)
-        self.assertIn("data-cb-course-stamp", html)
+    def test_the_continue_plate_has_no_seal_at_any_width(self) -> None:
+        # H-145: the 64 px seal read as an avatar and needed an explanation. The plate carries the
+        # course title as text instead.
+        for width in (460, 900, 1280):
+            with self.subTest(width=width):
+                html = self.render(width=width)
+                self.assertNotIn("data-cb-course-stamp", html)
+                self.assertIn("data-cb-desk-course", html)
 
     def test_continue_shows_the_recorded_estimate_and_last_touched(self) -> None:
         html = self.render()
@@ -821,8 +825,7 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertEqual(html.count('data-cb-desk-facts='), 1, html)
         self.assertNotIn('data-cb-desk-stats', html)
         self.assertNotIn('data-cb-desk-stat=', html)
-        self.assertIn('data-cb-course-stamp', html)
-        # The next move and the path come before the secondary course shelf in reading order.
+        self.assertNotIn('data-cb-course-stamp', html)
         self.assertLess(html.index('data-cb-continue'), html.index('data-cb-all-courses'))
 
     def test_resume_without_a_binding_opens_the_section_instead_of_a_blank_chat(self) -> None:

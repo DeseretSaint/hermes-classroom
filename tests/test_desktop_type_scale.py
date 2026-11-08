@@ -149,7 +149,7 @@ const snapshot = (name) => {
 
 await act(async () => { root.render(route.render()) })
 await flush(120)
-const surfaces = [snapshot('courses-desk')]
+const surfaces = [snapshot('home-desk')]
 
 const navTo = async (destination) => {
   const button = document.querySelector(`[data-cb-nav-item="${destination}"]`)
@@ -350,7 +350,7 @@ class TypeScaleRenderTest(unittest.TestCase):
                     self.assertGreaterEqual(min(item["sizes"]), 12, item["sizes"])
 
     def test_body_copy_is_sixteen_pixels(self) -> None:
-        for name in ("courses-desk", "library", "studio", "section"):
+        for name in ("home-desk", "library", "studio", "section"):
             with self.subTest(surface=name):
                 item = self.surface(name)
                 self.assertIn(16, item["sizes"], f"{name} has no 16px body copy: {item['sizes']}")

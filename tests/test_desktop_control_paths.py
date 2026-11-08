@@ -37,7 +37,7 @@ from tests.test_desktop_lesson_views import SDK_STUB, _desktop_node_modules
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_JS = ROOT / "desktop" / "plugin.js"
 
-BUTTON_PATTERN = re.compile(r"jsxs?\(\s*(sdk\.Button|'button'|\"button\"|'a'|\"a\")\s*,\s*\{")
+BUTTON_PATTERN = re.compile(r"jsxs?\(\s*(sdk\.Button|CbAction|'button'|\"button\"|'a'|\"a\")\s*,\s*\{")
 HANDLER_KEYS = ("onClick", "href", "asChild", "type: 'submit'", 'type: "submit"', "formAction")
 DISABLED_KEYS = ("disabled",)
 
