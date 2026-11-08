@@ -13,6 +13,12 @@ This record is not a mastery score, an engagement metric, a badge or a leaderboa
 - lesson: `tests/fixtures/generation/lesson_parent_unsafe.json` sha256 `0935dcb0f92866e4d229cb1e5c55da40ac7e56489b682c6b79fd98d338d7121a`
 - validation: `tests/fixtures/generation/validation_reject_hazard.json` sha256 `f6d0161427286da5d0341aa346aa5cd155266c1ea6a67a2724b9743e32165c48`
 
+Superseded plan bytes (H-173c): the plan hash above is the pre-fix fixture this record scored.
+The repaired plan at `tests/fixtures/generation/plan_parent.json` is sha256
+`9358219ceb158086d964a9fd756728ba47ac5a7b88c145c0fc79dd4676e963fd`; the lesson and validation
+hashes above are unchanged, because `lesson_parent_unsafe.json` is the hazard fixture and was not
+edited. The re-score of the repaired pair is `docs/reviews/H173c-S3-parent-kitchen-rescore.md`.
+
 ## Observed facts
 
 Facts are extracted mechanically. They are not scores and they do not replace the
