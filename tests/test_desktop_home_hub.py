@@ -285,6 +285,35 @@ if (payload.script === 'select-option') {
   steps.push({ step: 'after-select', ...snapshot() })
 }
 
+// H-146a: the ring is a style the control paints, so the contract is read off the element itself.
+const focusInfo = (node) => ({
+  courseId: node.getAttribute('data-cb-slot-tab'),
+  active: document.activeElement === node,
+  outline: node.style.outline,
+  outlineOffset: node.style.outlineOffset,
+  ring: node.getAttribute('data-cb-focus-ring')
+})
+
+if (payload.script === 'focus') {
+  const target = document.querySelector('[data-cb-slot-tab="' + payload.target + '"]')
+  if (!target) throw new Error('no classroom tab ' + payload.target)
+  steps.push({ step: 'before-focus', focus: focusInfo(target) })
+  // jsdom moves activeElement on focus() but React listens for focusin on the root, so both the
+  // real event and its bubbling companion are dispatched the way a browser would.
+  await act(async () => {
+    target.focus()
+    target.dispatchEvent(new window.FocusEvent('focusin', { bubbles: true }))
+  })
+  await flush(60)
+  steps.push({ step: 'focused', focus: focusInfo(target) })
+  await act(async () => {
+    target.blur()
+    target.dispatchEvent(new window.FocusEvent('focusout', { bubbles: true }))
+  })
+  await flush(60)
+  steps.push({ step: 'blurred', focus: focusInfo(target) })
+}
+
 process.stdout.write(JSON.stringify({ steps, profileRouteReads: globalThis.__CB_PROFILE_ROUTES_CALLS || 0 }))
 """
 
@@ -662,6 +691,32 @@ class HubRouteTest(Harness):
         self.assertIn("flex-wrap:wrap", html)
         self.assertNotRegex(html, r"min-width:\s*[3-9][0-9]{2}px")
         self.assertIn("data-cb-slot-tab", html)
+
+    def test_focused_classroom_tab_paints_the_identity_focus_ring(self) -> None:
+        """H-146a: the tab keeps a visible ring while it holds focus, in the identity's own terms.
+
+        The host's reset clears the user agent ring on a bare button, so the plugin paints its own
+        inline outline; this asserts the property the control actually sets, and that it is not
+        `none` while focused and is `none` again once focus leaves.
+        """
+        result = self.page(
+            self.default_responses([row(), second_row()]), script="focus", target="crs_bbbbbbbbbbbbbbbb"
+        )
+        steps = {step["step"]: step["focus"] for step in result["steps"] if "focus" in step}
+        before, focused, blurred = steps["before-focus"], steps["focused"], steps["blurred"]
+        self.assertEqual(before["courseId"], "crs_bbbbbbbbbbbbbbbb")
+        self.assertFalse(before["active"])
+        self.assertEqual(before["outline"], "none")
+        self.assertEqual(before["ring"], "none")
+        self.assertTrue(focused["active"])
+        self.assertNotEqual(focused["outline"], "none")
+        self.assertEqual(focused["outline"], "2px solid var(--cb-accent)")
+        self.assertEqual(focused["outlineOffset"], "2px")
+        self.assertEqual(focused["ring"], "visible")
+        self.assertEqual(blurred["outline"], "none")
+        self.assertEqual(blurred["ring"], "none")
+        # The ring is a token, never a raw colour, and it is not the browser default either.
+        self.assertNotRegex(focused["outline"], r"#[0-9a-fA-F]{3,8}\b|rgba?\(")
 
     def test_offline_and_stale_keep_the_classroom_and_say_it_is_paused(self) -> None:
         html = self.render([row()], online=False, stale=True)

@@ -2840,6 +2840,69 @@ function DeskFacts({ desk }) {
 }
 
 /**
+ * H-146 — the focus ring for one classroom tab.
+ *
+ * The host stylesheet owns `:focus` and its reset clears the user agent's ring on a bare `button`,
+ * and this plugin has no stylesheet of its own to declare `:focus-visible` in — an inline `outline`
+ * is the only hook left. So the ring is state on the control: it is painted while the tab matches
+ * `:focus-visible` and it is `none` otherwise, matching
+ * `docs/COURSEBOOK-VISUAL-IDENTITY-V2.md` (2px `accent`, 2px offset, a 2px radius on the ring).
+ * It is never removed for keyboard users: a Tab stop always paints it, a pointer click does not.
+ */
+const CB_FOCUS_RING = '2px solid var(--cb-accent)'
+
+/**
+ * Does this focus deserve a ring? `:focus-visible` is the identity's rule, so a pointer click on a
+ * plain text tab leaves nothing behind while a Tab stop always paints. The query is asked on the
+ * focused node itself; an engine that cannot answer keeps the ring on focus rather than losing it
+ * for a keyboard user.
+ */
+function focusRingVisible(node) {
+  if (!node || typeof node.matches !== 'function') return true
+  try {
+    return node.matches(':focus-visible')
+  } catch (error) {
+    return true
+  }
+}
+
+/** One classroom tab: a text target that keeps the identity's ring while it is keyboard-focused. */
+function SlotTab({ slot, isCurrent, onSelect }) {
+  const [focused, setFocused] = useState(false)
+  return jsx('button', {
+    type: 'button',
+    'data-cb-slot-tab': slot.course_id,
+    'data-cb-slot-state': isCurrent ? 'current' : 'available',
+    'data-cb-focus-ring': focused ? 'visible' : 'none',
+    'aria-current': isCurrent ? 'true' : undefined,
+    onFocus: (event) => setFocused(focusRingVisible(event.currentTarget)),
+    onBlur: () => setFocused(false),
+    onClick: () => {
+      if (!isCurrent) onSelect(slot.course_id)
+    },
+    style: {
+      minHeight: '44px',
+      maxWidth: '100%',
+      padding: '0.3rem 0.1rem',
+      background: 'none',
+      border: 'none',
+      borderBottom: `2px solid ${isCurrent ? 'var(--cb-lamp)' : 'transparent'}`,
+      borderRadius: '2px',
+      outline: focused ? CB_FOCUS_RING : 'none',
+      outlineOffset: '2px',
+      cursor: isCurrent ? 'default' : 'pointer',
+      fontFamily: CB_SANS,
+      fontSize: CB_TYPE.meta,
+      fontWeight: isCurrent ? 600 : 400,
+      color: isCurrent ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
+      textAlign: 'left',
+      overflowWrap: 'anywhere'
+    },
+    children: slot.name
+  })
+}
+
+/**
  * H-146 — the classroom rail. It is navigation, not a dashboard: up to four text tabs, one
  * `aria-current`, and the active classroom named in words underneath. Above four, the rail becomes
  * one labelled select rather than a wrapping card grid. A switch changes only shell state:
@@ -2962,36 +3025,7 @@ function SlotRail({ hub, selected, onSelect, onShowAll }) {
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.1rem 1.1rem', minWidth: 0 },
           children: all.map((slot) => {
             const isCurrent = slot.course_id === active.course_id
-            return jsx(
-              'button',
-              {
-                type: 'button',
-                'data-cb-slot-tab': slot.course_id,
-                'data-cb-slot-state': isCurrent ? 'current' : 'available',
-                'aria-current': isCurrent ? 'true' : undefined,
-                onClick: () => {
-                  if (!isCurrent) onSelect(slot.course_id)
-                },
-                style: {
-                  minHeight: '44px',
-                  maxWidth: '100%',
-                  padding: '0.3rem 0.1rem',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: `2px solid ${isCurrent ? 'var(--cb-lamp)' : 'transparent'}`,
-                  borderRadius: 0,
-                  cursor: isCurrent ? 'default' : 'pointer',
-                  fontFamily: CB_SANS,
-                  fontSize: CB_TYPE.meta,
-                  fontWeight: isCurrent ? 600 : 400,
-                  color: isCurrent ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
-                  textAlign: 'left',
-                  overflowWrap: 'anywhere'
-                },
-                children: slot.name
-              },
-              slot.course_id
-            )
+            return jsx(SlotTab, { slot, isCurrent, onSelect }, slot.course_id)
           })
         }, 'tabs'),
         current('current'),
