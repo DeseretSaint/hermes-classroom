@@ -482,5 +482,129 @@ class RegenerateOneSectionTest(FineTuneCase):
         self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM jobs")), 3)  # plan + lessons + one
 
 
+class BlueprintSectionIdentityTest(FineTuneCase):
+    """H-194b: the blueprint read serves the section fence, so the desktop can fine-tune.
+
+    ``lesson.revise`` fences on ``expected_page_hash`` and ``lesson.regenerate`` on ``section_id``.
+    Before v20 neither value was readable for a section that had never been revised, so the first
+    fine-tune of any section was unreachable from the desktop. These cases read the values off the
+    wire and hand them straight back to the commands — no test helper recomputes a digest, because
+    a helper recomputing one would re-hide exactly the defect this card closes.
+    """
+
+    FIELDS = {
+        "section_id",
+        "objective_id",
+        "ordinal",
+        "title",
+        "lesson_state",
+        "lesson_version",
+        "page_hash",
+    }
+
+    def blueprint(self, course_id: str) -> dict:
+        return self.ok("parent.blueprint.read", {"course_id": course_id})["result"]
+
+    def test_one_row_per_composed_section_in_ordinal_order(self) -> None:
+        course = self.authored_course()
+        rows = self.rows(
+            "SELECT id, ordinal FROM gen_plan_sections WHERE plan_id = ? ORDER BY ordinal",
+            (course["plan_id"],),
+        )
+        served = self.blueprint(course["course_id"])["sections"]
+        self.assertEqual(len(served), len(rows))
+        self.assertEqual([entry["section_id"] for entry in served], [str(row["id"]) for row in rows])
+        self.assertEqual([entry["ordinal"] for entry in served], [int(row["ordinal"]) for row in rows])
+        for entry in served:
+            self.assertEqual(set(entry), self.FIELDS, "the row is closed: exactly the seven keys")
+            self.assertIn(entry["objective_id"], course["objective_ids"])
+            self.assertEqual(entry["lesson_state"], "validated")
+            self.assertEqual(entry["lesson_version"], 1)
+            self.assertRegex(str(entry["page_hash"]), r"^sha256:[0-9a-f]{64}$")
+            self.assertTrue(str(entry["title"]))
+
+    def test_the_served_digest_is_accepted_by_lesson_revise_unchanged(self) -> None:
+        course = self.authored_course()
+        target = self.blueprint(course["course_id"])["sections"][1]
+        result = self.ok(
+            "lesson.revise",
+            {
+                "enrollment_id": course["enrollment_id"],
+                "plan_id": course["plan_id"],
+                "section_id": target["section_id"],
+                "expected_page_hash": target["page_hash"],
+                "title": "Retitled from the served identity",
+                "page": {"section_title": "Retitled from the served identity"},
+            },
+            expected_revision=course["revision"],
+            idempotency_key="h194b-revise",
+        )["result"]
+        self.assertEqual(result["lesson_state"], "needs_review")
+        self.assertEqual(result["lesson_version"], 2)
+        # The read follows the revision: the next call fences on the new digest, not the old one.
+        after = next(
+            entry
+            for entry in self.blueprint(course["course_id"])["sections"]
+            if entry["section_id"] == target["section_id"]
+        )
+        self.assertEqual(after["lesson_version"], 2)
+        self.assertEqual(after["lesson_state"], "needs_review")
+        self.assertEqual(after["page_hash"], result["page_hash"])
+        self.assertNotEqual(after["page_hash"], target["page_hash"])
+        self.assertEqual(after["title"], "Retitled from the served identity")
+
+    def test_regenerate_takes_the_served_section_id(self) -> None:
+        course = self.authored_course()
+        target = self.blueprint(course["course_id"])["sections"][2]
+        result = self.ok(
+            "lesson.regenerate",
+            {
+                "enrollment_id": course["enrollment_id"],
+                "plan_id": course["plan_id"],
+                "section_id": target["section_id"],
+            },
+            idempotency_key="h194b-regenerate",
+        )["result"]
+        self.assertEqual(result["scope"]["section_id"], target["section_id"])
+        self.assertEqual(result["scope"]["objective_id"], target["objective_id"])
+        self.assertEqual(result["scope"]["section_count"], 1)
+
+    def test_an_unauthored_section_is_served_as_nulls_not_omitted(self) -> None:
+        course = self.authored_course()
+        target = self.blueprint(course["course_id"])["sections"][0]
+        # Model "the plan has this section but no lesson row yet", the state in which
+        # `lesson.revise` refuses the section and `lesson.regenerate` is the way to author it.
+        with db.transaction() as connection:
+            connection.execute(
+                "DELETE FROM gen_lessons WHERE section_id = ?", (target["section_id"],)
+            )
+        unauthored = next(
+            entry
+            for entry in self.blueprint(course["course_id"])["sections"]
+            if entry["section_id"] == target["section_id"]
+        )
+        self.assertEqual(unauthored["lesson_state"], None)
+        self.assertEqual(unauthored["lesson_version"], None)
+        self.assertEqual(unauthored["page_hash"], None)
+        self.assertEqual(set(unauthored), self.FIELDS)
+
+    def test_a_course_with_no_composed_sections_answers_an_empty_array(self) -> None:
+        # The key is required, so a course whose plan currently composes no sections answers []
+        # rather than omitting it. A re-plan that has not produced its sections yet is exactly
+        # this state; `gen_plan_sections` is the table `authoring.sections()` walks.
+        course = self.authored_course()
+        with db.transaction() as connection:
+            connection.execute(
+                "DELETE FROM gen_plan_sections WHERE plan_id = ?", (course["plan_id"],)
+            )
+        book = self.blueprint(course["course_id"])
+        self.assertIn("sections", book, "a required response key is never omitted")
+        self.assertEqual(book["sections"], [])
+        self.assertEqual(
+            int(self.scalar("SELECT COUNT(*) FROM gen_plan_sections WHERE plan_id = ?", (course["plan_id"],))),
+            0,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

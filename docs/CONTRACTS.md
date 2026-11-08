@@ -1,6 +1,7 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v19** (H-194 fine-tuning a generated course: `cb.rpc` v19 appends five
+Status: **frozen at v20** (H-194b: `cb.rpc` v20 is one additive amendment over v19 — `parent.blueprint.read` gains one required response array, `sections[]`, one entry per composed section carrying `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`, the exact digest `lesson.revise` fences on, so the desktop can fine-tune a section that has never been revised. No method, request shape, error code, job kind or vocabulary value moves.
+v19 = H-194 fine-tuning a generated course: `cb.rpc` v19 appends five
 commands — `plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read` —
 and `cb.db` v12 adds the two durable fine-tune ledgers `plan_revisions` and `lesson_revisions`;
 v18 = H-185 model-assessed lesson provenance; v17 = H-106 source provenance: `cb.rpc` v17 additively gives the source item of
@@ -28,19 +29,20 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v19.json` | 19 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v20.json` | 20 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v12.json` | 12 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
-The v1 **to v16** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
-`rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json` and `rpc.v16.json`), the
+The v1 **to v19** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
+`rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json`, `rpc.v16.json`, `rpc.v17.json`,
+`rpc.v18.json` and `rpc.v19.json`), the
 v1 **to v11** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
 `db.v8.json`, `db.v9.json`, `db.v10.json` and `db.v11.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v16.json`, `db.v10.json`,
+as immutable history: the superseded current files are `rpc.v19.json`, `db.v11.json`,
 `errors.v3.json` and `jobs.v4.json`.
 
 `cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`) and v2
@@ -50,7 +52,7 @@ declared `narration`/`visual` file to the section that may play it, with a short
 not named there stays stored evidence only, exactly as every v1 pack behaves. No `cb.rpc` method,
 `cb.db` column or migration changes (H-137 implements `docs/PACK-MEDIA-PLAYBACK.md` §4, §8).
 
-The inventory current stays **v1** because every frozen `cb.rpc` file (v4…v16) and
+The inventory current stays **v1** because every frozen `cb.rpc` file (v4…v19) and
 `cb.projection` v1 resolve `$ref` targets to `pack-manifest/v1`; naming v2 current would either
 break those references or require editing a frozen wire contract. v2 is therefore an accepted
 *document* version, selected per pack by `contract_version`, not a change to the cross-document
@@ -1643,6 +1645,7 @@ Consequences for clients (H-117 and the retry surface):
 | v16 | 2026-11-07 | H-120 additive amendment (contract, migration and the grading lane's router). Four methods appended to the 64 v15 methods — `practice.start`, `practice.state`, `practice.end`, `practice.cancel` — plus one optional `check_stimulus.practice` declaration, so a bounded conversation practice is a `quiz` check the learner actually talks through. 68 RPC methods. Grading is provider-free: `practice.end` hands the stored learner turns to `conversation.grade_transcript` through the same `_commit_attempt` path `attempt.submit` uses, and `attempt.submit` on a practice check is refused `POLICY_VIOLATION` / `practice_requires_practice_end`, so one chat line can never produce a verdict. cb.db **v11** adds `practice_sessions` and `practice_turns` via migration 0011, additive with no backfill; practice turns are learner-owned and never reach `pack.export` or `course.export`. No new error code, job kind, vocabulary value, answer kind, evidence class or evidence target; the new refusals ride `error.details.reason`. Authored as a v15 on `wt/h120-practice`, but v15 was already frozen by H-139 when that branch reached master, so the amendment took the next free number instead of editing a frozen document. `rpc.v15.json` and `db.v10.json` are pinned by sha256. |
 | v17 | 2026-11-08 | H-106 additive amendment (contract only). The source item in `lesson.page` and `parent.blueprint.read` responses gains six optional properties: `excerpt` (≤ 20000 characters or null), `excerpt_state` (`recorded`/`missing`/`unreadable`), `content_hash` (sha256 or null), `modality` (≤ 60 or null), `licence` (≤ 200 or null) and `support_assessment` (`supported`/`partial`/`unverified`/`contradictory` or null). 68 RPC methods — no method added. Both `required` lists and `additionalProperties: false` are untouched, so every v16 payload still validates. `excerpt_state` is the typed absence: an excerpt that was never recorded or could not be read is reported as `missing`/`unreadable` with `excerpt: null`, never a fabricated excerpt. No `cb.db`, `cb.errors`, `cb.jobs` or vocabulary change. Authored as a v15 on `wt/h106-provenance`, but v15 and v16 were already frozen, so the amendment takes the next free number. `rpc.v15.json` and `rpc.v16.json` are pinned by sha256. |
 | v18 | 2026-11-08 | H-185 additive amendment: a model-assessed lesson page is served with its provenance. The `lesson.page` response gains one optional property, `provenance` — an object `{outcome, independent, facts_unverified, check_enabled, warning}` or null. `outcome` is `independently_validated` or `model_assessed`; `independent` is false for a page the author model assessed itself; `check_enabled` is true for a usable check even when the pass was not independent; `warning` states the reason (same model / unidentified identity / facts unverified) and is never a validation claim. The property is optional and null for a page not authored by the generation pipeline, so every v17 payload still validates. 68 methods unchanged; no `required` list, error code, job kind, vocabulary value or `additionalProperties` move. `rpc.v17.json` is pinned by sha256. | 
+| v20 | 2026-11-08 | H-194b additive amendment (contract and the one `parent.blueprint.read` handler). The `parent.blueprint.read` response gains one required array, `sections[]`, one entry per composed section: `section_id`, `objective_id`, `ordinal`, `title`, `lesson_state`, `lesson_version` and `page_hash`. `page_hash` is computed by the same function `lesson.revise` fences on (`domain._lesson_page_hash`), so the desktop can call `lesson.revise`/`lesson.regenerate` for a section that has never been revised — previously the first fine-tune of any section was unreachable, because `parent.review.read` only carries a section's identity after a revision and `tabs.*.sha256` is the rendered-text digest. `[]` for a pack-backed course. No method, request shape, error code, job kind, vocabulary value or existing required key moves, and `additionalProperties: false` stays. Found while building the H-194 UI half; numbered v20 because v19 was already frozen. `rpc.v19.json` is byte-identical and `x-supersedes` names it. |
 | no bump (t_d43c0dc1) | 2026-11-07 | H-130 decision: a subsystem-specific reason does not become a catalogue code when `category`/`retryable`/HTTP already fit one. `BRIEF_UNREADABLE` lands as `error.details.reason = "brief_unreadable"` under `VALIDATION_FAILED` (non-retryable, 422), and `checkpoint.reason` uses `checkpoint_serializer_failed`. `cb.errors` stays v4; no enum, catalog, `$defs` or `CONTRACT_FILES` change. The convention and the reason labels a client may key on are frozen in the section above. |
 
 ## Deliberate omissions (do not "helpfully" add these)
@@ -2096,3 +2099,47 @@ never rewrites an attempt, transition or evidence row. Regression guard:
 evidence-consequence confirmation, stale-approval export refusal, re-approve and one-section
 regeneration), `tests/test_kernel_schema.py` for the table/unique/index inventory, and
 `tests/test_contracts.py` for the v19/v12 delta.
+
+## v20 delta (H-194b) — a section's identity and page digest are readable before any revision exists
+
+`cb.rpc` v20 is v19 with **one** additive change: the `parent.blueprint.read` response gains one
+required array, `sections`. No method is added, moved or retyped; no request shape, error code, job
+kind, answer kind, verdict, evidence class or vocabulary value moves; `cb.db`, `cb.errors`,
+`cb.jobs`, `cb.pack` and `cb.projection` are untouched. `rpc.v19.json` stays byte-identical on disk
+(sha256 `0ebc9efb2f1c3bc2dd6b3a756bc7ceab3a0502c6d0eef34031a1edd9a2b6d5f5`) and `x-supersedes`
+names `.../rpc/v19`.
+
+**The defect this closes.** `lesson.revise` requires `section_id` **and** `expected_page_hash`, and
+`lesson.regenerate` requires `section_id`, but v19 served neither for a section that had never been
+revised: `parent.blueprint.read` had no `sections` array, `tabs.*.blueprint_file.sha256` is the
+digest of the *rendered text* rather than of the stored `gen_lessons.page_json`, `parent.review.read`
+carries `section_id`/`page_hash_after` only for a section that was already revised, and `lesson.page`
+serves a projected document whose digest the client must not recompute. The first fine-tune of any
+section was therefore unreachable from the desktop.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `sections` | array, ≤ 100 | One entry per composed section, in `gen_plan_sections.ordinal` order. `[]` for a pack-backed course, which is composed from the pack and has no authored sections. |
+| `sections[].section_id` | identifier | The `gen_plan_sections.id`, exactly the value `lesson.revise`/`lesson.regenerate` take. |
+| `sections[].objective_id` | identifier | The objective the section is bound to (`objective_refs_json` first ordinal), falling back to the plan id as the composed section already does. |
+| `sections[].ordinal` | integer 1–10000 | `gen_plan_sections.ordinal`. |
+| `sections[].title` | string 1–300 | The title the blueprint serves, which after an authored edit is the page's `section_title`. |
+| `sections[].lesson_state` | string ≤ 40 or null | `gen_lessons.state`; null when no lesson row exists yet. |
+| `sections[].lesson_version` | integer 1–10000 or null | `gen_lessons.version`; null when no lesson row exists yet. |
+| `sections[].page_hash` | sha256 or null | **The fence value.** The digest `lesson.revise` compares `expected_page_hash` against, computed by the same function (`domain._lesson_page_hash`, sha256 over the canonical page JSON). Null exactly when the section has no usable authored page, which is also the case `lesson.revise` refuses; `lesson.regenerate` is the way to author it. |
+
+**Why the digest cannot drift.** `parent_authoring.sections()` already computed the digest with
+`packs.canonical_json_bytes`, and `domain._lesson_page_hash` uses `domain._json_dump`; both emit
+`json.dumps(..., sort_keys=True, separators=(",", ":"), ensure_ascii=False)`, i.e. identical UTF-8
+bytes. The handler does not trust that coincidence: `_blueprint_section_identity` calls
+`_lesson_page_hash` itself, so the served value is the fence value by construction.
+
+**Required, not optional.** `sections` is appended to the response `required` list. A read whose
+stated purpose is to carry the section fence must not be able to omit it; `sections: []` is the
+honest answer for a course with no authored sections. No existing required key, property type or
+`additionalProperties: false` moves, so every valid v19 response stays valid after the one key is
+added.
+
+Regression guard: `tests/test_h194_fine_tune.py` (`BlueprintSectionIdentityTest` — one row per
+composed section with the digest, and `lesson.revise` accepting that digest unchanged with no test
+helper recomputing it) and `tests/test_contracts.py` for the v20 delta.

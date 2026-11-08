@@ -4464,6 +4464,35 @@ def _derived_content(connection, course, plan: Any) -> tuple[list[dict[str, Any]
     return composed, authoring.content_hash(str(course["id"]), str(plan["id"]), current_hash, composed)
 
 
+def _blueprint_section_identity(composed: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The section identity ``parent.blueprint.read`` reports so a fine-tune call can be made.
+
+    ``page_hash`` is computed by the exact function ``lesson.revise`` fences on
+    (``_lesson_page_hash``), not by re-deriving the digest locally, so a value read out of this
+    payload is accepted by that fence unchanged. It is null exactly when the section has no usable
+    authored page — the case where ``lesson.revise`` refuses the section and ``lesson.regenerate``
+    is the only way to author it. ``lesson_state``/``lesson_version`` are null when no
+    ``gen_lessons`` row exists for the section yet.
+    """
+    identities: list[dict[str, Any]] = []
+    for section in composed:
+        page = section.get("page")
+        state = section.get("lesson_state")
+        version = section.get("lesson_version")
+        identities.append(
+            {
+                "section_id": str(section["section_id"]),
+                "objective_id": str(section["objective_id"]),
+                "ordinal": int(section["ordinal"]),
+                "title": str(section["title"]),
+                "lesson_state": None if state is None else str(state),
+                "lesson_version": None if version is None else int(version),
+                "page_hash": _lesson_page_hash(page) if isinstance(page, Mapping) and page else None,
+            }
+        )
+    return identities
+
+
 def _approval_view(row: Any) -> dict[str, Any]:
     if row is None:
         return {
@@ -5703,6 +5732,9 @@ def parent_blueprint_read(payload: dict[str, Any], envelope: dict[str, Any]) -> 
                 "export": status,
                 "tabs": tabs,
                 "sources": sources,
+                # H-194b: a pack-backed course is composed from the pack, not from
+                # `gen_plan_sections`, so it has no authored section identity to serve.
+                "sections": [],
             }
         composed, current_hash = _derived_content(connection, course, plan)
         sources = _blueprint_sources(connection, str(course["id"]))
@@ -5725,6 +5757,7 @@ def parent_blueprint_read(payload: dict[str, Any], envelope: dict[str, Any]) -> 
         "export": status,
         "tabs": tabs,
         "sources": sources,
+        "sections": _blueprint_section_identity(composed),
     }
 
 
