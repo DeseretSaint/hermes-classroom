@@ -65,3 +65,43 @@ These are **not** the three named defects and are not repaired here:
   A diagnostic rerun is recorded separately (`full-rerun.json`) if it completed.
 
 The packet is the H-192 packet; H-192 re-runs it after this branch lands.
+
+## Second measurement — bounded passes (`0bd5cf2` + `f0be341`)
+
+Same packet, fresh isolated homes, operator deadlines unchanged (600 s generate / 600 s validate,
+job stop 1100 s), author `nous/deepseek-v4.1-flash-1017`, validator `nous/z-ai/glm-5.3-flash`.
+Layout on this run: two criteria passes of five, at most six claims on a criteria pass, twelve on
+a claim-only pass. Raw per-call numbers below; the redacted captures are in `evidence/`.
+
+| scope | plan.generate | plan.validate calls (duration / output tokens) | plan.approve | lessons |
+|---|---|---|---|---|
+| single | 32.4 s / 7 189 | 43.8 s / 3 004 + **344.8 s / 9 881** (total 12 885) | **ok** | unit_sections 5.8 s / 1 138 + 4.7 s / 996; unit validate **320.6 s / 23 096** + 214.5 s / 16 051; lesson 64.0 s + 54.6 s; job stopped at 666 s |
+| short | 348.2 s / 10 300 | 49.6 s / 4 361 + **542.4 s / 18 740** | ok (plan approved) | unit_sections 12.8 s / 1 462; unit validate 135.3 s / 17 232; lesson 58.6 s / 9 016; job still running at the 1 100 s stop |
+| full | 83.0 s / 17 006 | 31.7 s / 2 388 + 183.9 s / 11 893 + 258.6 s / 2 868 + **927.0 s / 19 739** | refused `plan_empty` (job `HOST_UNAVAILABLE`, `plan.validate` deadline) | not started |
+
+What changed relative to the first measurement:
+
+- The single-scope validation answer fell from one unbounded demand to two bounded passes
+  (3 004 + 9 881 = 12 885 completion tokens against the 29 386-token full-scope answer H-192
+  measured), and `single` reached `plan.approve` ok for the first time on this branch.
+- The full-scope claim answer no longer breaks its schema: every returned answer was
+  schema-valid, and no job reported a shape violation.
+- **Defect 1 is not closed for `full`.** A pass that was asked for five criteria and six claims
+  still emitted **19 739 completion tokens in 927 s**, past its own 600 s deadline, and the job
+  failed `HOST_UNAVAILABLE`. Bounding the *demand* does not bound the validator's own reasoning;
+  `max_tokens` is still not forwarded on this route, so no cap bites. The measured remedy left is
+  a provider-side output cap or a validator route that stops at the schema, not a wider deadline.
+- Defects 2 and 3 are closed and proven by the suite (`tests/test_h192_validation_bounds.py`,
+  `tests/test_validation_shape_repair.py`): a shape violation at plan stage and a content
+  rejection are both `VALIDATION_FAILED`, non-retryable, with the reasons.
+- The plan prompt now states the graded-check rule the kernel enforces; `short`'s committed plan
+  was authored and approved on the first attempt in this run (the first measurement lost both
+  attempts to `committed courses need graded checks`).
+- The unit-stage validation request is now unit-sized (the whole plan document used to make a
+  short course's request 26 799 bytes against the 24 000-byte bound).
+- The lesson short-claim gate no longer treats sentence-final punctuation as a new claim (the
+  first measurement's single-scope page was parked on `'3:00.'`).
+
+Remaining work is named, measured and out of this branch's rule surface: validator output is
+uncapped on the nous route (927 s / 19 739 tokens for a five-criterion pass), and the lesson-stage
+validation has the same shape (23 096 and 16 051-token answers in `single`).

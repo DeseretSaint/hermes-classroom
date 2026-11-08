@@ -1,7 +1,7 @@
 {
   "course": {
-    "course_id": "crs_1c45f5d60bf1439cb93d7f453d95075f",
-    "plan_id": "pln_5261b63af6254ee2bd886cef10c2f0b2",
+    "course_id": "crs_fd5cb544dc334c03aa761ab12ec5ae9b",
+    "plan_id": "pln_60692743a6e8425e90b026f981a75326",
     "revision": 0
   },
   "dial_s": {
@@ -11,21 +11,24 @@
     "pace": "light"
   },
   "enrollment": {
-    "enrollment_id": "enr_847b12b8abbe422886bc45d9974c46ee",
+    "enrollment_id": "enr_058bf8af7f7d45f981823633ba9e74da",
     "revision": 0
   },
-  "finished_at": "2026-11-08T22:23:55Z",
+  "finished_at": "2026-11-08T22:58:09Z",
   "goal": "Brew a pour-over coffee whose strength stays consistent from cup to cup",
   "ok": true,
   "phases": {
     "approve": {
-      "error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"the plan has no passing validation record; it cannot be approved.\", \"retryable\": false, \"details\": {\"reason\": \"plan_not_validated\", \"plan_id\": \"pln_5261b63af6254ee2bd886cef10c2f0b2\", \"generation_state\": \"needs_review\", \"validation_verdict\": \"reject\"}}",
-      "generation_digest": "sha256:5d10017e35b2be0db8ec723c44dfed03466d988db6c09f945a6539aaeb1c0301",
-      "kernel_digest": "sha256:18ed543dcc8d852b79d04a2cd98a0e0652893230feaaa79058dd3f6a7ca47123",
+      "generation_digest": "sha256:fa25bf2a3433ee85e1fcbdc5fc30513ce95b28b62b4a3b7ff8dcb7e555330b3d",
+      "kernel_digest": "sha256:5a07cd3a5fc77aa4582a7bbbcbadb7dfaa4d5e546f9c8c72d746af7ef2fd5511",
       "kernel_digest_source": "parent.blueprint.read",
-      "ok": false,
-      "plan_state_after": "draft",
-      "started_at": "2026-11-08T22:23:55Z"
+      "ok": true,
+      "plan_state_after": "approved",
+      "result": {
+        "plan_hash": "sha256:5a07cd3a5fc77aa4582a7bbbcbadb7dfaa4d5e546f9c8c72d746af7ef2fd5511",
+        "revision": 1
+      },
+      "started_at": "2026-11-08T22:47:03Z"
     },
     "lessons": {
       "facts": {
@@ -33,15 +36,101 @@
         "servable_objectives": [],
         "states": []
       },
-      "jobs": [],
-      "started_at": "2026-11-08T22:23:55Z"
+      "jobs": [
+        {
+          "elapsed_s": 666.3,
+          "facts": {
+            "rows": [],
+            "servable_objectives": [],
+            "states": []
+          },
+          "final_job": {
+            "artifact_ids": [],
+            "attempt_id": "att_9527a517d5894bc38550e5b44b6191fb",
+            "brief": {
+              "enrollment_id": "enr_058bf8af7f7d45f981823633ba9e74da",
+              "plan_id": "pln_60692743a6e8425e90b026f981a75326",
+              "stage": "lessons"
+            },
+            "cancel_requested_at": null,
+            "checkpoint": {
+              "budget": {
+                "max_calls": 4,
+                "max_cost_usd": 0.75,
+                "source": "declared"
+              },
+              "last_stage": "unit_sections",
+              "next_unit_ordinal": null,
+              "owners": 1,
+              "plan_hash": "sha256:fa25bf2a3433ee85e1fcbdc5fc30513ce95b28b62b4a3b7ff8dcb7e555330b3d",
+              "plan_id": "pln_60692743a6e8425e90b026f981a75326",
+              "reviews": 0,
+              "sections": 1,
+              "state": "validated",
+              "unit_ordinal": 1,
+              "units_complete": [],
+              "units_total": 1
+            },
+            "created_at": "2026-11-08T22:47:03Z",
+            "error": {
+              "category": "validation",
+              "code": "VALIDATION_FAILED",
+              "message": "request payload is 28682 bytes compact, over the 24000-byte request bound",
+              "retryable": false
+            },
+            "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+            "kind": "plan",
+            "lease": null,
+            "operation_id": "h187-jobs-create-1794178023171411562",
+            "progress": {
+              "message": "unit 1 sections authored (1 sections)",
+              "stage": "unit_sections",
+              "steps_done": 1,
+              "steps_total": 2
+            },
+            "state": "failed",
+            "updated_at": "2026-11-08T22:58:07Z"
+          },
+          "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+          "label": "lessons-0",
+          "pump": {
+            "done_at_s": 664.4,
+            "finished": [
+              "job_3bbabd291c1246bf815b1aab22a6c696"
+            ]
+          },
+          "terminal_state": "failed",
+          "thread_alive": false,
+          "timeline": [
+            {
+              "elapsed_s": 0.0,
+              "message": "",
+              "stage": "queued",
+              "state": "queued"
+            },
+            {
+              "elapsed_s": 2.0,
+              "message": "",
+              "stage": "queued",
+              "state": "running"
+            },
+            {
+              "elapsed_s": 666.3,
+              "message": "unit 1 sections authored (1 sections)",
+              "stage": "unit_sections",
+              "state": "failed"
+            }
+          ]
+        }
+      ],
+      "started_at": "2026-11-08T22:47:03Z"
     },
     "page": {
       "served": null,
-      "started_at": "2026-11-08T22:23:55Z"
+      "started_at": "2026-11-08T22:58:09Z"
     },
     "plan": {
-      "elapsed_s": 374.2,
+      "elapsed_s": 386.2,
       "facts": {
         "approved_at": null,
         "generation": {
@@ -53,17 +142,17 @@
               "provider": "nous"
             },
             "independent": true,
-            "needs_review": true,
-            "outcome": "rejected",
+            "needs_review": false,
+            "outcome": "independently_validated",
             "prompt_version": "plan-prompt.v11",
-            "warning": "validation rejected this artifact: it is not approvable as validated."
+            "warning": null
           },
           "budget": null,
           "check_plan": [
             {
               "evidence_target": "procedure",
               "kind": "verification",
-              "notes": "Verification checklist: learner sets up, brews, repeats the same dose, water amount, grind, pour order and timing, then compares cups. Catches the misconception that changing dose or pour timing between cups cannot change strength. Stop if dripper is unstable or hot water spills.",
+              "notes": "Verification checklist, not a quiz: observe station setup, safety stop statement, guided first cup, unaided second cup, and side-by-side record comparison. A wrong answer is a provisional misconception, not a diagnosis. No count or independent_evidence field is used.",
               "objective_ref": 1
             }
           ],
@@ -76,40 +165,39 @@
             "source": "declared",
             "target_language": null
           },
-          "generation_state": "needs_review",
+          "generation_state": "draft",
           "goal": null,
-          "learner_outcome": "With a guided checklist, the learner can brew one pour-over cup using a repeatable setup and pour sequence, then brew a second cup the same way and compare them to state whether strength stayed consistent.",
+          "learner_outcome": "After one guided session, the learner can set up a pour-over station, state the hot-water safety stop condition, follow a recorded recipe once with coaching, then brew a second cup unaided using the same dose, grind, water amount, water temperature, pour sequence and brew time, and record both results so consistency can be checked rather than guessed.",
           "objective_titles": [
-            "Brew two pour-over cups using the same dose, water amount, grind, pour sequence and timing, then compare them and state whether strength stayed consistent."
+            "Brew a second pour-over cup unaided from the same recorded recipe and record both cups for comparison"
           ],
-          "plan_hash": "sha256:5d10017e35b2be0db8ec723c44dfed03466d988db6c09f945a6539aaeb1c0301",
+          "plan_hash": "sha256:fa25bf2a3433ee85e1fcbdc5fc30513ce95b28b62b4a3b7ff8dcb7e555330b3d",
           "plan_schema": "coursebook.plan.v2",
-          "rejection_reasons": [
-            "source:89529d11eba43e9b: Listed in plan.source_ids but its excerpt is site navigation plus a self-certification line ('Source-checked... Prepared with AI assistance'); it holds no verifiable pour-over content and cannot back any claim.",
-            "source:31f6fbd8da84dfa8: Listed in plan.source_ids but its excerpt is storefront navigation ('Looking for Podium gifts?', 'Email me with') with no substantive technique content, so it supports nothing in the plan."
-          ],
+          "rejection_reasons": [],
           "section_count": 0,
           "spaced_review": false,
-          "status": "needs_review",
+          "status": "draft",
           "time_estimate": {
-            "basis": "none",
+            "attainment_hours": null,
+            "basis": "model",
+            "benchmark": null,
             "confidence": "low",
             "minutes_per_session": 45,
-            "rationale": "One guided sitting: setup, a worked demonstration, one guided brew, then a second brew for comparison. No benchmark supports an attainment-hours claim, so none is given.",
+            "rationale": "One 45-minute sitting: 5 min station and safety check, 10 min worked demonstration and guided first cup, 15 min unaided second cup, 10 min record comparison, 5 min cleanup. Basis is model with low confidence; no supplied source gives a validated duration or attainment benchmark, so no attainment hours are claimed.",
             "sessions_per_week": 1,
             "weeks": 1
           },
-          "title": "Brew a Repeatable Pour-Over Cup",
+          "title": "Repeatable Pour-Over: One Recorded Recipe, Two Cups",
           "units_in_document": [
             {
               "ordinal": 1,
               "prerequisites": [],
-              "title": "Set Up and Brew One Repeatable Pour-Over Cup"
+              "title": "Set up, safety-check and repeat a recorded pour-over recipe"
             }
           ],
           "validation": {
             "cost": {
-              "calls": 1,
+              "calls": 2,
               "cost_usd": null,
               "unknown_cost": true
             },
@@ -122,7 +210,7 @@
             },
             "independence": "independent",
             "independent": true,
-            "outcome": "rejected",
+            "outcome": "independently_validated",
             "research_status": "ok",
             "shape_violations": 0,
             "validator": {
@@ -130,9 +218,9 @@
               "model": "z-ai/glm-5.3-flash",
               "provider": "nous"
             },
-            "verdict": "reject",
+            "verdict": "pass",
             "waived_unknown": [],
-            "warning": "validation rejected this artifact: it is not approvable as validated."
+            "warning": null
           },
           "validation_record": {
             "facts_unverified": false,
@@ -144,33 +232,33 @@
             "generator_prompt_sha256": "sha256:42949ff70638013a2a0ab6056f60d5d0f0961e91cdd3d68460b6d5fa28bbe8b5",
             "independence": "independent",
             "independent": true,
-            "outcome": "rejected",
+            "outcome": "independently_validated",
             "shape_violations": 0,
-            "subject_id": "pln_5261b63af6254ee2bd886cef10c2f0b2",
+            "subject_id": "pln_60692743a6e8425e90b026f981a75326",
             "subject_kind": "plan",
-            "validation_id": "5596b3c7aab551b0",
+            "validation_id": "9021bb5561ed6dda",
             "validator": {
               "known": true,
               "model": "z-ai/glm-5.3-flash",
               "provider": "nous"
             },
             "validator_prompt_sha256": "sha256:bc081f14d737f5d5a3bac372d0ca8b6df888bf1b6fe6adb429c8fd8d7f11caa6",
-            "verdict": "reject",
+            "verdict": "pass",
             "waived_unknown": [],
-            "warning": "validation rejected this artifact: it is not approvable as validated."
+            "warning": null
           },
-          "validation_verdict": "reject"
+          "validation_verdict": "pass"
         },
         "objectives": [
           {
-            "objective_id": "9d654da62322355b",
+            "objective_id": "bd2d2a5260eb6839",
             "ordinal": 1,
-            "title": "Brew two pour-over cups using the same dose, water amount, grind, pour sequence and timing, then compare them and state whether strength stayed consistent.",
-            "unit_id": "d55413e346d7b9b8"
+            "title": "Brew a second pour-over cup unaided from the same recorded recipe and record both cups for comparison",
+            "unit_id": "7debf6fea5011260"
           }
         ],
-        "plan_hash": "sha256:5d10017e35b2be0db8ec723c44dfed03466d988db6c09f945a6539aaeb1c0301",
-        "plan_id": "pln_5261b63af6254ee2bd886cef10c2f0b2",
+        "plan_hash": "sha256:fa25bf2a3433ee85e1fcbdc5fc30513ce95b28b62b4a3b7ff8dcb7e555330b3d",
+        "plan_id": "pln_60692743a6e8425e90b026f981a75326",
         "plan_state": "draft",
         "research": {
           "failure_count": 0,
@@ -185,32 +273,32 @@
           "sources": [
             {
               "excerpt_chars": 600,
-              "fetched_at": "2026-11-08T22:17:41Z",
-              "source_id": "c8f048801a709820",
+              "fetched_at": "2026-11-08T22:40:37Z",
+              "source_id": "71732f9d98d34ffc",
               "support": null,
               "title": "Pour-over coffee - NCA - About Coffee",
               "url": "https://www.aboutcoffee.org/brewing/pour-over-coffee/"
             },
             {
               "excerpt_chars": 600,
-              "fetched_at": "2026-11-08T22:17:41Z",
-              "source_id": "89529d11eba43e9b",
+              "fetched_at": "2026-11-08T22:40:37Z",
+              "source_id": "eeedee65b72f26ff",
               "support": null,
               "title": "Pour-over technique \u00b7 Coffearium",
               "url": "https://coffearium.org/entries/pour-over-technique/"
             },
             {
               "excerpt_chars": 600,
-              "fetched_at": "2026-11-08T22:17:41Z",
-              "source_id": "2f150cf95da11294",
+              "fetched_at": "2026-11-08T22:40:37Z",
+              "source_id": "9c3f15a8824f2787",
               "support": null,
               "title": "Pour Over Coffee: What It Is & Why It Matters",
               "url": "https://keithlyons.org/coffee-encyclopedia/pour-over"
             },
             {
               "excerpt_chars": 600,
-              "fetched_at": "2026-11-08T22:17:41Z",
-              "source_id": "31f6fbd8da84dfa8",
+              "fetched_at": "2026-11-08T22:40:37Z",
+              "source_id": "0f7208c3e9320661",
               "support": null,
               "title": "Mastering Pour-Over Technique: Every Variable That Matters",
               "url": "https://podiumcoffeeclub.com/blogs/blog/pour-over-technique"
@@ -220,29 +308,29 @@
         },
         "units": [
           {
-            "created_at": "2026-11-08T22:23:54Z",
-            "goal": "Learner completes one guided pour-over brew with fixed dose, water amount, grind, water temperature, pour sequence and timing, then checks the result against a second cup made the same way; this is the only unit because the one-off goal is a single verified procedure.",
-            "id": "d55413e346d7b9b8",
+            "created_at": "2026-11-08T22:47:01Z",
+            "goal": "This unit comes first because consistency needs a fixed baseline: the learner must set up the station, state the hot-water stop condition and record one recipe before a second cup can be compared. It covers the task analysis, safety prerequisite, worked demonstration, guided first cup and independent second cup in one sitting.",
+            "id": "7debf6fea5011260",
             "ordinal": 1,
-            "plan_id": "pln_5261b63af6254ee2bd886cef10c2f0b2",
+            "plan_id": "pln_60692743a6e8425e90b026f981a75326",
             "prerequisite_refs": [],
             "target_lessons": 1,
-            "title": "Set Up and Brew One Repeatable Pour-Over Cup"
+            "title": "Set up, safety-check and repeat a recorded pour-over recipe"
           }
         ]
       },
       "final_job": {
         "artifact_ids": [],
-        "attempt_id": "att_91880a92770d475f942c0833cec9248f",
+        "attempt_id": "att_6969d7706ba448a7aa5e5dc53a5de48f",
         "brief": {
-          "course_id": "crs_1c45f5d60bf1439cb93d7f453d95075f",
+          "course_id": "crs_fd5cb544dc334c03aa761ab12ec5ae9b",
           "dials": {
             "assessment": "none",
             "autonomy": "guided",
             "depth": "working",
             "pace": "light"
           },
-          "enrollment_id": "enr_847b12b8abbe422886bc45d9974c46ee",
+          "enrollment_id": "enr_058bf8af7f7d45f981823633ba9e74da",
           "goal": "Brew a pour-over coffee whose strength stays consistent from cup to cup",
           "recipe": "one_off",
           "scope": "single",
@@ -259,10 +347,10 @@
               "provider": "nous"
             },
             "independent": true,
-            "needs_review": true,
-            "outcome": "rejected",
+            "needs_review": false,
+            "outcome": "independently_validated",
             "prompt_version": "plan-prompt.v11",
-            "warning": "validation rejected this artifact: it is not approvable as validated."
+            "warning": null
           },
           "domain_provenance": {
             "declared_locale": null,
@@ -271,22 +359,19 @@
             "source": "declared",
             "target_language": null
           },
-          "generation_state": "needs_review",
+          "generation_state": "draft",
           "last_stage": "plan",
           "next_unit_ordinal": 1,
           "objectives": 1,
-          "plan_hash": "sha256:5d10017e35b2be0db8ec723c44dfed03466d988db6c09f945a6539aaeb1c0301",
-          "plan_id": "pln_5261b63af6254ee2bd886cef10c2f0b2",
+          "plan_hash": "sha256:fa25bf2a3433ee85e1fcbdc5fc30513ce95b28b62b4a3b7ff8dcb7e555330b3d",
+          "plan_id": "pln_60692743a6e8425e90b026f981a75326",
           "plan_schema": "coursebook.plan.v2",
           "plan_version": 1,
-          "rejection_reasons": [
-            "source:89529d11eba43e9b: Listed in plan.source_ids but its excerpt is site navigation plus a self-certification line ('Source-checked... Prepared with AI assistance'); it holds no verifiable pour-over content and cannot back any claim.",
-            "source:31f6fbd8da84dfa8: Listed in plan.source_ids but its excerpt is storefront navigation ('Looking for Podium gifts?', 'Email me with') with no substantive technique content, so it supports nothing in the plan."
-          ],
+          "rejection_reasons": [],
           "units": 1,
           "validation": {
             "cost": {
-              "calls": 1,
+              "calls": 2,
               "cost_usd": null,
               "unknown_cost": true
             },
@@ -299,7 +384,7 @@
             },
             "independence": "independent",
             "independent": true,
-            "outcome": "rejected",
+            "outcome": "independently_validated",
             "research_status": "ok",
             "shape_violations": 0,
             "validator": {
@@ -307,36 +392,36 @@
               "model": "z-ai/glm-5.3-flash",
               "provider": "nous"
             },
-            "verdict": "reject",
+            "verdict": "pass",
             "waived_unknown": [],
-            "warning": "validation rejected this artifact: it is not approvable as validated."
+            "warning": null
           },
-          "validation_verdict": "reject"
+          "validation_verdict": "pass"
         },
-        "created_at": "2026-11-08T22:17:41Z",
+        "created_at": "2026-11-08T22:40:36Z",
         "error": null,
-        "job_id": "job_17c39456bec54eb2a16b5bfcb6b6a376",
+        "job_id": "job_92b7c9d75a7040faa34f093ccbe3b47f",
         "kind": "plan",
         "lease": null,
-        "operation_id": "h187-jobs-create-1794176261481982509",
+        "operation_id": "h187-jobs-create-1794177636911074710",
         "progress": {
-          "message": "plan authored (needs_review)",
+          "message": "plan authored (draft)",
           "stage": "plan",
           "steps_done": 1,
           "steps_total": 1
         },
         "state": "completed",
-        "updated_at": "2026-11-08T22:23:54Z"
+        "updated_at": "2026-11-08T22:47:01Z"
       },
-      "job_id": "job_17c39456bec54eb2a16b5bfcb6b6a376",
+      "job_id": "job_92b7c9d75a7040faa34f093ccbe3b47f",
       "label": "plan",
       "pump": {
-        "done_at_s": 372.9,
+        "done_at_s": 384.6,
         "finished": [
-          "job_17c39456bec54eb2a16b5bfcb6b6a376"
+          "job_92b7c9d75a7040faa34f093ccbe3b47f"
         ]
       },
-      "started_at": "2026-11-08T22:17:41Z",
+      "started_at": "2026-11-08T22:40:36Z",
       "terminal_state": "completed",
       "thread_alive": false,
       "timeline": [
@@ -353,8 +438,8 @@
           "state": "running"
         },
         {
-          "elapsed_s": 374.2,
-          "message": "plan authored (needs_review)",
+          "elapsed_s": 386.2,
+          "message": "plan authored (draft)",
           "stage": "plan",
           "state": "completed"
         }
@@ -362,61 +447,151 @@
     }
   },
   "plan_job": {
-    "job_id": "job_17c39456bec54eb2a16b5bfcb6b6a376",
+    "job_id": "job_92b7c9d75a7040faa34f093ccbe3b47f",
     "state": "queued"
   },
   "recipe": "one_off",
   "schema_version": 11,
   "scope": "single",
-  "started_at": "2026-11-08T22:17:41Z",
+  "started_at": "2026-11-08T22:40:36Z",
   "subject_domain": "technical_procedure",
   "tag": "single",
   "title": "Brew a pour-over coffee consistently",
-  "total_elapsed_s": 374.6,
+  "total_elapsed_s": 1053.0,
   "usage": {
     "events": [
       {
-        "duration_ms": 55227,
-        "job_id": "job_17c39456bec54eb2a16b5bfcb6b6a376",
+        "duration_ms": 32387,
+        "job_id": "job_92b7c9d75a7040faa34f093ccbe3b47f",
         "model": "deepseek/deepseek-v4.1-flash-1017",
         "provider": "nous",
-        "recorded_at": "2026-11-08T22:23:54Z",
+        "recorded_at": "2026-11-08T22:47:01Z",
         "tokens": {
           "cost_usd": null,
-          "input_tokens": 5411,
-          "output_tokens": 5812,
+          "input_tokens": 5415,
+          "output_tokens": 7189,
           "prompt_version": "plan-prompt.v11",
           "purpose": "coursebook.plan.generate",
           "unknown_cost": true
         }
       },
       {
-        "duration_ms": 25509,
-        "job_id": "job_17c39456bec54eb2a16b5bfcb6b6a376",
-        "model": "deepseek/deepseek-v4.1-flash-1017",
-        "provider": "nous",
-        "recorded_at": "2026-11-08T22:23:54Z",
-        "tokens": {
-          "cost_usd": null,
-          "input_tokens": 5460,
-          "output_tokens": 4057,
-          "prompt_version": "plan-prompt.v11",
-          "purpose": "coursebook.plan.generate",
-          "unknown_cost": true
-        }
-      },
-      {
-        "duration_ms": 284415,
-        "job_id": "job_17c39456bec54eb2a16b5bfcb6b6a376",
+        "duration_ms": 43835,
+        "job_id": "job_92b7c9d75a7040faa34f093ccbe3b47f",
         "model": "z-ai/glm-5.3-flash",
         "provider": "nous",
-        "recorded_at": "2026-11-08T22:23:54Z",
+        "recorded_at": "2026-11-08T22:47:01Z",
         "tokens": {
           "cost_usd": null,
-          "input_tokens": 3947,
-          "output_tokens": 19476,
+          "input_tokens": 3826,
+          "output_tokens": 3004,
           "prompt_version": "validation-prompt.v4",
           "purpose": "coursebook.plan.validate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 344841,
+        "job_id": "job_92b7c9d75a7040faa34f093ccbe3b47f",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:47:01Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 4231,
+          "output_tokens": 9881,
+          "prompt_version": "validation-prompt.v4",
+          "purpose": "coursebook.plan.validate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 5776,
+        "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:56:08Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 3048,
+          "output_tokens": 1138,
+          "prompt_version": "unit-sections-prompt.v1",
+          "purpose": "coursebook.unit_sections.generate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 320641,
+        "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:56:08Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 3723,
+          "output_tokens": 23096,
+          "prompt_version": "validation-prompt.v4",
+          "purpose": "coursebook.unit_sections.validate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 4703,
+        "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:56:08Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 3107,
+          "output_tokens": 996,
+          "prompt_version": "unit-sections-prompt.v1",
+          "purpose": "coursebook.unit_sections.generate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 214478,
+        "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:56:08Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 3673,
+          "output_tokens": 16051,
+          "prompt_version": "validation-prompt.v4",
+          "purpose": "coursebook.unit_sections.validate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 64008,
+        "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:58:07Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 7566,
+          "output_tokens": 12080,
+          "prompt_version": "lesson-prompt.v10",
+          "purpose": "coursebook.lesson.generate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 54625,
+        "job_id": "job_3bbabd291c1246bf815b1aab22a6c696",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T22:58:07Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 7620,
+          "output_tokens": 11931,
+          "prompt_version": "lesson-prompt.v10",
+          "purpose": "coursebook.lesson.generate",
           "unknown_cost": true
         }
       }
@@ -424,17 +599,17 @@
     "totals": {
       "by_model": {
         "nous/deepseek/deepseek-v4.1-flash-1017": {
-          "calls": 2,
+          "calls": 5,
           "total_tokens": 0
         },
         "nous/z-ai/glm-5.3-flash": {
-          "calls": 1,
+          "calls": 4,
           "total_tokens": 0
         }
       },
-      "calls": 3,
-      "input_tokens": 14818,
-      "output_tokens": 29345,
+      "calls": 9,
+      "input_tokens": 42209,
+      "output_tokens": 85366,
       "total_tokens": 0
     }
   },
