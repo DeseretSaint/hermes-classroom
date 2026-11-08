@@ -3586,7 +3586,14 @@ def _enforce_plan_rules_v1(
     # H-89: vocabulary targets must come from the declared inventory, in band order, with no
     # duplicates and no function words presented as word cards. This is a deterministic
     # sequence check, not a frequency proof.
-    reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
+    #
+    # H-187: the check is a *language-course* rule. ``target_items`` are lemmas of the target
+    # language: a non-language brief is never asked for them (the prompt carries no vocabulary
+    # block at all), so a non-language plan that happens to set the field cannot satisfy an
+    # inventory rule and used to be refused twice with no path forward. The field is inert there;
+    # the rule stays exactly as strict whenever a locale declares a language.
+    if locale:
+        reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
 
     if reasons:
         raise _RuleViolation(reasons)
@@ -3974,8 +3981,10 @@ def _enforce_plan_rules_v2(
         require_independent_declaration=False,
     )
 
-    # H-89: same deterministic vocabulary-sequence rules on the blueprint schema.
-    reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
+    # H-89: same deterministic vocabulary-sequence rules on the blueprint schema. H-187: gated on
+    # a declared language for the same reason as the v1 path above.
+    if locale:
+        reasons.extend(frequency.plan_vocabulary_reasons(objectives, frequency_selection))
 
     if reasons:
         raise _RuleViolation(reasons)
@@ -4680,7 +4689,21 @@ def _feedback(rejections: Sequence[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def _bounded_input(payload: dict[str, Any], limit: int = 24000) -> str:
+#: Local request-size guard per declared scope. This is not a provider limit: it exists so a
+#: provider is never handed a malformed JSON string. A full-scope deep pass carries far more
+#: research than a single-sitting plan, and 24 kB was measured too small for a legal full-scope
+#: blueprint plus its real ledger (H-187: 28,154 bytes compact), which failed the job before the
+#: first model call. The bound therefore scales with the scope the brief declared.
+REQUEST_BYTES_BOUNDS: dict[str, int] = {"single": 24000, "short": 24000, "full": 48000}
+DEFAULT_REQUEST_BYTES = 24000
+
+
+def _request_bound(scope: str | None) -> int:
+    """The request byte bound for this brief's scope. Unknown/absent keeps the historic bound."""
+    return REQUEST_BYTES_BOUNDS.get(str(scope or "").strip().lower(), DEFAULT_REQUEST_BYTES)
+
+
+def _bounded_input(payload: dict[str, Any], limit: int = DEFAULT_REQUEST_BYTES) -> str:
     """Request JSON, bounded without ever cutting the document mid-token.
 
     ``indent=1`` makes a captured prompt readable for a human. When that spelling would push the
@@ -4939,7 +4962,7 @@ def build_plan_request(
         prompt_version=PLAN_PROMPT_VERSION_V2 if blueprint else PLAN_PROMPT_VERSION,
         system_prompt=PLAN_SYSTEM_PROMPT,
         instructions=instructions,
-        input_text=_bounded_input(payload),
+        input_text=_bounded_input(payload, limit=_request_bound(scope)),
         schema=schema,
         schema_name=(
             "coursebook_plan_v2" if blueprint else "coursebook_plan_v1"
@@ -5003,7 +5026,7 @@ def build_plan_validation_request(
         prompt_version=VALIDATION_PROMPT_VERSION,
         system_prompt=VALIDATION_SYSTEM_PROMPT,
         instructions=_validation_instructions(subject="plan", criteria=VALIDATION_CRITERIA),
-        input_text=_bounded_input(payload),
+        input_text=_bounded_input(payload, limit=_request_bound(scope)),
         schema=VALIDATION_SCHEMA,
         schema_name="coursebook_validation_v1",
         max_tokens=2000,
