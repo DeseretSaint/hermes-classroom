@@ -235,8 +235,9 @@ const clickText = async (selector, wanted) => {
   await flush(120)
 }
 
-// Back to the section index, then each course surface the tabs can reach.
-await clickText('button', 'Back to the section index')
+// Back to the section index, then each course surface the tabs can reach. H-149 moved the exit
+// control into the player header (`Exit`), so the harness accepts either and proves the real one.
+await clickText('button', byText('button', 'Exit') ? 'Exit' : 'Back to the section index')
 for (const tab of ['Notebook', 'Quizzes', 'Evidence', 'Plan', 'Export']) {
   const control = byText('button', tab)
   if (!control) continue
