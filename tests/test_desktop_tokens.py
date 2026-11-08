@@ -297,10 +297,16 @@ class RouteShellRenderTest(unittest.TestCase):
         self.assertNotIn("grid-template-columns", html)
 
     def test_the_reading_typography_scales_with_the_root_font(self) -> None:
-        html = self.render(1280, "light")["html"]["shell"]
+        payload = self.render(1280, "light")
+        html = payload["html"]["shell"]
         # 200% text is a root-font change; px font sizes would not follow it.
-        self.assertIn("clamp(1.45rem", html)
         self.assertNotRegex(html, r"font-size:\s*\d+px")
+        # The shell uses the named scale, not a bespoke value.
+        light = payload["scope_light"]
+        for step in ("caption", "meta", "body", "lead", "heading", "display"):
+            self.assertIn(f"--cb-text-{step}", light)
+        self.assertEqual(light["--cb-text-body"], "1rem")
+        self.assertIn("font-size:1.5rem", html.replace(" ", ""))
 
     def test_dark_mode_paints_the_dark_table_on_the_same_root(self) -> None:
         html = self.render(1280, "dark")["html"]["section"]

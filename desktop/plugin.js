@@ -915,9 +915,76 @@ function ErrorLine({ error }) {
   })
 }
 
-/** Shared page chrome: a destination body never re-implements its own header. */
-function PageBody({ children }) {
-  return jsx('div', { className: 'min-h-0 flex-1 overflow-auto pb-6', children })
+/** Shared page chrome: the route's one `main` landmark, named for the surface it holds. */
+function PageBody({ children, label }) {
+  return jsx('main', {
+    id: 'cb-main-content',
+    'data-cb-main': '',
+    tabIndex: -1,
+    'aria-label': label || 'Coursebook content',
+    className: 'min-h-0 flex-1 overflow-auto pb-6',
+    children
+  })
+}
+
+/**
+ * The skip path. It is the first focus stop on the route and is clipped until it is focused, so a
+ * keyboard or screen-reader user can jump the route header and the destination nav. It lands on the
+ * reading column when the surface has one (a section or textbook page), and on the `main` region
+ * otherwise — never on the header.
+ */
+function SkipToContent({ label }) {
+  const [revealed, setRevealed] = useState(false)
+  const hidden = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '1px',
+    height: '1px',
+    padding: 0,
+    margin: '-1px',
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+    border: '1px solid transparent',
+    fontFamily: CB_SANS,
+    fontSize: CB_TYPE.meta,
+    lineHeight: 1.4
+  }
+  const shown = {
+    ...hidden,
+    width: 'auto',
+    height: 'auto',
+    margin: 0,
+    padding: '0.35rem 0.7rem',
+    overflow: 'visible',
+    clip: 'auto',
+    zIndex: 40,
+    color: 'var(--cb-on-lamp)',
+    background: 'var(--cb-lamp)',
+    border: '1px solid var(--cb-ink)',
+    borderRadius: '2px',
+    textDecoration: 'none'
+  }
+  return jsx('a', {
+    href: '#cb-main-content',
+    'data-cb-skip': '',
+    onFocus: () => setRevealed(true),
+    onBlur: () => setRevealed(false),
+    onClick: (event) => {
+      const root = document.querySelector('[data-cb-route]')
+      const reading = root ? root.querySelector('[data-cb-reading-column]') : null
+      const main = document.getElementById('cb-main-content')
+      const target = reading || main
+      if (!target) return
+      event.preventDefault()
+      target.setAttribute('tabindex', '-1')
+      if (typeof target.focus === 'function') target.focus({ preventScroll: true })
+      if (typeof target.scrollIntoView === 'function') target.scrollIntoView({ block: 'start' })
+    },
+    style: revealed ? shown : hidden,
+    children: label || 'Skip to course content'
+  })
 }
 
 function backendCopy(status) {
@@ -1048,7 +1115,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
   const canSyllabus = typeof onSyllabus === 'function' && Boolean(implemented && implemented.has('syllabus.intake.create'))
   const width = useCbViewportWidth()
   const compact = width > 0 && width < 520
-  const hintStyle = { margin: 0, fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' }
+  const hintStyle = { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }
   // One start plate: what Coursebook is for, one filled action, then the path in three short rows.
   // The numbers carry the sequence, so step one is never marked current until a course exists.
   return jsxs('div', {
@@ -1071,14 +1138,14 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
         style: { display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' },
         children: [
           jsx(SurveyMark, { courseId: 'first-run', size: compact ? 40 : 56 }),
-          jsx('h1', {
+          jsx('h2', {
             'data-cb-first-run-title': '',
             style: {
               margin: 0,
               flex: '1 1 12rem',
               minWidth: 0,
               fontFamily: CB_SERIF,
-              fontSize: compact ? '1.6rem' : 'clamp(1.75rem, 1.35rem + 1.6vw, 2.5rem)',
+              fontSize: compact ? CB_TYPE.heading : CB_TYPE.display,
               fontWeight: 600,
               lineHeight: 1.08,
               letterSpacing: '-0.015em',
@@ -1095,7 +1162,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
           margin: 0,
           maxWidth: '54ch',
           fontFamily: CB_SANS,
-          fontSize: '1rem',
+          fontSize: CB_TYPE.body,
           lineHeight: 1.55,
           color: 'var(--cb-ink)'
         },
@@ -1115,7 +1182,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
                   border: '1px solid var(--cb-on-lamp)',
                   borderRadius: '2px',
                   minHeight: '44px',
-                  fontSize: '1rem'
+                  fontSize: CB_TYPE.body
                 },
                 children: FIRST_RUN_COPY.primary
               }),
@@ -1138,7 +1205,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
                   style: {
                     flex: '0 0 1.3rem',
                     fontFamily: CB_SERIF,
-                    fontSize: '1.1rem',
+                    fontSize: CB_TYPE.body,
                     fontWeight: 600,
                     fontVariantNumeric: 'tabular-nums',
                     color: 'var(--cb-ink-soft)'
@@ -1149,11 +1216,11 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
                   style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
                   children: [
                     jsx('span', {
-                      style: { fontFamily: CB_SANS, fontSize: '1rem', fontWeight: 600, color: 'var(--cb-ink)' },
+                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.body, fontWeight: 600, color: 'var(--cb-ink)' },
                       children: step.title
                     }),
                     jsx('span', {
-                      style: { fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
                       children: step.line
                     })
                   ]
@@ -1211,7 +1278,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
           borderTop: '1px solid var(--cb-rule)',
           maxWidth: '56ch',
           fontFamily: CB_SANS,
-          fontSize: '0.8125rem',
+          fontSize: CB_TYPE.meta,
           lineHeight: 1.5,
           color: 'var(--cb-ink-soft)'
         },
@@ -1320,7 +1387,7 @@ function PackPreview({ preview, existing }) {
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx('h3', { className: 'text-sm font-semibold', children: manifest.title }),
+          jsx('h2', { className: 'text-sm font-semibold', children: manifest.title }),
           manifest.subtitle
             ? jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-secondary)', children: manifest.subtitle })
             : null,
@@ -2085,7 +2152,7 @@ function CourseRow({ row, implemented, onResume, onArchive, onDelete, onOpen }) 
         jsx(CourseStamp, { title: row.title, courseId: row.course_id }),
         jsx('span', {
           className: 'min-w-0 break-words',
-          style: { fontFamily: CB_SERIF, fontSize: '1.0625rem', fontWeight: 600 },
+          style: { fontFamily: CB_SERIF, fontSize: CB_TYPE.body, fontWeight: 600 },
           children: row.title
         }),
         jsx(sdk.Badge, { variant: 'muted', size: 'xs', children: RECIPE_COPY[row.recipe] ? RECIPE_COPY[row.recipe].title : row.recipe }),
@@ -2273,14 +2340,16 @@ function buildDeskModel({ library, outline, estimate }) {
   }
 }
 
-function DeskLabel({ children }) {
-  return jsx('div', {
+function DeskLabel({ children, as }) {
+  const tag = as || 'div'
+  return jsx(tag, {
     style: {
       fontFamily: CB_SANS,
-      fontSize: '0.75rem',
+      fontSize: CB_TYPE.caption,
       fontWeight: 600,
       letterSpacing: '0.01em',
-      color: 'var(--cb-ink-soft)'
+      color: 'var(--cb-ink-soft)',
+      margin: 0
     },
     children
   })
@@ -2335,52 +2404,22 @@ function DeskProgress({ objectives }) {
   })
 }
 
-/** Three counts the backend actually recorded. No percentage, no streak, no invented goal. */
-function DeskStats({ desk }) {
-  const stats = [
-    { key: 'sections', label: 'Sections', value: desk.total },
-    { key: 'evidence', label: 'With evidence', value: desk.settled },
-    { key: 'due', label: 'Due now', value: desk.dueCount }
-  ]
+/**
+ * The desk's facts, in the same voice as course detail's hero line: one line, the value then its
+ * caption, separated by a rule. It replaces the three equal stat cards (H-94 V2-5): there is no
+ * percentage, no streak and no invented goal, only counts the backend actually recorded.
+ */
+function DeskFacts({ desk }) {
+  const current = desk.current
+  const facts = [
+    current ? { value: DESK_STATE_WORD[current.state] || 'Not started', label: 'This section' } : null,
+    { value: `${desk.settled} of ${desk.total}`, label: 'With evidence' },
+    desk.dueCount > 0 ? { value: String(desk.dueCount), label: 'Due now' } : null
+  ].filter(Boolean)
   return jsx('div', {
-    'data-cb-desk-stats': '',
-    style: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-      gap: '0.4rem',
-      borderTop: '1px solid var(--cb-rule)',
-      paddingTop: '0.55rem'
-    },
-    children: stats.map((stat) =>
-      jsxs(
-        'div',
-        {
-          'data-cb-desk-stat': stat.key,
-          style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
-          children: [
-            jsx('span', {
-              style: {
-                fontSize: '1.05rem',
-                lineHeight: 1.15,
-                fontVariantNumeric: 'tabular-nums',
-                color:
-                  stat.key === 'due' && Number(stat.value) > 0
-                    ? 'var(--cb-ochre)'
-                    : stat.key === 'evidence' && Number(stat.value) > 0
-                      ? 'var(--cb-field)'
-                      : 'var(--cb-ink)'
-              },
-              children: String(stat.value)
-            }),
-            jsx('span', {
-              style: { fontSize: '0.75rem', letterSpacing: '0.01em', color: 'var(--cb-ink-soft)' },
-              children: stat.label
-            })
-          ]
-        },
-        stat.key
-      )
-    )
+    'data-cb-desk-facts': String(facts.length),
+    style: { borderTop: '1px solid var(--cb-rule)', paddingTop: '0.55rem' },
+    children: jsx(HeroFacts, { facts })
   })
 }
 
@@ -2420,7 +2459,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
                     'data-cb-desk-course': '',
                     style: {
                       fontFamily: CB_SANS,
-                      fontSize: '0.75rem',
+                      fontSize: CB_TYPE.caption,
                       fontWeight: 600,
                       letterSpacing: '0.02em',
                       lineHeight: 1.4,
@@ -2430,12 +2469,12 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
                     children: courseTitle
                   })
                 : null,
-              jsx('h3', {
+              jsx('h2', {
                 'data-cb-continue-section': '',
                 style: {
                   margin: 0,
                   fontFamily: CB_SERIF,
-                  fontSize: compact ? '1.35rem' : 'clamp(1.5rem, 1.2rem + 1.4vw, 2.2rem)',
+                  fontSize: compact ? CB_TYPE.heading : CB_TYPE.heading,
                   fontWeight: 600,
                   lineHeight: 1.12,
                   letterSpacing: '-0.015em',
@@ -2451,7 +2490,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
                   flexWrap: 'wrap',
                   alignItems: 'baseline',
                   gap: '0.2rem 0.85rem',
-                  fontSize: '0.75rem',
+                  fontSize: CB_TYPE.caption,
                   color: 'var(--cb-ink-soft)'
                 },
                 children: [
@@ -2484,7 +2523,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
                 ]
               }),
               jsx(DeskProgress, { objectives: desk.objectives }),
-              jsx(DeskStats, { desk })
+              jsx(DeskFacts, { desk })
             ]
           }),
           compact ? null : jsx(CourseStamp, { title: courseTitle || title, large: true, courseId: desk.row ? desk.row.course_id : null })
@@ -2492,7 +2531,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
       }),
       jsxs('p', {
         'data-cb-continue-next': '',
-        style: { margin: 0, fontSize: '0.9rem', lineHeight: 1.55, color: 'var(--cb-ink)' },
+        style: { margin: 0, maxWidth: CB_MEASURE, fontSize: CB_TYPE.body, lineHeight: 1.55, color: 'var(--cb-ink)' },
         children: [
           jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: 'Next · ' }),
           desk.nextLabel
@@ -2543,7 +2582,7 @@ function PathPreview({ desk, onOpenSection }) {
         title: desk.row && desk.row.title ? desk.row.title : 'Your path',
         caption: jsx('span', {
           'data-cb-path-summary': '',
-          style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+          style: { fontFamily: CB_SANS, maxWidth: CB_MEASURE, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
           children: objectives.length
             ? `Course evidence · ${desk.settled} of ${desk.total} sections have evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
             : 'No path read yet'
@@ -2593,7 +2632,7 @@ function PathPreview({ desk, onOpenSection }) {
                     padding: '0.45rem 0.1rem',
                     textAlign: 'left',
                     color: 'var(--cb-ink)',
-                    fontSize: '0.85rem',
+                    fontSize: CB_TYPE.meta,
                     borderLeft: isCurrent ? '2px solid var(--cb-accent)' : '2px solid transparent',
                     paddingLeft: '0.55rem'
                   },
@@ -2611,7 +2650,7 @@ function PathPreview({ desk, onOpenSection }) {
                         background: isCurrent ? 'var(--cb-paper-raised)' : 'transparent',
                         color: deskToneColor(tone),
                         fontVariantNumeric: 'tabular-nums',
-                        fontSize: '0.75rem',
+                        fontSize: CB_TYPE.caption,
                         lineHeight: 1
                       },
                       children: String(objective.ordinal).padStart(2, '0')
@@ -2632,7 +2671,7 @@ function PathPreview({ desk, onOpenSection }) {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '0.3rem',
-                        fontSize: '0.75rem',
+                        fontSize: CB_TYPE.caption,
                         color: deskToneColor(tone),
                         fontWeight: 600
                       },
@@ -2658,11 +2697,11 @@ function PathPreview({ desk, onOpenSection }) {
         })
       }),
       remaining > 0
-        ? jsx('div', { style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)', paddingTop: '0.2rem' }, children: `${remaining} more section${remaining === 1 ? '' : 's'} in the path` })
+        ? jsx('div', { style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', paddingTop: '0.2rem' }, children: `${remaining} more section${remaining === 1 ? '' : 's'} in the path` })
         : null,
       objectives.length === 0
         ? jsx('p', {
-            style: { margin: 0, fontSize: '0.8rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
             children: 'This course has no objectives yet, so there is no path to show. Approve its plan to start one.'
           })
         : null
@@ -2690,7 +2729,7 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
         children: open ? 'Hide sources' : 'Show sources'
       }),
       jsx('div', {
-        style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
         children: sectionTitle ? `Sources for “${sectionTitle}”` : 'Sources'
       }),
       open
@@ -2704,7 +2743,7 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
                 ? jsx(sdk.Loader, { label: 'Reading this section’s sources' })
                 : status === 'error'
                   ? jsxs('div', {
-                      style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--cb-ink-soft)' },
+                      style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
                       children: [
                         jsx('span', {
                           children: `${error && error.code ? error.code + ': ' : ''}${describeError(error)} The sources were not read.`
@@ -2713,7 +2752,7 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
                       ]
                     })
                   : items.length === 0
-                    ? jsx('p', { style: { margin: 0, fontSize: '0.8rem', color: 'var(--cb-ink-soft)' }, children: 'No sources are recorded for this section yet.' })
+                    ? jsx('p', { style: { margin: 0, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' }, children: 'No sources are recorded for this section yet.' })
                     : jsx('ul', {
                         style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' },
                         children: items.map((source) =>
@@ -2723,8 +2762,8 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
                               'data-cb-desk-source': source.source_id || '',
                               style: { borderLeft: '2px solid var(--cb-rule)', paddingLeft: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.05rem' },
                               children: [
-                                jsx('span', { style: { fontSize: '0.85rem', color: 'var(--cb-ink)' }, children: source.title || 'Untitled source' }),
-                                jsx('span', { style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
+                                jsx('span', { style: { fontSize: CB_TYPE.meta, color: 'var(--cb-ink)' }, children: source.title || 'Untitled source' }),
+                                jsx('span', { style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
                               ]
                             },
                             source.source_id || source.title
@@ -2750,13 +2789,13 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
         children: [
-          jsx(DeskLabel, { children: `All courses · ${rows.length}` }),
+          jsx(DeskLabel, { as: 'h2', children: `All courses · ${rows.length}` }),
           jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'Search and manage courses' })
         ]
       }),
       others.length === 0
         ? jsx('p', {
-            style: { margin: 0, fontSize: '0.8rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
             children: 'This is the only course on this profile.'
           })
         : jsx('div', {
@@ -2790,7 +2829,7 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
                             style: {
                               minWidth: 0,
                               fontFamily: CB_SERIF,
-                              fontSize: '1rem',
+                              fontSize: CB_TYPE.body,
                               fontWeight: 600,
                               lineHeight: 1.3,
                               color: 'var(--cb-ink)',
@@ -2802,14 +2841,14 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
                       ]
                     }),
                     jsx('div', {
-                      style: { minHeight: '2rem', fontSize: '0.75rem', lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
+                      style: { minHeight: '2rem', fontSize: CB_TYPE.caption, lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
                       children: (row.next_step && row.next_step.label) || 'No next step recorded'
                     }),
                     jsxs('div', {
                       style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' },
                       children: [
                         jsx('span', {
-                          style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)', fontVariantNumeric: 'tabular-nums' },
+                          style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', fontVariantNumeric: 'tabular-nums' },
                           children: `${Number(summary.independent || 0)} of ${Number(summary.total_objectives || 0)} with evidence`
                         }),
                         jsx(sdk.Button, {
@@ -2829,7 +2868,7 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
       hidden > 0
         ? jsx('div', {
             'data-cb-all-courses-more': String(hidden),
-            style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)', paddingTop: '0.1rem' },
+            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', paddingTop: '0.1rem' },
             children: `+${hidden} more course${hidden === 1 ? '' : 's'} on this profile`
           })
         : null
@@ -2887,7 +2926,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
       })
     : null
 
-  const quietText = { margin: 0, fontSize: '0.75rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' }
+  const quietText = { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.55, color: 'var(--cb-ink-soft)' }
 
   return jsxs('section', {
     'data-cb-field-notes': status === 'ready' && recent.length > 0 ? 'ready' : status,
@@ -2913,10 +2952,10 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
           jsxs('div', {
             style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem' },
             children: [
-              jsx(DeskLabel, { children: 'Field Notes' }),
+              jsx(DeskLabel, { as: 'h2', children: 'Field Notes' }),
               entries.length > 0
                 ? jsx('span', {
-                    style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                    style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                     children: `${entries.length} saved${entries.length > recent.length ? ` · showing the last ${recent.length}` : ''}`
                   })
                 : null
@@ -2932,7 +2971,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
       }),
       stale
         ? jsx('p', {
-            style: { ...quietText, fontSize: '0.75rem' },
+            style: { ...quietText, fontSize: CB_TYPE.caption },
             children: 'These are the notes last read. A save or an edit is paused until the desk reconnects.'
           })
         : null,
@@ -2954,7 +2993,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
                 style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' },
                 children: [
                   jsx('p', {
-                    style: { ...quietText, maxWidth: '34rem' },
+                    style: { ...quietText, maxWidth: CB_MEASURE },
                     children: 'Save an explanation, visual or quiz moment and it will appear here.'
                   }),
                   action
@@ -2979,7 +3018,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
                         jsx('p', {
                           style: {
                             margin: 0,
-                            fontSize: '0.9rem',
+                            fontSize: CB_TYPE.meta,
                             lineHeight: 1.55,
                             color: 'var(--cb-ink)',
                             whiteSpace: 'pre-wrap',
@@ -2989,7 +3028,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
                         }),
                         entry.note && entry.excerpt
                           ? jsx('p', {
-                              style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                              style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                               children: entry.note
                             })
                           : null,
@@ -2999,7 +3038,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
                             flexWrap: 'wrap',
                             alignItems: 'baseline',
                             gap: '0.25rem 0.8rem',
-                            fontSize: '0.75rem',
+                            fontSize: CB_TYPE.caption,
                             color: 'var(--cb-ink-soft)'
                           },
                           children: [
@@ -3011,7 +3050,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
                                   style: {
                                     border: '1px solid var(--cb-rule)',
                                     padding: '0 0.3rem',
-                                    fontSize: '0.75rem',
+                                    fontSize: CB_TYPE.caption,
                                     color: 'var(--cb-ink-soft)'
                                   },
                                   children: item
@@ -3130,11 +3169,12 @@ function FieldDeskHome({
   })
   const coursesCard = jsx(AllCoursesList, { rows: desk.rows, onOpen, onShowAll })
   const mainColumn = jsxs('div', {
-    style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
+    style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, maxWidth: CB_MEASURE },
     children: [continueCard, pathCard, sourcesCard]
   })
   const sideColumn = jsxs('aside', {
-    style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
+    'aria-label': 'Field notes and all courses',
+    style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, maxWidth: CB_MEASURE },
     children: [notesCard, coursesCard]
   })
 
@@ -3625,6 +3665,12 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
             children: 'Back to the Field Desk'
           })
         : null,
+      jsx(PlateHead, {
+        title: 'All courses',
+        caption: data
+          ? `${Number(data.total || 0)} ${Number(data.total || 0) === 1 ? 'course' : 'courses'} on this profile`
+          : 'Reading the courses on this profile'
+      }),
       jsxs('div', {
         className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
         children: [
@@ -3712,7 +3758,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx('h3', { className: 'text-sm font-semibold', children: row.title }),
+          jsx('h2', { className: 'text-sm font-semibold', children: row.title }),
           jsxs('div', {
             className: 'mt-1 flex flex-wrap items-center gap-2',
             children: [
@@ -3940,7 +3986,7 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
           description: LIBRARY_COPY.emptyBody
         }),
         jsx('p', {
-          className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+          style: { margin: 0, maxWidth: CB_MEASURE, fontSize: CB_TYPE.body, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
           children: LIBRARY_COPY.lead
         })
       ]
@@ -3994,6 +4040,7 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
 
   return jsxs('div', {
     className: 'flex flex-col',
+    style: { maxWidth: CB_MEASURE },
     children: [
       jsx(PlateHead, {
         label: 'Library',
@@ -4010,7 +4057,8 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
             className: 'flex flex-wrap items-center justify-between gap-2',
             children: [
               jsx('div', {
-                className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                className: 'max-w-prose leading-relaxed text-(--ui-text-secondary)',
+                style: { maxWidth: CB_MEASURE, fontSize: CB_TYPE.body },
                 children: stale ? 'Reconnecting. Showing the last packs that were read.' : ''
               }),
               jsx(sdk.SegmentedControl, {
@@ -4027,11 +4075,12 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
           }),
           jsxs('details', {
             'data-cb-pack-trust': '',
-            className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+            className: 'max-w-prose leading-relaxed text-(--ui-text-secondary)',
+            style: { maxWidth: CB_MEASURE, fontSize: CB_TYPE.body },
             children: [
               jsx('summary', { className: 'cursor-pointer text-xs font-medium', children: 'What we check / what we do not check' }),
-              jsx('p', { className: 'mt-1', children: LIBRARY_COPY.whatWeCheck }),
-              jsx('p', { className: 'mt-1', children: LIBRARY_COPY.whatWeDoNotCheck })
+              jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeCheck }),
+              jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeDoNotCheck })
             ]
           })
         ]
@@ -6859,7 +6908,11 @@ function Hairline() {
 }
 
 function QuietNote({ children }) {
-  return jsx('p', { className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)', children })
+  return jsx('p', {
+    className: 'leading-relaxed text-(--ui-text-secondary)',
+    style: { maxWidth: CB_MEASURE, fontSize: CB_TYPE.caption },
+    children
+  })
 }
 
 /**
@@ -7593,10 +7646,7 @@ function AttemptControls({
             className: 'flex flex-col gap-2',
             'data-cb-check-stimulus': check.check_id,
             children: [
-              jsx('div', {
-                className: 'max-w-prose',
-                children: jsx(sdk.MessageTextContent, { text: stimulus.prompt })
-              }),
+              jsx(ProseText, { className: 'max-w-prose', text: stimulus.prompt }),
               stimulus.learner_instructions
                 ? jsx('p', {
                     className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -7712,6 +7762,7 @@ function AttemptControls({
                 : jsx('p', {
                     id: 'cb-attempt-help',
                     className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    style: { maxWidth: CB_MEASURE },
                     children: supports('check.get')
                       ? 'The question and any choices are shown above; this field records what you answered.'
                       : 'The question and any choices are in the teaching chat. This field records your answer and the backend grades it once.'
@@ -7881,6 +7932,7 @@ function AttemptControls({
 
       jsx('p', {
         className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+        style: { maxWidth: CB_MEASURE },
         'data-cb-breadth': 'check',
         children: CHECK_SURFACE_DISCLOSURE
       }),
@@ -8192,6 +8244,18 @@ const CB_TOKEN_NAMES = Object.freeze([
   'plum-soft'
 ])
 
+/**
+ * Six type steps, and only six. Every font size Coursebook authors for its own text is one of
+ * these; the host's own chrome (badges, buttons, tab strips) keeps its own sizes and is outside
+ * this claim. Body is `1rem`, so a 16px root paints 16px body copy; a 200% root scales the lot.
+ * Display is a clamp inside the 2.25-2.5rem band, so no hero ever exceeds the step.
+ */
+const CB_TYPE_SCALE_JSON =
+  '{"caption":"0.75rem","meta":"0.875rem","body":"1rem","lead":"1.125rem","heading":"1.5rem","display":"clamp(2.25rem, 1.9rem + 0.7vw, 2.5rem)"}'
+
+const CB_TYPE = JSON.parse(CB_TYPE_SCALE_JSON)
+const CB_TYPE_STEPS = Object.freeze(['caption', 'meta', 'body', 'lead', 'heading', 'display'])
+
 /** The host cannot ship a font file, so the voices are OS-resident stacks only. */
 const CB_SERIF = 'ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif'
 const CB_SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif'
@@ -8234,6 +8298,7 @@ function cbScopeStyle(mode) {
   const palette = CB_TOKENS[mode === 'dark' ? 'dark' : 'light']
   const style = {}
   for (const name of CB_TOKEN_NAMES) style[`--cb-${name}`] = palette[name]
+  for (const step of CB_TYPE_STEPS) style[`--cb-text-${step}`] = CB_TYPE[step]
   style.colorScheme = mode === 'dark' ? 'dark' : 'light'
   style.backgroundColor = 'var(--cb-paper)'
   style.color = 'var(--cb-ink)'
@@ -8429,7 +8494,7 @@ function CbLabel({ children }) {
   return jsx('div', {
     style: {
       fontFamily: CB_SANS,
-      fontSize: '0.75rem',
+      fontSize: CB_TYPE.caption,
       fontWeight: 600,
       letterSpacing: '0.01em',
       color: 'var(--cb-ink-soft)'
@@ -8460,7 +8525,7 @@ function PlateHead({ id, label, title, caption, actions, level }) {
             ? jsx('div', {
                 style: {
                   fontFamily: CB_SANS,
-                  fontSize: '0.75rem',
+                  fontSize: CB_TYPE.caption,
                   fontWeight: 600,
                   letterSpacing: '0.01em',
                   color: 'var(--cb-ink-soft)'
@@ -8473,7 +8538,7 @@ function PlateHead({ id, label, title, caption, actions, level }) {
             style: {
               margin: 0,
               fontFamily: CB_SERIF,
-              fontSize: '1.375rem',
+              fontSize: CB_TYPE.heading,
               fontWeight: 600,
               lineHeight: 1.2,
               letterSpacing: '-0.01em',
@@ -8484,7 +8549,7 @@ function PlateHead({ id, label, title, caption, actions, level }) {
           }),
           caption
             ? jsx('p', {
-                style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                style: { margin: 0, maxWidth: CB_MEASURE, fontFamily: CB_SANS, fontSize: CB_TYPE.body, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
                 children: caption
               })
             : null
@@ -8516,7 +8581,7 @@ function cbSpineNodeStyle(tone, isCurrent, phone) {
     justifyContent: 'center',
     fontFamily: CB_SANS,
     fontVariantNumeric: 'tabular-nums',
-    fontSize: '0.75rem',
+    fontSize: CB_TYPE.caption,
     fontWeight: 600,
     lineHeight: 1,
     boxSizing: 'border-box'
@@ -8572,7 +8637,7 @@ function RouteSpine({ objectives, currentId, onSelect, phone, ariaLabel }) {
                 textAlign: 'left',
                 color: 'var(--cb-ink)',
                 fontFamily: CB_SANS,
-                fontSize: '0.875rem',
+                fontSize: CB_TYPE.meta,
                 borderTop: '1px solid var(--cb-rule)',
                 background: isCurrent ? 'var(--cb-accent-soft)' : 'transparent',
                 borderLeft: isCurrent ? '2px solid var(--cb-accent)' : '2px solid transparent'
@@ -8601,7 +8666,7 @@ function RouteSpine({ objectives, currentId, onSelect, phone, ariaLabel }) {
                     overflowWrap: 'anywhere',
                     whiteSpace: 'normal',
                     fontFamily: CB_SERIF,
-                    fontSize: '1rem',
+                    fontSize: CB_TYPE.body,
                     fontWeight: 600,
                     lineHeight: 1.3
                   },
@@ -8613,7 +8678,7 @@ function RouteSpine({ objectives, currentId, onSelect, phone, ariaLabel }) {
                     display: 'inline-flex',
                     alignItems: 'center',
                     fontFamily: CB_SANS,
-                    fontSize: '0.75rem',
+                    fontSize: CB_TYPE.caption,
                     fontWeight: 600,
                     color: deskToneColor(tone),
                     border: `1px solid ${deskToneColor(tone)}`,
@@ -8665,7 +8730,7 @@ function EvidenceTally({ objectives, caption, phone }) {
         : null,
       jsx('p', {
         'data-cb-tally-caption': '',
-        style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+        style: { margin: 0, maxWidth: CB_MEASURE, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
         children: caption
       })
     ]
@@ -8720,11 +8785,11 @@ function BlankPlate({ title, caption, action, tertiary }) {
         })
       }),
       jsx('h3', {
-        style: { margin: 0, fontFamily: CB_SERIF, fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)', maxWidth: '28ch' },
+        style: { margin: 0, fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)', maxWidth: '28ch' },
         children: title
       }),
       caption
-        ? jsx('p', { style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '48ch' }, children: caption })
+        ? jsx('p', { style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '48ch' }, children: caption })
         : null,
       action || null,
       tertiary || null
@@ -8774,7 +8839,7 @@ function CbStatePill({ state, label, phone }) {
       display: 'inline-flex',
       alignItems: 'center',
       fontFamily: CB_SANS,
-      fontSize: '0.75rem',
+      fontSize: CB_TYPE.caption,
       fontWeight: 600,
       lineHeight: 1.3,
       color: deskToneColor(tone),
@@ -8809,7 +8874,7 @@ function HeroFacts({ facts, phone }) {
             style: {
               fontFamily: CB_SANS,
               fontVariantNumeric: 'tabular-nums',
-              fontSize: '1rem',
+              fontSize: CB_TYPE.body,
               fontWeight: 600,
               lineHeight: 1.4,
               color: 'var(--cb-ink)',
@@ -8818,7 +8883,7 @@ function HeroFacts({ facts, phone }) {
             children: fact.value
           }),
           jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
             children: fact.label
           })
         ]
@@ -8864,7 +8929,7 @@ function LearningTabs({ options, value, onChange, phone, ariaLabel }) {
               padding: phone ? '0.7rem 0' : '0.45rem 0 0.4rem',
               borderBottom: current ? '2px solid var(--cb-accent)' : '2px solid transparent',
               fontFamily: CB_SANS,
-              fontSize: '0.8125rem',
+              fontSize: CB_TYPE.meta,
               fontWeight: current ? 600 : 400,
               color: current ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
               whiteSpace: 'nowrap'
@@ -8903,7 +8968,7 @@ function CheckPanelFrame({ kind, label, children }) {
         ? jsx('div', {
             style: {
               fontFamily: CB_SANS,
-              fontSize: '0.75rem',
+              fontSize: CB_TYPE.caption,
               fontWeight: 600,
               lineHeight: 1.3,
               color: retry ? 'var(--cb-coral)' : 'var(--cb-ochre)'
@@ -8929,7 +8994,7 @@ function CbRailSection({ label, children }) {
     children: [
       jsx('div', {
         style: {
-          fontSize: '0.75rem',
+          fontSize: CB_TYPE.caption,
           fontWeight: 600,
           letterSpacing: '0.01em',
           color: 'var(--cb-ink-soft)'
@@ -8950,7 +9015,8 @@ function FieldRail({ next, facts, sources, notes }) {
   const noteRows = (notes || []).slice(0, 3)
   return jsxs('aside', {
     'data-cb-field-rail': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.8rem', lineHeight: 1.5 },
+    'aria-label': 'Section details',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: CB_TYPE.meta, lineHeight: 1.5 },
     children: [
       jsx(CbRailSection, {
         label: 'Next action',
@@ -8983,7 +9049,7 @@ function FieldRail({ next, facts, sources, notes }) {
                 style: { display: 'flex', flexDirection: 'column', gap: '0.05rem', borderLeft: '2px solid var(--cb-rule)', paddingLeft: '0.45rem' },
                 children: [
                   jsx('span', { style: { color: 'var(--cb-ink)' }, children: source.title || 'Untitled source' }),
-                  jsx('span', { style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
+                  jsx('span', { style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
                 ]
               }, source.source_id || source.title)
             ) })
@@ -9034,7 +9100,7 @@ function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, childre
                 style: {
                   margin: 0,
                   fontFamily: CB_SERIF,
-                  fontSize: 'clamp(1.45rem, 1.1rem + 1.2vw, 2rem)',
+                  fontSize: CB_TYPE.heading,
                   fontWeight: 600,
                   lineHeight: 1.15,
                   letterSpacing: '-0.015em',
@@ -9043,7 +9109,7 @@ function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, childre
                 children: title
               }),
               subtitle
-                ? jsx('div', { style: { fontFamily: CB_SANS, fontSize: '0.875rem', color: 'var(--cb-ink-soft)' }, children: subtitle })
+                ? jsx('div', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' }, children: subtitle })
                 : null
             ]
           }),
@@ -9058,7 +9124,7 @@ function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, childre
       meta && meta.length
         ? jsx('div', {
             'data-cb-route-meta': '',
-            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: meta
           })
         : null,
@@ -9111,12 +9177,12 @@ function MediaFrame({ artifactId, kind, label, caption, provenance, textEquivale
       caption
         ? jsx('figcaption', {
             'data-cb-media-caption': '',
-            style: { fontSize: '0.85rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+            style: { fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
             children: caption
           })
         : null,
       jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
         children: [
           label
             ? jsx('span', {
@@ -9138,7 +9204,7 @@ function MediaFrame({ artifactId, kind, label, caption, provenance, textEquivale
       textEquivalent
         ? jsxs('details', {
             'data-cb-media-text-equivalent': '',
-            style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: [
               jsx('summary', { style: { cursor: 'pointer' }, children: 'Text equivalent' }),
               jsx('div', { style: { paddingTop: '0.25rem', lineHeight: 1.5 }, children: textEquivalent })
@@ -9204,9 +9270,9 @@ function MediaSegment({ segment }) {
               src: preview.data_url
             })
           : preview.state === 'loading'
-            ? jsx('div', { style: { padding: '0.35rem 0', fontSize: '0.75rem', color: 'var(--cb-ink-soft)' }, children: 'Loading media' })
+            ? jsx('div', { style: { padding: '0.35rem 0', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: 'Loading media' })
             : jsx('div', {
-                style: { padding: '0.25rem 0', fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                style: { padding: '0.25rem 0', fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                 children: preview.message
               })
   return jsx(MediaFrame, {
@@ -9358,20 +9424,20 @@ function PronunciationWords({ words, unit }) {
             border: `1px solid ${word.match ? 'var(--cb-rule)' : 'var(--cb-ink-soft)'}`,
             borderRadius: '0.25rem',
             padding: '0.05rem 0.35rem',
-            fontSize: '0.85rem'
+            fontSize: CB_TYPE.meta
           },
           children: [
             jsx('span', { children: word.expected || '—' }),
             word.match
               ? null
               : jsx('span', {
-                  style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                  style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                   children: word.heard ? `heard “${word.heard}”` : 'not heard'
                 }),
             word.match && pronPercent(word.confidence)
               ? jsx('span', {
                   'data-cb-word-confidence': pronPercent(word.confidence),
-                  style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                  style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                   children: pronPercent(word.confidence)
                 })
               : null
@@ -9675,13 +9741,13 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.4rem' },
         children: [
           jsx('h4', {
-            style: { margin: 0, fontSize: '0.9rem', fontWeight: 600 },
+            style: { margin: 0, fontSize: CB_TYPE.meta, fontWeight: 600 },
             children: 'Pronunciation practice'
           }),
           jsx('span', {
             'data-cb-pronunciation-target': target,
             lang: locale,
-            style: { fontSize: '0.95rem' },
+            style: { fontSize: CB_TYPE.body },
             children: target
           })
         ]
@@ -9712,7 +9778,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
           })
         : jsx('p', {
             'data-cb-pronunciation-reference': preview.state === 'loading' ? 'loading' : 'none',
-            style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
             children:
               preview.state === 'loading'
                 ? 'Loading the reference recording.'
@@ -9722,7 +9788,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
       jsx('p', {
         'data-cb-pronunciation-disclosure': availability.tone,
         'aria-live': 'polite',
-        style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
         children: availability.text
       }),
 
@@ -9744,14 +9810,14 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
                 'data-cb-pronunciation-timer': String(seconds),
                 role: 'status',
                 'aria-live': 'polite',
-                style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                 children: `Recording — ${seconds} s of 30 s. Stop when you are done.`
               })
             : null,
           phase === 'comparing'
             ? jsx('span', {
                 role: 'status',
-                style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                 children: 'Comparing your take with the target…'
               })
             : null,
@@ -9773,8 +9839,8 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
             role: 'status',
             style: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
             children: [
-              jsx('span', { style: { fontSize: '0.8rem', fontWeight: 600 }, children: `${error.code}: ${describeError(error)}` }),
-              jsx('span', { style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' }, children: 'No evidence was recorded.' })
+              jsx('span', { style: { fontSize: CB_TYPE.meta, fontWeight: 600 }, children: `${error.code}: ${describeError(error)}` }),
+              jsx('span', { style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: 'No evidence was recorded.' })
             ]
           })
         : null,
@@ -9794,33 +9860,33 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
                   }),
                   jsx('span', {
                     'data-cb-pronunciation-verdict': assessment.verdict,
-                    style: { fontSize: '0.85rem', fontWeight: 600 },
+                    style: { fontSize: CB_TYPE.meta, fontWeight: 600 },
                     children: PRONUNCIATION_VERDICT_COPY[assessment.verdict] || assessment.verdict
                   }),
                   pronPercent(assessment.confidence)
                     ? jsx('span', {
                         'data-cb-pronunciation-confidence': pronPercent(assessment.confidence),
-                        style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                         children: `Recogniser confidence ${pronPercent(assessment.confidence)}`
                       })
                     : null,
                   totalCount > 0
                     ? jsx('span', {
                         'data-cb-pronunciation-matched': `${matchedCount}/${totalCount}`,
-                        style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                         children: `${matchedCount} of ${totalCount} ${pronUnitLabel(assessment.unit)} matched`
                       })
                     : null
                 ]
               }),
               jsx('p', {
-                style: { margin: 0, fontSize: '0.85rem', lineHeight: 1.5 },
+                style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.5 },
                 children: `Heard: ${assessment.transcript || 'nothing'}`
               }),
               jsx(PronunciationWords, { words: assessment.words, unit: assessment.unit }),
               jsx('p', {
                 'data-cb-pronunciation-provenance': assessment.provider,
-                style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                 children:
                   `Practice measurement by ${assessment.provider}` +
                   `${assessment.model ? ` (${assessment.model})` : ''} — not verified pronunciation and not a graded score.` +
@@ -9841,7 +9907,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
                   saved
                     ? jsx('span', {
                         role: 'status',
-                        style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                         children: 'The result is in the notebook; the audio was never stored.'
                       })
                     : null
@@ -9857,9 +9923,9 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
             role: 'status',
             style: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
             children: [
-              jsx('span', { style: { fontSize: '0.85rem', fontWeight: 600 }, children: 'Practice only, not graded' }),
+              jsx('span', { style: { fontSize: CB_TYPE.meta, fontWeight: 600 }, children: 'Practice only, not graded' }),
               jsx('span', {
-                style: { fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                style: { fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                 children:
                   PRONUNCIATION_REASON_COPY[result.reason] ||
                   result.reason ||
@@ -9950,7 +10016,7 @@ function BlockSourceChips({ ids, index }) {
             borderRadius: '2px',
             padding: '0.1rem 0.45rem',
             fontFamily: CB_SANS,
-            fontSize: '0.75rem',
+            fontSize: CB_TYPE.caption,
             fontWeight: 600,
             lineHeight: 1.3,
             color: 'var(--cb-ink-soft)',
@@ -10074,6 +10140,39 @@ function BlockSaveActions({ block, checkLabels, onSaveBlock, className }) {
   })
 }
 
+/**
+ * Authored lesson prose is content underneath the page's one `h1`. A markdown document may carry
+ * its own `#` title, so an `h1` inside a reading body is given ARIA heading level 2: the page keeps
+ * exactly one `h1`, the prose keeps its own heading, and no level is skipped. The text, its order
+ * and the host's markdown renderer are untouched — only the announced level changes.
+ */
+function useProseHeadingTier() {
+  const ref = useRef(null)
+  useEffect(() => {
+    const root = ref.current
+    if (!root) return undefined
+    const apply = () => {
+      for (const heading of root.querySelectorAll('h1')) {
+        if (heading.getAttribute('role') === 'heading' && heading.getAttribute('aria-level') === '2') continue
+        heading.setAttribute('role', 'heading')
+        heading.setAttribute('aria-level', '2')
+      }
+    }
+    apply()
+    if (typeof MutationObserver !== 'function') return undefined
+    const observer = new MutationObserver(apply)
+    observer.observe(root, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+  return ref
+}
+
+/** The host's markdown renderer inside a reading body, with the one-`h1` prose tier applied. */
+function ProseText({ text, ...wrapper }) {
+  const ref = useProseHeadingTier()
+  return jsx('div', { ...wrapper, ref, children: jsx(sdk.MessageTextContent, { text }) })
+}
+
 /** The excerpt a save will carry: the block's own prose, never a re-summarised one. */
 function blockSaveExcerpt(block, checkLabels, media) {
   if (media) return media.text_equivalent || media.purpose || block.headline || ''
@@ -10091,18 +10190,18 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronun
     className: 'flex flex-col gap-2',
     children: [
       body
-        ? jsx('div', {
+        ? jsx(ProseText, {
             'data-cb-reading-body': lede ? 'lede' : 'body',
             style: {
               maxWidth: CB_MEASURE,
               fontFamily: CB_SERIF,
-              fontSize: lede ? '1.1875rem' : '1.0625rem',
+              fontSize: lede ? CB_TYPE.lead : CB_TYPE.body,
               lineHeight: lede ? 1.5 : 1.65,
               color: 'var(--cb-ink)',
               borderLeft: lede ? '1px solid var(--cb-accent)' : 'none',
               paddingLeft: lede ? '0.9rem' : 0
             },
-            children: jsx(sdk.MessageTextContent, { text: body })
+            text: body
           })
         : null,
       (block.media || []).map((media, index) =>
@@ -10121,7 +10220,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronun
               children: [
                 checkSlot,
                 jsx('p', {
-                  style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                  style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
                   children: 'This is the section’s one check. It is the same in Textbook, Guided and Field Quest, and it is not a grade.'
                 })
               ]
@@ -10156,7 +10255,7 @@ function TextbookBlock({ block, sources, checkSlot, checkLabels, onSaveBlock, pr
             style: {
               margin: 0,
               fontFamily: CB_SERIF,
-              fontSize: '1.25rem',
+              fontSize: CB_TYPE.heading,
               fontWeight: 600,
               lineHeight: 1.25,
               letterSpacing: '-0.01em',
@@ -10167,7 +10266,7 @@ function TextbookBlock({ block, sources, checkSlot, checkLabels, onSaveBlock, pr
             children: block.headline
           }),
           jsx('span', {
-            style: { fontFamily: CB_SANS, fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--cb-ink-soft)' },
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, lineHeight: 1.3, color: 'var(--cb-ink-soft)' },
             children: BLOCK_ROLE_COPY[block.role] || block.role
           })
         ]
@@ -10220,7 +10319,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
                   color: 'var(--cb-field)',
                   fontFamily: CB_SANS,
                   fontVariantNumeric: 'tabular-nums',
-                  fontSize: '0.75rem',
+                  fontSize: CB_TYPE.caption,
                   fontWeight: 600
                 },
                 children: String(index + 1).padStart(2, '0')
@@ -10240,7 +10339,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
                   margin: 0,
                   minWidth: 0,
                   fontFamily: CB_SERIF,
-                  fontSize: '1.25rem',
+                  fontSize: CB_TYPE.heading,
                   fontWeight: 600,
                   lineHeight: 1.2,
                   letterSpacing: '-0.01em',
@@ -10250,7 +10349,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
                 children: block.headline
               }),
               jsx('span', {
-                style: { fontFamily: CB_SANS, fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--cb-field)' },
+                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, lineHeight: 1.3, color: 'var(--cb-field)' },
                 children: BLOCK_ROLE_COPY[block.role] || block.role
               })
             ]
@@ -10259,7 +10358,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
             style: {
               fontFamily: CB_SANS,
               fontVariantNumeric: 'tabular-nums',
-              fontSize: '0.75rem',
+              fontSize: CB_TYPE.caption,
               color: 'var(--cb-ink-soft)'
             },
             'aria-live': 'polite',
@@ -10269,15 +10368,15 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
         ]
       }),
       body
-        ? jsx('div', {
+        ? jsx(ProseText, {
             style: {
               maxWidth: CB_MEASURE,
               fontFamily: CB_SERIF,
-              fontSize: '1.125rem',
+              fontSize: CB_TYPE.lead,
               lineHeight: 1.6,
               color: 'var(--cb-ink)'
             },
-            children: jsx(sdk.MessageTextContent, { text: body })
+            text: body
           })
         : null,
       (block.media || []).map((media, ordinal) =>
@@ -10319,7 +10418,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
           }),
           last
             ? jsx('span', {
-                style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
                 children: 'End of the guided pass. The Textbook view keeps the full text.'
               })
             : null
@@ -10443,7 +10542,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
               border: checkpoint ? 'none' : '1.5px solid var(--cb-rule)',
               fontFamily: CB_SANS,
               fontVariantNumeric: 'tabular-nums',
-              fontSize: '0.75rem',
+              fontSize: CB_TYPE.caption,
               fontWeight: 600
             },
             children: String(mission.index + 1).padStart(2, '0')
@@ -10460,7 +10559,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
               margin: 0,
               minWidth: 0,
               fontFamily: CB_SERIF,
-              fontSize: '1.25rem',
+              fontSize: CB_TYPE.heading,
               fontWeight: 600,
               lineHeight: 1.25,
               color: 'var(--cb-ink)',
@@ -10473,7 +10572,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
             style: {
               flex: '0 0 auto',
               fontFamily: CB_SANS,
-              fontSize: '0.75rem',
+              fontSize: CB_TYPE.caption,
               fontWeight: 600,
               lineHeight: 1.3,
               color: tone
@@ -10483,16 +10582,16 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
         ]
       }),
       body
-        ? jsx('div', {
+        ? jsx(ProseText, {
             style: {
               maxWidth: CB_MEASURE,
               paddingTop: '0.3rem',
               fontFamily: CB_SERIF,
-              fontSize: '1rem',
+              fontSize: CB_TYPE.body,
               lineHeight: 1.6,
               color: 'var(--cb-ink)'
             },
-            children: jsx(sdk.MessageTextContent, { text: body })
+            text: body
           })
         : null,
       (block.media || []).map((media, ordinal) =>
@@ -10507,13 +10606,13 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
             style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingTop: '0.35rem' },
             children: [
               jsx('p', {
-                style: { margin: 0, maxWidth: CB_MEASURE, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                style: { margin: 0, maxWidth: CB_MEASURE, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                 children: 'This is the section’s existing check — the same one Textbook and Guided use. Finishing it is not required to read anything here.'
               }),
               checkSlot
                 ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' }, children: checkSlot })
                 : jsx('div', {
-                    style: { fontFamily: CB_SANS, fontSize: '0.8rem', color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
                     children: 'No check could be attached to this checkpoint, so the mission stays readable and ungated.'
                   })
             ]
@@ -10573,7 +10672,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
             style: {
               margin: 0,
               fontFamily: CB_SERIF,
-              fontSize: phone ? '1.5rem' : 'clamp(1.75rem, 1.4rem + 1.1vw, 2.25rem)',
+              fontSize: phone ? CB_TYPE.heading : CB_TYPE.display,
               fontWeight: 600,
               lineHeight: 1.1,
               letterSpacing: '-0.015em',
@@ -10583,7 +10682,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
             children: display.charAt(0).toUpperCase() + display.slice(1)
           }),
           jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '52ch' },
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '52ch' },
             children: 'Missions are the reading path. The checkpoint is shared with the other lesson views.'
           }),
           jsx(HeroFacts, {
@@ -10596,7 +10695,7 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
           }),
           jsxs('details', {
             'data-cb-quest-note': '',
-            style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: [
               jsx('summary', { style: { cursor: 'pointer' }, children: 'What these counts mean' }),
               jsx('p', {
@@ -10689,7 +10788,7 @@ function ProcedureHeader({ procedure, sectionTitle }) {
         children: [
           jsx(DeskLabel, { children: 'Tools' }),
           jsx('ul', {
-            style: { margin: 0, paddingLeft: '1.1rem', fontSize: '0.85rem', lineHeight: 1.55, color: 'var(--cb-ink)' },
+            style: { margin: 0, paddingLeft: '1.1rem', fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink)' },
             children: tools.map((item, index) => jsx('li', { children: item }, `${sectionTitle}-tool-${index}`))
           })
         ]
@@ -10705,7 +10804,7 @@ function ProcedureHeader({ procedure, sectionTitle }) {
         children: [
           jsx(DeskLabel, { children: 'Parts' }),
           jsx('ul', {
-            style: { margin: 0, paddingLeft: '1.1rem', fontSize: '0.85rem', lineHeight: 1.55, color: 'var(--cb-ink)' },
+            style: { margin: 0, paddingLeft: '1.1rem', fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink)' },
             children: parts.map((item, index) => jsx('li', { children: item }, `${sectionTitle}-part-${index}`))
           })
         ]
@@ -10734,7 +10833,7 @@ function ProcedureHeader({ procedure, sectionTitle }) {
       columns.length > 0
         ? jsx('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '1rem' }, children: columns })
         : jsx('p', {
-            style: { margin: 0, fontSize: '0.85rem', color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
             children: 'The author listed no tools or parts for this procedure.'
           })
     ]
@@ -10766,7 +10865,7 @@ function ProcedureHazardCallout({ hazards, stopCondition }) {
     children: [
       jsx('div', {
         style: {
-          fontSize: '0.75rem',
+          fontSize: CB_TYPE.caption,
           fontWeight: 700,
           letterSpacing: '0.01em',
           color: 'var(--cb-coral)'
@@ -10775,13 +10874,13 @@ function ProcedureHazardCallout({ hazards, stopCondition }) {
       }),
       list.length > 0
         ? jsx('ul', {
-            style: { margin: 0, paddingLeft: '1.1rem', fontSize: '0.9rem', lineHeight: 1.55, color: 'var(--cb-ink)' },
+            style: { margin: 0, paddingLeft: '1.1rem', fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink)' },
             children: list.map((item, index) => jsx('li', { children: item }, `hazard-${index}`))
           })
         : null,
       jsxs('p', {
         'data-cb-procedure-stop': '',
-        style: { margin: 0, fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--cb-ink)' },
+        style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.6, color: 'var(--cb-ink)' },
         children: [jsx('strong', { children: 'Stop if: ' }), stopCondition]
       })
     ]
@@ -10817,16 +10916,16 @@ function ProcedureSchematic({ schematic, sources, blockId }) {
     children: [
       jsx('h3', {
         id: `cb-procedure-schematic-${blockId || 'document'}`,
-        style: { margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--cb-ink)' },
+        style: { margin: 0, fontSize: CB_TYPE.body, fontWeight: 600, color: 'var(--cb-ink)' },
         children: schematic.title
       }),
       jsx('div', {
-        style: { fontSize: '0.75rem', letterSpacing: '0.01em', color: 'var(--cb-ink-soft)' },
+        style: { fontSize: CB_TYPE.caption, letterSpacing: '0.01em', color: 'var(--cb-ink-soft)' },
         children: 'Drawing from the steps below'
       }),
       jsx('table', {
         'data-cb-procedure-rows': String(rows.length),
-        style: { borderCollapse: 'collapse', width: '100%', fontSize: '0.85rem', color: 'var(--cb-ink)' },
+        style: { borderCollapse: 'collapse', width: '100%', fontSize: CB_TYPE.meta, color: 'var(--cb-ink)' },
         children: jsxs('tbody', {
           children: rows.map((row, index) =>
             jsxs(
@@ -10851,13 +10950,13 @@ function ProcedureSchematic({ schematic, sources, blockId }) {
         })
       }),
       jsx('p', {
-        style: { margin: 0, fontSize: '0.8rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+        style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
         children: schematic.text_equivalent
       }),
       schematic.source_id
         ? jsx('p', {
             'data-cb-procedure-schematic-source': schematic.source_id,
-            style: { margin: 0, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: `Facts from ${(source && source.title) || schematic.source_id}`
           })
         : null,
@@ -10898,7 +10997,7 @@ function ProcedureSourceCard({ source, sources }) {
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' },
         children: [
-          jsx('span', { style: { fontSize: '0.9rem', fontWeight: 600, color: 'var(--cb-ink)' }, children: (meta && meta.title) || source.source_id }),
+          jsx('span', { style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' }, children: (meta && meta.title) || source.source_id }),
           jsx(sdk.Badge, { size: 'xs', variant: source.permission === 'licensed' ? 'muted' : 'outline', children: permission })
         ]
       }),
@@ -10907,12 +11006,12 @@ function ProcedureSourceCard({ source, sources }) {
             href: meta.url,
             rel: 'noreferrer noopener',
             target: '_blank',
-            style: { fontSize: '0.8rem', color: 'var(--cb-accent)', overflowWrap: 'anywhere' },
+            style: { fontSize: CB_TYPE.meta, color: 'var(--cb-accent)', overflowWrap: 'anywhere' },
             children: meta.url
           })
         : null,
       jsx('p', {
-        style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
         children: 'Torque values and sequence come from this reference and the structured schematic; the illustration is context only.'
       })
     ]
@@ -10934,7 +11033,7 @@ function ProcedureStepCard({ step, index, block, sources, checkSlot, checkLabels
           note
             ? jsx('p', {
                 'data-cb-procedure-media-note': item.role || '',
-                style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: item.role === 'illustration' ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)' },
+                style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: item.role === 'illustration' ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)' },
                 children: note
               })
             : null,
@@ -10959,7 +11058,7 @@ function ProcedureStepCard({ step, index, block, sources, checkSlot, checkLabels
       jsx('span', {
         'aria-hidden': 'true',
         style: {
-          fontSize: '0.8rem',
+          fontSize: CB_TYPE.meta,
           fontWeight: 700,
           fontVariantNumeric: 'tabular-nums',
           color: 'var(--cb-accent)',
@@ -10975,18 +11074,18 @@ function ProcedureStepCard({ step, index, block, sources, checkSlot, checkLabels
             children: [
               jsx('span', { className: 'sr-only', children: `Step ${index + 1}` }),
               jsx('h3', {
-                style: { margin: 0, fontSize: '1rem', fontWeight: 600, lineHeight: 1.35, color: 'var(--cb-ink)' },
+                style: { margin: 0, fontSize: CB_TYPE.body, fontWeight: 600, lineHeight: 1.35, color: 'var(--cb-ink)' },
                 children: block.headline
               })
             ]
           }),
           body
-            ? jsx('div', { style: { maxWidth: '44rem' }, children: jsx(sdk.MessageTextContent, { text: body }) })
+            ? jsx(ProseText, { style: { maxWidth: '44rem' }, text: body })
             : null,
           step.check
             ? jsxs('p', {
                 'data-cb-procedure-step-check': block.id,
-                style: { margin: 0, fontSize: '0.82rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+                style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
                 children: [jsx('strong', { children: 'Check: ' }), step.check]
               })
             : null,
@@ -11066,7 +11165,7 @@ function ProcedureDocument({ document, sources, checkSlot, checkLabels, onSaveBl
               children: [
                 jsx(DeskLabel, { children: 'Verification checklist' }),
                 jsx('p', {
-                  style: { margin: 0, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                  style: { margin: 0, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                   children: 'The checklist is on the step above. It is the section’s one check, not an extra quiz.'
                 })
               ]
@@ -11445,16 +11544,16 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
             },
             children: [
               jsx('h3', {
-                style: { margin: 0, fontFamily: CB_SERIF, fontSize: '1.25rem', fontWeight: 600, lineHeight: 1.2, color: 'var(--cb-ink)' },
+                style: { margin: 0, fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.2, color: 'var(--cb-ink)' },
                 children: 'This section could not be read'
               }),
               jsx('p', {
-                style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+                style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
                 children: 'Nothing was lost. The page is still saved on this profile; the read just did not finish.'
               }),
               pageError && pageError.code
                 ? jsxs('details', {
-                    style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                     children: [
                       jsx('summary', { style: { cursor: 'pointer' }, children: 'Technical detail' }),
                       jsx('p', { style: { margin: '0.25rem 0 0' }, children: `${pageError.code}: ${describeError(pageError)}` })
@@ -11499,7 +11598,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
               },
               children: [
                 jsx('span', {
-                  style: { fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
                   children: 'This section has no lesson chat yet. Start one and send the first message to begin.'
                 })
               ]
@@ -11588,10 +11687,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                       }),
                       segment.kind === 'media'
                         ? jsx(MediaSegment, { segment })
-                        : jsx('div', {
-                            className: 'max-w-3xl',
-                            children: jsx(sdk.MessageTextContent, { text: segment.text })
-                          }),
+                        : jsx(ProseText, { className: 'max-w-3xl', text: segment.text }),
                       segment.source_id
                         ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `Source ${segment.source_id}` })
                         : null
@@ -11621,7 +11717,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
               style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', maxWidth: CB_MEASURE },
               children: [
                 jsx('summary', {
-                  style: { cursor: 'pointer', fontFamily: CB_SANS, fontSize: '0.8125rem', color: 'var(--cb-ink-soft)' },
+                  style: { cursor: 'pointer', fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
                   children: `${page.attempts.length} ${page.attempts.length === 1 ? 'attempt' : 'attempts'} recorded on this section · last ${whenLabel(page.attempts[0].committed_at || page.attempts[0].created_at)}`
                 }),
                 jsx('div', {
@@ -11686,7 +11782,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         'data-cb-view-options': viewOptions.map((option) => option.id).join(' '),
         children: [
           jsxs('span', {
-            style: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            style: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: [jsx(ModeDot, { mode: activeMode }), 'Lesson view']
           }),
           viewOptions.length > 1
@@ -11723,21 +11819,21 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         }),
         jsx('span', {
           key: 'place',
-          style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
           children: [place, activeView === 'textbook' ? 'Textbook' : activeView === 'guided' ? 'Guided' : 'Field Quest'].filter(Boolean).join(' · ')
         }),
         jsx(CbStatePill, { key: 'state', state: section.state }),
         section.evidence_target
           ? jsx('span', {
               key: 'evidence',
-              style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+              style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
               children: learnerEvidenceTarget(section.evidence_target) || 'Evidence target not recorded'
             })
           : null,
         section.last_opened_at
           ? jsx('span', {
               key: 'opened',
-              style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+              style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
               children: `Last opened ${whenLabel(section.last_opened_at)}`
             })
           : null
@@ -11849,7 +11945,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                   flex: '0 0 2.5rem',
                   fontFamily: CB_SANS,
                   fontVariantNumeric: 'tabular-nums',
-                  fontSize: '0.8125rem',
+                  fontSize: CB_TYPE.meta,
                   fontWeight: 600,
                   lineHeight: 1.6,
                   color: 'var(--cb-ink-soft)'
@@ -11862,7 +11958,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                   jsx('div', {
                     style: {
                       fontFamily: CB_SERIF,
-                      fontSize: '1.25rem',
+                      fontSize: CB_TYPE.heading,
                       fontWeight: 600,
                       lineHeight: 1.25,
                       color: 'var(--cb-ink)',
@@ -11875,14 +11971,14 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                         jsx(CbStatePill, { state: section.state }),
                         section.evidence_target
                           ? jsx('span', {
-                              style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                              style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
                               children: learnerEvidenceTarget(section.evidence_target)
                             })
                           : null
                       ] })
                     : null,
                   jsx('div', {
-                    style: { fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                     children: next.label ? `Next: ${next.label}` : 'The backend did not return a next step for this course.'
                   })
                 ]
@@ -11955,7 +12051,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                       padding: '0.45rem 0',
                       borderTop: index === 0 ? '1px solid var(--cb-rule)' : '1px solid var(--cb-rule)',
                       fontFamily: CB_SANS,
-                      fontSize: '0.75rem',
+                      fontSize: CB_TYPE.caption,
                       lineHeight: 1.45
                     },
                     children: [
@@ -11969,7 +12065,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                 )
               })
             : jsx('p', {
-                style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                 children: 'No attempt has been recorded on this course yet.'
               }),
           due.length > 0
@@ -12109,7 +12205,7 @@ function CourseIdentity({ title, subtitle, progress, nextTitle, nextSemantic, co
         style: {
           margin: 0,
           fontFamily: CB_SERIF,
-          fontSize: compact ? '1.25rem' : 'clamp(1.5rem, 1.2rem + 0.9vw, 2rem)',
+          fontSize: compact ? CB_TYPE.heading : CB_TYPE.heading,
           fontWeight: 600,
           lineHeight: 1.15,
           letterSpacing: '-0.01em',
@@ -12124,7 +12220,7 @@ function CourseIdentity({ title, subtitle, progress, nextTitle, nextSemantic, co
         style: {
           fontFamily: CB_SANS,
           fontVariantNumeric: 'tabular-nums',
-          fontSize: '0.8125rem',
+          fontSize: CB_TYPE.meta,
           lineHeight: 1.5,
           color: 'var(--cb-ink-soft)'
         },
@@ -12133,7 +12229,7 @@ function CourseIdentity({ title, subtitle, progress, nextTitle, nextSemantic, co
       nextTitle
         ? jsxs('div', {
             'data-cb-next-statement': '',
-            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.35rem', fontFamily: CB_SANS, fontSize: '0.8125rem' },
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.35rem', fontFamily: CB_SANS, fontSize: CB_TYPE.meta },
             children: [
               jsx('span', { style: { fontWeight: 600, color: 'var(--cb-accent)' }, children: 'Next ·' }),
               jsx('span', { style: { color: 'var(--cb-ink)', overflowWrap: 'anywhere' }, children: nextTitle }),
@@ -12144,7 +12240,7 @@ function CourseIdentity({ title, subtitle, progress, nextTitle, nextSemantic, co
           })
         : null,
       subtitle
-        ? jsx('div', { style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' }, children: subtitle })
+        ? jsx('div', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' }, children: subtitle })
         : null
     ]
   })
@@ -12191,7 +12287,7 @@ function SectionRow({ entry, semantic, isNext, onOpen }) {
             flex: '0 0 2.5rem',
             fontFamily: CB_SANS,
             fontVariantNumeric: 'tabular-nums',
-            fontSize: '0.8125rem',
+            fontSize: CB_TYPE.meta,
             fontWeight: 600,
             lineHeight: 1.6,
             color: isNext ? 'var(--cb-accent)' : 'var(--cb-ink-soft)'
@@ -12209,7 +12305,7 @@ function SectionRow({ entry, semantic, isNext, onOpen }) {
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
                 fontFamily: CB_SERIF,
-                fontSize: '1.125rem',
+                fontSize: CB_TYPE.lead,
                 fontWeight: 600,
                 lineHeight: 1.3,
                 color: 'var(--cb-ink)'
@@ -12217,7 +12313,7 @@ function SectionRow({ entry, semantic, isNext, onOpen }) {
               children: entry.title
             }),
             subline
-              ? jsx('span', { style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' }, children: subline })
+              ? jsx('span', { style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' }, children: subline })
               : null
           ]
         }),
@@ -12256,7 +12352,7 @@ function UnitHeading({ unit, entries }) {
             children: [
               jsx('span', {
                 style: {
-                  fontSize: '0.75rem',
+                  fontSize: CB_TYPE.caption,
                   fontWeight: 600,
                   letterSpacing: '0.01em',
                   color: 'var(--cb-ink-soft)'
@@ -12264,21 +12360,21 @@ function UnitHeading({ unit, entries }) {
                 children: `Unit ${unit.ordinal}`
               }),
               jsx('span', {
-                style: { fontSize: '0.92rem', fontWeight: 600, color: 'var(--cb-ink)', overflowWrap: 'anywhere' },
+                style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)', overflowWrap: 'anywhere' },
                 children: unit.title
               })
             ]
           }),
           jsx('span', {
             'data-cb-unit-progress': '',
-            style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: progress.statement
           })
         ]
       }),
       blocked
         ? jsx('div', {
-            style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: `This unit starts after Unit ${unit.prereq_unit_ordinals.join(', ')}. You can still open it.`
           })
         : null
@@ -12305,7 +12401,7 @@ function TextbookIndexDetails({ rows }) {
     style: { maxWidth: '46rem', paddingTop: '0.2rem' },
     children: [
       jsx('summary', {
-        style: { cursor: 'pointer', fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+        style: { cursor: 'pointer', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
         children: 'What the states and check types mean'
       }),
       jsxs('div', {
@@ -12317,7 +12413,7 @@ function TextbookIndexDetails({ rows }) {
               jsxs(
                 'div',
                 {
-                  style: { display: 'flex', alignItems: 'baseline', gap: '0.4rem', fontSize: '0.75rem' },
+                  style: { display: 'flex', alignItems: 'baseline', gap: '0.4rem', fontSize: CB_TYPE.caption },
                   children: [
                     jsx('span', { style: { color: sectionToneColor(entry.semantic.key) }, children: entry.semantic.label }),
                     jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: `— ${entry.meaning}` })
@@ -12330,7 +12426,7 @@ function TextbookIndexDetails({ rows }) {
           targets.length > 0
             ? jsxs('div', {
                 'data-cb-check-types': '',
-                style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.75rem' },
+                style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: CB_TYPE.caption },
                 children: [
                   jsx('div', {
                     style: { fontWeight: 600, color: 'var(--cb-ink-soft)' },
@@ -12454,7 +12550,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
             : null,
           jsx('p', {
             'data-cb-reading-caption': '',
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
             children: '66 characters per line. Evidence is named, never estimated.'
           })
         ]
@@ -12494,7 +12590,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
                       children: [
                         jsx('div', {
                           style: {
-                            fontSize: '0.75rem',
+                            fontSize: CB_TYPE.caption,
                             color: 'var(--cb-ink-soft)',
                             paddingTop: '0.55rem',
                             borderBottom: '1px solid var(--cb-rule)',
@@ -12722,7 +12818,7 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                   children: [
                     jsx('div', {
                       className: 'max-w-3xl',
-                      children: jsx(sdk.MessageTextContent, { text: entry.excerpt || entry.note || entry.kind })
+                      children: jsx(ProseText, { text: entry.excerpt || entry.note || entry.kind })
                     }),
                     entry.note && entry.excerpt
                       ? jsx('p', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: entry.note })
@@ -13960,12 +14056,12 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
             jsxs('div', {
               style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, flex: compactHero ? '1 1 100%' : '1 1 16rem' },
               children: [
-                jsx('h1', {
+                jsx('h2', {
                   'data-cb-course-title': '',
                   style: {
                     margin: 0,
                     fontFamily: CB_SERIF,
-                    fontSize: 'clamp(1.75rem, 1.35rem + 1.6vw, 2.5rem)',
+                    fontSize: CB_TYPE.display,
                     fontWeight: 600,
                     lineHeight: 1.12,
                     letterSpacing: '-0.015em',
@@ -13981,7 +14077,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
                     jsx(CbStatePill, { state: section ? section.state : row.enrollment_status === 'active' ? 'introduced' : 'not_started' }),
                     row.recipe
                       ? jsx('span', {
-                          style: { fontFamily: CB_SANS, fontSize: '0.8125rem', color: 'var(--cb-ink-soft)' },
+                          style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
                           children: (RECIPE_COPY[row.recipe] || {}).title || row.recipe
                         })
                       : null,
@@ -14019,7 +14115,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
                 }),
                 jsxs('details', {
                   'data-cb-why-next': '',
-                  style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
                   children: [
                     jsx('summary', { style: { cursor: 'pointer' }, children: 'Why this is next' }),
                     jsx('p', { style: { margin: '0.35rem 0 0', lineHeight: 1.5 }, children: currentTitle })
@@ -14062,7 +14158,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
 
       tierTwoActive
         ? jsx('div', {
-            style: { fontFamily: CB_SANS, fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: `You are reading ${viewLabel.toLowerCase()}, outside the course route. Overview, Textbook, Notebook, Quizzes and Evidence stay one click away above.`
           })
         : null,
@@ -14074,7 +14170,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
               style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' },
               children: [
                 jsx('span', {
-                  style: { fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
+                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
                   children: `${review.data.total_overdue} ${review.data.total_overdue === 1 ? 'section is' : 'sections are'} due for review.`
                 }),
                 jsx(sdk.Button, {
@@ -14821,11 +14917,21 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
     })
   }
 
+  return jsx(StudioLanding, { rows, onCreate, onOpen })
+}
+
+/**
+ * The Parent Studio landing plate: the one place a parent starts a new plan. The route header
+ * carries no create action, so this in-page primary is the only `variant=default` control on the
+ * surface (H-94 V2-4; H-91 P2-4 removed the duplicate header button).
+ */
+function StudioLanding({ rows, onCreate, onOpen }) {
   return jsxs('div', {
     'data-cb-studio-landing': '',
     style: {
       display: 'flex',
       flexDirection: 'column',
+      maxWidth: CB_MEASURE,
       gap: '0.75rem',
       padding: '1rem 1rem 1.1rem',
       background: 'var(--cb-plum-soft)',
@@ -16195,10 +16301,7 @@ function StudioBlueprintView({ book }) {
                           })
                         ]
                       }),
-                      jsx('div', {
-                        className: 'max-w-3xl',
-                        children: jsx(sdk.MessageTextContent, { text: file.text })
-                      }),
+                      jsx(ProseText, { className: 'max-w-3xl', text: file.text }),
                       jsxs('div', {
                         className: 'text-xs break-all text-(--ui-text-secondary)',
                         children: [`sha256 ${file.sha256}`, file.truncated ? ' · the served text was clipped at the tab limit' : '']
@@ -17038,15 +17141,20 @@ function CoursebookPage() {
   const statusCopy = backendCopy(health.status)
   const online = useOnline()
   const showDestinationNav = health.status === 'ready' && !creating && !importing && !syllabusFlow
+  // One stable page title per destination. It is the route's only `h1` in every health and flow
+  // state, so the first heading is the page title and never a card's objective; every surface
+  // below it is an `h2` region.
+  const pageTitle = ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
 
   return jsxs('div', {
-    className: 'flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
+    className: 'relative flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
     'data-cb-destination': destination,
     'data-cb-route': ROUTE_PATH,
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion,
     style: cbScopeStyle(cbMode),
     children: [
+      jsx(SkipToContent, {}),
       jsxs('header', {
         className: 'flex shrink-0 flex-col gap-2 pt-3',
         children: [
@@ -17057,7 +17165,12 @@ function CoursebookPage() {
                 className: 'flex min-w-0 items-center gap-2',
                 children: [
                   jsx(SurveyMark, { courseId: 'coursebook', size: 24 }),
-                  jsx('div', { className: 'text-base font-semibold', children: ROUTE_TITLE })
+                  jsx('h1', {
+                    'data-cb-page-title': '',
+                    className: 'text-base font-semibold',
+                    style: { margin: 0 },
+                    children: pageTitle
+                  })
                 ]
               }),
               jsxs('div', {
@@ -17097,7 +17210,7 @@ function CoursebookPage() {
             : null
         ]
       }),
-      jsx(PageBody, { children: body })
+      jsx(PageBody, { label: `${pageTitle} content`, children: body })
     ]
   })
 }
@@ -17130,7 +17243,7 @@ function CbDestinationNav({ value, onChange }) {
             padding: '0.35rem 0',
             cursor: current ? 'default' : 'pointer',
             fontFamily: CB_SANS,
-            fontSize: '0.9375rem',
+            fontSize: CB_TYPE.meta,
             fontWeight: current ? 600 : 400,
             color: current ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
             borderBottom: current ? '2px solid var(--cb-lamp)' : '2px solid transparent',
@@ -17485,6 +17598,8 @@ export {
   BackendUnavailable,
   CB_TOKENS,
   CB_TOKEN_NAMES,
+  CB_TYPE,
+  CB_TYPE_STEPS,
   COURSE_SCOPES,
   CREATE_RESULT_COPY,
   FieldDesk,
@@ -17505,11 +17620,13 @@ export {
   FieldRail,
   FieldDeskHome,
   FieldNotesStrip,
+  DeskFacts,
   FieldQuestView,
   LESSON_VIEWS,
   LEARNING_VIEWS,
   SELF_REPORTED_CONFIRM_COPY,
   SELF_REPORTED_EVIDENCE_COPY,
+  StudioLanding,
   SYLLABUS_ACCEPT,
   SYLLABUS_COPY,
   SYLLABUS_LIMITS,
