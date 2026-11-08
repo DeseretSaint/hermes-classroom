@@ -156,7 +156,47 @@ without before/after captures at 1049/900/460, light/dark, 200% text, reduced mo
 and a state matrix. The final card is adversarial: it tries to find a reason the product is not
 impressive, not a reason to call it done.
 
-## 9. Non-goals
+## 9. Research basis
+
+This is a design synthesis, not a claim that a competitor's skin predicts learning. The transferable
+patterns and the boundary we keep:
+
+- **The judged differentiator is the evidence rule, not the theme.** Prior Nous rounds favour
+  infrastructure whose boundary is visible; a polished learning app still loses to a product that
+  makes the model's inability to hand over the answer legible. Sources: the contest announcement
+  (https://x.com/NousResearch/status/2118094256438936062), the prior-round roundup
+  (https://bobatron.com/blog/hermes-x-roundup-2026-07-16), and the plugin-admission rules
+  (https://hermes-agent.nousresearch.com/docs/developer-guide/plugins/catalog-submission).
+  This is why H-178 treats the integrity chip as P0, not decoration.
+- **One route, one next node, a reaction at the point of effort.** Duolingo's path redesign and
+  its shape-language note are the clearest public descriptions of a linear learning route that
+  stays legible without a world map: https://blog.duolingo.com/new-duolingo-home-screen-design/,
+  https://blog.duolingo.com/shape-language-duolingos-art-style/.
+- **Calm chrome, one focal object.** Linear's design refresh is the reference for hierarchy by
+  space and type, not by boxes: https://linear.app/now/behind-the-latest-design-refresh.
+- **Motion is a finite feedback ladder, not a show.** Material 3 duration/easing tokens and Apple's
+  HIG motion/feedback guidance give the caps this spec uses (press 90–120 ms, state 160–200 ms,
+  panel 240–300 ms, one celebration 450–600 ms; reduced motion keeps meaning):
+  https://m3.material.io/styles/motion/easing-and-duration/tokens-specs,
+  https://developer.apple.com/design/human-interface-guidelines/motion,
+  https://developer.apple.com/design/human-interface-guidelines/feedback.
+- **Game feel is causal, not confetti.** The "juice" literature is useful only when every effect
+  names an event; it is not a licence to add shake, coins or a mascot:
+  https://gamedesign.gg/watch/juice-it-or-lose-it/.
+- **The companion is identity, not a progression system.** The host already owns the learner's
+  selected pet; the plugin only reads the supported pet RPC and renders one frame. It does not
+  create a character, a level, a currency, or a second learning model.
+- **The learning claims stay bounded.** The design borrows presentation patterns; it does not
+  claim efficacy, mastery, a streak effect or a COPPA/child-safety property. Those would require
+  evidence the product does not have.
+
+The internal evidence base remains `docs/CRAFT-CHANNELS-RESEARCH.md`,
+`docs/GAME-HOME-RESEARCH.md`, `docs/DUOLINGO-RESEARCH.md`, `docs/ENGAGEMENT-RESEARCH.md`,
+`docs/UX-RESEARCH-STANDARDS.md` and `docs/H148-EVIDENCE.md`; where this spec and those files
+disagree, the stricter honesty rule wins.
+
+## 10. Non-goals
+
 
 - No new avatar system, avatar editor, character creator, pet dialogue, pet progression or pet
   currency. Use the learner's existing Hermes pet or nothing.
