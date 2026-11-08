@@ -1,0 +1,50 @@
+{
+  "generated_by": "scripts/audit-ux-practice-seed.py",
+  "home": "/home/deseretsaint/.hermes/coursebook-test-h120b/home",
+  "course_id": "crs_d8e0ad31242d454d819e3e7793a8d369",
+  "course_title": "Buy a train ticket (practice)",
+  "plan_id": "pln_3cda195e7ae24b18ba944091a5fa9b3d",
+  "objective_id": "obj_c3dc777bff624ea9a785ee1fd91c7901",
+  "objective_title": "Buy one train ticket at the station counter",
+  "enrollment_id": "enr_1ddb6d9732854a73a4d7b8a3ed775192",
+  "check_id": "chk_f9c7740df4b44739ab6db277e6c4c82e",
+  "check_version": 1,
+  "revision": 1,
+  "lesson_run_id": "run_f99291764be8426ca7099623313cf9c6",
+  "stored_session_id": "seed-practice-ed775192",
+  "session_id": "prc_a809b5232d5b49f0b5e2539e4c7d3178",
+  "learner_turns_written": 3,
+  "turns_said": [
+    "One ticket to Kyoto, please.",
+    "How much is it?",
+    "Thank you. Where is platform four?"
+  ],
+  "practice_state_after_seed": {
+    "state": "active",
+    "learner_turns": 3,
+    "remaining": 2,
+    "awaiting_tutor": true,
+    "transcript": [
+      {
+        "ordinal": 1,
+        "speaker": "tutor",
+        "text": "Welcome. Where are you travelling today?"
+      },
+      {
+        "ordinal": 2,
+        "speaker": "learner",
+        "text": "One ticket to Kyoto, please."
+      },
+      {
+        "ordinal": 3,
+        "speaker": "learner",
+        "text": "How much is it?"
+      },
+      {
+        "ordinal": 4,
+        "speaker": "learner",
+        "text": "Thank you. Where is platform four?"
+      }
+    ]
+  }
+}

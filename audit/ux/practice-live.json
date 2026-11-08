@@ -1,0 +1,467 @@
+{
+  "rig": {
+    "cdp": "9341",
+    "seed": {
+      "course_id": "crs_d8e0ad31242d454d819e3e7793a8d369",
+      "objective_id": "obj_c3dc777bff624ea9a785ee1fd91c7901",
+      "check_id": "chk_f9c7740df4b44739ab6db277e6c4c82e",
+      "session_id": "prc_a809b5232d5b49f0b5e2539e4c7d3178"
+    },
+    "at": "2026-11-08T05:34:19.520Z"
+  },
+  "variants": {
+    "desktop-1049": {
+      "url": "#/coursebook",
+      "viewport": {
+        "w": 1049,
+        "h": 900
+      },
+      "rootFont": "16px",
+      "mode": "dark",
+      "theme": "nous",
+      "overflowX": 0,
+      "routeWidth": 790,
+      "routeText": "Skip to course content\nCourses\nCourses\nLibrary\nParent Studio\nAll courses\nBuy a train ticket (practice)\nNot started\nA steady plan\nSection 1 of 1\nBuy one train ticket at the station counter\n·\n0 of 1\nWith independent evidence\nResume the lesson\nOpen the textbook\nWhy this is next\nOverview\nTextbook\nNotebook\nQuizzes\nEvidence\nPlan\nSources\nExport\nBuy one train ticket at the station counter\nLesson view\nTextbook\nGuided\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nB",
+      "textLength": 1835,
+      "clipped": [
+        {
+          "text": "Skip to course content",
+          "cls": "",
+          "sw": 149,
+          "cw": 0,
+          "sh": 20,
+          "ch": 0
+        }
+      ],
+      "contrast": [],
+      "contrastTotal": 0,
+      "contrastBySize": {},
+      "contrastAll": [],
+      "unnamed": [],
+      "colorOnly": [],
+      "smallTargets": [
+        {
+          "name": "Skip to course content",
+          "w": 2,
+          "h": 2
+        },
+        {
+          "name": "Textbook",
+          "w": 60,
+          "h": 20
+        },
+        {
+          "name": "Guided",
+          "w": 51,
+          "h": 20
+        },
+        {
+          "name": "Field Quest",
+          "w": 72,
+          "h": 20
+        }
+      ],
+      "live": [],
+      "headings": [
+        {
+          "level": 1,
+          "text": "Courses"
+        },
+        {
+          "level": 2,
+          "text": "Buy a train ticket (practice)"
+        },
+        {
+          "level": 2,
+          "text": "Buy one train ticket at the station counter"
+        },
+        {
+          "level": 3,
+          "text": "Lesson"
+        }
+      ],
+      "animation": [],
+      "variant": "desktop-1049",
+      "at": "2026-11-08T05:34:25.544Z",
+      "practiceState": "active",
+      "practiceText": "Skip to course content Courses Courses Library Parent Studio All courses Buy a train ticket (practice) Not started A steady plan Section 1 of 1 Buy one train ticket at the station counter · 0 of 1 With independent evidence Resume the lesson Open the textbook Why this is next Overview Textbook Notebook Quizzes Evidence Plan Sources Export Buy one train ticket at the station counter Lesson view Textbook Guided Field Quest This lesson has no guided version. This lesson has no Field Quest version. Buy a train ticket (practice) Section 1 of 1 · Textbook Not started Say or write it Last opened just now This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat Lesson Orient At a station counter you ask for one ticket to Kyoto, then ask the price and where platform four is. Say each line out loud before you start the practice. Save to notebook Checkpoint Check v1 Conversation practice Scene Buying one train ticket at a station counter You are a traveller going to Kyoto; the tutor plays the station clerk. 3 to 5 learner turns. Expressions to practise one ticket to Kyoto, please how much is it? 3 of 5 learner turns used; waiting for the tutor to reply. Transcript Tutor Welcome. Where are you travelling today? You One ticket to Kyoto, please. You How much is it? You Thank you. Where is platform four? End practice Cancel practice Refresh transcript This is the section’s one check. It is the same in Textbook, Guided and Field Quest, and it is not a grade. Back to the section index Next action Continue Buy one train ticket at the station counter This section State Not started Evidence Say or write it Attempts 0 Source cards No sources are recorded for this course yet. Saved notes Nothing saved from this section yet.",
+      "feedback": null,
+      "controls": [
+        "End practice",
+        "Cancel practice",
+        "Refresh transcript"
+      ],
+      "shot": "audit/ux/practice-shots/practice-desktop-1049.png"
+    },
+    "narrow-460": {
+      "url": "#/coursebook",
+      "viewport": {
+        "w": 460,
+        "h": 900
+      },
+      "rootFont": "16px",
+      "mode": "dark",
+      "theme": "nous",
+      "overflowX": 0,
+      "routeWidth": 461,
+      "routeText": "Skip to course content\nCourses\nCourses\nLibrary\nParent Studio\nAll courses\nBuy a train ticket (practice)\nNot started\nA steady plan\nSection 1 of 1\nBuy one train ticket at the station counter\n·\n0 of 1\nWith independent evidence\nResume the lesson\nOpen the textbook\nWhy this is next\nOverview\nTextbook\nNotebook\nQuizzes\nEvidence\nPlan\nSources\nExport\nBuy one train ticket at the station counter\nLesson view\nTextbook\nGuided\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nB",
+      "textLength": 1835,
+      "clipped": [
+        {
+          "text": "Skip to course content",
+          "cls": "",
+          "sw": 149,
+          "cw": 0,
+          "sh": 20,
+          "ch": 0
+        }
+      ],
+      "contrast": [],
+      "contrastTotal": 0,
+      "contrastBySize": {},
+      "contrastAll": [],
+      "unnamed": [],
+      "colorOnly": [],
+      "smallTargets": [
+        {
+          "name": "Skip to course content",
+          "w": 2,
+          "h": 2
+        },
+        {
+          "name": "Textbook",
+          "w": 60,
+          "h": 20
+        },
+        {
+          "name": "Guided",
+          "w": 51,
+          "h": 20
+        },
+        {
+          "name": "Field Quest",
+          "w": 72,
+          "h": 20
+        }
+      ],
+      "live": [],
+      "headings": [
+        {
+          "level": 1,
+          "text": "Courses"
+        },
+        {
+          "level": 2,
+          "text": "Buy a train ticket (practice)"
+        },
+        {
+          "level": 2,
+          "text": "Buy one train ticket at the station counter"
+        },
+        {
+          "level": 3,
+          "text": "Lesson"
+        }
+      ],
+      "animation": [],
+      "variant": "narrow-460",
+      "at": "2026-11-08T05:34:26.605Z",
+      "practiceState": "active",
+      "practiceText": "Skip to course content Courses Courses Library Parent Studio All courses Buy a train ticket (practice) Not started A steady plan Section 1 of 1 Buy one train ticket at the station counter · 0 of 1 With independent evidence Resume the lesson Open the textbook Why this is next Overview Textbook Notebook Quizzes Evidence Plan Sources Export Buy one train ticket at the station counter Lesson view Textbook Guided Field Quest This lesson has no guided version. This lesson has no Field Quest version. Buy a train ticket (practice) Section 1 of 1 · Textbook Not started Say or write it Last opened just now This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat Lesson Orient At a station counter you ask for one ticket to Kyoto, then ask the price and where platform four is. Say each line out loud before you start the practice. Save to notebook Checkpoint Check v1 Conversation practice Scene Buying one train ticket at a station counter You are a traveller going to Kyoto; the tutor plays the station clerk. 3 to 5 learner turns. Expressions to practise one ticket to Kyoto, please how much is it? 3 of 5 learner turns used; waiting for the tutor to reply. Transcript Tutor Welcome. Where are you travelling today? You One ticket to Kyoto, please. You How much is it? You Thank you. Where is platform four? End practice Cancel practice Refresh transcript This is the section’s one check. It is the same in Textbook, Guided and Field Quest, and it is not a grade. Back to the section index Next action Continue Buy one train ticket at the station counter This section State Not started Evidence Say or write it Attempts 0 Source cards No sources are recorded for this course yet. Saved notes Nothing saved from this section yet.",
+      "feedback": null,
+      "controls": [
+        "End practice",
+        "Cancel practice",
+        "Refresh transcript"
+      ],
+      "shot": "audit/ux/practice-shots/practice-narrow-460.png"
+    },
+    "text200-1049": {
+      "url": "#/coursebook",
+      "viewport": {
+        "w": 1049,
+        "h": 900
+      },
+      "rootFont": "16px",
+      "mode": "dark",
+      "theme": "nous",
+      "overflowX": 0,
+      "routeWidth": 790,
+      "routeText": "Skip to course content\nCourses\nCourses\nLibrary\nParent Studio\nAll courses\nBuy a train ticket (practice)\nNot started\nA steady plan\nSection 1 of 1\nBuy one train ticket at the station counter\n·\n0 of 1\nWith independent evidence\nResume the lesson\nOpen the textbook\nWhy this is next\nOverview\nTextbook\nNotebook\nQuizzes\nEvidence\nPlan\nSources\nExport\nBuy one train ticket at the station counter\nLesson view\nTextbook\nGuided\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nB",
+      "textLength": 1835,
+      "clipped": [
+        {
+          "text": "Skip to course content",
+          "cls": "",
+          "sw": 149,
+          "cw": 0,
+          "sh": 20,
+          "ch": 0
+        }
+      ],
+      "contrast": [],
+      "contrastTotal": 0,
+      "contrastBySize": {},
+      "contrastAll": [],
+      "unnamed": [],
+      "colorOnly": [],
+      "smallTargets": [
+        {
+          "name": "Skip to course content",
+          "w": 2,
+          "h": 2
+        },
+        {
+          "name": "Textbook",
+          "w": 60,
+          "h": 20
+        },
+        {
+          "name": "Guided",
+          "w": 51,
+          "h": 20
+        },
+        {
+          "name": "Field Quest",
+          "w": 72,
+          "h": 20
+        }
+      ],
+      "live": [],
+      "headings": [
+        {
+          "level": 1,
+          "text": "Courses"
+        },
+        {
+          "level": 2,
+          "text": "Buy a train ticket (practice)"
+        },
+        {
+          "level": 2,
+          "text": "Buy one train ticket at the station counter"
+        },
+        {
+          "level": 3,
+          "text": "Lesson"
+        }
+      ],
+      "animation": [],
+      "variant": "text200-1049",
+      "at": "2026-11-08T05:34:27.743Z",
+      "practiceState": "active",
+      "practiceText": "Skip to course content Courses Courses Library Parent Studio All courses Buy a train ticket (practice) Not started A steady plan Section 1 of 1 Buy one train ticket at the station counter · 0 of 1 With independent evidence Resume the lesson Open the textbook Why this is next Overview Textbook Notebook Quizzes Evidence Plan Sources Export Buy one train ticket at the station counter Lesson view Textbook Guided Field Quest This lesson has no guided version. This lesson has no Field Quest version. Buy a train ticket (practice) Section 1 of 1 · Textbook Not started Say or write it Last opened just now This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat Lesson Orient At a station counter you ask for one ticket to Kyoto, then ask the price and where platform four is. Say each line out loud before you start the practice. Save to notebook Checkpoint Check v1 Conversation practice Scene Buying one train ticket at a station counter You are a traveller going to Kyoto; the tutor plays the station clerk. 3 to 5 learner turns. Expressions to practise one ticket to Kyoto, please how much is it? 3 of 5 learner turns used; waiting for the tutor to reply. Transcript Tutor Welcome. Where are you travelling today? You One ticket to Kyoto, please. You How much is it? You Thank you. Where is platform four? End practice Cancel practice Refresh transcript This is the section’s one check. It is the same in Textbook, Guided and Field Quest, and it is not a grade. Back to the section index Next action Continue Buy one train ticket at the station counter This section State Not started Evidence Say or write it Attempts 0 Source cards No sources are recorded for this course yet. Saved notes Nothing saved from this section yet.",
+      "feedback": null,
+      "controls": [
+        "End practice",
+        "Cancel practice",
+        "Refresh transcript"
+      ],
+      "shot": "audit/ux/practice-shots/practice-text200-1049.png"
+    },
+    "graded-1049": {
+      "url": "#/coursebook",
+      "viewport": {
+        "w": 1049,
+        "h": 900
+      },
+      "rootFont": "16px",
+      "mode": "dark",
+      "theme": "nous",
+      "overflowX": 0,
+      "routeWidth": 790,
+      "routeText": "Skip to course content\nCourses\nCourses\nLibrary\nParent Studio\nAll courses\nBuy a train ticket (practice)\nStarted\nA steady plan\nSection 1 of 1\nBuy one train ticket at the station counter\n·\n0 of 1\nWith independent evidence\nResume the lesson\nOpen the textbook\nWhy this is next\nOverview\nTextbook\nNotebook\nQuizzes\nEvidence\nPlan\nSources\nExport\nBuy one train ticket at the station counter\nLesson view\nTextbook\nGuided\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nBuy a",
+      "textLength": 1445,
+      "clipped": [
+        {
+          "text": "Skip to course content",
+          "cls": "",
+          "sw": 149,
+          "cw": 0,
+          "sh": 20,
+          "ch": 0
+        }
+      ],
+      "contrast": [],
+      "contrastTotal": 0,
+      "contrastBySize": {},
+      "contrastAll": [],
+      "unnamed": [],
+      "colorOnly": [],
+      "smallTargets": [
+        {
+          "name": "Skip to course content",
+          "w": 2,
+          "h": 2
+        },
+        {
+          "name": "Textbook",
+          "w": 60,
+          "h": 20
+        },
+        {
+          "name": "Guided",
+          "w": 51,
+          "h": 20
+        },
+        {
+          "name": "Field Quest",
+          "w": 72,
+          "h": 20
+        }
+      ],
+      "live": [],
+      "headings": [
+        {
+          "level": 1,
+          "text": "Courses"
+        },
+        {
+          "level": 2,
+          "text": "Buy a train ticket (practice)"
+        },
+        {
+          "level": 2,
+          "text": "Buy one train ticket at the station counter"
+        },
+        {
+          "level": 3,
+          "text": "Lesson"
+        }
+      ],
+      "animation": [],
+      "variant": "graded-1049",
+      "at": "2026-11-08T05:34:49.741Z",
+      "practiceState": null,
+      "practiceText": "Skip to course content Courses Courses Library Parent Studio All courses Buy a train ticket (practice) Started A steady plan Section 1 of 1 Buy one train ticket at the station counter · 0 of 1 With independent evidence Resume the lesson Open the textbook Why this is next Overview Textbook Notebook Quizzes Evidence Plan Sources Export Buy one train ticket at the station counter Lesson view Textbook Guided Field Quest This lesson has no guided version. This lesson has no Field Quest version. Buy a train ticket (practice) Section 1 of 1 · Textbook Started Say or write it Last opened just now This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat Lesson Orient At a station counter you ask for one ticket to Kyoto, then ask the price and where platform four is. Say each line out loud before you start the practice. Save to notebook Checkpoint VALIDATION_FAILED: a course may declare at most one conversation practice. This is the section’s one check. It is the same in Textbook, Guided and Field Quest, and it is not a grade. 1 attempt recorded on this section · last just now Back to the section index Next action Continue Buy one train ticket at the station counter This section State Started Evidence Say or write it Attempts 1 Source cards No sources are recorded for this course yet. Saved notes Nothing saved from this section yet.",
+      "feedback": null,
+      "controls": [],
+      "shot": "audit/ux/practice-shots/practice-graded-1049.png"
+    },
+    "graded-review-1049": {
+      "url": "#/coursebook",
+      "viewport": {
+        "w": 1049,
+        "h": 900
+      },
+      "rootFont": "16px",
+      "mode": "dark",
+      "theme": "nous",
+      "overflowX": 0,
+      "routeWidth": 790,
+      "routeText": "Skip to course content\nCourses\nCourses\nLibrary\nParent Studio\nAll courses\nBuy a train ticket (practice)\nStarted\nA steady plan\nSection 1 of 1\nBuy one train ticket at the station counter\n·\n0 of 1\nWith independent evidence\nResume the lesson\nOpen the textbook\nWhy this is next\nOverview\nTextbook\nNotebook\nQuizzes\nEvidence\nPlan\nSources\nExport\nBuy one train ticket at the station counter\nLesson view\nTextbook\nGuided\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nBuy a",
+      "textLength": 1445,
+      "clipped": [
+        {
+          "text": "Skip to course content",
+          "cls": "",
+          "sw": 149,
+          "cw": 0,
+          "sh": 20,
+          "ch": 0
+        }
+      ],
+      "contrast": [],
+      "contrastTotal": 0,
+      "contrastBySize": {},
+      "contrastAll": [],
+      "unnamed": [],
+      "colorOnly": [],
+      "smallTargets": [
+        {
+          "name": "Skip to course content",
+          "w": 2,
+          "h": 2
+        },
+        {
+          "name": "Textbook",
+          "w": 60,
+          "h": 20
+        },
+        {
+          "name": "Guided",
+          "w": 51,
+          "h": 20
+        },
+        {
+          "name": "Field Quest",
+          "w": 72,
+          "h": 20
+        }
+      ],
+      "live": [],
+      "headings": [
+        {
+          "level": 1,
+          "text": "Courses"
+        },
+        {
+          "level": 2,
+          "text": "Buy a train ticket (practice)"
+        },
+        {
+          "level": 2,
+          "text": "Buy one train ticket at the station counter"
+        },
+        {
+          "level": 3,
+          "text": "Lesson"
+        }
+      ],
+      "animation": [],
+      "variant": "graded-review-1049",
+      "at": "2026-11-08T05:34:51.290Z",
+      "practiceState": null,
+      "practiceText": "Skip to course content Courses Courses Library Parent Studio All courses Buy a train ticket (practice) Started A steady plan Section 1 of 1 Buy one train ticket at the station counter · 0 of 1 With independent evidence Resume the lesson Open the textbook Why this is next Overview Textbook Notebook Quizzes Evidence Plan Sources Export Buy one train ticket at the station counter Lesson view Textbook Guided Field Quest This lesson has no guided version. This lesson has no Field Quest version. Buy a train ticket (practice) Section 1 of 1 · Textbook Started Say or write it Last opened just now This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only. Continue in the lesson chat Lesson Orient At a station counter you ask for one ticket to Kyoto, then ask the price and where platform four is. Say each line out loud before you start the practice. Save to notebook Checkpoint VALIDATION_FAILED: a course may declare at most one conversation practice. This is the section’s one check. It is the same in Textbook, Guided and Field Quest, and it is not a grade. 1 attempt recorded on this section · last just now Back to the section index Next action Continue Buy one train ticket at the station counter This section State Started Evidence Say or write it Attempts 1 Source cards No sources are recorded for this course yet. Saved notes Nothing saved from this section yet.",
+      "feedback": null,
+      "controls": [],
+      "shot": "audit/ux/practice-shots/practice-graded-review-1049.png"
+    }
+  },
+  "navigation": {
+    "how": "hero",
+    "practiceState": "active"
+  },
+  "keyboard": {
+    "stops": 60,
+    "practiceStops": [
+      "BUTTON:End practice",
+      "BUTTON:Cancel practice",
+      "BUTTON:Refresh transcript"
+    ],
+    "trap": null,
+    "escape": {
+      "before": {
+        "tag": "BUTTON",
+        "role": "",
+        "name": "Revive Marketing LLC business details",
+        "inRoute": false,
+        "visible": true,
+        "outline": "none",
+        "ring": "shadow",
+        "x": 118,
+        "y": 475
+      },
+      "after": {
+        "tag": "BUTTON",
+        "role": "",
+        "name": "Revive Marketing LLC business details",
+        "inRoute": false,
+        "visible": true,
+        "outline": "none",
+        "ring": "shadow",
+        "x": 118,
+        "y": 475
+      }
+    }
+  },
+  "end": {
+    "clicked": true,
+    "state": null,
+    "feedback": null,
+    "criteriaPresent": false,
+    "bodyHasPercent": false,
+    "reviewClicked": false,
+    "criteriaCount": 0
+  }
+}
