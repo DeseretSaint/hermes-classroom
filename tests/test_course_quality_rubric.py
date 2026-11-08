@@ -28,6 +28,15 @@ REVIEW_RECORDS = (
     DOCS / "reviews" / "H173-S2-short-japanese-cafe.md",
     DOCS / "reviews" / "H173-S3-parent-kitchen.md",
 )
+#: H-173d: Sentinel's three independent re-scores. They are the positive control for the holes
+#: below, and they quote the checker's own "Aggregate score: 24 out of 32" hole, which must not be
+#: mistaken for an aggregate the record is claiming.
+INDEPENDENT_RECORDS = (
+    DOCS / "reviews" / "H173d-S1-independent.md",
+    DOCS / "reviews" / "H173d-S2-independent.md",
+    DOCS / "reviews" / "H173d-S3-independent.md",
+)
+HONEST_INDEPENDENT = INDEPENDENT_RECORDS[0]
 PACKET = ROOT / "scripts" / "course_quality_review.py"
 
 EXPECTED_DIMENSIONS = (
@@ -248,6 +257,101 @@ class RecordCheckTest(unittest.TestCase):
         joined = "\n".join(errors)
         self.assertIn("overall score", joined)
         self.assertIn("leaderboard", joined)
+
+
+class CheckerHoleRegressionTest(unittest.TestCase):
+    """H-173g: the four holes H-173d reproduced must fail by name, not print PASS.
+
+    Each case starts from Sentinel's honest H-173d S1 record, which the checker accepts, and
+    applies exactly one of the §7 tampering repros. The error must name the reason.
+    """
+
+    def honest(self) -> str:
+        self.assertTrue(HONEST_INDEPENDENT.is_file(), f"{HONEST_INDEPENDENT} is missing")
+        text = HONEST_INDEPENDENT.read_text(encoding="utf-8")
+        module = load_packet_module()
+        self.assertEqual(module.check_record(text), [], "the positive control must PASS first")
+        return text
+
+    def test_blank_reviewer_line_is_rejected_instead_of_reading_the_next_header(self) -> None:
+        module = load_packet_module()
+        text = self.honest().replace(
+            "Reviewer: Sentinel (independent, cbqa)", "Reviewer: ", 1
+        )
+        errors = module.check_record(text)
+        joined = "\n".join(errors)
+        self.assertIn("Reviewer:", joined)
+        self.assertIn("same line", joined)
+        # It must not silently accept the next header line as the name.
+        self.assertNotIn("Sample: S1", joined)
+
+    def test_reviewer_value_that_is_a_header_is_not_a_name(self) -> None:
+        module = load_packet_module()
+        text = self.honest().replace(
+            "Reviewer: Sentinel (independent, cbqa)", "Reviewer: Sample: S1", 1
+        )
+        joined = "\n".join(module.check_record(text))
+        self.assertIn("Reviewer:", joined)
+        self.assertIn("header line", joined)
+
+    def test_score_below_three_with_follow_up_none_is_rejected(self) -> None:
+        module = load_packet_module()
+        # S1 D7 is a 2 routed to t_fc59d3c6; §8 requires that route.
+        text = self.honest().replace("Follow-up: t_fc59d3c6", "Follow-up: none", 1)
+        errors = module.check_record(text)
+        joined = "\n".join(errors)
+        self.assertIn("D7", joined)
+        self.assertIn("Follow-up: none", joined)
+        self.assertIn("must route", joined)
+
+    def test_aggregate_appended_outside_a_dimension_block_is_rejected(self) -> None:
+        module = load_packet_module()
+        text = self.honest() + "\nAggregate score: 24 out of 32.\n"
+        joined = "\n".join(module.check_record(text))
+        self.assertIn("forbidden aggregate", joined)
+        self.assertIn("aggregate or overall score", joined)
+
+    def test_percentage_and_mastery_appended_outside_a_dimension_block_are_rejected(self) -> None:
+        module = load_packet_module()
+        text = (
+            self.honest()
+            + "\nOverall quality: 78% across the eight dimensions."
+            + "\nMastery: 4 of 8 dimensions are strong.\n"
+        )
+        joined = "\n".join(module.check_record(text))
+        self.assertIn("percentage", joined)
+        self.assertIn("mastery claim", joined)
+
+    def test_a_quoted_aggregate_on_its_own_line_is_still_rejected(self) -> None:
+        module = load_packet_module()
+        text = self.honest() + '\n"Aggregate score: 24 out of 32."\n'
+        joined = "\n".join(module.check_record(text))
+        self.assertIn("on its own line", joined)
+
+    def test_the_three_independent_records_still_pass(self) -> None:
+        module = load_packet_module()
+        for path in INDEPENDENT_RECORDS:
+            self.assertTrue(path.is_file(), f"{path} is missing")
+            self.assertEqual(
+                module.check_record(path.read_text(encoding="utf-8")),
+                [],
+                f"{path} was a passing record and must stay one",
+            )
+
+    def test_a_quoted_mention_of_the_hole_is_not_the_records_own_aggregate(self) -> None:
+        """The honest record quotes "Aggregate score: 24 out of 32" while naming the hole."""
+        module = load_packet_module()
+        text = self.honest()
+        self.assertIn('"Aggregate score: 24 out', text)
+        self.assertNotIn("aggregate or overall score", module.forbidden_language(text))
+
+    def test_packet_and_fill_emit_no_aggregate(self) -> None:
+        module = load_packet_module()
+        packet = packet_text()
+        filled = module.fill_packet(packet, valid_scores())
+        for text in (packet, filled):
+            self.assertEqual(module.forbidden_language(text), [])
+            self.assertNotRegex(text, r"\b(?:aggregate|overall|total|average)\b[ _-]*score\b")
 
 
 class CommittedRecordTest(unittest.TestCase):
