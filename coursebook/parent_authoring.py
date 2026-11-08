@@ -221,12 +221,20 @@ def generation_plan_hash(connection, plan_id: str, fallback: str = "") -> str:
 
 
 def _lesson_rows(connection, plan_id: str, plan_hash: str) -> dict[str, Any]:
-    """`section_id -> (section row, lesson row)` for lessons generated against this plan hash."""
+    """`section_id -> (section row, lesson row)` for the **latest** lesson revision.
+
+    H-194: a fine-tuned section has more than one `gen_lessons` row; the served/exported page is
+    the newest version, and the previous revisions stay in the table. A course that was never
+    fine-tuned has one version-1 row per section, so this read matches the old join exactly.
+    """
     rows = connection.execute(
         "SELECT s.*, l.id AS lesson_id, l.state AS lesson_state, l.page_json AS page_json,"
-        " l.parent_notes_json AS parent_notes_json"
+        " l.parent_notes_json AS parent_notes_json, l.version AS lesson_version"
         " FROM gen_plan_sections s"
-        " LEFT JOIN gen_lessons l ON l.section_id = s.id AND l.plan_hash = ? AND l.version = 1"
+        " LEFT JOIN gen_lessons l ON l.id = ("
+        "   SELECT g.id FROM gen_lessons g WHERE g.section_id = s.id AND g.plan_hash = ?"
+        "   ORDER BY g.version DESC, g.rowid DESC LIMIT 1"
+        " )"
         " WHERE s.plan_id = ? ORDER BY s.ordinal",
         (plan_hash, plan_id),
     ).fetchall()
@@ -427,7 +435,9 @@ def sections(connection, course, plan) -> list[dict[str, Any]]:
             "objective": objective,
             "lesson_id": row["lesson_id"],
             "lesson_state": row["lesson_state"],
+            "lesson_version": row["lesson_version"],
             "page": page if isinstance(page, dict) else None,
+            "page_hash": None,
             "notes": {},
             "paths": {},
             "files": {},
@@ -435,6 +445,15 @@ def sections(connection, course, plan) -> list[dict[str, Any]]:
         if base["page"] is None:
             result.append(base)
             continue
+        # H-194: an authored edit stores its new section title in the page it writes, because the
+        # staging section row is immutable under its plan hash. Prefer that title so the review
+        # diff, the export paths and the learner page all read the authored value.
+        authored_title = str(base["page"].get("section_title") or "").strip()
+        if authored_title:
+            base["title"] = authored_title
+        base["page_hash"] = "sha256:" + hashlib.sha256(
+            packs.canonical_json_bytes(base["page"])
+        ).hexdigest()
         check = _section_check(connection, str(row["lesson_id"]))
         notes = _load(row["parent_notes_json"], {})
         base["notes"] = notes if isinstance(notes, dict) else {}
@@ -472,21 +491,26 @@ def validated_sections(
 ) -> tuple[list[Mapping[str, Any]], list[str]]:
     """Split a composed course into ``(validated, problems)``.
 
-    The authored-export gate (``course.export``) ships only pages a validator cleared: every
-    section must have a generated page *and* a ``gen_lessons`` row in ``validated`` state. A page
-    parked for review is content a model wrote, not content that passed; exporting it would hand
-    a reader a lesson the harness itself refused. ``problems`` names each section by ordinal and
-    observed state so the surface can show exactly which page blocks and why.
+    The authored-export gate (``course.export``) ships only pages a validator cleared **or** an
+    authored edit the human approved: every section must have a generated page and a
+    ``gen_lessons`` row in ``validated``, ``model_assessed`` or ``parent_approved`` state.
+    ``needs_review`` is an authored edit no one has approved yet, so it blocks the export until
+    ``parent.final.approve`` covers the exact new bytes. ``problems`` names each section by
+    ordinal and observed state so the surface can show exactly which page blocks and why.
     """
     validated: list[Mapping[str, Any]] = []
     problems: list[str] = []
+    served_states = {VALIDATED_LESSON_STATE, "model_assessed", "parent_approved"}
     for section in composed:
         label = f"section {int(section['ordinal'])} ({str(section.get('title') or 'untitled')})"
         if section.get("page") is None:
             problems.append(f"{label} has no generated page")
             continue
         state = str(section.get("lesson_state") or "")
-        if state != VALIDATED_LESSON_STATE:
+        if state == "needs_review":
+            problems.append(f"{label} was edited and needs review")
+            continue
+        if state not in served_states:
             problems.append(f"{label} is {state or 'not generated'}, not validated")
             continue
         validated.append(section)

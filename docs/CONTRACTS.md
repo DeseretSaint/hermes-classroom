@@ -1,6 +1,9 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v17** (H-106 source provenance: `cb.rpc` v17 additively gives the source item of
+Status: **frozen at v19** (H-194 fine-tuning a generated course: `cb.rpc` v19 appends five
+commands — `plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read` —
+and `cb.db` v12 adds the two durable fine-tune ledgers `plan_revisions` and `lesson_revisions`;
+v18 = H-185 model-assessed lesson provenance; v17 = H-106 source provenance: `cb.rpc` v17 additively gives the source item of
 `lesson.page` and `parent.blueprint.read` six optional fields — `excerpt`, `excerpt_state`,
 `content_hash`, `modality`, `licence`, `support_assessment` — and moves no method, required key or
 other payload; v16 = H-120 bounded conversation practice, which appends the four
@@ -25,8 +28,8 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v17.json` | 17 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v11.json` | 11 | Cinder | migrations, every command, evidence views |
+| `cb.rpc` | `contracts/rpc.v19.json` | 19 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance + fine-tune), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.db` | `contracts/db.v12.json` | 12 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
@@ -2040,3 +2043,56 @@ if any `required` list changes, if the echo drifts from 17, or if `rpc.v15.json`
 stop being byte-identical history. `V15AmendmentTest`, `V16AmendmentTest` and the carried-over
 v1-v14 tests compare through `_without_v17_source_fields`, so the additive fields are removed
 before the older snapshot comparison rather than the older assertion being weakened.
+
+## v19 delta (H-194) — fine-tune a generated course without regenerating it
+
+`cb.rpc` v19 appends five methods and widens one existing response enum. No existing method,
+required key, `additionalProperties`, error code, job kind, answer kind, verdict, evidence class or
+vocabulary value moves; v18 stays byte-identical on disk and `x-supersedes` names it.
+
+| Method | Kind | Request (required) | What it does |
+|---|---|---|---|
+| `plan.edit` | mutation | `enrollment_id`, `plan_id`, `expected_plan_hash` | Reorder objectives (`reorder`, a permutation of objective ids) and/or edit `title`/`evidence_target`/`criteria` on an **approved** plan. Writes ordinals only, re-points every `gen_plan_sections.objective_refs_json` so a section keeps its own objective, and records one `plan_revisions` row. A reorder across units that goes backwards is refused with `reason: prerequisite_order_conflict` and nothing is written. |
+| `plan.undo` | mutation | `enrollment_id`, `plan_id`, `expected_plan_hash` | Reverts the last un-reverted `plan_revisions` row (or the named `revision_id`) if the plan still matches that revision's `after` snapshot; otherwise `reason: revision_conflict`. The undo is itself a `plan_revisions` row. |
+| `lesson.revise` | mutation | `enrollment_id`, `plan_id`, `section_id`, `expected_page_hash` | Writes a new immutable `gen_lessons` row at the next version with state `needs_review`; the previous row is kept and attempts are untouched. Only that section's validation is stale. If attempts exist, `confirm_evidence_consequence: true` is required or the call is refused with `reason: evidence_consequence_confirmation_required`. |
+| `lesson.regenerate` | mutation | `enrollment_id`, `plan_id`, `section_id` | Queues a normal `plan`-kind job whose brief is `{stage:'lessons', section_id, regenerate:true, unit_ordinal}` and returns a one-section cost preflight. The executor authors only that section at its next version. It never queues a plan-wide replan. |
+| `parent.review.read` | read | `course_id` | The pending review diff: `plan_revisions`, `lesson_revisions`, current `content_hash`, active approval and the export gate. `parent.final.approve` remains the only approval writer. |
+
+**Approval and export.** A fine-tune supersedes the active `final_approvals` row
+(`plan_edited` / `content_changed`). `parent.final.approve` still binds `plan_hash` + `content_hash`;
+on success it marks the covered revision rows `approved`, promotes the edited `gen_lessons` row to
+`parent_approved` (never `validated`), and the export gates (`parent.export`, `course.export*`)
+remain fail-closed until the active approval hash equals the recomputed content hash. A
+`needs_review` section is served by `lesson.page` as text with `check_enabled: false`.
+
+**`lesson.page` provenance outcome** gains two enum values: `needs_review` (authored edit awaiting
+review, check disabled) and `parent_approved` (human-approved authored edit, still not independent
+validation). This is the only change to an existing payload shape, and it is an enum widening inside
+a new contract version.
+
+**Mutation fences.** `plan.edit`, `plan.undo` and `lesson.revise` require `idempotency_key` and
+`expected_revision`; `lesson.regenerate` requires `idempotency_key`. Idempotent replay, key/payload
+conflict and stale-revision conflict are the existing `idempotency_keys` and enrollment-revision
+mechanisms, not a second authority.
+
+## cb.db v12 delta (H-194) — two fine-tune ledgers
+
+`cb.db` v12 adds exactly two tables, created by `0012_fine_tune_revisions.sql`. Additive only: no
+v11 table, column, index or unique key is dropped or retyped; there is no backfill.
+
+* `plan_revisions` — one structural change to an approved plan. `before_json` / `after_json` are
+  full objective snapshots (id, ordinal, title, evidence target, criteria, version);
+  `state` is `needs_review` -> `approved` (when `parent.final.approve` covers the new bytes) or
+  `reverted`; `reverts_revision_id` names the revision an undo reversed; `approval_id` names the
+  approval that covered it.
+* `lesson_revisions` — one authored edit to a single generated section. `from_lesson_id` and
+  `lesson_id` are both `gen_lessons` rows (the previous version stays), `diff_json` is the review
+  diff, `evidence_attempts` is the count the author was shown and
+  `confirmed_evidence_consequence` records their confirmation; `unique(lesson_id)`.
+
+Neither table is read by grading. An attempt keeps pointing at the check id it answered; an edit
+never rewrites an attempt, transition or evidence row. Regression guard:
+`tests/test_h194_fine_tune.py` (reorder, unit-edge refusal, undo, single-section revision,
+evidence-consequence confirmation, stale-approval export refusal, re-approve and one-section
+regeneration), `tests/test_kernel_schema.py` for the table/unique/index inventory, and
+`tests/test_contracts.py` for the v19/v12 delta.

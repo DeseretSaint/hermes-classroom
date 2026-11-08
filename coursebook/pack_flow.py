@@ -1546,7 +1546,18 @@ def _authored_export_plan(connection, enrollment_id: str) -> dict[str, Any]:
         " ORDER BY approved_at DESC LIMIT 1",
         (course["id"],),
     )
-    if approval is not None and str(approval["content_hash"]) != digest:
+    # H-194: the readiness report fails closed exactly like `parent.export`. A course whose
+    # active approval was superseded by a fine-tune has no approval covering its bytes, so it is
+    # not ready even before the hash comparison below.
+    if approval is None:
+        plan_record.update(
+            blocked_reason="no_final_approval",
+            blocked_message=(
+                "the generated lessons have not been approved; review the changes and approve before packaging."
+            ),
+        )
+        return plan_record
+    if str(approval["content_hash"]) != digest:
         plan_record.update(
             blocked_reason="changes_need_review",
             blocked_message=(
