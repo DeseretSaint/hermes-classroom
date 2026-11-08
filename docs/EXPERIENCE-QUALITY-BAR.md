@@ -168,9 +168,37 @@ A card cannot be done if any applicable hard gate fails. A card with any pillar 
 named follow-up card before it can be called ship quality. The target for the core home/path/lesson
 loop is **4.5 or higher on every pillar**, not an average that hides a 2.
 
+### 4.1 Recommendation review
+
+Every research recommendation is reviewed before it becomes a card. A recommendation passes only
+if all of these are true:
+
+1. **Outcome:** it makes the primary learning loop clearer, more engaging or more trustworthy for
+   a first-time learner. "It looks nicer" is not an outcome.
+2. **Evidence:** it is backed by a named source or recorded product evidence, with vendor claims
+   labelled as vendor claims. A confident blog post is not a law.
+3. **Honesty:** it does not invent progress, mastery, social proof, urgency or a metric the backend
+   cannot support.
+4. **Fit:** it works inside the existing plugin, RPC/evidence contracts and token system without a
+   speculative rewrite. If it needs a new contract, that contract is named and scoped.
+5. **Comprehension:** it reduces, rather than adds, the need to explain the interface. A new mode,
+   panel or badge must earn its place.
+6. **Access and resilience:** it works at 460/900/1049 px, light/dark, 200% text, keyboard,
+   reduced motion, and in the empty/loading/error states.
+7. **Scope:** it is either part of the first vertical slice or explicitly deferred with a reason.
+   It does not smuggle a world map, avatar system, currency or other second product into the slice.
+8. **Measurability:** there is a way to tell whether it worked, not just whether it shipped.
+
+Verdicts are **ADOPT** (card it), **ADAPT** (card the smaller honest version), **DEFER** (card only
+if the later trigger is real), or **REJECT** (record why, no card). Every ADOPT/ADAPT item gets a
+card with the gate(s) it advances, the evidence, the exposed states, and the acceptance evidence
+from §8. No card is created for a recommendation that only changes styling.
+
 ## 5. Anti-patterns: this is what "not high quality" looks like
 
 - A page made of a heading, a bordered box, a row of three equal stat cards and two buttons.
+- A full RPG world map, open exploration, avatars, currencies or a game engine. The Hollow Knight
+  reference is a launcher home, not an RPG.
 - Adding colour, a gradient or a decorative seal and calling the result "designed".
 - A seal/monogram that requires the owner to ask what it means.
 - A home screen that is a dashboard of counts before it is a place to continue learning.
@@ -228,28 +256,40 @@ What we do not take:
 
 ## 7. Required shape of the first experience redesign
 
+Owner clarification: the Hollow Knight reference means **a home/launcher screen only**, not an RPG
+world map. The intended read is: open Coursebook, hit Continue, choose which classroom/save file
+to continue, change a few settings if wanted, and get on with learning. The learning path stays a
+Duolingo-like linear route with checkpoints. No open exploration, avatars, currencies or game
+engine.
+
 This is a direction, not a frozen implementation. The research pass may refine it.
 
-1. **Home is a classroom hub, not a dashboard.** The first thing is a single Continue surface for
-   the most recently active classroom, with the next checkpoint named. Below it, classrooms are
-   presented as distinct places (cover/motif, subject, progress, next checkpoint), not identical
-   admin rows. One action creates a new classroom.
-2. **A classroom opens on its path.** The path shows chapters/units, the current checkpoint, the
-   next checkpoint and completed ground. A node opens the lesson; there is no separate catalogue
-   of equal rows to decode.
-3. **A lesson is a player, not a document.** Default to one concept per step, a visual/example,
+1. **Home is a launcher, not a dashboard or a world.** The first thing is a single Continue
+   surface for the most recently active classroom, with the next checkpoint named. Below it,
+   classrooms are presented as distinct places (cover/motif, subject, progress, next checkpoint),
+   not identical admin rows. One action creates a new classroom.
+2. **Settings live on Home, not in a separate maze.** One compact settings sheet: appearance
+   (system/light/dark), default presentation mode (Game/Guided/Textbook), sound/haptics,
+   reduced motion, and a per-classroom override. Toggles apply immediately; no Save button. Do not
+   build a settings page until the list actually grows past one sheet.
+3. **A classroom opens on its path.** The path shows chapters/units, the current checkpoint, the
+   next checkpoint and completed ground. It is a linear route, not a map. A node opens the lesson;
+   there is no separate catalogue of equal rows to decode.
+4. **A lesson is a player, not a document.** Default to one concept per step, a visual/example,
    an interaction or check, immediate feedback, and a close that returns to the path with the
    recorded result. Textbook remains an optional reference view, not the default learning surface.
-4. **The seal is retired from primary navigation, first-run and pack rows.** Replace it with a
+   The Home setting chooses the learner's default view; the classroom can override it.
+5. **The seal is retired from primary navigation, first-run and pack rows.** Replace it with a
    meaningful classroom identity (subject/title/cover/motif) or nothing. Do not defend an ornament
    that needs an explanation.
-5. **Parent Studio stays a separate, legible authoring space.** It is not the learner's home, and
+6. **Parent Studio stays a separate, legible authoring space.** It is not the learner's home, and
    its primary action is preparing a lesson for a child, not chatting as the child.
-6. **Library remains the pack shelf.** It is not the home and does not pretend a pack is a course.
+7. **Library remains the pack shelf.** It is not the home and does not pretend a pack is a course.
 
-The first vertical slice is Home → Continue → Path → one lesson step → check → return. Do not
-start with a full animated world map, avatars, leagues, currencies or generated art pipelines.
-Those are later roadmap items, and only if they serve the loop.
+The first vertical slice is Home → Continue → Path → one lesson step → check → return, plus the
+Home settings sheet with the default-view control. Do not start with a world map, avatars,
+leagues, currencies or generated art pipelines. Those are not part of the Hollow Knight reference;
+they are later roadmap ideas only if they serve the loop.
 
 ## 8. Definition of done for a card
 
