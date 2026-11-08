@@ -10,8 +10,9 @@ from __future__ import annotations
 import hashlib
 import json
 import unittest
+from pathlib import Path
 
-from coursebook import api, contracts
+from coursebook import api, contracts, db
 from tests.kernel_support import KernelCase
 
 #: Handler registration happens when a module is imported, and the dispatch seam answers
@@ -643,13 +644,35 @@ class V2AmendmentTest(unittest.TestCase):
                 api.METHOD_HANDLERS.pop("library.list", None)
 
 
-class V3AmendmentTest(unittest.TestCase):
+class V3AmendmentTest(KernelCase):
     """CB-022: the additive v3 amendment that gives the review queue and Evidence tab a command path.
 
     CB-008 implemented the semantics (``coursebook/review.py``, ``coursebook/evidence.py``); these
     tests hold the contract to *that* backend: same field names, no second revision authority, no
     reference answer in the evidence view, and no storage claim that the database does not keep.
+
+    Isolation is part of the contract (t_7dee7265): the handler assertions below reach the real
+    kernel and answer ``NOT_FOUND`` only because a migrated store is present. As a plain
+    ``unittest.TestCase`` this class opened whatever profile store the runner's ``HERMES_HOME``
+    pointed at — a locked, corrupt or older-schema store turned those four assertions into
+    ``INTERNAL_ERROR``. ``KernelCase`` owns a throwaway home per test, so the answer can no longer
+    depend on the developer's profile.
     """
+
+    def test_the_class_runs_against_its_own_store_not_the_ambient_profile(self) -> None:
+        """Regression guard: a store the class does not own must never decide these assertions."""
+        self.assertIsInstance(
+            self,
+            KernelCase,
+            "V3AmendmentTest must inherit KernelCase: as a plain TestCase it resolves the ambient "
+            "profile store, and a stale, locked or corrupt one answers INTERNAL_ERROR where the "
+            "contract says NOT_FOUND (t_7dee7265)",
+        )
+        store = db.store_root().resolve()
+        self.assertTrue(
+            db.within(store, Path(self.home).resolve()),
+            f"the class resolved its store to {store}, outside its per-test home {self.home}",
+        )
 
     def test_v3_adds_only_the_learning_loop_surface(self) -> None:
         v2_methods = set(_document("rpc.v2.json")["$defs"]["method"]["enum"])
