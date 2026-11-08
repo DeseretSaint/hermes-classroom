@@ -125,9 +125,14 @@ V17_SOURCE_PROVENANCE_FIELDS: tuple[str, ...] = (
 )
 V17_ADDED_SOURCE_ITEMS: tuple[str, ...] = ("lesson.page", "parent.blueprint.read")
 
+#: H-185 / cb.rpc v18 appends one *optional* response property to ``lesson.page``: the lesson
+#: provenance block (``outcome``/``independent``/``warning``). It is never required, so the
+#: carried-over comparison only has to drop the property.
+V18_ADDED_RESPONSE_FIELDS: dict[str, tuple[str, ...]] = {"lesson.page": ("provenance",)}
+
 
 def _without_v17_source_fields(payload: dict, method: str) -> dict:
-    """Undo v17's additive source-item fields for a carried-over comparison."""
+    """Undo v17's additive source-item fields and v18's provenance for a carried-over comparison."""
     carried = json.loads(json.dumps(payload))
     if method not in V17_ADDED_SOURCE_ITEMS:
         return carried
@@ -135,6 +140,17 @@ def _without_v17_source_fields(payload: dict, method: str) -> dict:
     for field in V17_SOURCE_PROVENANCE_FIELDS:
         items["properties"].pop(field, None)
     # The six fields are optional, so no `required` entry is ever removed here.
+    return _without_v18_provenance(carried, method)
+
+
+def _without_v18_provenance(payload: dict, method: str) -> dict:
+    """Undo v18's additive ``lesson.page`` provenance for a carried-over comparison."""
+    carried = json.loads(json.dumps(payload))
+    for field in V18_ADDED_RESPONSE_FIELDS.get(method, ()):
+        carried["response"]["properties"].pop(field, None)
+        required = carried["response"].get("required") or []
+        if field in required:
+            required.remove(field)
     return carried
 
 
@@ -175,6 +191,11 @@ def _carried_payload(payload: dict, method: str) -> dict:
         required = carried["response"].get("required") or []
         if field in required:
             required.remove(field)
+    for field in V18_ADDED_RESPONSE_FIELDS.get(method, ()):
+        carried["response"]["properties"].pop(field, None)
+        required = carried["response"].get("required") or []
+        if field in required:
+            required.remove(field)
     request = carried["request"]
     for field in V10_ADDED_METHOD_FIELDS.get(method, ()):
         (request.get("properties") or {}).pop(field, None)
@@ -186,7 +207,7 @@ def _carried_payload(payload: dict, method: str) -> dict:
         # v10 applies a closed `$defs/plan_brief` to `kind = "plan"`; the open bounded brief
         # object every earlier snapshot froze is untouched.
         request.pop("allOf", None)
-    return _normalise_refresh_refs(_without_v17_source_fields(carried, method))
+    return _normalise_refresh_refs(_without_v18_provenance(_without_v17_source_fields(carried, method), method))
 
 
 def _envelope(method: str, payload: dict | None = None, **overrides) -> dict:
@@ -294,9 +315,9 @@ class ContractSetTest(unittest.TestCase):
 
     def test_wire_contract_is_current(self) -> None:
         self.assertEqual(contracts.WIRE_CONTRACT_ID, "cb.rpc")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 17)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 18)
         self.assertEqual(contracts.WIRE_CONTRACT_VERSION, contracts.contract_version("cb.rpc"))
-        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v17"))
+        self.assertTrue(str(contracts.contract("cb.rpc")["$id"]).endswith("/rpc/v18"))
         # Every place the wire version is echoed (both response envelopes, health.get) must agree.
         # A missed constant is an envelope the plugin itself produces and cannot validate.
         echo = _wire_echoes(contracts.contract("cb.rpc"))
@@ -1302,6 +1323,7 @@ FROZEN_RPC_SHA256 = {
     "rpc.v14.json": "sha256:b454fab7e5b9fbc5e8fb536954486d01b0a3c580b55b8858450734f37357cc4e",
     "rpc.v15.json": "sha256:5d689b0cffce9ce6043ed5c9e60ab27f3a68f31462a0cc27572147b08c3772e7",
     "rpc.v16.json": "sha256:9b10439576fd667f9554c638bd92a7fccffd7ecaef6cef81bd23e1414e3cf46d",
+    "rpc.v17.json": "sha256:c8444ba5ee7fb7d89375deb1fa4f2595d2754761fdbd01e376f4725f37cbd997",
 }
 
 #: The superseded storage snapshots stay on disk and stay byte-identical: a later amendment is a
@@ -1332,10 +1354,10 @@ class V5AmendmentTest(unittest.TestCase):
             with self.subTest(filename=filename):
                 digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
                 self.assertEqual(f"sha256:{digest}", expected)
-        for version in range(1, 17):
+        for version in range(1, 18):
             # Not in the inventory, and not silently repurposed: history stays history.
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v17.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v18.json")
 
     def test_v5_adds_only_the_outline_check_and_assist_surface(self) -> None:
         # The v5 snapshot, not the live inventory: v6 appended the Parent Studio family afterwards.
@@ -1731,7 +1753,7 @@ class V6AmendmentTest(unittest.TestCase):
             self.assertNotIn(f"rpc.v{version}.json", contracts.CONTRACT_FILES.values())
         for version in (1, 2, 3, 4, 5):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v17.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v18.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v11.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
@@ -2629,7 +2651,7 @@ class V10AmendmentTest(unittest.TestCase):
             expected = {**FROZEN_RPC_SHA256, **FROZEN_DB_SHA256}[filename]
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v17.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v18.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v11.json")
 
     def test_v10_adds_no_error_code_and_no_vocabulary_change(self) -> None:
@@ -2957,7 +2979,7 @@ class V11AmendmentTest(unittest.TestCase):
             expected = {**FROZEN_RPC_SHA256, **FROZEN_DB_SHA256}[filename]
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v17.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v18.json")
         self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v11.json")
 
     def test_docs_publish_the_v11_delta(self) -> None:
@@ -3144,11 +3166,11 @@ class V14AmendmentTest(unittest.TestCase):
     def test_the_v13_snapshot_is_superseded_history(self) -> None:
         digest = hashlib.sha256((contracts.CONTRACT_DIR / "rpc.v13.json").read_bytes()).hexdigest()
         self.assertEqual(f"sha256:{digest}", FROZEN_RPC_SHA256["rpc.v13.json"])
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v17.json")
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 17)
-        # v17 supersedes v16; v16, v15 and v14 remain frozen predecessors pinned on disk.
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v18.json")
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 18)
+        # v18 supersedes v17; v17, v16, v15 and v14 remain frozen predecessors pinned on disk.
         self.assertEqual(contracts.contract("cb.rpc")["x-supersedes"],
-                         "https://contracts.coursebook.hermes/rpc/v16")
+                         "https://contracts.coursebook.hermes/rpc/v17")
 
     def test_the_method_writes_one_layer_one_evidence_row(self) -> None:
         schema = contracts.method_schema(self.METHOD)
@@ -3355,7 +3377,7 @@ class DbV10AmendmentTest(unittest.TestCase):
 
     def test_the_pane_read_needs_no_rpc_bump(self) -> None:
         """``binding`` is an open object, so ``snapshot_failures`` is not a contract amendment."""
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v17.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v18.json")
         binding = contracts.method_schema("binding.get")["response"]["properties"]["binding"]
         closed = binding["oneOf"][1]
         self.assertNotIn(
@@ -3410,7 +3432,7 @@ class ChecklistConfirmationWireTest(unittest.TestCase):
             )
 
     def test_the_wire_version_moved_only_for_the_blueprint(self) -> None:
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 17)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 18)
         answer = contracts.method_schema("attempt.submit")["request"]["properties"]["answer"]
         self.assertFalse(answer["additionalProperties"])
         self.assertEqual(sorted(answer["properties"]), ["kind", "selection", "text"])
@@ -3894,19 +3916,19 @@ class V17AmendmentTest(unittest.TestCase):
                     {"recorded", "missing", "unreadable"},
                 )
 
-    def test_the_wire_echo_moved_to_seventeen_everywhere(self) -> None:
+    def test_the_wire_echo_moved_to_eighteen_everywhere(self) -> None:
         current = contracts.contract("cb.rpc")
         echoes = _wire_echoes(current)
         self.assertEqual(len(echoes), 4, echoes)
         for path, value in echoes:
-            self.assertEqual(value, 17, path)
-        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 17)
-        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v17.json")
-        self.assertEqual(current["x-contract-version"], 17)
-        self.assertEqual(current["$id"], "https://contracts.coursebook.hermes/rpc/v17")
-        self.assertEqual(current["title"], "Coursebook backend RPC v17")
+            self.assertEqual(value, 18, path)
+        self.assertEqual(contracts.WIRE_CONTRACT_VERSION, 18)
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v18.json")
+        self.assertEqual(current["x-contract-version"], 18)
+        self.assertEqual(current["$id"], "https://contracts.coursebook.hermes/rpc/v18")
+        self.assertEqual(current["title"], "Coursebook backend RPC v18")
         self.assertEqual(
-            current["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v16"
+            current["x-supersedes"], "https://contracts.coursebook.hermes/rpc/v17"
         )
 
     def test_v15_and_v16_snapshots_stay_byte_identical_history(self) -> None:

@@ -190,7 +190,8 @@ class MediaGenerationTest(KernelCase):
         with db.read() as connection:
             page = generation.learner_page(connection, self.lesson_id)
         self.assertEqual(page["provenance"]["outcome"], "model_assessed")
-        self.assertFalse(page["provenance"]["check_enabled"])
+        self.assertTrue(page["provenance"]["check_enabled"])
+        self.assertFalse(page["provenance"]["independent"])
         self.assertIn("not independently validated", page["provenance"]["warning"])
         media = page["media"]
         self.assertEqual(len(media), 2)

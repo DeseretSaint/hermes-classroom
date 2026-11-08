@@ -218,8 +218,10 @@ class LegacyDocumentHashTest(unittest.TestCase):
         source = (
             Path(__file__).resolve().parents[1] / "coursebook" / "domain.py"
         ).read_text(encoding="utf-8")
-        self.assertIn("document = lesson_document.document_from_page(authored, check_id=check_id)", source)
-        self.assertNotIn('authored, check_id=check_id, locale=', source)
+        # H-185 renamed the projected page local (the authored page is merged with its generated
+        # media first); the property under test is unchanged: no locale is handed over.
+        self.assertIn("document = lesson_document.document_from_page(page, check_id=check_id)", source)
+        self.assertNotIn("document_from_page(page, check_id=check_id, locale=", source)
 
 
 class ReviewTargetScaffoldTest(unittest.TestCase):

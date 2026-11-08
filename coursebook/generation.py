@@ -8347,7 +8347,12 @@ def _author_section(
                     _json(check_payloads["reference"]),
                     locale,
                     "passed" if state == "validated" else ("pending" if state == "model_assessed" else "failed"),
-                    "open" if state == "validated" else "closed",
+                    # H-185: a model_assessed lesson's check is *usable* (the learner may open and
+                    # answer it) while its audit stays `pending` — no same-model pass is recorded as
+                    # an independent audit. The attempt lane in `domain.attempt.submit` admits a
+                    # pending audit only for a check bound to a `model_assessed` lesson, and the
+                    # served page carries the model-assessed provenance warning.
+                    "open" if state in ("validated", "model_assessed") else "closed",
                     timestamp,
                 ),
             )
@@ -8377,7 +8382,7 @@ def _author_section(
         "lesson_id": lesson_id,
         "check_id": check_id,
         "state": state,
-        "check_enabled": state == "validated",
+        "check_enabled": state in ("validated", "model_assessed"),
         "audit_state": "passed" if state == "validated" else ("pending" if state == "model_assessed" else "failed"),
         "validation_id": validation_id,
         "validation_verdict": verdict["verdict"],
@@ -8446,25 +8451,35 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
                 raise LessonNotAvailable("stored lesson page announces a check answer; refusing to serve it")
     # A model-assessed page is readable, but the warning travels with it: a learner or parent
     # must not read a same-model / no-research pass as validation.
-    validation = validation_record(connection, row.get("validation_id"))
-    if row["state"] == "model_assessed":
-        page["provenance"] = {
+    page["provenance"] = lesson_provenance(connection, row["state"], row.get("validation_id"))
+    return page
+
+
+def lesson_provenance(connection: sqlite3.Connection, state: str, validation_id: str | None) -> dict[str, Any]:
+    """The provenance block a served lesson page carries (H-105/H-185).
+
+    ``independent`` is true only for a ``validated`` row. A ``model_assessed`` row is served and
+    its check is usable, but the block says so plainly: the author model assessed its own page, so
+    the pass is not an independent one. The warning is read from the validation record (so it names
+    the facts-unverified / same-model / unidentified reason) and is never replaced by a claim.
+    """
+    validation = validation_record(connection, validation_id)
+    if state == "model_assessed":
+        return {
             "outcome": OUTCOME_MODEL_ASSESSED,
             "independent": False,
             "facts_unverified": bool((validation or {}).get("facts_unverified")),
-            "check_enabled": False,
+            "check_enabled": True,
             "warning": (validation or {}).get("warning")
             or "model assessed, not independently validated: treat this page as a proposal.",
         }
-    else:
-        page["provenance"] = {
-            "outcome": (validation or {}).get("outcome") or OUTCOME_INDEPENDENT,
-            "independent": True,
-            "facts_unverified": False,
-            "check_enabled": True,
-            "warning": None,
-        }
-    return page
+    return {
+        "outcome": (validation or {}).get("outcome") or OUTCOME_INDEPENDENT,
+        "independent": True,
+        "facts_unverified": False,
+        "check_enabled": True,
+        "warning": None,
+    }
 
 
 #: The only media fields a learner-facing page publishes. ``spec``, ``transcript`` and
@@ -8480,6 +8495,16 @@ _LESSON_MEDIA_FIELDS = (
     "degraded",
     "reason",
 )
+
+
+def stored_lesson_media(row: dict[str, Any]) -> list[dict[str, Any]]:
+    """Public read of the generated media allowlist for one ``gen_lessons`` row.
+
+    ``lesson.page`` and ``gen.learner_page`` both merge this into the served page so the artifact
+    id, MIME and honest degraded reason reach the learner; ``page_json`` alone keeps only the
+    authoring spec.
+    """
+    return _stored_lesson_media(row)
 
 
 def _stored_lesson_media(row: dict[str, Any]) -> list[dict[str, Any]]:

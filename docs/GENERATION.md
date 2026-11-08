@@ -364,10 +364,13 @@ v10). They are their own fields; they are never written into `dials`, which stay
   An older document with no validation row returns `validation: null`; it is never upgraded to
   independent on read.
 * Lessons author under the plan's research status. A model-assessed lesson is stored in
-  `gen_lessons.state = 'model_assessed'`: `learner_page()` serves it with
-  `provenance = {outcome, independent: false, facts_unverified, check_enabled: false, warning}` and
-  its check stays `closed` with `audit_state = 'pending'`. A `needs_review` lesson is still
-  refused. No same-model pass can enable a graded check.
+  `gen_lessons.state = 'model_assessed'`: `learner_page()` and `lesson.page` serve it with
+  `provenance = {outcome, independent: false, facts_unverified, check_enabled: true, warning}`.
+  Its check is `open` with `audit_state = 'pending'`, so the page is usable — but a same-model
+  pass never records an independent audit. `attempt.submit` admits that pending audit only for a
+  check bound to a `model_assessed` lesson; any other pending/failed check keeps the
+  `check_not_audited` refusal. A `needs_review` lesson is still refused. No same-model pass is
+  ever reported as independent validation.
 
 ## 6. Lessons, checks and answer separation
 
@@ -543,17 +546,20 @@ Two stored shapes project into the same `$defs/lesson_document`:
   `worked_example`, `learner_explanation`, `media`, `sources`) and attaches the linked check id.
   The row is not rewritten: an older page keeps its v7 bytes and gains `document` at read.
 * `lesson.page` prefers the run's **authored** page: an objective whose plan has a
-  `gen_lessons` row in state `validated` is projected with `document_from_page`, which publishes
-  the authored `short` beside each `deep`. A `model_assessed` lesson is deliberately not promoted
-  here until the wire carries its provenance warning (see `docs/H15-VALIDATOR-INDEPENDENCE.md`);
-  it keeps the durable `lesson_segments` projection, and its generated media reaches the run as
-  `lesson_segments(kind='media')` seeded by `media.seed_authored_media`, which accepts both
-  `validated` and `model_assessed` lessons. Every other section — a pack/composed section, a
+  `gen_lessons` row in state `validated` or `model_assessed` is projected with
+  `document_from_page`, which publishes the authored `short` beside each `deep`. Since H-185 the
+  wire carries the lesson provenance (`lesson.page.provenance`), so a `model_assessed` page is
+  served too, with `independent: false` and a warning that says the author model assessed its own
+  page — never that a second model did. A `needs_review`/rejected page is still refused. Generated
+  media from `gen_lessons.media_json` is merged into the served page with its text equivalent and
+  honest degraded reason (media.seed_authored_media also projects it into a new run's
+  `lesson_segments(kind='media')`). Every other section — a pack/composed section, a
   chat-written transcript, a page that predates the guided writer, or a stored page that no longer
   validates — keeps the durable `lesson_segments` projection and therefore reports
-  `textbook_only`. Teaching prose maps positionally to `orient`/`explain`/`recap`, a
-  `check_prompt` segment becomes the `practice` block, and a `media` segment becomes a media child
-  of the preceding block.
+  `textbook_only`. A generated page with no teaching segments is not served blank: it falls back
+  and its `view_note` names the missing teaching segments. Teaching prose maps positionally to
+  `orient`/`explain`/`recap`, a `check_prompt` segment becomes the `practice` block, and a
+  `media` segment becomes a media child of the preceding block.
 
 Rules the projection cannot bend:
 

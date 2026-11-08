@@ -1518,6 +1518,25 @@ def _attempt_rows_before(connection, enrollment_id: str, check_id: str) -> int:
     return int(row["n"] if row else 0)
 
 
+def _check_belongs_to_model_assessed_lesson(connection, check_id: str) -> bool:
+    """Whether a check is the one a *model_assessed* generated lesson owns (H-185).
+
+    A model_assessed lesson's check is usable while its audit stays ``pending``: a same-model
+    pass cannot certify an independent audit, so ``attempt.submit`` admits the pending audit only
+    for exactly this case. Any other pending/failed check keeps the refusal. A profile with no
+    generation tables returns False, so the gate is unchanged for pack/chat courses.
+    """
+    try:
+        row = connection.execute(
+            "SELECT l.state FROM gen_lesson_checks g JOIN gen_lessons l ON l.id = g.lesson_id"
+            " WHERE g.check_id = ? ORDER BY g.rowid DESC LIMIT 1",
+            (check_id,),
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return False
+    return row is not None and str(row["state"]) == "model_assessed"
+
+
 def _classify_evidence(connection, enrollment_id: str, check_id: str, *, targets_visible: bool | None = None) -> str:
     """How this answer was produced.
 
@@ -1787,10 +1806,17 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
                 check_state=check["state"],
             )
         if check["audit_state"] != "passed":
-            raise RpcError.of(
-                "POLICY_VIOLATION", "this check did not pass its pre-lesson audit and cannot be graded.",
-                reason="check_not_audited", audit_state=check["audit_state"],
-            )
+            # H-185: a model_assessed lesson's check is usable. Its audit stays `pending` because
+            # the author model assessed its own page; admitting the attempt is not a claim that the
+            # audit was independent, and the served page carries the model-assessed warning.
+            if not (
+                str(check["audit_state"]) == "pending"
+                and _check_belongs_to_model_assessed_lesson(connection, str(check["id"]))
+            ):
+                raise RpcError.of(
+                    "POLICY_VIOLATION", "this check did not pass its pre-lesson audit and cannot be graded.",
+                    reason="check_not_audited", audit_state=check["audit_state"],
+                )
         # A source update pauses dependent generated checks pending review; grading against
         # changed content would manufacture evidence the plan no longer supports.
         source_ledger.assert_check_current(connection, str(check["id"]))
@@ -2934,12 +2960,18 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
 
 
 def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
-    """The validated authored page for this objective, if the generation pipeline wrote one.
+    """The authored page for this objective, whatever its validation strength (H-185).
 
     ``gen_lessons`` is keyed by ``(section, plan_hash, version)`` and the section names its
     objective refs, so the objective is the only join key the kernel has. A profile that has never
     run the pipeline has no ``gen_*`` tables: that is a normal course built from packs or chat
     segments, not an error, and it stays on the segment projection.
+
+    Both ``validated`` (independently checked) and ``model_assessed`` (the author model assessed
+    its own page) rows are returned, because the default install has no second validator and a
+    model-assessed page must still be readable. The returned ``state`` and ``validation_id`` let
+    the caller label the page honestly; nothing here promotes one state to the other. A
+    ``validated`` row is preferred when both exist for the same section+hash.
     """
     try:
         document = connection.execute(
@@ -2956,8 +2988,9 @@ def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
         if section is None:
             return None
         lesson = connection.execute(
-            "SELECT page_json FROM gen_lessons WHERE section_id = ? AND plan_hash = ?"
-            " AND state = 'validated' ORDER BY version DESC, rowid DESC LIMIT 1",
+            "SELECT page_json, state, validation_id, media_json FROM gen_lessons"
+            " WHERE section_id = ? AND plan_hash = ? AND state IN ('validated', 'model_assessed')"
+            " ORDER BY (state = 'validated') DESC, version DESC, rowid DESC LIMIT 1",
             (str(section["id"]), str(document["plan_hash"])),
         ).fetchone()
     except sqlite3.OperationalError:
@@ -2965,7 +2998,14 @@ def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
     if lesson is None:
         return None
     page = _json_load(lesson["page_json"], None)
-    return page if isinstance(page, dict) and page else None
+    if not isinstance(page, dict) or not page:
+        return None
+    return {
+        "page": page,
+        "state": str(lesson["state"]),
+        "validation_id": lesson["validation_id"],
+        "media": generation.stored_lesson_media(dict(lesson)),
+    }
 
 
 @_handler("lesson.page")
@@ -3048,9 +3088,12 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         # returned: no column, no rewrite, and an older section gains a document on read instead
         # of needing a migration. The check attaches to one block, never to a view.
         #
-        # A section authored by the lesson pipeline has a validated page in `gen_lessons`, and that
-        # page carries the authored `short` beside each `deep`. Project it with
-        # `document_from_page`, which publishes only shorts the author wrote. Everything else (a
+        # A section authored by the lesson pipeline has a page in `gen_lessons`, and that page
+        # carries the authored `short` beside each `deep`. Project it with `document_from_page`,
+        # which publishes only shorts the author wrote. H-185: a `model_assessed` page is served
+        # too, with a provenance block that says it was assessed by its own author model and is
+        # not an independent pass — the wire carries the warning the old code waited for before
+        # promoting it. A `needs_review`/rejected page is still refused. Everything else (a
         # pack/composed section, a chat-written transcript, or a page whose stored document no
         # longer validates) keeps the segment projection and therefore stays `textbook_only`.
         #
@@ -3062,15 +3105,33 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         active_check = next((row for row in checks if row["state"] == "open"), checks[0] if checks else None)
         check_id = active_check["id"] if active_check is not None else None
         document = None
+        provenance = None
+        authored_incomplete = False
         authored = _authored_lesson_page(connection, objective)
         if authored is not None:
+            page = dict(authored["page"])
+            # H-169/H-185: `media_json` is the authoritative record after the media caller
+            # attached artifact ids, MIME and honest degraded reasons; the authoring snapshot in
+            # `page_json` still holds the pre-generation spec. Merge the generated list in so the
+            # served document carries the real artifact and its text equivalent.
+            if authored["media"]:
+                page["media"] = authored["media"]
             try:
-                document = lesson_document.document_from_page(authored, check_id=check_id)
+                document = lesson_document.document_from_page(page, check_id=check_id)
             except lesson_document.LessonDocumentError:
                 # A stored page that no longer validates is refused, not repaired: the learner
                 # still gets the durable segment text, and the failure is visible in the document
                 # state rather than in a half-built Guided view.
                 document = None
+            if document is not None and not document["blocks"]:
+                # Genuinely incomplete: a generated row with no teaching segments must not be
+                # served as a blank page. Keep the incomplete state and name what is missing.
+                document = None
+                authored_incomplete = True
+            elif document is not None:
+                provenance = generation.lesson_provenance(
+                    connection, authored["state"], authored["validation_id"]
+                )
         if document is None:
             document = lesson_document.document_from_segments(
                 [dict(row) for row in segments],
@@ -3081,6 +3142,13 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                     row["id"]: {"kind": row["kind"], "mime": row["mime"]} for row in artifacts
                 },
             )
+            if authored_incomplete and not document["blocks"]:
+                # The generated page had no teaching segments and the chat wrote none either.
+                # Name the missing piece instead of a generic "no content" note.
+                document["view_note"] = (
+                    "The generated lesson page is missing teaching segments; the lessons job "
+                    "owns this page."
+                )
     result = {
         "enrollment_id": enrollment["id"],
         "course": {"course_id": course["id"], "title": course["title"]},
@@ -3178,6 +3246,7 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             for row in attempts
         ],
         "state": objective["state"],
+        "provenance": provenance,
         "revision": int(enrollment["revision"]),
     }
     return int(enrollment["revision"]), result
