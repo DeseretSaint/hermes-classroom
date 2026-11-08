@@ -10,7 +10,7 @@
     {
       "kind": "guided",
       "heading": "Loosen only the named fastener",
-      "body": "Hold the caliper steady with one hand, loosen only the fastener your manual names, and slide the worn pad out. Stop if the caliper moves or the fastener will not turn by hand; do not force it.",
+      "body": "Hold the caliper steady with one hand, loosen only the fastener your manual names, and slide the worn pad out following the manual's release-sequence diagram. Stop if the caliper moves or the fastener will not turn by hand; do not force it.",
       "short": "Loosen the named fastener, slide the worn pad out, and stop if it binds."
     },
     {
@@ -22,7 +22,7 @@
     {
       "kind": "guided",
       "heading": "Verify the brake by hand",
-      "body": "Squeeze the lever and have a second person confirm what they see: the lever feels firm and the wheel spins free of the new pad. Do not ride until both are confirmed.",
+      "body": "Squeeze the lever and have a second person confirm what they see: the lever feels firm and the wheel spins free of the new pad. Compare what moves with the manual's moving-parts diagram. Do not ride until both are confirmed.",
       "short": "Get a second person to confirm a firm lever and a free wheel."
     }
   ],
@@ -37,7 +37,7 @@
     "answer": "The worn pad is out: the model matches the manual, the fastener was loosened with the named key, and the pad is photographed beside it.",
     "short": "Match the model, loosen the named fastener, slide the pad out and photograph it."
   },
-  "learner_explanation": "Work with your manual open: it, not this page, carries your brake's pad model, fastener and torque. Confirm each step only after you have done it, and take the photo and get the second person's confirmation: those are the evidence a reviewer could check, while this checklist records only what you confirm.",
+  "learner_explanation": "Work with your manual open: it, not this page, carries your brake's pad model, fastener and torque. This page ships four labelled schematics: the caliper parts, the release sequence, the pad seating and the parts that move; your manual's own diagrams remain the authority for your brake model. Confirm each step only after you have done it, and take the photo and get the second person's confirmation: those are the evidence a reviewer could check, while this checklist records only what you confirm.",
   "check": {
     "kind": "verification",
     "stimulus": {
@@ -106,6 +106,48 @@
           {"label": "Pad slot", "value": "top of the caliper"},
           {"label": "Worn pad", "value": "slides out of the pad slot"},
           {"label": "Mounting fastener", "value": "one fastener, key size from the manual"}
+        ]
+      }
+    },
+    {
+      "kind": "visual",
+      "role": "schematic",
+      "purpose": "Carry the order of the release steps so the learner can free the pad without forcing the caliper.",
+      "spec": "A labelled three-step line drawing: loosen the single caliper fastener, tilt the caliper just enough to free the pad, slide the worn pad out. Labels only, no measurements; the key size comes from the learner's manual.",
+      "text_equivalent": "The drawing labels three steps in order: loosen the one caliper fastener, tilt the caliper just enough to free the pad, slide the worn pad out. It carries no measurement; the key size and torque come from the learner's manual.",
+      "facts": {
+        "rows": [
+          {"label": "Step 1", "value": "loosen the single caliper fastener"},
+          {"label": "Step 2", "value": "tilt the caliper just enough to free the pad"},
+          {"label": "Step 3", "value": "slide the worn pad out"}
+        ]
+      }
+    },
+    {
+      "kind": "visual",
+      "role": "schematic",
+      "purpose": "Show the new pad seated square before the fastener is tightened, so the learner can check orientation without the manual's model-specific diagram.",
+      "spec": "A labelled parts diagram of the new pad seated square in the caliper against the rim, with the fastener shown before it is tightened. Labels only, no torque value; the torque comes from the learner's manual.",
+      "text_equivalent": "The drawing labels the new pad square in the caliper against the rim and the fastener before it is tightened. It carries no torque value; the torque comes from the learner's manual.",
+      "facts": {
+        "rows": [
+          {"label": "Pad position", "value": "square in the caliper against the rim"},
+          {"label": "Fastener", "value": "hand-tight, torque from the manual"},
+          {"label": "Pad entry", "value": "slides in from the open side of the caliper"}
+        ]
+      }
+    },
+    {
+      "kind": "visual",
+      "role": "schematic",
+      "purpose": "Show which parts move when the lever is squeezed, so the learner knows what the second person is checking.",
+      "spec": "A labelled diagram of the brake lever, the caliper arms, the pad and the rim, with arrows showing what moves when the lever is squeezed and what stays still. Labels only, no measurements.",
+      "text_equivalent": "The drawing labels the brake lever, the caliper arms, the pad and the rim, and shows with arrows that the lever moves the caliper arms, the arms press the pad onto the rim, and the rim spins free when the lever is released. No measurements are shown.",
+      "facts": {
+        "rows": [
+          {"label": "Brake lever", "value": "moves the caliper arms"},
+          {"label": "Caliper arms", "value": "press the pad onto the rim"},
+          {"label": "Wheel rim", "value": "spins free when the lever is released"}
         ]
       }
     }
