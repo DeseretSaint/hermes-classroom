@@ -200,7 +200,7 @@ Two operations do make a direct outbound HTTP request of Coursebook's own, both 
 Neither request carries a schoolwork payload, and neither uses a credential Coursebook holds.
 
 State lives in profile-scoped SQLite at `$HERMES_HOME/plugin-data/coursebook/data.db` and
-migrates on first use, through migrations `0001`-`0009` (schema v9) on this tree. Usage rows are
+migrates on first use, through migrations `0001`-`0010` (schema v10) on this tree. Usage rows are
 recorded locally, and only for a session this process observed as bound to an enrollment. "Local"
 describes storage, not inference.
 
