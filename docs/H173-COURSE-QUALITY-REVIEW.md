@@ -89,3 +89,22 @@ proof that a non-author reviewer can do it in 15 minutes. H-173d owns that proof
   is not a reason to block a course a human has approved.
 - It does not replace H-172. When H-172 lands, the same packet must run on its live single, short
   and full outputs; a fixture score is not a live score.
+
+## 6. Re-score after the S1 repair (H-173a)
+
+H-173a `t_c7fff5b4` repaired the S1 fixture pair and re-scored it at
+`docs/reviews/H173a-S1-single-brake-rescored.md`, produced with the same packet and accepted by
+`scripts/course_quality_review.py check`. D2, D3, D4, D5, D6 and D7 now score 3; D1 and D8 stay
+at 3. The repair touched `tests/fixtures/generation/plan_one_off.json` and
+`lesson_one_off.json` only: the four sections are now stated as steps inside one 45-minute
+session and the lesson walks all four; the checklist asks the learner to confirm a photo of the
+worn pad and a second person's check of the lever and free wheel (recorded as self-reported, with
+no attachment lane in this build); the reference answer matches the one-pad removal task; the plan
+records that no manufacturer manual was fetched and that no pad model, fastener size or torque
+value is claimed as fact; and every section declares a required labelled schematic that the
+lesson carries.
+
+The scores in section 2 stay as recorded for the sample before the repair. This is an
+author-run re-score by the engineer who made the fix, not an independent review, and it is not a
+live output. H-173d (`t_99f1cb89`) re-scores the same dimensions on H-172's live single-scope
+output when it lands; that is still the missing proof.

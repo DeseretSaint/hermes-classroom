@@ -1,6 +1,6 @@
 {
   "title": "Replace a bicycle brake pad",
-  "learner_outcome": "Replace one rim-brake pad on a bicycle, then verify the brake by hand before riding, following the manufacturer's manual.",
+  "learner_outcome": "Replace one rim-brake pad on a bicycle, then verify the brake by hand before riding. The brake model is not identified in this course, so the learner fetches the manufacturer's manual for their own brake and takes the pad model, fastener and torque values from it.",
   "delivery": "self_study",
   "time_estimate": {
     "sessions_per_week": 1,
@@ -8,7 +8,7 @@
     "weeks": 1,
     "basis": "none",
     "confidence": "low",
-    "rationale": "A single task; no attainment estimate is made because completion is verified, not learned.",
+    "rationale": "One 45-minute session covers the four steps of this single procedure: identify the pad, remove the worn pad, seat and tighten the new pad, verify the brake by hand. The four sections are steps inside that one session, not four separate sessions. No attainment figure is claimed because completion is verified, not learned.",
     "benchmark": null,
     "attainment_hours": null
   },
@@ -18,7 +18,7 @@
       "title": "Identify the correct replacement pad for the brake model",
       "evidence_target": "procedure",
       "evidence_criteria": [
-        "Matches pad model to the manual"
+        "The pad model printed in the manual for this brake is written down"
       ],
       "support": "unverified"
     },
@@ -27,7 +27,8 @@
       "title": "Remove the worn pad without damaging the caliper",
       "evidence_target": "procedure",
       "evidence_criteria": [
-        "Pad removed with the correct fastener"
+        "The worn pad is removed with the fastener the manual names",
+        "A photo of the worn pad beside the loosened fastener is taken for the learner's own record"
       ],
       "support": "unverified"
     },
@@ -36,8 +37,8 @@
       "title": "Seat and tighten the new pad to the manual's specification",
       "evidence_target": "procedure",
       "evidence_criteria": [
-        "Pad seated square",
-        "Fastener tightened to the manual's torque"
+        "The new pad is seated square in the caliper",
+        "The fastener is tightened to the torque printed in the manual for this brake model"
       ],
       "support": "unverified"
     },
@@ -46,8 +47,8 @@
       "title": "Verify the brake by hand before riding",
       "evidence_target": "procedure",
       "evidence_criteria": [
-        "Lever feels firm",
-        "Wheel spins without rubbing"
+        "A second person confirms the lever is firm",
+        "The wheel spins without rubbing after the new pad is fitted"
       ],
       "support": "unverified"
     }
@@ -56,54 +57,72 @@
     {
       "ordinal": 1,
       "title": "Identify the pad",
-      "lesson_intent": "Match the pad model to the manufacturer's manual before touching the brake.",
-      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
+      "lesson_intent": "Match the pad model and the caliper fastener to the manufacturer's labelled parts diagram before touching the brake.",
+      "media_need": {
+        "construct": "The labelled parts diagram: pad model, pad slot and the single caliper mounting fastener",
+        "image": {"level": "required", "role": "schematic"},
+        "audio": {"level": "none", "role": "none"}
+      },
       "objective_refs": [
         1
       ],
       "context_needs": [
-        "manufacturer manual"
+        "the manufacturer's manual for the learner's brake model",
+        "the manual's labelled diagram of the caliper"
       ],
       "source_ids": []
     },
     {
       "ordinal": 2,
       "title": "Remove the worn pad",
-      "lesson_intent": "Remove the worn pad with the fastener the manual names, without damaging the caliper.",
-      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
+      "lesson_intent": "Follow the labelled sequence for releasing the caliper fastener and sliding the worn pad out without damaging the caliper.",
+      "media_need": {
+        "construct": "The labelled diagram showing the sequence of steps that release the caliper fastener and free the pad",
+        "image": {"level": "required", "role": "schematic"},
+        "audio": {"level": "none", "role": "none"}
+      },
       "objective_refs": [
         2
       ],
       "context_needs": [
-        "manufacturer manual",
-        "correct tools"
+        "the manufacturer's manual for the learner's brake model",
+        "the hex key the manual names for the caliper fastener"
       ],
       "source_ids": []
     },
     {
       "ordinal": 3,
       "title": "Seat and tighten",
-      "lesson_intent": "Seat the new pad square and tighten the fastener to the manual's specification.",
-      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
+      "lesson_intent": "Seat the new pad square in the caliper and tighten the fastener to the torque the manual prints for this brake model.",
+      "media_need": {
+        "construct": "The labelled parts diagram showing pad orientation and seating before the fastener is tightened",
+        "image": {"level": "required", "role": "schematic"},
+        "audio": {"level": "none", "role": "none"}
+      },
       "objective_refs": [
         3
       ],
       "context_needs": [
-        "manufacturer manual",
-        "torque specification"
+        "the manufacturer's manual for the learner's brake model",
+        "the torque value the manual prints for the caliper fastener"
       ],
       "source_ids": []
     },
     {
       "ordinal": 4,
       "title": "Verify by hand",
-      "lesson_intent": "Run the manual's hand-verification checklist before any ride.",
-      "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
+      "lesson_intent": "Run the manual's hand-verification steps and have a second person confirm the lever and the free wheel before any ride.",
+      "media_need": {
+        "construct": "The labelled diagram of the parts that move when the brake lever is squeezed",
+        "image": {"level": "required", "role": "schematic"},
+        "audio": {"level": "none", "role": "none"}
+      },
       "objective_refs": [
         4
       ],
       "context_needs": [
-        "manufacturer manual"
+        "the manufacturer's manual for the learner's brake model",
+        "a second person to confirm the hand check"
       ],
       "source_ids": []
     }
@@ -114,41 +133,49 @@
       "kind": "verification",
       "evidence_target": "procedure",
       "count": 1,
-      "independent_evidence": false
+      "independent_evidence": false,
+      "notes": "The learner writes down the pad model read from their own manual; the photo the learner takes for objective 2 shows the same pad."
     },
     {
       "objective_ref": 2,
       "kind": "verification",
       "evidence_target": "procedure",
       "count": 1,
-      "independent_evidence": false
+      "independent_evidence": false,
+      "notes": "The checklist asks the learner to confirm the named fastener and the photo of the worn pad beside it. The attempt records that confirmation as self-reported; the photo stays the learner's own record, and no upload lane exists in this build."
     },
     {
       "objective_ref": 3,
       "kind": "verification",
       "evidence_target": "procedure",
       "count": 1,
-      "independent_evidence": false
+      "independent_evidence": false,
+      "notes": "The torque value is read from the learner's manual; the course states none, and the checklist asks the learner to confirm the fastener was tightened to that printed value."
     },
     {
       "objective_ref": 4,
       "kind": "verification",
       "evidence_target": "procedure",
       "count": 1,
-      "independent_evidence": false
+      "independent_evidence": false,
+      "notes": "The checklist asks the learner to confirm a second person checked the lever and the free wheel. That confirmation is recorded as the learner's self-report, never as independent evidence."
     }
   ],
   "context_needs": [
-    "manufacturer manual",
-    "correct tools",
-    "work stand"
+    "the manufacturer's manual for the learner's brake model",
+    "the hex key the manual names for the caliper fastener",
+    "a work stand or a way to hold the bicycle steady",
+    "a camera to photograph the removed pad",
+    "a second person for the hand verification"
   ],
   "source_ids": [],
   "exclusions": [
-    "Does not certify the procedure; authoritative manufacturer documentation and an expert check are required.",
+    "Does not cite or supply a manufacturer manual; the learner must fetch the manual for their own brake model.",
+    "Does not state a pad model, fastener size or torque value as fact; the example's model and key are stand-ins for what the learner's manual prints.",
+    "Does not certify the procedure; the manufacturer's documentation and an expert check remain the authority.",
     "No live-road test is part of this brief.",
     "Not for hydraulic, disc or e-bike brake systems."
   ],
   "spaced_review": false,
-  "evidence_note": null
+  "evidence_note": "No manufacturer manual was fetched for this course. The brake model is unknown here, all four objectives are marked unverified, and no pad model, fastener size or torque value is stated as fact. The example's pad model and key are stand-ins for the values printed in the learner's own manual."
 }

@@ -1,55 +1,68 @@
 {
-  "section_title": "Identify and remove",
+  "section_title": "Replace one brake pad",
   "segments": [
     {
       "kind": "model",
-      "heading": "Read the manual first",
-      "body": "Find the pad model in the manufacturer's manual before touching the brake. The manual names the tool and the fastener.",
-      "short": "Find the pad model in the manufacturer's manual before touching the brake."
+      "heading": "Read the manual before touching the brake",
+      "body": "Find the brake model in the manufacturer's manual and read off three things: the pad model, the fastener the caliper uses, and the torque the manual prints for that fastener. This page uses pad BR-42 and a 5 mm hex key as stand-ins for whatever your own manual prints.",
+      "short": "Read the pad model, fastener and torque from your own manual first."
     },
     {
       "kind": "guided",
-      "heading": "Remove with the listed tool",
-      "body": "Hold the caliper steady and loosen only the fastener the manual names. Stop if the caliper moves or the fastener will not turn by hand.",
-      "short": "Loosen only the fastener the manual names; stop if the caliper moves."
+      "heading": "Loosen only the named fastener",
+      "body": "Hold the caliper steady with one hand, loosen only the fastener your manual names, and slide the worn pad out. Stop if the caliper moves or the fastener will not turn by hand; do not force it.",
+      "short": "Loosen the named fastener, slide the worn pad out, and stop if it binds."
+    },
+    {
+      "kind": "guided",
+      "heading": "Seat the new pad and tighten it",
+      "body": "Slide the new pad into the caliper the way the labelled diagram shows, check that it sits square against the rim, then tighten the fastener to the torque your manual prints for this brake model.",
+      "short": "Seat the pad square, then tighten to the torque your manual prints."
+    },
+    {
+      "kind": "guided",
+      "heading": "Verify the brake by hand",
+      "body": "Squeeze the lever and have a second person confirm what they see: the lever feels firm and the wheel spins free of the new pad. Do not ride until both are confirmed.",
+      "short": "Get a second person to confirm a firm lever and a free wheel."
     }
   ],
   "worked_example": {
-    "prompt": "The manual lists pad model BR-42 and a 5 mm hex key.",
+    "prompt": "The manual for your brake lists a pad model and the hex key that fits the caliper fastener; this example uses pad BR-42 and a 5 mm key as stand-ins.",
     "steps": [
-      "Lay out the new pad and the 5 mm key",
-      "Confirm the pad model matches BR-42",
-      "Loosen the fastener and slide the worn pad out"
+      "Lay out the new pad and the key the manual names",
+      "Write down the pad model printed in the manual",
+      "Loosen only the caliper fastener and slide the worn pad out",
+      "Set the worn pad beside the loosened fastener for the photo"
     ],
-    "answer": "Worn pad removed with the listed key",
-    "short": "Lay out the pad and the listed key, then loosen the fastener and slide the worn pad out."
+    "answer": "The worn pad is out: the model matches the manual, the fastener was loosened with the named key, and the pad is photographed beside it.",
+    "short": "Match the model, loosen the named fastener, slide the pad out and photograph it."
   },
-  "learner_explanation": "Work through the checklist with the manual open. This is a verification list, not a quiz: you confirm each step honestly.",
+  "learner_explanation": "Work with your manual open: it, not this page, carries your brake's pad model, fastener and torque. Confirm each step only after you have done it, and take the photo and get the second person's confirmation: those are the evidence a reviewer could check, while this checklist records only what you confirm.",
   "check": {
     "kind": "verification",
     "stimulus": {
-      "prompt": "Tick each step only after you have done it with the manual open.",
+      "prompt": "Tick each step only after you have done it with the manual open, the photo taken, and the second person's confirmation heard.",
       "format": "verification",
       "choices": [],
       "items": [
         {
           "id": "item_1",
-          "label": "Pad model matched to the manual"
+          "label": "Pad model printed in the manual written down"
         },
         {
           "id": "item_2",
-          "label": "Worn pad removed with the listed tool"
+          "label": "Worn pad removed with the named fastener, and a photo of the worn pad beside the loosened fastener taken"
         },
         {
           "id": "item_3",
-          "label": "Caliper undamaged"
+          "label": "Second person confirmed the pad seated square, the lever firm and the wheel spinning free"
         }
       ]
     },
-    "learner_instructions": "Tick what is true. Completion is self-reported and is never presented as independently verified.",
+    "learner_instructions": "Tick what is true. This is a self-report: ticking the photo and second-person items records that you say you did them, and no tick here is presented as independently verified.",
     "evidence_target": "procedure",
     "accepted_answers": [
-      "all three steps ticked honestly"
+      "all three steps confirmed, including the photo taken and the second person's confirmation"
     ],
     "accepted_alternatives": [],
     "rubric": [
@@ -69,7 +82,7 @@
         "description": "Fastener loosened with the listed tool only"
       }
     ],
-    "reference_answer": "Both pads replaced, wheel seated, lever firm with 2 mm clearance",
+    "reference_answer": "Pad model matched to the manual and written down; worn pad removed with the named fastener and photographed beside it; new pad seated square; a second person confirms a firm lever and a free wheel.",
     "assistance_policy": {
       "hint": "available",
       "answer_marks_evidence_class": "none"
@@ -81,8 +94,23 @@
     }
   },
   "sources": [],
-  "media": [],
+  "media": [
+    {
+      "kind": "visual",
+      "role": "schematic",
+      "purpose": "Carry the pad, the pad slot and the single caliper fastener so the learner can match the manual's diagram to their own brake.",
+      "spec": "A labelled line drawing of a rim-brake caliper: the pad slot, the worn pad, and the one mounting fastener that holds the caliper. Labels in the learner's language, no measurements.",
+      "text_equivalent": "The drawing labels the pad slot, the worn pad and the single mounting fastener on the caliper. The diagram carries no measurement; every value comes from the learner's manual.",
+      "facts": {
+        "rows": [
+          {"label": "Pad slot", "value": "top of the caliper"},
+          {"label": "Worn pad", "value": "slides out of the pad slot"},
+          {"label": "Mounting fastener", "value": "one fastener, key size from the manual"}
+        ]
+      }
+    }
+  ],
   "parent_notes": null,
   "supervision_notes": [],
-  "learner_explanation_short": "Work through the checklist with the manual open; you confirm each step honestly."
+  "learner_explanation_short": "Keep your manual open: it carries the pad model, fastener and torque. Confirm each step only after doing it."
 }
