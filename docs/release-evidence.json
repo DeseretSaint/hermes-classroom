@@ -30,13 +30,13 @@
     "frames": 62,
     "claims_pass": 15,
     "claims_total": 15,
-    "text_nodes": 2282,
+    "text_nodes": 2266,
     "forced_color_frames": 6,
     "min_authored_ratio": 5.93,
     "ax_controls": 364,
     "ax_unnamed": 0,
     "overflow_px": 0,
-    "source": "audit/visual/m4-visual/audit.json at this commit; text_nodes is the sum over the 56 non-forced-colour frames (2,602 over all 62 frames)"
+    "source": "audit/visual/m4-visual/audit.json regenerated on wt/h146-classroom-rail at ae2494f (plugin 687613ab); text_nodes is the sum over the 56 non-forced-colour frames"
   },
   "m4_repro": {
     "command": "python3 scripts/m4v-repro-check.py",

@@ -37,6 +37,12 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 ### Reproducibility
 
+**Re-pin at `687613ab` (H-146, commit `ae2494f`).** `desktop/plugin.js` moved, so the audit was
+regenerated: `python3 scripts/m4v-audit.py` → 15 PASS, 0 not PASS, 62 frames,
+`plugin_sha256: 687613abde8d77ab6c1825a92b1bd3e0d0293d71a9f665c38d3bf44fa87bcc66` (branch
+`wt/h146-classroom-rail`). The reproducibility pair quoted below is the earlier measurement at
+`9735300e`; it has **not** been re-run at this pin.
+
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
 Run back to back on this pin (`0312a9ea…`), verbatim (scratch roots elided):

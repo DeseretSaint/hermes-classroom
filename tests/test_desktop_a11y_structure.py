@@ -246,8 +246,10 @@ for (const tab of ['Notebook', 'Quizzes', 'Evidence', 'Plan', 'Export']) {
 }
 
 // The list mode and the create flow are destinations of the same route.
+// H-146: "All courses" inside Course Detail returns Home; the catalog is its own destination,
+// and it carries the search/manage controls and the New course action.
 await clickText('button', 'All courses')
-await clickText('button', 'Search and manage courses')
+await navTo('courses')
 surfaces.push(await snapshot('courses-list'))
 await clickText('button', 'New course')
 surfaces.push(await snapshot('create-course'))
