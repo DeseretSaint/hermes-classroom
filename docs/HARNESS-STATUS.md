@@ -3,10 +3,10 @@
 Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
 
 **Current release candidate (measured on 2026-11-08):** merged `master`
-`33e75395b8cd7443f09b4ac8500942b5d12fc043` (H-120b `wt/h120b-practice-ui` @ `9aa2e6a` merged onto the H-105 + `cb.rpc` v16
-union `39659b7`). On that commit `cb.rpc` is
+`625c9397469cfaab95692a00abf5fd343a8dd493` (H-120b `wt/h120b-practice-ui` @ `9aa2e6a` merged onto the H-105 + `cb.rpc` v16
+union `39659b7`, re-landed on H-155 `ac301a1`). On that commit `cb.rpc` is
 v16 with 68 declared methods and 68 handlers, `cb.db` is v11 (`contracts/db.v11.json`, migrations
-`0001`-`0011`), the suite is `Ran 1998 tests … OK (skipped=1)`, and `desktop/plugin.js` is sha256
+`0001`-`0011`), the suite is `Ran 2007 tests … OK (skipped=1, expected failures=1)`, and `desktop/plugin.js` is sha256
 `0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543`. The row-by-row body below is
 the older `498b1da` snapshot it was written against; where a row says "on `master`" or quotes a
 contract version, read it as `498b1da`, not as the current tree.

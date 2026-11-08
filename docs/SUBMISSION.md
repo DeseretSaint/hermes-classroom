@@ -8,15 +8,15 @@ Status key: `[x]` verified on the commit named in the row, `[ ]` open, `[~]` par
 another owner. A gate is not `[x]` because code exists; it is `[x]` because a command ran against
 this commit and passed.
 
-Current measurement commit: **`33e75395b8cd7443f09b4ac8500942b5d12fc043`** (merged `master`, the H-120b conversation-practice
-surface `wt/h120b-practice-ui` @ `9aa2e6a` merged onto the H-105 + `cb.rpc` v16 union `39659b7`).
+Current measurement commit: **`625c9397469cfaab95692a00abf5fd343a8dd493`** (merged `master`, the H-120b conversation-practice
+surface `wt/h120b-practice-ui` @ `9aa2e6a` merged onto the H-105 + `cb.rpc` v16 union `39659b7`, re-landed on the H-155 engagement audit `ac301a1`).
 Every current-tree number in this file is re-derived there and checked by
 `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
 
 The tree carries `cb.rpc` v16 (68 declared methods, 68 handlers) and `cb.db` v11 (schema v11,
 migrations `0001`-`0011`): the conversation-practice amendment behind the existing check seam. The
-suite is `Ran 1998 tests … OK (skipped=1)` at that commit, measured independently of the branch.
+suite is `Ran 2007 tests … OK (skipped=1, expected failures=1)` at that commit, measured independently of the branch.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
@@ -43,15 +43,15 @@ branch-only evidence. The earlier harness evidence (`docs/HARNESS-E2E.md`, branc
 Each gate depends on the one above it. Do not start a later gate to save time; a failure there
 invalidates the earlier evidence.
 
-| # | Gate | Owner | Evidence on `33e7539` | Status |
+| # | Gate | Owner | Evidence on `625c939` | Status |
 | --- | --- | --- | --- | --- |
 | 1 | Contracts frozen | Atlas | `contracts/rpc.v16.json` (68 declared methods), `contracts/db.v11.json`, `docs/REVIEW_CB001.md` | [x] |
 | 2 | Platform skeleton passes admission | Sable | `bash scripts/validate-plugin.sh --ref b33a42f`: admission PASS, `node --check` PASS, desktop contract tests PASS; not re-run in this docs pass | [x] |
-| 3 | Backend kernel with migrations | Cinder | `cb.db` v11 / `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011`; suite `Ran 1998 tests … OK (skipped=1)` | [x] |
+| 3 | Backend kernel with migrations | Cinder | `cb.db` v11 / `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011`; suite `Ran 2007 tests … OK (skipped=1, expected failures=1)` | [x] |
 | 4 | Packs import and export | Lattice | Pack round-trip and export hash were last driven live at `29bede7`; the pack tests pass inside the 1,998-test suite on this tree, but no pack round-trip was re-driven here | [~] |
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | `PROBES.md`: 7 probes run, `pre_llm_call` replay FAIL, compression and Desktop render segments BLOCKED; not re-run in this pass | [~] |
-| 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `33e7539` and no video exists. Gate 5 and the recording path must close first | [ ] |
+| 7 | Demo scenarios pass on the release commit | Sentinel | `docs/ACCEPTANCE.md`; no Sentinel scenario has run on `625c939` and no video exists. Gate 5 and the recording path must close first | [ ] |
 | 8 | Release docs match shipped behavior | Harbor | this file, `README.md`, `docs/INSTALL.md`, `docs/M4-VISUAL-MEDIA-AUDIT.md`, `docs/RELEASE-EVIDENCE.md`; `python3 scripts/check-docs-truth.py --skip-tests` passes | [x] |
 | 9 | License present | DeseretSaint | No `LICENSE` at repository root; the decision is `t_6f2d2080`, blocked on DeseretSaint | [ ] owner decision |
 | 10 | Public repository pushed | DeseretSaint | source backup is pushed to the private `DeseretSaint/hermes-classroom` remote; making it public is publication and stays closed | [~] |
@@ -76,18 +76,18 @@ against.
 Run on the exact commit that will be pinned. Nothing else counts as evidence.
 
 ```
-python3 -m unittest discover -s tests -t .   # Ran 1998 tests, OK (skipped=1)
+python3 -m unittest discover -s tests -t .   # Ran 2007 tests, OK (skipped=1, expected failures=1)
 bash scripts/validate-plugin.sh --ref <sha>  # the release gate: a clean export of the commit
 bash scripts/validate.sh                     # pre-merge gate: tests, syntax, admission, doctor, probe
 python3 scripts/check-docs-truth.py          # docs quote the measured values
 ```
 
-Observed by this pass on `33e75395b8cd7443f09b4ac8500942b5d12fc043`:
+Observed by this pass on `625c9397469cfaab95692a00abf5fd343a8dd493`:
 
 ```
-Ran 1998 tests in 347.909s
+Ran 2007 tests in 330.563s
 
-OK (skipped=1)
+OK (skipped=1, expected failures=1)
 ```
 
 The release gate (`validate-plugin.sh`), the mounted backend trace (`validate.sh` step 5) and
@@ -269,8 +269,8 @@ resolved for the recording.
 | --- | --- |
 | Repository | `https://github.com/DeseretSaint/hermes-classroom` (private; source backup only) |
 | Release branch | `master` (pushed to `origin/master`; tags, catalog PR and publication remain operator-gated) |
-| Release candidate commit | `33e75395b8cd7443f09b4ac8500942b5d12fc043` — merged master: H-120b conversation-practice surface (`wt/h120b-practice-ui` @ `9aa2e6a`) onto the H-105 + `cb.rpc` v16 / `cb.db` v11 union (`39659b7`) |
-| Measured on that commit | suite `Ran 1998 tests … OK (skipped=1)`; `cb.rpc` v16 / 68 methods / 68 handlers; `cb.db` v11; `desktop/plugin.js` sha256 `0312a9ea…959df62b3f8543`; M4 62 frames, 15/15 claims PASS |
+| Release candidate commit | `625c9397469cfaab95692a00abf5fd343a8dd493` — merged master: H-120b conversation-practice surface (`wt/h120b-practice-ui` @ `9aa2e6a`) onto the H-105 + `cb.rpc` v16 / `cb.db` v11 union (`39659b7`), on top of the H-155 engagement audit (`ac301a1`) |
+| Measured on that commit | suite `Ran 2007 tests … OK (skipped=1, expected failures=1)`; `cb.rpc` v16 / 68 methods / 68 handlers; `cb.db` v11; `desktop/plugin.js` sha256 `0312a9ea…959df62b3f8543`; M4 62 frames, 15/15 claims PASS |
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
 | Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |
@@ -278,8 +278,8 @@ resolved for the recording.
 | Checklist | sections 1-7 of this file: six gates open (`[ ]`: 7, 9, 12, 13, 14, 15) and five partial (`[~]`: 4, 5, 6, 10, 11) |
 
 One gap is recorded rather than hidden: the catalog pins this documents commit, keeping the measured
-code commit `33e7539` one below it, because an entry cannot carry its own hash. The numbers above are
-measurements of `33e7539`; the catalog update after this file only corrects what the documents say
+code commit `625c939` one below it, because an entry cannot carry its own hash. The numbers above are
+measurements of `625c939`; the catalog update after this file only corrects what the documents say
 about them. The catalog
 pull request moves `sha`, `docs_url` and the docs record together once gates 5, 7, 9 and 10 close.
-The installed tree at `33e7539` is the one the gates ran on.
+The installed tree at `625c939` is the one the gates ran on.

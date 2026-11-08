@@ -3,12 +3,13 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on merged `master` `33e7539` — the H-105 + `cb.rpc` v16 union merge `39659b7` plus the
-H-120b conversation-practice surface (`wt/h120b-practice-ui` @ `9aa2e6a`) — and is pinned to the
+regenerated on merged `master` `625c939` — the H-105 + `cb.rpc` v16 union merge `39659b7` plus the
+H-120b conversation-practice surface (`wt/h120b-practice-ui` @ `9aa2e6a`), re-landed on the
+H-155 engagement audit `ac301a1` — and is pinned to the
 module that ships from that commit: `desktop/plugin.js` sha256
 `0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543`.
 
-That module is the one that ships from `33e7539`, the commit this audit was regenerated on, so this
+That module is the one that ships from `625c939`, the commit this audit was regenerated on, so this
 is the audit of the shipping module, not of a branch. The previous
 pin, `desktop/plugin.js` sha256
 `71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`, is history for the H-91 tree;

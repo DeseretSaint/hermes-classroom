@@ -1,8 +1,8 @@
 # Release evidence — what is measured, on which commit, and what is branch-only
 
 Status: the H-116 truth pass, re-derived on the merged release candidate `master`
-`33e75395b8cd7443f09b4ac8500942b5d12fc043` (H-120b `wt/h120b-practice-ui` @ `9aa2e6a` merged onto the H-105 + `cb.rpc` v16
-union `39659b7`). Every
+`625c9397469cfaab95692a00abf5fd343a8dd493` (H-120b `wt/h120b-practice-ui` @ `9aa2e6a` merged onto the H-105 + `cb.rpc` v16
+union `39659b7`, re-landed on H-155 `ac301a1`). Every
 number below was produced by a command in this pass on that commit unless a row names another
 commit. Machine-readable copy: `docs/release-evidence.json`, checked against the documents by
 `python3 scripts/check-docs-truth.py`.
@@ -12,11 +12,11 @@ blocked H-85 are fixed here, but no demo is recorded, no license exists, no live
 driven this exact commit, and the operator publication gate in `docs/SUBMISSION.md` §0 is closed.
 No tag, catalog pull request or announcement was made.
 
-## Measured on `33e7539`
+## Measured on `625c939`
 
 | Fact | Value | Command |
 | --- | --- | --- |
-| Suite | `Ran 1998 tests in 347.909s`, `OK (skipped=1)` | `python3 -m unittest discover -s tests -t .` |
+| Suite | `Ran 2007 tests in 330.563s`, `OK (skipped=1, expected failures=1)` | `python3 -m unittest discover -s tests -t .` |
 | `cb.rpc` | v16, 68 declared methods | `contracts/rpc.v16.json` (`$defs.method.enum` length) |
 | Handlers | 68, asserted by the registry test inside the suite | registry test in the suite |
 | `cb.db` | v11, `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011` | `coursebook/db.py`, `contracts/db.v11.json` |
@@ -49,7 +49,7 @@ evidence and do not cite their numbers as current.
 
 ## What this pass did not measure
 
-- No live Desktop window and no mounted backend trace on `33e7539`; `scripts/validate.sh` step 5 was
+- No live Desktop window and no mounted backend trace on `625c939`; `scripts/validate.sh` step 5 was
   not run here (it needs a mounted backend and an isolated home).
 - `bash scripts/validate-plugin.sh` (the export admission gate) and `hermes plugins doctor` were not
   re-run in this docs pass. Rows that cite them cite the `29bede7` record or mark the gap.

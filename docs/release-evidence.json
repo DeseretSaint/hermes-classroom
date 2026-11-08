@@ -1,14 +1,14 @@
 {
-  "measured_commit": "33e75395b8cd7443f09b4ac8500942b5d12fc043",
-  "measured_commit_short": "33e7539",
+  "measured_commit": "625c9397469cfaab95692a00abf5fd343a8dd493",
+  "measured_commit_short": "625c939",
   "measured_at": "2026-11-08",
   "branch": "master",
-  "merge_commit": "33e75395b8cd7443f09b4ac8500942b5d12fc043",
+  "merge_commit": "625c9397469cfaab95692a00abf5fd343a8dd493",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "ran": 1998,
+    "ran": 2007,
     "skipped": 1,
-    "verdict": "OK (skipped=1)"
+    "verdict": "OK (skipped=1, expected failures=1)"
   },
   "rpc": {
     "contract": "cb.rpc",
