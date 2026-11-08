@@ -892,11 +892,16 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn('data-cb-trailhead', html)
         self.assertIn('data-cb-course-contour', html)
         self.assertIn('data-cb-trailhead-actions', html)
-        # H-94 V2-5: the desk carries one facts line, not a three-cell stat strip.
-        self.assertEqual(html.count('data-cb-desk-facts='), 1, html)
+        # H-189: the plate no longer repeats the route's own counts. One stat strip would compete
+        # with the route, so there is none inside the plate at all.
+        self.assertNotIn('data-cb-desk-facts=', html)
         self.assertNotIn('data-cb-desk-stats', html)
         self.assertNotIn('data-cb-desk-stat=', html)
         self.assertNotIn('data-cb-course-stamp', html)
+        # H-189: every classroom carries a cover; none of them is a drawn contour or an empty-alt
+        # image. The shelf is type over paper, and the trailhead is the only object above it.
+        self.assertIn('data-cb-slot-cover="typographic"', html)
+        self.assertNotIn('<img alt=""', html)
         # H-176: the plate leads, the path is joined directly below it, and the classroom shelf
         # follows the trail instead of sitting above it.
         self.assertLess(html.index('data-cb-continue'), html.index('data-cb-path'))

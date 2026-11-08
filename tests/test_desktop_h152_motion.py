@@ -345,7 +345,10 @@ class FullMotionTest(MotionHarness):
         self.assertEqual(motion["ceiling"], 600)
         ladder = motion["ladder"]
         self.assertTrue(90 <= ms_of(ladder["press"]) <= 120, ladder["press"])
-        self.assertLessEqual(ms_of(ladder["route"]), 180, ladder["route"])
+        # H-189 raised the route/edge beat from 180 ms to 280 ms so the trailhead's one arrival
+        # sits inside the card's authored 240-320 ms window. It is still one ladder rung, still
+        # under the 600 ms ceiling, and the reduced-motion frame is still static.
+        self.assertTrue(240 <= ms_of(ladder["route"]) <= 320, ladder["route"])
         self.assertTrue(120 <= ms_of(ladder["verdict"]) <= 180, ladder["verdict"])
         self.assertLessEqual(ms_of(ladder["complete"]), 600, ladder["complete"])
         self.assertLessEqual(ms_of(ladder["fade"]), 120, ladder["fade"])
@@ -497,7 +500,9 @@ class MotionSourceTest(unittest.TestCase):
         # Every transition the module authors comes through the hook, never as a literal duration.
         literals = re.findall(r"transition:\s*'([^']+)'", self.source)
         self.assertEqual(literals, ["none"])
-        self.assertEqual(self.source.count("motion.transition("), 2)
+        # More than one call site is allowed (press, route settle, the current stop's finite
+        # cycle); what matters is that each names a beat, which the duration test above proves.
+        self.assertGreaterEqual(self.source.count("motion.transition("), 2)
 
     def test_no_keyframes_no_animation_no_shadow_no_gradient(self) -> None:
         self.assertNotIn("@keyframes", self.source)
@@ -518,7 +523,7 @@ class MotionSourceTest(unittest.TestCase):
         durations = re.findall(r"^\s+(press|route|verdict|complete|fade): '(\d+ms)'", self.source, re.M)
         self.assertEqual(
             durations,
-            [("press", "100ms"), ("route", "180ms"), ("verdict", "160ms"), ("complete", "600ms"), ("fade", "120ms")],
+            [("press", "100ms"), ("route", "280ms"), ("verdict", "160ms"), ("complete", "600ms"), ("fade", "120ms")],
         )
 
     def test_the_only_utility_transition_is_colour_only(self) -> None:

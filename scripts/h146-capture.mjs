@@ -109,13 +109,21 @@ const facts = () =>
       pathError: document.querySelector('[data-cb-path]') && document.querySelector('[data-cb-path]').getAttribute('data-cb-path'),
       parentLeak: /Parent demo|H103 live reject check/.test(main ? main.innerText : ''),
       allCourses: document.querySelectorAll('[data-cb-all-courses]').length,
-      covers: document.querySelectorAll('[data-cb-course-cover],[data-cb-course-stamp]').length,
-      // H-176: a course contour is identity, not a generated cover; the companion is the learner's
-      // own Hermes pet drawn to a canvas, not an invented avatar image. Record both so a visual
-      // gate does not read either as the old H-145 "seal/avatar" regression.
+      covers: document.querySelectorAll('[data-cb-course-cover],[data-cb-course-stamp],[data-cb-slot-cover]').length,
+      // H-189: the shelf's code-drawn contour is gone — a classroom is told apart by its cover
+      // (authored artifact or type) and its name. data-cb-course-contour now survives only on
+      // the trailhead plate, the first-run ghost and the Courses detail, never on a shelf card.
+      // The companion is the learner's own Hermes pet drawn to a canvas, not an invented avatar.
+      shelfContours: document.querySelectorAll('[data-cb-classroom-shelf] [data-cb-course-contour]').length,
+      slotCovers: [...document.querySelectorAll('[data-cb-slot-cover]')].map((node) => ({
+        kind: node.getAttribute('data-cb-slot-cover'),
+        alt: node.querySelector('img') ? node.querySelector('img').getAttribute('alt') : null
+      })),
       contours: document.querySelectorAll('[data-cb-course-contour]').length,
       companions: document.querySelectorAll('[data-cb-companion]').length,
       avatars: document.querySelectorAll('img[alt=""]:not([data-cb-companion] img), .avatar').length,
+      fieldNotesLine: document.querySelectorAll('[data-cb-field-notes-line]').length,
+      fieldNoteRows: document.querySelectorAll('[data-cb-field-note]').length,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       h1: document.querySelectorAll('h1').length,
       emptyOrError: main ? main.getAttribute('data-cb-desk') : null,

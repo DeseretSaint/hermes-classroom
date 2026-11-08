@@ -375,13 +375,26 @@ class FieldNotesRenderTest(unittest.TestCase):
 
     def test_the_notebook_shows_search_section_provenance_and_return(self) -> None:
         html = self.notebook([ENTRY_ARTIFACT, ENTRY_PLAIN])
-        self.assertIn("Section · Affection and register", html)
-        self.assertIn("Source · src_affection01", html)
+        # H-189: the learner row is the note, its lesson and one way back. The kind enum, the tag
+        # enums, the objective id and the source ids live behind Technical detail.
+        self.assertIn("Affection and register", html)
         self.assertIn("Course · Japanese affection (L0)", html)
         self.assertIn("Open in textbook", html)
-        self.assertIn("Continue from here", html)
+        self.assertIn("Technical detail", html)
+        self.assertIn("data-cb-note-technical=", html)
+        self.assertIn("src_affection01", html)
+        technical = html.split("data-cb-note-technical=", 1)[1]
+        self.assertIn("data-cb-note-section=", technical)
         self.assertIn("Edit note and tags", html)
         self.assertIn("Remove from notebook", html)
+
+    def test_the_learner_note_row_carries_no_machine_label(self) -> None:
+        html = self.notebook([ENTRY_ARTIFACT])
+        # Everything before the Technical detail disclosure is learner-facing and must not name
+        # an id, an enum or a "saved from section" record.
+        learner = html.split("data-cb-note-technical=", 1)[0]
+        for forbidden in ("obj_", "src_", "nbt_", "Section ·", "saved from"):
+            self.assertNotIn(forbidden, learner, forbidden)
 
     def test_only_a_media_entry_offers_play_or_view(self) -> None:
         html = self.notebook([ENTRY_ARTIFACT, ENTRY_PLAIN])

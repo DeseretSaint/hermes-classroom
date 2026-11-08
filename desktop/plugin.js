@@ -3169,15 +3169,168 @@ function focusRingVisible(node) {
   }
 }
 
-/** One classroom tile on the shelf: its own contour, name, next stop and last touch. */
-function SlotTab({ slot, isCurrent, onSelect }) {
+/**
+ * H-189 — the classroom cover.
+ *
+ * The owner's verdict on the drawn contour was that it read as code, not as a place: an
+ * `aria-hidden` ridge drawing above each name, with no course fact inside it. So a classroom now
+ * carries one of exactly two covers, and neither is invented here:
+ *
+ *   * an authored artifact, only when a `library.list` row actually declares one
+ *     (`row.cover = { artifact_id, caption, … }`), served through the one media route and always
+ *     with a non-empty `alt` plus the authored text equivalent visible underneath;
+ *   * otherwise a quiet typographic paper cover: the classroom's own name, the subject it records
+ *     (level/locale when the backend recorded one), and its monogram. No illustration, no ridge
+ *     line, no equalizer.
+ *
+ * The two classrooms on a shelf are told apart by their names and subjects, never by decoration.
+ * A row with no cover and no caption therefore cannot produce an empty `alt`: it produces type.
+ */
+function cbCoverMedia(row) {
+  const cover = row && row.cover
+  if (!cover || typeof cover !== 'object') return null
+  const artifactId = cover.artifact_id || cover.artifact
+  if (!artifactId) return null
+  const caption = typeof cover.caption === 'string' ? cover.caption.trim() : ''
+  // No caption means no `alt`, and an image with an empty `alt` is a decorative lie about a
+  // teaching artifact. Type is the honest fallback, not an empty alt.
+  if (!caption) return null
+  return {
+    artifact_id: String(artifactId),
+    caption,
+    text_equivalent:
+      typeof cover.text_equivalent === 'string' && cover.text_equivalent.trim()
+        ? cover.text_equivalent.trim()
+        : caption,
+    provenance: typeof cover.provenance === 'string' ? cover.provenance : null
+  }
+}
+
+/** The subject a classroom records, in the backend's own words, or nothing. */
+function cbCoverSubject(row) {
+  const level = row && typeof row.level_label === 'string' ? row.level_label.trim() : ''
+  if (level) return level
+  const locale = row && typeof row.locale === 'string' ? row.locale.trim() : ''
+  if (locale) return locale
+  return null
+}
+
+function ClassroomCover({ slot, compact }) {
+  const row = slot.row || {}
+  const media = cbCoverMedia(row)
+  // One hook, called every render: an absent artifact is a synchronous text state, not a request.
+  const preview = useArtifactPreview(media ? media.artifact_id : null)
+  const subject = cbCoverSubject(row)
+  const height = compact ? 44 : 56
+  const frame = {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: '0.1rem',
+    height: `${height}px`,
+    minWidth: 0,
+    padding: '0.3rem 0.45rem',
+    boxSizing: 'border-box',
+    background: 'var(--cb-paper)',
+    borderTop: '2px solid var(--cb-rule)',
+    overflow: 'hidden'
+  }
+  if (media && preview.state === 'ready' && preview.mime && preview.mime.startsWith('image/') && preview.data_url) {
+    return jsxs('figure', {
+      'data-cb-slot-cover': 'artifact',
+      style: { ...frame, margin: 0, padding: 0, gap: 0, borderTop: '2px solid var(--cb-lamp)' },
+      children: [
+        jsx('img', {
+          alt: media.caption,
+          src: preview.data_url,
+          loading: 'lazy',
+          style: { display: 'block', width: '100%', height: `${height}px`, objectFit: 'cover' }
+        }, 'image'),
+        // The authored text equivalent stays readable, so the cover is never only a picture.
+        jsx('figcaption', {
+          'data-cb-slot-cover-caption': '',
+          style: {
+            padding: '0.15rem 0.45rem 0.25rem',
+            fontFamily: CB_SANS,
+            fontSize: CB_TYPE.caption,
+            lineHeight: 1.35,
+            color: 'var(--cb-ink-soft)',
+            overflowWrap: 'anywhere'
+          },
+          children: media.text_equivalent
+        }, 'caption')
+      ]
+    })
+  }
+  return jsxs('div', {
+    'data-cb-slot-cover': 'typographic',
+    style: frame,
+    children: [
+      jsxs('span', {
+        style: { display: 'flex', alignItems: 'baseline', gap: '0.35rem', minWidth: 0 },
+        children: [
+          jsx('span', {
+            'aria-hidden': 'true',
+            style: {
+              flex: '0 0 auto',
+              fontFamily: CB_SERIF,
+              fontSize: CB_TYPE.caption,
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              color: 'var(--cb-ink-soft)'
+            },
+            children: courseStampText(slot.name || (row && row.title) || 'Coursebook')
+          }, 'monogram'),
+          jsx('span', {
+            'data-cb-slot-cover-title': '',
+            style: {
+              minWidth: 0,
+              fontFamily: CB_SERIF,
+              fontSize: compact ? CB_TYPE.meta : CB_TYPE.body,
+              fontWeight: 600,
+              lineHeight: 1.25,
+              color: 'var(--cb-ink)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            },
+            children: slot.name || (row && row.title) || 'Classroom'
+          }, 'title')
+        ]
+      }),
+      subject
+        ? jsx('span', {
+            'data-cb-slot-cover-subject': '',
+            style: {
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.3,
+              color: 'var(--cb-ink-soft)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            },
+            children: subject
+          }, 'subject')
+        : null
+    ]
+  })
+}
+
+/** One classroom tile on the shelf: its own cover, name, next stop and last touch. */
+function SlotTab({ slot, isCurrent, onSelect, compact }) {
   const [focused, setFocused] = useState(false)
+  const motion = useCbMotion()
+  // H-189: switching classrooms has one visible consequence — the newly selected card settles.
+  // It is one beat on the card that changed, re-armed by the course id, never a looping entrance.
+  const landed = useCbSelectionSettle(motion, `${slot.course_id}|${isCurrent ? 'current' : 'available'}`)
   const row = slot.row || {}
   const next = row.next_step && row.next_step.label ? row.next_step.label : null
   return jsxs('button', {
     type: 'button',
     'data-cb-slot-tab': slot.course_id,
     'data-cb-slot-state': isCurrent ? 'current' : 'available',
+    'data-cb-slot-motion': motion.reduced ? 'static' : landed ? 'settled' : 'settling',
     'data-cb-focus-ring': focused ? 'visible' : 'none',
     'aria-current': isCurrent ? 'true' : undefined,
     onFocus: (event) => setFocused(focusRingVisible(event.currentTarget)),
@@ -3205,18 +3358,16 @@ function SlotTab({ slot, isCurrent, onSelect }) {
       fontFamily: CB_SANS,
       fontSize: CB_TYPE.meta,
       color: isCurrent ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
-      overflowWrap: 'anywhere'
+      overflowWrap: 'anywhere',
+      ...cbSettleFrame(motion, landed, { beat: 'route', props: 'opacity, transform', from: 'translateY(3px)', fromOpacity: 0.9 })
     },
     children: [
-      jsx('span', {
-        'aria-hidden': 'true',
-        style: { height: '34px', overflow: 'hidden' },
-        children: jsx(CourseContour, { row, title: slot.name, height: 34, opacity: isCurrent ? 0.7 : 0.4 })
-      }, 'contour'),
+      jsx(ClassroomCover, { slot, compact }, 'cover'),
       jsx('span', {
         style: { fontWeight: isCurrent ? 600 : 400, lineHeight: 1.35 },
         children: slot.name
       }, 'name'),
+
       jsx('span', {
         'data-cb-slot-next': next ? 'recorded' : 'none',
         style: { fontSize: CB_TYPE.caption, lineHeight: 1.35, color: 'var(--cb-ink-soft)' },
@@ -3242,6 +3393,8 @@ function SlotTab({ slot, isCurrent, onSelect }) {
 function SlotRail({ hub, selected, onSelect, onShowAll, onCreate }) {
   const all = hub && Array.isArray(hub.all) ? hub.all : []
   if (all.length === 0) return null
+  const width = useCbViewportWidth()
+  const compact = width > 0 && width < 620
   const active = selected || all[0]
   const useSelect = all.length > HUB_SLOT_LIMIT
   const nameCount = {}
@@ -3308,11 +3461,10 @@ function SlotRail({ hub, selected, onSelect, onShowAll, onCreate }) {
         jsxs('div', {
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem', minWidth: 0 },
           children: [
-            jsx('span', {
-              'aria-hidden': 'true',
-              style: { width: '5.5rem', height: '2.4rem', overflow: 'hidden', flex: '0 0 auto' },
-              children: jsx(CourseContour, { row: active.row, title: active.name, height: 38, opacity: 0.55 })
-            }, 'contour'),
+            jsx('div', {
+              style: { width: '11rem', maxWidth: '100%', flex: '0 0 auto', minWidth: 0 },
+              children: jsx(ClassroomCover, { slot: active, compact }, 'cover')
+            }, 'cover'),
             jsx('span', {
               style: {
                 fontFamily: CB_SANS,
@@ -3384,7 +3536,7 @@ function SlotRail({ hub, selected, onSelect, onShowAll, onCreate }) {
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.4rem', minWidth: 0 },
           children: all.map((slot) => {
             const isCurrent = slot.course_id === active.course_id
-            return jsx(SlotTab, { slot, isCurrent, onSelect }, slot.course_id)
+            return jsx(SlotTab, { slot, isCurrent, onSelect, compact }, slot.course_id)
           })
         }, 'tabs'),
         current('current'),
@@ -3564,48 +3716,62 @@ function useStudyCompanion(enabled) {
 }
 
 /**
- * One frame of the real sheet: frame 0 of the row named `idle` in `stateRows` (row 0 when the
- * host names no rows). Static by construction, so reduced motion needs no branch. The canvas is
- * `aria-hidden`; the pet's own display name is the visible adjacent copy.
+ * The learner's own pet, one frame at a time.
+ *
+ * H-189: the sheet already carries an `idle` row, so the companion uses it at a deliberately low
+ * cadence (about 2.4 frames a second) instead of freezing on frame 0. Three rules keep it from
+ * becoming decoration:
+ *
+ *   * reduced motion (or a sheet with one frame) paints frame 0 and never starts a timer;
+ *   * a hidden document stops the timer, so a background tab does no drawing;
+ *   * the frames come only from the host's own `pet.info` sheet — there is no second avatar, no
+ *     dialogue and no invented pose.
+ *
+ * The canvas stays `aria-hidden`; the adjacent name is the visible copy.
  */
 function StudyCompanion({ info, size }) {
   const canvasRef = useRef(null)
+  const imageRef = useRef(null)
+  const motion = useCbMotion()
+  const visible = useCbPageVisible()
+  const [loaded, setLoaded] = useState(0)
+  const [frame, setFrame] = useState(0)
   const px = Number(size) || 64
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || !info) return undefined
-    const frameW = Number(info.frameW) || 0
-    const frameH = Number(info.frameH) || 0
-    if (!frameW || !frameH) return undefined
-    const rows = Array.isArray(info.stateRows) ? info.stateRows : []
-    const idle = rows.findIndex((row) => String(row).toLowerCase() === 'idle')
-    const row = idle >= 0 ? idle : 0
-    let cancelled = false
-    const paint = (image) => {
-      if (cancelled) return
-      try {
-        const ratio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1
-        canvas.width = Math.max(1, Math.round(px * ratio))
-        canvas.height = Math.max(1, Math.round(px * ratio))
-        const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null
-        if (!ctx) return
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.imageSmoothingEnabled = true
-        ctx.imageSmoothingQuality = 'high'
-        ctx.drawImage(image, 0, row * frameH, frameW, frameH, 0, 0, canvas.width, canvas.height)
-      } catch (error) {
-        // A canvas that cannot paint is not a reason to lose the Continue action.
-      }
+  const frameW = info ? Number(info.frameW) || 0 : 0
+  const frameH = info ? Number(info.frameH) || 0 : 0
+  const rows = info && Array.isArray(info.stateRows) ? info.stateRows : []
+  const idle = rows.findIndex((name) => String(name).toLowerCase() === 'idle')
+  const row = idle >= 0 ? idle : 0
+
+  // Frames in the idle row: the host's own per-state count when it names one, else the sheet width
+  // divided by one frame. A sheet with no readable width is one frame, which is a valid answer.
+  const framesInRow = () => {
+    const image = imageRef.current
+    if (!image || !frameW) return 1
+    const named = info && info.framesByState && typeof info.framesByState === 'object' ? info.framesByState : null
+    if (named) {
+      const key = rows[row] !== undefined ? rows[row] : String(row)
+      const count = Number(named[key])
+      if (Number.isFinite(count) && count > 0) return Math.floor(count)
     }
-    // The decoded sheet is the cache: once the image is in memory the base64 payload is dropped,
-    // so a spritesheet is not held twice for the life of the route.
+    const width = Number(image.naturalWidth || image.width) || 0
+    return Math.max(1, Math.floor(width / frameW))
+  }
+  const total = loaded ? framesInRow() : 1
+  const animating = !motion.reduced && visible && loaded && total > 1
+
+  // Load (or reuse) the one decoded sheet. The base64 payload is dropped once decoded so a
+  // spritesheet is never held twice for the life of the route.
+  useEffect(() => {
+    if (!info || !frameW || !frameH) return undefined
     const key = `${info.slug || ''}|${info.spritesheetRevision || ''}|${frameW}x${frameH}`
     let image = CB_COMPANION_SHEETS.get(key)
     if (!image) {
       if (!info.spritesheetBase64 || typeof Image === 'undefined') return undefined
       image = new Image()
       image.onload = () => {
-        paint(image)
+        imageRef.current = image
+        setLoaded((count) => count + 1)
         try {
           delete info.spritesheetBase64
         } catch (error) {
@@ -3614,23 +3780,58 @@ function StudyCompanion({ info, size }) {
       }
       image.src = `data:${info.mime || 'image/webp'};base64,${info.spritesheetBase64}`
       CB_COMPANION_SHEETS.set(key, image)
-    } else if (image.complete && image.naturalWidth > 0) {
-      paint(image)
-    } else if (typeof image.addEventListener === 'function') {
-      const onLoad = () => paint(image)
-      image.addEventListener('load', onLoad)
-      return () => {
-        cancelled = true
-        image.removeEventListener('load', onLoad)
+      return undefined
+    }
+    imageRef.current = image
+    if (image.complete && image.naturalWidth > 0) {
+      setLoaded((count) => count + 1)
+      return undefined
+    }
+    if (typeof image.addEventListener === 'function') {
+      const onLoad = () => {
+        imageRef.current = image
+        setLoaded((count) => count + 1)
       }
+      image.addEventListener('load', onLoad)
+      return () => image.removeEventListener('load', onLoad)
     }
-    return () => {
-      cancelled = true
+    return undefined
+  }, [info, frameW, frameH])
+
+  // Paint the current idle frame. Reduced motion always paints frame 0.
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const image = imageRef.current
+    if (!canvas || !image || !frameW || !frameH) return
+    try {
+      const ratio = typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1
+      canvas.width = Math.max(1, Math.round(px * ratio))
+      canvas.height = Math.max(1, Math.round(px * ratio))
+      const ctx = typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null
+      if (!ctx) return
+      const index = motion.reduced ? 0 : Math.min(frame, Math.max(0, total - 1))
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(image, index * frameW, row * frameH, frameW, frameH, 0, 0, canvas.width, canvas.height)
+    } catch (error) {
+      // A canvas that cannot paint is not a reason to lose the Continue action.
     }
-  }, [info, px])
+  }, [loaded, frame, px, motion.reduced, frameW, frameH, row, total])
+
+  // The idle cadence: one timer, low tempo, and only while the page is visible and motion is on.
+  useEffect(() => {
+    if (!animating || typeof window === 'undefined' || typeof window.setInterval !== 'function') {
+      setFrame(0)
+      return undefined
+    }
+    const timer = window.setInterval(() => setFrame((index) => (index + 1) % total), 420)
+    return () => window.clearInterval(timer)
+  }, [animating, total])
+
   return jsxs('div', {
     'data-cb-companion': 'ready',
-    'data-cb-companion-motion': 'static',
+    'data-cb-companion-motion': animating ? 'idle' : 'static',
     style: { display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 },
     children: [
       jsx('canvas', {
@@ -3698,6 +3899,13 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
   const courseTitle = desk.row && desk.row.title ? desk.row.title : null
   const viewportWidth = useCbViewportWidth()
   const compact = viewportWidth > 0 && viewportWidth < 620
+  // H-189: the trailhead arrives once, on the route beat, and re-arms when the learner switches
+  // classroom. Reduced motion paints the resting frame at once.
+  const motion = useCbMotion()
+  const arrival = useCbSelectionSettle(motion, desk.row && desk.row.course_id ? desk.row.course_id : 'none')
+  const edgeFrame = cbSettleFrame(motion, arrival, { beat: 'route', props: 'opacity, transform', from: 'translateY(6px)', fromOpacity: 0.35 })
+  const bandFrame = cbSettleFrame(motion, arrival, { beat: 'route', props: 'opacity, transform', from: 'translateY(-4px)', fromOpacity: 0.45 })
+
   // A lesson start needs a section id. Plan/review/pack next steps open Course Detail and do not,
   // so a failed outline read never disables the one primary action.
   const needsSection = desk.primaryKind === 'start_lesson' || desk.primaryKind === 'resume_lesson'
@@ -3833,14 +4041,18 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
             : null
         ]
       }, 'actions'),
-      // Counts come after the action, and only the counts the backend recorded.
-      jsx(DeskFacts, { desk }, 'facts')
+      // H-189 hierarchy: the old facts line repeated the path's own evidence count and the current
+      // stop's state word inside the plate, so the plate said the route twice before the route.
+      // The one count now lives in the route header; the plate keeps only what it alone knows —
+      // position, estimate and last touch.
+      null
     ]
   }, 'copy')
   return jsxs('section', {
     'data-cb-continue': '',
     'data-cb-trailhead': '',
     'data-cb-continue-compact': compact ? 'true' : 'false',
+    'data-cb-trailhead-motion': motion.reduced ? 'static' : arrival ? 'settled' : 'arriving',
     'data-cb-trail-palette': isParent ? 'parent' : 'learner',
     style: {
       display: 'flex',
@@ -3858,7 +4070,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
       compact
         ? jsx('div', {
             'aria-hidden': 'true',
-            style: { height: '26px', opacity: 0.5 },
+            style: { height: '26px', opacity: 0.5, ...(bandFrame || {}) },
             children: jsx(CourseContour, { row: desk.row, title: courseTitle, height: 26 })
           }, 'band')
         : null,
@@ -3878,7 +4090,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onSeePlan, onRetry
             ? null
             : jsxs('div', {
                 'data-cb-trailhead-edge': '',
-                style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem', minWidth: 0 },
+                style: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem', minWidth: 0, ...(edgeFrame || {}) },
                 children: [
                   jsx('div', {
                     'aria-hidden': 'true',
@@ -4022,8 +4234,14 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
   const width = useCbViewportWidth()
   const motion = useCbMotion()
   const routeSettle = useCbSettled(motion, true)
+  // H-189: the route arrives once. The whole route column settles on the route beat, re-armed when
+  // the selected classroom changes, so a switch has one visible consequence.
+  const arrival = useCbSelectionSettle(motion, desk.row ? desk.row.course_id : 'none')
   const compact = width > 0 && width < 620
   const objectives = Array.isArray(desk.objectives) ? desk.objectives : []
+  // H-189: one gentle cycle on the current stop, then it rests. Running only when a route exists.
+  // Declared before any early return so the hook order is identical in every state.
+  const pulse = useCbStopPulse(motion, objectives.length > 0)
   // A failed route read is its own state (H-146). Continue still works from the row's next step;
   // the path says what it could not read and offers the retry, rather than claiming the course is
   // empty. H-148 owns the checkpoint geometry; this branch is the read state it did not carry.
@@ -4056,17 +4274,35 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
   return jsxs('section', {
     'data-cb-path': '',
     'data-cb-path-layout': compact ? 'compact' : 'full',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '100%' },
+    'data-cb-path-motion': motion.reduced ? 'static' : arrival ? 'settled' : 'arriving',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+      maxWidth: '100%',
+      ...(cbSettleFrame(motion, arrival, { beat: 'route', props: 'opacity, transform', from: 'translateY(4px)', fromOpacity: 0.92 }) || {})
+    },
     children: [
       jsx(PlateHead, {
         label: 'The route',
         title: desk.row && desk.row.title ? desk.row.title : 'Your path'
       }),
+      // H-189 hierarchy: the route is the one object. The old twelve-bar tally painted the same
+      // evidence a second time above the nodes; the count now lives as one caption line, and the
+      // nodes themselves carry the state.
       objectives.length
-        ? jsx(EvidenceTally, {
-            objectives,
-            phone: compact,
-            caption
+        ? jsx('p', {
+            'data-cb-tally-caption': '',
+            'data-cb-path-caption': '',
+            style: {
+              margin: 0,
+              maxWidth: CB_MEASURE,
+              fontFamily: CB_SANS,
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.45,
+              color: 'var(--cb-ink-soft)'
+            },
+            children: caption
           })
         : jsx('p', {
             'data-cb-path-empty': '',
@@ -4158,7 +4394,29 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
                             left: `${Math.round((gutter - size) / 2)}px`,
                             top: '0.55rem'
                           },
-                          children: String(objective.ordinal).padStart(2, '0')
+                          children: [
+                            isCurrent
+                              ? jsx('span', {
+                                  // H-189: the current stop's one gentle cycle, two legs up and
+                                  // down, then the ring rests. No loop, no timer left behind.
+                                  'data-cb-path-pulse': pulse.running ? 'cycle' : 'rest',
+                                  style: {
+                                    position: 'absolute',
+                                    inset: '-5px',
+                                    borderRadius: '50%',
+                                    borderWidth: '2px',
+                                    borderStyle: 'solid',
+                                    borderColor: 'var(--cb-accent)',
+                                    opacity: pulse.scale,
+                                    pointerEvents: 'none',
+                                    ...(motion.transition('opacity', 'route')
+                                      ? { transition: motion.transition('opacity', 'route') }
+                                      : {})
+                                  }
+                                }, 'pulse')
+                              : null,
+                            jsx('span', { children: String(objective.ordinal).padStart(2, '0') }, 'ordinal')
+                          ]
                         }),
                         jsxs('span', {
                           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.2rem 0.55rem', minWidth: 0 },
@@ -4344,6 +4602,44 @@ function stripExcerpt(entry) {
  * last few things this course saved, each one able to return to its exact block. It reads only
  * `notebook.list`; it never writes, never invents an empty row and never hides a failed read.
  */
+/**
+ * H-189 — Field Notes on Home is one tertiary line, not a feed.
+ *
+ * The owner's note was that the strip filled Home with an audit list. Home is the trailhead; the
+ * Notebook is the notes surface. So this renders exactly one quiet line — the backends's own saved
+ * count — and the whole line is the door to the Notebook. Loading, failure and an empty notebook
+ * are said in the same single line; none of them expands into a list.
+ */
+function FieldNotesLine({ notes, stale, onShowNotebook }) {
+  if (!notes) return null
+  const status = notes.status ? notes.status : 'idle'
+  const entries = notes.data && Array.isArray(notes.data.entries) ? notes.data.entries : []
+  const count = entries.length
+  let text
+  if (status === 'loading' && !notes.data) text = 'Field notes · reading'
+  else if (status === 'error' && !notes.data) text = 'Field notes · could not be read'
+  else if (count === 0) text = 'Field notes · nothing saved yet'
+  else text = `Field notes · ${count} saved`
+  return jsx('div', {
+    'data-cb-field-notes-line': status === 'ready' && count > 0 ? 'ready' : status,
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.25rem', minWidth: 0 },
+    children: jsx(CbAction, {
+      variant: 'tertiary',
+      onClick: onShowNotebook,
+      'aria-describedby': 'cb-field-notes-count',
+      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 500, minHeight: '44px' },
+      children: jsxs('span', {
+        id: 'cb-field-notes-count',
+        style: { color: 'var(--cb-ink-soft)' },
+        children: [
+          jsx('span', { 'data-cb-field-notes-count': String(count), children: text }, 'count'),
+          stale ? jsx('span', { children: ' · paused until the desk reconnects' }, 'stale') : null
+        ]
+      })
+    })
+  })
+}
+
 function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenSection, onShowNotebook, onRetry }) {
   const status = notes && notes.status ? notes.status : 'idle'
   const entries = notes && notes.data && Array.isArray(notes.data.entries) ? notes.data.entries : []
@@ -5215,16 +5511,7 @@ function FieldDeskHome({
     { desk, busy, onPrimary, onOpenSection, onSeePlan, onRetryEstimate, companionEnabled },
     'continue'
   )
-  const notesCard = jsx(FieldNotesStrip, {
-    notes,
-    courseTitle: desk.row && desk.row.title ? desk.row.title : null,
-    current: desk.current || null,
-    sections: desk.objectives || [],
-    stale,
-    onOpenSection,
-    onShowNotebook,
-    onRetry
-  }, 'notes')
+  const notesCard = jsx(FieldNotesLine, { notes, stale, onShowNotebook }, 'notes')
   const pathCard = jsx(CheckpointPath, {
     desk,
     onOpenSection,
@@ -11648,7 +11935,12 @@ function useCbMode() {
  */
 const CB_MOTION = Object.freeze({
   press: '100ms',
-  route: '180ms',
+  /**
+   * H-189: the route/edge beat is the trailhead's one arrival. 280 ms sits inside the card's
+   * authored 240-320 ms window and inside the 600 ms ceiling; the path settles its eight nodes
+   * 40 ms apart on the same rung, so a route paints once and then rests.
+   */
+  route: '280ms',
   verdict: '160ms',
   complete: '600ms',
   /** The reduced-motion crossfade ceiling (M3): the state still changes, it does not travel. */
@@ -11800,6 +12092,81 @@ function useCbSettle(motion, options) {
     fromOpacity: spec.fromOpacity,
     delay: Math.max(0, Number(spec.index) || 0) * (Number(spec.staggerMs) || 0)
   }) || {}
+}
+
+/**
+ * H-189 — one settle per selection change.
+ *
+ * `useCbSettled` settles a node once for the life of the mount. A course switch needs the new
+ * card to land again, so this re-arms whenever `token` changes: the card paints at its start
+ * position for one frame, then transitions to rest once and stays there. Reduced motion returns
+ * `true` immediately — the state change survives, the travel does not.
+ */
+function useCbSelectionSettle(motion, token) {
+  const live =
+    !motion.reduced && typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+  const [landed, setLanded] = useState(!live)
+  useEffect(() => {
+    if (!live) {
+      setLanded(true)
+      return undefined
+    }
+    setLanded(false)
+    const frame = window.requestAnimationFrame(() => setLanded(true))
+    return () => {
+      if (typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(frame)
+    }
+  }, [token, live])
+  return live ? landed : true
+}
+
+/**
+ * H-189 — the current stop's one gentle cycle.
+ *
+ * The card asks for a ring that lifts from 0.55 to 0.9, runs **two** cycles and stops. This is a
+ * finite state machine, not a stylesheet loop: each leg is one `route`-beat opacity transition, and
+ * after four legs the last timer is gone, so nothing repeats. Reduced motion (or no timers) returns
+ * `pulse: false` and the ring keeps its static resting opacity.
+ *
+ * Returns `{ scale, running }`; the caller reads `scale` as the ring's opacity.
+ */
+function useCbStopPulse(motion, enabled) {
+  const running =
+    enabled !== false && !motion.reduced && typeof window !== 'undefined' && typeof window.setTimeout === 'function'
+  const [leg, setLeg] = useState(0)
+  useEffect(() => {
+    if (!running) {
+      setLeg(0)
+      return undefined
+    }
+    const timers = []
+    const duration = 280
+    // 0 -> 1 -> 0 -> 1 -> 0 is two full cycles; the final 0 is the rest frame, then it stops.
+    for (let step = 1; step <= 4; step += 1) {
+      timers.push(window.setTimeout(() => setLeg(step % 2 === 0 ? 0 : 1), step * duration))
+    }
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
+  }, [running])
+  return { running, scale: running ? (leg === 1 ? 0.9 : 0.55) : 0.55 }
+}
+
+/** True while the document is visible; a hidden page stops painting frames. */
+function useCbPageVisible() {
+  const read = () =>
+    typeof document === 'undefined' || !document || document.visibilityState === undefined
+      ? true
+      : document.visibilityState !== 'hidden'
+  const [visible, setVisible] = useState(read)
+  useEffect(() => {
+    if (typeof document === 'undefined' || !document || typeof document.addEventListener !== 'function') {
+      return undefined
+    }
+    const onChange = () => setVisible(read())
+    onChange()
+    document.addEventListener('visibilitychange', onChange)
+    return () => document.removeEventListener('visibilitychange', onChange)
+  }, [])
+  return visible
 }
 
 
@@ -17492,24 +17859,11 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                     jsxs('div', {
                       className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
                       children: [
-                        jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: entry.kind }),
                         jsx('span', {
-                          'data-cb-note-section': entry.objective_id,
-                          children: `Section · ${sectionTitles[entry.objective_id] || entry.objective_id}`
+                          'data-cb-note-lesson': sectionTitles[entry.objective_id] || 'This lesson',
+                          children: sectionTitles[entry.objective_id] || 'This lesson'
                         }),
-                        readNotebookRef(entry.source_ref).source_ids.length > 0
-                          ? jsx('span', {
-                              children: `Source · ${readNotebookRef(entry.source_ref).source_ids.join(', ')}`
-                            })
-                          : null,
                         row.title ? jsx('span', { children: `Course · ${row.title}` }) : null
-                      ]
-                    }),
-                    jsxs('div', {
-                      className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
-                      children: [
-                        (entry.tags || []).map((item) => jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: item }, item)),
-                        jsx('span', { children: `saved ${whenLabel(entry.created_at)}` })
                       ]
                     }),
                     jsxs('div', {
@@ -17520,12 +17874,6 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                           size: 'sm',
                           onClick: () => onOpenSection(entry.objective_id, readNotebookRef(entry.source_ref).block_id),
                           children: 'Open in textbook'
-                        }),
-                        jsx(sdk.Button, {
-                          variant: 'text',
-                          size: 'sm',
-                          onClick: () => onOpenSection(entry.objective_id, readNotebookRef(entry.source_ref).block_id),
-                          children: 'Continue from here'
                         }),
                         readNotebookRef(entry.source_ref).artifact_id
                           ? jsx(sdk.Button, {
@@ -17554,6 +17902,36 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                           size: 'sm',
                           onClick: () => setPendingRemove(entry),
                           children: 'Remove from notebook'
+                        })
+                      ]
+                    }),
+                    // H-189: the saved row's machine-facing anchors (kind enum, tag enums, the
+                    // objective id, source ids, the saved-from metadata) live here, behind the
+                    // existing Technical detail disclosure. The learner-facing row above is the
+                    // note, the lesson and one way back.
+                    jsxs('details', {
+                      'data-cb-note-technical': entry.entry_id,
+                      className: 'text-xs text-(--ui-text-secondary)',
+                      children: [
+                        jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }),
+                        jsxs('div', {
+                          className: 'flex flex-col gap-1 pt-1',
+                          children: [
+                            jsx('span', {
+                              'data-cb-note-section': entry.objective_id,
+                              children: `Section id · ${entry.objective_id || 'not recorded'}`
+                            }),
+                            jsx('span', { children: `Saved from · ${entry.kind || 'not recorded'}` }),
+                            readNotebookRef(entry.source_ref).source_ids.length > 0
+                              ? jsx('span', {
+                                  children: `Source · ${readNotebookRef(entry.source_ref).source_ids.join(', ')}`
+                                })
+                              : null,
+                            (entry.tags || []).length > 0
+                              ? jsx('span', { children: `Tags · ${(entry.tags || []).join(', ')}` })
+                              : null,
+                            jsx('span', { children: `Saved ${whenLabel(entry.created_at)}` })
+                          ]
                         })
                       ]
                     }),
