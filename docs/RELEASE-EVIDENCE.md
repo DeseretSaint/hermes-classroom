@@ -1,8 +1,9 @@
 # Release evidence — what is measured, on which commit, and what is branch-only
 
 Status: the H-116 truth pass, re-derived on the merged release candidate `master`
-`625c9397469cfaab95692a00abf5fd343a8dd493` (H-120b `wt/h120b-practice-ui` @ `9aa2e6a` merged onto the H-105 + `cb.rpc` v16
-union `39659b7`, re-landed on H-155 `ac301a1`). Every
+`b7c53e46ea468157d91127890de1435a00bf5f47` (the H-158 UI batch union —
+H-145/146/147/148/149/150/153/154/156/157 — merged onto the H-120b conversation-practice surface
+`625c939`, which sits on the H-105 + `cb.rpc` v16 union `39659b7` and H-155 `ac301a1`). Every
 number below was produced by a command in this pass on that commit unless a row names another
 commit. Machine-readable copy: `docs/release-evidence.json`, checked against the documents by
 `python3 scripts/check-docs-truth.py`.
@@ -12,28 +13,31 @@ blocked H-85 are fixed here, but no demo is recorded, no license exists, no live
 driven this exact commit, and the operator publication gate in `docs/SUBMISSION.md` §0 is closed.
 No tag, catalog pull request or announcement was made.
 
-## Measured on `625c939`
+## Measured on `b7c53e4`
 
 | Fact | Value | Command |
 | --- | --- | --- |
-| Suite | `Ran 2007 tests in 330.563s`, `OK (skipped=1, expected failures=1)` | `python3 -m unittest discover -s tests -t .` |
+| Suite | `Ran 2168 tests in 263.082s`, `OK (skipped=1)` | `python3 -m unittest discover -s tests -t .` |
 | `cb.rpc` | v16, 68 declared methods | `contracts/rpc.v16.json` (`$defs.method.enum` length) |
 | Handlers | 68, asserted by the registry test inside the suite | registry test in the suite |
 | `cb.db` | v11, `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011` | `coursebook/db.py`, `contracts/db.v11.json` |
-| Shipped module | `desktop/plugin.js` sha256 `0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543` | `sha256sum desktop/plugin.js` |
-| M4 audit | 62 frames, 15/15 claims PASS, 2,282 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 364 AX controls, 0 px overflow | `audit/visual/m4-visual/audit.json` |
-| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 0312a9ea…` | `python3 scripts/m4v-repro-check.py` |
+| Shipped module | `desktop/plugin.js` sha256 `8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d` | `sha256sum desktop/plugin.js` |
+| M4 audit | 62 frames, 15/15 claims PASS, 2,416 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 298 AX controls, 0 px overflow | `audit/visual/m4-visual/audit.json` |
+| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 8347331f…` | `python3 scripts/m4v-repro-check.py` |
 | Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `python3 tests/adversarial/attack_state.py` |
 | Catalog validity | `OK: 1 file(s) valid` | `python3 ~/.hermes/hermes-agent/scripts/validate_plugin_catalog.py catalog/coursebook.yaml` |
 
 The `audit.json` carries `plugin_sha256` equal to the shipped module's hash, which is what makes the
-M4 row a claim about this commit rather than a stale pin. The 2,282 text-node count is the sum over
+M4 row a claim about this commit rather than a stale pin. The 2,416 text-node count is the sum over
 the 56 non-forced-colour frames; the six forced-colours frames repeat the same content and are
-counted in `C-09` instead (2,602 text nodes over all 62 frames). The previous record quoted 2,266
-because it was measured on the `71fc4c3f` module at `b33a42f`; the H-105 union regenerated the audit
-at 2,282 and the H-120b practice merge repaints none of the 56 m4v frames, so this regeneration of
-`audit/visual/m4-visual/audit.json` still measures 2,282. The value is re-derived from the file, not
-carried forward.
+counted in `C-09` instead. The value is re-derived from the regenerated file, not carried forward.
+
+Two measured deltas from the `625c939` record are reported rather than smoothed: the accessibility
+control total fell from 364 to 298 (with Tab stops 304 → 268), and the painted media set fell from 60
+images / 22 audio elements to 50 / 12. A per-frame comparison localises both to two surfaces — Quest
+(`images`/`audio` 1 → 0, text 49 → 32, AX 21 → 10) and Field Desk (text 43 → 81) — while every claim
+still passes. Which change inside the UI batch union caused the Quest frame to lose its media was not
+measured here; it is carded for the owner (`t_34149aa1` H-160's successor, H-161).
 
 ## Branch-only evidence (not release evidence)
 

@@ -3,20 +3,22 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on merged `master` `625c939` — the H-105 + `cb.rpc` v16 union merge `39659b7` plus the
-H-120b conversation-practice surface (`wt/h120b-practice-ui` @ `9aa2e6a`), re-landed on the
-H-155 engagement audit `ac301a1` — and is pinned to the
-module that ships from that commit: `desktop/plugin.js` sha256
-`0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543`.
+regenerated on the H-158 UI batch union (`h158-union` @ `c41ee83`: H-145/146/147/148/149/150/153/154/156/157
+merged onto merged `master` `71b01b8`) and is pinned to the module that union produces:
+`desktop/plugin.js` sha256
+`8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d`.
 
-That module is the one that ships from `625c939`, the commit this audit was regenerated on, so this
-is the audit of the shipping module, not of a branch. The previous
+That module is the one that ships from the union merge `b7c53e4`, the commit this audit was regenerated
+for, so this is the audit of the shipping module, not of a branch. The previous
 pin, `desktop/plugin.js` sha256
-`71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`, is history for the H-91 tree;
-the two `audit.json` files differ only in `generated_at`, the recorded branch name and the plugin pin.
+`0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543` (`625c939`), is history for the
+H-120b tree, as is
+`71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5` for the H-91 tree;
+those `audit.json` files differ only in `generated_at`, the recorded branch name and the plugin pin.
 
-This is **not** release evidence. Nothing here was published, tagged, pushed or merged, and the
-audit makes no claim that Coursebook is installable.
+This is **not** publication evidence. Nothing here was published, tagged or opened as a catalog PR;
+the union it measures is merged to `master` (`b7c53e4`) and the audit makes no claim that Coursebook
+is installable.
 
 One command regenerates every number and every screenshot; a second proves the result is not a
 one-off:
@@ -37,22 +39,26 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 ### Reproducibility
 
-**Re-pin at `687613ab` (H-146, commit `ae2494f`).** `desktop/plugin.js` moved, so the audit was
-regenerated: `python3 scripts/m4v-audit.py` → 15 PASS, 0 not PASS, 62 frames,
-`plugin_sha256: 687613abde8d77ab6c1825a92b1bd3e0d0293d71a9f665c38d3bf44fa87bcc66` (branch
-`wt/h146-classroom-rail`). The reproducibility pair quoted below is the earlier measurement at
-`9735300e`; it has **not** been re-run at this pin.
+**Re-pin at `8347331f` (H-158 union, commit `c41ee83`, merged as `b7c53e4`).** `desktop/plugin.js`
+moved again with the UI batch union, so the audit was regenerated on the union tree:
+`python3 scripts/m4v-audit.py` → 15 PASS, 0 not PASS, 62 frames,
+`plugin_sha256: 8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d`. The 56
+non-forced frames now measure **2,416** text nodes and the 32 frames with an accessibility tree
+measure **298** AX controls — fewer controls than the `625c939` record's 364, a difference this pass
+measured but did **not** attribute to a specific module change; minimum authored contrast is
+unchanged at 5.93:1 with 0 plugin-authored failures, 0 clipped text and 0 px horizontal overflow. The
+reproducibility pair quoted below was re-run at this pin as part of the same pass.
 
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
-Run back to back on this pin (`0312a9ea…`), verbatim (scratch roots elided):
+Run back to back on this pin (`8347331f…`), verbatim (scratch roots elided):
 
 ```
 $ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-k205uyh8/run-a
-run B → …/cb-m4v-repro-k205uyh8/run-b
+run A → …/cb-m4v-repro-gz4l7rsm/run-a
+run B → …/cb-m4v-repro-gz4l7rsm/run-b
 PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543
+  plugin_sha256: 8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d
   reference_time: 2026-11-07T10:00:00.000Z
 ```
 
@@ -124,12 +130,12 @@ audio players, text-only, media-unavailable.
 | Claim | Verdict | Evidence (in `audit/visual/m4-visual/audit.json`) |
 |---|---|---|
 | C-01 Paint only from the `--cb-*` token layer | **PASS** | 62/62 frames carry all ten measured tokens; 0 colour literals in authored inline paint; 0 colour literals in `desktop/plugin.js` outside the embedded table; table equals `contracts/cb.tokens.v2.json` |
-| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,282 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
+| C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,416 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
 | C-03 No clipped text, no horizontal overflow | **PASS** | 0 clipped nodes in 62 frames; 0 frames overflow; includes 460 px at 200 % text |
-| C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 364 AX controls across the 32 measured frames; 304 distinct Tab stops, 0 unreachable, 0 without a visible focus ring; 86 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex` |
-| C-05 No autoplay | **PASS** | 0 of 22 painted `<audio>` elements autoplay or play on load |
-| C-06 Every instructional image has a text equivalent | **PASS** | 60 images, 0 without `alt`, 0 of 106 media frames without a caption/text equivalent |
-| C-07 Every audio has a transcript | **PASS** | 22 audio elements, 0 without an accessible transcript/`aria-label` |
+| C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 298 AX controls across the 32 measured frames; 268 distinct Tab stops, 0 unreachable, 0 without a visible focus ring; 60 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex`. The `625c939` record measured 364 AX controls and 304 Tab stops; the per-frame comparison puts the whole delta on two surfaces — Quest (`images`/`audio` 1→0, text 49→32, AX 21→10) and Field Desk (text 43→81) — and which change inside the union caused it was not measured (`t_*` H-161) |
+| C-05 No autoplay | **PASS** | 0 of 12 painted `<audio>` elements autoplay or play on load |
+| C-06 Every instructional image has a text equivalent | **PASS** | 50 images, 0 without `alt`, 0 of 86 media frames without a caption/text equivalent |
+| C-07 Every audio has a transcript | **PASS** | 12 audio elements, 0 without an accessible transcript/`aria-label` |
 | C-08 Reduced motion respected | **PASS** (trivial) | 0 animated/transitioned nodes in reduced **and** full frames — the module paints no motion to suppress; the preference is read and recorded |
 | C-09 Forced colors stays readable | **PASS** | 6 forced-colors frames, 0 authored failures, 0 clipped, 0 overflow |
 | C-10 Media-unavailable leaves the lesson readable | **PASS** | 6 frames: 0 images, 0 audio, honest message + caption retained |

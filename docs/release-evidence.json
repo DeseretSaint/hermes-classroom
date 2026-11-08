@@ -1,14 +1,14 @@
 {
-  "measured_commit": "625c9397469cfaab95692a00abf5fd343a8dd493",
-  "measured_commit_short": "625c939",
+  "measured_commit": "b7c53e46ea468157d91127890de1435a00bf5f47",
+  "measured_commit_short": "b7c53e4",
   "measured_at": "2026-11-08",
   "branch": "master",
-  "merge_commit": "625c9397469cfaab95692a00abf5fd343a8dd493",
+  "merge_commit": "b7c53e46ea468157d91127890de1435a00bf5f47",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "ran": 2007,
+    "ran": 2168,
     "skipped": 1,
-    "verdict": "OK (skipped=1, expected failures=1)"
+    "verdict": "OK (skipped=1)"
   },
   "rpc": {
     "contract": "cb.rpc",
@@ -24,24 +24,25 @@
   },
   "plugin": {
     "path": "desktop/plugin.js",
-    "sha256": "0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543"
+    "sha256": "8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d"
   },
   "m4": {
     "frames": 62,
     "claims_pass": 15,
     "claims_total": 15,
-    "text_nodes": 2266,
+    "text_nodes": 2416,
     "forced_color_frames": 6,
     "min_authored_ratio": 5.93,
-    "ax_controls": 364,
+    "ax_controls": 298,
     "ax_unnamed": 0,
     "overflow_px": 0,
-    "source": "audit/visual/m4-visual/audit.json regenerated on wt/h146-classroom-rail at ae2494f (plugin 687613ab); text_nodes is the sum over the 56 non-forced-colour frames"
+    "source": "audit/visual/m4-visual/audit.json regenerated on the UI-batch union h158-union at c41ee83 (plugin 8347331f); text_nodes is the sum over the 56 non-forced-colour frames and ax_controls the sum over the 32 frames where the accessibility tree was measured (the other frames have no AX tree, as on every prior record)",
+    "repro": "PASS at 8347331f"
   },
   "m4_repro": {
     "command": "python3 scripts/m4v-repro-check.py",
     "result": "PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots",
-    "plugin_sha256": "0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543"
+    "plugin_sha256": "8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d"
   },
   "adversarial_state": {
     "command": "python3 tests/adversarial/attack_state.py",
@@ -93,6 +94,11 @@
     {
       "sha256": "c151974a7de0fed2662e977a001127327b3c3cf96d19a54cd49b819433f935fc",
       "commit": "5b0f124",
+      "path": "desktop/plugin.js"
+    },
+    {
+      "sha256": "0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543",
+      "commit": "625c939",
       "path": "desktop/plugin.js"
     }
   ],
