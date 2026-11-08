@@ -2,7 +2,8 @@
 
 Status: binding design and review reference. Source: the user's Obsidian vault and OpenViking
 knowledge base, reviewed 2026-11-07. This file extracts the load-bearing rules; it does not
-replace the sources.
+replace the sources. Product-level quality gates, the anti-slop definition and the card
+definition-of-done live in `docs/EXPERIENCE-QUALITY-BAR.md`; both apply.
 
 ## Sources
 
