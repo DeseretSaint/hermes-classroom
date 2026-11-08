@@ -1,8 +1,8 @@
 # Catalog entry for Coursebook. NOT SUBMITTED.
 #
-# `sha` is `f5b8463`, the docs commit on top of the merged release candidate `e564e07` (merge
-# `494a540`, H-135). The pin is the commit whose documents and images this entry quotes; an entry
-# cannot carry its own hash, so the catalog update itself is one commit above it.
+# `sha` is `5194a1a`, the docs commit on top of the merged release candidate `b33a42f` (merge of
+# `e564e07` and `ce9fcab`, H-135). The pin is the commit whose documents and images this entry
+# quotes; an entry cannot carry its own hash, so the catalog update itself is one commit above it.
 # `version` is kept in step with `plugin.yaml` (0.1.0).
 #
 # The entry is still withheld: gates 5, 7, 9 and 10 of docs/SUBMISSION.md are partial or open
@@ -10,7 +10,7 @@
 # plugin defect; Atlas reclassified it as P3-operational (docs/REVIEW_CB017-FINAL.md §3.1).
 name: coursebook
 repo: https://github.com/DeseretSaint/hermes-classroom
-sha: f5b84632d7201448e43992b2c1b160f9ea8deeb3
+sha: 5194a1a5e2030343ab40212462eb7539c62ca8de
 description: >-
   A native Hermes Desktop learning workspace where a lesson is governed state rather than chat:
   one objective at a time, typed checks, bounded grading, transactional transitions, inspectable
@@ -36,7 +36,7 @@ tier: community
 category: desktop
 requires_hermes: ">=0.23.0"
 version: "0.1.0"
-docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/INSTALL.md
+docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/5194a1a5e2030343ab40212462eb7539c62ca8de/docs/INSTALL.md
 image: https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-overview-light.png
 screenshots:
   - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-overview-dark.png
