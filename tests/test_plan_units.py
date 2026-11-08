@@ -83,16 +83,18 @@ class PlanUnitsSchemaTest(KernelCase):
 
     # ── schema ──────────────────────────────────────────────────────────────
 
-    def test_target_schema_version_is_pinned_to_v9(self) -> None:
+    def test_target_schema_version_is_pinned_to_v10(self) -> None:
         # H-53 took cb.db to v9 for the nullable `evidence.note` column the v14
-        # `observation.record` writes; migration 0007 (plan_units) and 0008 (syllabus) are unchanged.
-        self.assertEqual(db.DB_SCHEMA_VERSION, 9)
-        self.assertEqual(db.target_schema_version(), 9)
-        self.assertEqual(contract("cb.db")["schema_version"], 9)
-        self.assertEqual(db.applied_schema_version(), 9)
+        # `observation.record` writes; H-124 took it to v10 for the `hook_errors` diagnostics
+        # table a lost teaching snapshot is recorded in. Migration 0007 (plan_units) and 0008
+        # (syllabus) are unchanged.
+        self.assertEqual(db.DB_SCHEMA_VERSION, 10)
+        self.assertEqual(db.target_schema_version(), 10)
+        self.assertEqual(contract("cb.db")["schema_version"], 10)
+        self.assertEqual(db.applied_schema_version(), 10)
         with db.read() as connection:
             recorded = connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0]
-        self.assertEqual(recorded, 9)
+        self.assertEqual(recorded, 10)
 
     def test_unit_columns_match_the_contract_exactly(self) -> None:
         spec = contract("cb.db")["tables"]

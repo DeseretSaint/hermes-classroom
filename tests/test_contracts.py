@@ -1697,7 +1697,7 @@ class V6AmendmentTest(unittest.TestCase):
         for version in (1, 2, 3, 4, 5):
             self.assertNotIn(f"db.v{version}.json", contracts.CONTRACT_FILES.values())
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v14.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v9.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v10.json")
 
     def test_v6_adds_only_the_parent_studio_surface(self) -> None:
         v5 = _document("rpc.v5.json")
@@ -2592,7 +2592,7 @@ class V10AmendmentTest(unittest.TestCase):
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v14.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v9.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v10.json")
 
     def test_v10_adds_no_error_code_and_no_vocabulary_change(self) -> None:
         self.assertEqual(contracts.contract_version("cb.errors"), 4)
@@ -2920,7 +2920,7 @@ class V11AmendmentTest(unittest.TestCase):
             digest = hashlib.sha256((contracts.CONTRACT_DIR / filename).read_bytes()).hexdigest()
             self.assertEqual(f"sha256:{digest}", expected)
         self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v14.json")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v9.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v10.json")
 
     def test_docs_publish_the_v11_delta(self) -> None:
         text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
@@ -3001,12 +3001,13 @@ class V13AmendmentTest(unittest.TestCase):
 
     def test_v13_adds_no_db_table_column_or_migration(self) -> None:
         # v13 froze against cb.db v8 and touched no storage. The v8 snapshot is still on disk as
-        # shipped; cb.db has since moved to v9 for H-53's one nullable `evidence.note` column, and
-        # that single addition is the whole delta between the v13-era inventory and today's.
+        # shipped; cb.db has since moved to v9 for H-53's one nullable `evidence.note` column and
+        # to v10 for H-124's `hook_errors` diagnostics table, and those two additions are the whole
+        # delta between the v13-era inventory and today's.
         v8 = _document("db.v8.json")
         current = contracts.contract("cb.db")
         self.assertEqual(v8["schema_version"], 8)
-        self.assertEqual(set(current["tables"]), set(v8["tables"]))
+        self.assertEqual(set(current["tables"]) - set(v8["tables"]), {"hook_errors"})
         added = {
             (table, column)
             for table, spec in v8["tables"].items()
@@ -3175,7 +3176,7 @@ class V14AmendmentTest(unittest.TestCase):
 
     def test_db_v9_adds_only_a_nullable_note_column(self) -> None:
         v8 = _document("db.v8.json")
-        current = contracts.contract("cb.db")
+        current = _document("db.v9.json")
         self.assertEqual(current["schema_version"], 9)
         self.assertEqual(current["x-supersedes"], "https://contracts.coursebook.hermes/db/v8")
         self.assertEqual(set(current["tables"]), set(v8["tables"]))
@@ -3194,7 +3195,7 @@ class V14AmendmentTest(unittest.TestCase):
         note = current["tables"]["evidence"]["columns"]["note"]
         self.assertEqual(note["type"], "TEXT")
         self.assertTrue(note["nullable"], "a pre-v9 evidence row has no note and must stay valid")
-        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v9.json")
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v10.json")
 
     def test_the_migration_is_forward_only_and_rewrites_no_row(self) -> None:
         plan = contracts.contract("cb.db")["migration_plan"]
@@ -3231,6 +3232,80 @@ class V14AmendmentTest(unittest.TestCase):
             line for line in text.splitlines() if "observation.record" in line and "v12" in line
         ]
         self.assertEqual(stale, [], f"CHECKLIST-CONFIRMATION.md still says v12: {stale}")
+
+
+class DbV10AmendmentTest(unittest.TestCase):
+    """H-124 (`t_e3f0d994`): cb.db v10 records a lost teaching snapshot; cb.rpc does not move.
+
+    ``hooks.post_llm_call`` is the only writer of a teaching segment. A failed write used to be
+    swallowed, so the turn vanished from the lesson page with no marker (H-114 F3). v10 is v9 plus
+    exactly one diagnostics table, ``hook_errors``, and no column changes. The pane still reads it
+    through ``binding.get`` because the ``binding`` object in ``cb.rpc`` is deliberately open —
+    asserting that here is what keeps "no rpc version bump" a checked fact rather than a hope.
+    """
+
+    def test_v10_is_v9_plus_one_diagnostics_table(self) -> None:
+        v9 = _document("db.v9.json")
+        current = contracts.contract("cb.db")
+        self.assertEqual(current["schema_version"], 10)
+        self.assertEqual(current["x-supersedes"], "https://contracts.coursebook.hermes/db/v9")
+        self.assertEqual(set(current["tables"]) - set(v9["tables"]), {"hook_errors"})
+        self.assertEqual(set(v9["tables"]) - set(current["tables"]), set(), "v10 dropped a table")
+        for table, spec in v9["tables"].items():
+            self.assertEqual(
+                current["tables"][table]["columns"], spec["columns"], f"{table} columns changed"
+            )
+            self.assertEqual(
+                current["tables"][table].get("indexes"), spec.get("indexes"),
+                f"{table} indexes changed",
+            )
+        self.assertEqual(contracts.CONTRACT_FILES["cb.db"], "db.v10.json")
+
+    def test_hook_errors_is_diagnostics_and_names_only_the_snapshot_loss(self) -> None:
+        table = contracts.contract("cb.db")["tables"]["hook_errors"]
+        self.assertEqual(
+            table["columns"]["kind"]["enum"], ["snapshot_write_failed"],
+            "the diagnostics table must not become a general-purpose error log",
+        )
+        self.assertTrue(table["columns"]["lesson_run_id"]["nullable"])
+        self.assertEqual(table["columns"]["lesson_run_id"]["ref"], "lesson_runs.id")
+        self.assertEqual(table["columns"]["attempts"]["default"], "1")
+        self.assertIn(["lesson_run_id"], table["indexes"])
+
+    def test_the_v10_migration_is_additive_and_rewrites_no_row(self) -> None:
+        plan = contracts.contract("cb.db")["migration_plan"]
+        entry = next(item for item in plan if item["version"] == 10)
+        self.assertEqual(entry["from"], 9)
+        self.assertEqual(entry["migration"], "0010_hook_errors.sql")
+        self.assertTrue(any("Additive only" in line for line in entry["impact"]))
+        sql = (
+            contracts.CONTRACT_DIR.parent / "coursebook" / "migrations" / entry["migration"]
+        ).read_text(encoding="utf-8")
+        self.assertIn("CREATE TABLE hook_errors", sql)
+        statements = "\n".join(line for line in sql.splitlines() if not line.lstrip().startswith("--"))
+        for forbidden in ("UPDATE ", "DELETE ", "DROP ", "ALTER ", "INSERT "):
+            self.assertNotIn(forbidden, statements, forbidden)
+
+    def test_the_pane_read_needs_no_rpc_bump(self) -> None:
+        """``binding`` is an open object, so ``snapshot_failures`` is not a contract amendment."""
+        self.assertEqual(contracts.CONTRACT_FILES["cb.rpc"], "rpc.v14.json")
+        binding = contracts.method_schema("binding.get")["response"]["properties"]["binding"]
+        closed = binding["oneOf"][1]
+        self.assertNotIn(
+            "additionalProperties", closed,
+            "binding became a closed object: snapshot_failures would now need a cb.rpc version",
+        )
+
+    def test_docs_publish_the_v10_delta(self) -> None:
+        text = (contracts.CONTRACT_DIR.parent / "docs" / "CONTRACTS.md").read_text(encoding="utf-8")
+        for needle in (
+            "v10 delta (H-124)",
+            "db.v10.json",
+            "0010_hook_errors.sql",
+            "hook_errors",
+            "snapshot_failures",
+        ):
+            self.assertIn(needle, text, f"CONTRACTS.md is missing {needle!r}")
 
 
 class ChecklistConfirmationWireTest(unittest.TestCase):

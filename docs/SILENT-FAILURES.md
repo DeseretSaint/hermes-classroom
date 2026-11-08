@@ -103,6 +103,16 @@ harness). No claim in this document rests on "the code looks reasonable".
   transcript survives in chat, but the lesson's own record — the evidence a parent or reviewer
   reads — is incomplete and looks complete.
 * Fix card: **H-124**.
+* **FIXED (H-124, `t_e3f0d994`).** `post_llm_call` retries the snapshot write once; if it still
+  fails, the loss is written to the `hook_errors` table (`cb.db` v10,
+  `0010_hook_errors.sql`) as `kind='snapshot_write_failed'` with the session id, run, nonce,
+  detail and attempt count. The hook still returns `None` and never fails the turn. The pane reads
+  the per-run count from the `binding.get` response it already requests
+  (`binding.snapshot_failures = {recorded, last_at}`, `null` when the count cannot be read). When
+  even that row cannot be written, the hook logs at ERROR with
+  `coursebook_event="snapshot_write_failed"`, `recorded=False` — stated, never implied. Guard:
+  `tests/test_hook_snapshot_loss.py`; schema guard:
+  `tests/test_contracts.py::DbV10AmendmentTest`.
 
 ### F4 — A finished pack import is journaled as "interrupted", and the UI says the worker died
 * **SILENT FALSEHOOD (with retry cost) · severity: high · [EXECUTED]**

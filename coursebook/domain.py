@@ -534,6 +534,13 @@ def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
     # `cb.rpc` v5 is an open object, so these two additive fields need no version bump; `status`
     # stays the row's own status, never derived from the section.
     section_columns = row.keys()
+    lesson_run_id = row["lesson_run_id"] if "lesson_run_id" in section_columns else None
+    # A teaching snapshot that could not be written is durable evidence loss (`cb.db` v10
+    # `hook_errors`). The pane needs to see *that* — this is the read it already makes on open, and
+    # the `bindings` object in `cb.rpc` is open, so no version bump is needed for the field.
+    from . import turn
+
+    failures = turn.snapshot_failures(lesson_run_id=lesson_run_id)
     return int(row["revision"]), {
         "binding": {
             "binding_id": row["id"],
@@ -543,8 +550,9 @@ def binding_get(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             "connection_id": row["connection_id"],
             "runtime_session_id": row["runtime_session_id"],
             "stored_session_id": row["stored_session_id"],
-            "lesson_run_id": row["lesson_run_id"] if "lesson_run_id" in section_columns else None,
+            "lesson_run_id": lesson_run_id,
             "objective_id": row["objective_id"] if "objective_id" in section_columns else None,
+            "snapshot_failures": failures,
             "cwd_fingerprint": row["cwd_fingerprint"],
             "compression_tip": row["compression_tip"],
             "status": row["status"],

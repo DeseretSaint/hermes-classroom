@@ -15,7 +15,10 @@ These three functions are the *only* place Coursebook touches Hermes chat lifecy
 
 ``post_llm_call``
     Observer only: records the assistant snapshot as a lesson segment, fenced by the revision and
-    turn nonce captured before the turn. Late callbacks are discarded, never written.
+    turn nonce captured before the turn. Late callbacks are discarded, never written. A write that
+    fails is retried once, then recorded as a ``hook_errors`` row the pane reads through
+    ``binding.get`` (``snapshot_failures``): the observer is still never the gate, but a lost
+    teaching snapshot is never silent (H-114 F3).
 
 ``post_tool_call``
     Captures tool provenance/usage correlation **for a bound lesson chat only**. A session that
@@ -200,15 +203,71 @@ def post_llm_call(
     if not pending:
         # No gate ran for this turn (ungoverned chat or a failed pre-turn). Nothing to record.
         return None
+    nonce = pending.get("nonce")
+    revision = pending.get("revision")
+    last_error: BaseException | None = None
+    # One immediate retry before declaring the snapshot lost. A transient lock or a brief I/O
+    # fault recovers here, and the lesson page never has to be told about it.
+    for attempt in (1, 2):
+        try:
+            turn.record_assistant_snapshot(
+                session_id=session_id,
+                assistant_response=str(assistant_response or ""),
+                nonce=nonce,
+                revision=revision,
+            )
+            if attempt == 2:
+                logger.warning(
+                    "coursebook: teaching snapshot recovered on retry (session=%s nonce=%s)",
+                    session_id,
+                    nonce,
+                    extra={"coursebook_event": "snapshot_write_recovered", "session_id": session_id},
+                )
+            return None
+        except Exception as exc:  # noqa: BLE001 - the observer is never the gate
+            last_error = exc
+    # The turn already ran; it must not be failed now. But a lost teaching snapshot is durable
+    # evidence loss, not a no-op: record it where the pane can read it (`binding.get` ->
+    # `snapshot_failures`), and say so in the log even when the record cannot be written.
+    detail = f"{type(last_error).__name__}: {last_error}"
+    recorded = False
     try:
-        turn.record_assistant_snapshot(
+        recorded = turn.record_snapshot_failure(
             session_id=session_id,
-            assistant_response=str(assistant_response or ""),
-            nonce=pending.get("nonce"),
-            revision=pending.get("revision"),
+            nonce=nonce if isinstance(nonce, str) else None,
+            detail=detail,
+            attempts=2,
         )
-    except Exception:  # noqa: BLE001 - the observer is never the gate
-        return None
+    except Exception:  # noqa: BLE001 - a logging path may not break the host turn either
+        recorded = False
+    if recorded:
+        logger.warning(
+            "coursebook: teaching snapshot LOST after 2 attempts and recorded in hook_errors"
+            " (session=%s nonce=%s): %s",
+            session_id,
+            nonce,
+            detail,
+            extra={
+                "coursebook_event": "snapshot_write_failed",
+                "session_id": session_id,
+                "nonce": nonce,
+                "recorded": True,
+            },
+        )
+    else:
+        logger.error(
+            "coursebook: teaching snapshot LOST after 2 attempts AND the failure record could not"
+            " be written (session=%s nonce=%s): %s",
+            session_id,
+            nonce,
+            detail,
+            extra={
+                "coursebook_event": "snapshot_write_failed",
+                "session_id": session_id,
+                "nonce": nonce,
+                "recorded": False,
+            },
+        )
     return None
 
 

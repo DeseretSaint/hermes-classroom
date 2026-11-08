@@ -20,17 +20,17 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
 | `cb.rpc` | `contracts/rpc.v14.json` | 14 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
-| `cb.db` | `contracts/db.v9.json` | 9 | Cinder | migrations, every command, evidence views |
+| `cb.db` | `contracts/db.v10.json` | 10 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v4.json` | 4 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` | 1 | Lattice | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 
 The v1 **to v13** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
 `rpc.v12.json` and `rpc.v13.json`), the
-v1 **to v8** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json` and
-`db.v8.json`), and the v1
+v1 **to v9** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
+`db.v8.json` and `db.v9.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v3 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v13.json`, `db.v8.json`,
+as immutable history: the superseded current files are `rpc.v13.json`, `db.v9.json`,
 `errors.v3.json` and `jobs.v3.json`.
 `CONTRACT_FILES` in `coursebook/contracts.py` points each id at its current
 version only. `audit_contracts()` rejects any `$ref` that still targets a superseded version.
@@ -1731,3 +1731,44 @@ change, no check kind or answer kind, no upload path, no `artifact.submit`/`code
 `performance.submit`. An observation is never independent evidence, and
 `docs/CHECKLIST-CONFIRMATION.md` §3.2/§6 is unchanged in substance: a checklist that *is* an
 objective's check still closes through `attempt.submit` `selection`.
+
+## cb.db v10 delta (H-124) — a lost teaching snapshot is recorded, not swallowed
+
+`hooks.post_llm_call` is the only writer of a `lesson_segments` row with `kind='teaching'` — the
+durable record the Textbook and Guided views render. It wrapped
+`turn.record_assistant_snapshot` in `except Exception: return None`, so a failed write removed a
+teaching turn from the lesson page while the chat transcript still showed it, with no marker
+anywhere (H-114 F3, `docs/SILENT-FAILURES.md`).
+
+The hook is still **never the gate**: the turn is not failed, and a snapshot write is still an
+observer. What changes is that the loss is now durable and readable.
+
+| Change | Where | What it may never do |
+|---|---|---|
+| `hook_errors` table | `coursebook/migrations/0010_hook_errors.sql` | become a general error log, lesson text, evidence or a grade |
+| one retry, then a row | `coursebook/hooks.py` `post_llm_call` | raise into the host turn, or retry more than once |
+| `snapshot_failures` on the binding | `coursebook/domain.py` `binding.get` | claim `0` losses when the count could not be read (`null` means unknown) |
+
+**Storage.** `cb.db` **v10** is v9 plus exactly one table, `hook_errors`
+(`id`, `kind`, `session_id`, `lesson_run_id`, `nonce`, `detail`, `attempts`, `created_at`), with
+indexes on `lesson_run_id` and `created_at`. `kind` is checked against exactly one value,
+`snapshot_write_failed`. `lesson_run_id` is nullable and references `lesson_runs.id`: a failure
+whose binding could not be read is still recorded rather than dropped. The migration is additive,
+forward-only, with no backfill — a pre-v10 database recorded no hook failures, which is true
+because the code that could have written them swallowed the error.
+
+**No `cb.rpc` version.** The `binding` object in `binding.get`'s response is an open object (the
+same deliberate choice that let `lesson_run_id`/`objective_id` land without a bump in v5), so the
+additive `snapshot_failures: {recorded, last_at}` field needs no rpc version. `recorded` is `null`,
+never `0`, when the count could not be read: "unknown" and "no loss" must not look alike.
+
+**Recovery.** One immediate retry runs before a loss is declared, so a transient lock recovers in
+place and leaves no row. A row therefore means two attempts failed, and `attempts` records that
+count. When even the failure row cannot be written (a read-only or full store) the hook logs at
+ERROR with `coursebook_event="snapshot_write_failed"` and `recorded=False` — the one case where the
+evidence genuinely could not be persisted, and it is stated rather than implied.
+
+**Regression guard.** `tests/test_hook_snapshot_loss.py` forces the snapshot write to raise and
+asserts the turn still returns `None`, the loss is attributed to the run, `binding.get` reports it,
+a transient failure recovers without a row, and a normal turn still writes exactly one segment.
+`tests/test_contracts.py::DbV10AmendmentTest` pins the additive schema and the open binding object.

@@ -31,7 +31,7 @@ CONTRACT_FILES: dict[str, str] = {
     "cb.vocabulary": "vocabulary.v1.json",
     "cb.errors": "errors.v4.json",
     "cb.rpc": "rpc.v14.json",
-    "cb.db": "db.v9.json",
+    "cb.db": "db.v10.json",
     "cb.jobs": "jobs.v4.json",
     "cb.pack": "pack-manifest.v1.json",
     "cb.projection": "projection.v1.json",

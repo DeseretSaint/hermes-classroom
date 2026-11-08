@@ -600,3 +600,81 @@ def record_assistant_snapshot(*, session_id: str, assistant_response: str, nonce
             )
             ordinal += 1
     return True
+
+
+def record_snapshot_failure(*, session_id: str, nonce: str | None, detail: str,
+                            attempts: int = 1) -> bool:
+    """Write a durable ``hook_errors`` row for a teaching snapshot that could not be stored.
+
+    ``post_llm_call`` is the only writer of a teaching segment (``kind='teaching'``), the durable
+    record the Textbook and Guided views render. Before ``cb.db`` v10 a failed write was swallowed:
+    the turn stayed in the chat transcript but vanished from the lesson page with no marker
+    (H-114 F3). The hook still never gates the turn, so the loss is *recorded* here instead of
+    raised — a row that ``binding.get`` reports as ``snapshot_failures`` for the run.
+
+    Returns ``True`` when the loss was recorded. **Never raises**: it runs inside an exception
+    handler, so a second failure must not escape into the host turn. ``False`` means the failure
+    itself could not be persisted, which the caller logs at error level.
+
+    It does not provision. A missing store means the pre-turn gate never ran, so there is no
+    lesson to lose a snapshot from; the caller never reaches here in that case.
+    """
+    if not session_id or not db.store_exists():
+        return False
+    lesson_run_id: str | None = None
+    try:
+        with db.read() as connection:
+            binding = connection.execute(
+                "SELECT lesson_run_id FROM bindings WHERE stored_session_id = ?"
+                " ORDER BY revision DESC, updated_at DESC LIMIT 1",
+                (str(session_id),),
+            ).fetchone()
+            if binding is not None:
+                lesson_run_id = binding["lesson_run_id"]
+    except Exception:  # noqa: BLE001 - an unreadable binding must not lose the failure record
+        lesson_run_id = None
+    try:
+        with db.transaction() as connection:
+            connection.execute(
+                "INSERT INTO hook_errors (id, kind, session_id, lesson_run_id, nonce, detail,"
+                " attempts, created_at) VALUES (?, 'snapshot_write_failed', ?, ?, ?, ?, ?, ?)",
+                (
+                    _random_evidence_id().replace("evd_", "hke_"),
+                    str(session_id),
+                    lesson_run_id,
+                    str(nonce) if nonce is not None else None,
+                    str(detail)[:2000],
+                    max(1, int(attempts)),
+                    db.utcnow(),
+                ),
+            )
+    except Exception:  # noqa: BLE001 - the observer is never the gate, even when logging fails
+        return False
+    return True
+
+
+def snapshot_failures(*, lesson_run_id: str | None) -> dict[str, Any]:
+    """Per-run count of lost teaching snapshots, for the ``binding.get`` read the pane makes.
+
+    ``recorded`` is ``None`` — never ``0`` — when the count could not be read. A pane must be able
+    to tell "no snapshot was lost" from "this build cannot say", or the diagnostics surface becomes
+    the same silent falsehood this table exists to remove.
+    """
+    if not lesson_run_id or not db.store_exists():
+        return {"recorded": None, "last_at": None}
+    try:
+        with db.read() as connection:
+            present = connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'hook_errors'"
+            ).fetchone()
+            if present is None:
+                return {"recorded": None, "last_at": None}
+            row = connection.execute(
+                "SELECT COUNT(*) AS recorded, MAX(created_at) AS last_at FROM hook_errors"
+                " WHERE lesson_run_id = ?",
+                (str(lesson_run_id),),
+            ).fetchone()
+    except Exception:  # noqa: BLE001 - the pane read reports unknown rather than a false zero
+        return {"recorded": None, "last_at": None}
+    return {"recorded": int(row["recorded"] or 0), "last_at": row["last_at"]}
+
