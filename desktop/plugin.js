@@ -6101,17 +6101,13 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
     setStep('parsing')
   }, [refuse, onParsed])
 
-  const cancel = useCallback(() => {
+  // Cancelling before the backend has minted a parse job is honest only if it says why: nothing
+  // further is sent from this screen, and there is no job id here to stop. Once a job exists the
+  // parse stage owns the cancel so its answer is rendered instead of assumed.
+  const cancelBeforeJob = useCallback(() => {
     cancelledRef.current = true
     setCancelled(true)
-    // Stopping the watch is not stopping the job. A real cancel is sent when the backend has
-    // already minted the parse job, so the learner is not told work stopped while it runs on.
-    if (parseJob && parseJob.job_id) {
-      rpc('jobs.cancel', { job_id: parseJob.job_id }, { idempotencyKey: `cb-syllabus-parse-cancel-${parseJob.job_id}` })
-        .catch(() => null)
-    }
-    onCancel && onCancel()
-  }, [onCancel, parseJob])
+  }, [])
 
   if (step === 'parsing' || step === 'parsed') {
     return jsx(SyllabusParseStage, {
@@ -6121,7 +6117,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
       revisionOnly,
       onParsed: setParsed,
       onStep: setStep,
-      onCancel: cancel,
+      onCancel: onCancel,
       onCreated,
       door: door,
       busy,
@@ -6146,7 +6142,7 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
         door === 'available'
           ? jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: openFile, disabled: busy, children: 'Choose a syllabus file' })
           : null,
-        jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: cancel, children: 'Cancel' })
+        jsx(sdk.Button, { size: 'sm', variant: 'ghost', onClick: cancelBeforeJob, children: 'Cancel' })
       ] }),
       jsxs('div', { className: 'flex flex-col gap-1', children: [
         jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Or paste the syllabus text' }),
@@ -6183,7 +6179,13 @@ function SyllabusIntakeFlow({ onCancel, onCreated, onParsed, supersedes, revisio
         ? jsx(sdk.ErrorState, { title: error.code, description: error.message })
         : null,
       cancelled
-        ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'Cancelled. Nothing further was sent.' })
+        ? jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancelled-before-job', children: [
+          jsx('div', {
+            className: 'max-w-prose text-xs text-(--ui-text-secondary)',
+            children: 'Cancelled. Nothing further was sent — no parse job had been recorded here, so there was nothing to stop.'
+          }),
+          jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Close' })
+        ] })
         : null
     ]
   })
@@ -6197,10 +6199,14 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
   const [scope, setScope] = useState('short')
   const [submitting, setSubmitting] = useState(false)
   const [failure, setFailure] = useState(null)
+  // The backend's answer to a cancel, rendered instead of assumed. `asking` is the unanswered
+  // moment; nothing claims the job stopped until this holds the backend's own state.
+  const [cancelOutcome, setCancelOutcome] = useState(null)
+  const cancelRef = useRef(false)
   const keyRef = useRef(null)
 
   useEffect(() => {
-    if (!syllabus || document) return undefined
+    if (!syllabus || document || cancelOutcome) return undefined
     let stopped = false
     let attempts = 0
     let dispose = null
@@ -6212,6 +6218,7 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
       }
     }
     const tick = async () => {
+      if (stopped || cancelRef.current) return
       attempts += 1
       const response = await rpc('syllabus.get', {
         syllabus_id: syllabus.syllabus_id,
@@ -6267,7 +6274,76 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
       dispose = () => clearInterval(handle)
     }
     return stop
-  }, [syllabus, jobId, document, onParsed])
+  }, [syllabus, jobId, document, onParsed, cancelOutcome])
+
+  // Stopping the watch is not stopping the job. `cancelRef` halts the poll immediately, then the
+  // `jobs.cancel` answer decides which of the three outcomes is shown: accepted (`queued` became
+  // `cancelled`), requested but still finishing (`running` became `cancel_requested`), or refused.
+  const requestCancel = useCallback(async () => {
+    cancelRef.current = true
+    setCancelOutcome({ status: 'asking' })
+    if (!jobId) {
+      setCancelOutcome({ status: 'no-job' })
+      return
+    }
+    const response = await rpc('jobs.cancel', { job_id: jobId }, { idempotencyKey: `cb-syllabus-parse-cancel-${jobId}` })
+    if (!response || response.ok !== true) {
+      const refusal = (response && response.error) || {
+        code: 'INTERNAL_ERROR',
+        message: 'The backend did not answer the cancel, so this screen cannot say the parse stopped.'
+      }
+      setCancelOutcome({ status: 'failed', error: refusal })
+      return
+    }
+    const target = response.result && response.result.state
+    if (target === 'cancelled') setCancelOutcome({ status: 'accepted' })
+    else setCancelOutcome({ status: 'requested', state: target || null })
+  }, [jobId])
+
+  if (cancelOutcome) {
+    const close = jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'secondary', onClick: onCancel, children: 'Back to Library' })
+    if (cancelOutcome.status === 'asking') {
+      return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancel-asking', children: [
+        jsx(sdk.Loader, { label: 'Asking the backend to stop the parse' })
+      ] })
+    }
+    if (cancelOutcome.status === 'accepted') {
+      return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancel-accepted', children: [
+        jsx('div', { className: 'max-w-prose text-sm', children: 'Cancelled. Nothing further was sent.' }),
+        jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: 'The backend accepted the stop, so no course will be created from this parse.' }),
+        close
+      ] })
+    }
+    if (cancelOutcome.status === 'requested') {
+      return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancel-requested', children: [
+        jsx('div', {
+          className: 'max-w-prose text-sm',
+          children: 'Asked the backend to stop; it will not start new work. The course will not be created until you review it.'
+        }),
+        close
+      ] })
+    }
+    if (cancelOutcome.status === 'no-job') {
+      return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancelled-before-job', children: [
+        jsx('div', {
+          className: 'max-w-prose text-sm',
+          children: 'Cancelled. Nothing further was sent — no parse job had been recorded here, so there was nothing to stop.'
+        }),
+        close
+      ] })
+    }
+    const refusal = cancelOutcome.error || {}
+    return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'cancel-failed', children: [
+      jsx(sdk.ErrorState, {
+        title: refusal.code || 'CANCEL_REFUSED',
+        description: `${refusal.message || 'The backend refused the cancel.'} The parse may still be running, and a course could be created from it. Retry the cancel, or review the course when it appears.`
+      }),
+      jsxs('div', { className: 'flex flex-wrap gap-2', children: [
+        jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: requestCancel, children: 'Retry cancel' }),
+        close
+      ] })
+    ] })
+  }
 
   const target = document || (parsed && parsed.document ? parsed : null)
 
@@ -6275,7 +6351,7 @@ function SyllabusParseStage({ syllabus, jobId, parsed, revisionOnly, onParsed, o
     return jsxs('div', { className: 'flex flex-col gap-2', 'data-cb-syllabus': 'parsing', children: [
       jsx(sdk.Loader, { label: 'Reading your syllabus' }),
       jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: SYLLABUS_COPY.parseRunning }),
-      jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'ghost', onClick: onCancel, children: 'Stop watching this parse' })
+      jsx(sdk.Button, { className: 'self-start', size: 'sm', variant: 'ghost', onClick: requestCancel, children: 'Stop watching this parse' })
     ] })
   }
   if (state === 'failed' || failure) {
