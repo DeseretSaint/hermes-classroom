@@ -16,18 +16,26 @@ Three different calls, three different prompts, three different schemas:
 
 | Pass | Purpose string | Prompt version | Schema |
 |---|---|---|---|
-| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v6` | `PLAN_SCHEMA` |
-| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v7` | `PLAN_SCHEMA_V2` |
+| Plan author (v1 plan) | `coursebook.plan.generate` | `plan-prompt.v8` | `PLAN_SCHEMA` |
+| Plan author (blueprint v2 plan) | `coursebook.plan.generate` | `plan-prompt.v9` | `PLAN_SCHEMA_V2` |
 | Unit-sections author | `coursebook.unit_sections.generate` | `unit-sections-prompt.v1` | `UNIT_SECTIONS_SCHEMA` |
 | Plan validator | `coursebook.plan.validate` | `validation-prompt.v3` | `VALIDATION_SCHEMA` |
-| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v9` | `LESSON_SCHEMA` |
+| Lesson author | `coursebook.lesson.generate` | `lesson-prompt.v10` | `LESSON_SCHEMA` |
 | Lesson validator | `coursebook.lesson.validate` | `validation-prompt.v3` | `VALIDATION_SCHEMA` |
 
-`build_plan_request()` selects the v2 schema and `plan-prompt.v7` when the brief declares a scope
-(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v6` otherwise.
+`build_plan_request()` selects the v2 schema and `plan-prompt.v9` when the brief declares a scope
+(`docs/COURSE-BLUEPRINT.md` §5), and `PLAN_SCHEMA`/`plan-prompt.v8` otherwise.
+
+The prompt labels above are the ones **H-195** ships: the v1 plan prompt advanced `v6` → `v8` and
+the blueprint prompt `v7` → `v9` for the through-line, prerequisite-assumption and
+no-study-skills-drift requirements, and the lesson prompt advanced `v9` → `v10` for the teaching
+arc, the plain-language rule and the lesson-specific heading rule. The pipeline label moved with
+them: `PIPELINE_VERSION = "cb.gen.v2"` (`coursebook/generation.py`), and it is part of every
+idempotency fingerprint, so a plan or lesson authored under `cb.gen.v1` is never silently reused
+under the H-195 rules.
 
 The labels in that table are not hand-copied. They are the constants at
-`coursebook/generation.py:157-174` (`PLAN_PROMPT_VERSION`, `PLAN_PROMPT_VERSION_V2`,
+`coursebook/generation.py:157-182` (`PLAN_PROMPT_VERSION`, `PLAN_PROMPT_VERSION_V2`,
 `UNIT_SECTIONS_PROMPT_VERSION`, `LESSON_PROMPT_VERSION`, `VALIDATION_PROMPT_VERSION`), and
 `scripts/check-docs-truth.py` reads them out of the module and fails this document when a table row
 or prose reference names a retired label. A prompt label is part of every stored validation binding
@@ -87,6 +95,24 @@ the results to the pipeline, which persists them.
 nowhere else. A host without `ctx.llm` leaves both unbound; `host_llm()` then raises a typed
 `GenerationRejected` instead of falling back to any provider, so failing closed is the intended
 behaviour.
+
+**Provenance is what the provider reported (H-195).** `generation_provenance(response, request)`
+records `{provider, model, known, prompt_version, pipeline_version}` on the plan document
+(`generation`), on the plan job result, on `approval_provenance.generator`, on
+`plan_document()["generation"]` and on every lesson summary. `provider` and `model` are the values
+the host's `PluginLlmStructuredResult` returned; nothing is inferred from configuration, a settings
+default or the purpose string. When the provider reports no model the block says `known: false`,
+the validation outcome is `model_assessed`, and the artifact is never presented as independent.
+`prompt_version` is the label on the request that actually wrote the artifact and
+`pipeline_version` is `PIPELINE_VERSION` (`cb.gen.v2`). A host with no bound model fails closed: a
+missing `_HOST_LLM` raises `GenerationRejected` ("no host LLM bound"), and a seam that returns
+anything other than an `LLMResponse` raises the same typed rejection. Neither case produces a
+canned document.
+
+**Model tested.** No live provider run has been measured against this contract. Everything this
+document describes is proven with the deterministic fake provider and the recorded transcripts
+(0 provider calls, $0.00 spend); the live quality benchmark is a separate card (H-195b) and its
+results are not claimed here.
 
 **Limits.**
 
@@ -247,6 +273,18 @@ call and can never look validated:
   structurally one entry, and `enforce_plan_rules` refuses a coverage gap or a duplicate); every
   objective appears in the check plan. The objective is the authoring and evidence unit, so a
   plan cannot leave an objective without its own generated lesson and export section.
+* **The plan states its arc and its starting assumptions (H-195).** `PLAN_SCHEMA` and
+  `PLAN_SCHEMA_V2` require `through_line` (20–600 characters: the single arc every objective
+  serves, in the owner's terms) and `prerequisite_assumptions` (1–6 non-blank statements of what
+  the learner must already have before objective 1). `enforce_plan_rules` refuses a missing or
+  too-short through-line and an empty prerequisite list with a typed reason, so a plan that cannot
+  say what the course builds toward never reaches the validator.
+* **No drift into generic study skills (H-195).** The same rule set refuses an objective title or
+  section `lesson_intent` that names a phrase from `GENERIC_STUDY_PHRASES` (time management,
+  note-taking, study skills, study habits, learning how to learn, how to study, motivation and
+  mindset, procrastination) **unless the goal itself names that phrase**. The check is a bounded
+  phrase list, not a topic classifier: a course genuinely about note-taking or time management is
+  still authored, and a course about ordering coffee cannot quietly become one.
 * Time honesty (`AUDIT.md` R9): `basis: none` carries no attainment hours; `basis: model` requires
   low confidence; `basis: fsi` requires a benchmark that states it is not a self-study conversion;
   attainment hours never carry high confidence.
@@ -444,14 +482,33 @@ whose labels read the same once case, spacing and punctuation are ignored are re
 read seam's own normalisation (`domain._check_label_key`, imported rather than reimplemented).
 Both raise `_RuleViolation`: attempt 1 is retried with the reasons, attempt 2 parks the lesson
 `needs_review` with the check closed, and `check.get` would refuse the same duplicate anyway. The
-prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v9` is
+prompt change is one of the reasons `LESSON_PROMPT_VERSION` is versioned; `lesson-prompt.v10` is
 the current label.
 
-**Rubric floor.** The lesson prompt (`lesson-prompt.v9`) asks for 3–6 criteria, each a distinct
+**Rubric floor.** The lesson prompt (`lesson-prompt.v10`) asks for 3–6 criteria, each a distinct
 observable aspect of the response. `enforce_lesson_rules` refuses fewer than
 `packs.MIN_RUBRIC_CRITERIA` (3) with a typed reason, so attempt 1 is retried with that reason in
 `revision_instructions` and attempt 2 parks the lesson `needs_review`. Criteria are never
 synthesised to reach the floor: a pack is exportable only when the author actually declared them.
+
+**Teaching floor (H-195).** On the real authoring path, and before the independent validator is
+called, `teaching_quality_problems(lesson)` applies a deterministic floor to the drafted section:
+
+* the teaching arc: at least one `model` segment that presents the target and one `guided`
+  segment that gives a second, worked pass at the same target;
+* a worked example with at least two non-blank steps — an answer stated without steps is refused;
+* headings that name this lesson: a heading that folds to `GENERIC_LESSON_HEADINGS` (`overview`,
+  `key points`, `summary`, `introduction`, …) is refused, and two segments may not share one;
+* at least `MIN_TEACHING_PROSE_CHARS` (400) characters of authored segment prose, with a longest
+  segment of at least `MIN_SINGLE_SEGMENT_CHARS` (120) — an outline is not a lesson;
+* no boilerplate from `PLACEHOLDER_LESSON_PHRASES` (`lorem ipsum`, `to be determined`,
+  `insert content`, …) anywhere in the authored teaching text.
+
+A failure is a `_RuleViolation`, so attempt 1 is retried with those reasons and attempt 2 parks the
+lesson `needs_review` with the check closed: a thin draft never reaches a learner. The floor is
+deterministic and structural — it refuses an outline and never scores prose quality — which is
+exactly why it is **not** an eleventh `VALIDATION_CRITERIA` entry. The ten criteria remain the
+independent model's judgment; this floor remains code.
 
 **Capability policy reaches the model.** The plan declares what each lesson needs before the lesson
 author runs: every `PLAN_SCHEMA` section carries a typed `media_need`
@@ -461,7 +518,7 @@ construct. `enforce_plan_rules` refuses a missing declaration and hands each dec
 (a required illustration, an illustration on a symbolic lesson, audio outside a language lesson).
 The declaration is stored in `gen_plan_sections.media_need_json`. Before the lesson prompt is built,
 the pipeline computes one immutable plan from the recipe, the objective's evidence target, the
-section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v9`
+section's declaration, the locale/level and an advisory subject domain. `lesson-prompt.v10`
 receives exactly that plan — the check angle, the rubric profile and the *permitted* media roles —
 instead of a generic invitation to add media. A lesson whose policy sets image or audio to `none`
 is told to emit no item of that kind at all, and one whose plan requires an item must produce it.
@@ -484,7 +541,7 @@ default profile. The profile's own criteria are then validated (3–6 distinct o
 mental-state claims, no restated aspect).
 
 **Procedure header (H-06).** A technical procedure lesson carries an optional typed `procedure`
-object in `LESSON_SCHEMA`; `lesson-prompt.v9` asks the author for it whenever the check's evidence
+object in `LESSON_SCHEMA`; `lesson-prompt.v10` asks the author for it whenever the check's evidence
 target is `procedure` or the lesson's construct is a technical procedure, and forbids it
 everywhere else. The label is versioned rather than frozen: it is recorded in stored validation
 bindings and the idempotency fingerprint, so a different instruction text under a reused label
@@ -571,7 +628,7 @@ Two stored shapes project into the same `$defs/lesson_document`:
 
 Rules the projection cannot bend:
 
-* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v9`)
+* `short` is authored, never synthesised from `deep`. The lesson writer (`lesson-prompt.v10`)
   authors `segments[].short`, `worked_example.short` and `learner_explanation_short`; the
   projection publishes exactly those strings and never slices a deep field. `_enforce_lesson_document`
   runs before the independent validator: it builds the document, re-runs `validate_blocks`

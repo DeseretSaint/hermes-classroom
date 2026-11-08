@@ -72,14 +72,14 @@
         "section_title": "Remove the rear wheel, replace the inner tube and check the brakes",
         "segments": [
           {
-            "body": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead.",
-            "heading": "The step",
+            "body": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead. The wheel comes off before the tube is touched, and the bead is the part that decides whether the repair holds.",
+            "heading": "Release the wheel before the tube",
             "kind": "model",
             "short": "Deflate the tyre fully and lift the wheel out of the dropouts."
           },
           {
-            "body": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
-            "heading": "Do it",
+            "body": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel. Forcing the bead with a lever marks the tyre, and a marked bead seats unevenly, so the hand check stays the last step.",
+            "heading": "Seat the bead, then check the brakes",
             "kind": "guided",
             "short": "Seat the new tube by hand and inflate it in small steps."
           }
@@ -104,9 +104,15 @@
   "observations": {
     "approval_provenance": {
       "facts_unverified": false,
+      "generator": {
+        "known": true,
+        "model": "recorded-transcript-h40",
+        "provider": "recorded"
+      },
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
+      "prompt_version": "plan-prompt.v9",
       "warning": null
     },
     "attempt_rows": [
@@ -142,7 +148,7 @@
     "plan_scope": "single",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v7",
+    "prompt_version": "plan-prompt.v9",
     "schema_name": "coursebook_plan_v2",
     "sections": 1,
     "units": 1,
@@ -182,9 +188,14 @@
       }
     ],
     "plan_schema": "coursebook.plan.v2",
+    "prerequisite_assumptions": [
+      "The learner has a floor pump, a tyre lever and a spare tube of the right size.",
+      "The learner can already identify the brake quick-release on this bike."
+    ],
     "scope": "single",
     "source_ids": [],
     "spaced_review": false,
+    "through_line": "One repair from start to finish: the wheel comes off, the tube goes in, the bead is checked by hand, and the brakes are proved before the ride.",
     "time_estimate": {
       "attainment_hours": null,
       "basis": "none",
@@ -352,9 +363,9 @@
         "blocks": [
           {
             "check_id": null,
-            "deep": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead.",
-            "headline": "The step",
-            "id": "blk_99d2b43364fec3143d41",
+            "deep": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead. The wheel comes off before the tube is touched, and the bead is the part that decides whether the repair holds.",
+            "headline": "Release the wheel before the tube",
+            "id": "blk_24f68ed1f3970f2c41d3",
             "media": [],
             "role": "example",
             "short": "Deflate the tyre fully and lift the wheel out of the dropouts.",
@@ -362,9 +373,9 @@
           },
           {
             "check_id": "000000000000001e",
-            "deep": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
-            "headline": "Do it",
-            "id": "blk_f9de1defbbaa5c277955",
+            "deep": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel. Forcing the bead with a lever marks the tyre, and a marked bead seats unevenly, so the hand check stays the last step.",
+            "headline": "Seat the bead, then check the brakes",
+            "id": "blk_3cc7cf2f48c0416a82be",
             "media": [],
             "role": "practice",
             "short": "Seat the new tube by hand and inflate it in small steps.",
@@ -392,9 +403,9 @@
           }
         ],
         "check_id": "000000000000001e",
-        "content_hash": "sha256:b89cf1f0cb070008f876f022217d6386c0420bba2db8835f5c1a0ad4fdd923ef",
+        "content_hash": "sha256:b1a250a6bb9b3d3a9a3fd68ec1d91c2a6bcec472f9864708c868fd82461222e8",
         "direction": "ltr",
-        "document_id": "doc_b89cf1f0cb070008f876",
+        "document_id": "doc_b1a250a6bb9b3d3a9a3f",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -467,6 +478,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000001e",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "000000000000001d",
               "reused": false,
               "section_id": "0000000000000017",
@@ -499,7 +517,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:0ed49b16a0035111db2c0c4ed99683b29e201837671556a54ebe2c9c5de29993",
+          "plan_hash": "sha256:ad190afa132937f593fa7d73350fbb8c0ea1c1e6fcbee884116bcd7d182c7cbf",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -539,8 +557,8 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2850,
-            "output_tokens": 945,
+            "input_tokens": 2993,
+            "output_tokens": 1017,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -601,7 +619,7 @@
           1,
           1
         ],
-        "prompt_version": "plan-prompt.v7",
+        "prompt_version": "plan-prompt.v9",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -620,9 +638,15 @@
       "result": {
         "approval_provenance": {
           "facts_unverified": false,
+          "generator": {
+            "known": true,
+            "model": "recorded-transcript-h40",
+            "provider": "recorded"
+          },
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
+          "prompt_version": "plan-prompt.v9",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -633,6 +657,13 @@
           "source": "declared",
           "target_language": null
         },
+        "generation": {
+          "known": true,
+          "model": "recorded-transcript-h40",
+          "pipeline_version": "cb.gen.v2",
+          "prompt_version": "plan-prompt.v9",
+          "provider": "recorded"
+        },
         "job_id": "job_00000000000000000000000000000007",
         "job_kind": "plan",
         "level": "beginner",
@@ -640,7 +671,7 @@
         "next_unit_ordinal": 1,
         "objectives": 1,
         "plan_content_hash": "sha256:2757e4000dd5cfb41c46f9b7a39ad1bc8e3b5520e815b657263b36c3db372ac3",
-        "plan_hash": "sha256:0ed49b16a0035111db2c0c4ed99683b29e201837671556a54ebe2c9c5de29993",
+        "plan_hash": "sha256:ad190afa132937f593fa7d73350fbb8c0ea1c1e6fcbee884116bcd7d182c7cbf",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -683,8 +714,8 @@
           "calls": 2,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 2055,
-          "output_tokens": 653,
+          "input_tokens": 2146,
+          "output_tokens": 740,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -764,7 +795,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 1,
-          "plan_hash": "sha256:0ed49b16a0035111db2c0c4ed99683b29e201837671556a54ebe2c9c5de29993",
+          "plan_hash": "sha256:ad190afa132937f593fa7d73350fbb8c0ea1c1e6fcbee884116bcd7d182c7cbf",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -797,7 +828,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1351,
+            "input_tokens": 1442,
             "output_tokens": 431,
             "unknown_calls": 0,
             "unknown_cost": false

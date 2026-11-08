@@ -5,6 +5,7 @@
         "all listed steps ticked honestly"
       ],
       "check_prompt": "Tick each step only after you have actually done it.",
+      "counter": "Forcing the bead with a lever marks the tyre, and a marked bead seats unevenly, so the hand check stays the last step.",
       "criterion": "Seat the new tube by hand, inflate in small steps, and close the quick-release before you spin the wheel.",
       "criterion_short": "Seat the new tube by hand and inflate it in small steps.",
       "example_steps": [
@@ -14,6 +15,10 @@
       ],
       "explanation": "A tube that is pinched under the bead fails on the first ride; the hand-check of the bead is the step that catches it.",
       "explanation_short": "A tube that is pinched under the bead fails on the first ride.",
+      "headings": [
+        "Release the wheel before the tube",
+        "Seat the bead, then check the brakes"
+      ],
       "intent": "Talk the learner through the repair and confirm each step was done.",
       "items": [
         {
@@ -31,7 +36,8 @@
       ],
       "practice": "Deflate the tyre fully, open the brake quick-release, and lift the wheel out of the dropouts without levering the bead.",
       "practice_short": "Deflate the tyre fully and lift the wheel out of the dropouts.",
-      "reference_answer": "Every listed step performed and checked by hand"
+      "reference_answer": "Every listed step performed and checked by hand",
+      "why": "The wheel comes off before the tube is touched, and the bead is the part that decides whether the repair holds."
     }
   },
   "research": {
@@ -70,7 +76,12 @@
         "unit_ref": 1
       }
     ],
+    "prerequisite_assumptions": [
+      "The learner has a floor pump, a tyre lever and a spare tube of the right size.",
+      "The learner can already identify the brake quick-release on this bike."
+    ],
     "sessions_per_week": 1,
+    "through_line": "One repair from start to finish: the wheel comes off, the tube goes in, the bead is checked by hand, and the brakes are proved before the ride.",
     "units": [
       {
         "goal": "Get the rear wheel off, fit a sound tube, and prove the brakes work.",

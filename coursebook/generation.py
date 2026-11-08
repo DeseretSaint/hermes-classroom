@@ -3584,6 +3584,9 @@ def enforce_plan_rules(
                 scope=scope,
                 parent_brief=parent_brief,
                 frequency_selection=frequency_selection,
+                # H-195: the goal is what the drift check compares against. Dropping it here made
+                # the rule unreachable on the real path, so it is threaded through explicitly.
+                goal=goal,
             )
         else:
             _enforce_plan_rules_v1(
@@ -3595,6 +3598,7 @@ def enforce_plan_rules(
                 scope=scope,
                 parent_brief=parent_brief,
                 frequency_selection=frequency_selection,
+                goal=goal,
             )
     except _RuleViolation as exc:
         if truncated:

@@ -59,6 +59,15 @@ This rubric is not:
 The 1 to 4 values are reviewer judgments about course design. They are never summed, averaged,
 ranked across courses or shown to a learner. A score of 4 is never required for release.
 
+**Where the deterministic floor sits (H-195).** Before any of this is scored, the pipeline applies
+`teaching_quality_problems` to the authored lesson. That floor is code, not a reviewer judgment: it
+refuses a lesson with no `model`/`guided` arc, a worked example with fewer than two steps, a
+template heading, fewer than `MIN_TEACHING_PROSE_CHARS` (400) characters of segment prose, or
+boilerplate filler. It is deliberately **not** a ninth dimension and **not** an eleventh
+`VALIDATION_CRITERIA` entry: the floor answers "is this a lesson at all", these eight dimensions
+answer "is this lesson good", and a course that reaches a reviewer has already cleared the floor.
+A thin draft is regenerated or parked `needs_review` before it is ever scored.
+
 ## 3. The scale
 
 | Score | Meaning | Test a reviewer applies |

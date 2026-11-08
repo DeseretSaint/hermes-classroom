@@ -1,8 +1,8 @@
 {
   "evidence": {
     "bicycle_single.json": {
-      "bytes": 26164,
-      "sha256": "9c733ff04dd12f4ef85241175d6e78c13bdcfe7f5caadc77233a9b044c7f4ac6"
+      "bytes": 27979,
+      "sha256": "60498cb34ebc768467c5a0322ef998fbc0aa9405a3f6fa11e6b7d7332a8de8d9"
     },
     "focused-tests.txt": {
       "bytes": 4558,
@@ -13,8 +13,8 @@
       "sha256": "5eede56a14d8a02c5acc2d7f3478c184470fadf6474d7925cf4dc1d3bedd66e4"
     },
     "music_short.json": {
-      "bytes": 45938,
-      "sha256": "6d85eba1cf795495bc7f8eb40a5de6d302fe28a5402975559c27af76e4fbaf21"
+      "bytes": 49433,
+      "sha256": "5079bb939e377a74e662670261287d77b7dcb73cf2f2906ad2fd80565f579c03"
     },
     "partial_unit_batch.json": {
       "bytes": 908,
@@ -22,11 +22,11 @@
     },
     "run-output.txt": {
       "bytes": 8698,
-      "sha256": "06dba5cf350f6e3e5c3bca813a00a41385307a60a95f62099daa0608c2a92a88"
+      "sha256": "122150a8d8b2dd9fb06bdc45e1a8c1ee7142c54127282b883fecd6cb1a65e328"
     },
     "soldering_full.json": {
-      "bytes": 117008,
-      "sha256": "6878845341df6ec7e8d1c1e5e73ce60da17edbe3e48503b7a813d1d566a2b059"
+      "bytes": 124984,
+      "sha256": "b7bb11365f434ca6af841bbeaf4c40be1122d4c7f1cc8c0d8bb2b58328700718"
     },
     "summary.json": {
       "bytes": 84,
@@ -35,7 +35,7 @@
   },
   "harness": {
     "path": "harness_e2e.py",
-    "sha256": "366d4456eaf279212957a7a3939ba90b381ae0a81e254d98dd2a23316c721a7e"
+    "sha256": "42582ac509976663cb49006ef3649ff112300aa9a97b108dba3d8f72bfdb5cb0"
   },
   "inputs": {
     "bicycle_single": {
@@ -52,7 +52,7 @@
       "model_transcript_id": "recorded-transcript-h40",
       "scope": "single",
       "transcript": "transcripts/bicycle_single.json",
-      "transcript_sha256": "9be57663269cf5ae3cbdedf638cb6273dff7e40d998cc51eb6a814834031e938",
+      "transcript_sha256": "2bac52b560f95e4e075c7bc3ddfc67eece4085eac0c3216f41c6dd5acd2484d7",
       "validator_transcript_id": "recorded-validator-h40"
     },
     "music_short": {
@@ -69,7 +69,7 @@
       "model_transcript_id": "recorded-transcript-h40",
       "scope": "short",
       "transcript": "transcripts/music_short.json",
-      "transcript_sha256": "542687d37f2501ef96b1cfcd35174d396f85e052cea44e8ac930188ba004d1e5",
+      "transcript_sha256": "9cb4f2ce7c33cd5f277c635492785bcf9ee0745590753ab842b2e70ffdfad6de",
       "validator_transcript_id": "recorded-validator-h40"
     },
     "soldering_full": {
@@ -86,7 +86,7 @@
       "model_transcript_id": "recorded-transcript-h40",
       "scope": "full",
       "transcript": "transcripts/soldering_full.json",
-      "transcript_sha256": "05933d564cec4ad51e0af3104746229150cc6a892a931be0cc324100a1d12644",
+      "transcript_sha256": "21af9c0566710b7d3bc07d170f1f082ef1e0f5793dae212bd48bd3e4a1ea6004",
       "validator_transcript_id": "recorded-validator-h40"
     }
   },

@@ -19,6 +19,14 @@ The repaired plan at `tests/fixtures/generation/plan_parent.json` is sha256
 hashes above are unchanged, because `lesson_parent_unsafe.json` is the hazard fixture and was not
 edited. The re-score of the repaired pair is `docs/reviews/H173c-S3-parent-kitchen-rescore.md`.
 
+Superseded lesson bytes (H-195): this record's lesson hash describes the fixture as it stood at
+the commit reviewed. H-195 lengthened `lesson_parent_unsafe.json` so that the hazard — not thin
+prose — is what the validator rejects under the new deterministic teaching floor; the current bytes
+are sha256 `b8461e8e67f194807e01d2893bf558a73e776701c826554831c65da81dd6f9a1`, the hazard (the child
+fills and switches on the kettle) is unchanged in substance, and
+`tests/test_course_quality_s3_fixture.py` pins the new digest. The 1–4 verdicts below were scored
+on the pre-H-195 bytes and are not re-scored here.
+
 ## Observed facts
 
 Facts are extracted mechanically. They are not scores and they do not replace the

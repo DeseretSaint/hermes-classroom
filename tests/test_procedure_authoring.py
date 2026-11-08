@@ -117,7 +117,9 @@ def procedure_lesson(request: gen.LLMRequest) -> gen.LLMResponse:
                 "heading": "Match the pad to the manual",
                 "body": (
                     "Find the pad model in the manufacturer's manual before touching the brake. "
-                    "The manual names the pad as BR-42 and the fastener's 5 mm hex key."
+                    "The manual names the pad as BR-42 and the fastener's 5 mm hex key. It also "
+                    "fixes the tightening order: the mounting fastener goes to 40 Nm in a star "
+                    "pattern, so the caliper seats evenly instead of cocking to one side."
                 ),
                 "short": "Find the pad model in the manual before touching the brake.",
             },
@@ -126,7 +128,10 @@ def procedure_lesson(request: gen.LLMRequest) -> gen.LLMResponse:
                 "heading": "Remove the worn pad",
                 "body": (
                     "Hold the caliper steady and loosen only the fastener the manual names, then "
-                    "slide the worn pad out while the caliper is supported by hand."
+                    "slide the worn pad out while the caliper is supported by hand. Keep that "
+                    "support for the whole removal: the manual forbids letting the caliper hang "
+                    "from the brake hose, and a hose under load is the failure this step exists "
+                    "to prevent."
                 ),
                 "short": "Loosen only the named fastener and slide the worn pad out.",
             },
@@ -357,7 +362,9 @@ class ProcedureGateTest(unittest.TestCase):
 
     def test_a_step_cue_that_copies_the_segment_is_rejected(self) -> None:
         lesson = self.base_lesson()
-        lesson["procedure"]["steps"][0]["check"] = lesson["segments"][0]["body"]
+        # A cue is capped at PROCEDURE_MAX_STEP_CHECK characters, so the copy has to be a slice
+        # long enough to be recognised as the segment's own text and short enough to be a cue.
+        lesson["procedure"]["steps"][0]["check"] = lesson["segments"][0]["body"][:150].strip()
         reasons = procedure_problems(lesson, technical_capability(), declared_target="procedure")
         self.assertTrue(
             any("must not be copied into the header" in reason for reason in reasons), reasons
@@ -558,7 +565,7 @@ class ProcedurePromptTest(unittest.TestCase):
         self.assertNotIn("1-based index of the segment", ordinary.instructions)
 
     def test_the_lesson_prompt_version_is_bumped(self) -> None:
-        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v9")
+        self.assertEqual(gen.LESSON_PROMPT_VERSION, "lesson-prompt.v10")
 
 
 class LegacyPageTest(unittest.TestCase):

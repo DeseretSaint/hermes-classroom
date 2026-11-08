@@ -209,6 +209,16 @@ def plan_document(row: dict) -> dict:
     document = {
         "title": "A generated course",
         "learner_outcome": "Produce the declared evidence for every objective in this course.",
+        # H-195: the schema requires the plan's arc and starting assumptions; this builder is a
+        # hand-built plan, so it states them rather than leaving the rule to reject it.
+        "through_line": (
+            "Each section adds one observable move and every later section uses the previous "
+            "one, so the declared evidence is produced by the end of the course."
+        ),
+        "prerequisite_assumptions": [
+            "The learner can read the language the course is delivered in.",
+            "No prior knowledge of the subject is assumed.",
+        ],
         "delivery": "parent_led" if row["recipe"] == "parent" else "self_study",
         "time_estimate": {
             "sessions_per_week": 3,
@@ -433,7 +443,7 @@ class GeneratedPlanDeclarationTest(unittest.TestCase):
         self.assertIn('"role": "none"', instructions)
         self.assertIn("sourced_reference", instructions)
         self.assertIn("never declare decorative media", instructions.lower())
-        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v6")
+        self.assertEqual(gen.PLAN_PROMPT_VERSION, "plan-prompt.v8")
 
     def test_lesson_prompt_receives_the_declared_permissions_not_a_wish_list(self) -> None:
         for name, row in MATRIX.items():
