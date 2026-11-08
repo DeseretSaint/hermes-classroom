@@ -969,8 +969,12 @@ def _brief_lesson_sections(connection: sqlite3.Connection, brief: dict[str, Any]
 
     Reads stored rows only. ``0`` means nothing is authorable: no outline yet for a legacy plan,
     or every unit of a blueprint plan already has its lessons (the job is an honest no-op then).
+    H-194: a ``section_id``-scoped regeneration authors exactly that one section, so its preflight
+    is sized to one section and never to the whole unit.
     """
     plan_id = str(brief.get("plan_id") or "")
+    if brief.get("section_id") is not None:
+        return 1
     requested = brief.get("unit_ordinal")
     if requested is not None:
         try:
@@ -8908,6 +8912,20 @@ def run_lesson_job(
                 "SELECT * FROM gen_plan_sections WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
             ).fetchall()
         ]
+    # H-194: a `lesson.regenerate` job names exactly one section. Author only that section, at
+    # its next `gen_lessons` version, and never re-author the rest of the unit or plan. The
+    # coverage checks below compare a *unit's* sections to its objectives, so they are skipped for
+    # a section-scoped job: the scope is the section the author named, not a partial outline.
+    scoped_section = brief.get("section_id")
+    regenerate = bool(brief.get("regenerate"))
+    if scoped_section is not None:
+        section_rows = [
+            section for section in section_rows if str(section.get("section_id")) == str(scoped_section)
+        ]
+        if not section_rows:
+            raise GenerationRejected(
+                f"section {scoped_section!r} is not authored under plan {plan_id!r}'s current outline"
+            )
     if not section_rows:
         if blueprint_plan and unit is not None:
             raise GenerationRejected(
@@ -8919,7 +8937,7 @@ def run_lesson_job(
     # A replanned (or draft-edited) plan can carry an outline that no longer covers its objectives —
     # for example an objective added after the carry. Authoring only the covered sections would
     # leave a lesson set that exports with an objective silently missing, so refuse instead.
-    if blueprint_plan and unit is not None:
+    if blueprint_plan and unit is not None and scoped_section is None:
         objective_ordinals = sorted(
             int(row["ordinal"])
             for row in connection.execute(
@@ -8960,27 +8978,28 @@ def run_lesson_job(
                 f"{len(section_rows)} section(s); re-author the unit sections."
             )
     else:
-        objective_ordinals = sorted(
-            int(row["ordinal"])
-            for row in connection.execute(
-                "SELECT ordinal FROM objectives WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
-            ).fetchall()
-        )
-        section_refs: list[int] = []
-        for section in section_rows:
-            refs = section.get("objective_refs") or []
-            if len(refs) != 1:
-                raise GenerationRejected(
-                    f"plan {plan_id!r} section {section.get('ordinal')} must name exactly one objective;"
-                    " re-author the plan"
-                )
-            section_refs.append(int(refs[0]))
-        if sorted(section_refs) != objective_ordinals:
-            raise GenerationRejected(
-                f"plan {plan_id!r} outline covers objectives {sorted(section_refs)} but the plan has"
-                f" objectives {objective_ordinals}; the plan structure changed after it was authored."
-                " Re-author the plan before generating lessons."
+        if scoped_section is None:
+            objective_ordinals = sorted(
+                int(row["ordinal"])
+                for row in connection.execute(
+                    "SELECT ordinal FROM objectives WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
+                ).fetchall()
             )
+            section_refs: list[int] = []
+            for section in section_rows:
+                refs = section.get("objective_refs") or []
+                if len(refs) != 1:
+                    raise GenerationRejected(
+                        f"plan {plan_id!r} section {section.get('ordinal')} must name exactly one objective;"
+                        " re-author the plan"
+                    )
+                section_refs.append(int(refs[0]))
+            if sorted(section_refs) != objective_ordinals:
+                raise GenerationRejected(
+                    f"plan {plan_id!r} outline covers objectives {sorted(section_refs)} but the plan has"
+                    f" objectives {objective_ordinals}; the plan structure changed after it was authored."
+                    " Re-author the plan before generating lessons."
+                )
 
     # Budget sized to *this* plan: every section gets two attempts of generate + validate, and the
     # dollar ceiling scales with the calls. Never start a job whose *minimum* (one generate + one
@@ -8998,7 +9017,10 @@ def run_lesson_job(
                     (section["section_id"], digest),
                 ).fetchone()
             )
-            if existing is not None:
+            # H-194: a section-scoped regeneration authors a new revision even though a version-1
+            # row exists. Every other section still reuses its stored lesson and spends nothing.
+            forced = regenerate and str(section["section_id"]) == str(scoped_section)
+            if existing is not None and not forced:
                 lesson_summaries.append(
                     {
                         "section_id": section["section_id"],
@@ -9009,6 +9031,16 @@ def run_lesson_job(
                     }
                 )
                 continue
+            next_version = 1
+            if forced:
+                version_row = _row_dict(
+                    connection.execute(
+                        "SELECT COALESCE(MAX(version), 0) AS v FROM gen_lessons"
+                        " WHERE section_id = ? AND plan_hash = ?",
+                        (section["section_id"], digest),
+                    ).fetchone()
+                )
+                next_version = int((version_row or {}).get("v") or 0) + 1
             review_target = None
             if blueprint_plan and str(section.get("section_role") or "owner") == "review":
                 review_target = _resolve_review_target(connection, str(plan_id), section)
@@ -9033,6 +9065,7 @@ def run_lesson_job(
                     now=now,
                     parent_brief=lesson_parent_brief,
                     review_target=review_target,
+                    version=next_version,
                 )
             )
     except BaseException as exc:
@@ -9174,6 +9207,7 @@ def _author_section(
     subject_domain: str | None = None,
     parent_brief: dict[str, Any] | None = None,
     review_target: dict[str, Any] | None = None,
+    version: int = 1,
 ) -> dict[str, Any]:
     objective_ordinal = int(
         review_target["objective_ordinal"]
@@ -9375,7 +9409,7 @@ def _author_section(
                 plan_id,
                 section["section_id"],
                 digest,
-                1,
+                int(version),
                 state,
                 _json(page),
                 _json(lesson.get("media") or []),
@@ -9516,12 +9550,14 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
 
 
 def lesson_provenance(connection: sqlite3.Connection, state: str, validation_id: str | None) -> dict[str, Any]:
-    """The provenance block a served lesson page carries (H-105/H-185).
+    """The provenance block a served lesson page carries (H-105/H-185/H-194).
 
     ``independent`` is true only for a ``validated`` row. A ``model_assessed`` row is served and
     its check is usable, but the block says so plainly: the author model assessed its own page, so
-    the pass is not an independent one. The warning is read from the validation record (so it names
-    the facts-unverified / same-model / unidentified reason) and is never replaced by a claim.
+    the pass is not an independent one. A ``parent_approved`` row is an authored fine-tune the
+    human approved — also not independent validation — and a ``needs_review`` row is an authored
+    edit not yet approved, served as text with its check disabled. The warning is read from the
+    validation record where one exists and is never replaced by a claim.
     """
     validation = validation_record(connection, validation_id)
     if state == "model_assessed":
@@ -9532,6 +9568,22 @@ def lesson_provenance(connection: sqlite3.Connection, state: str, validation_id:
             "check_enabled": True,
             "warning": (validation or {}).get("warning")
             or "model assessed, not independently validated: treat this page as a proposal.",
+        }
+    if state == "needs_review":
+        return {
+            "outcome": "needs_review",
+            "independent": False,
+            "facts_unverified": False,
+            "check_enabled": False,
+            "warning": "authored edit awaiting review; the check is disabled until the edit is approved.",
+        }
+    if state == "parent_approved":
+        return {
+            "outcome": "parent_approved",
+            "independent": False,
+            "facts_unverified": False,
+            "check_enabled": True,
+            "warning": "authored edit approved by the course author; not independently validated.",
         }
     return {
         "outcome": (validation or {}).get("outcome") or OUTCOME_INDEPENDENT,

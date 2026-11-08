@@ -29,7 +29,7 @@ import sqlite3
 import unicodedata
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from . import (
     api,
@@ -2990,18 +2990,17 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
 
 
 def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
-    """The authored page for this objective, whatever its validation strength (H-185).
+    """The authored page for this objective, whatever its validation strength (H-185/H-194).
 
     ``gen_lessons`` is keyed by ``(section, plan_hash, version)`` and the section names its
     objective refs, so the objective is the only join key the kernel has. A profile that has never
     run the pipeline has no ``gen_*`` tables: that is a normal course built from packs or chat
     segments, not an error, and it stays on the segment projection.
 
-    Both ``validated`` (independently checked) and ``model_assessed`` (the author model assessed
-    its own page) rows are returned, because the default install has no second validator and a
-    model-assessed page must still be readable. The returned ``state`` and ``validation_id`` let
-    the caller label the page honestly; nothing here promotes one state to the other. A
-    ``validated`` row is preferred when both exist for the same section+hash.
+    The **latest** revision is returned: an authored edit (``needs_review``) supersedes the
+    generated page it was made from without deleting it, and a parent-approved edit is served as
+    ``parent_approved`` — never relabelled as independently validated. A profile that never
+    fine-tunes has exactly one version-1 row, so its read is unchanged.
     """
     try:
         document = connection.execute(
@@ -3018,9 +3017,9 @@ def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
         if section is None:
             return None
         lesson = connection.execute(
-            "SELECT page_json, state, validation_id, media_json FROM gen_lessons"
-            " WHERE section_id = ? AND plan_hash = ? AND state IN ('validated', 'model_assessed')"
-            " ORDER BY (state = 'validated') DESC, version DESC, rowid DESC LIMIT 1",
+            "SELECT id, page_json, state, validation_id, media_json, version FROM gen_lessons"
+            " WHERE section_id = ? AND plan_hash = ?"
+            " ORDER BY version DESC, rowid DESC LIMIT 1",
             (str(section["id"]), str(document["plan_hash"])),
         ).fetchone()
     except sqlite3.OperationalError:
@@ -3035,6 +3034,8 @@ def _authored_lesson_page(connection, objective) -> dict[str, Any] | None:
         "state": str(lesson["state"]),
         "validation_id": lesson["validation_id"],
         "media": generation.stored_lesson_media(dict(lesson)),
+        "lesson_id": str(lesson["id"]),
+        "version": int(lesson["version"]),
     }
 
 
@@ -3140,6 +3141,10 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         authored = _authored_lesson_page(connection, objective)
         if authored is not None:
             page = dict(authored["page"])
+            # H-194: a section under authored review is served as text, but its check is not
+            # attached to the page until the edit is approved. The learner keeps the previous
+            # book page and cannot submit a new grade against unreviewed content.
+            served_check_id = None if authored["state"] == "needs_review" else check_id
             # H-169/H-185: `media_json` is the authoritative record after the media caller
             # attached artifact ids, MIME and honest degraded reasons; the authoring snapshot in
             # `page_json` still holds the pre-generation spec. Merge the generated list in so the
@@ -3147,7 +3152,7 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
             if authored["media"]:
                 page["media"] = authored["media"]
             try:
-                document = lesson_document.document_from_page(page, check_id=check_id)
+                document = lesson_document.document_from_page(page, check_id=served_check_id)
             except lesson_document.LessonDocumentError:
                 # A stored page that no longer validates is refused, not repaired: the learner
                 # still gets the durable segment text, and the failure is visible in the document
@@ -4459,6 +4464,35 @@ def _derived_content(connection, course, plan: Any) -> tuple[list[dict[str, Any]
     return composed, authoring.content_hash(str(course["id"]), str(plan["id"]), current_hash, composed)
 
 
+def _blueprint_section_identity(composed: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The section identity ``parent.blueprint.read`` reports so a fine-tune call can be made.
+
+    ``page_hash`` is computed by the exact function ``lesson.revise`` fences on
+    (``_lesson_page_hash``), not by re-deriving the digest locally, so a value read out of this
+    payload is accepted by that fence unchanged. It is null exactly when the section has no usable
+    authored page — the case where ``lesson.revise`` refuses the section and ``lesson.regenerate``
+    is the only way to author it. ``lesson_state``/``lesson_version`` are null when no
+    ``gen_lessons`` row exists for the section yet.
+    """
+    identities: list[dict[str, Any]] = []
+    for section in composed:
+        page = section.get("page")
+        state = section.get("lesson_state")
+        version = section.get("lesson_version")
+        identities.append(
+            {
+                "section_id": str(section["section_id"]),
+                "objective_id": str(section["objective_id"]),
+                "ordinal": int(section["ordinal"]),
+                "title": str(section["title"]),
+                "lesson_state": None if state is None else str(state),
+                "lesson_version": None if version is None else int(version),
+                "page_hash": _lesson_page_hash(page) if isinstance(page, Mapping) and page else None,
+            }
+        )
+    return identities
+
+
 def _approval_view(row: Any) -> dict[str, Any]:
     if row is None:
         return {
@@ -4845,6 +4879,731 @@ def parent_plan_edit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple
     return revision, result
 
 
+# ── H-194: fine-tuning an approved course without regenerating it ───────────
+
+
+def _plan_objective_snapshot(connection, plan_id: str) -> list[dict[str, Any]]:
+    """The full objective snapshot a fine-tune revision records before and after.
+
+    Ordinal, title, evidence target, criteria and version are the plan-hash inputs, so a
+    review diff and an undo read exactly the facts the hash covers. IDs are stored, never
+    re-derived from position.
+    """
+    rows = connection.execute(
+        "SELECT * FROM objectives WHERE plan_id = ? ORDER BY ordinal", (str(plan_id),)
+    ).fetchall()
+    return [
+        {
+            "objective_id": str(row["id"]),
+            "ordinal": int(row["ordinal"]),
+            "title": str(row["title"]),
+            "evidence_target": str(row["evidence_target"]),
+            "criteria": _json_load(row["evidence_criteria_json"], []),
+            "version": int(row["version"]),
+        }
+        for row in rows
+    ]
+
+
+def _snapshot_changes(before: Sequence[dict[str, Any]], after: Sequence[dict[str, Any]]) -> list[str]:
+    """Named field changes between two snapshots. `order` is one entry, not a guess per row."""
+    changes: list[str] = []
+    before_by_id = {item["objective_id"]: item for item in before}
+    after_by_id = {item["objective_id"]: item for item in after}
+    if [item["objective_id"] for item in before] != [item["objective_id"] for item in after]:
+        changes.append("order")
+    for objective_id in sorted(set(before_by_id) & set(after_by_id)):
+        left, right = before_by_id[objective_id], after_by_id[objective_id]
+        for field in ("ordinal", "title", "evidence_target", "criteria", "version"):
+            if left.get(field) != right.get(field):
+                changes.append(f"{objective_id}.{field}")
+    for objective_id in sorted(set(after_by_id) - set(before_by_id)):
+        changes.append(f"{objective_id}.added")
+    for objective_id in sorted(set(before_by_id) - set(after_by_id)):
+        changes.append(f"{objective_id}.removed")
+    return changes
+
+
+def _plan_revision_view(row: Any) -> dict[str, Any]:
+    return {
+        "revision_id": str(row["id"]),
+        "kind": str(row["kind"]),
+        "state": str(row["state"]),
+        "created_at": str(row["created_at"]),
+        "plan_hash_before": str(row["plan_hash_before"]),
+        "plan_hash_after": str(row["plan_hash_after"]),
+        "before": _json_load(row["before_json"], []),
+        "after": _json_load(row["after_json"], []),
+        "changed_fields": _snapshot_changes(
+            _json_load(row["before_json"], []), _json_load(row["after_json"], [])
+        ),
+    }
+
+
+def _lesson_page_hash(page: Mapping[str, Any]) -> str:
+    return _canonical_hash(dict(page))
+
+
+def _lesson_revision_view(row: Any) -> dict[str, Any]:
+    diff = _json_load(row["diff_json"], {})
+    return {
+        "revision_id": str(row["id"]),
+        "section_id": str(row["section_id"]),
+        "objective_id": str(row["objective_id"]),
+        "from_lesson_id": str(row["from_lesson_id"]),
+        "lesson_id": str(row["lesson_id"]),
+        "state": str(row["state"]),
+        "created_at": str(row["created_at"]),
+        "page_hash_before": str(row["page_hash_before"]),
+        "page_hash_after": str(row["page_hash_after"]),
+        "changed_fields": [str(item) for item in (diff.get("changed_fields") or [])],
+        "evidence_attempts": int(row["evidence_attempts"]),
+        "confirmed_evidence_consequence": bool(row["confirmed_evidence_consequence"]),
+    }
+
+
+def _latest_section_lesson(connection, plan_id: str, plan_hash: str, section_id: str) -> Any:
+    """The newest `gen_lessons` revision for one section under the plan's generation digest."""
+    return _row(
+        connection,
+        "SELECT * FROM gen_lessons WHERE section_id = ? AND plan_hash = ?"
+        " ORDER BY version DESC, rowid DESC LIMIT 1",
+        (str(section_id), str(plan_hash)),
+    )
+
+
+def _section_evidence_attempts(connection, lesson_id: str) -> int:
+    row = _row(
+        connection,
+        "SELECT COUNT(*) AS n FROM attempts a JOIN gen_lesson_checks g ON g.check_id = a.check_id"
+        " WHERE g.lesson_id = ?",
+        (str(lesson_id),),
+    )
+    return int(row["n"]) if row is not None else 0
+
+
+def _repoint_section_objective_refs(connection, plan_id: str, ordinal_map: dict[int, int]) -> None:
+    """Keep every section bound to the *same objective* after objectives are reordered.
+
+    `gen_plan_sections.objective_refs_json` stores objective ordinals, so an ordinal swap would
+    silently re-point a section's authored body at a different objective. The map is
+    old-ordinal -> new-ordinal for surviving objectives; a ref with no mapping is left untouched
+    (it names an objective this plan no longer has, which the export gate already refuses).
+    """
+    try:
+        rows = connection.execute(
+            "SELECT id, objective_refs_json FROM gen_plan_sections WHERE plan_id = ?", (plan_id,)
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return
+    for row in rows:
+        refs = _json_load(row["objective_refs_json"], [])
+        remapped = [ordinal_map.get(int(ref), int(ref)) for ref in refs]
+        if remapped != refs:
+            connection.execute(
+                "UPDATE gen_plan_sections SET objective_refs_json = ? WHERE id = ?",
+                (_json_dump(remapped), row["id"]),
+            )
+
+
+def _ordered_unit_ordinals(connection, plan_id: str, requested: Sequence[str]) -> list[int | None]:
+    """The unit ordinal of each objective in the requested order (None for a flat plan)."""
+    rows = connection.execute(
+        "SELECT o.id AS id, u.ordinal AS unit_ordinal FROM objectives o"
+        " LEFT JOIN plan_units u ON u.id = o.unit_id WHERE o.plan_id = ?",
+        (str(plan_id),),
+    ).fetchall()
+    by_id = {str(row["id"]): (int(row["unit_ordinal"]) if row["unit_ordinal"] is not None else None) for row in rows}
+    return [by_id[str(objective_id)] for objective_id in requested]
+
+
+@_handler("plan.edit")
+def plan_edit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Fine-tune an **approved** plan in place: reorder objectives and/or edit their metadata.
+
+    This is the approved-plan path H-194 asks for; `parent.plan.edit` remains the draft-only
+    method. Reordering writes ordinals only — it never touches `gen_lessons`, checks, attempts,
+    transitions or evidence — and records one `plan_revisions` row so the change is reviewable
+    and undoable. A requested order that crosses a unit boundary backwards is refused with a
+    typed reason and nothing is written, because that edge cannot survive the new order.
+    """
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "plan.edit"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    if payload.get("reorder") is None and payload.get("objective_edits") is None:
+        raise RpcError.of(
+            "VALIDATION_FAILED", "plan.edit needs at least one edit.", field="reorder"
+        )
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        plan = _row(connection, "SELECT * FROM plans WHERE id = ?", (payload["plan_id"],))
+        if plan is None or plan["course_id"] != enrollment["course_id"]:
+            raise _not_found("plan", payload["plan_id"])
+        if plan["state"] != "approved":
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "plan.edit changes an approved plan in place; a draft plan uses parent.plan.edit and an approved plan cannot be silently replaced.",
+                reason="plan_not_approved",
+                plan_id=str(plan["id"]),
+                state=str(plan["state"]),
+            )
+        actual_hash = _plan_hash(connection, plan)
+        if str(payload["expected_plan_hash"]) != actual_hash:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "the plan changed since it was read; re-read before editing.",
+                field="expected_plan_hash",
+                current_plan_hash=actual_hash,
+            )
+        objectives = connection.execute(
+            "SELECT * FROM objectives WHERE plan_id = ? ORDER BY ordinal", (plan["id"],)
+        ).fetchall()
+        by_id = {str(row["id"]): row for row in objectives}
+        before = _plan_objective_snapshot(connection, str(plan["id"]))
+        now = _now()
+
+        for edit in payload.get("objective_edits") or []:
+            objective = by_id.get(str(edit["objective_id"]))
+            if objective is None:
+                raise _not_found("objective", str(edit["objective_id"]))
+            title = edit.get("title") or objective["title"]
+            target = edit.get("evidence_target") or objective["evidence_target"]
+            criteria = (
+                _json_dump(edit["criteria"])
+                if edit.get("criteria") is not None
+                else objective["evidence_criteria_json"]
+            )
+            connection.execute(
+                "UPDATE objectives SET title = ?, evidence_target = ?, evidence_criteria_json = ?,"
+                " version = version + 1 WHERE id = ?",
+                (title, target, criteria, objective["id"]),
+            )
+
+        requested = payload.get("reorder")
+        if requested is not None:
+            requested = [str(item) for item in requested]
+            if len(requested) != len(set(requested)) or set(requested) != set(by_id):
+                raise RpcError.of(
+                    "VALIDATION_FAILED",
+                    "reorder must be a permutation of the plan's objective ids.",
+                    field="reorder",
+                )
+            unit_ordinals = _ordered_unit_ordinals(connection, str(plan["id"]), requested)
+            seen = [value for value in unit_ordinals if value is not None]
+            if seen != sorted(seen):
+                raise RpcError.of(
+                    "POLICY_VIOLATION",
+                    "that order crosses a unit prerequisite backwards; keep every unit's objectives together and in unit order.",
+                    reason="prerequisite_order_conflict",
+                    unit_ordinals=unit_ordinals,
+                )
+            # `objectives` is UNIQUE(plan_id, ordinal), so a direct swap would collide mid-update.
+            # Move every row out of the target range first, then write the requested order.
+            connection.execute(
+                "UPDATE objectives SET ordinal = ordinal + 1000 WHERE plan_id = ?", (plan["id"],)
+            )
+            for index, objective_id in enumerate(requested, start=1):
+                connection.execute(
+                    "UPDATE objectives SET ordinal = ? WHERE id = ?", (index, objective_id)
+                )
+            # Sections store objective ordinals; re-map them so each authored body keeps the same
+            # objective identity after the order changed.
+            old_ordinal = {item["objective_id"]: int(item["ordinal"]) for item in before}
+            _repoint_section_objective_refs(
+                connection,
+                str(plan["id"]),
+                {old_ordinal[objective_id]: index for index, objective_id in enumerate(requested, start=1)},
+            )
+
+        after = _plan_objective_snapshot(connection, str(plan["id"]))
+        changes = _snapshot_changes(before, after)
+        if not changes:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "the requested edit changes nothing on this plan.",
+                field="reorder",
+            )
+        revision = _bump_enrollment(connection, enrollment["id"], expected)
+        connection.execute(
+            "UPDATE plans SET version = version + 1 WHERE id = ?", (plan["id"],)
+        )
+        refreshed = _row(connection, "SELECT * FROM plans WHERE id = ?", (plan["id"],))
+        new_hash = _plan_hash(connection, refreshed)
+        connection.execute("UPDATE plans SET plan_hash = ? WHERE id = ?", (new_hash, plan["id"]))
+        revision_id = _new_id("prv")
+        kind = "reorder" if payload.get("reorder") is not None else "objective_edit"
+        connection.execute(
+            "INSERT INTO plan_revisions (id, course_id, plan_id, enrollment_id, kind, state,"
+            " before_json, after_json, plan_hash_before, plan_hash_after, review_revision,"
+            " created_at) VALUES (?,?,?,?,?, 'needs_review', ?,?,?,?,?,?)",
+            (
+                revision_id, enrollment["course_id"], plan["id"], enrollment["id"], kind,
+                _json_dump(before), _json_dump(after), actual_hash, new_hash, revision, now,
+            ),
+        )
+        generation.invalidate_plan_validation(
+            connection, str(plan["id"]), reason="plan_edited", manual_authoring=True
+        )
+        _supersede_active_approval(connection, str(enrollment["course_id"]), "plan_edited")
+        review = _plan_revision_view(
+            _row(connection, "SELECT * FROM plan_revisions WHERE id = ?", (revision_id,))
+        )
+        result = {
+            "plan_id": str(plan["id"]),
+            "plan_version": int(refreshed["version"]),
+            "plan_hash": new_hash,
+            "objective_ids": [
+                str(row["id"])
+                for row in connection.execute(
+                    "SELECT id FROM objectives WHERE plan_id = ? ORDER BY ordinal",
+                    (plan["id"],),
+                ).fetchall()
+            ],
+            "changes_need_review": True,
+            "review": review,
+            "revision": revision,
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+    return revision, result
+
+
+@_handler("plan.undo")
+def plan_undo(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Revert the last un-reverted structural revision of an approved plan.
+
+    The target is a stored `plan_revisions` row, not "the newest thing that happened". If the
+    plan's current order no longer matches that revision's `after` snapshot, the undo refuses
+    with a typed conflict instead of overwriting a later edit.
+    """
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "plan.undo"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        plan = _row(connection, "SELECT * FROM plans WHERE id = ?", (payload["plan_id"],))
+        if plan is None or plan["course_id"] != enrollment["course_id"]:
+            raise _not_found("plan", payload["plan_id"])
+        if plan["state"] != "approved":
+            raise RpcError.of(
+                "POLICY_VIOLATION", "only an approved plan can undo a structural change.",
+                reason="plan_not_approved", plan_id=str(plan["id"]), state=str(plan["state"]),
+            )
+        actual_hash = _plan_hash(connection, plan)
+        if str(payload["expected_plan_hash"]) != actual_hash:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "the plan changed since it was read; re-read before undoing.",
+                field="expected_plan_hash",
+                current_plan_hash=actual_hash,
+            )
+        if payload.get("revision_id") is not None:
+            target = _row(
+                connection,
+                "SELECT * FROM plan_revisions WHERE id = ? AND plan_id = ?",
+                (payload["revision_id"], plan["id"]),
+            )
+        else:
+            target = _row(
+                connection,
+                "SELECT * FROM plan_revisions WHERE plan_id = ? AND state != 'reverted'"
+                " ORDER BY created_at DESC, rowid DESC LIMIT 1",
+                (plan["id"],),
+            )
+        if target is None:
+            raise RpcError.of(
+                "NOT_FOUND", "this plan has no structural revision to undo.",
+                reason="nothing_to_undo", plan_id=str(plan["id"]),
+            )
+        if str(target["state"]) == "reverted":
+            raise RpcError.of(
+                "POLICY_VIOLATION", "that revision has already been undone.",
+                reason="revision_already_reverted", revision_id=str(target["id"]),
+            )
+        current = _plan_objective_snapshot(connection, str(plan["id"]))
+        after = _json_load(target["after_json"], [])
+        if [(item["objective_id"], item["ordinal"], item["title"], item["evidence_target"], item["version"])
+            for item in current] != [
+                (item["objective_id"], item["ordinal"], item["title"], item["evidence_target"], item["version"])
+                for item in after
+            ]:
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "the plan changed after that revision; undo would overwrite a later edit.",
+                reason="revision_conflict",
+                revision_id=str(target["id"]),
+            )
+        before_snapshot = _json_load(target["before_json"], [])
+        current_versions = {item["objective_id"]: int(item["version"]) for item in current}
+        revision = _bump_enrollment(connection, enrollment["id"], expected)
+        # Ordinals are UNIQUE(plan_id, ordinal); move every row out of the target range before
+        # writing the restored order.
+        connection.execute(
+            "UPDATE objectives SET ordinal = ordinal + 1000 WHERE plan_id = ?", (plan["id"],)
+        )
+        for item in before_snapshot:
+            connection.execute(
+                "UPDATE objectives SET ordinal = ?, title = ?, evidence_target = ?,"
+                " evidence_criteria_json = ?, version = ? WHERE id = ? AND plan_id = ?",
+                (
+                    int(item["ordinal"]), item["title"], item["evidence_target"],
+                    _json_dump(item.get("criteria") or []),
+                    max(current_versions.get(item["objective_id"], 1), int(item["version"])),
+                    item["objective_id"], plan["id"],
+                ),
+            )
+        now = _now()
+        # Re-point section objective refs through the reverse map, so an undone reorder restores
+        # the ordinal each authored section was bound to.
+        previous_ordinal = {item["objective_id"]: int(item["ordinal"]) for item in current}
+        _repoint_section_objective_refs(
+            connection,
+            str(plan["id"]),
+            {
+                previous_ordinal[item["objective_id"]]: int(item["ordinal"])
+                for item in before_snapshot
+                if item["objective_id"] in previous_ordinal
+            },
+        )
+        connection.execute(
+            "UPDATE plan_revisions SET state = 'reverted', reverted_at = ? WHERE id = ?",
+            (now, target["id"]),
+        )
+        connection.execute(
+            "UPDATE plans SET version = version + 1 WHERE id = ?", (plan["id"],)
+        )
+        refreshed = _row(connection, "SELECT * FROM plans WHERE id = ?", (plan["id"],))
+        new_hash = _plan_hash(connection, refreshed)
+        connection.execute("UPDATE plans SET plan_hash = ? WHERE id = ?", (new_hash, plan["id"]))
+        undo_id = _new_id("prv")
+        after_undo = _plan_objective_snapshot(connection, str(plan["id"]))
+        connection.execute(
+            "INSERT INTO plan_revisions (id, course_id, plan_id, enrollment_id, kind, state,"
+            " before_json, after_json, plan_hash_before, plan_hash_after, review_revision,"
+            " reverts_revision_id, created_at) VALUES (?,?,?,?, 'undo', 'needs_review', ?,?,?,?,?,?,?)",
+            (
+                undo_id, enrollment["course_id"], plan["id"], enrollment["id"],
+                _json_dump(current), _json_dump(after_undo), actual_hash, new_hash, revision,
+                target["id"], now,
+            ),
+        )
+        generation.invalidate_plan_validation(
+            connection, str(plan["id"]), reason="plan_edited", manual_authoring=True
+        )
+        _supersede_active_approval(connection, str(enrollment["course_id"]), "plan_edited")
+        result = {
+            "plan_id": str(plan["id"]),
+            "plan_version": int(refreshed["version"]),
+            "plan_hash": new_hash,
+            "objective_ids": [item["objective_id"] for item in after_undo],
+            "reverted_revision_id": str(target["id"]),
+            "changes_need_review": True,
+            "revision": revision,
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+    return revision, result
+
+
+@_handler("lesson.revise")
+def lesson_revise(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Store one immutable authored revision of one generated section.
+
+    A new `gen_lessons` row is written at the next version and the previous row is kept. Only
+    this section's validation is stale; every other section keeps its state. When the section
+    already has learner attempts, the author must explicitly confirm the evidence consequence —
+    the attempts are never rewritten and the old lesson revision stays readable.
+    """
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "lesson.revise"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    if payload.get("title") is None and payload.get("page") is None:
+        raise RpcError.of(
+            "VALIDATION_FAILED", "lesson.revise needs a title or a page to change.",
+            field="page",
+        )
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        plan = _row(connection, "SELECT * FROM plans WHERE id = ?", (payload["plan_id"],))
+        if plan is None or plan["course_id"] != enrollment["course_id"]:
+            raise _not_found("plan", payload["plan_id"])
+        if plan["state"] != "approved":
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "a lesson revision needs an approved plan; approve the plan first.",
+                reason="plan_not_approved", plan_id=str(plan["id"]), state=str(plan["state"]),
+            )
+        digest = authoring.generation_plan_hash(connection, str(plan["id"]), str(plan["plan_hash"] or ""))
+        lesson = _latest_section_lesson(connection, str(plan["id"]), digest, str(payload["section_id"]))
+        if lesson is None:
+            raise _not_found("section lesson", str(payload["section_id"]))
+        page = _json_load(lesson["page_json"], None)
+        if not isinstance(page, dict) or not page:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "that section has no authored page to revise.",
+                field="section_id", section_id=str(payload["section_id"]),
+            )
+        page_hash = _lesson_page_hash(page)
+        if str(payload["expected_page_hash"]) != page_hash:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                "the section changed since it was read; re-read before editing.",
+                field="expected_page_hash",
+                current_page_hash=page_hash,
+            )
+        revised = json.loads(json.dumps(page))
+        changed_fields: list[str] = []
+        if payload.get("title") is not None:
+            if str(payload["title"]) != str(page.get("section_title") or ""):
+                changed_fields.append("title")
+            revised["section_title"] = str(payload["title"])
+        for field, value in (payload.get("page") or {}).items():
+            if value != revised.get(field):
+                changed_fields.append(str(field))
+            revised[field] = value
+        if not changed_fields:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "the requested revision changes nothing on this section.",
+                field="page",
+            )
+        attempts = _section_evidence_attempts(connection, str(lesson["id"]))
+        confirmed = bool(payload.get("confirm_evidence_consequence"))
+        if attempts and not confirmed:
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                f"{attempts} learner attempt(s) already reference this section; confirm the evidence consequence before editing.",
+                reason="evidence_consequence_confirmation_required",
+                section_id=str(payload["section_id"]),
+                evidence_attempts=attempts,
+            )
+        objective_refs = _json_load(
+            str(
+                connection.execute(
+                    "SELECT objective_refs_json FROM gen_plan_sections WHERE id = ?",
+                    (str(payload["section_id"]),),
+                ).fetchone()[0]
+            ),
+            [],
+        )
+        objective_id = None
+        objective_row = (
+            connection.execute(
+                "SELECT * FROM objectives WHERE plan_id = ? AND ordinal = ?",
+                (plan["id"], int(objective_refs[0])),
+            ).fetchone()
+            if objective_refs
+            else None
+        )
+        if objective_row is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "that section is not bound to an objective.",
+                field="section_id", section_id=str(payload["section_id"]),
+            )
+        objective = objective_row
+        objective_id = str(objective_row["id"])
+        revision = _bump_enrollment(connection, enrollment["id"], expected)
+        now = _now()
+        new_lesson_id = _new_id("lsn")
+        next_version_row = _row(
+            connection,
+            "SELECT COALESCE(MAX(version), 0) AS v FROM gen_lessons WHERE section_id = ? AND plan_hash = ?",
+            (str(payload["section_id"]), digest),
+        )
+        next_version = int(next_version_row["v"]) + 1
+        connection.execute(
+            "INSERT INTO gen_lessons (id, plan_id, section_id, plan_hash, version, state, page_json,"
+            " media_json, parent_notes_json, rejection_reasons_json, validation_id, policy_json,"
+            " created_at, updated_at) VALUES (?,?,?,?,?, 'needs_review', ?,?,?,?, NULL, ?,?,?)",
+            (
+                new_lesson_id, plan["id"], payload["section_id"], digest, next_version,
+                _json_dump(revised), lesson["media_json"], lesson["parent_notes_json"],
+                lesson["rejection_reasons_json"], lesson["policy_json"], now, now,
+            ),
+        )
+        if objective is not None and payload.get("title") is not None:
+            connection.execute(
+                "UPDATE objectives SET title = ?, version = version + 1 WHERE id = ?",
+                (str(payload["title"]), objective_id),
+            )
+        revision_id = _new_id("lrv")
+        connection.execute(
+            "INSERT INTO lesson_revisions (id, course_id, plan_id, section_id, objective_id,"
+            " from_lesson_id, lesson_id, state, page_hash_before, page_hash_after, diff_json,"
+            " evidence_attempts, confirmed_evidence_consequence, review_revision, created_at)"
+            " VALUES (?,?,?,?,?,?,?, 'needs_review', ?,?,?,?,?,?,?)",
+            (
+                revision_id, enrollment["course_id"], plan["id"], payload["section_id"],
+                objective_id, lesson["id"], new_lesson_id, page_hash,
+                _lesson_page_hash(revised),
+                _json_dump({"changed_fields": changed_fields}), attempts,
+                1 if confirmed else 0, revision, now,
+            ),
+        )
+        _supersede_active_approval(connection, str(enrollment["course_id"]), "content_changed")
+        review = _lesson_revision_view(
+            _row(connection, "SELECT * FROM lesson_revisions WHERE id = ?", (revision_id,))
+        )
+        result = {
+            "section_id": str(payload["section_id"]),
+            "objective_id": objective_id,
+            "lesson_id": new_lesson_id,
+            "lesson_version": next_version,
+            "lesson_state": "needs_review",
+            "page_hash": review["page_hash_after"],
+            "review": review,
+            "changes_need_review": True,
+            "revision": revision,
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+    return revision, result
+
+
+@_handler("lesson.regenerate")
+def lesson_regenerate(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Queue a one-section lessons job with a one-section cost preflight.
+
+    Scope is the named section's unit; the job is a normal `lessons` job carrying `section_id`
+    and `regenerate`, so the executor authors only that section at its next version. Other
+    sections, their media, checks and progress are untouched, and no plan-wide job is created.
+    """
+    db.ensure_schema()
+    method = "lesson.regenerate"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    with db.transaction() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        plan = _row(connection, "SELECT * FROM plans WHERE id = ?", (payload["plan_id"],))
+        if plan is None or plan["course_id"] != enrollment["course_id"]:
+            raise _not_found("plan", payload["plan_id"])
+        if plan["state"] != "approved":
+            raise RpcError.of(
+                "POLICY_VIOLATION", "only an approved plan can regenerate a section.",
+                reason="plan_not_approved", plan_id=str(plan["id"]), state=str(plan["state"]),
+            )
+        section = _row(
+            connection,
+            "SELECT * FROM gen_plan_sections WHERE id = ? AND plan_id = ?",
+            (payload["section_id"], plan["id"]),
+        )
+        if section is None:
+            raise _not_found("section", str(payload["section_id"]))
+        objective_refs = _json_load(section["objective_refs_json"], [])
+        objective = (
+            _row(connection, "SELECT * FROM objectives WHERE plan_id = ? AND ordinal = ?",
+                 (plan["id"], int(objective_refs[0])))
+            if objective_refs else None
+        )
+        if objective is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "that section is not bound to an objective.",
+                field="section_id", section_id=str(payload["section_id"]),
+            )
+        unit_ordinal = None
+        if section["unit_id"] is not None:
+            unit = _row(connection, "SELECT ordinal FROM plan_units WHERE id = ?", (section["unit_id"],))
+            unit_ordinal = int(unit["ordinal"]) if unit is not None else None
+        brief: dict[str, Any] = {
+            "stage": "lessons",
+            "plan_id": str(plan["id"]),
+            "enrollment_id": str(enrollment["id"]),
+            "section_id": str(payload["section_id"]),
+            "regenerate": True,
+        }
+        if unit_ordinal is not None:
+            brief["unit_ordinal"] = unit_ordinal
+        if payload.get("budget_usd") is not None:
+            brief["budget_usd"] = payload["budget_usd"]
+        try:
+            preflight = generation.preflight_lesson_brief(connection, brief)
+        except generation.GenerationRejected as exc:
+            raise RpcError.of("VALIDATION_FAILED", str(exc), field="section_id") from exc
+        if preflight is None or not preflight.fits_minimum:
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                preflight.refusal_message() if preflight is not None
+                else "the cost preflight could not size this section.",
+                reason="cost_preflight_insufficient",
+                **(preflight.to_dict() if preflight is not None else {}),
+            )
+        revision = int(enrollment["revision"])
+        job = job_service.create(
+            "plan", brief,
+            operation_id=envelope.get("operation_id"),
+            idempotency_key=None,
+            now=datetime.now(timezone.utc),
+            connection=connection,
+        )
+        result = {
+            "job_id": str(job["job_id"]),
+            "kind": "plan",
+            "state": str(job["state"]),
+            "scope": {
+                "section_id": str(payload["section_id"]),
+                "objective_id": str(objective["id"]),
+                "section_count": 1,
+            },
+            "preflight": preflight.to_dict(),
+            "revision": revision,
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), revision, result)
+    return revision, result
+
+
+@_handler("parent.review.read")
+def parent_review_read(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """The pending review diff for a fine-tuned course: what `parent.final.approve` would bind."""
+    db.ensure_schema()
+    with db.read() as connection:
+        course = _course_row(connection, payload["course_id"])
+        plan = authoring.current_plan(connection, str(course["id"]))
+        composed, content_hash_value = _derived_content(connection, course, plan)
+        approval = _parent_approval(connection, str(course["id"]))
+        plan_rows = connection.execute(
+            "SELECT * FROM plan_revisions WHERE course_id = ? AND state != 'reverted'"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 50",
+            (course["id"],),
+        ).fetchall()
+        lesson_rows = connection.execute(
+            "SELECT * FROM lesson_revisions WHERE course_id = ? AND state != 'superseded'"
+            " ORDER BY created_at DESC, rowid DESC LIMIT 100",
+            (course["id"],),
+        ).fetchall()
+        plan_view = None
+        if plan is not None:
+            plan_view = {
+                "plan_id": str(plan["id"]),
+                "version": int(plan["version"]),
+                "state": str(plan["state"]),
+                "plan_hash": _plan_hash(connection, plan),
+            }
+        status = _export_status(plan, composed, approval, content_hash_value)
+    return 0, {
+        "course_id": str(course["id"]),
+        "plan": plan_view,
+        "approval": _approval_view(approval),
+        "content_hash": content_hash_value,
+        "plan_revisions": [_plan_revision_view(row) for row in plan_rows],
+        "lesson_revisions": [_lesson_revision_view(row) for row in lesson_rows],
+        "export": status,
+    }
+
+
 @_handler("parent.final.approve")
 def parent_final_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
     """Approve the exact generated content set by hash. Distinct from ``plan.approve``."""
@@ -4905,6 +5664,32 @@ def parent_final_approve(payload: dict[str, Any], envelope: dict[str, Any]) -> t
             " VALUES (?, ?, ?, ?, ?, 'active', NULL, ?, NULL)",
             (approval_id, course["id"], plan["id"], actual_hash, current_content, now),
         )
+        # H-194: an approval that covers an authored fine-tune is recorded on the revision rows
+        # too, and the authored lesson row is served as parent-approved (never as independently
+        # validated). Only revisions of this course that were awaiting review are touched.
+        pending_lessons = [
+            str(row["lesson_id"])
+            for row in connection.execute(
+                "SELECT lesson_id FROM lesson_revisions WHERE course_id = ? AND state = 'needs_review'",
+                (course["id"],),
+            ).fetchall()
+        ]
+        connection.execute(
+            "UPDATE lesson_revisions SET state = 'approved', approval_id = ?, approved_at = ?"
+            " WHERE course_id = ? AND state = 'needs_review'",
+            (approval_id, now, course["id"]),
+        )
+        for lesson_id in pending_lessons:
+            connection.execute(
+                "UPDATE gen_lessons SET state = 'parent_approved', updated_at = ?"
+                " WHERE id = ? AND state = 'needs_review'",
+                (now, lesson_id),
+            )
+        connection.execute(
+            "UPDATE plan_revisions SET state = 'approved', approval_id = ?, approved_at = ?"
+            " WHERE course_id = ? AND state = 'needs_review'",
+            (approval_id, now, course["id"]),
+        )
         result = {
             "approval_id": approval_id,
             "state": "active",
@@ -4947,6 +5732,9 @@ def parent_blueprint_read(payload: dict[str, Any], envelope: dict[str, Any]) -> 
                 "export": status,
                 "tabs": tabs,
                 "sources": sources,
+                # H-194b: a pack-backed course is composed from the pack, not from
+                # `gen_plan_sections`, so it has no authored section identity to serve.
+                "sections": [],
             }
         composed, current_hash = _derived_content(connection, course, plan)
         sources = _blueprint_sources(connection, str(course["id"]))
@@ -4969,6 +5757,7 @@ def parent_blueprint_read(payload: dict[str, Any], envelope: dict[str, Any]) -> 
         "export": status,
         "tabs": tabs,
         "sources": sources,
+        "sections": _blueprint_section_identity(composed),
     }
 
 
