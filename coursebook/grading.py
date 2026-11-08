@@ -330,6 +330,18 @@ def grade(
             return grade_confirmation(items, answer, reference=reference)
     if kind in validators.CLOSED_KINDS:
         return grade_closed(reference=reference, rubric=rubric, answer=answer)
+    if kind == "conversation":
+        # Provider-free transcript grading: only the stored learner turns are read, and the tutor's
+        # text never reaches this call. A reference it cannot read raises, which the caller persists
+        # as needs_retry (docs/CONVERSATION-PRACTICE.md §7.1, §8).
+        from . import conversation
+
+        return conversation.grade_transcript(
+            reference=reference,
+            rubric=rubric,
+            turns=(answer or {}).get("turns") if isinstance(answer, dict) else None,
+            stimulus=stimulus,
+        )
     return grade_open(
         reference=reference or {},
         rubric=rubric,

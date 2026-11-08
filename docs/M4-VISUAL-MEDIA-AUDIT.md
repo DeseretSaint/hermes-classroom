@@ -8,6 +8,12 @@ H-84's plain-language pass, H-86's wayfinding pass and H-91's section-crash / Li
 and is pinned to the module that ships from that tree: `desktop/plugin.js` sha256
 `71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`.
 
+Re-run on the v16 backend tree (`origin/master` `14a6443` plus the H-120a amendment) the same
+command reproduces this evidence: 62 frames, 15/15 claims PASS, 2,282 measured text nodes, pinned to
+the module that ships from that tree, `desktop/plugin.js` sha256
+`035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d`. The two `audit.json` files
+differ only in `generated_at` and the recorded branch name.
+
 This is **not** release evidence. Nothing here was published, tagged, pushed or merged, and the
 audit makes no claim that Coursebook is installable.
 

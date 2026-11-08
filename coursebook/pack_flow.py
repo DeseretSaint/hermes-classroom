@@ -252,6 +252,11 @@ def check_spec_from_pack_check(
     """
     if recipe == "parent":
         return None
+    if isinstance(check.get("practice"), dict):
+        # A pack cannot declare a practice: its authoring vocabulary carries no session scope, and
+        # an imported practice would be ungradeable by construction (docs/CONVERSATION-PRACTICE.md
+        # §14, practice_not_supported_in_packs).
+        return None
     passed, _problems = audit_check_for_import(check)
     if not passed:
         return None

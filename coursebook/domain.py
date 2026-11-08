@@ -43,6 +43,7 @@ from . import (
     lesson_document,
     parent_authoring as authoring,
     progress as progress_view,
+    practice,
     review,
     sources as source_ledger,
     validators,
@@ -1393,6 +1394,20 @@ def check_open(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, 
                 reason="check_not_gradable",
                 objective_id=objective["id"],
             )
+        if practice.declaration(stimulus) is not None:
+            # The same validator the generation writer calls: a malformed practice can never reach
+            # a learner (docs/CONVERSATION-PRACTICE.md §3.1).
+            try:
+                practice.validate_declaration(
+                    stimulus,
+                    reference,
+                    rubric,
+                    evidence_target=str(objective["evidence_target"]),
+                    recipe=str(_course_of_enrollment(connection, enrollment)["recipe"] or ""),
+                    practice_check_already=_course_has_practice(connection, str(enrollment["course_id"])),
+                )
+            except practice.PracticeDeclarationError as exc:
+                raise RpcError.of("VALIDATION_FAILED", str(exc), reason=exc.reason) from exc
         current = _row(
             connection, "SELECT MAX(version) AS version FROM checks WHERE objective_id = ?", (objective["id"],)
         )
@@ -1503,13 +1518,17 @@ def _attempt_rows_before(connection, enrollment_id: str, check_id: str) -> int:
     return int(row["n"] if row else 0)
 
 
-def _classify_evidence(connection, enrollment_id: str, check_id: str) -> str:
+def _classify_evidence(connection, enrollment_id: str, check_id: str, *, targets_visible: bool | None = None) -> str:
     """How this answer was produced.
 
     Cold is the default. A hint or a shown answer is a durable event recorded *before* the next
     answer (``AUDIT.md`` R10/R12): an answer produced after scaffolding is never independent
     evidence, and a shown answer is stronger contamination than a hint. A second answer to the
     same check also follows feedback, so it is at least ``hinted``.
+
+    A conversation practice whose target expressions were in view yields ``hinted`` for the same
+    reason: producing a visible phrase is not unaided recall (``docs/CONVERSATION-PRACTICE.md``
+    §7.3). Only ``targets_visible: false`` can reach ``cold``.
     """
     objective_row = _row(
         connection, "SELECT objective_id FROM checks WHERE id = ?", (check_id,)
@@ -1525,6 +1544,8 @@ def _classify_evidence(connection, enrollment_id: str, check_id: str) -> str:
         )
     if assist is not None and assist["kind"] == "answer_shown":
         return "answer_shown"
+    if targets_visible is True:
+        return "hinted"
     if assist is not None or _attempt_rows_before(connection, enrollment_id, check_id):
         return "hinted"
     return "cold"
@@ -1551,6 +1572,140 @@ def _attempt_result(row, revision: int) -> dict[str, Any]:
         "next_action": _next_action_for(str(verdict)),
         "revision": int(revision),
     }
+
+
+def _commit_attempt(
+    connection,
+    *,
+    payload: dict[str, Any],
+    attempt_id: str,
+    answer: dict[str, Any],
+    answer_hash: str,
+    graded,
+    failure: str,
+    evidence_class: str,
+    method: str,
+    payload_hash: str,
+    key: Any,
+    envelope: dict[str, Any],
+    expected: int,
+    targets_visible: bool | None = None,
+    practice_session_id: str | None = None,
+) -> tuple[int, dict[str, Any]]:
+    """The one commit half of a graded answer, shared by ``attempt.submit`` and ``practice.end``.
+
+    Runs inside the caller's ``BEGIN IMMEDIATE`` transaction and re-checks every fence before it
+    writes: replay, prior nonce, enrollment revision, check version and state, and source
+    revalidation. It writes the attempt (or a ``needs_retry`` attempt when ``graded`` is ``None``),
+    exactly one transitions row, the layer-1 evidence row (plus layer 2 for a cold pass), the
+    objective state, the check state and the idempotency key.
+
+    Extracted from ``attempt.submit`` so a conversation practice cannot drift into a second commit
+    path (``docs/CONVERSATION-PRACTICE.md`` §5.4); ``test_commit_parity`` pins the two entry points.
+    """
+    replay = _idempotent_lookup(connection, key, method, payload_hash)
+    if replay is not None:
+        return replay
+    enrollment, check, objective, _plan = _load_submit_context(connection, payload)
+    prior = _row(
+        connection,
+        "SELECT * FROM attempts WHERE enrollment_id = ? AND check_id = ? AND attempt_nonce = ?",
+        (enrollment["id"], check["id"], payload["attempt_nonce"]),
+    )
+    if prior is not None:
+        return int(enrollment["revision"]), _attempt_result(prior, int(enrollment["revision"]))
+    if int(enrollment["revision"]) != expected:
+        raise _stale("the enrollment moved on while this answer was being graded.", int(enrollment["revision"]))
+    if int(check["version"]) != int(payload["check_version"]) or check["state"] != "open":
+        raise _check_stale(
+            "the check changed while this answer was being graded; no attempt was created.",
+            int(enrollment["revision"]), check_version=int(check["version"]),
+        )
+    source_ledger.assert_check_current(connection, str(check["id"]))
+
+    if graded is None:
+        connection.execute(
+            "INSERT INTO attempts (id, enrollment_id, check_id, check_version, attempt_nonce, answer_kind,"
+            " answer_json, answer_hash, verdict, evidence_class, criteria_json, grading_provenance_json,"
+            " state, created_at, committed_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'needs_retry', ?, '[]', ?, 'failed', ?, NULL)",
+            (attempt_id, enrollment["id"], check["id"], int(check["version"]), payload["attempt_nonce"],
+             answer["kind"], _json_dump(answer), answer_hash, evidence_class,
+             _json_dump({"grader": "unavailable", "failure": failure}), _now()),
+        )
+        result = {
+            "attempt_id": attempt_id,
+            "verdict": "needs_retry",
+            "evidence_class": evidence_class,
+            "criteria": [],
+            "next_action": "retry_grading",
+            "revision": int(enrollment["revision"]),
+        }
+        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
+                  int(enrollment["revision"]), result)
+        return int(enrollment["revision"]), result
+
+    verdict = graded.verdict
+    # Only the confirmation lane may name an evidence class, and only its own constant. A
+    # future aux adapter cannot return ``cold`` through this channel.
+    if graded.evidence_class == grading.CONFIRMATION_EVIDENCE_CLASS:
+        evidence_class = graded.evidence_class
+    to_revision = _bump_enrollment(connection, enrollment["id"], expected)
+    connection.execute(
+        "INSERT INTO attempts (id, enrollment_id, check_id, check_version, attempt_nonce, answer_kind,"
+        " answer_json, answer_hash, verdict, evidence_class, criteria_json, grading_provenance_json,"
+        " state, created_at, committed_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'committed', ?, ?)",
+        (attempt_id, enrollment["id"], check["id"], int(check["version"]), payload["attempt_nonce"],
+         answer["kind"], _json_dump(answer), answer_hash, verdict, evidence_class,
+         _json_dump(graded.criteria), _json_dump(graded.provenance), _now(), _now()),
+    )
+    next_action = _next_action_for(verdict)
+    # A hint is consumed by the answer it contaminated: it stays linked to that attempt and
+    # cannot keep marking later, independent answers as hinted (R10/R12).
+    connection.execute(
+        "UPDATE evidence SET attempt_id = ? WHERE enrollment_id = ? AND objective_id = ?"
+        " AND kind IN ('hint_request', 'answer_shown') AND attempt_id IS NULL",
+        (attempt_id, enrollment["id"], objective["id"]),
+    )
+    if verdict == "pass" and evidence_class != "cold":
+        # Access may advance, but the record must not claim independent evidence.
+        next_action = "review_objective"
+    _transition(connection, enrollment["id"], expected, to_revision, next_action, attempt_id)
+    connection.execute(
+        "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
+        " VALUES (?, ?, ?, ?, 1, 'attempt', ?, ?)",
+        (_new_id("evd"), enrollment["id"], objective["id"], attempt_id, evidence_class, _now()),
+    )
+    if verdict == "pass" and evidence_class == "cold":
+        connection.execute(
+            "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
+            " VALUES (?, ?, ?, ?, 2, ?, ?, ?)",
+            (_new_id("evd"), enrollment["id"], objective["id"], attempt_id,
+             "delayed_retrieval" if objective["state"] == "review_due" else "independent_evidence",
+             evidence_class, _now()),
+        )
+    connection.execute(
+        "UPDATE objectives SET state = ? WHERE id = ?",
+        (_objective_state_after(verdict, evidence_class, objective["state"]), objective["id"]),
+    )
+    if verdict == "pass":
+        connection.execute("UPDATE checks SET state = 'closed' WHERE id = ?", (check["id"],))
+    if practice_session_id is not None:
+        practice.end_session(
+            connection, practice_session_id, state="graded", attempt_id=attempt_id,
+            reason=None, now=_now(),
+        )
+    result = {
+        "attempt_id": attempt_id,
+        "verdict": verdict,
+        "evidence_class": evidence_class,
+        "criteria": graded.criteria,
+        "next_action": next_action,
+        "revision": to_revision,
+    }
+    _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result)
+    return to_revision, result
 
 
 def _binding_refusal(connection, enrollment_id: str) -> None:
@@ -1647,6 +1802,16 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         rubric = _json_load(check["rubric_json"], {})
         stimulus = _json_load(check["stimulus_json"], {})
         locale = check["locale"]
+        if isinstance(reference, dict) and reference.get("kind") == "conversation":
+            # A practice is not a one-line answer. Grading it through attempt.submit would let one
+            # message produce a verdict without a bounded transcript (docs/CONVERSATION-PRACTICE.md
+            # §8). Refused before any write; only practice.end grades a conversation check.
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "this is a conversation practice; start it and end it from the course pane, not with a single answer.",
+                reason="practice_requires_practice_end",
+                field="answer",
+            )
 
     attempt_id = _new_id("att")
     answer = payload["answer"]
@@ -1673,107 +1838,343 @@ def attempt_submit(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[i
         failure = ""
 
     with db.transaction() as connection:
+        return _commit_attempt(
+            connection,
+            payload=payload,
+            attempt_id=attempt_id,
+            answer=answer,
+            answer_hash=answer_hash,
+            graded=graded,
+            failure=failure,
+            evidence_class=evidence_class,
+            method=method,
+            payload_hash=payload_hash,
+            key=key,
+            envelope=envelope,
+            expected=expected,
+        )
+
+
+# ── conversation practice ──────────────────────────────────────────────────
+
+
+def _course_has_practice(connection, course_id: str) -> bool:
+    """Whether any stored check in this course already declares a practice (one per course)."""
+    row = connection.execute(
+        "SELECT COUNT(*) AS n FROM checks c"
+        " JOIN objectives o ON o.id = c.objective_id"
+        " JOIN plans p ON p.id = o.plan_id"
+        " WHERE p.course_id = ? AND c.stimulus_json LIKE ?",
+        (str(course_id), '%"practice"%'),
+    ).fetchone()
+    return int(row["n"] or 0) > 0
+
+
+def _practice_check(connection, enrollment, objective_id: str):
+    """The objective's latest check, refused unless it is a practice the learner may work."""
+    plan = _approved_plan(connection, enrollment["course_id"])
+    if plan is None:
+        raise RpcError.of(
+            "VALIDATION_FAILED", "the course plan is not approved.", reason="plan_not_approved"
+        )
+    objective = _objective_in_plan(connection, objective_id, plan["id"])
+    check = _row(
+        connection,
+        "SELECT * FROM checks WHERE objective_id = ? ORDER BY (state = 'open') DESC, version DESC LIMIT 1",
+        (objective["id"],),
+    )
+    if check is None:
+        raise RpcError.of("NOT_FOUND", "that objective has no check.", entity="check")
+    reference = _json_load(check["reference_json"], {})
+    if not isinstance(reference, dict) or reference.get("kind") != "conversation":
+        raise RpcError.of(
+            "VALIDATION_FAILED",
+            "that check is not a conversation practice.",
+            reason="practice_not_a_practice_check",
+            check_id=check["id"],
+        )
+    return objective, check, reference
+
+
+def _practice_binding(connection, enrollment_id: str, objective_id: str):
+    """The active binding for this enrollment's section, or a refusal."""
+    binding = _row(
+        connection,
+        "SELECT * FROM bindings WHERE enrollment_id = ? AND objective_id = ? AND status = 'active'"
+        " ORDER BY revision DESC, updated_at DESC LIMIT 1",
+        (enrollment_id, objective_id),
+    )
+    if binding is None or not binding["lesson_run_id"]:
+        raise RpcError.of(
+            "BINDING_NOT_ACTIVE",
+            "this section has no active chat; bind it before practising.",
+            reason="practice_not_bound",
+        )
+    return binding
+
+
+def _practice_start_view(enrollment, check, session) -> dict[str, Any]:
+    return {
+        "session_id": session["id"],
+        "check_id": check["id"],
+        "check_version": int(check["version"]),
+        "state": session["state"],
+        "revision": int(enrollment["revision"]),
+        "session_revision": int(session["revision"]),
+    }
+
+
+@_handler("practice.start")
+def practice_start(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Start one bounded practice session with the authored opening; spend nothing."""
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "practice.start"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    operation_id = envelope.get("operation_id", "")
+    with db.transaction() as connection:
         replay = _idempotent_lookup(connection, key, method, payload_hash)
         if replay is not None:
             return replay
-        enrollment, check, objective, _plan = _load_submit_context(connection, payload)
-        prior = _row(
-            connection,
-            "SELECT * FROM attempts WHERE enrollment_id = ? AND check_id = ? AND attempt_nonce = ?",
-            (enrollment["id"], check["id"], payload["attempt_nonce"]),
-        )
-        if prior is not None:
-            return int(enrollment["revision"]), _attempt_result(prior, int(enrollment["revision"]))
+        enrollment = _enrollment(connection, payload["enrollment_id"])
         if int(enrollment["revision"]) != expected:
-            raise _stale("the enrollment moved on while this answer was being graded.", int(enrollment["revision"]))
-        if int(check["version"]) != int(payload["check_version"]) or check["state"] != "open":
-            raise _check_stale(
-                "the check changed while this answer was being graded; no attempt was created.",
-                int(enrollment["revision"]), check_version=int(check["version"]),
+            raise _stale("the enrollment moved on before this practice started.", int(enrollment["revision"]))
+        objective, check, _reference = _practice_check(connection, enrollment, payload["objective_id"])
+        course = _course_of_enrollment(connection, enrollment)
+        if str(course["recipe"] or "") == "parent":
+            raise RpcError.of(
+                "POLICY_VIOLATION",
+                "a parent-recipe course records observations; conversation practice is not available for it.",
+                reason="practice_not_available_for_recipe",
             )
-        # The pre-grade read checked this too, but a revalidation can land while the answer is
-        # being graded. Re-check inside the write transaction so a cold attempt is never committed
-        # against a source the user has since been told changed.
-        source_ledger.assert_check_current(connection, str(check["id"]))
-
-        if graded is None:
-            connection.execute(
-                "INSERT INTO attempts (id, enrollment_id, check_id, check_version, attempt_nonce, answer_kind,"
-                " answer_json, answer_hash, verdict, evidence_class, criteria_json, grading_provenance_json,"
-                " state, created_at, committed_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'needs_retry', ?, '[]', ?, 'failed', ?, NULL)",
-                (attempt_id, enrollment["id"], check["id"], int(check["version"]), payload["attempt_nonce"],
-                 answer["kind"], _json_dump(answer), answer_hash, evidence_class,
-                 _json_dump({"grader": "unavailable", "failure": failure}), _now()),
+        if check["state"] != "open" or check["audit_state"] != "passed":
+            raise RpcError.of(
+                "CHECK_STALE", "that practice check is not open for work.",
+                reason="practice_not_open", check_state=check["state"],
             )
-            result = {
-                "attempt_id": attempt_id,
-                "verdict": "needs_retry",
-                "evidence_class": evidence_class,
-                "criteria": [],
-                "next_action": "retry_grading",
-                "revision": int(enrollment["revision"]),
-            }
-            _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""),
-                      int(enrollment["revision"]), result)
-            return int(enrollment["revision"]), result
-
-        verdict = graded.verdict
-        # Only the confirmation lane may name an evidence class, and only its own constant. A
-        # future aux adapter cannot return ``cold`` through this channel.
-        if graded.evidence_class == grading.CONFIRMATION_EVIDENCE_CLASS:
-            evidence_class = graded.evidence_class
-        to_revision = _bump_enrollment(connection, enrollment["id"], expected)
-        connection.execute(
-            "INSERT INTO attempts (id, enrollment_id, check_id, check_version, attempt_nonce, answer_kind,"
-            " answer_json, answer_hash, verdict, evidence_class, criteria_json, grading_provenance_json,"
-            " state, created_at, committed_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'committed', ?, ?)",
-            (attempt_id, enrollment["id"], check["id"], int(check["version"]), payload["attempt_nonce"],
-             answer["kind"], _json_dump(answer), answer_hash, verdict, evidence_class,
-             _json_dump(graded.criteria), _json_dump(graded.provenance), _now(), _now()),
+        binding = _practice_binding(connection, enrollment["id"], objective["id"])
+        live = practice.active_session(
+            connection, lesson_run_id=str(binding["lesson_run_id"]), check_id=str(check["id"])
         )
-        next_action = _next_action_for(verdict)
-        # A hint is consumed by the answer it contaminated: it stays linked to that attempt and
-        # cannot keep marking later, independent answers as hinted (R10/R12).
-        connection.execute(
-            "UPDATE evidence SET attempt_id = ? WHERE enrollment_id = ? AND objective_id = ?"
-            " AND kind IN ('hint_request', 'answer_shown') AND attempt_id IS NULL",
-            (attempt_id, enrollment["id"], objective["id"]),
-        )
-        if verdict == "pass" and evidence_class != "cold":
-            # Access may advance, but the record must not claim independent evidence.
-            next_action = "review_objective"
-        _transition(connection, enrollment["id"], expected, to_revision, next_action, attempt_id)
-        connection.execute(
-            "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
-            " VALUES (?, ?, ?, ?, 1, 'attempt', ?, ?)",
-            (_new_id("evd"), enrollment["id"], objective["id"], attempt_id, evidence_class, _now()),
-        )
-        if verdict == "pass" and evidence_class == "cold":
-            connection.execute(
-                "INSERT INTO evidence (id, enrollment_id, objective_id, attempt_id, layer, kind, evidence_class, created_at)"
-                " VALUES (?, ?, ?, ?, 2, ?, ?, ?)",
-                (_new_id("evd"), enrollment["id"], objective["id"], attempt_id,
-                 "delayed_retrieval" if objective["state"] == "review_due" else "independent_evidence",
-                 evidence_class, _now()),
+        if live is None:
+            declaration = practice.declaration(_json_load(check["stimulus_json"], {}))
+            if declaration is None:
+                raise RpcError.of(
+                    "VALIDATION_FAILED", "the stored practice has no declaration.",
+                    reason="practice_malformed_declaration",
+                )
+            session = practice.start_session(
+                connection,
+                enrollment_id=enrollment["id"],
+                objective_id=objective["id"],
+                check=check,
+                lesson_run_id=str(binding["lesson_run_id"]),
+                opening=str(declaration.get("opening") or ""),
+                now=_now(),
             )
-        connection.execute(
-            "UPDATE objectives SET state = ? WHERE id = ?",
-            (_objective_state_after(verdict, evidence_class, objective["state"]), objective["id"]),
-        )
-        if verdict == "pass":
-            connection.execute("UPDATE checks SET state = 'closed' WHERE id = ?", (check["id"],))
+            turns = practice.turns_for  # read below after the insert commits to this transaction
+        else:
+            session = live
+            declaration = practice.declaration(_json_load(check["stimulus_json"], {})) or {}
+        transcript = practice.turns_for(connection, session["id"])
         result = {
-            "attempt_id": attempt_id,
-            "verdict": verdict,
-            "evidence_class": evidence_class,
-            "criteria": graded.criteria,
-            "next_action": next_action,
-            "revision": to_revision,
+            **_practice_start_view(enrollment, check, session),
+            "turns": {
+                "min": int((declaration.get("turns") or {}).get("min", practice.MIN_TURNS)),
+                "max": int((declaration.get("turns") or {}).get("max", practice.MIN_TURNS)),
+            },
+            "transcript": transcript,
         }
-        _remember(connection, key, method, payload_hash, envelope.get("operation_id", ""), to_revision, result)
-    return to_revision, result
+        _remember(connection, key, method, payload_hash, operation_id, int(enrollment["revision"]), result)
+    return int(enrollment["revision"]), result
+
+
+@_handler("practice.state")
+def practice_state(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Read-only practice state. An absent session is ``state: none``, never an error."""
+    db.ensure_schema()
+    with db.read() as connection:
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        objective = _row(
+            connection, "SELECT * FROM objectives WHERE id = ?", (payload["objective_id"],)
+        )
+        if objective is None:
+            raise _not_found("objective", payload["objective_id"])
+        check = _row(
+            connection,
+            "SELECT * FROM checks WHERE objective_id = ? ORDER BY (state = 'open') DESC, version DESC LIMIT 1",
+            (objective["id"],),
+        )
+        session = practice.latest_session(
+            connection, enrollment_id=enrollment["id"], objective_id=objective["id"]
+        )
+        if session is None:
+            return 0, {
+                "session_id": None,
+                "check_id": check["id"] if check is not None else None,
+                "check_version": int(check["version"]) if check is not None else None,
+                "state": "none",
+                "learner_turns": 0,
+                "remaining": 0,
+                "awaiting_tutor": False,
+                "transcript": [],
+                "attempt_id": None,
+                "verdict": None,
+                "criteria": [],
+            }
+        view = practice.state_view(connection, session)
+        return 0, view
+
+
+@_handler("practice.end")
+def practice_end(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Grade the stored transcript and commit exactly one attempt through ``_commit_attempt``."""
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    method = "practice.end"
+    payload_hash = _payload_hash(method, payload)
+    key = envelope.get("idempotency_key")
+    with db.read() as connection:
+        replay = _idempotent_lookup(connection, key, method, payload_hash)
+        if replay is not None:
+            return replay
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        check = _row(connection, "SELECT * FROM checks WHERE id = ?", (payload["check_id"],))
+        if check is None:
+            raise _not_found("check", payload["check_id"])
+        objective = _row(connection, "SELECT * FROM objectives WHERE id = ?", (check["objective_id"],))
+        session = practice.session_for_check(
+            connection, enrollment_id=enrollment["id"], check_id=str(check["id"])
+        )
+        if session is None or session["state"] != "active":
+            raise RpcError.of(
+                "VALIDATION_FAILED", "there is no live practice session to end.",
+                reason="practice_not_open",
+            )
+        _binding_refusal(connection, enrollment["id"])
+        if int(enrollment["revision"]) != expected:
+            raise _stale("the enrollment moved on before this practice ended.", int(enrollment["revision"]))
+        if int(check["version"]) != int(payload["check_version"]):
+            raise _check_stale(
+                "the practice check changed; no attempt was created.", int(enrollment["revision"]),
+                check_version=int(check["version"]),
+            )
+        if check["state"] != "open" or check["audit_state"] != "passed":
+            raise _check_stale(
+                "that practice check is closed; no attempt was created.", int(enrollment["revision"]),
+                check_state=check["state"],
+            )
+        source_ledger.assert_check_current(connection, str(check["id"]))
+        turns = practice.turns_for(connection, session["id"])
+        learner = practice.learner_turns(turns)
+        if not learner:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "the practice has no learner turn to grade.",
+                reason="practice_empty_transcript",
+            )
+        declaration = practice.declaration(_json_load(check["stimulus_json"], {})) or {}
+        low = int((declaration.get("turns") or {}).get("min", practice.MIN_TURNS))
+        if len(learner) < low:
+            raise RpcError.of(
+                "VALIDATION_FAILED",
+                f"this practice needs at least {low} learner turns; {len(learner)} are recorded.",
+                reason="practice_not_complete",
+                learner_turns=len(learner), min_turns=low,
+            )
+        reference = _json_load(check["reference_json"], {})
+        rubric = _json_load(check["rubric_json"], {})
+        stimulus = _json_load(check["stimulus_json"], {})
+        targets_visible = bool(declaration.get("targets_visible"))
+        evidence_class = _classify_evidence(
+            connection, enrollment["id"], check["id"], targets_visible=targets_visible
+        )
+        answer = {
+            "kind": "text",
+            "text": practice.canonical_transcript(learner),
+            "turns": [{"speaker": t["speaker"], "text": t["text"]} for t in turns],
+            "transcript_sha256": practice.transcript_hash(turns),
+        }
+        answer_hash = _canonical_hash(answer)
+
+    attempt_id = _new_id("att")
+    try:
+        graded = grading.grade(
+            reference=reference, rubric=rubric, stimulus=stimulus, answer=answer,
+            attempt_id=attempt_id, locale=check["locale"],
+        )
+    except Exception as exc:  # noqa: BLE001 - a grader that cannot finish is needs_retry, never a pass
+        graded = None
+        failure = f"{type(exc).__name__}: {exc}"[:300]
+    else:
+        failure = ""
+
+    with db.transaction() as connection:
+        revision, result = _commit_attempt(
+            connection,
+            payload={**payload, "attempt_nonce": payload["attempt_nonce"]},
+            attempt_id=attempt_id,
+            answer=answer,
+            answer_hash=answer_hash,
+            graded=graded,
+            failure=failure,
+            evidence_class=evidence_class,
+            method=method,
+            payload_hash=payload_hash,
+            key=key,
+            envelope=envelope,
+            expected=expected,
+            targets_visible=targets_visible,
+            practice_session_id=str(session["id"]),
+        )
+        stored = practice.session_for_check(
+            connection, enrollment_id=enrollment["id"], check_id=str(check["id"])
+        )
+        result = {
+            **result,
+            "transcript_sha256": answer["transcript_sha256"],
+            "learner_turns": len(learner),
+            "session_revision": int(stored["revision"]) if stored is not None else 0,
+        }
+    return revision, result
+
+
+@_handler("practice.cancel")
+def practice_cancel(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """End the session without grading. Every turn stays; no attempt, no revision bump."""
+    db.ensure_schema()
+    expected = _require_revision(envelope)
+    with db.transaction() as connection:
+        enrollment = _enrollment(connection, payload["enrollment_id"])
+        check = _row(connection, "SELECT * FROM checks WHERE id = ?", (payload["check_id"],))
+        if check is None:
+            raise _not_found("check", payload["check_id"])
+        session = practice.session_for_check(
+            connection, enrollment_id=enrollment["id"], check_id=str(check["id"])
+        )
+        if session is None:
+            raise RpcError.of(
+                "VALIDATION_FAILED", "there is no practice session to cancel.", reason="practice_not_open"
+            )
+        if session["state"] == "graded":
+            raise RpcError.of(
+                "VALIDATION_FAILED", "this practice has already been graded.",
+                reason="practice_already_graded",
+            )
+        if session["state"] != "cancelled":
+            practice.end_session(
+                connection, str(session["id"]), state="cancelled", attempt_id=None,
+                reason="learner_cancelled", now=_now(),
+            )
+        if int(enrollment["revision"]) != expected:
+            raise _stale("the enrollment moved on before this practice was cancelled.", int(enrollment["revision"]))
+        result = {
+            "session_id": session["id"],
+            "state": "cancelled",
+            "revision": int(enrollment["revision"]),
+            "session_revision": int(session["revision"]),
+        }
+    return int(enrollment["revision"]), result
 
 
 def _objective_state_after(verdict: str, evidence_class: str, current: str) -> str:
@@ -2472,6 +2873,11 @@ def lesson_begin(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int
             (enrollment["id"], objective["id"]),
         )
         if payload["mode"] == "fresh" and run is not None and run["state"] in ("active", "paused"):
+            # A fresh run is a new session scope: a practice left active on the old run can never
+            # be graded from a later chat (docs/CONVERSATION-PRACTICE.md §5.5).
+            practice.abandon_for_run(
+                connection, str(run["id"]), reason="run_paused", now=now,
+            )
             connection.execute(
                 "UPDATE lesson_runs SET state = 'abandoned', revision = revision + 1, updated_at = ? WHERE id = ?",
                 (now, run["id"]),
@@ -3395,7 +3801,23 @@ def _stimulus_view(stored: Any) -> dict[str, Any]:
         "choices": [str(choice)[:200] for choice in (choices if isinstance(choices, list) else [])][:8],
         "learner_instructions": str(instructions)[:400] if isinstance(instructions, str) else None,
         "items": items,
+        "practice": _practice_view(stored.get("practice")),
     }
+
+
+def _practice_view(stored: Any) -> dict[str, Any] | None:
+    """Project a stored practice declaration, withholding labels the learner was not shown.
+
+    The projection is built from named fields only: a ``match`` clause, a rubric criterion or a
+    reference that a smuggled stored key carried is never echoed (``check.get`` withholds
+    ``reference_json`` already, and this must not reintroduce it).
+    """
+    if not isinstance(stored, dict):
+        return None
+    try:
+        return practice.visible_view(stored)
+    except Exception:  # noqa: BLE001 - an unreadable declaration projects as absent, never as a key
+        return None
 
 
 @_handler("course.outline")

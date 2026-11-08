@@ -40,6 +40,21 @@ Three gates enforce it:
 | `domain.check.open` / `progression.challenge_out` | refuse a spec whose reference declares no lane, `VALIDATION_FAILED` / `check_not_gradable`, before any check row is created |
 | `grading.grade` | a missing/unknown kind raises `GradingUnavailable` (a grader failure — `needs_retry`), never a silent fallthrough to the open lane |
 
+`REFERENCE_KINDS` gained one value after this record was written: `conversation` (H-120, `cb.rpc`
+v16). It is a **closed** kind — graded from the stored transcript by deterministic code — so it is
+listed with the closed lanes, not with `rubric_only`:
+
+| Reference kind | Routed by `grading.grade` | Provider | What it reads |
+|---|---|---|---|
+| `conversation` | `coursebook.conversation.grade_transcript`, **before** the open lane is considered | **none** — `configure_aux_grader` is never called, and its result is never consulted | the stored **learner** turns only, against the declared targets, match clauses and turn range |
+
+A conversation reference is written by `practice.end`, never by `attempt.submit`: grading the whole
+bounded transcript at once is the only way a practice verdict stays honest, so `attempt.submit` on a
+practice check is refused `POLICY_VIOLATION` / `error.details.reason =
+"practice_requires_practice_end"`. Tutor text is never inspected, so nothing the model said during
+the session can produce a pass; a reference the grader cannot read raises, and `practice.end`
+persists `needs_retry` and advances nothing, exactly like every other lane that cannot finish.
+
 ### 2.2 Generated checks: `exact` over the declared answer forms
 
 The learner answers every generated check through `answer.text`: the pane prints choices and
