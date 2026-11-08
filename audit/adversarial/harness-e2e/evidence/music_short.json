@@ -58,14 +58,14 @@
         "section_title": "Count the semitones in a major third and a perfect fifth",
         "segments": [
           {
-            "body": "Start on C, count four semitones to E, and say the interval name out loud before you play it.",
-            "heading": "The step",
+            "body": "Start on C, count four semitones to E, and say the interval name out loud before you play it. Every interval you name in this course is a semitone count, so this number is the unit the rest of the course measures with.",
+            "heading": "Count from the start note",
             "kind": "model",
             "short": "Start on C and count four semitones to E."
           },
           {
-            "body": "From C, the fifth note arrives after the same four-semitone step plus three more.",
-            "heading": "Do it",
+            "body": "From C, the fifth note arrives after the same four-semitone step plus three more. If you count from the wrong start note the number still adds up, which is why you say the start note and the interval together.",
+            "heading": "Check the count at the keyboard",
             "kind": "guided",
             "short": "From C, the fifth note arrives after a four-semitone step."
           }
@@ -115,14 +115,14 @@
         "section_title": "Distinguish the two common thirds by sound",
         "segments": [
           {
-            "body": "Play C to E, then C to E flat, and hum each interval back before naming it.",
-            "heading": "The step",
+            "body": "Play C to E, then C to E flat, and hum each interval back before naming it. The two thirds are the whole difference between a major and a minor sound, so the ear is trained before the letters are.",
+            "heading": "Hear the two thirds",
             "kind": "model",
             "short": "Play C to E, then C to E flat."
           },
           {
-            "body": "The darker, lower interval is the one whose middle note is flattened; name it before checking the keys.",
-            "heading": "Do it",
+            "body": "The darker, lower interval is the one whose middle note is flattened; name it before checking the keys. Naming the interval before you look at the keys keeps the ear honest; naming it after is just reading the keys.",
+            "heading": "Name it before you look",
             "kind": "guided",
             "short": "The darker, lower interval is the one whose middle note is flattened."
           }
@@ -172,14 +172,14 @@
         "section_title": "Build a major and a minor triad from a root note",
         "segments": [
           {
-            "body": "From C, stack a major third and a perfect fifth for the major triad, then lower the middle note for the minor.",
-            "heading": "The step",
+            "body": "From C, stack a major third and a perfect fifth for the major triad, then lower the middle note for the minor. A triad is the chord you will find in every song analysis later, so the recipe is learned on one root first.",
+            "heading": "Stack both triads from one root",
             "kind": "model",
             "short": "From C, stack a major third and a perfect fifth."
           },
           {
-            "body": "Both triads share the root and fifth; lowering the middle note is the whole difference.",
-            "heading": "Do it",
+            "body": "Both triads share the root and fifth; lowering the middle note is the whole difference. Changing the root moves the whole triad, but the third still decides the quality; build it from G to hear the same shape.",
+            "heading": "Lower the third, keep the fifth",
             "kind": "guided",
             "short": "Both triads share the root and fifth."
           }
@@ -229,14 +229,14 @@
         "section_title": "Use the circle of fifths to name the chords in a pop song",
         "segments": [
           {
-            "body": "Write the song's chords, find each root on the circle, and mark the home chord before naming the key.",
-            "heading": "The step",
+            "body": "Write the song's chords, find each root on the circle, and mark the home chord before naming the key. The circle is the map from chords to a key, and the home chord is the landmark you find first on that map.",
+            "heading": "Find each root on the circle",
             "kind": "model",
             "short": "Write the song's chords and find each root on the circle."
           },
           {
-            "body": "The home chord is the one the song resolves to; name it before the key.",
-            "heading": "Do it",
+            "body": "The home chord is the one the song resolves to; name it before the key. A song that never settles on its home chord is still analysable, because the circle still shows the neighbouring chords it borrows from.",
+            "heading": "Name the home chord first",
             "kind": "guided",
             "short": "Name the home chord before the key."
           }
@@ -261,9 +261,15 @@
   "observations": {
     "approval_provenance": {
       "facts_unverified": false,
+      "generator": {
+        "known": true,
+        "model": "recorded-transcript-h40",
+        "provider": "recorded"
+      },
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
+      "prompt_version": "plan-prompt.v9",
       "warning": null
     },
     "attempt_rows": [
@@ -334,7 +340,7 @@
     "plan_scope": "short",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v7",
+    "prompt_version": "plan-prompt.v9",
     "schema_name": "coursebook_plan_v2",
     "sections": 4,
     "units": 2,
@@ -421,9 +427,14 @@
       }
     ],
     "plan_schema": "coursebook.plan.v2",
+    "prerequisite_assumptions": [
+      "The learner can find middle C on a keyboard or piano app.",
+      "The learner has no formal theory training and is not assumed to read music."
+    ],
     "scope": "short",
     "source_ids": [],
     "spaced_review": true,
+    "through_line": "Each unit turns a sound into a number and then a number into a name: semitones first, then the thirds, then the triads, then the circle that places every chord of one real song.",
     "time_estimate": {
       "attainment_hours": null,
       "basis": "none",
@@ -620,9 +631,9 @@
         "blocks": [
           {
             "check_id": null,
-            "deep": "Start on C, count four semitones to E, and say the interval name out loud before you play it.",
-            "headline": "The step",
-            "id": "blk_d06e212d323dbda61c01",
+            "deep": "Start on C, count four semitones to E, and say the interval name out loud before you play it. Every interval you name in this course is a semitone count, so this number is the unit the rest of the course measures with.",
+            "headline": "Count from the start note",
+            "id": "blk_9f98e51bffaa48a80ccd",
             "media": [],
             "role": "example",
             "short": "Start on C and count four semitones to E.",
@@ -630,9 +641,9 @@
           },
           {
             "check_id": "000000000000002a",
-            "deep": "From C, the fifth note arrives after the same four-semitone step plus three more.",
-            "headline": "Do it",
-            "id": "blk_d0a217836f2a3d2a1c16",
+            "deep": "From C, the fifth note arrives after the same four-semitone step plus three more. If you count from the wrong start note the number still adds up, which is why you say the start note and the interval together.",
+            "headline": "Check the count at the keyboard",
+            "id": "blk_3a4ba5f3ceb53d6609b4",
             "media": [],
             "role": "practice",
             "short": "From C, the fifth note arrives after a four-semitone step.",
@@ -660,9 +671,9 @@
           }
         ],
         "check_id": "000000000000002a",
-        "content_hash": "sha256:91e8bbd52fb3ef43a6b8e70762a3a7b0eeb9f497925c63cfb9e8968d46b8eefb",
+        "content_hash": "sha256:050cc16710975fa506d4697a265dfd94deb3fb118062a9807d478806d05d857c",
         "direction": "ltr",
-        "document_id": "doc_91e8bbd52fb3ef43a6b8",
+        "document_id": "doc_050cc16710975fa506d4",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -735,6 +746,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000002a",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000029",
               "reused": false,
               "section_id": "000000000000001b",
@@ -768,6 +786,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000002d",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "000000000000002c",
               "reused": false,
               "section_id": "000000000000001c",
@@ -800,7 +825,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 2,
-          "plan_hash": "sha256:4e36453758294148d4a488527a44de63b9f0b35a1170dbbbc0ddaafc225ca40f",
+          "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -840,8 +865,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5091,
-            "output_tokens": 1673,
+            "input_tokens": 5370,
+            "output_tokens": 1813,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -865,6 +890,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000036",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000035",
               "reused": false,
               "section_id": "0000000000000022",
@@ -898,6 +930,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000039",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000038",
               "reused": false,
               "section_id": "0000000000000023",
@@ -930,7 +969,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:4e36453758294148d4a488527a44de63b9f0b35a1170dbbbc0ddaafc225ca40f",
+          "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -970,8 +1009,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5148,
-            "output_tokens": 1729,
+            "input_tokens": 5430,
+            "output_tokens": 1870,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1123,7 +1162,7 @@
           3,
           6
         ],
-        "prompt_version": "plan-prompt.v7",
+        "prompt_version": "plan-prompt.v9",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           1,
@@ -1142,9 +1181,15 @@
       "result": {
         "approval_provenance": {
           "facts_unverified": false,
+          "generator": {
+            "known": true,
+            "model": "recorded-transcript-h40",
+            "provider": "recorded"
+          },
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
+          "prompt_version": "plan-prompt.v9",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -1155,6 +1200,13 @@
           "source": "declared",
           "target_language": null
         },
+        "generation": {
+          "known": true,
+          "model": "recorded-transcript-h40",
+          "pipeline_version": "cb.gen.v2",
+          "prompt_version": "plan-prompt.v9",
+          "provider": "recorded"
+        },
         "job_id": "job_00000000000000000000000000000007",
         "job_kind": "plan",
         "level": "beginner",
@@ -1162,7 +1214,7 @@
         "next_unit_ordinal": 1,
         "objectives": 4,
         "plan_content_hash": "sha256:c58bcf1ff2a5bf91213b171f846a49462e90aa4f41fec429fe7d1577bd1deef3",
-        "plan_hash": "sha256:4e36453758294148d4a488527a44de63b9f0b35a1170dbbbc0ddaafc225ca40f",
+        "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -1207,8 +1259,8 @@
           "calls": 2,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 2202,
-          "output_tokens": 904,
+          "input_tokens": 2297,
+          "output_tokens": 996,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -1292,7 +1344,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
-          "plan_hash": "sha256:4e36453758294148d4a488527a44de63b9f0b35a1170dbbbc0ddaafc225ca40f",
+          "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -1326,7 +1378,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1845,
+            "input_tokens": 1940,
             "output_tokens": 525,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1351,7 +1403,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
-          "plan_hash": "sha256:4e36453758294148d4a488527a44de63b9f0b35a1170dbbbc0ddaafc225ca40f",
+          "plan_hash": "sha256:4f01d6b97088838ddeffb4056d7769792f0098f7e4d1a1e9e146a579add84bcd",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -1385,7 +1437,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1862,
+            "input_tokens": 1957,
             "output_tokens": 524,
             "unknown_calls": 0,
             "unknown_cost": false

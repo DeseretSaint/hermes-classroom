@@ -6,6 +6,7 @@
         "E-flat"
       ],
       "check_prompt": "Which note is the third of a C minor triad?",
+      "counter": "Changing the root moves the whole triad, but the third still decides the quality; build it from G to hear the same shape.",
       "criterion": "Both triads share the root and fifth; lowering the middle note is the whole difference.",
       "criterion_short": "Both triads share the root and fifth.",
       "example_steps": [
@@ -15,17 +16,23 @@
       ],
       "explanation": "Both triads share the root and fifth; only the third moves, which is why the third carries the quality.",
       "explanation_short": "Only the third moves.",
+      "headings": [
+        "Stack both triads from one root",
+        "Lower the third, keep the fifth"
+      ],
       "intent": "Teach the triad recipes and check both spellings.",
       "items": null,
       "practice": "From C, stack a major third and a perfect fifth for the major triad, then lower the middle note for the minor.",
       "practice_short": "From C, stack a major third and a perfect fifth.",
-      "reference_answer": "E flat"
+      "reference_answer": "E flat",
+      "why": "A triad is the chord you will find in every song analysis later, so the recipe is learned on one root first."
     },
     "Count the semitones in a major third and a perfect fifth": {
       "accepted_answers": [
         "7"
       ],
       "check_prompt": "How many semitones are in a perfect fifth?",
+      "counter": "If you count from the wrong start note the number still adds up, which is why you say the start note and the interval together.",
       "criterion": "From C, the fifth note arrives after the same four-semitone step plus three more.",
       "criterion_short": "From C, the fifth note arrives after a four-semitone step.",
       "example_steps": [
@@ -35,17 +42,23 @@
       ],
       "explanation": "Counting semitones turns an interval from a feeling into a number you can check at the keyboard.",
       "explanation_short": "Counting semitones turns an interval into a number you can check.",
+      "headings": [
+        "Count from the start note",
+        "Check the count at the keyboard"
+      ],
       "intent": "Teach the semitone count and check recall of the two numbers.",
       "items": null,
       "practice": "Start on C, count four semitones to E, and say the interval name out loud before you play it.",
       "practice_short": "Start on C and count four semitones to E.",
-      "reference_answer": "seven"
+      "reference_answer": "seven",
+      "why": "Every interval you name in this course is a semitone count, so this number is the unit the rest of the course measures with."
     },
     "Distinguish the two common thirds by sound": {
       "accepted_answers": [
         "a minor third"
       ],
       "check_prompt": "Which interval is three semitones wide?",
+      "counter": "Naming the interval before you look at the keys keeps the ear honest; naming it after is just reading the keys.",
       "criterion": "The darker, lower interval is the one whose middle note is flattened; name it before checking the keys.",
       "criterion_short": "The darker, lower interval is the one whose middle note is flattened.",
       "example_steps": [
@@ -55,17 +68,23 @@
       ],
       "explanation": "The third decides whether a triad sounds major or minor, so the ear has to hear the difference before the theory helps.",
       "explanation_short": "The third decides whether a triad sounds major or minor.",
+      "headings": [
+        "Hear the two thirds",
+        "Name it before you look"
+      ],
       "intent": "Teach the sound difference and check the learner can name it.",
       "items": null,
       "practice": "Play C to E, then C to E flat, and hum each interval back before naming it.",
       "practice_short": "Play C to E, then C to E flat.",
-      "reference_answer": "minor third"
+      "reference_answer": "minor third",
+      "why": "The two thirds are the whole difference between a major and a minor sound, so the ear is trained before the letters are."
     },
     "Use the circle of fifths to name the chords in a pop song": {
       "accepted_answers": [
         "the key of C major"
       ],
       "check_prompt": "A song uses C, G, A minor and F. Which key is it in?",
+      "counter": "A song that never settles on its home chord is still analysable, because the circle still shows the neighbouring chords it borrows from.",
       "criterion": "The home chord is the one the song resolves to; name it before the key.",
       "criterion_short": "Name the home chord before the key.",
       "example_steps": [
@@ -75,11 +94,16 @@
       ],
       "explanation": "The circle shows which chords belong together, so a song's chord list becomes a key and a set of functions.",
       "explanation_short": "The circle shows which chords belong together.",
+      "headings": [
+        "Find each root on the circle",
+        "Name the home chord first"
+      ],
       "intent": "Teach the circle as a song-analysis tool and check one mapping.",
       "items": null,
       "practice": "Write the song's chords, find each root on the circle, and mark the home chord before naming the key.",
       "practice_short": "Write the song's chords and find each root on the circle.",
-      "reference_answer": "C major"
+      "reference_answer": "C major",
+      "why": "The circle is the map from chords to a key, and the home chord is the landmark you find first on that map."
     }
   },
   "research": {
@@ -159,7 +183,12 @@
         "unit_ref": 2
       }
     ],
+    "prerequisite_assumptions": [
+      "The learner can find middle C on a keyboard or piano app.",
+      "The learner has no formal theory training and is not assumed to read music."
+    ],
     "sessions_per_week": 2,
+    "through_line": "Each unit turns a sound into a number and then a number into a name: semitones first, then the thirds, then the triads, then the circle that places every chord of one real song.",
     "units": [
       {
         "goal": "Name an interval from its semitone count and sound.",

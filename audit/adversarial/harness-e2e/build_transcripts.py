@@ -46,6 +46,16 @@ SCENARIOS: dict[str, dict] = {
             "weeks": 1,
             "sessions_per_week": 1,
             "learner_outcome": "The learner replaces the inner tube and confirms the brakes by hand.",
+            # H-195: the plan states its own arc and starting assumptions. Authored here, not
+            # synthesised, so the recorded plan is a plan the rules would accept.
+            "through_line": (
+                "One repair from start to finish: the wheel comes off, the tube goes in, the "
+                "bead is checked by hand, and the brakes are proved before the ride."
+            ),
+            "prerequisite_assumptions": [
+                "The learner has a floor pump, a tyre lever and a spare tube of the right size.",
+                "The learner can already identify the brake quick-release on this bike.",
+            ],
             "units": [
                 {
                     "ordinal": 1,
@@ -114,6 +124,16 @@ SCENARIOS: dict[str, dict] = {
             "sessions_per_week": 2,
             "learner_outcome": "The learner names intervals and triads and uses the circle of "
                                "fifths to analyse a pop song.",
+            # H-195: the arc the units build and the standing the learner starts from.
+            "through_line": (
+                "Each unit turns a sound into a number and then a number into a name: semitones "
+                "first, then the thirds, then the triads, then the circle that places every "
+                "chord of one real song."
+            ),
+            "prerequisite_assumptions": [
+                "The learner can find middle C on a keyboard or piano app.",
+                "The learner has no formal theory training and is not assumed to read music.",
+            ],
             "units": [
                 {
                     "ordinal": 1,
@@ -248,6 +268,17 @@ SCENARIOS: dict[str, dict] = {
             "sessions_per_week": 2,
             "learner_outcome": "The learner solders, inspects and reworks a through-hole board "
                                "without lifting a pad.",
+            # H-195: the arc every unit serves and the standing the learner starts from. The
+            # bench safety unit comes first because every later unit assumes a controlled iron.
+            "through_line": (
+                "One board taken from a safe bench to a proved repair: name the hazards, set the "
+                "iron, read the part, seat it, form the joint, inspect it, rework what fails, and "
+                "prove continuity before power."
+            ),
+            "prerequisite_assumptions": [
+                "The learner has a temperature-controlled iron, leaded solder, flux and a meter.",
+                "The learner has not soldered before and is not assumed to know any bench rule.",
+            ],
             "units": [
                 {"ordinal": 1, "title": "Safety and the iron",
                  "goal": "Set up a safe bench and a controlled iron.", "prereq_unit_ordinals": [],
@@ -561,6 +592,203 @@ SHORTS: dict[str, dict[str, str]] = {
 }
 
 
+#: H-195 depth for each recorded lesson: a lesson-specific heading pair, one authored sentence on
+#: why the step matters and one second example or counterexample. The replay writes
+#: ``<practice>. <why>`` as the model segment and ``<criterion>. <counter>`` as the guided one, so
+#: the recorded lesson meets the deterministic teaching floor on its own text instead of leaving
+#: the floor to be lowered for a fixture. Every sentence here is authored; nothing is synthesised
+#: from the plain fields, and ``build()`` refuses a lesson with no entry.
+LESSON_DEPTH: dict[str, dict] = {
+    "Remove the rear wheel, replace the inner tube and check the brakes": {
+        "headings": ("Release the wheel before the tube", "Seat the bead, then check the brakes"),
+        "why": (
+            "The wheel comes off before the tube is touched, and the bead is the part that "
+            "decides whether the repair holds."
+        ),
+        "counter": (
+            "Forcing the bead with a lever marks the tyre, and a marked bead seats unevenly, so "
+            "the hand check stays the last step."
+        ),
+    },
+    "Count the semitones in a major third and a perfect fifth": {
+        "headings": ("Count from the start note", "Check the count at the keyboard"),
+        "why": (
+            "Every interval you name in this course is a semitone count, so this number is the "
+            "unit the rest of the course measures with."
+        ),
+        "counter": (
+            "If you count from the wrong start note the number still adds up, which is why you "
+            "say the start note and the interval together."
+        ),
+    },
+    "Distinguish the two common thirds by sound": {
+        "headings": ("Hear the two thirds", "Name it before you look"),
+        "why": (
+            "The two thirds are the whole difference between a major and a minor sound, so the "
+            "ear is trained before the letters are."
+        ),
+        "counter": (
+            "Naming the interval before you look at the keys keeps the ear honest; naming it "
+            "after is just reading the keys."
+        ),
+    },
+    "Build a major and a minor triad from a root note": {
+        "headings": ("Stack both triads from one root", "Lower the third, keep the fifth"),
+        "why": (
+            "A triad is the chord you will find in every song analysis later, so the recipe is "
+            "learned on one root first."
+        ),
+        "counter": (
+            "Changing the root moves the whole triad, but the third still decides the quality; "
+            "build it from G to hear the same shape."
+        ),
+    },
+    "Use the circle of fifths to name the chords in a pop song": {
+        "headings": ("Find each root on the circle", "Name the home chord first"),
+        "why": (
+            "The circle is the map from chords to a key, and the home chord is the landmark you "
+            "find first on that map."
+        ),
+        "counter": (
+            "A song that never settles on its home chord is still analysable, because the circle "
+            "still shows the neighbouring chords it borrows from."
+        ),
+    },
+    "Name the three burn and fume hazards at the bench": {
+        "headings": ("Point at each hazard", "Name the hazard before the iron"),
+        "why": (
+            "Every rule on this bench exists to answer one of these three hazards, so you name "
+            "them before you pick up the iron."
+        ),
+        "counter": (
+            "A hazard you cannot name is one you walk into while you are watching the joint, "
+            "which is why the naming is its own habit."
+        ),
+    },
+    "Set an iron to the temperature a leaded joint needs": {
+        "headings": ("Set and tin before the first joint", "Hotter is not faster"),
+        "why": (
+            "The setting decides how long the iron sits on a joint, and a long touch is what "
+            "damages pads and parts at the bench."
+        ),
+        "counter": (
+            "Turning the station hotter to work faster burns the flux first, and a joint with no "
+            "flux goes cold even at temperature."
+        ),
+    },
+    "Read a resistor value from its colour bands": {
+        "headings": ("Read the bands left to right", "Check the multiplier band"),
+        "why": (
+            "Reading the code is how you know a part's value without trusting a label or a "
+            "drawer."
+        ),
+        "counter": (
+            "Read from the wrong end and the multiplier lands on the wrong band, so the reading "
+            "always starts at the band nearest the end of the body."
+        ),
+    },
+    "Inspect a pad for lift before inserting a part": {
+        "headings": ("Press the pad edge lightly", "A lifted pad shows a shadow line"),
+        "why": (
+            "A pad is the only thing holding the joint to the board, so its condition is checked "
+            "before any heat goes near it."
+        ),
+        "counter": (
+            "Pressing harder on a lifted pad tears it away completely, so the toothpick test is "
+            "light and stops at the first give."
+        ),
+    },
+    "Form a lead so the part seats flush": {
+        "headings": ("Bend the lead at board thickness", "The lead carries the gap"),
+        "why": (
+            "The bend has to happen before soldering, because a lead bent while the joint is "
+            "solid pulls on the pad."
+        ),
+        "counter": (
+            "Holding a part down with pliers while it cools still leaves it standing off the "
+            "board later, so the lead carries the gap, not the tool."
+        ),
+    },
+    "Insert a part in the right orientation": {
+        "headings": ("Match the two markings", "Solder does not fix a reversed part"),
+        "why": (
+            "The marking is the only thing on the part that says which way the circuit expects "
+            "it, and solder does not fix a reversed part."
+        ),
+        "counter": (
+            "A reversed part can pass a visual check and still fail on power, which is why the "
+            "markings are matched before anything is bent."
+        ),
+    },
+    "Heat the pad and lead together before feeding solder": {
+        "headings": ("Heat the joint, then feed solder", "Solder on the tip looks joined"),
+        "why": (
+            "The heat has to reach the joint before the solder is offered, or the solder sits on "
+            "top of a cold surface."
+        ),
+        "counter": (
+            "Solder fed onto the tip runs down hot and looks joined, and the same joint fails a "
+            "continuity check once it has cooled to room temperature."
+        ),
+    },
+    "Recognise a cold joint from its surface": {
+        "headings": ("Compare grainy with bright", "Rework the grainy ones first"),
+        "why": (
+            "Most cold joints are readable without a meter, and the surface is the first "
+            "inspection you can do at your own bench."
+        ),
+        "counter": (
+            "A bright joint can still be cold under the surface, so the grainy ones are the ones "
+            "you rework before testing the rest."
+        ),
+    },
+    "Inspect a finished joint against the fillet criterion": {
+        "headings": ("Judge every joint by one criterion", "A balled joint is a fail"),
+        "why": (
+            "One criterion applied to every joint is what keeps the inspection consistent, "
+            "instead of judging each joint on how it feels."
+        ),
+        "counter": (
+            "A balled joint is the clearest fail and the easiest to under-call, because it looks "
+            "like extra solder rather than a bad joint."
+        ),
+    },
+    "Wick a solder bridge without lifting the pad": {
+        "headings": ("Lay the wick over the bridge", "Lift only after the solder flows"),
+        "why": (
+            "A bridge connects two points the circuit keeps apart, so it is removed before power "
+            "is ever applied."
+        ),
+        "counter": (
+            "Lifting the wick early leaves solder behind and pulls on a solid joint, so the wick "
+            "comes up only after the solder has flowed into it."
+        ),
+    },
+    "Desolder a two-lead part without overheating it": {
+        "headings": ("Add fresh solder to each joint", "Alternate the heat"),
+        "why": (
+            "Fresh solder restores the flux that makes the old joint flow, so removal stays quick "
+            "instead of holding heat on the pads."
+        ),
+        "counter": (
+            "Holding heat on one lead while the other is still solid lifts pads and cooks the "
+            "part, so the heat alternates."
+        ),
+    },
+    "Prove continuity with a meter after rework": {
+        "headings": ("Probe the ends of the repaired path", "Continuity across the wrong points"),
+        "why": (
+            "The meter answers the one question the eye cannot: does the repair conduct from one "
+            "intended point to the other."
+        ),
+        "counter": (
+            "Continuity across the wrong two points proves nothing, so the probes go on the ends "
+            "of the repaired path, not on the nearest metal."
+        ),
+    },
+}
+
+
 def _json(value) -> str:
     return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False)
 
@@ -636,7 +864,19 @@ def build(name: str) -> dict:
         short = SHORTS.get(title)
         if short is None:
             raise SystemExit(f"{name}: no authored short for lesson {title!r}")
+        depth = LESSON_DEPTH.get(title)
+        if depth is None:
+            raise SystemExit(f"{name}: no authored depth (headings/why/counter) for {title!r}")
         lessons[title].update(short)
+        lessons[title].update(depth)
+        # H-195: the recorded lesson has to clear the deterministic teaching floor on its own
+        # words, so the builder refuses a transcript that would only pass a lowered floor.
+        prose = (
+            len(lessons[title]["practice"]) + len(lessons[title]["why"]) + 2
+            + len(lessons[title]["criterion"]) + len(lessons[title]["counter"]) + 2
+        )
+        if prose < 400:
+            raise SystemExit(f"{name}: lesson {title!r} authors {prose} teaching characters < 400")
         leaked = _leaks(title, objective, lessons[title])
         if leaked:
             raise SystemExit(f"{name}: lesson {title!r} announces its own answer(s) {leaked}")

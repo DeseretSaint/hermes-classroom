@@ -142,12 +142,15 @@ and no learner has received this fixture.
 
 ### Relation to the unfixed artifact
 
-The unfixed artifact is unchanged and its reject still stands: `lesson_parent_unsafe.json`
-sha256 `0935dcb0f92866e4d229cb1e5c55da40ac7e56489b682c6b79fd98d338d7121a` still says
-"Have the child fill the kettle at the sink and switch it on", and
-`validation_reject_hazard.json` still records `hazard_age_appropriateness: fail` for
-`segment:2`. `tests/test_course_quality_s3_fixture.py` pins both hashes and fails if the hazard
-fixture is softened, and the existing pipeline test
+The unfixed artifact keeps its reject, and the hazard survived H-195: `lesson_parent_unsafe.json`
+sha256 `b8461e8e67f194807e01d2893bf558a73e776701c826554831c65da81dd6f9a1` still says the child
+fills the kettle at the sink and switches it on, and `validation_reject_hazard.json` still records
+`hazard_age_appropriateness: fail` for `segment:2`. (The digest this record originally reviewed,
+`0935dcb0f92866e4d229cb1e5c55da40ac7e56489b682c6b79fd98d338d7121a`, describes the pre-H-195 bytes;
+H-195 lengthened the fixture so the *hazard* — not thin prose — is what fails the new teaching
+floor, and re-derived the test pin once from the settled bytes rather than editing either.)
+`tests/test_course_quality_s3_fixture.py` pins both hashes and fails if the hazard fixture is
+softened, and the existing pipeline test
 `tests.test_generation.GenerationTest.test_parent_hazard_is_rejected_by_validation` still drives
 that reject through the real lesson pipeline. The repaired pair is a separate fixture; it is not
 a replacement for the hazard fixture and it does not inherit a validator pass.

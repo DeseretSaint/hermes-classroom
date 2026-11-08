@@ -289,6 +289,10 @@ class RecordedLLM:
             "scope": scope,
             "title": scenario["title"],
             "learner_outcome": shape["learner_outcome"],
+            # H-195: the plan's arc and starting assumptions are authored in the recording, like
+            # every other content field; the replay never invents them.
+            "through_line": shape["through_line"],
+            "prerequisite_assumptions": list(shape["prerequisite_assumptions"]),
             "delivery": "self_study",
             "time_estimate": {
                 "sessions_per_week": int(shape["sessions_per_week"]),
@@ -404,10 +408,13 @@ class RecordedLLM:
         return {
             "section_title": section["title"],
             "segments": [
-                {"kind": "model", "heading": "The step", "body": practice,
-                 "short": practice_short},
-                {"kind": "guided", "heading": "Do it", "body": criterion,
-                 "short": criterion_short},
+                # H-195: a lesson-specific heading and enough authored teaching to be a lesson
+                # rather than an outline. `<practice>. <why>` teaches the step and its point;
+                # `<criterion>. <counter>` gives the second pass. All four sentences are recorded.
+                {"kind": "model", "heading": str(recording["headings"][0]),
+                 "body": f"{practice} {recording['why']}", "short": practice_short},
+                {"kind": "guided", "heading": str(recording["headings"][1]),
+                 "body": f"{criterion} {recording['counter']}", "short": criterion_short},
             ],
             "worked_example": {
                 "prompt": f"A worked example of {section['title']}",

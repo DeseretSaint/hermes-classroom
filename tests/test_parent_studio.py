@@ -67,13 +67,25 @@ def parent_lesson_response(rubric_criteria: int = 3):
                 {
                     "kind": "model",
                     "heading": "Name one of each",
-                    "body": "Point at the kettle: it holds hot water. Point at the fridge: it is cold inside.",
+                    "body": (
+                        "Point at the kettle. It holds hot water, so it is warm. Point at the "
+                        "fridge. It is cold inside, so it is not warm. Look at the pot on the "
+                        "stove. It is warm now, and it will be cold later. Warm is something you "
+                        "feel with your hand. It is not a colour and it is not a size. That is "
+                        "why we say the kettle is warm and the fridge is cold."
+                    ),
                     "short": "Point at the kettle for hot water and the fridge for cold.",
                 },
                 {
                     "kind": "guided",
                     "heading": "Sort the cards",
-                    "body": "Put each card under the warm or cold heading and say the word out loud.",
+                    "body": (
+                        "Put each picture card on the table. Pick up one card and say what the "
+                        "object is. Then put the card under the warm heading or under the cold "
+                        "heading. Say the word out loud as you put it down. If you are not sure, "
+                        "touch the object first, then choose. At the end, count how many cards "
+                        "are under each heading."
+                    ),
                     "short": "Put each card under warm or cold and say the word out loud.",
                 },
             ],

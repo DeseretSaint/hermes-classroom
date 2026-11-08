@@ -1,6 +1,11 @@
 {
   "title": "Japanese café basics",
   "learner_outcome": "At a café, choose the greeting that opens the interaction, order one drink, pick out a menu item by its distance, and answer a written question about drink size in Japanese, with romaji and furigana available as scaffolds.",
+  "through_line": "One café visit, opening to order: greet, name a drink, point to a menu item by distance, then confirm the size in writing — each step uses the phrase the previous step set up.",
+  "prerequisite_assumptions": [
+    "The learner can read hiragana with romaji available as a scaffold.",
+    "The learner has not yet used Japanese in a shop or café."
+  ],
   "delivery": "self_study",
   "time_estimate": {
     "sessions_per_week": 1,

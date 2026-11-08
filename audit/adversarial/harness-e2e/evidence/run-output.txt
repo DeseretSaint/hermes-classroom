@@ -24,7 +24,7 @@ bicycle_single: PASS  scope=single units=1 objectives=1 checks=1 lessons=1 valid
   PASS  the_check_is_verification
   PASS  no_quiz_lane_present
   PASS  verification_is_graded_as_self_reported
-  grading[correct]: {"attempt_id": "att_00000000000000000000000000000027", "verdict": "pass", "evidence_class": "self_reported", "criteria": [{"id": "item_1", "observed": "Deflated the tyre and released the brake", "met": true}, {"id": "item_2", "observed": "Refitted the wheel without forcing the bead", "met": true}, {"id": "item_3", "observed": "Checked the brakes by hand before riding", "met": true}], "next_action": "review_objective", "revision": 2}
+  grading[correct]: {"attempt_id": "att_00000000000000000000000000000026", "verdict": "pass", "evidence_class": "self_reported", "criteria": [{"id": "item_1", "observed": "Deflated the tyre and released the brake", "met": true}, {"id": "item_2", "observed": "Refitted the wheel without forcing the bead", "met": true}, {"id": "item_3", "observed": "Checked the brakes by hand before riding", "met": true}], "next_action": "review_objective", "revision": 2}
 
 music_short: PASS  scope=short units=2 objectives=4 checks=4 lessons=4 validation=independently_validated
   PASS  no_japanese_content_in_plan
@@ -47,8 +47,8 @@ music_short: PASS  scope=short units=2 objectives=4 checks=4 lessons=4 validatio
   PASS  every_check_is_an_exact_lane_quiz
   PASS  correct_answer_passes
   PASS  wrong_answer_is_not_yet
-  grading[correct]: {"attempt_id": "att_00000000000000000000000000000044", "verdict": "pass", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "matches an accepted answer", "met": true}], "next_action": "complete_objective", "revision": 2}
-  grading[wrong]: {"attempt_id": "att_0000000000000000000000000000004a", "verdict": "not_yet", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "does not match an accepted answer", "met": false}], "next_action": "retry_attempt", "revision": 3}
+  grading[correct]: {"attempt_id": "att_00000000000000000000000000000043", "verdict": "pass", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "matches an accepted answer", "met": true}], "next_action": "complete_objective", "revision": 2}
+  grading[wrong]: {"attempt_id": "att_00000000000000000000000000000049", "verdict": "not_yet", "evidence_class": "cold", "criteria": [{"id": "c1", "observed": "does not match an accepted answer", "met": false}], "next_action": "retry_attempt", "revision": 3}
 
 soldering_full: PASS  scope=full units=6 objectives=12 checks=12 lessons=12 validation=independently_validated
   PASS  no_japanese_content_in_plan

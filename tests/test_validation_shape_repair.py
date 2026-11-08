@@ -46,15 +46,38 @@ MEASURED_ITEM = "check_plan: pressing harder does not fix a rolled edge; light s
 HOST_GATE_PREFIX = "Plugin LLM structured output did not match schema: "
 
 
-def measured_document() -> dict:
+def _claim_verdicts_for(request: gen.LLMRequest | None) -> list[dict]:
+    """Claim verdicts for exactly the labels this pass was told to judge.
+
+    H-191's narrowed demand (``plan_claim_labels`` / ``validation_pass_schema``) pins
+    ``claim_verdicts`` to the plan's own named claims, so a fixture answer that carries an empty
+    claim set is no longer schema-valid for a plan pass. The fixtures stay recorded answers; only
+    the claim set is derived from the request, so the shape under test is still the measured
+    over-long ``item`` and not a stale claim list.
+    """
+    if request is None or request.schema is None:
+        return []
+    claim = (request.schema.get("properties") or {}).get("claim_verdicts") or {}
+    labels = (((claim.get("items") or {}).get("properties") or {}).get("item") or {}).get("enum")
+    if not labels:
+        return []
+    return [
+        {"item": label, "support": "unverified", "reason": "not assessed by this fixture"}
+        for label in labels
+    ]
+
+
+def measured_document(request: gen.LLMRequest | None = None) -> dict:
     """The recorded validator answer: schema-minimal, with the measured over-long ``item``."""
-    return fixture("validation_measured_item_81")
+    document = json.loads(json.dumps(fixture("validation_measured_item_81")))
+    document["claim_verdicts"] = _claim_verdicts_for(request)
+    return document
 
 
 def clean_document(request: gen.LLMRequest | None = None) -> dict:
     """A schema-valid validator answer with no claim coupling (the ledger stays untouched)."""
     document = json.loads(json.dumps(fixture("validation_pass")))
-    document["claim_verdicts"] = []
+    document["claim_verdicts"] = _claim_verdicts_for(request)
     return document
 
 
@@ -184,7 +207,7 @@ class RepairedAnswerIsValidOnTheMeritsTest(ShapeRepairCase):
         seam = HostStructuredSeam(
             {
                 "coursebook.plan.generate": [plan_document],
-                "coursebook.plan.validate": [measured_document(), clean_document],
+                "coursebook.plan.validate": [measured_document, clean_document],
             }
         )
         result = self.run_plan(seam)
@@ -268,7 +291,7 @@ class SecondViolationIsTypedNotAnOutageTest(ShapeRepairCase):
         seam = HostStructuredSeam(
             {
                 "coursebook.plan.generate": [plan_document],
-                "coursebook.plan.validate": [measured_document(), measured_document()],
+                "coursebook.plan.validate": [measured_document, measured_document],
             }
         )
         with self.assertRaises(gen.ModelOutputInvalid) as caught:
@@ -317,7 +340,7 @@ class JobReportsTheTruthTest(ShapeRepairCase):
         seam = HostStructuredSeam(
             {
                 "coursebook.plan.generate": [plan_document],
-                "coursebook.plan.validate": [measured_document(), measured_document()],
+                "coursebook.plan.validate": [measured_document, measured_document],
             }
         )
         connection = self.connection

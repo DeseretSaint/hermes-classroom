@@ -1,6 +1,11 @@
 {
   "title": "Replace a bicycle brake pad",
   "learner_outcome": "Replace one rim-brake pad on a bicycle, then verify the brake by hand before riding. The brake model is not identified in this course, so the learner fetches the manufacturer's manual for their own brake and takes the pad model, fastener and torque values from it.",
+  "through_line": "One brake pad, one fastener at a time: read the manual, loosen only the named fastener, seat the new pad, then prove the brake works by hand before the wheel turns.",
+  "prerequisite_assumptions": [
+    "The learner has the bicycle and its manufacturer's manual in front of them.",
+    "The learner can identify a rim brake and the pad that presses on the rim."
+  ],
   "delivery": "self_study",
   "time_estimate": {
     "sessions_per_week": 1,

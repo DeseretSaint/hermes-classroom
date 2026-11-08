@@ -34,12 +34,15 @@ FIXTURES = ROOT / "tests" / "fixtures" / "generation"
 RECORD = ROOT / "docs" / "reviews" / "H173c-S3-parent-kitchen-rescore.md"
 PACKET = ROOT / "scripts" / "course_quality_review.py"
 
-#: The unfixed artifact, exactly as the H-173 review recorded it. If either digest moves, the
-#: hazard rejection stops describing bytes that exist and the S3 finding is no longer reproducible.
-UNSAFE_LESSON_SHA256 = "0935dcb0f92866e4d229cb1e5c55da40ac7e56489b682c6b79fd98d338d7121a"
+#: The unfixed artifact, exactly as the H-173 review recorded it, and re-derived once after H-195
+#: lengthened the hazard lesson so the *hazard* (not thin prose) is what fails. If either digest
+#: moves again, the hazard rejection stops describing bytes that exist and the S3 finding is no
+#: longer reproducible: re-derive it deliberately and state why, never hand-edit it to match.
+UNSAFE_LESSON_SHA256 = "b8461e8e67f194807e01d2893bf558a73e776701c826554831c65da81dd6f9a1"
 HAZARD_VALIDATION_SHA256 = "f6d0161427286da5d0341aa346aa5cd155266c1ea6a67a2724b9743e32165c48"
 
-KETTLE_OPERATION = "Have the child fill the kettle at the sink and switch it on"
+#: The hazard itself, in the settled wording: the child fills the kettle and switches it on.
+KETTLE_OPERATION = "Have the child fill the kettle at the sink, switch it on"
 
 
 def load(name: str) -> dict:

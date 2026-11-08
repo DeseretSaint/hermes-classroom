@@ -112,14 +112,14 @@
         "section_title": "Name the three burn and fume hazards at the bench",
         "segments": [
           {
-            "body": "Point at the iron, the fume path and your eyes, and name the hazard each one creates.",
-            "heading": "The step",
+            "body": "Point at the iron, the fume path and your eyes, and name the hazard each one creates. Every rule on this bench exists to answer one of these three hazards, so you name them before you pick up the iron.",
+            "heading": "Point at each hazard",
             "kind": "model",
             "short": "Point at the iron, the fume path and your eyes."
           },
           {
-            "body": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
-            "heading": "Do it",
+            "body": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes. A hazard you cannot name is one you walk into while you are watching the joint, which is why the naming is its own habit.",
+            "heading": "Name the hazard before the iron",
             "kind": "guided",
             "short": "The three hazards are the hot iron, the solder fumes and flying clippings."
           }
@@ -169,14 +169,14 @@
         "section_title": "Set an iron to the temperature a leaded joint needs",
         "segments": [
           {
-            "body": "Set the station, wait for the display to settle, and tin the tip before the first joint.",
-            "heading": "The step",
+            "body": "Set the station, wait for the display to settle, and tin the tip before the first joint. The setting decides how long the iron sits on a joint, and a long touch is what damages pads and parts at the bench.",
+            "heading": "Set and tin before the first joint",
             "kind": "model",
             "short": "Set the station and wait for the display to settle."
           },
           {
-            "body": "Leaded solder wants a moderate setting; hotter burns the flux before the joint forms.",
-            "heading": "Do it",
+            "body": "Leaded solder wants a moderate setting; hotter burns the flux before the joint forms. Turning the station hotter to work faster burns the flux first, and a joint with no flux goes cold even at temperature.",
+            "heading": "Hotter is not faster",
             "kind": "guided",
             "short": "Leaded solder wants a moderate setting."
           }
@@ -226,14 +226,14 @@
         "section_title": "Read a resistor value from its colour bands",
         "segments": [
           {
-            "body": "Read the bands left to right, then multiply by the third band before you trust the value.",
-            "heading": "The step",
+            "body": "Read the bands left to right, then multiply by the third band before you trust the value. Reading the code is how you know a part's value without trusting a label or a drawer.",
+            "heading": "Read the bands left to right",
             "kind": "model",
             "short": "Read the bands left to right."
           },
           {
-            "body": "Brown, black, red, gold is ten times one hundred, so one thousand ohms at five percent.",
-            "heading": "Do it",
+            "body": "Brown, black, red, gold is ten times one hundred, so one thousand ohms at five percent. Read from the wrong end and the multiplier lands on the wrong band, so the reading always starts at the band nearest the end of the body.",
+            "heading": "Check the multiplier band",
             "kind": "guided",
             "short": "Brown, black, red, gold is ten times one hundred."
           }
@@ -283,14 +283,14 @@
         "section_title": "Inspect a pad for lift before inserting a part",
         "segments": [
           {
-            "body": "Look at the pad edge against the board and press gently with a toothpick before you insert anything.",
-            "heading": "The step",
+            "body": "Look at the pad edge against the board and press gently with a toothpick before you insert anything. A pad is the only thing holding the joint to the board, so its condition is checked before any heat goes near it.",
+            "heading": "Press the pad edge lightly",
             "kind": "model",
             "short": "Look at the pad edge against the board."
           },
           {
-            "body": "A sound pad sits flat on the board; a lifted pad shows a shadow line and gives under light pressure.",
-            "heading": "Do it",
+            "body": "A sound pad sits flat on the board; a lifted pad shows a shadow line and gives under light pressure. Pressing harder on a lifted pad tears it away completely, so the toothpick test is light and stops at the first give.",
+            "heading": "A lifted pad shows a shadow line",
             "kind": "guided",
             "short": "A sound pad sits flat on the board."
           }
@@ -340,14 +340,14 @@
         "section_title": "Form a lead so the part seats flush",
         "segments": [
           {
-            "body": "Bend the lead with pliers at the board thickness and let the part drop flush without pushing it.",
-            "heading": "The step",
+            "body": "Bend the lead with pliers at the board thickness and let the part drop flush without pushing it. The bend has to happen before soldering, because a lead bent while the joint is solid pulls on the pad.",
+            "heading": "Bend the lead at board thickness",
             "kind": "model",
             "short": "Bend the lead with pliers at the board thickness."
           },
           {
-            "body": "The body sits flat with the lead bent between the body and the pad.",
-            "heading": "Do it",
+            "body": "The body sits flat with the lead bent between the body and the pad. Holding a part down with pliers while it cools still leaves it standing off the board later, so the lead carries the gap, not the tool.",
+            "heading": "The lead carries the gap",
             "kind": "guided",
             "short": "The body sits flat with the lead bent."
           }
@@ -397,14 +397,14 @@
         "section_title": "Insert a part in the right orientation",
         "segments": [
           {
-            "body": "Find the marking on the part and match it to the board's own marking before you bend anything.",
-            "heading": "The step",
+            "body": "Find the marking on the part and match it to the board's own marking before you bend anything. The marking is the only thing on the part that says which way the circuit expects it, and solder does not fix a reversed part.",
+            "heading": "Match the two markings",
             "kind": "model",
             "short": "Find the marking on the part and match it to the board's own marking."
           },
           {
-            "body": "The part's marking and the board's marking face the same way.",
-            "heading": "Do it",
+            "body": "The part's marking and the board's marking face the same way. A reversed part can pass a visual check and still fail on power, which is why the markings are matched before anything is bent.",
+            "heading": "Solder does not fix a reversed part",
             "kind": "guided",
             "short": "Both markings face the same way."
           }
@@ -454,14 +454,14 @@
         "section_title": "Heat the pad and lead together before feeding solder",
         "segments": [
           {
-            "body": "Touch the tip to the pad and the lead at once, count two seconds, then feed solder into the joint, not the tip.",
-            "heading": "The step",
+            "body": "Touch the tip to the pad and the lead at once, count two seconds, then feed solder into the joint, not the tip. The heat has to reach the joint before the solder is offered, or the solder sits on top of a cold surface.",
+            "heading": "Heat the joint, then feed solder",
             "kind": "model",
             "short": "Touch the tip to the pad and the lead at once."
           },
           {
-            "body": "The joint reaches temperature first; solder follows the heat.",
-            "heading": "Do it",
+            "body": "The joint reaches temperature first; solder follows the heat. Solder fed onto the tip runs down hot and looks joined, and the same joint fails a continuity check once it has cooled to room temperature.",
+            "heading": "Solder on the tip looks joined",
             "kind": "guided",
             "short": "The joint reaches temperature first."
           }
@@ -511,14 +511,14 @@
         "section_title": "Recognise a cold joint from its surface",
         "segments": [
           {
-            "body": "Compare a grainy joint with a bright fillet and say which one moved while it cooled.",
-            "heading": "The step",
+            "body": "Compare a grainy joint with a bright fillet and say which one moved while it cooled. Most cold joints are readable without a meter, and the surface is the first inspection you can do at your own bench.",
+            "heading": "Compare grainy with bright",
             "kind": "model",
             "short": "Compare a grainy joint with a bright fillet."
           },
           {
-            "body": "A cold joint has a grainy, matte surface; a sound fillet is bright and concave.",
-            "heading": "Do it",
+            "body": "A cold joint has a grainy, matte surface; a sound fillet is bright and concave. A bright joint can still be cold under the surface, so the grainy ones are the ones you rework before testing the rest.",
+            "heading": "Rework the grainy ones first",
             "kind": "guided",
             "short": "A cold joint has a grainy, matte surface."
           }
@@ -568,14 +568,14 @@
         "section_title": "Inspect a finished joint against the fillet criterion",
         "segments": [
           {
-            "body": "Judge each joint on the board against the fillet criterion and mark the ones that need rework.",
-            "heading": "The step",
+            "body": "Judge each joint on the board against the fillet criterion and mark the ones that need rework. One criterion applied to every joint is what keeps the inspection consistent, instead of judging each joint on how it feels.",
+            "heading": "Judge every joint by one criterion",
             "kind": "model",
             "short": "Judge each joint on the board against the fillet criterion."
           },
           {
-            "body": "A sound joint is shiny, concave and covers the pad without a ball.",
-            "heading": "Do it",
+            "body": "A sound joint is shiny, concave and covers the pad without a ball. A balled joint is the clearest fail and the easiest to under-call, because it looks like extra solder rather than a bad joint.",
+            "heading": "A balled joint is a fail",
             "kind": "guided",
             "short": "A sound joint is shiny, concave and covers the pad."
           }
@@ -625,14 +625,14 @@
         "section_title": "Wick a solder bridge without lifting the pad",
         "segments": [
           {
-            "body": "Add flux, lay the wick over the bridge, and heat the wick until the solder flows into it before lifting.",
-            "heading": "The step",
+            "body": "Add flux, lay the wick over the bridge, and heat the wick until the solder flows into it before lifting. A bridge connects two points the circuit keeps apart, so it is removed before power is ever applied.",
+            "heading": "Lay the wick over the bridge",
             "kind": "model",
             "short": "Add flux and lay the wick over the bridge."
           },
           {
-            "body": "Heat through the wick and stop as soon as the bridge disappears.",
-            "heading": "Do it",
+            "body": "Heat through the wick and stop as soon as the bridge disappears. Lifting the wick early leaves solder behind and pulls on a solid joint, so the wick comes up only after the solder has flowed into it.",
+            "heading": "Lift only after the solder flows",
             "kind": "guided",
             "short": "Heat through the wick and stop."
           }
@@ -682,14 +682,14 @@
         "section_title": "Desolder a two-lead part without overheating it",
         "segments": [
           {
-            "body": "Add fresh solder to each joint, alternate heat between the leads, and pull gently once both are molten.",
-            "heading": "The step",
+            "body": "Add fresh solder to each joint, alternate heat between the leads, and pull gently once both are molten. Fresh solder restores the flux that makes the old joint flow, so removal stays quick instead of holding heat on the pads.",
+            "heading": "Add fresh solder to each joint",
             "kind": "model",
             "short": "Add fresh solder to each joint and alternate heat between the leads."
           },
           {
-            "body": "Fresh solder and alternating heat keep the part and the pads alive.",
-            "heading": "Do it",
+            "body": "Fresh solder and alternating heat keep the part and the pads alive. Holding heat on one lead while the other is still solid lifts pads and cooks the part, so the heat alternates.",
+            "heading": "Alternate the heat",
             "kind": "guided",
             "short": "Fresh solder and alternating heat keep the pads alive."
           }
@@ -739,14 +739,14 @@
         "section_title": "Prove continuity with a meter after rework",
         "segments": [
           {
-            "body": "Set the meter to continuity, probe the two ends of the repaired path, and confirm the beep before power.",
-            "heading": "The step",
+            "body": "Set the meter to continuity, probe the two ends of the repaired path, and confirm the beep before power. The meter answers the one question the eye cannot: does the repair conduct from one intended point to the other.",
+            "heading": "Probe the ends of the repaired path",
             "kind": "model",
             "short": "Set the meter to continuity and probe the two ends."
           },
           {
-            "body": "Continuity between the intended points proves the repair conducts.",
-            "heading": "Do it",
+            "body": "Continuity between the intended points proves the repair conducts. Continuity across the wrong two points proves nothing, so the probes go on the ends of the repaired path, not on the nearest metal.",
+            "heading": "Continuity across the wrong points",
             "kind": "guided",
             "short": "Continuity proves the repair conducts."
           }
@@ -771,9 +771,15 @@
   "observations": {
     "approval_provenance": {
       "facts_unverified": false,
+      "generator": {
+        "known": true,
+        "model": "recorded-transcript-h40",
+        "provider": "recorded"
+      },
       "independent": true,
       "needs_review": false,
       "outcome": "independently_validated",
+      "prompt_version": "plan-prompt.v9",
       "warning": null
     },
     "attempt_rows": [
@@ -928,7 +934,7 @@
     "plan_scope": "full",
     "plan_state_after_approval": "approved",
     "plan_state_before_approval": "draft",
-    "prompt_version": "plan-prompt.v7",
+    "prompt_version": "plan-prompt.v9",
     "schema_name": "coursebook_plan_v2",
     "sections": 12,
     "units": 6,
@@ -1143,9 +1149,14 @@
       }
     ],
     "plan_schema": "coursebook.plan.v2",
+    "prerequisite_assumptions": [
+      "The learner has a temperature-controlled iron, leaded solder, flux and a meter.",
+      "The learner has not soldered before and is not assumed to know any bench rule."
+    ],
     "scope": "full",
     "source_ids": [],
     "spaced_review": true,
+    "through_line": "One board taken from a safe bench to a proved repair: name the hazards, set the iron, read the part, seat it, form the joint, inspect it, rework what fails, and prove continuity before power.",
     "time_estimate": {
       "attainment_hours": null,
       "basis": "none",
@@ -1378,9 +1389,9 @@
         "blocks": [
           {
             "check_id": null,
-            "deep": "Point at the iron, the fume path and your eyes, and name the hazard each one creates.",
-            "headline": "The step",
-            "id": "blk_e8352713982c3097bff2",
+            "deep": "Point at the iron, the fume path and your eyes, and name the hazard each one creates. Every rule on this bench exists to answer one of these three hazards, so you name them before you pick up the iron.",
+            "headline": "Point at each hazard",
+            "id": "blk_62b182da5a56ffb7fc13",
             "media": [],
             "role": "example",
             "short": "Point at the iron, the fume path and your eyes.",
@@ -1388,9 +1399,9 @@
           },
           {
             "check_id": "0000000000000057",
-            "deep": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
-            "headline": "Do it",
-            "id": "blk_cccb4749265a6c5f10ef",
+            "deep": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes. A hazard you cannot name is one you walk into while you are watching the joint, which is why the naming is its own habit.",
+            "headline": "Name the hazard before the iron",
+            "id": "blk_a07eac1cffef67ce5608",
             "media": [],
             "role": "practice",
             "short": "The three hazards are the hot iron, the solder fumes and flying clippings.",
@@ -1418,9 +1429,9 @@
           }
         ],
         "check_id": "0000000000000057",
-        "content_hash": "sha256:fa9d22fc1111081604e822184aebc84defd727287c37febf9bd20b8c95c63229",
+        "content_hash": "sha256:363cb12b611edf824ee72aaef5d30c968ed6f58c7d43dbf746cb4c50cb8ec412",
         "direction": "ltr",
-        "document_id": "doc_fa9d22fc1111081604e8",
+        "document_id": "doc_363cb12b611edf824ee7",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -1573,6 +1584,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000057",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000056",
               "reused": false,
               "section_id": "000000000000002c",
@@ -1606,6 +1624,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000005a",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000059",
               "reused": false,
               "section_id": "000000000000002d",
@@ -1638,7 +1663,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 2,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1678,8 +1703,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10139,
-            "output_tokens": 1678,
+            "input_tokens": 10416,
+            "output_tokens": 1816,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1703,6 +1728,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000063",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000062",
               "reused": false,
               "section_id": "0000000000000033",
@@ -1736,6 +1768,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000066",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000065",
               "reused": false,
               "section_id": "0000000000000034",
@@ -1768,7 +1807,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 3,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1808,8 +1847,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10124,
-            "output_tokens": 1685,
+            "input_tokens": 10394,
+            "output_tokens": 1820,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1833,6 +1872,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000006f",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "000000000000006e",
               "reused": false,
               "section_id": "000000000000003a",
@@ -1866,6 +1912,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000072",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000071",
               "reused": false,
               "section_id": "000000000000003b",
@@ -1898,7 +1951,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 4,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -1938,8 +1991,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10051,
-            "output_tokens": 1663,
+            "input_tokens": 10342,
+            "output_tokens": 1809,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -1963,6 +2016,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000007b",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "000000000000007a",
               "reused": false,
               "section_id": "0000000000000041",
@@ -1996,6 +2056,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000007e",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "000000000000007d",
               "reused": false,
               "section_id": "0000000000000042",
@@ -2028,7 +2095,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 5,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2068,8 +2135,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10029,
-            "output_tokens": 1636,
+            "input_tokens": 10316,
+            "output_tokens": 1779,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2093,6 +2160,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000087",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000086",
               "reused": false,
               "section_id": "0000000000000048",
@@ -2126,6 +2200,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "000000000000008a",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000089",
               "reused": false,
               "section_id": "0000000000000049",
@@ -2158,7 +2239,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": 6,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2198,8 +2279,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10088,
-            "output_tokens": 1681,
+            "input_tokens": 10378,
+            "output_tokens": 1826,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2223,6 +2304,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000093",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000092",
               "reused": false,
               "section_id": "000000000000004f",
@@ -2256,6 +2344,13 @@
               "audit_state": "passed",
               "check_enabled": true,
               "check_id": "0000000000000096",
+              "generation": {
+                "known": true,
+                "model": "recorded-transcript-h40",
+                "pipeline_version": "cb.gen.v2",
+                "prompt_version": "lesson-prompt.v10",
+                "provider": "recorded"
+              },
               "lesson_id": "0000000000000095",
               "reused": false,
               "section_id": "0000000000000050",
@@ -2288,7 +2383,7 @@
           ],
           "needs_review": [],
           "next_unit_ordinal": null,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
@@ -2328,8 +2423,8 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 10101,
-            "output_tokens": 1681,
+            "input_tokens": 10385,
+            "output_tokens": 1823,
             "unknown_calls": 0,
             "unknown_cost": false
           }
@@ -2757,7 +2852,7 @@
           12,
           40
         ],
-        "prompt_version": "plan-prompt.v7",
+        "prompt_version": "plan-prompt.v9",
         "schema_name": "coursebook_plan_v2",
         "unit_count_rule": [
           2,
@@ -2776,9 +2871,15 @@
       "result": {
         "approval_provenance": {
           "facts_unverified": false,
+          "generator": {
+            "known": true,
+            "model": "recorded-transcript-h40",
+            "provider": "recorded"
+          },
           "independent": true,
           "needs_review": false,
           "outcome": "independently_validated",
+          "prompt_version": "plan-prompt.v9",
           "warning": null
         },
         "course_id": "crs_00000000000000000000000000000002",
@@ -2789,6 +2890,13 @@
           "source": "declared",
           "target_language": null
         },
+        "generation": {
+          "known": true,
+          "model": "recorded-transcript-h40",
+          "pipeline_version": "cb.gen.v2",
+          "prompt_version": "plan-prompt.v9",
+          "provider": "recorded"
+        },
         "job_id": "job_00000000000000000000000000000007",
         "job_kind": "plan",
         "level": "beginner",
@@ -2796,7 +2904,7 @@
         "next_unit_ordinal": 1,
         "objectives": 12,
         "plan_content_hash": "sha256:3f7372ca2c4564824d3fcc3aa9cdcb60470b8dcaa2078b544402814f494986ba",
-        "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+        "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
         "plan_id": "pln_00000000000000000000000000000003",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 1,
@@ -2847,8 +2955,8 @@
           "calls": 2,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 6661,
-          "output_tokens": 1620,
+          "input_tokens": 6766,
+          "output_tokens": 1721,
           "unknown_calls": 0,
           "unknown_cost": false
         },
@@ -2956,7 +3064,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -2990,7 +3098,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5794,
+            "input_tokens": 5899,
             "output_tokens": 517,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3015,7 +3123,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 3,
           "owners": 2,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3049,7 +3157,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5787,
+            "input_tokens": 5892,
             "output_tokens": 504,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3074,7 +3182,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 4,
           "owners": 2,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3108,7 +3216,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5776,
+            "input_tokens": 5881,
             "output_tokens": 503,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3133,7 +3241,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 5,
           "owners": 2,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3167,7 +3275,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5782,
+            "input_tokens": 5887,
             "output_tokens": 505,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3192,7 +3300,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": 6,
           "owners": 2,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3226,7 +3334,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5788,
+            "input_tokens": 5893,
             "output_tokens": 509,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -3251,7 +3359,7 @@
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
-          "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
+          "plan_hash": "sha256:17c3452ed0f379d1025cd269a703503131d4a3c952ba05198adaa93d9ebdbf27",
           "plan_id": "pln_00000000000000000000000000000003",
           "rejection_reasons": [],
           "reused": false,
@@ -3285,7 +3393,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5804,
+            "input_tokens": 5909,
             "output_tokens": 508,
             "unknown_calls": 0,
             "unknown_cost": false
