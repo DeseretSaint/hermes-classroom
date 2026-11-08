@@ -285,9 +285,12 @@ frame scripts under `.chromium` profile directories; a profile whose lock names 
 Neither touches the machine-level home's copy.
 
 `plugins validate` prints one warning rather than an error: `coursebook/db.py` opens SQLite through
-`hermes_cli.sqlite_util.open_db`, and the `probes/scripts/` harnesses import `hermes_bootstrap` and
-`agent.plugin_llm` helpers. Those are private core surfaces, they can break on a Hermes upgrade, and
-they are listed here rather than hidden. Catalog rule 9 treats them as a warning, not a rejection.
+`hermes_cli.sqlite_util.open_db` on the single-home pinned path only, and the `probes/scripts/`
+harnesses import `hermes_bootstrap` and `agent.plugin_llm` helpers. Those are private core surfaces,
+they can break on a Hermes upgrade, and they are listed here rather than hidden. Catalog rule 9
+treats them as a warning, not a rejection. The `open_db` one is guarded and documented
+(`docs/ARCHITECTURE.md` §9): a host release that moves it fails the pinned open with a message
+naming the surface, and `coursebook.install_check` reports `HOST_SEAM_UNAVAILABLE` with the fix.
 
 ## 8. What a correct first run looks like
 
