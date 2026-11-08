@@ -1,0 +1,1325 @@
+{
+  "port": "9363",
+  "target": "http://127.0.0.1:5174/#/coursebook",
+  "mode": "dark",
+  "frames": [
+    {
+      "mode": "light",
+      "width": 1049,
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/light-firstrun-1049.png"
+    },
+    {
+      "mode": "light",
+      "width": 900,
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/light-firstrun-900.png"
+    },
+    {
+      "mode": "light",
+      "width": 460,
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/light-firstrun-460.png"
+    },
+    {
+      "mode": "light",
+      "width": 1049,
+      "text": "200%",
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/text200-light-firstrun-1049.png"
+    },
+    {
+      "mode": "light",
+      "width": 460,
+      "text": "200%",
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/text200-light-firstrun-460.png"
+    },
+    {
+      "mode": "light",
+      "width": 1049,
+      "state": "offline",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/light-offline.png"
+    },
+    {
+      "mode": "light",
+      "width": 1049,
+      "state": "backend-down",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/light-error.png"
+    },
+    {
+      "mode": "light",
+      "width": 1049,
+      "state": "loading",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/light-loading.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/dark-firstrun-1049.png"
+    },
+    {
+      "mode": "dark",
+      "width": 900,
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/dark-firstrun-900.png"
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/dark-firstrun-460.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "text": "200%",
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/text200-dark-firstrun-1049.png"
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "text": "200%",
+      "state": "firstrun",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/text200-dark-firstrun-460.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "state": "offline",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/dark-offline.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "state": "backend-down",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/dark-error.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "state": "loading",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_38328bdc/docs/h153-shots/dark-loading.png"
+    }
+  ],
+  "facts": {
+    "light-firstrun-1049": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 360,
+            "height": 44
+          },
+          "background": "rgb(232, 169, 58)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 360,
+            "height": 44
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "light-firstrun-900": {
+      "innerWidth": 900,
+      "online": true,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 218,
+            "height": 44
+          },
+          "background": "rgb(232, 169, 58)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 218,
+            "height": 54
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 218,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 218,
+              "height": 54
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "light-firstrun-460": {
+      "innerWidth": 460,
+      "online": true,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 176,
+            "height": 44
+          },
+          "background": "rgb(232, 169, 58)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 176,
+            "height": 54
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 176,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 176,
+              "height": 54
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "text200-light-firstrun-1049": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 299,
+            "height": 68
+          },
+          "background": "rgb(232, 169, 58)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 299,
+            "height": 107
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 299,
+              "height": 68
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 299,
+              "height": 107
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "22.4px",
+        "right": "22.4px"
+      },
+      "offlineBanner": false
+    },
+    "text200-light-firstrun-460": {
+      "innerWidth": 460,
+      "online": true,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 123,
+            "height": 193
+          },
+          "background": "rgb(232, 169, 58)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 153,
+            "height": 232
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 123,
+              "height": 193
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 153,
+              "height": 232
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "22.4px",
+        "right": "22.4px"
+      },
+      "offlineBanner": false
+    },
+    "dark-firstrun-1049": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 360,
+            "height": 44
+          },
+          "background": "rgb(239, 192, 107)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 360,
+            "height": 44
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "dark-firstrun-900": {
+      "innerWidth": 900,
+      "online": true,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 218,
+            "height": 44
+          },
+          "background": "rgb(239, 192, 107)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 218,
+            "height": 54
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 218,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 218,
+              "height": 54
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "dark-firstrun-460": {
+      "innerWidth": 460,
+      "online": true,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 176,
+            "height": 44
+          },
+          "background": "rgb(239, 192, 107)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 176,
+            "height": 54
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 176,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 176,
+              "height": 54
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "text200-dark-firstrun-1049": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 299,
+            "height": 68
+          },
+          "background": "rgb(239, 192, 107)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 299,
+            "height": 107
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 299,
+              "height": 68
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 299,
+              "height": 107
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "22.4px",
+        "right": "22.4px"
+      },
+      "offlineBanner": false
+    },
+    "text200-dark-firstrun-460": {
+      "innerWidth": 460,
+      "online": true,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 123,
+            "height": 193
+          },
+          "background": "rgb(239, 192, 107)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 153,
+            "height": 232
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 123,
+              "height": 193
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 153,
+              "height": 232
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "22.4px",
+        "right": "22.4px"
+      },
+      "offlineBanner": false
+    }
+  },
+  "states": {
+    "light-offline": {
+      "innerWidth": 1049,
+      "online": false,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "offline",
+        "headline": "What do you want to be able to do?",
+        "line": "A new course is paused while this profile is offline. Nothing you already saved is lost.",
+        "words": 25,
+        "visibleText": "What do you want to be able to do?A new course is paused while this profile is offline. Nothing you already saved is lost.Try again",
+        "primary": {
+          "label": "Try again",
+          "variant": "default",
+          "rect": {
+            "width": 360,
+            "height": 44
+          },
+          "background": "rgb(232, 169, 58)"
+        },
+        "secondary": null,
+        "controls": [
+          {
+            "label": "Try again",
+            "variant": "default",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": true
+    },
+    "light-backenddown": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": null,
+      "desk": "error",
+      "loader": "",
+      "error": {
+        "title": "The Field Desk could not read your coursesHOST_UNAVAILABLE: Error invoking remote method 'hermes:api': Error: connect ECONNREFUSED 127.0.0.1:44531 This desk will not show an empty course in place of a failed read.Try againOpen Capabilities",
+        "buttons": [
+          "Try again",
+          "Open Capabilities"
+        ]
+      },
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "light-recovered": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 360,
+            "height": 44
+          },
+          "background": "rgb(232, 169, 58)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 360,
+            "height": 44
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "light-loading": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": null,
+      "desk": "loading",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "light-afterload": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "light",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 360,
+            "height": 44
+          },
+          "background": "rgb(232, 169, 58)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 360,
+            "height": 44
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "dark-offline": {
+      "innerWidth": 1049,
+      "online": false,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "offline",
+        "headline": "What do you want to be able to do?",
+        "line": "A new course is paused while this profile is offline. Nothing you already saved is lost.",
+        "words": 25,
+        "visibleText": "What do you want to be able to do?A new course is paused while this profile is offline. Nothing you already saved is lost.Try again",
+        "primary": {
+          "label": "Try again",
+          "variant": "default",
+          "rect": {
+            "width": 360,
+            "height": 44
+          },
+          "background": "rgb(239, 192, 107)"
+        },
+        "secondary": null,
+        "controls": [
+          {
+            "label": "Try again",
+            "variant": "default",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": true
+    },
+    "dark-backenddown": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": null,
+      "desk": "error",
+      "loader": "",
+      "error": {
+        "title": "The Field Desk could not read your coursesHOST_UNAVAILABLE: Error invoking remote method 'hermes:api': Error: connect ECONNREFUSED 127.0.0.1:44531 This desk will not show an empty course in place of a failed read.Try againOpen Capabilities",
+        "buttons": [
+          "Try again",
+          "Open Capabilities"
+        ]
+      },
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "dark-recovered": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 360,
+            "height": 44
+          },
+          "background": "rgb(239, 192, 107)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 360,
+            "height": 44
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "dark-loading": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": null,
+      "desk": "loading",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    },
+    "dark-afterload": {
+      "innerWidth": 1049,
+      "online": true,
+      "mode": "dark",
+      "destination": "home",
+      "h1": {
+        "count": 1,
+        "text": "Home"
+      },
+      "wordmark": "Coursebook",
+      "plate": {
+        "state": "start",
+        "headline": "What do you want to be able to do?",
+        "line": "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+        "words": 32,
+        "visibleText": "What do you want to be able to do?Name one goal, review the plan, then learn. Nothing is created until you approve the plan.Start with a goalUse a course I already have",
+        "primary": {
+          "label": "Start with a goal",
+          "variant": "default",
+          "rect": {
+            "width": 360,
+            "height": 44
+          },
+          "background": "rgb(239, 192, 107)"
+        },
+        "secondary": {
+          "label": "Use a course I already have",
+          "variant": "secondary",
+          "rect": {
+            "width": 360,
+            "height": 44
+          }
+        },
+        "controls": [
+          {
+            "label": "Start with a goal",
+            "variant": "default",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          },
+          {
+            "label": "Use a course I already have",
+            "variant": "secondary",
+            "rect": {
+              "width": 360,
+              "height": 44
+            }
+          }
+        ],
+        "minors": 1,
+        "svgs": 0,
+        "seals": 0,
+        "pathRows": 0,
+        "pathList": 0,
+        "inventoryNote": false
+      },
+      "desk": "empty",
+      "loader": "",
+      "error": null,
+      "continueCards": 0,
+      "courseRows": 0,
+      "overflow": 0,
+      "gutter": {
+        "left": "11.2px",
+        "right": "11.2px"
+      },
+      "offlineBanner": false
+    }
+  },
+  "darkKeyboard": {
+    "stops": [
+      "Skip to course content",
+      "Home",
+      "Courses",
+      "Library",
+      "Parent Studio",
+      "Start with a goal"
+    ],
+    "primary": {
+      "tag": "button",
+      "label": "Start with a goal",
+      "primary": true,
+      "outline": "none 1.1156px",
+      "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.638022 -0.0233847 -0.190333 / 0.5) 0px 0px 0px 3px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+      "borderColor": "rgb(19, 18, 16)"
+    },
+    "ringPaint": true
+  },
+  "coldPressableMs": 102
+}

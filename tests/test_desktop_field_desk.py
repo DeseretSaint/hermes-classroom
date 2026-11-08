@@ -208,6 +208,7 @@ const pass = (props) => {
 }
 
 export const Button = (props) => el('button', pass(props), textOf(props))
+export const RowButton = (props) => el('button', pass(props), textOf(props))
 export const Badge = (props) => el('span', { className: 'badge', 'data-variant': props.variant || null }, textOf(props))
 export const PanelSectionLabel = (props) => el('div', { className: 'panel-label' }, textOf(props))
 export const PanelEmpty = (props) => el('div', { className: 'panel-empty' }, textOf(props))
@@ -491,8 +492,9 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn('data-cb-continue-section', html)
         # `resolve_review_due` in the row's next_step makes the due review the section to continue.
         self.assertIn("Diagnose a no-start", html)
-        self.assertIn("Review 1 objective(s)", html)
-        self.assertIn("Next · ", html)
+        self.assertIn("Start the review", html)
+        # H-145: the section title is the next step; the duplicate "Next ·" sentence is gone.
+        self.assertNotIn("Next · ", html)
         self.assertIn("Section 2 of 4", html)
 
     def test_a_narrow_desk_stacks_and_drops_the_course_stamp(self) -> None:
@@ -504,11 +506,14 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn("Diagnose a no-start", html)
         self.assertIn("Open the section", html)
 
-    def test_a_wide_desk_keeps_the_course_stamp(self) -> None:
-        html = self.render(width=1280)
-        self.assertIn('data-cb-desk-layout="wide"', html)
-        self.assertIn('data-cb-continue-compact="false"', html)
-        self.assertIn("data-cb-course-stamp", html)
+    def test_the_continue_plate_has_no_seal_at_any_width(self) -> None:
+        # H-145: the 64 px seal read as an avatar and needed an explanation. The plate carries the
+        # course title as text instead.
+        for width in (460, 900, 1280):
+            with self.subTest(width=width):
+                html = self.render(width=width)
+                self.assertNotIn("data-cb-course-stamp", html)
+                self.assertIn("data-cb-desk-course", html)
 
     def test_continue_shows_the_recorded_estimate_and_last_touched(self) -> None:
         html = self.render()
@@ -662,8 +667,18 @@ class FieldDeskRenderTest(unittest.TestCase):
 
     def test_path_summary_counts_real_states_not_vanity(self) -> None:
         html = self.render()
-        self.assertIn("1 of 4 sections have evidence", html)
+        # H-145 / ENG-D5: one evidence caption on the path, not the plate caption and the tally.
+        self.assertEqual(html.count("with evidence"), 1, html)
+        self.assertIn("1 of 4 sections with evidence", html)
         self.assertIn("1 due", html)
+        self.assertNotIn("Course evidence ·", html)
+
+    def test_a_single_section_reads_as_one_section(self) -> None:
+        # ENG-D4: no "1 of 1 sections".
+        outline = {"revision": 0, "objectives": OUTLINE["objectives"][:1], "plan": {"units": []}}
+        html = self.render(outline=outline)
+        self.assertIn("1 of 1 section with evidence", html)
+        self.assertNotIn("1 sections", html)
 
     def test_path_is_not_a_table(self) -> None:
         html = self.render()
@@ -761,6 +776,8 @@ class FieldDeskRenderTest(unittest.TestCase):
         html = self.render(library=None, libraryStatus="loading")
         self.assertIn('data-cb-desk="loading"', html)
         self.assertIn("Reading your courses", html)
+        # H-153: the spinner carries a visible line, not only an aria-label.
+        self.assertIn("Reading your courses.</p>", html)
         self.assertNotIn("data-cb-continue", html)
 
     def test_a_failed_read_keeps_its_code_and_retry(self) -> None:
@@ -779,24 +796,32 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn("Reconnecting", html)
         self.assertIn("Retry now", html)
 
-    def test_all_courses_is_secondary_and_lists_the_other_rows(self) -> None:
+    def test_the_home_names_the_other_classroom_without_a_card_grid(self) -> None:
         second = library_row(
             enrollment_id="enr_ffffffffffffffff",
             course_id="crs_ffffffffffffffff",
             title="Japanese greetings",
+            learner_label="Ada",
             next_step={"kind": "start_lesson", "label": "Start あいさつ"},
         )
         html = self.render(library=library(library_row(), second))
-        self.assertIn("All courses · 2", html)
-        self.assertIn("Japanese greetings", html)
-        self.assertIn("Start あいさつ", html)
-        self.assertIn("Search and manage courses", html)
+        # H-146: the rail is navigation. The other classroom is one text tab with a real
+        # `aria-current`, and the all-courses catalog stays behind the Courses destination.
+        self.assertIn('data-cb-slot-rail="tabs"', html)
+        self.assertIn('data-cb-slot-tab="crs_ffffffffffffffff"', html)
+        self.assertIn(">Ada<", html)
+        self.assertIn("All courses", html)
+        self.assertNotIn("data-cb-all-courses", html)
+        self.assertNotIn("data-cb-course-cover", html)
 
-    def test_a_single_course_says_so_rather_than_padding_the_list(self) -> None:
+    def test_a_single_classroom_names_itself_without_a_switcher(self) -> None:
         html = self.render()
-        self.assertIn("This is the only course on this profile.", html)
+        self.assertIn('data-cb-slot-rail="single"', html)
+        self.assertIn("Showing Small-engine maintenance", html)
+        self.assertNotIn("data-cb-slot-tab", html)
+        self.assertNotIn("data-cb-classroom-select", html)
 
-    def test_the_secondary_list_stays_compact_and_counts_the_rest(self) -> None:
+    def test_above_four_classrooms_becomes_one_labelled_select(self) -> None:
         rows = [library_row()]
         for index in range(5):
             rows.append(
@@ -804,12 +829,15 @@ class FieldDeskRenderTest(unittest.TestCase):
                     enrollment_id=f"enr_{index:016d}",
                     course_id=f"crs_{index:016d}",
                     title=f"Other course {index}",
+                    updated_at=f"2026-10-{index + 1:02d}T10:00:00.000000+00:00",
                 )
             )
         html = self.render(library=library(*rows))
-        self.assertIn("All courses · 6", html)
-        self.assertEqual(html.count("data-cb-all-courses-row"), 3)
-        self.assertIn("+2 more courses on this profile", html)
+        self.assertIn('data-cb-slot-rail="select"', html)
+        self.assertIn("data-cb-classroom-select", html)
+        self.assertIn("Choose a classroom", html)
+        self.assertEqual(html.count("<option"), 6)
+        self.assertNotIn("data-cb-slot-tab", html)
 
     def test_the_wide_desk_is_a_two_column_reading_surface(self) -> None:
         html = self.render()
@@ -819,9 +847,10 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertEqual(html.count('data-cb-desk-facts='), 1, html)
         self.assertNotIn('data-cb-desk-stats', html)
         self.assertNotIn('data-cb-desk-stat=', html)
-        self.assertIn('data-cb-course-stamp', html)
-        # The next move and the path come before the secondary course shelf in reading order.
-        self.assertLess(html.index('data-cb-continue'), html.index('data-cb-all-courses'))
+        self.assertNotIn('data-cb-course-stamp', html)
+        # H-146: the classroom rail sits above Continue; the course grid does not exist on Home.
+        self.assertLess(html.index('data-cb-slot-rail-section'), html.index('data-cb-continue'))
+        self.assertNotIn('data-cb-all-courses', html)
 
     def test_resume_without_a_binding_opens_the_section_instead_of_a_blank_chat(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
@@ -832,7 +861,7 @@ class FieldDeskRenderTest(unittest.TestCase):
     # -- the module's shape -----------------------------------------------------------------
     def test_path_titles_wrap_without_colliding_with_the_state_label(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        path = source.split("function PathPreview(", 1)[1].split("function SourcesDrawer(", 1)[0]
+        path = source.split("function CheckpointPath(", 1)[1].split("function SourcesDrawer(", 1)[0]
         self.assertIn("whiteSpace: 'normal'", path)
         self.assertIn("flex: '1 1 8rem'", path)
 

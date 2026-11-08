@@ -38,8 +38,17 @@ class StartPlateTest(unittest.TestCase):
         self.assertIn("borderTop: '1px solid var(--cb-lamp)'", body)
 
     def test_no_onboarding_by_overlay(self) -> None:
-        for banned in ("role: 'dialog'", "coachMark", "coach_mark", "ThemePicker", "welcomeTour"):
+        start = self.source.index("function FirstRun({")
+        end = self.source.index("function onImportPlaceholder()")
+        plate = self.source[start:end]
+        # H-147 owns one user-invoked settings sheet: role="dialog", mounted only while `open`
+        # (HomeSettingsSheet returns null when closed), with its own focus trap and Escape close.
+        # That is a settings surface, not onboarding, so the overlay ban is scoped to the start
+        # plate while the onboarding artifacts stay banned module-wide.
+        self.assertNotIn("role: 'dialog'", plate)
+        for banned in ("coachMark", "coach_mark", "ThemePicker", "welcomeTour"):
             self.assertNotIn(banned, self.source)
+        self.assertIn("if (!open) return null", self.source)
 
 
 class WayfindingTest(unittest.TestCase):
@@ -74,12 +83,14 @@ class WayfindingTest(unittest.TestCase):
         self.assertIn("variant: 'secondary'", nearby)
         self.assertNotIn("variant: 'default', children: 'New course'", self.source)
 
-    def test_host_entry_opens_the_route_and_carries_the_seal(self) -> None:
+    def test_host_entry_opens_the_route_and_carries_the_wordmark(self) -> None:
         self.assertIn("data: { path: ROUTE_PATH, label: ROUTE_TITLE, codicon: 'book' }", self.source)
         header = self.source[self.source.index("'data-cb-route': ROUTE_PATH") :]
         header = header[: header.index("PageBody")]
-        self.assertIn("SurveyMark", header)
-        # H-92: the route header's heading is the destination's page title, so the wordmark a
+        # H-145: the chrome carries the product name as type, never the seal.
+        self.assertIn("CoursebookWordmark", header)
+        self.assertNotIn("SurveyMark", header)
+        # H-92: the route header's heading is the destination's page title, so the first heading a
         # reader sees is the page they are on; the sidebar still registers ROUTE_TITLE above.
         self.assertIn("children: pageTitle", header)
         self.assertNotIn("children: ROUTE_TITLE", header)

@@ -311,7 +311,6 @@ class EngagementIntegrityTest(unittest.TestCase):
         self.assertEqual({"empty"}, {segment["state"] for segment in unreadable["segments"]})
         self.assertEqual("No sections yet", unreadable["caption"])
 
-    @unittest.expectedFailure
     def test_zero_evidence_path_paints_no_reached_segment(self):
         """ENG-D1: at zero evidence the first of four shelf segments is painted `--cb-accent`
         (state `current`, opacity 1) while the caption says "0 of 4 with evidence". One filled

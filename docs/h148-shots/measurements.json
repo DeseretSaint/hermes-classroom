@@ -1,0 +1,600 @@
+{
+  "widths": {
+    "460": {
+      "innerWidth": 459,
+      "routeWidth": 460,
+      "routeText": "Skip to course content\nCourses\nNew course\nCourses\nLibrary\nParent Studio\nReview due\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nSection 1 of 4",
+      "pathCaption": "No evidence yet · 3 due",
+      "markers": [
+        {
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "check": "open",
+          "declared": "44",
+          "width": 44,
+          "height": 44
+        },
+        {
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "check": "open",
+          "declared": "32",
+          "width": 32,
+          "height": 32
+        },
+        {
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "check": "open",
+          "declared": "24",
+          "width": 24,
+          "height": 24
+        },
+        {
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "check": "open",
+          "declared": "24",
+          "width": 24,
+          "height": 24
+        }
+      ],
+      "buttons": [
+        {
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+          "current": "step",
+          "focusable": true
+        },
+        {
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+          "current": null,
+          "focusable": true
+        },
+        {
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "label": "Checkpoint 3: Recall the intimate declaration in a new context, Needs review, Check open",
+          "current": null,
+          "focusable": true
+        },
+        {
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "label": "Checkpoint 4: Explain why register changes with the relationship, Overridden, Check open",
+          "current": null,
+          "focusable": true
+        }
+      ],
+      "details": [
+        {
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "open": true
+        },
+        {
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "open": true
+        },
+        {
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "open": false
+        },
+        {
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "open": false
+        }
+      ],
+      "words": [
+        "Needs review",
+        "Needs review",
+        "Needs review",
+        "Overridden"
+      ],
+      "checkWords": [
+        "Check open",
+        "Check open",
+        "Check open",
+        "Check open"
+      ],
+      "shelfPaths": [
+        {
+          "segments": "1",
+          "caption": "No evidence yet",
+          "accentPaint": false,
+          "segmentBackgrounds": [
+            "rgb(61, 56, 45)"
+          ]
+        },
+        {
+          "segments": "0",
+          "caption": "No sections yet",
+          "accentPaint": false,
+          "segmentBackgrounds": []
+        },
+        {
+          "segments": "2",
+          "caption": "No evidence yet",
+          "accentPaint": false,
+          "segmentBackgrounds": [
+            "rgb(61, 56, 45)",
+            "rgb(61, 56, 45)"
+          ]
+        }
+      ],
+      "pageOverflow": 0,
+      "routeOverflow": 0,
+      "h1s": 1,
+      "fonts": [
+        "12px",
+        "12px",
+        "12px",
+        "12px"
+      ],
+      "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0c5a84a4/docs/h148-shots/path-460.png",
+      "pathScreenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0c5a84a4/docs/h148-shots/path-460-section.png"
+    },
+    "900": {
+      "innerWidth": 900,
+      "routeWidth": 872,
+      "routeText": "Skip to course content\nCourses\nNew course\nCourses\nLibrary\nParent Studio\nReview due\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nSection 1 of 4",
+      "pathCaption": "No evidence yet · 3 due",
+      "markers": [
+        {
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "check": "open",
+          "declared": "56",
+          "width": 56,
+          "height": 56
+        },
+        {
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "check": "open",
+          "declared": "40",
+          "width": 40,
+          "height": 40
+        },
+        {
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "check": "open",
+          "declared": "28",
+          "width": 28,
+          "height": 28
+        },
+        {
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "check": "open",
+          "declared": "28",
+          "width": 28,
+          "height": 28
+        }
+      ],
+      "buttons": [
+        {
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+          "current": "step",
+          "focusable": true
+        },
+        {
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+          "current": null,
+          "focusable": true
+        },
+        {
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "label": "Checkpoint 3: Recall the intimate declaration in a new context, Needs review, Check open",
+          "current": null,
+          "focusable": true
+        },
+        {
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "label": "Checkpoint 4: Explain why register changes with the relationship, Overridden, Check open",
+          "current": null,
+          "focusable": true
+        }
+      ],
+      "details": [
+        {
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "open": true
+        },
+        {
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "open": true
+        },
+        {
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "open": false
+        },
+        {
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "open": false
+        }
+      ],
+      "words": [
+        "Needs review",
+        "Needs review",
+        "Needs review",
+        "Overridden"
+      ],
+      "checkWords": [
+        "Check open",
+        "Check open",
+        "Check open",
+        "Check open"
+      ],
+      "shelfPaths": [
+        {
+          "segments": "1",
+          "caption": "No evidence yet",
+          "accentPaint": false,
+          "segmentBackgrounds": [
+            "rgb(61, 56, 45)"
+          ]
+        },
+        {
+          "segments": "0",
+          "caption": "No sections yet",
+          "accentPaint": false,
+          "segmentBackgrounds": []
+        },
+        {
+          "segments": "2",
+          "caption": "No evidence yet",
+          "accentPaint": false,
+          "segmentBackgrounds": [
+            "rgb(61, 56, 45)",
+            "rgb(61, 56, 45)"
+          ]
+        }
+      ],
+      "pageOverflow": 0,
+      "routeOverflow": 0,
+      "h1s": 1,
+      "fonts": [
+        "12px",
+        "12px",
+        "12px",
+        "12px"
+      ],
+      "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0c5a84a4/docs/h148-shots/path-900.png",
+      "pathScreenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0c5a84a4/docs/h148-shots/path-900-section.png"
+    },
+    "1049": {
+      "innerWidth": 1049,
+      "routeWidth": 1022,
+      "routeText": "Skip to course content\nCourses\nNew course\nCourses\nLibrary\nParent Studio\nReview due\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nSection 1 of 4",
+      "pathCaption": "No evidence yet · 3 due",
+      "markers": [
+        {
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "check": "open",
+          "declared": "56",
+          "width": 56,
+          "height": 56
+        },
+        {
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "check": "open",
+          "declared": "40",
+          "width": 40,
+          "height": 40
+        },
+        {
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "check": "open",
+          "declared": "28",
+          "width": 28,
+          "height": 28
+        },
+        {
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "check": "open",
+          "declared": "28",
+          "width": 28,
+          "height": 28
+        }
+      ],
+      "buttons": [
+        {
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+          "current": "step",
+          "focusable": true
+        },
+        {
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+          "current": null,
+          "focusable": true
+        },
+        {
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "label": "Checkpoint 3: Recall the intimate declaration in a new context, Needs review, Check open",
+          "current": null,
+          "focusable": true
+        },
+        {
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "label": "Checkpoint 4: Explain why register changes with the relationship, Overridden, Check open",
+          "current": null,
+          "focusable": true
+        }
+      ],
+      "details": [
+        {
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "open": true
+        },
+        {
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "open": true
+        },
+        {
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "open": false
+        },
+        {
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "open": false
+        }
+      ],
+      "words": [
+        "Needs review",
+        "Needs review",
+        "Needs review",
+        "Overridden"
+      ],
+      "checkWords": [
+        "Check open",
+        "Check open",
+        "Check open",
+        "Check open"
+      ],
+      "shelfPaths": [
+        {
+          "segments": "1",
+          "caption": "No evidence yet",
+          "accentPaint": false,
+          "segmentBackgrounds": [
+            "rgb(61, 56, 45)"
+          ]
+        },
+        {
+          "segments": "0",
+          "caption": "No sections yet",
+          "accentPaint": false,
+          "segmentBackgrounds": []
+        },
+        {
+          "segments": "2",
+          "caption": "No evidence yet",
+          "accentPaint": false,
+          "segmentBackgrounds": [
+            "rgb(61, 56, 45)",
+            "rgb(61, 56, 45)"
+          ]
+        }
+      ],
+      "pageOverflow": 0,
+      "routeOverflow": 0,
+      "h1s": 1,
+      "fonts": [
+        "12px",
+        "12px",
+        "12px",
+        "12px"
+      ],
+      "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0c5a84a4/docs/h148-shots/path-1049.png",
+      "pathScreenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0c5a84a4/docs/h148-shots/path-1049-section.png"
+    }
+  },
+  "shelf": {
+    "listRect": {
+      "x": 69.96907043457031,
+      "y": 749.6312866210938,
+      "width": 930.0274047851562,
+      "height": 321.76361083984375
+    },
+    "rows": [
+      {
+        "segments": "1",
+        "caption": "No evidence yet",
+        "backgrounds": [
+          "rgb(61, 56, 45)"
+        ],
+        "dataBackgrounds": [
+          "var(--cb-rule)"
+        ]
+      },
+      {
+        "segments": "0",
+        "caption": "No sections yet",
+        "backgrounds": [],
+        "dataBackgrounds": []
+      },
+      {
+        "segments": "2",
+        "caption": "No evidence yet",
+        "backgrounds": [
+          "rgb(61, 56, 45)",
+          "rgb(61, 56, 45)"
+        ],
+        "dataBackgrounds": [
+          "var(--cb-rule)",
+          "var(--cb-rule)"
+        ]
+      }
+    ],
+    "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0c5a84a4/docs/h148-shots/shelf-zero-evidence-1049.png"
+  },
+  "text200": {
+    "innerWidth": 459,
+    "routeWidth": 460,
+    "routeText": "Skip to course content\nCourses\nNew course\nCourses\nLibrary\nParent Studio\nReview due\nJapanese affection and register — an L0 demonstration classroom\nTell everyday affection from a direct romantic declaration\nSection 1 of 4",
+    "pathCaption": "No evidence yet · 3 due",
+    "markers": [
+      {
+        "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+        "check": "open",
+        "declared": "44",
+        "width": 44,
+        "height": 44
+      },
+      {
+        "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+        "check": "open",
+        "declared": "32",
+        "width": 32,
+        "height": 32
+      },
+      {
+        "id": "obj_9b59620700274412b8bd27e86e30e231",
+        "check": "open",
+        "declared": "24",
+        "width": 24,
+        "height": 24
+      },
+      {
+        "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+        "check": "open",
+        "declared": "24",
+        "width": 24,
+        "height": 24
+      }
+    ],
+    "buttons": [
+      {
+        "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+        "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+        "current": "step",
+        "focusable": true
+      },
+      {
+        "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+        "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+        "current": null,
+        "focusable": true
+      },
+      {
+        "id": "obj_9b59620700274412b8bd27e86e30e231",
+        "label": "Checkpoint 3: Recall the intimate declaration in a new context, Needs review, Check open",
+        "current": null,
+        "focusable": true
+      },
+      {
+        "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+        "label": "Checkpoint 4: Explain why register changes with the relationship, Overridden, Check open",
+        "current": null,
+        "focusable": true
+      }
+    ],
+    "details": [
+      {
+        "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+        "open": true
+      },
+      {
+        "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+        "open": true
+      },
+      {
+        "id": "obj_9b59620700274412b8bd27e86e30e231",
+        "open": false
+      },
+      {
+        "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+        "open": false
+      }
+    ],
+    "words": [
+      "Needs review",
+      "Needs review",
+      "Needs review",
+      "Overridden"
+    ],
+    "checkWords": [
+      "Check open",
+      "Check open",
+      "Check open",
+      "Check open"
+    ],
+    "shelfPaths": [
+      {
+        "segments": "1",
+        "caption": "No evidence yet",
+        "accentPaint": false,
+        "segmentBackgrounds": [
+          "rgb(61, 56, 45)"
+        ]
+      },
+      {
+        "segments": "0",
+        "caption": "No sections yet",
+        "accentPaint": false,
+        "segmentBackgrounds": []
+      },
+      {
+        "segments": "2",
+        "caption": "No evidence yet",
+        "accentPaint": false,
+        "segmentBackgrounds": [
+          "rgb(61, 56, 45)",
+          "rgb(61, 56, 45)"
+        ]
+      }
+    ],
+    "pageOverflow": 0,
+    "routeOverflow": 0,
+    "h1s": 1,
+    "fonts": [
+      "24px",
+      "24px",
+      "24px",
+      "24px"
+    ],
+    "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0c5a84a4/docs/h148-shots/path-460-text200.png"
+  },
+  "keyboard": {
+    "stops": [
+      {
+        "tag": "BUTTON",
+        "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+        "current": "step",
+        "outlineWidth": "2.2312px",
+        "outlineColor": "rgba(230, 237, 243, 0.54)",
+        "outlineOffset": "0px"
+      },
+      {
+        "tag": "SUMMARY",
+        "label": null,
+        "current": null,
+        "outlineWidth": "1.1156px",
+        "outlineColor": "rgb(238, 238, 238)",
+        "outlineOffset": "0px"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+        "current": null,
+        "outlineWidth": "1.1156px",
+        "outlineColor": "rgb(238, 238, 238)",
+        "outlineOffset": "0px"
+      },
+      {
+        "tag": "SUMMARY",
+        "label": null,
+        "current": null,
+        "outlineWidth": "1.1156px",
+        "outlineColor": "rgb(238, 238, 238)",
+        "outlineOffset": "0px"
+      },
+      {
+        "tag": "BUTTON",
+        "label": "Checkpoint 3: Recall the intimate declaration in a new context, Needs review, Check open",
+        "current": null,
+        "outlineWidth": "1.1156px",
+        "outlineColor": "rgb(238, 238, 238)",
+        "outlineOffset": "0px"
+      }
+    ],
+    "focusables": 4,
+    "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_0c5a84a4/docs/h148-shots/path-1049-keyboard-focus.png"
+  }
+}

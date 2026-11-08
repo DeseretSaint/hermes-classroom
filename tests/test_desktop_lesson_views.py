@@ -117,6 +117,17 @@ export const Button = (props) => {
   }
   return el('button', attrs, textOf(props))
 }
+export const RowButton = (props) => {
+  // The real RowButton is a bare `<button>` that spreads every prop, so a caller's style, focus
+  // handlers and key handler reach the DOM. A stub that only forwarded aria-/data- made the shelf's
+  // focus ring and its Enter/Space path invisible to a jsdom test.
+  const attrs = { type: 'button' }
+  for (const [name, value] of Object.entries(props)) {
+    if (name === 'children' || value === undefined) continue
+    attrs[name] = value
+  }
+  return el('button', attrs, textOf(props))
+}
 export const Badge = (props) => el('span', { className: 'badge', 'data-variant': props.variant || null }, textOf(props))
 export const PanelSectionLabel = (props) => el('div', { className: 'panel-label' }, textOf(props))
 export const PanelEmpty = (props) => el('div', { className: 'panel-empty' }, textOf(props))
@@ -399,16 +410,18 @@ class LessonViewRenderTest(unittest.TestCase):
         doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
         html = self.render(self.section_payload(doc))
         self.assertIn('data-cb-view-switcher="available"', html)
-        self.assertIn('data-cb-view-options="textbook guided"', html)
+        # H-149: the player is the default learning surface and is always offered.
+        self.assertIn('data-cb-view-options="player guided textbook"', html)
         self.assertIn('data-cb-view-unavailable="field_quest"', html)
         self.assertIn('aria-pressed="true"', html)
+        self.assertIn("Game", html)
         self.assertIn("Textbook", html)
         self.assertIn("Guided", html)
         # H-96: the third name stays on screen even when this document has no quest.
         self.assertIn("Field Quest", html)
         self.assertIn('data-cb-view-choice="field_quest"', html)
         self.assertIn('data-cb-view-choice-state="unavailable"', html)
-        self.assertIn('data-cb-lesson-view="textbook"', html)
+        self.assertIn('data-cb-lesson-view="player"', html)
 
     def test_a_document_without_guided_or_quest_still_shows_three_named_choices(self) -> None:
         """H-96: an absent view is a disabled choice with a reason, never a vanished control.
@@ -426,11 +439,11 @@ class LessonViewRenderTest(unittest.TestCase):
         )
         doc["views"]["field_quest"] = False
         html = self.render(self.section_payload(doc))
-        self.assertIn('data-cb-view-switcher="textbook-only"', html)
-        self.assertIn('data-cb-view-options="textbook"', html)
+        self.assertIn('data-cb-view-switcher="available"', html)
+        self.assertIn('data-cb-view-options="player textbook"', html)
         self.assertIn('data-cb-view-unavailable="guided field_quest"', html)
-        self.assertEqual(html.count('data-cb-view-choice="'), 3)
-        for view_id, label in (("textbook", "Textbook"), ("guided", "Guided"), ("field_quest", "Field Quest")):
+        self.assertEqual(html.count('data-cb-view-choice="'), 4)
+        for view_id, label in (("player", "Game"), ("textbook", "Textbook"), ("guided", "Guided"), ("field_quest", "Field Quest")):
             self.assertIn(f'data-cb-view-choice="{view_id}"', html)
             self.assertIn(label, html)
         self.assertIn('data-cb-view-choice-state="available"', html)
@@ -486,7 +499,7 @@ class LessonViewRenderTest(unittest.TestCase):
         self.assertIn('data-cb-section-actions="start"', html)
         self.assertNotIn('data-cb-section-actions="resume"', html)
         # The section itself rendered.
-        self.assertIn('data-cb-lesson-view="textbook"', html)
+        self.assertIn('data-cb-lesson-view="player"', html)
 
 
 if __name__ == "__main__":

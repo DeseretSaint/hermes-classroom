@@ -1,0 +1,1497 @@
+{
+  "port": "9381",
+  "startedAt": "2026-11-08T07:13:04.196Z",
+  "homeInitial": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "textbook",
+    "homeOverride": null,
+    "lineText": "Default view · TextbookSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sheetMaxWidth": null,
+    "sections": [],
+    "sectionHeadingIds": [],
+    "scopeLabel": null,
+    "scope": "light",
+    "motion": "full",
+    "controls": {},
+    "toggles": {},
+    "resetButtons": [],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "body",
+      "label": null,
+      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]"
+    },
+    "focusInSheet": false,
+    "stored": {},
+    "sheetText": null
+  },
+  "sheetOpen": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "textbook",
+    "homeOverride": null,
+    "lineText": "Default view · TextbookSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sheetMaxWidth": "100%",
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sectionHeadingIds": [
+      {
+        "labelledBy": "cb-settings-appearance",
+        "headingId": "cb-settings-appearance"
+      },
+      {
+        "labelledBy": "cb-settings-default-view",
+        "headingId": "cb-settings-default-view"
+      },
+      {
+        "labelledBy": "cb-settings-classroom",
+        "headingId": "cb-settings-classroom"
+      },
+      {
+        "labelledBy": "cb-settings-sound",
+        "headingId": "cb-settings-sound"
+      },
+      {
+        "labelledBy": "cb-settings-haptics",
+        "headingId": "cb-settings-haptics"
+      },
+      {
+        "labelledBy": "cb-settings-reduced-motion",
+        "headingId": "cb-settings-reduced-motion"
+      }
+    ],
+    "scopeLabel": "On this device",
+    "scope": "light",
+    "motion": "full",
+    "controls": {
+      "appearance": "light",
+      "default-view": "textbook",
+      "classroom": "default",
+      "reduced-motion": "system"
+    },
+    "toggles": {
+      "sound": "false",
+      "haptics": "false"
+    },
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "label": "Reset appearance to System",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "label": "Reset the default view to Game",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "label": "Clear this classroom’s view override",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "label": "Reset sound to off",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "label": "Haptics are always off on desktop",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "label": "Reset motion to follow the system",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "stored": {},
+    "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+  },
+  "afterDefaultTextbook": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "textbook",
+    "homeOverride": null,
+    "lineText": "Default view · TextbookSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sheetMaxWidth": "100%",
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sectionHeadingIds": [
+      {
+        "labelledBy": "cb-settings-appearance",
+        "headingId": "cb-settings-appearance"
+      },
+      {
+        "labelledBy": "cb-settings-default-view",
+        "headingId": "cb-settings-default-view"
+      },
+      {
+        "labelledBy": "cb-settings-classroom",
+        "headingId": "cb-settings-classroom"
+      },
+      {
+        "labelledBy": "cb-settings-sound",
+        "headingId": "cb-settings-sound"
+      },
+      {
+        "labelledBy": "cb-settings-haptics",
+        "headingId": "cb-settings-haptics"
+      },
+      {
+        "labelledBy": "cb-settings-reduced-motion",
+        "headingId": "cb-settings-reduced-motion"
+      }
+    ],
+    "scopeLabel": "On this device",
+    "scope": "light",
+    "motion": "full",
+    "controls": {
+      "appearance": "light",
+      "default-view": "textbook",
+      "classroom": "default",
+      "reduced-motion": "system"
+    },
+    "toggles": {
+      "sound": "false",
+      "haptics": "false"
+    },
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "label": "Reset appearance to System",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "label": "Reset the default view to Game",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "label": "Clear this classroom’s view override",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "label": "Reset sound to off",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "label": "Haptics are always off on desktop",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "label": "Reset motion to follow the system",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "light",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "classrooms": {}
+      }
+    },
+    "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+  },
+  "afterClassroomGuided": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "guided",
+    "homeOverride": "guided",
+    "lineText": "Default view · Textbook· This classroom · GuidedSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sheetMaxWidth": "100%",
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sectionHeadingIds": [
+      {
+        "labelledBy": "cb-settings-appearance",
+        "headingId": "cb-settings-appearance"
+      },
+      {
+        "labelledBy": "cb-settings-default-view",
+        "headingId": "cb-settings-default-view"
+      },
+      {
+        "labelledBy": "cb-settings-classroom",
+        "headingId": "cb-settings-classroom"
+      },
+      {
+        "labelledBy": "cb-settings-sound",
+        "headingId": "cb-settings-sound"
+      },
+      {
+        "labelledBy": "cb-settings-haptics",
+        "headingId": "cb-settings-haptics"
+      },
+      {
+        "labelledBy": "cb-settings-reduced-motion",
+        "headingId": "cb-settings-reduced-motion"
+      }
+    ],
+    "scopeLabel": "On this device",
+    "scope": "light",
+    "motion": "full",
+    "controls": {
+      "appearance": "light",
+      "default-view": "textbook",
+      "classroom": "guided",
+      "reduced-motion": "system"
+    },
+    "toggles": {
+      "sound": "false",
+      "haptics": "false"
+    },
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "label": "Reset appearance to System",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "label": "Reset the default view to Game",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "label": "Clear this classroom’s view override",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "label": "Reset sound to off",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "label": "Haptics are always off on desktop",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "label": "Reset motion to follow the system",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "light",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "classrooms": {
+          "crs_650052975ca7406aaddda22122c89bad": "guided"
+        }
+      }
+    },
+    "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+  },
+  "afterClassroomReset": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "textbook",
+    "homeOverride": null,
+    "lineText": "Default view · TextbookSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sheetMaxWidth": "100%",
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sectionHeadingIds": [
+      {
+        "labelledBy": "cb-settings-appearance",
+        "headingId": "cb-settings-appearance"
+      },
+      {
+        "labelledBy": "cb-settings-default-view",
+        "headingId": "cb-settings-default-view"
+      },
+      {
+        "labelledBy": "cb-settings-classroom",
+        "headingId": "cb-settings-classroom"
+      },
+      {
+        "labelledBy": "cb-settings-sound",
+        "headingId": "cb-settings-sound"
+      },
+      {
+        "labelledBy": "cb-settings-haptics",
+        "headingId": "cb-settings-haptics"
+      },
+      {
+        "labelledBy": "cb-settings-reduced-motion",
+        "headingId": "cb-settings-reduced-motion"
+      }
+    ],
+    "scopeLabel": "On this device",
+    "scope": "light",
+    "motion": "full",
+    "controls": {
+      "appearance": "light",
+      "default-view": "textbook",
+      "classroom": "default",
+      "reduced-motion": "system"
+    },
+    "toggles": {
+      "sound": "false",
+      "haptics": "false"
+    },
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "label": "Reset appearance to System",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "label": "Reset the default view to Game",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "label": "Clear this classroom’s view override",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "label": "Reset sound to off",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "label": "Haptics are always off on desktop",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "label": "Reset motion to follow the system",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "light",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "classrooms": {}
+      }
+    },
+    "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+  },
+  "afterSoundOn": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "textbook",
+    "homeOverride": null,
+    "lineText": "Default view · TextbookSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sheetMaxWidth": "100%",
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sectionHeadingIds": [
+      {
+        "labelledBy": "cb-settings-appearance",
+        "headingId": "cb-settings-appearance"
+      },
+      {
+        "labelledBy": "cb-settings-default-view",
+        "headingId": "cb-settings-default-view"
+      },
+      {
+        "labelledBy": "cb-settings-classroom",
+        "headingId": "cb-settings-classroom"
+      },
+      {
+        "labelledBy": "cb-settings-sound",
+        "headingId": "cb-settings-sound"
+      },
+      {
+        "labelledBy": "cb-settings-haptics",
+        "headingId": "cb-settings-haptics"
+      },
+      {
+        "labelledBy": "cb-settings-reduced-motion",
+        "headingId": "cb-settings-reduced-motion"
+      }
+    ],
+    "scopeLabel": "On this device",
+    "scope": "light",
+    "motion": "full",
+    "controls": {
+      "appearance": "light",
+      "default-view": "textbook",
+      "classroom": "default",
+      "reduced-motion": "system"
+    },
+    "toggles": {
+      "sound": "true",
+      "haptics": "false"
+    },
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "label": "Reset appearance to System",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "label": "Reset the default view to Game",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "label": "Clear this classroom’s view override",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "label": "Reset sound to off",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "label": "Haptics are always off on desktop",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "label": "Reset motion to follow the system",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "light",
+        "defaultMode": "textbook",
+        "sound": true,
+        "reducedMotion": "system",
+        "classrooms": {}
+      }
+    },
+    "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+  },
+  "afterSoundReset": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "textbook",
+    "homeOverride": null,
+    "lineText": "Default view · TextbookSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sheetMaxWidth": "100%",
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sectionHeadingIds": [
+      {
+        "labelledBy": "cb-settings-appearance",
+        "headingId": "cb-settings-appearance"
+      },
+      {
+        "labelledBy": "cb-settings-default-view",
+        "headingId": "cb-settings-default-view"
+      },
+      {
+        "labelledBy": "cb-settings-classroom",
+        "headingId": "cb-settings-classroom"
+      },
+      {
+        "labelledBy": "cb-settings-sound",
+        "headingId": "cb-settings-sound"
+      },
+      {
+        "labelledBy": "cb-settings-haptics",
+        "headingId": "cb-settings-haptics"
+      },
+      {
+        "labelledBy": "cb-settings-reduced-motion",
+        "headingId": "cb-settings-reduced-motion"
+      }
+    ],
+    "scopeLabel": "On this device",
+    "scope": "light",
+    "motion": "full",
+    "controls": {
+      "appearance": "light",
+      "default-view": "textbook",
+      "classroom": "default",
+      "reduced-motion": "system"
+    },
+    "toggles": {
+      "sound": "false",
+      "haptics": "false"
+    },
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "label": "Reset appearance to System",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "label": "Reset the default view to Game",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "label": "Clear this classroom’s view override",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "label": "Reset sound to off",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "label": "Haptics are always off on desktop",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "label": "Reset motion to follow the system",
+        "disabled": true,
+        "height": 44
+      }
+    ],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "light",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "classrooms": {}
+      }
+    },
+    "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+  },
+  "afterReducedMotion": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "textbook",
+    "homeOverride": null,
+    "lineText": "Default view · TextbookSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": true,
+    "sheetRole": "dialog",
+    "sheetModal": "true",
+    "sheetWidth": 460,
+    "sheetMaxWidth": "100%",
+    "sections": [
+      "appearance",
+      "default-view",
+      "classroom",
+      "sound",
+      "haptics",
+      "reduced-motion"
+    ],
+    "sectionHeadingIds": [
+      {
+        "labelledBy": "cb-settings-appearance",
+        "headingId": "cb-settings-appearance"
+      },
+      {
+        "labelledBy": "cb-settings-default-view",
+        "headingId": "cb-settings-default-view"
+      },
+      {
+        "labelledBy": "cb-settings-classroom",
+        "headingId": "cb-settings-classroom"
+      },
+      {
+        "labelledBy": "cb-settings-sound",
+        "headingId": "cb-settings-sound"
+      },
+      {
+        "labelledBy": "cb-settings-haptics",
+        "headingId": "cb-settings-haptics"
+      },
+      {
+        "labelledBy": "cb-settings-reduced-motion",
+        "headingId": "cb-settings-reduced-motion"
+      }
+    ],
+    "scopeLabel": "On this device",
+    "scope": "light",
+    "motion": "reduced",
+    "controls": {
+      "appearance": "light",
+      "default-view": "textbook",
+      "classroom": "default",
+      "reduced-motion": "reduce"
+    },
+    "toggles": {
+      "sound": "false",
+      "haptics": "false"
+    },
+    "resetButtons": [
+      {
+        "section": "appearance",
+        "label": "Reset appearance to System",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "default-view",
+        "label": "Reset the default view to Game",
+        "disabled": false,
+        "height": 44
+      },
+      {
+        "section": "classroom",
+        "label": "Clear this classroom’s view override",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "sound",
+        "label": "Reset sound to off",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "haptics",
+        "label": "Haptics are always off on desktop",
+        "disabled": true,
+        "height": 44
+      },
+      {
+        "section": "reduced-motion",
+        "label": "Reset motion to follow the system",
+        "disabled": false,
+        "height": 44
+      }
+    ],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Close settings",
+      "text": "Close"
+    },
+    "focusInSheet": true,
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "light",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "reduce",
+        "classrooms": {}
+      }
+    },
+    "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+  },
+  "afterEscape": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "textbook",
+    "homeOverride": null,
+    "lineText": "Default view · TextbookSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sheetMaxWidth": null,
+    "sections": [],
+    "sectionHeadingIds": [],
+    "scopeLabel": null,
+    "scope": "light",
+    "motion": "full",
+    "controls": {},
+    "toggles": {},
+    "resetButtons": [],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Open Coursebook settings",
+      "text": "Settings"
+    },
+    "focusInSheet": false,
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "light",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "classrooms": {}
+      }
+    },
+    "sheetText": null
+  },
+  "frames": [
+    {
+      "mode": "light",
+      "width": 1049,
+      "calibrated": {
+        "target": 1049,
+        "override": 941,
+        "inner": 1049
+      },
+      "mounted": true,
+      "pageTitle": "Home",
+      "homeDefaults": "textbook",
+      "homeEffective": "textbook",
+      "homeOverride": null,
+      "lineText": "Default view · TextbookSettings",
+      "trigger": {
+        "label": "Open Coursebook settings",
+        "haspopup": "dialog",
+        "minHeight": "44px",
+        "height": 44
+      },
+      "sheetOpen": true,
+      "sheetRole": "dialog",
+      "sheetModal": "true",
+      "sheetWidth": 460,
+      "sheetMaxWidth": "100%",
+      "sections": [
+        "appearance",
+        "default-view",
+        "classroom",
+        "sound",
+        "haptics",
+        "reduced-motion"
+      ],
+      "sectionHeadingIds": [
+        {
+          "labelledBy": "cb-settings-appearance",
+          "headingId": "cb-settings-appearance"
+        },
+        {
+          "labelledBy": "cb-settings-default-view",
+          "headingId": "cb-settings-default-view"
+        },
+        {
+          "labelledBy": "cb-settings-classroom",
+          "headingId": "cb-settings-classroom"
+        },
+        {
+          "labelledBy": "cb-settings-sound",
+          "headingId": "cb-settings-sound"
+        },
+        {
+          "labelledBy": "cb-settings-haptics",
+          "headingId": "cb-settings-haptics"
+        },
+        {
+          "labelledBy": "cb-settings-reduced-motion",
+          "headingId": "cb-settings-reduced-motion"
+        }
+      ],
+      "scopeLabel": "On this device",
+      "scope": "light",
+      "motion": "full",
+      "controls": {
+        "appearance": "light",
+        "default-view": "textbook",
+        "classroom": "default",
+        "reduced-motion": "system"
+      },
+      "toggles": {
+        "sound": "false",
+        "haptics": "false"
+      },
+      "resetButtons": [
+        {
+          "section": "appearance",
+          "label": "Reset appearance to System",
+          "disabled": false,
+          "height": 44
+        },
+        {
+          "section": "default-view",
+          "label": "Reset the default view to Game",
+          "disabled": false,
+          "height": 44
+        },
+        {
+          "section": "classroom",
+          "label": "Clear this classroom’s view override",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "sound",
+          "label": "Reset sound to off",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "haptics",
+          "label": "Haptics are always off on desktop",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "reduced-motion",
+          "label": "Reset motion to follow the system",
+          "disabled": true,
+          "height": 44
+        }
+      ],
+      "saveButtons": 0,
+      "horizontalOverflow": 0,
+      "focus": {
+        "tag": "button",
+        "label": "Close settings",
+        "text": "Close"
+      },
+      "focusInSheet": true,
+      "stored": {
+        "hermes.plugin.coursebook.home-preferences.default": {
+          "appearance": "light",
+          "defaultMode": "textbook",
+          "sound": false,
+          "reducedMotion": "system",
+          "classrooms": {}
+        }
+      },
+      "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+    },
+    {
+      "mode": "light",
+      "width": 460,
+      "calibrated": {
+        "target": 460,
+        "override": 413,
+        "inner": 460
+      },
+      "mounted": true,
+      "pageTitle": "Home",
+      "homeDefaults": "textbook",
+      "homeEffective": "textbook",
+      "homeOverride": null,
+      "lineText": "Default view · TextbookSettings",
+      "trigger": {
+        "label": "Open Coursebook settings",
+        "haspopup": "dialog",
+        "minHeight": "44px",
+        "height": 44
+      },
+      "sheetOpen": true,
+      "sheetRole": "dialog",
+      "sheetModal": "true",
+      "sheetWidth": 460,
+      "sheetMaxWidth": "100%",
+      "sections": [
+        "appearance",
+        "default-view",
+        "classroom",
+        "sound",
+        "haptics",
+        "reduced-motion"
+      ],
+      "sectionHeadingIds": [
+        {
+          "labelledBy": "cb-settings-appearance",
+          "headingId": "cb-settings-appearance"
+        },
+        {
+          "labelledBy": "cb-settings-default-view",
+          "headingId": "cb-settings-default-view"
+        },
+        {
+          "labelledBy": "cb-settings-classroom",
+          "headingId": "cb-settings-classroom"
+        },
+        {
+          "labelledBy": "cb-settings-sound",
+          "headingId": "cb-settings-sound"
+        },
+        {
+          "labelledBy": "cb-settings-haptics",
+          "headingId": "cb-settings-haptics"
+        },
+        {
+          "labelledBy": "cb-settings-reduced-motion",
+          "headingId": "cb-settings-reduced-motion"
+        }
+      ],
+      "scopeLabel": "On this device",
+      "scope": "light",
+      "motion": "full",
+      "controls": {
+        "appearance": "light",
+        "default-view": "textbook",
+        "classroom": "default",
+        "reduced-motion": "system"
+      },
+      "toggles": {
+        "sound": "false",
+        "haptics": "false"
+      },
+      "resetButtons": [
+        {
+          "section": "appearance",
+          "label": "Reset appearance to System",
+          "disabled": false,
+          "height": 44
+        },
+        {
+          "section": "default-view",
+          "label": "Reset the default view to Game",
+          "disabled": false,
+          "height": 44
+        },
+        {
+          "section": "classroom",
+          "label": "Clear this classroom’s view override",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "sound",
+          "label": "Reset sound to off",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "haptics",
+          "label": "Haptics are always off on desktop",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "reduced-motion",
+          "label": "Reset motion to follow the system",
+          "disabled": true,
+          "height": 44
+        }
+      ],
+      "saveButtons": 0,
+      "horizontalOverflow": 0,
+      "focus": {
+        "tag": "button",
+        "label": "Close settings",
+        "text": "Close"
+      },
+      "focusInSheet": true,
+      "stored": {
+        "hermes.plugin.coursebook.home-preferences.default": {
+          "appearance": "light",
+          "defaultMode": "textbook",
+          "sound": false,
+          "reducedMotion": "system",
+          "classrooms": {}
+        }
+      },
+      "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "calibrated": {
+        "target": 1049,
+        "override": 941,
+        "inner": 1049
+      },
+      "mounted": true,
+      "pageTitle": "Home",
+      "homeDefaults": "textbook",
+      "homeEffective": "textbook",
+      "homeOverride": null,
+      "lineText": "Default view · TextbookSettings",
+      "trigger": {
+        "label": "Open Coursebook settings",
+        "haspopup": "dialog",
+        "minHeight": "44px",
+        "height": 44
+      },
+      "sheetOpen": true,
+      "sheetRole": "dialog",
+      "sheetModal": "true",
+      "sheetWidth": 460,
+      "sheetMaxWidth": "100%",
+      "sections": [
+        "appearance",
+        "default-view",
+        "classroom",
+        "sound",
+        "haptics",
+        "reduced-motion"
+      ],
+      "sectionHeadingIds": [
+        {
+          "labelledBy": "cb-settings-appearance",
+          "headingId": "cb-settings-appearance"
+        },
+        {
+          "labelledBy": "cb-settings-default-view",
+          "headingId": "cb-settings-default-view"
+        },
+        {
+          "labelledBy": "cb-settings-classroom",
+          "headingId": "cb-settings-classroom"
+        },
+        {
+          "labelledBy": "cb-settings-sound",
+          "headingId": "cb-settings-sound"
+        },
+        {
+          "labelledBy": "cb-settings-haptics",
+          "headingId": "cb-settings-haptics"
+        },
+        {
+          "labelledBy": "cb-settings-reduced-motion",
+          "headingId": "cb-settings-reduced-motion"
+        }
+      ],
+      "scopeLabel": "On this device",
+      "scope": "dark",
+      "motion": "full",
+      "controls": {
+        "appearance": "dark",
+        "default-view": "textbook",
+        "classroom": "default",
+        "reduced-motion": "system"
+      },
+      "toggles": {
+        "sound": "false",
+        "haptics": "false"
+      },
+      "resetButtons": [
+        {
+          "section": "appearance",
+          "label": "Reset appearance to System",
+          "disabled": false,
+          "height": 44
+        },
+        {
+          "section": "default-view",
+          "label": "Reset the default view to Game",
+          "disabled": false,
+          "height": 44
+        },
+        {
+          "section": "classroom",
+          "label": "Clear this classroom’s view override",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "sound",
+          "label": "Reset sound to off",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "haptics",
+          "label": "Haptics are always off on desktop",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "reduced-motion",
+          "label": "Reset motion to follow the system",
+          "disabled": true,
+          "height": 44
+        }
+      ],
+      "saveButtons": 0,
+      "horizontalOverflow": 0,
+      "focus": {
+        "tag": "button",
+        "label": "Close settings",
+        "text": "Close"
+      },
+      "focusInSheet": true,
+      "stored": {
+        "hermes.plugin.coursebook.home-preferences.default": {
+          "appearance": "dark",
+          "defaultMode": "textbook",
+          "sound": false,
+          "reducedMotion": "system",
+          "classrooms": {}
+        }
+      },
+      "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "calibrated": {
+        "target": 460,
+        "override": 413,
+        "inner": 460
+      },
+      "mounted": true,
+      "pageTitle": "Home",
+      "homeDefaults": "textbook",
+      "homeEffective": "textbook",
+      "homeOverride": null,
+      "lineText": "Default view · TextbookSettings",
+      "trigger": {
+        "label": "Open Coursebook settings",
+        "haspopup": "dialog",
+        "minHeight": "44px",
+        "height": 44
+      },
+      "sheetOpen": true,
+      "sheetRole": "dialog",
+      "sheetModal": "true",
+      "sheetWidth": 460,
+      "sheetMaxWidth": "100%",
+      "sections": [
+        "appearance",
+        "default-view",
+        "classroom",
+        "sound",
+        "haptics",
+        "reduced-motion"
+      ],
+      "sectionHeadingIds": [
+        {
+          "labelledBy": "cb-settings-appearance",
+          "headingId": "cb-settings-appearance"
+        },
+        {
+          "labelledBy": "cb-settings-default-view",
+          "headingId": "cb-settings-default-view"
+        },
+        {
+          "labelledBy": "cb-settings-classroom",
+          "headingId": "cb-settings-classroom"
+        },
+        {
+          "labelledBy": "cb-settings-sound",
+          "headingId": "cb-settings-sound"
+        },
+        {
+          "labelledBy": "cb-settings-haptics",
+          "headingId": "cb-settings-haptics"
+        },
+        {
+          "labelledBy": "cb-settings-reduced-motion",
+          "headingId": "cb-settings-reduced-motion"
+        }
+      ],
+      "scopeLabel": "On this device",
+      "scope": "dark",
+      "motion": "full",
+      "controls": {
+        "appearance": "dark",
+        "default-view": "textbook",
+        "classroom": "default",
+        "reduced-motion": "system"
+      },
+      "toggles": {
+        "sound": "false",
+        "haptics": "false"
+      },
+      "resetButtons": [
+        {
+          "section": "appearance",
+          "label": "Reset appearance to System",
+          "disabled": false,
+          "height": 44
+        },
+        {
+          "section": "default-view",
+          "label": "Reset the default view to Game",
+          "disabled": false,
+          "height": 44
+        },
+        {
+          "section": "classroom",
+          "label": "Clear this classroom’s view override",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "sound",
+          "label": "Reset sound to off",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "haptics",
+          "label": "Haptics are always off on desktop",
+          "disabled": true,
+          "height": 44
+        },
+        {
+          "section": "reduced-motion",
+          "label": "Reset motion to follow the system",
+          "disabled": true,
+          "height": 44
+        }
+      ],
+      "saveButtons": 0,
+      "horizontalOverflow": 0,
+      "focus": {
+        "tag": "button",
+        "label": "Close settings",
+        "text": "Close"
+      },
+      "focusInSheet": true,
+      "stored": {
+        "hermes.plugin.coursebook.home-preferences.default": {
+          "appearance": "dark",
+          "defaultMode": "textbook",
+          "sound": false,
+          "reducedMotion": "system",
+          "classrooms": {}
+        }
+      },
+      "sheetText": "Settings On this device Close Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device. Appearance Reset The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme. System Light Dark Default view Reset The view a lesson opens in. A single classroom can override it. Game Guided Textbook This classroom · Japanese affection and register — an L0 demonstration classroom Reset This classroom keeps its own view. Choosing the home default clears the override. Home default Game Guided Textbook Sound Reset A short tone when a check is scored. Off by default. Check cue sound One quiet tone at a verdict, never narration. Haptics Reset Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing. Haptics A desktop has no haptic engine to drive. Reduced motion Reset Follow the system setting, or hold Coursebook to no transitions even when the system allows them. Follow system Reduce motion"
+    }
+  ],
+  "final": {
+    "mounted": true,
+    "pageTitle": "Home",
+    "homeDefaults": "textbook",
+    "homeEffective": "textbook",
+    "homeOverride": null,
+    "lineText": "Default view · TextbookSettings",
+    "trigger": {
+      "label": "Open Coursebook settings",
+      "haspopup": "dialog",
+      "minHeight": "44px",
+      "height": 44
+    },
+    "sheetOpen": false,
+    "sheetRole": null,
+    "sheetModal": null,
+    "sheetWidth": null,
+    "sheetMaxWidth": null,
+    "sections": [],
+    "sectionHeadingIds": [],
+    "scopeLabel": null,
+    "scope": "dark",
+    "motion": "full",
+    "controls": {},
+    "toggles": {},
+    "resetButtons": [],
+    "saveButtons": 0,
+    "horizontalOverflow": 0,
+    "focus": {
+      "tag": "button",
+      "label": "Open Coursebook settings",
+      "text": "Settings"
+    },
+    "focusInSheet": false,
+    "stored": {
+      "hermes.plugin.coursebook.home-preferences.default": {
+        "appearance": "dark",
+        "defaultMode": "textbook",
+        "sound": false,
+        "reducedMotion": "system",
+        "classrooms": {}
+      }
+    },
+    "sheetText": null
+  }
+}

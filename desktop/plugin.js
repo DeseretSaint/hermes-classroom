@@ -121,11 +121,278 @@ const FILTERS = [
   { id: 'review_due', label: 'Review due' },
   { id: 'archived', label: 'Archived' }
 ]
+/**
+ * H-145 — Home is the launcher (the selected classroom's Continue plate); Courses is the
+ * all-courses catalog. Home is first because it is the only destination that answers "what do I do
+ * now?" without a choice.
+ */
 const DESTINATIONS = [
+  { id: 'home', label: 'Home' },
   { id: 'courses', label: 'Courses' },
   { id: 'library', label: 'Library' },
   { id: 'studio', label: 'Parent Studio' }
 ]
+
+/**
+ * H-147 — the one Home settings document.
+ *
+ * `ctx.storage` is the host's namespaced JSON store (VS Code `globalState`'s analog); it writes
+ * under `hermes.plugin.coursebook.*` and there is no account-level preference API. The document is
+ * therefore honestly device state — the sheet says "On this device" and nothing claims a sync —
+ * and it is keyed by the Hermes profile the route is scoped to, so two profiles on this machine
+ * keep separate settings.
+ *
+ * `appearance` and `reducedMotion` default to `system`: the host's own theme and the OS motion
+ * preference stay authoritative until the learner says otherwise.
+ */
+const CB_HOME_PREF_DEFAULTS = Object.freeze({
+  appearance: 'system',
+  defaultMode: 'game',
+  sound: false,
+  reducedMotion: 'system',
+  // H-156 — the one number a parent sets for a child-facing lesson. It is a calm default, not a
+  // timer: nothing counts down and no session is ended by it.
+  sessionMinutes: 15,
+  classrooms: Object.freeze({})
+})
+const CB_APPEARANCE_OPTIONS = Object.freeze([
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' }
+])
+/** Learner-facing names; the stored id is the setting, the lesson view is what it opens. */
+const CB_PRESENTATION_OPTIONS = Object.freeze([
+  { id: 'game', label: 'Game' },
+  { id: 'guided', label: 'Guided' },
+  { id: 'textbook', label: 'Textbook' }
+])
+const CB_PRESENTATION_VIEW = Object.freeze({ game: 'field_quest', guided: 'guided', textbook: 'textbook' })
+const CB_PRESENTATION_LABEL = Object.freeze({ game: 'Game', guided: 'Guided', textbook: 'Textbook' })
+const CB_REDUCED_MOTION_OPTIONS = Object.freeze([
+  { id: 'system', label: 'Follow system' },
+  { id: 'reduce', label: 'Reduce motion' }
+])
+/**
+ * H-156 — the child-safe floor and the session length a parent can set.
+ *
+ * The four rules are fixed facts about this build, not switches: Coursebook has no reminder
+ * scheduler, no ranking, no random reward and no XP or streak store to turn on. They are listed
+ * with their state so a parent can read the floor, and a test scans the shipped copy so the
+ * floors cannot regress into a feature quietly.
+ */
+const CB_CHILD_SAFE_RULES = Object.freeze([
+  { id: 'reminders', label: 'Loss-framed reminders', state: 'Never' },
+  { id: 'leaderboard', label: 'Public leaderboard', state: 'Never' },
+  { id: 'rewards', label: 'Loot or random rewards', state: 'Never' },
+  { id: 'xp', label: 'XP and streaks', state: 'Never' }
+])
+const CB_SESSION_OPTIONS = Object.freeze([
+  { id: '10', label: '10 min' },
+  { id: '15', label: '15 min' },
+  { id: '20', label: '20 min' },
+  { id: '30', label: '30 min' }
+])
+const CB_SESSION_CHOICES = CB_SESSION_OPTIONS.map((option) => Number(option.id))
+const CB_SETTINGS_TITLE_ID = 'cb-home-settings-title'
+
+/** One listener set, one cache: every mounted Coursebook surface reads the same document. */
+const cbHomePrefsListeners = new Set()
+const cbHomePrefsCache = new Map()
+
+function cbPrefsProfile() {
+  try {
+    return currentScope().profile || 'default'
+  } catch (error) {
+    return 'default'
+  }
+}
+
+function cbPrefsStorage() {
+  const storage = pluginContext && pluginContext.storage
+  return storage && typeof storage.get === 'function' && typeof storage.set === 'function' ? storage : null
+}
+
+/** Nothing stored is trusted: a partial, hand-edited or older document reads as its defaults. */
+function sanitizeCbHomePrefs(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {}
+  const oneOf = (value, allowed, fallback) => (allowed.indexOf(value) >= 0 ? value : fallback)
+  const classrooms = {}
+  if (source.classrooms && typeof source.classrooms === 'object') {
+    for (const courseId of Object.keys(source.classrooms)) {
+      const mode = source.classrooms[courseId]
+      if (courseId && CB_PRESENTATION_VIEW[mode]) classrooms[courseId] = mode
+    }
+  }
+  return {
+    appearance: oneOf(source.appearance, ['system', 'light', 'dark'], CB_HOME_PREF_DEFAULTS.appearance),
+    defaultMode: oneOf(
+      source.defaultMode,
+      Object.keys(CB_PRESENTATION_VIEW),
+      CB_HOME_PREF_DEFAULTS.defaultMode
+    ),
+    sound: source.sound === true,
+    reducedMotion: oneOf(source.reducedMotion, ['system', 'reduce'], CB_HOME_PREF_DEFAULTS.reducedMotion),
+    sessionMinutes: CB_SESSION_CHOICES.indexOf(Number(source.sessionMinutes)) >= 0
+      ? Number(source.sessionMinutes)
+      : CB_HOME_PREF_DEFAULTS.sessionMinutes,
+    classrooms
+  }
+}
+
+function cbHomePrefsKey(profile) {
+  return `home-preferences.${profile || 'default'}`
+}
+
+function readCbHomePrefs(profile) {
+  const key = profile || 'default'
+  if (cbHomePrefsCache.has(key)) return cbHomePrefsCache.get(key)
+  let raw = null
+  const storage = cbPrefsStorage()
+  try {
+    raw = storage ? storage.get(cbHomePrefsKey(key), null) : null
+  } catch (error) {
+    raw = null
+  }
+  const value = sanitizeCbHomePrefs(raw)
+  cbHomePrefsCache.set(key, value)
+  return value
+}
+
+function writeCbHomePrefs(profile, next) {
+  const key = profile || 'default'
+  const clean = sanitizeCbHomePrefs(next)
+  cbHomePrefsCache.set(key, clean)
+  const storage = cbPrefsStorage()
+  try {
+    // A failed write must not look saved. The cache still changes for this session, and the
+    // sheet's next mount re-reads storage, so the loss is visible rather than silently assumed.
+    if (storage) storage.set(cbHomePrefsKey(key), clean)
+  } catch (error) {
+    // Leave the in-memory value; there is no sync claim to protect.
+  }
+  for (const listener of cbHomePrefsListeners) {
+    try {
+      listener(clean)
+    } catch (error) {
+      // One broken subscriber must not stop the others.
+    }
+  }
+  return clean
+}
+
+function updateCbHomePrefs(profile, patch) {
+  const current = readCbHomePrefs(profile)
+  return writeCbHomePrefs(profile, { ...current, ...patch })
+}
+
+/** One section's reset. The classroom map is one section; every scalar is its own. */
+function resetCbHomePrefsSection(profile, section) {
+  const current = readCbHomePrefs(profile)
+  const next = { ...current }
+  if (section === 'classroom') next.classrooms = {}
+  else if (Object.prototype.hasOwnProperty.call(CB_HOME_PREF_DEFAULTS, section)) {
+    next[section] = CB_HOME_PREF_DEFAULTS[section]
+  }
+  return writeCbHomePrefs(profile, next)
+}
+
+/** The effective view for one classroom: its own override wins, else the home default. */
+function cbEffectiveMode(prefs, courseId) {
+  const document = prefs || CB_HOME_PREF_DEFAULTS
+  const override = courseId && document.classrooms ? document.classrooms[courseId] : null
+  return override || document.defaultMode
+}
+
+/** The palette the route paints: an explicit appearance wins, `system` follows the host. */
+function cbAppliedMode(hostMode, appearance) {
+  return appearance === 'light' || appearance === 'dark' ? appearance : hostMode
+}
+
+/**
+ * When the learner picks an appearance that differs from the host theme, the SDK controls inside
+ * Coursebook (buttons, rows, switches) would keep the host's own text/background variables and go
+ * unreadable on the plugin's palette. These are the host variables those controls consume, mapped
+ * onto the scoped `--cb-*` table so one surface has one palette. `system` changes nothing.
+ */
+function cbHostVars(appearance) {
+  if (appearance !== 'light' && appearance !== 'dark') return {}
+  return {
+    '--background': 'var(--cb-paper)',
+    '--foreground': 'var(--cb-ink)',
+    '--card': 'var(--cb-paper-raised)',
+    '--card-foreground': 'var(--cb-ink)',
+    '--popover': 'var(--cb-paper-raised)',
+    '--popover-foreground': 'var(--cb-ink)',
+    '--muted': 'var(--cb-paper)',
+    '--muted-foreground': 'var(--cb-ink-soft)',
+    '--border': 'var(--cb-rule)',
+    '--input': 'var(--cb-rule)',
+    '--accent': 'var(--cb-accent-soft)',
+    '--accent-foreground': 'var(--cb-ink)',
+    '--primary': 'var(--cb-lamp)',
+    '--primary-foreground': 'var(--cb-on-lamp)',
+    '--ui-text-primary': 'var(--cb-ink)',
+    '--ui-text-secondary': 'var(--cb-ink-soft)',
+    '--ui-text-tertiary': 'var(--cb-ink-soft)',
+    '--ui-bg-primary': 'var(--cb-paper)',
+    '--ui-bg-secondary': 'var(--cb-paper-raised)',
+    '--ui-bg-tertiary': 'var(--cb-paper)'
+  }
+}
+
+/**
+ * The one sound this build owns when `sound` is on: a short, quiet tone at a check verdict.
+ * It is never narration and never autoplays a media file; a host without Web Audio stays silent.
+ */
+function cbPlayCheckCue(verdict) {
+  const prefs = readCbHomePrefs(cbPrefsProfile())
+  if (!prefs.sound) return false
+  try {
+    const Ctor =
+      typeof window !== 'undefined' ? window.AudioContext || window.webkitAudioContext : null
+    if (!Ctor) return false
+    const context = new Ctor()
+    const osc = context.createOscillator()
+    const gain = context.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = verdict === 'needs_retry' ? 261.63 : 392
+    gain.gain.value = 0.04
+    osc.connect(gain)
+    gain.connect(context.destination)
+    osc.onended = () => {
+      try {
+        context.close()
+      } catch (error) {
+        // Already closed.
+      }
+    }
+    osc.start()
+    osc.stop(context.currentTime + 0.14)
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
+/**
+ * The hook every Coursebook surface uses. `update` and `reset` apply immediately — there is no
+ * Save step — and notify every other mounted surface in the same frame.
+ */
+function useCbHomePrefs() {
+  const profile = cbPrefsProfile()
+  const [prefs, setPrefs] = useState(() => readCbHomePrefs(profile))
+  useEffect(() => {
+    setPrefs(readCbHomePrefs(profile))
+    const listener = (value) => setPrefs(value)
+    cbHomePrefsListeners.add(listener)
+    return () => {
+      cbHomePrefsListeners.delete(listener)
+    }
+  }, [profile])
+  const update = useCallback((patch) => updateCbHomePrefs(profile, patch), [profile])
+  const reset = useCallback((section) => resetCbHomePrefsSection(profile, section), [profile])
+  return [prefs, update, reset, profile]
+}
 
 /**
  * Set true by the pack work package when its import/export screens land in this module. The
@@ -277,7 +544,7 @@ function useRouteIntent(handler) {
 }
 
 /** The destination survives leaving the route; it is a view preference, not navigation state. */
-let rememberedDestination = 'courses'
+let rememberedDestination = 'home'
 
 function requireContext() {
   if (!pluginContext) throw new Error('Coursebook is not registered')
@@ -1072,103 +1339,126 @@ function DegradedBody({ result, reload }) {
 }
 
 /**
- * The one plain sentence under the welcome (H-28).
+ * H-153 — the start plate: one headline, one short "what happens" line, one primary action and at
+ * most one secondary door.
  *
- * Replaces the three "governed learning workspace / real evidence / nothing advances on its own"
- * orientation lines. It says the same thing in a learner's words, and it stays true: progress is
- * profile-local and an objective only advances on a check the learner can see.
+ * What this replaces, and why: the plate used to carry a three-step explainer, a progress
+ * paragraph and a capability inventory ("Not in this backend build yet: pack preview, ..."). Read
+ * cold, that was a policy page: four blocks of explanation before a learner could press anything.
+ * The question, one sentence about what pressing does, and one button are enough. The seal is gone
+ * (H-145), and so is the support note: an absent command is *absent*, never announced as inventory.
+ *
+ * Every entry is still gated on the command that serves it, never rendered disabled:
+ *   create    `course.create` — the plate's primary.
+ *   import    `pack.import` — one of the Library's two doors, behind the one secondary.
+ *   syllabus  `syllabus.intake.create` — the Library's other door, behind the same secondary.
+ * The secondary opens the Library only when at least one of its doors is actually mounted; with
+ * neither, the secondary is absent rather than dead. If this build cannot create a course, the
+ * same line says so instead of listing missing methods.
+ *
+ * Offline is a state, not an empty profile: the plate keeps its headline, says what is paused and
+ * offers one retry. A failed or in-flight read never reaches this component at all — the surfaces
+ * above it show the error or the loader — so nothing here can claim a profile is empty.
  */
 const FIRST_RUN_COPY = {
   title: 'What do you want to be able to do?',
-  promise:
-    'Name one goal, review the plan, then learn. Nothing is created until you approve the plan.',
-  progress:
-    'Your progress stays on this profile. Nothing is marked complete without a check you can see.',
+  promise: 'Name one goal, review the plan, then learn. Nothing is created until you approve the plan.',
   primary: 'Start with a goal',
-  primaryNext: 'Next you choose how big the course is.',
-  path: [
-    { n: 1, title: 'Name a goal', line: 'Say what you want to be able to do.' },
-    { n: 2, title: 'Review the plan', line: 'Check the sections and their sources. No lesson is written yet.' },
-    { n: 3, title: 'Learn and adapt', line: 'Lessons follow the plan you approved.' }
-  ],
   secondary: 'Use a course I already have',
-  secondaryHint:
-    'You will see who made it, where it came from and what is checked before anything is added.',
-  syllabus: 'Use my college syllabus',
-  syllabusHint:
-    'Your syllabus sets the scope. Coursebook writes its own lessons alongside it and stores your file on this profile.'
+  unavailable: 'This version of Coursebook cannot create a course yet.',
+  noEntries: 'This version of Coursebook cannot create or add a course yet.',
+  offline: 'A new course is paused while this profile is offline. Nothing you already saved is lost.',
+  retry: 'Try again'
 }
 
-function supportNote(implemented) {
-  if (!implemented) return null
-  const missing = []
-  if (!implemented || !implemented.has('pack.preview')) missing.push('pack preview')
-  if (!implemented || !implemented.has('pack.import')) missing.push('pack import')
-  if (!implemented || !implemented.has('jobs.create')) missing.push('plan generation jobs')
-  if (missing.length === 0) return null
-  return jsx('div', {
-    className: 'mt-4 text-xs text-(--ui-text-secondary)',
-    children: `Not in this backend build yet: ${missing.join(', ')}. Nothing here is sample data, so those actions are absent rather than faked.`
-  })
-}
-
-/**
- * The honest welcome (H-28, UX-01). One promise, one primary action, one secondary path, one plain
- * progress sentence. No "governed learning workspace", no marketing hero, no fake sample progress.
- *
- * "Use my college syllabus" is gated on the same capability it is served by (H-27 ships the flow as
- * `syllabus.intake.create`), just as the import action is gated on `pack.import`: the button appears
- * only when the backend can honour it, and never as a disabled-forever or faked control.
- */
-function FirstRun({ implemented, onCreate, onSyllabus }) {
-  const canCreate = Boolean(implemented && implemented.has('course.create')) && typeof onCreate === 'function'
-  const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
-  const canSyllabus = typeof onSyllabus === 'function' && Boolean(implemented && implemented.has('syllabus.intake.create'))
+function FirstRun({ implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry }) {
+  const online = useOnline()
+  const connected = online !== false
+  const canCreate = Boolean(connected && implemented && implemented.has('course.create')) && typeof onCreate === 'function'
+  // The Library owns import and college-syllabus intake; its row is offered only when one of those
+  // doors is mounted, so the secondary always opens a shelf that can actually do something.
+  const libraryHasEntry = Boolean(
+    implemented &&
+      (implemented.has('syllabus.intake.create') || (IMPORT_FLOW_WIRED && implemented.has('pack.import')))
+  )
+  const canBrowse = Boolean(connected && libraryHasEntry) && typeof onBrowseLibrary === 'function'
+  const canRetry = !connected && typeof onRetry === 'function'
+  const line = !connected
+    ? FIRST_RUN_COPY.offline
+    : canCreate
+      ? FIRST_RUN_COPY.promise
+      : canBrowse
+        ? FIRST_RUN_COPY.unavailable
+        : FIRST_RUN_COPY.noEntries
+  const actionLabel = connected ? FIRST_RUN_COPY.primary : FIRST_RUN_COPY.retry
+  const action = connected ? onCreate : onRetry
+  const showAction = connected ? canCreate : canRetry
   const width = useCbViewportWidth()
   const compact = width > 0 && width < 520
-  const hintStyle = { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }
-  // One start plate: what Coursebook is for, one filled action, then the path in three short rows.
-  // The numbers carry the sequence, so step one is never marked current until a course exists.
+  // At 460 px the route column is ~215 px; at 200% text that is the width a phone browser gives a
+  // 320 px layout, so the headline steps down and the plate's own inset stops eating the measure.
+  // (The column width is the host shell's; the plate must not make it worse.)
+  const veryNarrow = width > 0 && width < 300
+  const headingSize = veryNarrow ? CB_TYPE.lead : compact ? CB_TYPE.heading : CB_TYPE.display
+  // A host Button keeps its label on one line (`whitespace-nowrap`). At a 460 px window the route
+  // column is ~215 px, so "Use a course I already have" was clipped inside its own box. Let the
+  // label wrap and keep the 44 px target: narrow is a width, not a reason to truncate an action.
+  const buttonStyle = {
+    flex: '1 1 auto',
+    borderRadius: '2px',
+    minHeight: '44px',
+    height: 'auto',
+    whiteSpace: 'normal',
+    textAlign: 'center',
+    lineHeight: 1.3,
+    fontSize: CB_TYPE.body
+  }
+  // One secondary at most: a real destination, never a disabled control. It is the same door
+  // whether or not the plate has a primary, because "use a course I already have" does not depend
+  // on this build being able to create one.
+  const secondary = canBrowse
+    ? jsx(sdk.Button, {
+        'data-cb-first-run-secondary': '',
+        variant: 'secondary',
+        onClick: onBrowseLibrary,
+        style: buttonStyle,
+        children: FIRST_RUN_COPY.secondary
+      })
+    : null
   return jsxs('div', {
     'data-cb-first-run': '',
+    'data-cb-first-run-state': !connected ? 'offline' : canCreate ? 'start' : 'unavailable',
     style: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '1rem',
+      gap: compact ? '0.8rem' : '1rem',
       width: '100%',
       maxWidth: '42rem',
       margin: '0 auto',
-      padding: compact ? '1rem 0.9rem 1.1rem' : '1.4rem 1.5rem 1.5rem',
+      padding: veryNarrow ? '0.7rem 0.45rem 0.8rem' : compact ? '0.9rem 0.7rem 1rem' : '1.4rem 1.5rem 1.5rem',
       background: 'var(--cb-lamp-soft)',
       border: '1px solid var(--cb-rule)',
       borderTop: '1px solid var(--cb-lamp)',
       boxSizing: 'border-box'
     },
     children: [
-      jsxs('div', {
-        style: { display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' },
-        children: [
-          jsx(SurveyMark, { courseId: 'first-run', size: compact ? 40 : 56 }),
-          jsx('h2', {
-            'data-cb-first-run-title': '',
-            style: {
-              margin: 0,
-              flex: '1 1 12rem',
-              minWidth: 0,
-              fontFamily: CB_SERIF,
-              fontSize: compact ? CB_TYPE.heading : CB_TYPE.display,
-              fontWeight: 600,
-              lineHeight: 1.08,
-              letterSpacing: '-0.015em',
-              color: 'var(--cb-ink)',
-              maxWidth: '22ch',
-              overflowWrap: 'break-word'
-            },
-            children: FIRST_RUN_COPY.title
-          })
-        ]
+      jsx('h2', {
+        'data-cb-first-run-title': '',
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: headingSize,
+          fontWeight: 600,
+          lineHeight: 1.08,
+          letterSpacing: '-0.015em',
+          color: 'var(--cb-ink)',
+          maxWidth: '22ch',
+          overflowWrap: 'break-word'
+        },
+        children: FIRST_RUN_COPY.title
       }),
       jsx('p', {
+        'data-cb-first-run-line': '',
         style: {
           margin: 0,
           maxWidth: '54ch',
@@ -1177,125 +1467,31 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
           lineHeight: 1.55,
           color: 'var(--cb-ink)'
         },
-        children: FIRST_RUN_COPY.promise
+        children: line
       }),
-      canCreate
+      showAction || secondary
         ? jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-start' },
+            'data-cb-first-run-actions': '',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.6rem' },
             children: [
-              jsx(sdk.Button, {
-                'data-cb-first-run-primary': '',
-                variant: 'default',
-                onClick: onCreate,
-                style: {
-                  background: 'var(--cb-lamp)',
-                  color: 'var(--cb-on-lamp)',
-                  border: '1px solid var(--cb-on-lamp)',
-                  borderRadius: '2px',
-                  minHeight: '44px',
-                  fontSize: CB_TYPE.body
-                },
-                children: FIRST_RUN_COPY.primary
-              }),
-              jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.primaryNext })
-            ]
-          })
-        : null,
-      jsx('ol', {
-        'data-cb-first-run-path': '',
-        'aria-label': 'How a course is made',
-        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' },
-        children: FIRST_RUN_COPY.path.map((step) =>
-          jsxs(
-            'li',
-            {
-              'data-cb-first-run-step': String(step.n),
-              style: { display: 'flex', alignItems: 'baseline', gap: '0.7rem', padding: '0.5rem 0', borderTop: '1px solid var(--cb-rule)' },
-              children: [
-                jsx('span', {
-                  style: {
-                    flex: '0 0 1.3rem',
-                    fontFamily: CB_SERIF,
-                    fontSize: CB_TYPE.body,
-                    fontWeight: 600,
-                    fontVariantNumeric: 'tabular-nums',
-                    color: 'var(--cb-ink-soft)'
-                  },
-                  children: String(step.n)
-                }),
-                jsxs('span', {
-                  style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
-                  children: [
-                    jsx('span', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.body, fontWeight: 600, color: 'var(--cb-ink)' },
-                      children: step.title
-                    }),
-                    jsx('span', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
-                      children: step.line
-                    })
-                  ]
-                })
-              ]
-            },
-            step.n
-          )
-        )
-      }),
-      canImport || canSyllabus
-        ? jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--cb-rule)' },
-            children: [
-              canImport
-                ? jsxs('div', {
-                    style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', alignItems: 'flex-start', padding: '0.65rem 0' },
-                    children: [
-                      jsx(sdk.Button, {
-                        variant: 'secondary',
-                        onClick: onImportPlaceholder,
-                        children: FIRST_RUN_COPY.secondary
-                      }),
-                      jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.secondaryHint })
-                    ]
+              showAction
+                ? jsx(sdk.Button, {
+                    'data-cb-first-run-primary': '',
+                    variant: 'default',
+                    onClick: action,
+                    style: {
+                      ...buttonStyle,
+                      background: 'var(--cb-lamp)',
+                      color: 'var(--cb-on-lamp)',
+                      border: '1px solid var(--cb-on-lamp)'
+                    },
+                    children: actionLabel
                   })
                 : null,
-              canSyllabus
-                ? jsxs('div', {
-                    style: {
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.2rem',
-                      alignItems: 'flex-start',
-                      padding: '0.65rem 0',
-                      borderTop: '1px solid var(--cb-rule)'
-                    },
-                    children: [
-                      jsx(sdk.Button, {
-                        variant: 'secondary',
-                        onClick: onSyllabus,
-                        children: FIRST_RUN_COPY.syllabus
-                      }),
-                      jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.syllabusHint })
-                    ]
-                  })
-                : null
+              secondary
             ]
           })
-        : null,
-      jsx('p', {
-        style: {
-          margin: 0,
-          paddingTop: '0.6rem',
-          borderTop: '1px solid var(--cb-rule)',
-          maxWidth: '56ch',
-          fontFamily: CB_SANS,
-          fontSize: CB_TYPE.meta,
-          lineHeight: 1.5,
-          color: 'var(--cb-ink-soft)'
-        },
-        children: FIRST_RUN_COPY.progress
-      }),
-      supportNote(implemented)
+        : null
     ]
   })
 }
@@ -1455,7 +1651,7 @@ function PackPreview({ preview, existing }) {
           }),
           jsx(PackReviewLine, {
             label: 'Files',
-            value: `${preview.integrity.file_count} file(s) · ${bytesLabel(preview.integrity.expanded_bytes)} expanded`
+            value: `${plural(preview.integrity.file_count, 'file', 'files')} · ${bytesLabel(preview.integrity.expanded_bytes)} expanded`
           }),
           jsx(PackReviewLine, {
             label: 'Hashes match the manifest',
@@ -1533,7 +1729,7 @@ function PackPreview({ preview, existing }) {
                     jsx(sdk.Badge, {
                       size: 'xs',
                       variant: 'outline',
-                      children: `${(objective.checks || []).length} check(s)`
+                      children: plural((objective.checks || []).length, 'check', 'checks')
                     })
                   ]
                 }),
@@ -2267,6 +2463,109 @@ function mainlineObjective(row, objectives) {
   return list.find((entry) => !entry.independent) || list[list.length - 1]
 }
 
+const HUB_SLOT_LIMIT = 4
+
+/** Numeric clock for `updated_at`; an unparseable stamp sorts last, never first. */
+function hubTime(value) {
+  const time = Date.parse(String(value || ''))
+  return Number.isFinite(time) ? time : 0
+}
+
+/**
+ * The name of a classroom, from the row and nothing else: the enrollment's own `learner_label`
+ * when it has one, otherwise the course title. "Learner 1" is never generated; a pack import has
+ * no label, and a course switcher is the honest thing to show until rename exists.
+ */
+function hubSlotName(row) {
+  const label = row && typeof row.learner_label === 'string' ? row.learner_label.trim() : ''
+  if (label) return label
+  const title = row && typeof row.title === 'string' ? row.title.trim() : ''
+  return title || 'Untitled course'
+}
+
+function hubSlotFrom(entry) {
+  const row = entry.row
+  return {
+    course_id: row.course_id,
+    enrollment_id: row.enrollment_id,
+    name: hubSlotName(row),
+    learner_label: row.learner_label || null,
+    title: row.title || null,
+    updated_at: row.updated_at || null,
+    // How many non-archived progress records this course carries in the rows the hub read.
+    // Objective state is course-scoped, so this is a disclosure, not a second classroom.
+    recordCount: entry.records,
+    row
+  }
+}
+
+/**
+ * H-146 — the hub's read model. A classroom is the pair Coursebook already stores: a course plus
+ * its newest enrollment (`library.list` rows are exactly that pair). Parent-authored rows are a
+ * different destination and never become learner classrooms. Two enrollments on one course are
+ * one classroom with two progress records, because objective state in the kernel is course-scoped:
+ * splitting them would show two identical progress readings dressed as two learners.
+ *
+ * Pure and exported: it takes the contract's own rows and returns the rail, its visible cap and
+ * the counts. It never reads the DOM, the clock or a host atom.
+ */
+function hubSlots(rows) {
+  const list = Array.isArray(rows) ? rows : []
+  const byCourse = new Map()
+  list.forEach((row) => {
+    if (!row || !row.course_id) return
+    if (row.recipe === 'parent') return
+    const held = byCourse.get(row.course_id)
+    if (!held) {
+      byCourse.set(row.course_id, { row, records: 1 })
+      return
+    }
+    held.records += 1
+    if (hubTime(row.updated_at) > hubTime(held.row.updated_at)) held.row = row
+  })
+  const classrooms = [...byCourse.values()]
+    .map(hubSlotFrom)
+    .sort((a, b) => {
+      const delta = hubTime(b.updated_at) - hubTime(a.updated_at)
+      if (delta !== 0) return delta
+      return a.name.localeCompare(b.name)
+    })
+  const slots = classrooms.slice(0, HUB_SLOT_LIMIT)
+  return {
+    slots,
+    // The full list is what the select above four needs; the cap is what the rail may show.
+    all: classrooms,
+    hidden: Math.max(0, classrooms.length - slots.length),
+    total: classrooms.length,
+    rowTotal: list.length
+  }
+}
+
+/** The selected classroom, or the newest one when nothing is selected (or it just vanished). */
+function selectedHubSlot(hub, selectedCourseId) {
+  const all = hub && Array.isArray(hub.all) ? hub.all : []
+  const wanted = selectedCourseId ? all.find((slot) => slot.course_id === selectedCourseId) : null
+  return wanted || (hub && hub.slots && hub.slots[0]) || null
+}
+
+/**
+ * When `course.outline` could not be read, the row still carries the section the enrollment is on.
+ * This is only a pointer, never a fabricated objective: it has an id and no title or ordinal, so
+ * the plate says the backend's own next-step label until the outline answers.
+ */
+function rowFallbackCurrent(row) {
+  const summary = row && row.evidence_summary ? row.evidence_summary : {}
+  if (!summary.current_objective_id) return null
+  return {
+    objective_id: summary.current_objective_id,
+    title: null,
+    ordinal: null,
+    state: null,
+    independent: false,
+    last_opened_at: null
+  }
+}
+
 /**
  * The estimate state, normalized for rendering. `error` means the read itself failed: the desk
  * has no answer, so it must not say the author recorded none. `none` means the backend answered
@@ -2289,14 +2588,29 @@ function deskEstimateLabel(estimate) {
   return 'Session length not recorded'
 }
 
-/** Pure projection of the three reads into what the desk renders. Tested without a DOM. */
-function buildDeskModel({ library, outline, estimate }) {
+/**
+ * Pure projection of the three reads into what the desk renders. Tested without a DOM.
+ *
+ * H-146: `selectedCourseId` picks the classroom; every read above it is keyed to that slot's
+ * enrollment. `outlineState` tells the model whether `course.outline` answered, failed, or is
+ * still in flight, so a failed route read falls back to the row's own current objective instead
+ * of inventing one or disabling Continue.
+ */
+function buildDeskModel({ library, outline, estimate, selectedCourseId = null, outlineState = null }) {
   const rows = library && Array.isArray(library.items) ? library.items : []
-  const row = rows[0] || null
+  const hub = hubSlots(rows)
+  const selected = selectedHubSlot(hub, selectedCourseId)
+  // A selected course that is no longer in the rows is not silently replaced as if it still
+  // existed; the fallback is named in `selectionLost` so the surface can say what happened.
+  const selectionLost = Boolean(selectedCourseId) && Boolean(selected) && selected.course_id !== selectedCourseId
+  const row = selected ? selected.row : null
   if (!row) {
     return {
       rows: [],
       row: null,
+      hub,
+      selected: null,
+      selectionLost: false,
       current: null,
       objectives: [],
       total: 0,
@@ -2313,8 +2627,11 @@ function buildDeskModel({ library, outline, estimate }) {
       touchedSource: null
     }
   }
+  const readState = outlineState || (outline ? 'ready' : 'idle')
   const objectives = outline && Array.isArray(outline.objectives) ? outline.objectives : []
-  const current = mainlineObjective(row, objectives)
+  // Only an unanswered outline (failed or in flight) uses the row's current-objective pointer.
+  // A ready outline with zero objectives is a real answer: this course has no path yet.
+  const current = mainlineObjective(row, objectives) || (readState !== 'ready' ? rowFallbackCurrent(row) : null)
   const total = outline && Number(outline.total) ? Number(outline.total) : objectives.length
   const settled = objectives.filter((entry) => entry.independent).length
   const dueCount = objectives.filter(
@@ -2324,12 +2641,15 @@ function buildDeskModel({ library, outline, estimate }) {
   return {
     rows,
     row,
+    hub,
+    selected,
+    selectionLost,
     current,
     objectives,
     total,
     settled,
     dueCount,
-    sectionLabel: current ? `Section ${current.ordinal} of ${total}` : null,
+    sectionLabel: current && current.ordinal ? `Section ${current.ordinal} of ${total}` : null,
     nextLabel: next.label || 'The backend did not record a next step for this course.',
     primaryLabel: DESK_PRIMARY_LABEL[next.kind] || 'Open the lesson',
     primaryKind: next.kind || 'start_lesson',
@@ -2363,14 +2683,23 @@ function courseStampText(title) {
   return cbCourseMonogram(title)
 }
 
-/** The course cover: the Atlas Lamp seal, deterministic per course, with the title adjacent. */
+/** The course cover: deterministic monogram as type, with the title adjacent. */
 function CourseStamp({ title, large, courseId, identity }) {
   return jsx('div', {
     'data-cb-course-stamp': '',
     title: title || 'Course',
     'aria-hidden': 'true',
     style: { flex: '0 0 auto', display: 'flex', alignItems: 'center' },
-    children: jsx(SurveyMark, { courseId: courseId || title || 'Coursebook', identity, size: large ? 64 : 28 })
+    children: jsx('span', {
+      style: {
+        fontFamily: CB_SERIF,
+        fontSize: large ? CB_TYPE.heading : CB_TYPE.meta,
+        fontWeight: 600,
+        letterSpacing: '0.04em',
+        color: 'var(--cb-ink-soft)'
+      },
+      children: courseStampText(title || 'Course')
+    })
   })
 }
 
@@ -2384,32 +2713,37 @@ const CB_PATH_TONE = {
   empty: 'var(--cb-rule)'
 }
 
-/** The four segments under a cover. Colour never carries the state alone: the caption does. */
+/**
+ * The evidence record under a cover. One segment per objective for courses small enough to draw
+ * honestly; a larger course shows the count only rather than inventing a bucket. Colour never
+ * carries the state alone: the caption does.
+ */
 function CoursePath({ row }) {
   const segments = cbCoursePathSegments(row)
   return jsxs('div', {
     'data-cb-course-path': String(segments.length),
     style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.1rem' },
     children: [
-      jsx('div', {
-        'aria-hidden': 'true',
-        style: { display: 'flex', gap: '0.2rem', height: '0.3rem', alignItems: 'stretch' },
-        children: segments.map((segment) =>
-          jsx(
-            'span',
-            {
-              style: {
-                flex: '1 1 0',
-                minWidth: 0,
-                background: CB_PATH_TONE[segment.state] || CB_PATH_TONE.quiet,
-                opacity: segment.state === 'quiet' || segment.state === 'empty' ? 0.45 : 1,
-                outline: segment.state === 'current' ? '1px solid var(--cb-accent)' : 'none'
-              }
-            },
-            segment.index
-          )
-        )
-      }),
+      segments.length
+        ? jsx('div', {
+            'aria-hidden': 'true',
+            style: { display: 'flex', gap: '0.2rem', height: '0.3rem', alignItems: 'stretch' },
+            children: segments.map((segment) =>
+              jsx(
+                'span',
+                {
+                  style: {
+                    flex: '1 1 0',
+                    minWidth: 0,
+                    background: CB_PATH_TONE[segment.state] || CB_PATH_TONE.quiet,
+                    opacity: segment.state === 'quiet' || segment.state === 'empty' ? 0.45 : 1
+                  }
+                },
+                segment.index
+              )
+            )
+          })
+        : null,
       jsx('div', {
         'data-cb-course-path-caption': '',
         style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
@@ -2475,8 +2809,7 @@ function ShelfDisclosure({ group, onOpen, label }) {
             [
               jsxs('span', { style: { minWidth: 0, overflowWrap: 'anywhere' }, children: [
                 jsx('span', { children: member.title || 'Untitled' }),
-                jsx('span', { children: ` · ${whenLabel(member.updated_at)}` }),
-                jsx('span', { children: ` · ${cbShelfFingerprint(member)}` })
+                jsx('span', { children: ` · ${whenLabel(member.updated_at)}` })
               ] }),
               onOpen
                 ? jsx(sdk.Button, {
@@ -2532,7 +2865,6 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
           overflow: 'hidden'
         },
         children: [
-          jsx(SurveyMark, { courseId: row.course_id || row.title || 'Coursebook', identity, size: 40 }),
           jsx('div', {
             'aria-hidden': 'true',
             style: {
@@ -2573,6 +2905,22 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
 }
 
 /**
+ * H-150c — is this focus worth a ring?
+ *
+ * `:focus-visible` is the identity's rule (H-146a): a keyboard stop paints, a pointer press on the
+ * row leaves nothing behind. An engine that cannot answer the query keeps the ring, because losing
+ * it for a keyboard user is the failure this card is about.
+ */
+function shelfRingVisible(node) {
+  if (!node || typeof node.matches !== 'function') return true
+  try {
+    return node.matches(':focus-visible')
+  } catch (error) {
+    return true
+  }
+}
+
+/**
  * One pack on the Library shelf: a compact row, not a course cover.
  *
  * A pack is not a course. Reusing `CourseCover` here put a 16:9 decorative field, a 40 px
@@ -2585,23 +2933,63 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
  * (the manifest is inspectable) without a four-segment path that would imply content.
  */
 function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
   const summary = (row && row.evidence_summary) || {}
   const total = Math.max(0, Number(summary.total_objectives || 0))
   const empty = total === 0
+  const title = row.title || 'Untitled pack'
+  const source = sourceLabel(row.provenance && row.provenance.source)
+  const openPreview = () => { if (onPreview) onPreview(row) }
   return jsxs('article', {
     'data-cb-pack-row': cbShelfFingerprint(row),
     'data-cb-pack-empty': empty ? 'true' : 'false',
+    'data-cb-pack-selected': selected ? 'true' : undefined,
     style: {
+      position: 'relative',
       display: 'flex',
       flexDirection: 'column',
       gap: '0.35rem',
       minWidth: 0,
-      paddingTop: '0.55rem',
-      borderTop: '1px solid var(--cb-rule)'
+      padding: '0.55rem 0.6rem',
+      borderTop: '1px solid var(--cb-rule)',
+      background: selected ? 'var(--cb-accent-soft)' : 'transparent'
     },
     children: [
+      // H-150: the whole row is the target. One real button paints over the row's empty space
+      // and takes the keyboard (Enter/Space); the row content is inert, and the single Preview
+      // affordance below sits above the overlay. This mirrors the host's own RowButton pattern.
+      //
+      // H-150c: the ring is drawn *inside* the row. The old `outlineOffset: '2px'` put the left
+      // and right strokes outside a row that sits flush with `MAIN.overflow-auto`, so only the top
+      // and bottom strokes ever painted. A negative offset keeps the same 2px accent ring (the
+      // H-146a identity ring) entirely within the row's own box, where the scroll container cannot
+      // clip it. `data-cb-pack-row-action` is the stable handle the shelf uses to put focus back on
+      // this row after the preview is dismissed.
+      onPreview
+        ? jsx(sdk.RowButton, {
+            'aria-label': `Preview ${title}`,
+            'aria-pressed': selected ? 'true' : 'false',
+            'data-cb-pack-row-action': row.enrollment_id,
+            'data-cb-focus-ring': keyboardFocus ? 'visible' : 'none',
+            className: 'absolute inset-0 rounded-[2px]',
+            onBlur: () => setKeyboardFocus(false),
+            onFocus: (event) => setKeyboardFocus(shelfRingVisible(event && event.currentTarget)),
+            style: {
+              outline: keyboardFocus ? '2px solid var(--cb-accent)' : 'none',
+              outlineOffset: '-2px',
+              borderRadius: '2px'
+            },
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                openPreview()
+              }
+            },
+            onClick: openPreview
+          })
+        : null,
       jsxs('div', {
-        className: 'flex flex-wrap items-start justify-between gap-2',
+        className: 'pointer-events-none flex flex-wrap items-start justify-between gap-2',
         children: [
           jsxs('div', {
             style: { display: 'flex', minWidth: 0, flexDirection: 'column', gap: '0.2rem' },
@@ -2616,40 +3004,38 @@ function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
                   color: 'var(--cb-ink)',
                   overflowWrap: 'anywhere'
                 },
-                children: row.title || 'Untitled pack'
+                children: title
               }),
               jsxs('div', {
                 className: 'flex flex-wrap items-center gap-2',
                 style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
                 children: [
-                  jsx(sdk.Badge, {
-                    variant: 'muted',
-                    size: 'xs',
-                    children: sourceLabel(row.provenance && row.provenance.source)
-                  }),
+                  jsx(sdk.Badge, { variant: 'muted', size: 'xs', children: source }),
                   jsx('span', {
-                    children: empty ? 'No sections yet' : `${total} objective${total === 1 ? '' : 's'}`
-                  })
+                    children: empty ? 'No sections yet' : plural(total, 'section', 'sections')
+                  }),
+                  selected
+                    ? jsxs('span', {
+                        'data-cb-pack-selected-cue': '',
+                        className: 'inline-flex items-center gap-1 font-semibold',
+                        style: { color: 'var(--cb-accent)' },
+                        children: [
+                          jsx(sdk.Codicon, { name: 'check', size: '0.75rem' }),
+                          jsx('span', { children: 'Selected' })
+                        ]
+                      })
+                    : null
                 ]
               })
             ]
-          }),
-          onPreview
-            ? jsx(sdk.Button, {
-                'aria-label': `Preview ${row.title || 'pack'}`,
-                onClick: () => onPreview(row),
-                size: 'sm',
-                variant: selected ? 'secondary' : 'text',
-                children: 'Preview'
-              })
-            : null
+          })
         ]
       }),
       empty
         ? jsx('p', {
             'data-cb-pack-empty-note': '',
             style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
-            children: 'This pack has no sections yet. Preview it to see the manifest; there is nothing to open.'
+            children: 'Nothing to open yet. Preview it to see the manifest.'
           })
         : jsxs('div', {
             style: { display: 'flex', flexDirection: 'column', gap: '0.2rem' },
@@ -2662,7 +3048,17 @@ function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
               jsx(CoursePath, { row })
             ]
           }),
-      group && group.label ? jsx(ShelfDisclosure, { group, onOpen: onOpenMember }) : null
+      group && group.label ? jsx(ShelfDisclosure, { group, onOpen: onOpenMember }) : null,
+      onPreview
+        ? jsx(sdk.Button, {
+            className: 'relative self-start',
+            'aria-label': `Preview ${title}`,
+            onClick: openPreview,
+            size: 'sm',
+            variant: selected ? 'secondary' : 'text',
+            children: 'Preview'
+          })
+        : null
     ]
   })
 }
@@ -2713,6 +3109,209 @@ function DeskFacts({ desk }) {
   })
 }
 
+/**
+ * H-146 — the focus ring for one classroom tab.
+ *
+ * The host stylesheet owns `:focus` and its reset clears the user agent's ring on a bare `button`,
+ * and this plugin has no stylesheet of its own to declare `:focus-visible` in — an inline `outline`
+ * is the only hook left. So the ring is state on the control: it is painted while the tab matches
+ * `:focus-visible` and it is `none` otherwise, matching
+ * `docs/COURSEBOOK-VISUAL-IDENTITY-V2.md` (2px `accent`, 2px offset, a 2px radius on the ring).
+ * It is never removed for keyboard users: a Tab stop always paints it, a pointer click does not.
+ */
+const CB_FOCUS_RING = '2px solid var(--cb-accent)'
+
+/**
+ * Does this focus deserve a ring? `:focus-visible` is the identity's rule, so a pointer click on a
+ * plain text tab leaves nothing behind while a Tab stop always paints. The query is asked on the
+ * focused node itself; an engine that cannot answer keeps the ring on focus rather than losing it
+ * for a keyboard user.
+ */
+function focusRingVisible(node) {
+  if (!node || typeof node.matches !== 'function') return true
+  try {
+    return node.matches(':focus-visible')
+  } catch (error) {
+    return true
+  }
+}
+
+/** One classroom tab: a text target that keeps the identity's ring while it is keyboard-focused. */
+function SlotTab({ slot, isCurrent, onSelect }) {
+  const [focused, setFocused] = useState(false)
+  return jsx('button', {
+    type: 'button',
+    'data-cb-slot-tab': slot.course_id,
+    'data-cb-slot-state': isCurrent ? 'current' : 'available',
+    'data-cb-focus-ring': focused ? 'visible' : 'none',
+    'aria-current': isCurrent ? 'true' : undefined,
+    onFocus: (event) => setFocused(focusRingVisible(event.currentTarget)),
+    onBlur: () => setFocused(false),
+    onClick: () => {
+      if (!isCurrent) onSelect(slot.course_id)
+    },
+    style: {
+      minHeight: '44px',
+      maxWidth: '100%',
+      padding: '0.3rem 0.1rem',
+      background: 'none',
+      border: 'none',
+      borderBottom: `2px solid ${isCurrent ? 'var(--cb-lamp)' : 'transparent'}`,
+      borderRadius: '2px',
+      outline: focused ? CB_FOCUS_RING : 'none',
+      outlineOffset: '2px',
+      cursor: isCurrent ? 'default' : 'pointer',
+      fontFamily: CB_SANS,
+      fontSize: CB_TYPE.meta,
+      fontWeight: isCurrent ? 600 : 400,
+      color: isCurrent ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
+      textAlign: 'left',
+      overflowWrap: 'anywhere'
+    },
+    children: slot.name
+  })
+}
+
+/**
+ * H-146 — the classroom rail. It is navigation, not a dashboard: up to four text tabs, one
+ * `aria-current`, and the active classroom named in words underneath. Above four, the rail becomes
+ * one labelled select rather than a wrapping card grid. A switch changes only shell state:
+ * `onSelect(course_id)` is a local selection, never `?profile=`, a host route read, or a backend
+ * write. There are no avatars, covers or per-slot cards.
+ */
+function SlotRail({ hub, selected, onSelect, onShowAll }) {
+  const all = hub && Array.isArray(hub.all) ? hub.all : []
+  if (all.length === 0) return null
+  const active = selected || all[0]
+  const useSelect = all.length > HUB_SLOT_LIMIT
+  const nameCount = {}
+  all.forEach((slot) => {
+    nameCount[slot.name] = (nameCount[slot.name] || 0) + 1
+  })
+  // Two classrooms can share a learner label; the course title disambiguates in the select only,
+  // where there is room for it. Tabs keep the short identity.
+  const optionLabel = (slot) =>
+    nameCount[slot.name] > 1 && slot.title && slot.title !== slot.name ? `${slot.name} · ${slot.title}` : slot.name
+  const quiet = { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' }
+  const heading = (key) => jsxs('div', {
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
+    children: [
+      jsx(DeskLabel, { children: 'Classroom' }, 'label'),
+      onShowAll
+        ? jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'All courses' }, 'all')
+        : null
+    ]
+  }, key)
+  const current = (key) => jsx('p', {
+    'data-cb-slot-current': active.course_id,
+    'id': 'cb-hub-slot-current',
+    style: { ...quiet, color: 'var(--cb-ink)' },
+    children: `Showing ${active.name}`
+  }, key)
+  const disclosure = (key) =>
+    active.recordCount > 1
+      ? jsx('p', {
+          'data-cb-slot-disclosure': String(active.recordCount),
+          style: quiet,
+          children: `This course has ${active.recordCount} progress records; showing the most recent.`
+        }, key)
+      : null
+
+  let control
+  if (all.length === 1) {
+    // One classroom is named, not turned into a control that can only select itself.
+    control = jsxs('div', {
+      'data-cb-slot-rail': 'single',
+      'data-cb-slot-single': active.course_id,
+      style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+      children: [
+        heading('heading'),
+        jsx('span', {
+          style: {
+            fontFamily: CB_SANS,
+            fontSize: CB_TYPE.body,
+            fontWeight: 600,
+            color: 'var(--cb-ink)',
+            overflowWrap: 'break-word'
+          },
+          children: active.name
+        }, 'name'),
+        current('current'),
+        disclosure('disclosure')
+      ]
+    })
+  } else if (useSelect) {
+    control = jsxs('div', {
+      'data-cb-slot-rail': 'select',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+      children: [
+        heading('heading'),
+        jsxs('div', {
+          style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+          children: [
+            jsx('label', {
+              htmlFor: 'cb-hub-classroom',
+              style: { ...quiet, fontWeight: 600 },
+              children: 'Choose a classroom'
+            }, 'label'),
+            jsx('select', {
+              id: 'cb-hub-classroom',
+              'data-cb-classroom-select': '',
+              'aria-describedby': 'cb-hub-slot-current',
+              value: active.course_id,
+              onChange: (event) => onSelect(event.target.value),
+              style: {
+                width: '100%',
+                maxWidth: '22rem',
+                minHeight: '44px',
+                padding: '0.35rem 0.5rem',
+                fontFamily: CB_SANS,
+                fontSize: CB_TYPE.meta,
+                color: 'var(--cb-ink)',
+                background: 'var(--cb-paper-raised)',
+                border: '1px solid var(--cb-ink)',
+                borderRadius: '2px',
+                boxSizing: 'border-box'
+              },
+              children: all.map((slot) =>
+                jsx('option', { value: slot.course_id, children: optionLabel(slot) }, slot.course_id)
+              )
+            }, 'select')
+          ]
+        }, 'field'),
+        current('current'),
+        disclosure('disclosure')
+      ]
+    })
+  } else {
+    control = jsxs('div', {
+      'data-cb-slot-rail': 'tabs',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: 0 },
+      children: [
+        heading('heading'),
+        jsx('nav', {
+          'data-cb-classroom-tabs': '',
+          'aria-label': 'Classrooms',
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.1rem 1.1rem', minWidth: 0 },
+          children: all.map((slot) => {
+            const isCurrent = slot.course_id === active.course_id
+            return jsx(SlotTab, { slot, isCurrent, onSelect }, slot.course_id)
+          })
+        }, 'tabs'),
+        current('current'),
+        disclosure('disclosure')
+      ]
+    })
+  }
+
+  return jsx('section', {
+    'data-cb-slot-rail-section': '',
+    'aria-label': 'Classroom selection',
+    style: { maxWidth: CB_MEASURE, minWidth: 0 },
+    children: control
+  })
+}
+
 /** One raised frame, not a card in a card: the Continue card is the only surface on the desk. */
 function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate }) {
   const current = desk.current
@@ -2722,6 +3321,10 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
   // Keep it on the wide desk, where it reads as a course cover; drop it when the text must lead.
   const viewportWidth = useCbViewportWidth()
   const compact = viewportWidth > 0 && viewportWidth < 620
+  // A lesson start needs a section id. Plan/review/pack next steps open Course Detail and do not,
+  // so a failed outline read never disables the one primary action.
+  const needsSection = desk.primaryKind === 'start_lesson' || desk.primaryKind === 'resume_lesson'
+  const canPrimary = Boolean(desk.row) && (Boolean(current) || !needsSection)
   return jsxs('section', {
     'data-cb-continue': '',
     'data-cb-continue-compact': compact ? 'true' : 'false',
@@ -2815,16 +3418,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
               jsx(DeskProgress, { objectives: desk.objectives }),
               jsx(DeskFacts, { desk })
             ]
-          }),
-          compact ? null : jsx(CourseStamp, { title: courseTitle || title, large: true, courseId: desk.row ? desk.row.course_id : null })
-        ]
-      }),
-      jsxs('p', {
-        'data-cb-continue-next': '',
-        style: { margin: 0, maxWidth: CB_MEASURE, fontSize: CB_TYPE.body, lineHeight: 1.55, color: 'var(--cb-ink)' },
-        children: [
-          jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: 'Next · ' }),
-          desk.nextLabel
+          })
         ]
       }),
       jsxs('div', {
@@ -2832,12 +3426,12 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
         children: [
           jsx(sdk.Button, {
             variant: 'default',
-            disabled: Boolean(busy) || !current,
+            disabled: Boolean(busy) || !canPrimary,
             onClick: onPrimary,
             style: {
-              background: busy || !current ? 'var(--cb-paper)' : 'var(--cb-lamp)',
-              color: busy || !current ? 'var(--cb-ink-soft)' : 'var(--cb-on-lamp)',
-              border: `1px solid ${busy || !current ? 'var(--cb-rule)' : 'var(--cb-on-lamp)'}`,
+              background: busy || !canPrimary ? 'var(--cb-paper)' : 'var(--cb-lamp)',
+              color: busy || !canPrimary ? 'var(--cb-ink-soft)' : 'var(--cb-on-lamp)',
+              border: `1px solid ${busy || !canPrimary ? 'var(--cb-rule)' : 'var(--cb-on-lamp)'}`,
               borderRadius: '2px',
               minHeight: '36px'
             },
@@ -2857,142 +3451,336 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
 }
 
 /**
- * The path is a route, not a table: ordinal, title and the state word, with the current section
- * marked `aria-current="step"`. Every row is a real button into that section.
+ * The check row's learner word. `check_state` is the backend's highest-version check for the
+ * objective; `none` means no check was ever authored, which is a fact, not a lock.
  */
-function PathPreview({ desk, onOpenSection }) {
-  const objectives = desk.objectives.slice(0, 8)
-  const remaining = Math.max(0, desk.total - objectives.length)
+const CHECK_STATE_WORD = {
+  none: 'No check yet',
+  open: 'Check open',
+  closed: 'Check closed',
+  superseded: 'Check replaced'
+}
+
+function cbCheckStateWord(value) {
+  return CHECK_STATE_WORD[value] || 'Check state not recorded'
+}
+
+/** The objective the route stands on: the desk's current section, else the first without evidence. */
+function cbPathCurrentId(objectives, current) {
+  if (current && current.objective_id) return current.objective_id
+  const list = Array.isArray(objectives) ? objectives : []
+  const fallback = list.find((entry) => !entry.independent)
+  return fallback ? fallback.objective_id : list.length ? list[0].objective_id : null
+}
+
+/** The next node is the next section that still needs evidence; a settled one is not "next". */
+function cbPathNextId(objectives, currentId) {
+  const list = Array.isArray(objectives) ? objectives : []
+  const index = list.findIndex((entry) => entry.objective_id === currentId)
+  if (index < 0) return null
+  for (let cursor = index + 1; cursor < list.length; cursor += 1) {
+    if (!list[cursor].independent) return list[cursor].objective_id
+  }
+  return null
+}
+
+/**
+ * Position on the route is geometry, not evidence: current / next / done / future. A done node is
+ * only a node the backend marks independent; no node is ever locked.
+ */
+function cbPathNodeKind(objective, currentId, nextId) {
+  if (!objective) return 'future'
+  if (currentId && objective.objective_id === currentId) return 'current'
+  if (nextId && objective.objective_id === nextId) return 'next'
+  if (objective.independent) return 'done'
+  return 'future'
+}
+
+/** 56/44 current, 40/32 next, 28/24 for done and future: measured against the route, not the window. */
+function cbPathNodeSize(kind, compact) {
+  if (kind === 'current') return compact ? 44 : 56
+  if (kind === 'next') return compact ? 32 : 40
+  return compact ? 24 : 28
+}
+
+/** The one evidence caption on the path. Zero evidence says so; it never paints a reached segment. */
+function cbPathEvidenceCaption(settled, total, due) {
+  const all = Math.max(0, Number(total) || 0)
+  if (all === 0) return 'No sections yet'
+  const done = Math.max(0, Math.min(all, Number(settled) || 0))
+  const waiting = Math.max(0, Number(due) || 0)
+  // H-155: the caption is a count or it says there is no count. "No evidence yet" hid a real
+  // "0 of 4 with evidence" behind a slogan; the number is the honest statement.
+  const noun = all === 1 ? 'section' : 'sections'
+  return `${done} of ${all} ${noun} with evidence${waiting > 0 ? ` · ${waiting} due` : ''}`
+}
+
+/** Node paint: fill, ring and number come from the stored state tone; only current adds the ring. */
+function cbPathMarkerStyle(tone, kind, size) {
+  const base = {
+    width: `${size}px`,
+    height: `${size}px`,
+    flex: `0 0 ${size}px`,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    fontFamily: CB_SANS,
+    fontVariantNumeric: 'tabular-nums',
+    fontWeight: 600,
+    fontSize: kind === 'current' ? CB_TYPE.meta : CB_TYPE.caption,
+    lineHeight: 1,
+    position: 'absolute',
+    zIndex: 1
+  }
+  let painted
+  if (tone === 'done') painted = { ...base, background: 'var(--cb-field)', color: 'var(--cb-paper)', border: 'none' }
+  else if (tone === 'due') painted = { ...base, background: 'var(--cb-paper)', color: 'var(--cb-ochre)', border: '2px solid var(--cb-ochre)' }
+  else if (tone === 'attention') painted = { ...base, background: 'var(--cb-paper)', color: 'var(--cb-coral)', border: '2px solid var(--cb-coral)' }
+  else if (tone === 'active') painted = { ...base, background: 'var(--cb-accent-soft)', color: 'var(--cb-accent)', border: '2px solid var(--cb-accent)' }
+  else painted = { ...base, background: 'var(--cb-paper)', color: 'var(--cb-ink-soft)', border: '1.5px solid var(--cb-rule)' }
+  if (kind !== 'current') return painted
+  return { ...painted, border: '2px solid var(--cb-accent)', outline: '1px solid var(--cb-accent)', outlineOffset: '3px' }
+}
+
+function cbPathTone(state) {
+  if (state === 'needs_review') return 'attention'
+  return DESK_STATE_TONE[state] || 'quiet'
+}
+
+function cbPathToneColor(tone) {
+  if (tone === 'done') return 'var(--cb-field)'
+  if (tone === 'due') return 'var(--cb-ochre)'
+  if (tone === 'attention') return 'var(--cb-coral)'
+  if (tone === 'active') return 'var(--cb-accent)'
+  return 'var(--cb-ink-soft)'
+}
+
+/** One honest detail line: label, value. Never a score, a percentage or a gate. */
+function CheckpointDetailRow({ label, value }) {
+  return jsxs('div', {
+    style: { display: 'flex', flexWrap: 'wrap', gap: '0.15rem 0.5rem', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45 }
+  , children: [
+    jsx('span', { style: { color: 'var(--cb-ink-soft)', minWidth: '8.5rem' }, children: label }),
+    jsx('span', { style: { color: 'var(--cb-ink)' }, children: value })
+  ] })
+}
+
+/**
+ * The path is a route, not a table. Every objective is a real node: the current node is the
+ * largest and carries `aria-current="step"`, the next one is smaller, evidence already held is a
+ * filled field, and the rest are quiet. No node is locked and no node is a fake checkpoint: the
+ * marker shows the backend's own `check_state`, and the detail line names the evidence target in
+ * learner words, the committed attempt count and the last opened time.
+ */
+function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRetryOutline }) {
+  const width = useCbViewportWidth()
+  const compact = width > 0 && width < 620
+  const objectives = Array.isArray(desk.objectives) ? desk.objectives : []
+  // A failed route read is its own state (H-146). Continue still works from the row's next step;
+  // the path says what it could not read and offers the retry, rather than claiming the course is
+  // empty. H-148 owns the checkpoint geometry; this branch is the read state it did not carry.
+  if (outlineStatus === 'error' && objectives.length === 0) {
+    return jsxs('section', {
+      'data-cb-path': 'error',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: '100%' },
+      children: [
+        jsx(PlateHead, {
+          label: 'The route',
+          title: desk.row && desk.row.title ? desk.row.title : 'Your path'
+        }, 'head'),
+        jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+          children: [
+            jsx('p', {
+              style: { margin: 0, lineHeight: 1.55 },
+              children: `${outlineError && outlineError.code ? outlineError.code + ': ' : ''}${describeError(outlineError)} The route was not read. Continue still uses the next step this course recorded.`
+            }, 'copy'),
+            jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: onRetryOutline, children: 'Try again' }, 'retry')
+          ]
+        }, 'body')
+      ]
+    })
+  }
+  const currentId = cbPathCurrentId(objectives, desk.current)
+  const nextId = cbPathNextId(objectives, currentId)
+  const gutter = compact ? 44 : 56
+  const caption = cbPathEvidenceCaption(desk.settled, desk.total, desk.dueCount)
   return jsxs('section', {
     'data-cb-path': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '100%' },
+    'data-cb-path-layout': compact ? 'compact' : 'full',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '100%' },
     children: [
       jsx(PlateHead, {
         label: 'The route',
-        title: desk.row && desk.row.title ? desk.row.title : 'Your path',
-        caption: jsx('span', {
-          'data-cb-path-summary': '',
-          style: { fontFamily: CB_SANS, maxWidth: CB_MEASURE, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-          children: objectives.length
-            ? `Course evidence · ${desk.settled} of ${desk.total} sections have evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
-            : 'No path read yet'
-        })
+        title: desk.row && desk.row.title ? desk.row.title : 'Your path'
       }),
-      jsx(EvidenceTally, {
-        objectives: desk.objectives,
-        caption: objectives.length
-          ? `${desk.settled} of ${desk.total} sections with evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
-          : 'No evidence recorded yet'
-      }),
-      jsx('ol', {
-        'aria-label': 'Course route',
-        style: {
-          listStyle: 'none',
-          margin: 0,
-          padding: '0 0 0 0.75rem',
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
-          borderLeft: '1px solid var(--cb-rule)'
-        },
-        children: objectives.map((objective) => {
-          const tone = DESK_STATE_TONE[objective.state] || 'quiet'
-          const isCurrent = Boolean(desk.current && desk.current.objective_id === objective.objective_id)
-          return jsx(
-            'li',
-            {
-              style: {
-                borderTop: '1px solid var(--cb-rule)',
-                background: isCurrent ? 'var(--cb-accent-soft)' : 'transparent'
-              },
-              children: jsx(sdk.Button, {
-                variant: 'text',
-                className: 'w-full justify-start',
-                'aria-current': isCurrent ? 'step' : undefined,
-                onClick: () => onOpenSection(objective.objective_id),
-                children: jsxs('span', {
-                  'data-cb-path-item': objective.objective_id,
-                  'data-cb-path-state': objective.state,
-                  'data-cb-path-current': isCurrent ? 'true' : 'false',
-                  style: {
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '0.7rem',
-                    width: '100%',
-                    padding: '0.45rem 0.1rem',
-                    textAlign: 'left',
-                    color: 'var(--cb-ink)',
-                    fontSize: CB_TYPE.meta,
-                    borderLeft: isCurrent ? '2px solid var(--cb-accent)' : '2px solid transparent',
-                    paddingLeft: '0.55rem'
-                  },
+      objectives.length
+        ? jsx(EvidenceTally, {
+            objectives,
+            phone: compact,
+            caption
+          })
+        : jsx('p', {
+            'data-cb-path-empty': '',
+            style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+            children: 'This course has no objectives yet, so there is no path to show. Approve its plan to start one.'
+          }),
+      objectives.length
+        ? jsx('ol', {
+            'aria-label': 'Course route',
+            style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', position: 'relative' },
+            children: objectives.map((objective) => {
+              const tone = cbPathTone(objective.state)
+              const kind = cbPathNodeKind(objective, currentId, nextId)
+              const size = cbPathNodeSize(kind, compact)
+              const isCurrent = kind === 'current'
+              const stateWord = DESK_STATE_WORD[objective.state] || 'Not started'
+              const checkWord = cbCheckStateWord(objective.check_state)
+              const attempts = Math.max(0, Number(objective.attempt_count) || 0)
+              const detailOpen = kind === 'current' || kind === 'next'
+              return jsx(
+                'li',
+                {
+                  'data-cb-path-node': objective.objective_id,
+                  style: { display: 'flex', flexDirection: 'column', position: 'relative' },
                   children: [
-                    jsx('span', {
+                  jsx('span', {
+                    'aria-hidden': 'true',
+                    style: {
+                      position: 'absolute',
+                      left: `${Math.round(gutter / 2)}px`,
+                      top: 0,
+                      bottom: 0,
+                      width: '1px',
+                      background: 'var(--cb-rule)'
+                    }
+                  }, 'spine'),
+                  jsx(sdk.Button, {
+                    variant: 'text',
+                    className: 'w-full justify-start',
+                    'aria-current': isCurrent ? 'step' : undefined,
+                    'aria-label': `Checkpoint ${objective.ordinal}: ${objective.title}, ${stateWord}, ${checkWord}`,
+                    onClick: () => onOpenSection(objective.objective_id),
+                    children: jsxs('span', {
+                      'data-cb-path-open': objective.objective_id,
+                      'data-cb-path-item': objective.objective_id,
+                      'data-cb-path-state': objective.state,
+                      'data-cb-path-check': objective.check_state || 'none',
+                      'data-cb-path-kind': kind,
+                      'data-cb-path-current': isCurrent ? 'true' : 'false',
+                      'data-cb-path-node-size': String(size),
                       style: {
-                        flex: '0 0 1.75rem',
-                        width: '1.75rem',
-                        height: '1.75rem',
-                        borderRadius: '50%',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: `1px solid ${deskToneColor(tone)}`,
-                        background: isCurrent ? 'var(--cb-paper-raised)' : 'transparent',
-                        color: deskToneColor(tone),
-                        fontVariantNumeric: 'tabular-nums',
-                        fontSize: CB_TYPE.caption,
-                        lineHeight: 1
-                      },
-                      children: String(objective.ordinal).padStart(2, '0')
-                    }),
-                    jsx('span', {
-                      style: {
-                        flex: '1 1 8rem',
-                        minWidth: 0,
-                        overflowWrap: 'anywhere',
-                        whiteSpace: 'normal',
-                        lineHeight: 1.35
-                      },
-                      children: objective.title
-                    }),
-                    jsx('span', {
-                      style: {
-                        flex: '0 0 auto',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                        fontSize: CB_TYPE.caption,
-                        color: deskToneColor(tone),
-                        fontWeight: 600
+                        flexDirection: 'column',
+                        gap: '0.25rem',
+                        width: '100%',
+                        padding: `0.55rem 0.1rem 0.55rem ${gutter}px`,
+                        position: 'relative',
+                        boxSizing: 'border-box',
+                        textAlign: 'left',
+                        color: 'var(--cb-ink)',
+                        fontSize: CB_TYPE.meta,
+                        borderTop: '1px solid var(--cb-rule)',
+                        background: isCurrent ? 'var(--cb-accent-soft)' : 'transparent'
                       },
                       children: [
                         jsx('span', {
+                          'data-cb-path-marker': objective.objective_id,
+                          'data-cb-path-marker-check': objective.check_state || 'none',
                           'aria-hidden': 'true',
                           style: {
-                            width: '0.35rem',
-                            height: '0.35rem',
-                            borderRadius: '50%',
-                            background: deskToneColor(tone)
-                          }
+                            ...cbPathMarkerStyle(tone, kind, size),
+                            left: `${Math.round((gutter - size) / 2)}px`,
+                            top: '0.55rem'
+                          },
+                          children: String(objective.ordinal).padStart(2, '0')
                         }),
-                        jsx('span', { children: DESK_STATE_WORD[objective.state] || objective.state })
+                        jsxs('span', {
+                          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.2rem 0.55rem', minWidth: 0 },
+                          children: [
+                            jsx('span', {
+                              style: {
+                                flex: '1 1 8rem',
+                                minWidth: 0,
+                                overflowWrap: 'anywhere',
+                                whiteSpace: 'normal',
+                                fontFamily: CB_SERIF,
+                                fontSize: isCurrent ? CB_TYPE.body : CB_TYPE.meta,
+                                fontWeight: 600,
+                                lineHeight: 1.35
+                              },
+                              children: objective.title
+                            }),
+                            jsx('span', {
+                              'data-cb-path-word': '',
+                              style: {
+                                flex: '0 0 auto',
+                                fontFamily: CB_SANS,
+                                fontSize: CB_TYPE.caption,
+                                fontWeight: 600,
+                                color: cbPathToneColor(tone),
+                                border: `1px solid ${cbPathToneColor(tone)}`,
+                                borderRadius: '999px',
+                                padding: '0.05rem 0.45rem',
+                                whiteSpace: 'nowrap'
+                              },
+                              children: stateWord
+                            }),
+                            jsx('span', {
+                              'data-cb-path-check-word': '',
+                              style: { flex: '0 0 auto', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                              children: checkWord
+                            })
+                          ]
+                        })
                       ]
                     })
+                  }),
+                  jsxs('details', {
+                    'data-cb-path-detail': objective.objective_id,
+                    open: detailOpen,
+                    style: { marginLeft: `${gutter}px`, padding: '0 0.1rem 0.55rem 0' },
+                    children: [
+                      jsx('summary', {
+                        'data-cb-path-detail-toggle': '',
+                        style: {
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          minHeight: compact ? '2.75rem' : '2rem',
+                          fontFamily: CB_SANS,
+                          fontSize: CB_TYPE.caption,
+                          color: 'var(--cb-ink-soft)'
+                        },
+                        children: `Details for checkpoint ${objective.ordinal}`
+                      }),
+                      jsxs('div', {
+                        'data-cb-path-detail-body': '',
+                        style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', paddingTop: '0.25rem' },
+                        children: [
+                          jsx(CheckpointDetailRow, {
+                            label: 'Evidence target',
+                            value: objective.evidence_target ? learnerEvidenceTarget(objective.evidence_target) : 'Not recorded'
+                          }),
+                          jsx(CheckpointDetailRow, {
+                            label: 'Committed attempts',
+                            value: attempts === 0 ? 'No committed attempts yet' : `${attempts} committed attempt${attempts === 1 ? '' : 's'}`
+                          }),
+                          jsx(CheckpointDetailRow, {
+                            label: 'Last opened',
+                            value: objective.last_opened_at ? whenLabel(objective.last_opened_at) : 'Not opened yet'
+                          }),
+                          jsx(CheckpointDetailRow, { label: 'Check', value: checkWord })
+                        ]
+                      })
+                    ]
+                  })
                   ]
-                })
-              })
-            },
-            objective.objective_id
-          )
-        })
-      }),
-      remaining > 0
-        ? jsx('div', { style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', paddingTop: '0.2rem' }, children: `${remaining} more section${remaining === 1 ? '' : 's'} in the path` })
-        : null,
-      objectives.length === 0
-        ? jsx('p', {
-            style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
-            children: 'This course has no objectives yet, so there is no path to show. Approve its plan to start one.'
+                }
+              )
+            })
           })
         : null
     ]
@@ -3060,67 +3848,6 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
                           )
                         )
                       })
-          })
-        : null
-    ]
-  })
-}
-
-/** The secondary list: the other courses on this profile, by their own next step. */
-function AllCoursesList({ rows, onOpen, onShowAll }) {
-  // H-99: the shelf is one object per course. Repeated enrollments of the same course no longer
-  // become three identical tiles; the group keeps its count for the full list.
-  const groups = groupShelfRows(rows)
-  const others = groups.slice(1)
-  // The desk stays one glance: three more courses, then the honest count and the full list.
-  const shown = others.slice(0, 3)
-  const hidden = others.length - shown.length
-  return jsxs('section', {
-    'data-cb-all-courses': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: '100%' },
-    children: [
-      jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
-        children: [
-          jsx(DeskLabel, { as: 'h2', children: `All courses · ${groups.length}` }),
-          jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'Search and manage courses' })
-        ]
-      }),
-      others.length === 0
-        ? jsx('p', {
-            style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
-            children: 'This is the only course on this profile.'
-          })
-        : jsx('div', {
-            style: {
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(13rem, 1fr))',
-              gap: '0.55rem'
-            },
-            children: shown.map((group) =>
-              jsx(
-                CourseCover,
-                {
-                  row: group.primary,
-                  group,
-                  testId: group.primary.enrollment_id,
-                  onOpenMember: onOpen,
-                  action: jsx(sdk.Button, {
-                    variant: 'secondary',
-                    size: 'sm',
-                    onClick: () => onOpen(group.primary),
-                    children: 'Open'
-                  })
-                },
-                `all-${group.key}`
-              )
-            )
-          }),
-      hidden > 0
-        ? jsx('div', {
-            'data-cb-all-courses-more': String(hidden),
-            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', paddingTop: '0.1rem' },
-            children: `+${hidden} more course${hidden === 1 ? '' : 's'} on this profile`
           })
         : null
     ]
@@ -3333,6 +4060,541 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
   })
 }
 
+/**
+ * One settings section: heading, one sentence, the control, and its own Reset.
+ *
+ * The reset is disabled at the default, so "already at the default" is visible instead of
+ * offering a control that would do nothing. Every control fires on change; there is no Save.
+ */
+function CbSettingsSection({ id, title, description, resetLabel, atDefault, onReset, children }) {
+  return jsxs('section', {
+    'data-cb-settings-section': id,
+    'aria-labelledby': `cb-settings-${id}`,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+      padding: '0.9rem 0',
+      borderTop: '1px solid var(--cb-rule)'
+    },
+    children: [
+      jsxs(
+        'div',
+        {
+          style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', minHeight: '2.75rem' },
+          children: [
+            jsx('h3', {
+              id: `cb-settings-${id}`,
+              style: {
+                margin: 0,
+                fontFamily: CB_SANS,
+                fontSize: CB_TYPE.meta,
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                color: 'var(--cb-ink)'
+              },
+              children: title
+            }),
+            jsx(sdk.Button, {
+              size: 'sm',
+              variant: 'ghost',
+              disabled: Boolean(atDefault),
+              'data-cb-settings-reset': id,
+              'aria-label': resetLabel,
+              style: { minHeight: '44px' },
+              onClick: onReset,
+              children: 'Reset'
+            })
+          ]
+        },
+        'head'
+      ),
+      jsx('p', {
+        style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+        children: description
+      }),
+      children
+    ]
+  })
+}
+
+/**
+ * H-147 — the one compact settings sheet, opened from Home.
+ *
+ * It is a sheet, not a route and not a second profile: the route stays `/coursebook`, and no
+ * settings tab is added anywhere. It applies on change, names the current value on every control,
+ * says "On this device" because the host has no account preference API, and keeps focus inside
+ * itself until Escape or Close returns the reader to the control that opened it.
+ */
+function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose }) {
+  const panelRef = useRef(null)
+  const courseId = classroom && classroom.courseId ? classroom.courseId : null
+  const override = courseId ? (prefs.classrooms && prefs.classrooms[courseId]) || null : null
+
+  useEffect(() => {
+    if (!open) return undefined
+    const focusables = () => {
+      const panel = panelRef.current
+      if (!panel || typeof panel.querySelectorAll !== 'function') return []
+      return Array.from(
+        panel.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true')
+    }
+    const nodes = focusables()
+    if (nodes.length > 0 && typeof nodes[0].focus === 'function') nodes[0].focus({ preventScroll: true })
+    const onKeyDown = (event) => {
+      if (!event || !event.key) return
+      if (event.key === 'Escape' || event.key === 'Esc') {
+        if (typeof event.preventDefault === 'function') event.preventDefault()
+        if (typeof event.stopPropagation === 'function') event.stopPropagation()
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const items = focusables()
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      const active = typeof document !== 'undefined' ? document.activeElement : null
+      if (event.shiftKey && (active === first || !items.includes(active))) {
+        if (typeof event.preventDefault === 'function') event.preventDefault()
+        last.focus({ preventScroll: true })
+      } else if (!event.shiftKey && (active === last || !items.includes(active))) {
+        if (typeof event.preventDefault === 'function') event.preventDefault()
+        first.focus({ preventScroll: true })
+      }
+    }
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('keydown', onKeyDown, true)
+    }
+    return () => {
+      if (typeof document !== 'undefined' && document.removeEventListener) {
+        document.removeEventListener('keydown', onKeyDown, true)
+      }
+    }
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return jsx('div', {
+    'data-cb-settings-backdrop': '',
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 60,
+      display: 'flex',
+      justifyContent: 'flex-end',
+      // A token-derived scrim: no hard-coded colour enters the palette.
+      background: 'color-mix(in srgb, var(--cb-ink) 26%, transparent)'
+    },
+    onMouseDown: (event) => {
+      if (event && event.target === event.currentTarget) onClose()
+    },
+    children: jsxs(
+      'div',
+      {
+        ref: panelRef,
+        role: 'dialog',
+        'aria-modal': 'true',
+        'aria-labelledby': CB_SETTINGS_TITLE_ID,
+        'data-cb-settings-sheet': 'open',
+        style: {
+          width: '28.75rem',
+          maxWidth: '100%',
+          height: '100%',
+          overflowY: 'auto',
+          background: 'var(--cb-paper-raised)',
+          color: 'var(--cb-ink)',
+          borderLeft: '1px solid var(--cb-rule)',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '0.75rem 1rem 1.25rem'
+        },
+        children: [
+          jsxs(
+            'div',
+            {
+              style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' },
+              children: [
+                jsxs('div', {
+                  style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+                  children: [
+                    jsx('h2', {
+                      id: CB_SETTINGS_TITLE_ID,
+                      style: { margin: 0, fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.1 },
+                      children: 'Settings'
+                    }),
+                    jsx('div', {
+                      'data-cb-settings-scope': 'device',
+                      style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      children: 'On this device'
+                    })
+                  ]
+                }),
+                jsx(sdk.Button, {
+                  size: 'sm',
+                  variant: 'ghost',
+                  'data-cb-settings-close': '',
+                  'aria-label': 'Close settings',
+                  style: { minHeight: '44px' },
+                  onClick: onClose,
+                  children: 'Close'
+                })
+              ]
+            },
+            'head'
+          ),
+          jsx('p', {
+            style: {
+              margin: '0.4rem 0 0',
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.5,
+              color: 'var(--cb-ink-soft)'
+            },
+            children:
+              'Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device.'
+          }),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'appearance',
+              title: 'Appearance',
+              description:
+                'The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme.',
+              resetLabel: 'Reset appearance to System',
+              atDefault: prefs.appearance === CB_HOME_PREF_DEFAULTS.appearance,
+              onReset: () => onReset('appearance'),
+              children: jsx('div', {
+                'data-cb-settings-control': 'appearance',
+                'data-cb-settings-value': prefs.appearance,
+                style: { minWidth: 0 },
+                children: jsx(sdk.SegmentedControl, {
+                  options: CB_APPEARANCE_OPTIONS,
+                  value: prefs.appearance,
+                  onChange: (id) => onUpdate({ appearance: id }),
+                  className: 'min-h-11 items-stretch'
+                })
+              })
+            },
+            'appearance'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'default-view',
+              title: 'Default view',
+              description: 'The view a lesson opens in. A single classroom can override it.',
+              resetLabel: 'Reset the default view to Game',
+              atDefault: prefs.defaultMode === CB_HOME_PREF_DEFAULTS.defaultMode,
+              onReset: () => onReset('defaultMode'),
+              children: jsx('div', {
+                'data-cb-settings-control': 'default-view',
+                'data-cb-settings-value': prefs.defaultMode,
+                style: { minWidth: 0 },
+                children: jsx(sdk.SegmentedControl, {
+                  options: CB_PRESENTATION_OPTIONS,
+                  value: prefs.defaultMode,
+                  onChange: (id) => onUpdate({ defaultMode: id }),
+                  className: 'min-h-11 items-stretch'
+                })
+              })
+            },
+            'default-view'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'classroom',
+              title: courseId && classroom.title ? `This classroom · ${classroom.title}` : 'This classroom',
+              description: courseId
+                ? 'This classroom keeps its own view. Choosing the home default clears the override.'
+                : 'Select a classroom on Home to give it its own view.',
+              resetLabel: 'Clear this classroom’s view override',
+              atDefault: !override,
+              onReset: () => onReset('classroom'),
+              children: jsx('div', {
+                'data-cb-settings-control': 'classroom',
+                'data-cb-settings-value': override || 'default',
+                style: { minWidth: 0, opacity: courseId ? 1 : 0.6 },
+                children: jsx(sdk.SegmentedControl, {
+                  options: [{ id: 'default', label: 'Home default' }].concat(CB_PRESENTATION_OPTIONS),
+                  value: override || 'default',
+                  disabled: !courseId,
+                  onChange: (id) => {
+                    if (!courseId) return
+                    const classrooms = { ...(prefs.classrooms || {}) }
+                    if (id === 'default') delete classrooms[courseId]
+                    else classrooms[courseId] = id
+                    onUpdate({ classrooms })
+                  },
+                  className: 'min-h-11 items-stretch'
+                })
+              })
+            },
+            'classroom'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'child-safe',
+              title: 'Child-safe defaults',
+              description:
+                'For any lesson a child uses. These four do not exist in Coursebook, and they do not exist to be switched on later.',
+              resetLabel: 'Reset the session length to 15 minutes',
+              atDefault: prefs.sessionMinutes === CB_HOME_PREF_DEFAULTS.sessionMinutes,
+              onReset: () => onReset('sessionMinutes'),
+              children: jsxs('div', {
+                'data-cb-child-safe': 'on',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0 },
+                children: [
+                  jsx('ul', {
+                    'data-cb-child-safe-rules': '',
+                    style: {
+                      listStyle: 'none',
+                      margin: 0,
+                      padding: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.3rem'
+                    },
+                    children: CB_CHILD_SAFE_RULES.map((rule) =>
+                      jsxs(
+                        'li',
+                        {
+                          'data-cb-child-safe-rule': rule.id,
+                          'data-cb-child-safe-state': rule.state.toLowerCase(),
+                          style: {
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            justifyContent: 'space-between',
+                            gap: '0.75rem',
+                            fontSize: CB_TYPE.meta,
+                            lineHeight: 1.45,
+                            color: 'var(--cb-ink-soft)'
+                          },
+                          children: [
+                            jsx('span', { children: rule.label }),
+                            jsx('strong', {
+                              style: { color: 'var(--cb-ink)', fontWeight: 600, whiteSpace: 'nowrap' },
+                              children: rule.state
+                            })
+                          ]
+                        },
+                        rule.id
+                      )
+                    )
+                  }),
+                  jsxs('div', {
+                    style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+                    children: [
+                      jsx('span', {
+                        id: 'cb-settings-session-length-label',
+                        style: { fontSize: CB_TYPE.meta, fontWeight: 600, color: 'var(--cb-ink)' },
+                        children: 'Session length'
+                      }),
+                      jsx('div', {
+                        'data-cb-settings-control': 'session-length',
+                        'data-cb-settings-value': String(prefs.sessionMinutes),
+                        'aria-labelledby': 'cb-settings-session-length-label',
+                        style: { minWidth: 0 },
+                        children: jsx(sdk.SegmentedControl, {
+                          options: CB_SESSION_OPTIONS,
+                          value: String(prefs.sessionMinutes),
+                          onChange: (id) => {
+                            const minutes = Number(id)
+                            if (CB_SESSION_CHOICES.indexOf(minutes) >= 0) onUpdate({ sessionMinutes: minutes })
+                          },
+                          className: 'min-h-11 items-stretch'
+                        })
+                      }),
+                      jsx('p', {
+                        style: { margin: 0, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                        children:
+                          'A plan the parent writes, not a countdown. No reminder is sent when a session is missed.'
+                      })
+                    ]
+                  })
+                ]
+              })
+            },
+            'child-safe'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'sound',
+              title: 'Sound',
+              description: 'A short tone when a check is scored. Off by default.',
+              resetLabel: 'Reset sound to off',
+              atDefault: prefs.sound === CB_HOME_PREF_DEFAULTS.sound,
+              onReset: () => onReset('sound'),
+              children: jsx('div', {
+                'data-cb-settings-toggle': 'sound',
+                children: jsx(sdk.ToggleRow, {
+                  checked: prefs.sound === true,
+                  label: 'Check cue sound',
+                  description: 'One quiet tone at a verdict, never narration.',
+                  onChange: (on) => onUpdate({ sound: on === true })
+                })
+              })
+            },
+            'sound'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'haptics',
+              title: 'Haptics',
+              description:
+                'Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing.',
+              resetLabel: 'Haptics are always off on desktop',
+              atDefault: true,
+              onReset: () => {},
+              children: jsx('div', {
+                'data-cb-settings-toggle': 'haptics',
+                children: jsx(sdk.ToggleRow, {
+                  checked: false,
+                  disabled: true,
+                  label: 'Haptics',
+                  description: 'A desktop has no haptic engine to drive.',
+                  onChange: () => {}
+                })
+              })
+            },
+            'haptics'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'reduced-motion',
+              title: 'Reduced motion',
+              description:
+                'Follow the system setting, or hold Coursebook to no transitions even when the system allows them.',
+              resetLabel: 'Reset motion to follow the system',
+              atDefault: prefs.reducedMotion === CB_HOME_PREF_DEFAULTS.reducedMotion,
+              onReset: () => onReset('reducedMotion'),
+              children: jsx('div', {
+                'data-cb-settings-control': 'reduced-motion',
+                'data-cb-settings-value': prefs.reducedMotion,
+                style: { minWidth: 0 },
+                children: jsx(sdk.SegmentedControl, {
+                  options: CB_REDUCED_MOTION_OPTIONS,
+                  value: prefs.reducedMotion,
+                  onChange: (id) => onUpdate({ reducedMotion: id }),
+                  className: 'min-h-11 items-stretch'
+                })
+              })
+            },
+            'reduced-motion'
+          )
+        ]
+      },
+      'sheet'
+    )
+  })
+}
+
+/**
+ * The Home defaults line and its one-interaction Settings trigger. It names the current default
+ * without opening anything, and it names a classroom override when the selected classroom has one.
+ */
+function HomeDefaultsLine({ prefs, classroom, onOpenSettings, triggerRef }) {
+  const courseId = classroom && classroom.courseId ? classroom.courseId : null
+  const override = courseId ? (prefs.classrooms && prefs.classrooms[courseId]) || null : null
+  const effective = cbEffectiveMode(prefs, courseId)
+  return jsxs('div', {
+    'data-cb-home-defaults': prefs.defaultMode,
+    'data-cb-home-effective': effective,
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', minHeight: '2.75rem' },
+    children: [
+      jsxs('span', {
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: [
+          'Default view · ',
+          jsx('strong', { style: { color: 'var(--cb-ink)', fontWeight: 600 }, children: CB_PRESENTATION_LABEL[prefs.defaultMode] || 'Game' })
+        ]
+      }),
+      override
+        ? jsxs('span', {
+            'data-cb-home-override': override,
+            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: [
+              '· This classroom · ',
+              jsx('strong', { style: { color: 'var(--cb-ink)', fontWeight: 600 }, children: CB_PRESENTATION_LABEL[override] || override })
+            ]
+          })
+        : null,
+      // H-156 — the child-safe floor and the parent-set session length are visible on Home before
+      // the sheet is opened, so nobody has to find Settings to learn what the defaults are.
+      jsx('span', {
+        'data-cb-child-safe': 'on',
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: '· Child-safe defaults'
+      }),
+      jsx('span', {
+        'data-cb-session-minutes': String(prefs.sessionMinutes),
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: `· Session · ${prefs.sessionMinutes} min`
+      }),
+      jsx('span', {
+        ref: triggerRef,
+        style: { display: 'inline-flex', alignItems: 'center' },
+        children: jsx(sdk.Button, {
+          size: 'sm',
+          variant: 'ghost',
+          'data-cb-settings-open': '',
+          'aria-label': 'Open Coursebook settings',
+          'aria-haspopup': 'dialog',
+          style: { minHeight: '44px' },
+          onClick: onOpenSettings,
+          children: 'Settings'
+        })
+      })
+    ]
+  })
+}
+
+/**
+ * H-156 — the same child-safe line in Parent Studio, where a parent prepares the lesson.
+ *
+ * It names the session length and the fixed floor, and it opens the one settings sheet. Two
+ * destinations never mount at once, so the route's single trigger ref belongs to whichever line
+ * is on screen; Escape returns focus to that line's own Settings button.
+ */
+function ChildSafeLine({ sessionMinutes, onOpenSettings, triggerRef }) {
+  return jsxs('div', {
+    'data-cb-child-safe': 'on',
+    'data-cb-session-minutes': String(sessionMinutes),
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', minHeight: '2.75rem' },
+    children: [
+      jsx('span', {
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: 'Child-safe defaults · no loss-framed reminders, no ranking, no random rewards, no XP or streaks'
+      }),
+      jsx('span', {
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: `· Session · ${sessionMinutes} min`
+      }),
+      jsx('span', {
+        ref: triggerRef,
+        style: { display: 'inline-flex', alignItems: 'center' },
+        children: jsx(sdk.Button, {
+          size: 'sm',
+          variant: 'ghost',
+          'data-cb-settings-open': '',
+          'aria-label': 'Open Coursebook settings',
+          'aria-haspopup': 'dialog',
+          style: { minHeight: '44px' },
+          onClick: onOpenSettings,
+          children: 'Settings'
+        })
+      })
+    ]
+  })
+}
+
 /** The pure desk view. The container below owns the reads; this owns the geometry. */
 function FieldDeskHome({
   desk,
@@ -3340,15 +4602,19 @@ function FieldDeskHome({
   onShowNotebook,
   libraryStatus,
   libraryError,
+  libraryEmptyReason,
   stale,
   busy,
   notice,
+  online,
   onRetry,
   onCreate,
   onSyllabus,
   onPrimary,
   onOpenSection,
   onRetryEstimate,
+  onSelectCourse,
+  onOpenStudio,
   onOpen,
   onShowAll,
   sourcesOpen,
@@ -3357,7 +4623,11 @@ function FieldDeskHome({
   sourcesError,
   sources,
   onRetrySources,
+  outlineStatus,
+  outlineError,
+  onRetryOutline,
   implemented,
+  onBrowseLibrary,
   onEmptyChange
 }) {
   const width = useCbViewportWidth()
@@ -3371,7 +4641,27 @@ function FieldDeskHome({
   }, [emptyFirstRun, onEmptyChange])
 
   if (libraryStatus === 'loading' && !desk.row) {
-    return jsx('div', { 'data-cb-desk': 'loading', className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading your courses' }) })
+    // A spinner alone says nothing a cold learner can name; the visible line says what is being
+    // read and that nothing is lost while it is read (H-153, Q7/Q10).
+    return jsxs('div', {
+      'data-cb-desk': 'loading',
+      className: 'flex flex-col items-center gap-3 py-10',
+      children: [
+        jsx(sdk.Loader, { label: 'Reading your courses' }),
+        jsx('p', {
+          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+          children: 'Reading your courses.'
+        })
+      ]
+    })
+  }
+  if (libraryStatus === 'idle' && !desk.row) {
+    // The backend cannot serve `library.list` at all: the start plate says what it can do instead
+    // of the route going blank (UX_SPEC §13 unsupported backend, H-153).
+    return jsx('div', {
+      'data-cb-desk': 'unavailable',
+      children: jsx(FirstRun, { implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry })
+    })
   }
   if (libraryStatus === 'error' && !desk.row) {
     return jsx('div', {
@@ -3391,13 +4681,56 @@ function FieldDeskHome({
     })
   }
   if (!desk.row) {
+    // H-146: a profile can have rows and still no learner classroom. Parent-authored plans are a
+    // different destination, and an all-archived profile has an answer of its own; neither is
+    // "first run", and neither may silently borrow the first-run plate.
+    if (desk.hub.rowTotal > 0) {
+      return jsx('div', {
+        'data-cb-desk': 'parent-only',
+        className: 'py-6',
+        children: jsxs(EmptyState, {
+          title: 'Parent Studio holds your lesson plans.',
+          description:
+            'This profile has parent-led lesson plans, not a learner classroom. Continue belongs to a learner classroom.',
+          children: jsx(sdk.Button, {
+            variant: 'default',
+            onClick: onOpenStudio,
+            style: { background: 'var(--cb-lamp)', color: 'var(--cb-on-lamp)', border: '1px solid var(--cb-on-lamp)', borderRadius: '2px', minHeight: '44px' },
+            children: 'Open Parent Studio'
+          })
+        })
+      })
+    }
+    if (libraryEmptyReason === 'all_archived') {
+      return jsx('div', {
+        'data-cb-desk': 'archived',
+        className: 'py-6',
+        children: jsxs(EmptyState, {
+          title: 'Every classroom here is archived.',
+          description: 'Archived courses keep their evidence. Unarchive one in Courses to continue it.',
+          children: jsx(sdk.Button, { variant: 'secondary', onClick: onShowAll, children: 'Open courses' })
+        })
+      })
+    }
     return jsx('div', {
-      'data-cb-desk': 'empty',
-      children: jsx(FirstRun, { implemented, onCreate, onSyllabus })
+      'data-cb-desk': libraryStatus === 'idle' ? 'unavailable' : 'empty',
+      children: jsx(FirstRun, {
+        implemented,
+        onCreate,
+        onSyllabus,
+        onBrowseLibrary,
+        onRetry
+      })
     })
   }
 
-  const continueCard = jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection, onRetryEstimate })
+  const railCard = jsx(SlotRail, {
+    hub: desk.hub,
+    selected: desk.selected,
+    onSelect: onSelectCourse,
+    onShowAll
+  }, 'rail')
+  const continueCard = jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection, onRetryEstimate }, 'continue')
   const notesCard = jsx(FieldNotesStrip, {
     notes,
     courseTitle: desk.row && desk.row.title ? desk.row.title : null,
@@ -3407,8 +4740,14 @@ function FieldDeskHome({
     onOpenSection,
     onShowNotebook,
     onRetry
+  }, 'notes')
+  const pathCard = jsx(CheckpointPath, {
+    desk,
+    onOpenSection,
+    outlineStatus,
+    outlineError,
+    onRetryOutline
   })
-  const pathCard = jsx(PathPreview, { desk, onOpenSection })
   const sourcesCard = jsx(SourcesDrawer, {
     open: sourcesOpen,
     onToggle: onToggleSources,
@@ -3417,17 +4756,16 @@ function FieldDeskHome({
     error: sourcesError,
     sources,
     onRetry: onRetrySources
-  })
-  const coursesCard = jsx(AllCoursesList, { rows: desk.rows, onOpen, onShowAll })
+  }, 'sources')
   const mainColumn = jsxs('div', {
     style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, maxWidth: CB_MEASURE },
-    children: [continueCard, pathCard, sourcesCard]
-  })
+    children: [railCard, continueCard, pathCard, sourcesCard]
+  }, 'main')
   const sideColumn = jsxs('aside', {
-    'aria-label': 'Field notes and all courses',
+    'aria-label': 'Field notes',
     style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, maxWidth: CB_MEASURE },
-    children: [notesCard, coursesCard]
-  })
+    children: [notesCard]
+  }, 'side')
 
   return jsxs('div', {
     'data-cb-desk': 'ready',
@@ -3444,9 +4782,23 @@ function FieldDeskHome({
               }),
               jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onRetry, children: 'Retry now' })
             ]
-          })
+          }, 'stale')
         : null,
-      notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
+      online === false
+        ? jsx('div', {
+            'data-cb-desk-offline': '',
+            className: 'text-xs text-(--ui-text-secondary)',
+            children: 'Offline. Showing the classrooms that were last read; starting a lesson is paused until the connection returns.'
+          }, 'offline')
+        : null,
+      desk.selectionLost && desk.selected
+        ? jsx('div', {
+            'data-cb-desk-selection-lost': desk.selected.course_id,
+            className: 'text-xs text-(--ui-text-secondary)',
+            children: `That classroom is no longer on this profile. Showing ${desk.selected.name}.`
+          }, 'selection')
+        : null,
+      notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }, 'notice') : null,
       wide
         ? jsxs('div', {
             style: {
@@ -3456,11 +4808,11 @@ function FieldDeskHome({
               alignItems: 'start'
             },
             children: [mainColumn, sideColumn]
-          })
+          }, 'layout')
         : jsxs('div', {
             style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
-            children: [continueCard, notesCard, pathCard, sourcesCard, coursesCard]
-          })
+            children: [railCard, continueCard, notesCard, pathCard, sourcesCard]
+          }, 'layout')
     ]
   })
 }
@@ -3546,17 +4898,37 @@ function useSessionEstimate({ row, current, enabled, retryToken = 0 }) {
 }
 
 /**
- * The Field Desk container. One `library.list` read picks the course to continue (the most
- * recently written row), `course.outline` supplies the path, and the section's sources are read
- * only when the drawer opens. A failure in any of those is shown, never papered over.
+ * The Field Desk container. One `library.list` read feeds the hub projection; the selected
+ * classroom's enrollment keys `course.outline`, `lesson.page`, `notebook.list` and Continue.
+ * `selectedCourseId` is shell state owned by the page, so opening Course Detail and coming back
+ * restores the same classroom. Every failed read is shown, never papered over.
  */
-function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSyllabus, profile, onEmptyChange }) {
+function FieldDesk({
+  implemented,
+  onOpen,
+  onShowAll,
+  onStartCreate,
+  onStartSyllabus,
+  profile,
+  onEmptyChange,
+  selectedCourseId,
+  onSelectCourse,
+  onOpenStudio,
+  onBrowseLibrary,
+  onSelectedClassroom,
+  online
+}) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const payload = { filter: 'all', limit: 50, sort: 'recent' }
   const key = JSON.stringify(payload)
   const library = useRpcQuery('library.list', payload, key, backendSupports('library.list'))
 
-  const provisional = buildDeskModel({ library: library.data, outline: null, estimate: null })
+  const provisional = buildDeskModel({
+    library: library.data,
+    outline: null,
+    estimate: null,
+    selectedCourseId: selectedCourseId || null
+  })
   const row = provisional.row
   const outline = useRpcQuery(
     'course.outline',
@@ -3564,7 +4936,13 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     `desk-outline-${row ? row.enrollment_id : 'none'}`,
     Boolean(row) && supports('course.outline')
   )
-  const withOutline = buildDeskModel({ library: library.data, outline: outline.data, estimate: null })
+  const withOutline = buildDeskModel({
+    library: library.data,
+    outline: outline.data,
+    estimate: null,
+    selectedCourseId: selectedCourseId || null,
+    outlineState: outline.status
+  })
   const current = withOutline.current
   const [estimateTicket, setEstimateTicket] = useState(0)
   const estimate = useSessionEstimate({
@@ -3574,13 +4952,36 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     retryToken: estimateTicket
   })
   const onRetryEstimate = useCallback(() => setEstimateTicket((value) => value + 1), [])
-  const desk = buildDeskModel({ library: library.data, outline: outline.data, estimate })
+  const desk = buildDeskModel({
+    library: library.data,
+    outline: outline.data,
+    estimate,
+    selectedCourseId: selectedCourseId || null,
+    outlineState: outline.status
+  })
+
+  // A selected classroom that disappeared between reads is replaced by the newest slot and named
+  // in the surface. The shell value is synced to the row that is actually shown, but no route or
+  // focus changes: a background archive must not navigate the learner.
+  const selectedCourseKey = desk.selected ? desk.selected.course_id : null
+  useEffect(() => {
+    if (desk.selectionLost && selectedCourseKey && onSelectCourse) onSelectCourse(selectedCourseKey)
+  }, [desk.selectionLost, selectedCourseKey, onSelectCourse])
+
+  // H-147: the settings sheet names the classroom its override belongs to, so the shell learns the
+  // selected slot's id and title from the same model the rail paints.
+  const selectedCourseTitle = desk.selected ? desk.selected.title || null : null
+  useEffect(() => {
+    if (onSelectedClassroom) {
+      onSelectedClassroom(selectedCourseKey ? { courseId: selectedCourseKey, title: selectedCourseTitle } : null)
+    }
+  }, [selectedCourseKey, selectedCourseTitle, onSelectedClassroom])
 
   const [sourcesOpen, setSourcesOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
 
-  // A different continued course must not inherit the previous course's open drawer.
+  // A different classroom must not inherit the previous one's open drawer.
   useEffect(() => {
     setSourcesOpen(false)
   }, [row ? row.enrollment_id : 'none'])
@@ -3603,9 +5004,10 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
   )
 
   const onPrimary = useCallback(async () => {
-    if (!desk.row || !desk.current) return
+    if (!desk.row) return
     const kind = desk.primaryKind
     if (kind === 'start_lesson' || kind === 'resume_lesson') {
+      if (!desk.current) return
       setBusy(true)
       setNotice(null)
       const outcome = await beginLessonFor({
@@ -3636,15 +5038,19 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     desk,
     libraryStatus: library.status,
     libraryError: library.error,
+    libraryEmptyReason: library.data ? library.data.empty_reason : null,
     stale: Boolean(library.stale),
     busy,
     notice,
+    online,
     onRetry: library.reload,
     onCreate: onStartCreate,
     onSyllabus: onStartSyllabus,
     onPrimary,
     onOpenSection: (objectiveId, blockId) => onOpen(desk.row, objectiveId, blockId),
     onRetryEstimate,
+    onSelectCourse,
+    onOpenStudio,
     notes,
     onShowNotebook: () => onOpen(desk.row, null, null, 'notebook'),
     onOpen,
@@ -3655,7 +5061,11 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     sourcesError: page.error,
     sources: page.data && page.data.sources,
     onRetrySources: page.reload,
+    outlineStatus: outline.status,
+    outlineError: outline.error,
+    onRetryOutline: outline.reload,
     implemented,
+    onBrowseLibrary,
     onEmptyChange
   })
 }
@@ -3670,7 +5080,7 @@ function courseToolsVisible(data) {
   return Number(data.total || 0) > 0
 }
 
-function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, onOpen, onShowDesk, onEmptyChange }) {
+function CoursesView({ implemented, onStartCreate, onStartSyllabus, onBrowseLibrary, createOpen, onOpen, onShowDesk, onEmptyChange }) {
   const [filter, setFilter] = useState('all')
   const [searchInput, setSearchInput] = useState('')
   const [query, setQuery] = useState('')
@@ -3794,9 +5204,26 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
 
   let body
   if (status === 'idle') {
-    body = null
+    // The backend cannot serve `library.list` at all: the same start plate, with its honest
+    // "cannot create or add" line, instead of a blank route (H-153, UX_SPEC §13 unsupported backend).
+    body = jsx(FirstRun, {
+      implemented,
+      onCreate: onStartCreate,
+      onSyllabus: onStartSyllabus,
+      onBrowseLibrary,
+      onRetry: reload
+    })
   } else if (status === 'loading' && !data) {
-    body = jsx('div', { className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading your courses' }) })
+    body = jsxs('div', {
+      className: 'flex flex-col items-center gap-3 py-10',
+      children: [
+        jsx(sdk.Loader, { label: 'Reading your courses' }),
+        jsx('p', {
+          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+          children: 'Reading your courses.'
+        })
+      ]
+    })
   } else if (status === 'error' && !data) {
     body = jsx('div', {
       className: 'mx-auto w-full max-w-xl py-6',
@@ -3836,7 +5263,13 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
             ]
           })
         })
-      : jsx(FirstRun, { implemented, onCreate: onStartCreate, onSyllabus: onStartSyllabus })
+      : jsx(FirstRun, {
+          implemented,
+          onCreate: onStartCreate,
+          onSyllabus: onStartSyllabus,
+          onBrowseLibrary,
+          onRetry: reload
+        })
   } else {
     body = jsxs('div', {
       className: 'flex flex-col',
@@ -4003,68 +5436,126 @@ function enrollmentStatusLabel(value) {
   return ENROLLMENT_STATUS_COPY[value] || value || 'Unknown'
 }
 
-function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPack, onDeletePack, onBack, showBack }) {
+/**
+ * Maintenance actions for one pack. They sit under overflow so the preview keeps one primary
+ * (Open/Resume) and one secondary; nothing destructive competes with the learner's next step.
+ */
+function PackMenu({ row, supports, onExportPack, onDelete, onDeletePack }) {
+  const items = []
+  const packBacked = Boolean(row.provenance && row.provenance.pack_id)
+  if (packBacked && supports('pack.export')) {
+    items.push(
+      jsx(sdk.DropdownMenuItem, { onSelect: () => onExportPack(row), children: 'Export pack…' }, 'export')
+    )
+  }
+  if (supports('enrollment.delete')) {
+    items.push(
+      jsx(
+        sdk.DropdownMenuItem,
+        { onSelect: () => onDelete(row), variant: 'destructive', children: 'Delete enrollment…' },
+        'delete-enrollment'
+      )
+    )
+  }
+  if (packBacked && supports('pack.delete') && row.warning !== 'pack_frozen') {
+    items.push(
+      jsx(
+        sdk.DropdownMenuItem,
+        { onSelect: () => onDeletePack(row), variant: 'destructive', children: 'Remove pack…' },
+        'delete-pack'
+      )
+    )
+  }
+  if (items.length === 0) return null
+  return jsxs(sdk.DropdownMenu, {
+    children: [
+      jsx(sdk.DropdownMenuTrigger, {
+        asChild: true,
+        children: jsx(sdk.Button, {
+          'aria-label': `More actions for ${row.title || 'this pack'}`,
+          size: 'icon-sm',
+          variant: 'ghost',
+          children: jsx(sdk.Codicon, { name: 'kebab-vertical', size: '0.875rem' })
+        })
+      }),
+      jsx(sdk.DropdownMenuContent, { align: 'end', children: items })
+    ]
+  })
+}
+
+/**
+ * H-150 — a pack preview, not an inspector. It answers what this pack is and what to do next:
+ * one primary, one secondary, maintenance under overflow. Pack identifiers and record revisions
+ * are real but they are not learner facts, so they live under a closed Technical details
+ * disclosure instead of in the header and the status lines.
+ */
+function PackFacts({ row, implemented, onOpen, onResume, onArchive, onDelete, onExportPack, onDeletePack, onBack, showBack }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const next = row.next_step || {}
   const warning = WARNING_COPY[row.warning]
+  const summary = row.evidence_summary || {}
+  const total = Math.max(0, Number(summary.total_objectives || 0))
+  const independent = Math.max(0, Number(summary.independent || 0))
+  const due = Math.max(0, Number(summary.review_due || 0))
+  const canResume = next.kind === 'resume_lesson' && supports('binding.get')
+  const provenance = row.provenance || {}
+  const technical = [
+    provenance.pack_id ? { label: 'Pack ID', value: provenance.pack_id } : null,
+    provenance.pack_version ? { label: 'Pack version', value: `v${provenance.pack_version}` } : null,
+    { label: 'Record revision', value: String(row.revision == null ? 0 : row.revision) }
+  ].filter(Boolean)
   return jsxs('div', {
     className: 'flex min-w-0 flex-1 flex-col gap-3',
+    'data-cb-pack-preview': '',
     children: [
       showBack
-        ? jsx(sdk.Button, { className: 'self-start', onClick: onBack, size: 'sm', variant: 'text', children: 'All packs' })
+        ? jsx(sdk.Button, {
+            'data-cb-pack-back': '',
+            className: 'self-start',
+            onClick: onBack,
+            size: 'sm',
+            variant: 'text',
+            children: 'All packs'
+          })
         : null,
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx('h2', { className: 'text-sm font-semibold', children: row.title }),
+          jsx('h2', { className: 'text-sm font-semibold', children: row.title || 'Untitled pack' }),
           jsxs('div', {
             className: 'mt-1 flex flex-wrap items-center gap-2',
             children: [
-              jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: sourceLabel(row.provenance && row.provenance.source) }),
-              row.provenance && row.provenance.pack_id
-                ? jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: row.provenance.pack_id })
-                : null,
-              row.provenance && row.provenance.pack_version
-                ? jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: `v${row.provenance.pack_version}` })
-                : null,
+              jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: sourceLabel(provenance.source) }),
               warning ? jsx(WarningBadge, { warning: row.warning }) : null
             ]
           })
         ]
       }),
-      jsx(CbLabel, { children: 'What the record shows' }),
+      jsx(CbLabel, { children: 'What this pack shows' }),
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx(StatusRow, { label: 'Next step', value: next.label || '—' }),
-          jsx(StatusRow, {
-            label: 'Enrolment',
-            value: enrollmentStatusLabel(row.enrollment_status),
-            detail: `revision ${row.revision}`
-          }),
+          jsx(StatusRow, { label: 'Next step', value: learnerNextLabel(next.label) || '—' }),
+          jsx(StatusRow, { label: 'Enrolment', value: enrollmentStatusLabel(row.enrollment_status) }),
           jsx(StatusRow, {
             label: 'Evidence',
-            value: `${Number((row.evidence_summary || {}).independent || 0)} independent`,
-            detail: `${Number((row.evidence_summary || {}).total_objectives || 0)} objectives · ${Number((row.evidence_summary || {}).review_due || 0)} due`
+            value: total === 0 ? 'None recorded' : `${independent} of ${plural(total, 'section', 'sections')}`,
+            detail: total === 0 ? 'This pack has no lesson sections.' : `${plural(due, 'review', 'reviews')} due`
           }),
-          jsx(StatusRow, {
-            label: 'Last change',
-            value: formatWhen(row.updated_at)
-          })
+          jsx(StatusRow, { label: 'Last change', value: formatWhen(row.updated_at) })
         ]
       }),
       warning
-        ? jsx('div', {
-            className: 'text-xs text-(--ui-text-secondary)',
-            children: warning.detail
-          })
+        ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: warning.detail })
         : null,
       jsxs('div', {
         className: 'flex flex-wrap items-center gap-2 pt-1',
         children: [
-          next.kind === 'resume_lesson' && supports('binding.get')
+          canResume && onResume
             ? jsx(sdk.Button, { onClick: () => onResume(row), size: 'sm', variant: 'default', children: 'Resume lesson' })
-            : null,
+            : onOpen
+              ? jsx(sdk.Button, { onClick: () => onOpen(row), size: 'sm', variant: 'default', children: 'Open course' })
+              : null,
           supports('enrollment.update')
             ? jsx(sdk.Button, {
                 onClick: () => onArchive(row, row.enrollment_status === 'archived' ? 'unarchive' : 'archive'),
@@ -4073,15 +5564,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
                 children: row.enrollment_status === 'archived' ? 'Unarchive' : 'Archive'
               })
             : null,
-          supports('enrollment.delete')
-            ? jsx(sdk.Button, { onClick: () => onDelete(row), size: 'sm', variant: 'secondary', children: 'Delete enrollment…' })
-            : null,
-          row.provenance && row.provenance.pack_id && supports('pack.export')
-            ? jsx(sdk.Button, { onClick: () => onExportPack(row), size: 'sm', variant: 'secondary', children: 'Export pack…' })
-            : null,
-          row.provenance && row.provenance.pack_id && supports('pack.delete') && row.warning !== 'pack_frozen'
-            ? jsx(sdk.Button, { onClick: () => onDeletePack(row), size: 'sm', variant: 'secondary', children: 'Remove pack…' })
-            : null
+          jsx(PackMenu, { row, supports, onExportPack, onDelete, onDeletePack })
         ]
       }),
       row.recipe === 'parent'
@@ -4092,11 +5575,23 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
               'not graded child answers, and this course is never offered as an adult graded course.'
           })
         : null,
-      jsx('div', {
-        className: 'mt-2 text-xs leading-relaxed text-(--ui-text-secondary)',
-        children:
-          'Sources, rights, checks and file integrity come from the pack preview command. This build ' +
-          'shows only what the backend recorded for this pack, so nothing here is inferred.'
+      jsxs('details', {
+        'data-cb-pack-technical': '',
+        className: 'mt-1',
+        children: [
+          jsx('summary', {
+            className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
+            style: { listStyle: 'none', minHeight: '1.75rem', color: 'var(--ui-text-secondary)' },
+            children: [
+              jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+              jsx('span', { children: 'Technical details' })
+            ]
+          }),
+          jsxs('div', {
+            className: 'flex flex-col',
+            children: technical.map((item) => jsx(StatusRow, { label: item.label, value: item.value }, item.label))
+          })
+        ]
       })
     ]
   })
@@ -4117,7 +5612,7 @@ function formatWhen(value) {
  * meaning and nobody reads a pack as endorsed.
  */
 const LIBRARY_COPY = {
-  lead: 'Courses made by other people. You will see who made it, where it came from and what has been checked before you add one.',
+  lead: 'Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.',
   whatWeCheck:
     'What we check — that every file matches the hashes in the pack’s manifest, that its structure and teaching minima pass the automated checks, and whether a named reviewer and a model assessment are recorded. Those are separate labels on every pack and they are never merged into a score.',
   whatWeDoNotCheck:
@@ -4127,11 +5622,110 @@ const LIBRARY_COPY = {
     'A pack is a zip file someone else made: lessons, sources and a manifest that lists every file. Bundled packs ship with Coursebook; a pack from someone else is added from the Import flow, where you review it first.'
 }
 
-function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }) {
+/**
+ * H-150c — the route column below which the shelf shows one pane at a time.
+ *
+ * Measured route columns on the isolated rig: 958 px in a 1600 px window, 407 px in a 1049 px one,
+ * 257 px at 900 and 215 px at 460. A pack row needs roughly 18rem to show its title, its next step
+ * and its one Preview affordance, so below ~25rem the preview and the list cannot both be read;
+ * once a pack is opened there, the preview replaces the list. This is a route width, not a window
+ * width: the host keeps the chat workspace beside the route, so a window breakpoint picks the
+ * wrong pane (a 900 px window leaves Coursebook 257 px).
+ */
+const CB_SHELF_COMPACT_WIDTH = 400
+
+/**
+ * H-150c — the shelf's two panes, and who holds focus after a pack is opened.
+ *
+ * The panes are stacked, not beside each other. The deck emits `.min-[47.5rem]:flex-row`,
+ * `:w-52` and `:gap-5` — but not the `.min-[47.5rem]:flex` or `:w-72` the shelf asked for, so the
+ * list's `hidden min-[47.5rem]:flex` never un-hid and its 18rem width never applied: the intended
+ * two-column split was never drawn, and at 460 px the `hidden` class took the list — and the
+ * focused row button with it — out of layout, which is why `document.activeElement` fell to `body`.
+ *
+ * `compact` is the one rule that both hides the list when a pack is open and picks the focus
+ * target, so the pane the user can still see is the pane that keeps focus. `focus` is the caller's
+ * request object, not a scalar: opening the same pack twice must move focus twice, and equal
+ * scalars would leave the effect asleep on the second press.
+ */
+function PackShelfSplit({ compact, detailOpen, focus, list, detail }) {
+  const rootRef = useRef(null)
+  useEffect(() => {
+    if (!focus || !rootRef.current) return
+    const root = rootRef.current
+    const node =
+      focus.target === 'detail'
+        ? root.querySelector('[data-cb-pack-preview] button')
+        : Array.from(root.querySelectorAll('[data-cb-pack-row-action]')).find(
+            (candidate) => candidate.getAttribute('data-cb-pack-row-action') === String(focus.key || '')
+          )
+    if (!node || typeof node.focus !== 'function') return
+    const moved = typeof document !== 'undefined' && document.activeElement !== node
+    node.focus()
+    // This Electron build moves `activeElement` for a script focus without firing `focusin`
+    // (measured in H-146b), so React's `onFocus` never runs and a retained row would keep its
+    // ring off. Announce the focus we just made, once, and only when we actually moved it.
+    if (moved && typeof FocusEvent === 'function') node.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+  }, [focus])
+  return jsxs('div', {
+    ref: rootRef,
+    'data-cb-pack-split': compact ? 'one-pane' : 'stacked',
+    'data-cb-pack-detail-open': detailOpen ? 'true' : 'false',
+    style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
+    children: [
+      jsx('div', {
+        'data-cb-pack-list-pane': '',
+        style: {
+          display: detailOpen && compact ? 'none' : 'flex',
+          flexDirection: 'column',
+          minWidth: 0
+        },
+        children: list
+      }),
+      detail
+    ]
+  })
+}
+
+/**
+ * H-150c — where focus belongs once a pack is opened.
+ *
+ * In the stacked shelf the row the user pressed is still on screen, so focus stays on it. In the
+ * compact shelf the list is gone, so focus goes to the preview's own `All packs` back control —
+ * the visible way out. One function keeps the two keys, the layout and the focus target aligned.
+ */
+function shelfFocusTarget(compact, detailOpen) {
+  return detailOpen && compact ? 'detail' : 'list'
+}
+
+function LibraryView({ implemented, createOpen, onOpen, onStartSyllabus, onStartImport }) {
   const [view, setView] = useState('all')
   const [selected, setSelected] = useState(null)
   const [packPanel, setPackPanel] = useState(null)
   const [packPanelRow, setPackPanelRow] = useState(null)
+  // H-150c: where focus goes after a pack is opened, decided from the route column the shelf is
+  // actually drawn in — not from the window width.
+  const [focusIntent, setFocusIntent] = useState(null)
+  const routeWidth = useCbViewportWidth()
+  // An unmeasured route (first paint, SSR) is treated as the stacked shelf: the list is visible,
+  // so the row is the honest focus target.
+  const compactShelf = Number.isFinite(routeWidth) && routeWidth > 0 && routeWidth < CB_SHELF_COMPACT_WIDTH
+
+  const openPack = useCallback(
+    (row) => {
+      setSelected(row.enrollment_id)
+      setFocusIntent({ target: shelfFocusTarget(compactShelf, true), key: row.enrollment_id })
+    },
+    [compactShelf]
+  )
+
+  const closePack = useCallback(
+    (row) => {
+      setSelected(null)
+      if (row) setFocusIntent({ target: 'list', key: row.enrollment_id })
+    },
+    []
+  )
 
   const payload = { filter: 'all', limit: 50, sort: 'title' }
   const key = JSON.stringify(payload)
@@ -4211,10 +5805,13 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
   }, [pendingDelete, deleteScope, reload])
 
   const allRows = data && Array.isArray(data.items) ? data.items : []
+  // H-150: the labels must describe the rows they return. Bundled means the packs that ship with
+  // Coursebook; "From someone else" is every imported pack (community or added from a file), and
+  // never an authored course. There is no "Local" bucket that quietly includes community packs.
   const filteredRows = allRows.filter((row) => {
     const source = (row.provenance && row.provenance.source) || 'authored'
     if (view === 'bundled') return source === 'bundled'
-    if (view === 'local') return source === 'local' || source === 'community'
+    if (view === 'other') return source === 'community' || source === 'local'
     return true
   })
   // H-99: one shelf object per course/pack. Fourteen enrollments of the same pack are one row
@@ -4223,7 +5820,6 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
   const rows = filteredRows
 
   const detailRow = selected ? allRows.find((row) => row.enrollment_id === selected) || null : null
-  const narrowDetailOnly = Boolean(detailRow)
 
   let listBody
   if (status === 'loading' && !data) {
@@ -4240,18 +5836,17 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
       ]
     })
   } else if (rows.length === 0) {
-    listBody = jsxs('div', {
+    listBody = jsx('div', {
       className: 'flex flex-col gap-3',
-      children: [
-        jsx(EmptyState, {
-          title: view === 'bundled' ? 'No bundled pack on this profile' : view === 'local' ? 'No pack from someone else on this profile' : LIBRARY_COPY.emptyTitle,
-          description: LIBRARY_COPY.emptyBody
-        }),
-        jsx('p', {
-          style: { margin: 0, maxWidth: CB_MEASURE, fontSize: CB_TYPE.body, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
-          children: LIBRARY_COPY.lead
-        })
-      ]
+      children: jsx(EmptyState, {
+        title:
+          view === 'bundled'
+            ? 'No bundled pack on this profile'
+            : view === 'other'
+              ? 'No pack from someone else on this profile'
+              : LIBRARY_COPY.emptyTitle,
+        description: LIBRARY_COPY.emptyBody
+      })
     })
   } else {
     listBody = jsxs('div', {
@@ -4271,8 +5866,8 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
               row,
               group,
               selected: row.enrollment_id === selected,
-              onOpenMember: (member) => setSelected(member.enrollment_id),
-              onPreview: (member) => setSelected(member.enrollment_id)
+              onOpenMember: (member) => openPack(member),
+              onPreview: (member) => openPack(member)
             },
             group.key
           )
@@ -4285,90 +5880,89 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
     className: 'flex flex-col',
     style: { maxWidth: CB_MEASURE },
     children: [
+      // H-150: the route shell already prints the page h1 "Library". This plate names the shelf
+      // region once and carries the single lead; it must not repeat the destination name.
       jsx(PlateHead, {
-        label: 'Library',
         title: 'Packs on this profile',
         caption: jsx('span', { children: LIBRARY_COPY.lead })
       }),
+      stale
+        ? jsx('div', {
+            className: 'mb-2 text-xs text-(--ui-text-secondary)',
+            children: 'Reconnecting. Showing the last packs that were read.'
+          })
+        : null,
       // H-99: the two import paths live in the route header — one primary `Import pack` and one
       // secondary `Use my college syllabus`. They are no longer repeated here under a second set
       // of labels; one surface, one primary per object (see the H-94 rule).
-      jsxs('div', {
-        className: 'mb-2 flex flex-col gap-2',
-        children: [
-          jsxs('div', {
-            className: 'flex flex-wrap items-center justify-between gap-2',
-            children: [
-              jsx('div', {
-                className: 'max-w-prose leading-relaxed text-(--ui-text-secondary)',
-                style: { maxWidth: CB_MEASURE, fontSize: CB_TYPE.body },
-                children: stale ? 'Reconnecting. Showing the last packs that were read.' : ''
-              }),
-              jsx(sdk.SegmentedControl, {
-                onChange: setView,
-                options: [
-                  { id: 'all', label: 'All' },
-                  { id: 'bundled', label: 'Bundled' },
-                  { id: 'local', label: 'Local' }
-                ],
-                sizing: 'content',
-                value: view
-              })
-            ]
-          }),
-          jsxs('details', {
-            'data-cb-pack-trust': '',
-            className: 'max-w-prose leading-relaxed text-(--ui-text-secondary)',
-            style: { maxWidth: CB_MEASURE, fontSize: CB_TYPE.body },
-            children: [
-              jsx('summary', {
-                'data-cb-affordance': 'disclosure',
-                className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
-                style: { listStyle: 'none', minHeight: '1.75rem' },
-                children: [
-                  jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
-                  jsx('span', { children: 'What we check / what we do not check' })
-                ]
-              }),
-              jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeCheck }),
-              jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeDoNotCheck })
-            ]
-          })
-        ]
+      jsx('div', {
+        className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
+        children: jsx(sdk.SegmentedControl, {
+          onChange: (next) => {
+            setView(next)
+            setSelected(null)
+          },
+          options: [
+            { id: 'all', label: 'All packs' },
+            { id: 'bundled', label: 'Bundled' },
+            { id: 'other', label: 'From someone else' }
+          ],
+          sizing: 'content',
+          value: view
+        })
       }),
-      jsxs('div', {
-        className: 'flex flex-col gap-4 min-[47.5rem]:flex-row',
+      jsx(PackShelfSplit, {
+        detailOpen: Boolean(detailRow),
+        detail: detailRow
+          ? jsx(PackFacts, {
+              implemented,
+              onArchive,
+              onBack: () => closePack(detailRow),
+              onDelete,
+              onOpen,
+              onDeletePack: (row) => {
+                setPackPanelRow(row)
+                setPackPanel('delete')
+              },
+              onExportPack: (row) => {
+                setPackPanelRow(row)
+                setPackPanel('export')
+              },
+              onResume,
+              row: detailRow,
+              showBack: true
+            })
+          : jsx('div', {
+              'data-cb-pack-placeholder': '',
+              style: { display: compactShelf ? 'none' : 'flex', minWidth: 0, flex: 1, alignItems: 'flex-start' },
+              children: jsx(EmptyState, {
+                className: 'w-full',
+                title: 'Choose a pack to see what we know about it',
+                description: 'Preview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.'
+              })
+            }),
+        compact: compactShelf,
+        focus: focusIntent,
+        list: listBody
+      }),
+      // H-150: trust is read after the shelf, not before it. The learner browses packs first;
+      // what is and is not checked sits below the list as one closed disclosure.
+      jsxs('details', {
+        'data-cb-pack-trust': '',
+        className: 'mt-4 max-w-prose leading-relaxed text-(--ui-text-secondary)',
+        style: { maxWidth: CB_MEASURE, fontSize: CB_TYPE.body },
         children: [
-          jsx('div', {
-            className: `${narrowDetailOnly ? 'hidden min-[47.5rem]:flex' : 'flex'} min-w-0 flex-col min-[47.5rem]:w-72 min-[47.5rem]:shrink-0`,
-            children: listBody
+          jsx('summary', {
+            'data-cb-affordance': 'disclosure',
+            className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
+            style: { listStyle: 'none', minHeight: '1.75rem' },
+            children: [
+              jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+              jsx('span', { children: 'What we check / what we do not check' })
+            ]
           }),
-          detailRow
-            ? jsx(PackFacts, {
-                implemented,
-                onArchive,
-                onBack: () => setSelected(null),
-                onDelete,
-                onDeletePack: (row) => {
-                  setPackPanelRow(row)
-                  setPackPanel('delete')
-                },
-                onExportPack: (row) => {
-                  setPackPanelRow(row)
-                  setPackPanel('export')
-                },
-                onResume,
-                row: detailRow,
-                showBack: true
-              })
-            : jsx('div', {
-                className: 'hidden min-[47.5rem]:flex min-w-0 flex-1 items-start',
-                children: jsx(EmptyState, {
-                  className: 'w-full',
-                  title: 'Choose a pack to see what we know about it',
-                  description: 'Preview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.'
-                })
-              })
+          jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeCheck }),
+          jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeDoNotCheck })
         ]
       }),
       packPanel && packPanelRow
@@ -6406,7 +8000,7 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
       needsDecision.length
         ? jsx('div', {
             className: 'max-w-prose text-xs text-(--ui-text-secondary)',
-            children: `${needsDecision.filter((row) => decisions[row.itemId]).length} of ${needsDecision.length} items have a decision. Every partly covered, uncovered or conflicting item needs one before the mapping is approved.`
+            children: `${needsDecision.filter((row) => decisions[row.itemId]).length} of ${needsDecision.length} ${needsDecision.length === 1 ? 'item has' : 'items have'} a decision. Every partly covered, uncovered or conflicting item needs one before the mapping is approved.`
           })
         : null,
       notice ? jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: notice }) : null,
@@ -6952,6 +8546,45 @@ const LEARNING_VIEWS = [
   { id: 'sources', label: 'Sources' },
   { id: 'export', label: 'Export' }
 ]
+
+const PRIMARY_SURFACE_OF_VIEW = {
+  overview: 'overview',
+  textbook: 'learn',
+  guided: 'learn',
+  field_quest: 'learn',
+  learn: 'learn',
+  notebook: 'notebook',
+  evidence: 'evidence'
+}
+
+/** Which of the four primary course surfaces a legacy view id belongs to. */
+function primarySurfaceFor(view) {
+  return PRIMARY_SURFACE_OF_VIEW[view] || view
+}
+
+/** The four primary course surfaces. Learn is one surface, not three peer tabs. */
+const COURSE_PRIMARY_TABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'learn', label: 'Learn' },
+  { id: 'notebook', label: 'Notebook' },
+  { id: 'evidence', label: 'Evidence' }
+]
+
+/**
+ * Everything else, behind one `More` disclosure.
+ *
+ * Plan, Sources and Export are reference/administration; the graded-attempt record is an
+ * inspector of what was already recorded, not a learning surface. Export only appears when the
+ * backend advertises `course.export.read`.
+ */
+function courseMoreTabs(supports) {
+  return [
+    { id: 'quizzes', label: 'Attempts' },
+    { id: 'plan', label: 'Plan' },
+    { id: 'sources', label: 'Sources' },
+    supports && supports('course.export.read') ? { id: 'export', label: 'Export' } : null
+  ].filter(Boolean)
+}
 
 /** A section or quiz row is never colour-only: this is the text that carries the state. */
 const OBJECTIVE_STATE_COPY = {
@@ -8387,7 +10020,10 @@ function AttemptControls({
   parentLed = false,
   stimulusStatus = null,
   stimulusError = null,
-  onRetryStimulus = null
+  onRetryStimulus = null,
+  playerMode = false,
+  playerController = null,
+  onPlayerState = null
 }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const [text, setText] = useState('')
@@ -8508,6 +10144,7 @@ function AttemptControls({
     setResultCheck(check)
     setOpenLaneUnconfigured(false)
     setPhase(graded.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
+    cbPlayCheckCue(graded.verdict)
     if (graded.verdict === 'needs_retry') void resolveNeedsRetryLane(graded.attempt_id)
     if (onCommitted) onCommitted(graded)
   }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
@@ -8539,6 +10176,7 @@ function AttemptControls({
     setResultCheck(check)
     setOpenLaneUnconfigured(false)
     setPhase(response.result.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
+    cbPlayCheckCue(response.result.verdict)
     if (response.result.verdict === 'needs_retry') void resolveNeedsRetryLane(response.result.attempt_id)
     if (onCommitted) onCommitted(response.result)
   }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
@@ -8564,6 +10202,60 @@ function AttemptControls({
     setPhase('overridden')
     if (onCommitted) onCommitted(response.result)
   }, [check, enrollmentId, revision, onCommitted])
+
+  /**
+   * Start a different re-attempt on the same open check.
+   *
+   * `Check` never changes the check the backend served, so retrying is free and unshamed: the
+   * nonce is dropped (a new attempt, never a replay), the answer is cleared and any feedback is
+   * dismissed. Nothing is scored and nothing is counted against the learner.
+   */
+  const newExample = useCallback(() => {
+    setText('')
+    setTicked([])
+    setResult(null)
+    setResultCheck(null)
+    setError(null)
+    setPhase('awaiting_input')
+    nonceRef.current = null
+  }, [])
+
+  /**
+   * The player bridge.
+   *
+   * The player owns the single footer primary, so the answer card must not paint a second one and
+   * must tell its host when `Check` is legal. The snapshot is deliberately small and primitive so
+   * the parent only re-renders when the answer state actually changes; every action below already
+   * exists for the reference views and this bridge only exposes it.
+   */
+  const playerSnapshot = {
+    phase,
+    canCheck: !check
+      ? false
+      : Boolean(
+          stimulusState === 'unsupported' ||
+            (stimulusState === 'ready' && (checklist.length > 0 ? ticked.length > 0 : text.trim().length > 0))
+        ) && phase === 'awaiting_input' && !detached,
+    verdict: result ? result.verdict : null,
+    evidenceClass: result ? result.evidence_class || null : null,
+    answerKind: checklist.length > 0 ? 'selection' : 'text'
+  }
+  const playerSnapshotKey = `${playerSnapshot.phase}|${playerSnapshot.canCheck}|${playerSnapshot.verdict}|${playerSnapshot.answerKind}`
+  useEffect(() => {
+    if (!playerMode || !onPlayerState) return
+    onPlayerState(playerSnapshot)
+    // The key is what changes; the object itself is rebuilt every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerMode, onPlayerState, playerSnapshotKey])
+  useEffect(() => {
+    if (!playerMode || !playerController) return
+    playerController.current = {
+      submit,
+      retryGrading,
+      newExample,
+      moveOn: () => setOverrideOpen(true)
+    }
+  })
 
   if (!check) {
     return jsx(QuietNote, {
@@ -8784,7 +10476,11 @@ function AttemptControls({
                     children: 'This lesson is no longer connected to its chat, so Submit is off. Open a new lesson run to connect a new chat.'
                   })
                 : null,
-              jsxs('div', {
+              // The player carries the one footer primary (`Check`), so the answer card paints no
+              // button of its own there. The reference views keep their inline actions unchanged.
+              playerMode
+                ? null
+                : jsxs('div', {
                 className: 'flex flex-wrap items-center gap-2',
                 children: [
                   jsx(sdk.Button, {
@@ -8837,21 +10533,24 @@ function AttemptControls({
             ref: resultRef,
             tabIndex: -1,
             children: [
-              jsx(AttemptVerdict, {
-                result,
-                criteria,
-                checklist,
-                onResumeChecklist: resumeChecklist,
-                onNewExample: () => {
-                  setText('')
-                  setTicked([])
-                  setResult(null)
-                  setResultCheck(null)
-                  setPhase('awaiting_input')
-                  nonceRef.current = null
-                },
-                onExplain: () => setPhase('awaiting_input')
-              })
+              playerMode
+                ? jsx(PlayerVerdict, {
+                    result,
+                    criteria,
+                    checklist,
+                    answer:
+                      checklist.length > 0
+                        ? checklist.filter((item) => ticked.includes(item.id)).map((item) => item.label)
+                        : text.trim()
+                  })
+                : jsx(AttemptVerdict, {
+                    result,
+                    criteria,
+                    checklist,
+                    onResumeChecklist: resumeChecklist,
+                    onNewExample: newExample,
+                    onExplain: () => setPhase('awaiting_input')
+                  })
             ]
           })
         : null,
@@ -8879,10 +10578,12 @@ function AttemptControls({
                       'Your answer is saved, not graded. No progress was changed, and Retry grading does not create a second attempt.'
                   }),
               error ? jsx(ErrorLine, { error }) : null,
-              jsxs('div', {
-                className: 'flex flex-wrap items-center gap-2',
-                children: [
-                  jsx(sdk.Button, { variant: 'default', size: 'sm', onClick: retryGrading, children: 'Retry grading' }),
+              playerMode
+                ? null
+                : jsxs('div', {
+                    className: 'flex flex-wrap items-center gap-2',
+                    children: [
+                      jsx(sdk.Button, { variant: 'default', size: 'sm', onClick: retryGrading, children: 'Retry grading' }),
                   jsx(sdk.Button, {
                     variant: 'secondary',
                     size: 'sm',
@@ -8906,10 +10607,12 @@ function AttemptControls({
               jsx(QuietNote, {
                 children: 'The override is recorded against this objective. It advances access and is never counted as a pass.'
               }),
-              jsx(sdk.Button, {
-                variant: 'secondary',
-                size: 'sm',
-                onClick: () => {
+              playerMode
+                ? null
+                : jsx(sdk.Button, {
+                    variant: 'secondary',
+                    size: 'sm',
+                    onClick: () => {
                   setResult(null)
                   setResultCheck(null)
                   setPhase('awaiting_input')
@@ -8936,11 +10639,13 @@ function AttemptControls({
 
       error && phase !== 'needs_retry' && phase !== 'stale' ? jsx(ErrorLine, { error }) : null,
 
-      jsx(QuietNote, {
-        children: supports('lesson.assist')
-          ? 'Hints and shown answers are recorded against the next attempt.'
-          : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
-      }),
+      playerMode
+        ? null
+        : jsx(QuietNote, {
+            children: supports('lesson.assist')
+              ? 'Hints and shown answers are recorded against the next attempt.'
+              : 'Hint and Show answer are not registered by this build yet; asking for a hint in the teaching chat records it against your next answer.'
+          }),
 
       jsx('p', {
         className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -9268,6 +10973,11 @@ const CB_TYPE_SCALE_JSON =
 const CB_TYPE = JSON.parse(CB_TYPE_SCALE_JSON)
 const CB_TYPE_STEPS = Object.freeze(['caption', 'meta', 'body', 'lead', 'heading', 'display'])
 
+/** One plural rule for every count the learner reads: `plural(1,'section','sections')`. */
+function plural(count, one, many) {
+  return `${count} ${Number(count) === 1 ? one : many}`
+}
+
 /** The host cannot ship a font file, so the voices are OS-resident stacks only. */
 const CB_SERIF = 'ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif'
 const CB_SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif'
@@ -9569,42 +11279,49 @@ function groupShelfRows(rows) {
   return groups
 }
 
+/** Small enough to draw one segment per objective without turning the row into a texture. */
+const CB_COURSE_PATH_MAX = 12
+
+/** The placeholder bar: how many unpainted parts stand in when there is no readable count. */
 const CB_COURSE_PATH_PARTS = 4
 
 /**
- * The four-segment path on a cover. Segments are fractions of the objective list, so the
- * current segment is the quarter the evidence has reached: `done` behind it, `current` (or
- * `due` when a review is waiting) at it, `quiet` ahead. With no objectives recorded there is
- * nothing to fill, and the path says so instead of drawing invented progress.
+ * The evidence record on a cover. Segments are objectives, not quarters: `done` only where the
+ * count of independent evidence actually reaches, `due` only for the objectives due for review,
+ * and `quiet` everywhere else. A zero-evidence course paints nothing: the old `current` segment
+ * made 0 of 4 look 25 % complete. A course too large to draw honestly carries the count only.
  */
 function cbCoursePathSegments(row) {
   const summary = (row && row.evidence_summary) || {}
-  const total = Math.max(0, Number(summary.total_objectives || 0))
-  const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
-  const due = Math.max(0, Number(summary.review_due || 0))
-  const segments = []
-  if (total === 0) {
-    for (let index = 0; index < CB_COURSE_PATH_PARTS; index += 1) {
-      segments.push({ index, state: 'empty' })
-    }
-    return segments
+  const rawTotal = Number(summary.total_objectives)
+  // A count this projection cannot read (a hostile or truncated summary) is not zero evidence:
+  // it is no answer. Every part is `empty` so nothing is painted as reached (H-155 ENG-D1).
+  if (!Number.isFinite(rawTotal)) {
+    const empty = []
+    for (let index = 0; index < CB_COURSE_PATH_PARTS; index += 1) empty.push({ index, state: 'empty' })
+    return empty
   }
-  const quarter = Math.ceil(total / CB_COURSE_PATH_PARTS)
-  const reached = independent >= total ? CB_COURSE_PATH_PARTS : Math.floor(independent / quarter)
-  for (let index = 0; index < CB_COURSE_PATH_PARTS; index += 1) {
+  const total = Math.max(0, Math.floor(rawTotal))
+  if (total === 0 || total > CB_COURSE_PATH_MAX) return []
+  const independent = Math.max(0, Math.min(total, Number(summary.independent) || 0))
+  const due = Math.max(0, Math.min(total - independent, Number(summary.review_due) || 0))
+  const segments = []
+  for (let index = 0; index < total; index += 1) {
     let state = 'quiet'
-    if (index < reached) state = 'done'
-    else if (index === reached) state = due > 0 ? 'due' : 'current'
+    if (index < independent) state = 'done'
+    else if (index < independent + due) state = 'due'
     segments.push({ index, state })
   }
   return segments
 }
 
-/** The exact counts under the path. Never a percentage, never a score. */
+/** The exact counts under the path. Never a percentage, never a score, never a fake quarter. */
 function cbCoursePathCaption(row) {
   const summary = (row && row.evidence_summary) || {}
   const total = Math.max(0, Number(summary.total_objectives || 0))
-  if (total === 0) return 'No sections yet'
+  // H-155: the caption is a count or it says there is no count. "No evidence yet" replaced a real
+  // "0 of 4 with evidence" with a slogan, and a learner cannot tell the two apart from it.
+  if (total === 0 || !Number.isFinite(total)) return 'No sections yet'
   const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
   const due = Math.max(0, Number(summary.review_due || 0))
   const parts = [`${independent} of ${total} with evidence`]
@@ -9622,52 +11339,29 @@ function cbCourseGoalLine(row) {
   if (goal) return goal
   const subtitle = row && typeof row.subtitle === 'string' ? row.subtitle.trim() : ''
   if (subtitle) return subtitle
-  const label = row && row.next_step && typeof row.next_step.label === 'string' ? row.next_step.label.trim() : ''
+  const label = learnerNextLabel(row && row.next_step && row.next_step.label)
   if (label) return label
   return 'No next step recorded'
 }
 
 /**
- * The course seal: a surveyed square, an identity arc, meridians and one station mark. It is
- * decorative (`aria-hidden`); the course title is always adjacent as text.
+ * The backend's next-step label is plain English except for its `objective(s)` placeholder. The
+ * shelf shows the sentence the learner acts on, so the placeholder is resolved here; the backend
+ * keeps its contract string untouched.
  */
-function SurveyMark({ courseId, identity, size }) {
-  const station = cbSealStation(courseId)
-  const hue = identity === 'plum' ? 'var(--cb-plum)' : 'var(--cb-accent)'
-  const points = [
-    [26, 26],
-    [70, 26],
-    [26, 70],
-    [70, 70]
-  ]
-  const [cx, cy] = points[station]
-  const ticks = [
-    ['M4 18 H4 V4 H18', 'tl'],
-    ['M78 4 H92 V18', 'tr'],
-    ['M92 78 V92 H78', 'br'],
-    ['M18 92 H4 V78', 'bl']
-  ]
-  const tick = station <= 1 ? ticks[3] : ticks[0]
-  return jsxs('svg', {
-    'data-cb-seal': String(station),
-    'data-cb-seal-identity': identity === 'plum' ? 'plum' : 'accent',
-    viewBox: '0 0 96 96',
-    width: size || 96,
-    height: size || 96,
-    'aria-hidden': 'true',
-    focusable: 'false',
-    style: { display: 'block', flex: '0 0 auto' },
-    children: [
-      jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1.6 }, 'frame'),
-      jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: hue, strokeWidth: 7 }, 'arc'),
-      jsx('path', { d: 'M4 36.5 H92', stroke: 'var(--cb-rule)', strokeWidth: 1 }, 'meridian-h'),
-      jsx('path', { d: 'M59.5 4 V92', stroke: 'var(--cb-rule)', strokeWidth: 1 }, 'meridian-v'),
-      jsx('circle', { cx, cy, r: 13, fill: 'none', stroke: hue, strokeWidth: 1.6 }, 'ring'),
-      jsx('circle', { cx, cy, r: 7, fill: hue }, 'station'),
-      jsx('path', { d: tick[0], fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1 }, 'tick')
-    ]
-  })
+function learnerNextLabel(label) {
+  const text = String(label || '').trim()
+  if (!text) return ''
+  const match = text.match(/^Review (\d+) objective\(s\)$/)
+  if (match) return `Review ${plural(Number(match[1]), 'objective', 'objectives')}`
+  return text.replace(/\bobjective\(s\)/g, 'objectives').replace(/\brun\(s\)/g, 'runs')
 }
+
+/**
+ * H-145 — the course seal was retired from every surface it appeared on. The owner asked twice
+ * what it meant; a mark that needs an explanation is not identity. `cbSealStation` stays exported
+ * because the visual-identity probes address it, but nothing in the route renders an SVG seal.
+ */
 
 /** Segment kinds are internal enums; the learner sees a plain word. */
 const CB_SEGMENT_WORD = {
@@ -9997,17 +11691,25 @@ function BlankPlate({ title, caption, action, tertiary }) {
 
 /** A mode hue is a 3px dot plus the mode word, never a coloured block. */
 function ModeDot({ mode }) {
-  const paint = mode === 'guided' ? 'var(--cb-field)' : mode === 'field_quest' ? 'var(--cb-ochre)' : 'var(--cb-accent)'
+  const paint =
+    mode === 'guided'
+      ? 'var(--cb-field)'
+      : mode === 'field_quest'
+        ? 'var(--cb-ochre)'
+        : mode === 'game'
+          ? 'var(--cb-lamp)'
+          : 'var(--cb-accent)'
   return jsx('span', {
     'aria-hidden': 'true',
     style: { display: 'inline-block', width: '3px', height: '3px', minWidth: '3px', borderRadius: '50%', background: paint, verticalAlign: 'middle' }
   })
 }
 
-/** Which hue a surface owns: Textbook `accent`, Guided `field`, Field Quest `ochre`. */
+/** Which hue a surface owns: Textbook `accent`, Guided `field`, Game `lamp`, Field Quest `ochre`. */
 function cbModeFor(view) {
   if (view === 'guided') return 'guided'
   if (view === 'field_quest') return 'field_quest'
+  if (view === 'player') return 'game'
   return 'textbook'
 }
 
@@ -10095,10 +11797,34 @@ function HeroFacts({ facts, phone }) {
  * a 2px underline on the current one. It never hides a surface behind a select.
  */
 function LearningTabs({ options, value, onChange, phone, ariaLabel }) {
+  const list = (options || []).filter(Boolean)
+  // The row is one tab stop with a roving tabindex, so the arrow keys must work and the focused
+  // tab must show a ring of its own (the host resets the UA outline). Left/Right wrap, Home/End
+  // jump; the focused tab moves with the selection instead of being left behind.
+  const [focusId, setFocusId] = useState(null)
+  const onKeyDown = (event) => {
+    const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End']
+    if (!keys.includes(event.key)) return
+    const index = list.findIndex((option) => option.id === value)
+    const nextIndex =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? list.length - 1
+          : (index + (event.key === 'ArrowRight' ? 1 : -1) + list.length) % list.length
+    const next = list[nextIndex]
+    if (!next) return
+    event.preventDefault()
+    setFocusId(next.id)
+    onChange(next.id)
+    const node = event.currentTarget.querySelector(`[data-cb-tab="${next.id}"]`)
+    if (node && typeof node.focus === 'function') node.focus()
+  }
   return jsx('nav', {
     'aria-label': ariaLabel || 'Course surfaces',
     'data-cb-learning-tabs': value,
     role: 'tablist',
+    onKeyDown,
     style: {
       display: 'flex',
       flexWrap: 'wrap',
@@ -10107,7 +11833,7 @@ function LearningTabs({ options, value, onChange, phone, ariaLabel }) {
       borderBottom: '1px solid var(--cb-rule)',
       minWidth: 0
     },
-    children: (options || []).map((option) => {
+    children: list.map((option) => {
       const current = option.id === value
       const mode = option.mode ? cbModeFor(option.id) : null
       return jsx(
@@ -10117,8 +11843,17 @@ function LearningTabs({ options, value, onChange, phone, ariaLabel }) {
           role: 'tab',
           'aria-selected': current ? 'true' : 'false',
           'data-cb-tab': option.id,
+          'data-cb-tab-focus': focusId === option.id ? 'ring' : 'idle',
+          tabIndex: current ? 0 : -1,
           className: '!h-auto !px-0 !py-0',
           onClick: () => onChange(option.id),
+          onFocus: () => setFocusId(option.id),
+          onBlur: () => setFocusId((id) => (id === option.id ? null : id)),
+          style: {
+            outline: focusId === option.id ? '2px solid var(--cb-accent)' : 'none',
+            outlineOffset: '2px',
+            borderRadius: '2px'
+          },
           children: jsx('span', {
             style: {
               display: 'inline-flex',
@@ -11161,10 +12896,18 @@ function PronunciationSeat({ block, pronunciation }) {
   })
 }
 
-/** The three presentation views this build implements (docs/VISUAL_MEDIA_PLAN.md §3.3, §5). */
+/**
+ * The presentation views this build implements (docs/VISUAL_MEDIA_PLAN.md §3.3, §5).
+ *
+ * `player` is the default learning surface (docs/EXPERIENCE-QUALITY-BAR.md §7.4, H-149): one
+ * concept, one check, one close, rendered from the same lesson document, check and evidence as
+ * the reference views. Textbook stays the optional reference view, and the order here is the order
+ * the Home default offers: Game, Guided, Textbook.
+ */
 const LESSON_VIEWS = [
-  { id: 'textbook', label: 'Textbook' },
+  { id: 'player', label: 'Game' },
   { id: 'guided', label: 'Guided' },
+  { id: 'textbook', label: 'Textbook' },
   { id: 'field_quest', label: 'Field Quest' }
 ]
 
@@ -11183,21 +12926,25 @@ const LESSON_VIEW_UNAVAILABLE_REASON = {
 /**
  * The views *this document* can render.
  *
- * Textbook is the floor. Guided needs authored `short` prose on every block. Field Quest needs the
- * same and exactly one attachable check, because its checkpoints are the document's existing
- * checks and nothing else. This returns only the enabled options (the legacy marker value);
- * `lessonViewChoices` returns all three with an availability flag and a reason.
+ * Textbook and the player are the floor: both are read from the document's own blocks and its one
+ * check, so neither can be missing for a document that has blocks. Guided needs authored `short`
+ * prose on every block. Field Quest needs the same and exactly one attachable check, because its
+ * checkpoints are the document's existing checks and nothing else. This returns only the enabled
+ * options (the legacy marker value); `lessonViewChoices` returns all four with an availability
+ * flag and a reason.
  */
 function lessonViewOptions(document) {
   const views = (document && document.views) || {}
-  return LESSON_VIEWS.filter((view) => (view.id === 'textbook' ? true : Boolean(views[view.id])))
+  return LESSON_VIEWS.filter((view) =>
+    view.id === 'textbook' || view.id === 'player' ? true : Boolean(views[view.id])
+  )
 }
 
-/** All three named views, each marked available or carrying the plain-words reason it is not. */
+/** All four named views, each marked available or carrying the plain-words reason it is not. */
 function lessonViewChoices(document) {
   const views = (document && document.views) || {}
   return LESSON_VIEWS.map((view) => {
-    const available = view.id === 'textbook' ? true : Boolean(views[view.id])
+    const available = view.id === 'textbook' || view.id === 'player' ? true : Boolean(views[view.id])
     return {
       ...view,
       available,
@@ -11445,7 +13192,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronun
                 checkSlot,
                 jsx('p', {
                   style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
-                  children: 'This is the section’s one check. It is the same in Textbook, Guided and Field Quest, and it is not a grade.'
+                  children: 'This is the section’s one check. It is the same in Game, Textbook, Guided and Field Quest, and it is not a grade.'
                 })
               ]
             })
@@ -11686,52 +13433,40 @@ function questProgressLabel(summary) {
 }
 
 /**
+ * The one line a mission shows.
+ *
+ * Field Quest is a path, not a second reader: the brief is the block's authored `short` prose cut
+ * to its first sentence, and the full prose, media and pronunciation studio stay in Textbook. The
+ * line is also painted as a single row (`nowrap` + ellipsis), so a narrow window never turns the
+ * pointer back into a prose block.
+ */
+function missionBriefLine(block, checkLabels) {
+  const text = withoutCheckLabels(block.short || block.deep, checkLabels) || ''
+  const flat = String(text).replace(/\s+/g, ' ').trim()
+  if (!flat) return ''
+  const stop = flat.search(/[.!?](\s|$)/)
+  const first = stop >= 0 ? flat.slice(0, stop + 1) : flat
+  return first.length > 140 ? `${first.slice(0, 137).trimEnd()}…` : first
+}
+
+/**
  * One mission on the quest spine: a numbered node, the role word, a serif title, one line of what
- * the learner does, and one tertiary way into the same block in Textbook. A checkpoint keeps the
- * same node but gains the `lamp-soft` check field. Nothing is locked, nothing is scored, and the
- * clickable affordance is the whole brief — not a grey bar under every mission
- * (docs/COURSEBOOK-VISUAL-IDENTITY-V2.md §4.7, §5.9).
+ * the learner does, and one way into the same block in Textbook. A checkpoint keeps the same node
+ * but gains the `lamp-soft` check field. Nothing is locked, nothing is scored, and the row holds
+ * exactly one action — the whole row is not a second, invisible control.
  */
 function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbook, onSaveBlock, pronunciation }) {
   const block = mission.block
-  const body = withoutCheckLabels(block.short || block.deep, checkLabels)
+  const brief = missionBriefLine(block, checkLabels)
   const checkpoint = mission.checkpoint
   const stateWord = checkpoint ? 'Checkpoint' : 'Mission'
   const tone = checkpoint ? 'var(--cb-ochre)' : 'var(--cb-ink-soft)'
-  const headingId = `cb-mission-headline-${block.id}`
-  // The mission's heading and prose are the brief. Clicking anywhere outside an actual control
-  // hands the same block to Textbook, so a learner who taps the brief is not left wondering
-  // whether the card is decorative. Nested controls keep their own behaviour.
-  const openMission = (event) => {
-    const target = event && event.target
-    if (
-      target &&
-      typeof target.closest === 'function' &&
-      target.closest('button, a, input, textarea, select, [role="button"], [role="checkbox"], [role="radio"]')
-    ) {
-      return
-    }
-    if (onReadInTextbook) onReadInTextbook(block.id)
-  }
-  const openMissionOnKey = (event) => {
-    if (event.target !== event.currentTarget) return
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      if (onReadInTextbook) onReadInTextbook(block.id)
-    }
-  }
   return jsxs('li', {
     'data-cb-mission': block.id,
     'data-cb-mission-index': String(mission.index + 1),
     'data-cb-mission-role': block.role,
     'data-cb-mission-checkpoint': checkpoint ? 'true' : 'false',
     'data-cb-mission-check': checkpoint && block.check_id ? block.check_id : '',
-    tabIndex: 0,
-    role: 'link',
-    'aria-label': `Open mission ${mission.index + 1}, ${block.headline}, in Textbook`,
-    title: 'Open this mission in Textbook',
-    onClick: openMission,
-    onKeyDown: openMissionOnKey,
     style: {
       position: 'relative',
       display: 'flex',
@@ -11741,8 +13476,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
       background: checkpoint ? 'var(--cb-lamp-soft)' : 'transparent',
       borderTop: checkpoint ? '1px solid var(--cb-lamp)' : 'none',
       maxWidth: '46rem',
-      boxSizing: 'border-box',
-      cursor: 'pointer'
+      boxSizing: 'border-box'
     },
     children: [
       // The spine: a node per mission and a hairline that runs through the whole list.
@@ -11775,85 +13509,92 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
         ]
       }),
       jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.2rem 0.75rem' },
+        style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
         children: [
-          jsx('h3', {
-            id: headingId,
-            style: {
-              margin: 0,
-              minWidth: 0,
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.heading,
-              fontWeight: 600,
-              lineHeight: 1.25,
-              color: 'var(--cb-ink)',
-              overflowWrap: 'anywhere'
-            },
-            children: block.headline
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.2rem 0.75rem' },
+            children: [
+              jsx('h3', {
+                style: {
+                  margin: 0,
+                  minWidth: 0,
+                  fontFamily: CB_SERIF,
+                  fontSize: CB_TYPE.heading,
+                  fontWeight: 600,
+                  lineHeight: 1.25,
+                  color: 'var(--cb-ink)',
+                  overflowWrap: 'anywhere'
+                },
+                children: block.headline
+              }),
+              jsxs('span', {
+                'data-cb-mission-state': checkpoint ? 'checkpoint' : 'mission',
+                style: {
+                  flex: '0 0 auto',
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.caption,
+                  fontWeight: 600,
+                  lineHeight: 1.3,
+                  color: tone
+                },
+                children: [stateWord, ' · ', BLOCK_ROLE_COPY[block.role] || block.role]
+              })
+            ]
           }),
-          jsxs('span', {
-            'data-cb-mission-state': checkpoint ? 'checkpoint' : 'mission',
-            style: {
-              flex: '0 0 auto',
-              fontFamily: CB_SANS,
-              fontSize: CB_TYPE.caption,
-              fontWeight: 600,
-              lineHeight: 1.3,
-              color: tone
-            },
-            children: [stateWord, ' · ', BLOCK_ROLE_COPY[block.role] || block.role]
+          brief
+            ? jsx('p', {
+                'data-cb-mission-brief': block.id,
+                style: {
+                  margin: 0,
+                  maxWidth: '46rem',
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.meta,
+                  lineHeight: 1.5,
+                  color: 'var(--cb-ink-soft)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                },
+                children: brief
+              })
+            : null,
+          jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
+          // Notebook save and the pronunciation studio are the same controls every lesson view
+          // offers at this block; only the prose moves to Textbook.
+          jsx(BlockSaveActions, { block, checkLabels, onSaveBlock, className: 'flex flex-wrap items-center gap-1 self-start' }),
+          jsx(PronunciationSeat, { block, pronunciation }),
+          checkpoint
+            ? jsxs('div', {
+                'data-cb-mission-gate': block.check_id || 'unattached',
+                style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingTop: '0.35rem' },
+                children: [
+                  jsx('p', {
+                    style: { margin: 0, maxWidth: CB_MEASURE, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                    children: 'The section’s one check. Nothing on this page is locked.'
+                  }),
+                  checkSlot
+                    ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' }, children: checkSlot })
+                    : jsx('div', {
+                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+                        children: 'No check could be attached to this checkpoint, so the mission stays readable and ungated.'
+                      })
+                ]
+              })
+            : null,
+          // Exactly one action per mission. Everything else about this block is in Textbook.
+          jsx('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', paddingTop: '0.1rem' },
+            children: jsx(sdk.Button, {
+              variant: 'text',
+              size: 'sm',
+              className: 'self-start',
+              'data-cb-mission-read': block.id,
+              'aria-label': `Read mission ${mission.index + 1}, ${block.headline}, in Textbook`,
+              onClick: () => onReadInTextbook(block.id),
+              children: 'Read in Textbook'
+            })
           })
         ]
-      }),
-      body
-        ? jsx(ProseText, {
-            style: {
-              maxWidth: CB_MEASURE,
-              paddingTop: '0.3rem',
-              fontFamily: CB_SERIF,
-              fontSize: CB_TYPE.body,
-              lineHeight: 1.6,
-              color: 'var(--cb-ink)'
-            },
-            text: body
-          })
-        : null,
-      (block.media || []).map((media, ordinal) =>
-        jsx(BlockMedia, { media, blockId: block.id, ordinal }, `${block.id}-media-${ordinal}`)
-      ),
-      jsx(BlockSourceChips, { ids: block.source_ids, index: sources }),
-      jsx(BlockSaveActions, { block, checkLabels, onSaveBlock, className: 'flex flex-wrap items-center gap-1 self-start' }),
-      jsx(PronunciationSeat, { block, pronunciation }),
-      checkpoint
-        ? jsxs('div', {
-            'data-cb-mission-gate': block.check_id || 'unattached',
-            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingTop: '0.35rem' },
-            children: [
-              jsx('p', {
-                style: { margin: 0, maxWidth: CB_MEASURE, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
-                children: 'This is the section’s existing check — the same one Textbook and Guided use. Finishing it is not required to read anything here.'
-              }),
-              checkSlot
-                ? jsx('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' }, children: checkSlot })
-                : jsx('div', {
-                    style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
-                    children: 'No check could be attached to this checkpoint, so the mission stays readable and ungated.'
-                  })
-            ]
-          })
-        : null,
-      // One tertiary link at the foot of the brief, not a full-width bar under every mission.
-      jsx('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', paddingTop: '0.35rem' },
-        children: jsx(sdk.Button, {
-          variant: 'text',
-          size: 'sm',
-          className: 'self-start',
-          'data-cb-mission-read': block.id,
-          'aria-label': `Read mission ${mission.index + 1}, ${block.headline}, in Textbook`,
-          onClick: () => onReadInTextbook(block.id),
-          children: 'Read in Textbook'
-        })
       })
     ]
   })
@@ -11874,10 +13615,13 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
   const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
   const progressLabel = questProgressLabel(progress)
   const checkpoints = missions.filter((mission) => mission.checkpoint).length
-  const display = `${missions.length} ${missions.length === 1 ? 'mission' : 'missions'}, ${checkpoints} ${checkpoints === 1 ? 'checkpoint' : 'checkpoints'}`
-  const due = progress && typeof progress === 'object' ? Number(progress.review_due) || 0 : 0
-  const independent = progress && typeof progress === 'object' ? Number(progress.independent) || 0 : 0
+  const display = `${plural(missions.length, 'mission', 'missions')}, ${plural(checkpoints, 'checkpoint', 'checkpoints')}`
   const hasRecord = progress && typeof progress === 'object' && Number(progress.total_objectives) > 0
+  const evidenceLine = hasRecord
+    ? `${Number(progress.independent) || 0} of ${Number(progress.total_objectives)} with independent evidence${
+        Number(progress.review_due) > 0 ? ` · ${Number(progress.review_due)} due for review` : ''
+      }`
+    : questProgressLabel(progress)
   return jsxs('div', {
     ...lessonTextAttrs(document),
     'data-cb-lesson-view': 'field_quest',
@@ -11888,11 +13632,14 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
     'data-cb-quest-checkpoints': String(checkpoints),
     style: { display: 'flex', flexDirection: 'column', gap: '0.9rem' },
     children: [
+      // The section is the heading; the counts are a caption under it, never the hero. One real
+      // evidence line follows, and it is the only number on the page that is not a length.
       jsxs('header', {
         'data-cb-quest-head': '',
-        style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', maxWidth: '46rem' },
+        style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: '46rem' },
         children: [
           jsx('h2', {
+            'data-cb-quest-title': '',
             style: {
               margin: 0,
               fontFamily: CB_SERIF,
@@ -11901,34 +13648,20 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
               lineHeight: 1.1,
               letterSpacing: '-0.015em',
               color: 'var(--cb-ink)',
-              maxWidth: '24ch'
+              maxWidth: '24ch',
+              overflowWrap: 'anywhere'
             },
-            children: display.charAt(0).toUpperCase() + display.slice(1)
+            children: document.section_title || 'This section'
           }),
           jsx('p', {
-            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '52ch' },
-            children: 'Missions are the reading path. The checkpoint is shared with the other lesson views.'
+            'data-cb-quest-caption': '',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: display
           }),
-          jsx(HeroFacts, {
-            phone,
-            facts: [
-              { value: String(missions.length), label: 'Missions' },
-              { value: String(checkpoints), label: 'Checkpoints' },
-              hasRecord ? { value: String(due), label: 'Due for review' } : null
-            ].filter(Boolean)
-          }),
-          jsxs('details', {
-            'data-cb-quest-note': '',
-            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-            children: [
-              jsx('summary', { style: { cursor: 'pointer' }, children: 'What these counts mean' }),
-              jsx('p', {
-                style: { margin: '0.3rem 0 0', lineHeight: 1.5, maxWidth: '52ch' },
-                children: hasRecord
-                  ? `Counts describe evidence already recorded — ${independent} independent, ${due} due. They are not a score, nothing here is locked, and the checkpoint is the section’s existing check.`
-                  : 'Counts describe evidence already recorded. They are not a score, nothing here is locked, and the checkpoint is the section’s own check.'
-              })
-            ]
+          jsx('p', {
+            'data-cb-quest-evidence': hasRecord ? 'recorded' : 'none',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: evidenceLine
           })
         ]
       }),
@@ -12424,7 +14157,407 @@ function lessonTextAttrs(document) {
   return attrs
 }
 
-function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock, onSaveBlock, pronunciation }) {
+/* ---------------------------------------------------------------------------------------------
+ * H-149 · the lesson player.
+ *
+ * The learner surface is a bounded session over the section's own document: one concept per step,
+ * one response (the document's one check), immediate corrective feedback, and a close that returns
+ * to the path with the recorded result. Nothing here authors content: the steps are the document's
+ * blocks in authored order, the response is the same `check.get` the reference views mount, and
+ * every number on the close plate is read from the enrollment row.
+ * ------------------------------------------------------------------------------------------- */
+
+/** The player's steps: the document's blocks, with the section's one check on the block that carries it. */
+function playerSteps(document) {
+  const blocks = (document && document.blocks) || []
+  const checkId = document ? document.check_id : null
+  const carried = blocks.some((block) => Boolean(checkId && block.check_id === checkId))
+  return blocks.map((block, index) => ({
+    index,
+    total: blocks.length,
+    block,
+    // A document whose one check is not attached to a block still gets its response: the last
+    // step hosts it rather than dropping the check from the session.
+    check: Boolean(checkId && (block.check_id === checkId || (!carried && index === blocks.length - 1)))
+  }))
+}
+
+/** How many distinct checks this section's document declares. One is the normal case. */
+function playerCheckCount(document) {
+  const blocks = (document && document.blocks) || []
+  const ids = new Set()
+  for (const block of blocks) if (block && block.check_id) ids.add(block.check_id)
+  if (ids.size === 0 && document && document.check_id) ids.add(document.check_id)
+  return ids.size
+}
+
+/**
+ * The one concept on a step: the authored `short` when the document has one, otherwise the first
+ * paragraph of the authored `deep` prose. The clip is declared to the learner and Textbook keeps
+ * the full text, so the player never silently drops authored material.
+ */
+function playerConcept(block, checkLabels) {
+  const short = withoutCheckLabels(block.short, checkLabels)
+  if (short) return { text: short, clipped: false }
+  const deep = withoutCheckLabels(block.deep, checkLabels) || ''
+  const first = String(deep).split(/\n\s*\n/)[0].trim()
+  return { text: first, clipped: Boolean(first) && first.length < String(deep).trim().length }
+}
+
+/**
+ * The player's verdict card.
+ *
+ * Two verdicts only — `Correct` and `Not quite` — always as words, with the learner's own answer in
+ * context and the backend's own criterion text as the reason. The correct answer is not invented:
+ * the contract returns criteria and a next action, not a reference answer, so the card prints what
+ * the backend recorded and says plainly that a retry is free.
+ */
+function PlayerVerdict({ result, criteria, checklist, answer }) {
+  const passed = Boolean(result) && (result.verdict === 'pass' || result.verdict === 'overridden')
+  const rows = (criteria || []).filter(Boolean)
+  const unmet = rows.filter((row) => !row.met)
+  const met = rows.filter((row) => row.met && row.observed)
+  const override = Boolean(result) && result.verdict === 'overridden'
+  const selfReported = Boolean(result) && result.evidence_class === 'self_reported'
+  const why = passed ? verdictTakeaway(result, criteria) : nextActionCopy(result)
+  const rule = unmet.length > 0 ? String(unmet[0].observed || unmet[0].id || '').trim() : null
+  const answerText = Array.isArray(answer) ? answer.join('; ') : String(answer || '').trim()
+  return jsxs('div', {
+    'data-cb-player-feedback': passed ? 'correct' : 'not_quite',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: CB_MEASURE },
+    children: [
+      jsxs('div', {
+        style: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
+        children: [
+          jsx(sdk.Codicon, { name: passed ? 'pass-filled' : 'circle-slash', size: '0.95rem' }),
+          jsx('strong', {
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.body, fontWeight: 700, color: 'var(--cb-ink)' },
+            children: override ? 'Recorded — not a pass' : passed ? 'Correct' : 'Not quite'
+          })
+        ]
+      }),
+      answerText
+        ? jsxs('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', overflowWrap: 'anywhere' },
+            'data-cb-player-answer': '',
+            children: ['You answered: ', jsx('span', { style: { color: 'var(--cb-ink)' }, children: answerText })]
+          })
+        : null,
+      selfReported
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            children: SELF_REPORTED_CONFIRM_COPY
+          })
+        : null,
+      why
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            'data-cb-player-why': '',
+            children: why
+          })
+        : null,
+      !passed && rule
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            'data-cb-player-rule': '',
+            children: `The part that did not hold: ${rule}`
+          })
+        : null,
+      !passed && met.length > 0
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: `What you did show: ${met.slice(0, 2).map((row) => String(row.observed).trim()).join('; ')}.`
+          })
+        : null,
+      !passed && checklist && checklist.length > 0
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: 'Tick the remaining steps and check again. Nothing here is counted against you.'
+          })
+        : !passed
+          ? jsx('p', {
+              style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+              children: 'Try again with a different answer. The retry is free and nothing is counted against you.'
+            })
+          : null
+    ]
+  })
+}
+
+/** The close: the section is finished, and every number is the enrollment row's own count. */
+function PlayerClose({ section, progress, onBack }) {
+  const ordinal = section && section.ordinal ? String(section.ordinal) : null
+  const summary = progress || {}
+  const total = Math.max(0, Number(summary.total_objectives || 0))
+  const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
+  const due = Math.max(0, Number(summary.review_due || 0))
+  const facts = []
+  if (total > 0) facts.push(`${independent} of ${total} with evidence`)
+  if (total > 0) facts.push(due > 0 ? `${due} to review` : 'Nothing due for review')
+  return jsxs('section', {
+    'data-cb-player-close': '',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: CB_MEASURE, padding: '1.25rem 0' },
+    children: [
+      jsx('h3', {
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: CB_TYPE.display,
+          fontWeight: 600,
+          lineHeight: 1.1,
+          letterSpacing: '-0.015em',
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: ordinal ? `You finished Section ${ordinal}` : 'You finished this section'
+      }),
+      facts.length > 0
+        ? jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.lead, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            'data-cb-player-close-facts': '',
+            children: facts.join(' · ')
+          })
+        : jsx('p', {
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.lead, lineHeight: 1.5, color: 'var(--cb-ink)' },
+            'data-cb-player-close-facts': '',
+            children: 'The result is recorded on this profile.'
+          }),
+      jsx('p', {
+        style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        children: 'The path shows which section is next. Nothing is lost when you leave.'
+      }),
+      jsx(sdk.Button, {
+        'data-cb-player-close-primary': '',
+        variant: 'default',
+        size: 'sm',
+        style: CB_PRIMARY_STYLE,
+        onClick: onBack,
+        children: 'Back to the path'
+      })
+    ]
+  })
+}
+
+/**
+ * The player surface.
+ *
+ * One footer, one primary: `Check` becomes `Continue`, then `Finish` on the last step, then the
+ * close. Enter runs the same action as the footer; a textarea keeps Enter for its own newlines.
+ */
+function LessonPlayer({
+  document,
+  sources,
+  checkSlot,
+  checkLabels,
+  section,
+  progress,
+  playerState,
+  playerController,
+  onExit,
+  onReload,
+  onSaveBlock,
+  pronunciation
+}) {
+  const phone = cbLayoutFor(useCbViewportWidth()) === 'phone'
+  const steps = playerSteps(document)
+  const [index, setIndex] = useState(0)
+  const [closed, setClosed] = useState(false)
+  const state = playerState || { phase: 'awaiting_input', canCheck: false, verdict: null }
+  if (steps.length === 0) return null
+  const current = steps[Math.min(index, steps.length - 1)]
+  const last = current.index >= steps.length - 1
+  const concept = playerConcept(current.block, checkLabels)
+  const call = (name) => {
+    const api = playerController && playerController.current
+    if (api && typeof api[name] === 'function') api[name]()
+  }
+  const advance = () => {
+    if (last) setClosed(true)
+    else setIndex(current.index + 1)
+  }
+  if (closed) return jsx(PlayerClose, { section, progress, onBack: onExit })
+
+  const passed = state.verdict === 'pass' || state.verdict === 'overridden'
+  let action
+  if (!current.check) {
+    action = { label: last ? 'Finish' : 'Continue', run: advance, disabled: false }
+  } else if (state.phase === 'submitting') {
+    action = { label: 'Checking', run: null, disabled: true }
+  } else if (state.phase === 'graded' || state.phase === 'overridden') {
+    action = passed
+      ? { label: last ? 'Finish' : 'Continue', run: advance, disabled: false }
+      : { label: 'Try again', run: () => call('newExample'), disabled: false }
+  } else if (state.phase === 'needs_retry') {
+    action = { label: 'Retry grading', run: () => call('retryGrading'), disabled: false }
+  } else if (state.phase === 'stale') {
+    action = { label: 'Read the current check', run: onReload || advance, disabled: false }
+  } else {
+    action = { label: 'Check', run: () => call('submit'), disabled: !state.canCheck }
+  }
+  const onKeyDown = (event) => {
+    if (event.key !== 'Enter' || event.shiftKey) return
+    const target = event.target
+    if (target && typeof target.closest === 'function' && target.closest('button, textarea, input, select, [contenteditable="true"]')) return
+    if (action.disabled || !action.run) return
+    event.preventDefault()
+    action.run()
+  }
+  const checks = playerCheckCount(document)
+  const ordinal = section && section.ordinal ? String(section.ordinal) : null
+  return jsxs('div', {
+    'data-cb-lesson-view': 'player',
+    'data-cb-player': '',
+    'data-cb-document': document.document_id,
+    'data-cb-play-heading-tier': 'prose',
+    onKeyDown,
+    style: { display: 'flex', flexDirection: 'column', gap: '0.85rem', minWidth: 0 },
+    ...lessonTextAttrs(document),
+    children: [
+      jsxs('div', {
+        'data-cb-player-bar': '',
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.35rem 0.9rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid var(--cb-rule)',
+          fontFamily: CB_SANS,
+          fontSize: CB_TYPE.caption,
+          color: 'var(--cb-ink-soft)'
+        },
+        children: [
+          jsx('span', {
+            'data-cb-player-section': ordinal || 'section',
+            style: { fontWeight: 600, color: 'var(--cb-ink)' },
+            children: ordinal ? `Section ${ordinal}` : 'Section'
+          }),
+          jsxs('span', {
+            'data-cb-player-mode': 'game',
+            style: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem' },
+            children: [jsx(ModeDot, { mode: 'game' }), 'Game']
+          }),
+          checks > 0
+            ? jsx('span', {
+                'data-cb-player-check-count': String(checks),
+                style: { fontVariantNumeric: 'tabular-nums' },
+                children: current.check ? `Check 1 of ${checks}` : `${checks} ${checks === 1 ? 'check' : 'checks'} in this section`
+              })
+            : null,
+          jsx('span', {
+            'data-cb-player-step': `${current.index + 1}/${steps.length}`,
+            'aria-live': 'polite',
+            style: { fontVariantNumeric: 'tabular-nums', marginLeft: 'auto' },
+            children: `Step ${current.index + 1} of ${steps.length}`
+          }),
+          jsx(sdk.Button, {
+            'data-cb-player-exit': '',
+            variant: 'text',
+            size: 'sm',
+            onClick: onExit,
+            children: 'Exit'
+          })
+        ]
+      }),
+      jsxs('section', {
+        'data-cb-player-step-block': current.block.id,
+        'data-cb-player-role': current.block.role,
+        'aria-labelledby': `cb-play-headline-${current.block.id}`,
+        style: { display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 0 },
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.25rem 0.6rem', minWidth: 0 },
+            children: [
+              jsx('h3', {
+                id: `cb-play-headline-${current.block.id}`,
+                style: {
+                  margin: 0,
+                  minWidth: 0,
+                  fontFamily: CB_SERIF,
+                  fontSize: CB_TYPE.heading,
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.01em',
+                  color: 'var(--cb-ink)',
+                  overflowWrap: 'anywhere'
+                },
+                children: current.block.headline
+              }),
+              jsx('span', {
+                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, fontWeight: 600, lineHeight: 1.3, color: 'var(--cb-ink-soft)' },
+                children: BLOCK_ROLE_COPY[current.block.role] || current.block.role
+              })
+            ]
+          }),
+          concept.text
+            ? jsx(ProseText, {
+                'data-cb-play-concept': current.block.id,
+                style: {
+                  maxWidth: CB_MEASURE,
+                  fontFamily: CB_SERIF,
+                  fontSize: phone ? CB_TYPE.body : CB_TYPE.lead,
+                  lineHeight: 1.6,
+                  color: 'var(--cb-ink)'
+                },
+                text: concept.text
+              })
+            : null,
+          concept.clipped
+            ? jsx('p', {
+                style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                children: 'First paragraph of this step. The full text is in Textbook.'
+              })
+            : null,
+          (current.block.media || []).map((media, ordinalIndex) =>
+            jsx(BlockMedia, { media, blockId: current.block.id, ordinal: ordinalIndex }, `${current.block.id}-media-${ordinalIndex}`)
+          ),
+          jsx(PronunciationSeat, { block: current.block, pronunciation }),
+          jsx(BlockSourceChips, { ids: current.block.source_ids, index: sources }),
+          onSaveBlock ? jsx(BlockSaveActions, { block: current.block, checkLabels, onSaveBlock }) : null,
+          current.check && checkSlot
+            ? jsx(CheckPanelFrame, {
+                kind: 'check',
+                label: 'Your turn',
+                children: jsx('div', {
+                  className: 'flex flex-col gap-2',
+                  'data-cb-block-check': current.block.id,
+                  children: checkSlot
+                })
+              })
+            : null
+        ]
+      }),
+      jsxs('footer', {
+        'data-cb-player-footer': '',
+        style: {
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.5rem 0.75rem',
+          paddingTop: '0.65rem',
+          borderTop: '1px solid var(--cb-rule)'
+        },
+        children: [
+          jsx(sdk.Button, {
+            'data-cb-player-primary': action.label,
+            variant: 'default',
+            size: 'sm',
+            style: CB_PRIMARY_STYLE,
+            disabled: action.disabled,
+            onClick: action.run || undefined,
+            children: action.label
+          }),
+          jsx('span', {
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
+            children: action.disabled && state.phase === 'awaiting_input' ? 'Answer above, then press Enter.' : 'Enter does the same.'
+          })
+        ]
+      })
+    ]
+  })
+}
+
+function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, progress, focusBlockId, onOpenBlock, onSaveBlock, pronunciation, player }) {
   const blocks = (document && document.blocks) || []
   const labels = Array.isArray(checkLabels) ? checkLabels : []
   const [step, setStep] = useState(0)
@@ -12486,6 +14619,27 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
     })
   }
 
+  if (view === 'player' && player) {
+    return jsx(
+      LessonPlayer,
+      {
+        document,
+        sources,
+        checkSlot: player.slot || checkSlot,
+        checkLabels: labels,
+        section: player.section,
+        progress,
+        playerState: player.state,
+        playerController: player.controller,
+        onExit: player.onExit,
+        onReload: player.onReload,
+        onSaveBlock,
+        pronunciation
+      },
+      document.document_id
+    )
+  }
+
   if (view === 'guided' && document.views && document.views.guided) {
     const current = Math.min(step, blocks.length - 1)
     const block = blocks[current]
@@ -12543,7 +14697,23 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
   })
 }
 
-function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review, targetBlockId }) {
+function SectionPage({
+  row,
+  objectiveId,
+  page,
+  pageStatus,
+  pageError,
+  onRetryPage,
+  implemented,
+  onBack,
+  onChanged,
+  review,
+  targetBlockId,
+  // The Home settings sheet (H-147) owns the learner's default presentation mode (Game / Guided /
+  // Textbook, docs/EXPERIENCE-QUALITY-BAR.md §7.2) and passes it here. H-149 makes the player the
+  // default surface; a preference naming a view this document cannot render falls back to it.
+  defaultLessonView = 'player'
+}) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const section = page && page.section
   const runtime = page && page.runtime
@@ -12551,7 +14721,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const [saveSeed, setSaveSeed] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
-  const [lessonView, setLessonView] = useState('textbook')
+  const preferredView = LESSON_VIEWS.some((view) => view.id === defaultLessonView) ? defaultLessonView : 'player'
+  const [lessonView, setLessonView] = useState(preferredView)
   // A mission or a saved moment hands the reader to the same block in Textbook. The target is a
   // block id, so the handoff survives the view switch and lands on the document's own block, not
   // an offset. A target from outside the section (Notebook, Field Desk) arrives the same way.
@@ -12566,9 +14737,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   // One view is on screen at a time, so a single check node serves the Textbook block, the Guided
   // step and the legacy segment list. It is never rendered twice in one view.
   useEffect(() => {
-    setLessonView('textbook')
+    setLessonView(preferredView)
     setFocusBlockId(targetBlockId || null)
-  }, [objectiveId, targetBlockId])
+  }, [objectiveId, targetBlockId, preferredView])
   const check = useOpenCheck({
     enrollmentId: row.enrollment_id,
     objectiveId,
@@ -12633,10 +14804,32 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
             if (onChanged) onChanged()
           }
         })
-  // The practice slot: the observation for a parent-led lesson, the graded check everywhere else.
-  // It is mounted once by the page body below, not inside a document block: a parent observation is
-  // not a check, so it must not inherit the block's `CHECK` heading, and it must still be reachable
-  // on a section whose document has no blocks yet.
+  // The player's own check node. It is the same `AttemptControls` over the same open check; the
+  // only difference is that it reports its answer phase to the player footer and paints no button
+  // of its own, so the session has exactly one primary.
+  const [playerCheckState, setPlayerCheckState] = useState({ phase: 'awaiting_input', canCheck: false, verdict: null })
+  const playerController = useRef(null)
+  const playerCheckNode =
+    check.status === 'error' || (check.status === 'loading' && !check.check)
+      ? checkNode
+      : jsx(AttemptControls, {
+          enrollmentId: row.enrollment_id,
+          objectiveId,
+          check: check.check,
+          revision: page ? page.revision : 0,
+          implemented,
+          bindingState: runtime ? runtime.binding_status : 'detached',
+          parentLed,
+          stimulusStatus: check.stimulusStatus,
+          stimulusError: check.stimulusError,
+          onRetryStimulus: check.reload,
+          playerMode: true,
+          playerController,
+          onPlayerState: setPlayerCheckState,
+          onCommitted: () => {
+            if (onChanged) onChanged()
+          }
+        })
 
   const begin = useCallback(
     async (mode) => {
@@ -12755,6 +14948,10 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         }
       : null
 
+  // The player owns the screen's one primary (`Check`), so the chat action beside it is secondary
+  // while the player is on screen. It keeps its handler: nothing becomes a dead control.
+  const playerSurface = Boolean(document) && lessonView === 'player'
+
   let body
   if (!page) {
     body =
@@ -12839,10 +15036,10 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
           children: [
             jsx(sdk.Button, {
-              'data-cb-section-primary': '',
-              variant: 'default',
+              'data-cb-section-primary': playerSurface ? 'secondary' : '',
+              variant: playerSurface ? 'secondary' : 'default',
               size: 'sm',
-              style: CB_PRIMARY_STYLE,
+              style: playerSurface ? undefined : CB_PRIMARY_STYLE,
               disabled: busy,
               onClick: () => begin(bindingActive ? 'resume' : 'fresh'),
               children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start a fresh run'
@@ -12864,7 +15061,17 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                 focusBlockId,
                 onOpenBlock: openBlock,
                 onSaveBlock: supports('notebook.save') ? saveBlock : null,
-                pronunciation
+                pronunciation,
+                player: parentLed
+                  ? null
+                  : {
+                      slot: playerCheckNode,
+                      state: playerCheckState,
+                      controller: playerController,
+                      section,
+                      onExit: onBack,
+                      onReload: onRetryPage
+                    }
               },
               objectiveId
             )
@@ -13002,7 +15209,8 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const viewOptions = document ? lessonViewOptions(document) : []
   const viewChoices = document ? lessonViewChoices(document) : []
   const unavailableViews = viewChoices.filter((choice) => !choice.available)
-  const activeView = viewOptions.some((option) => option.id === lessonView) ? lessonView : 'textbook'
+  const activeView = viewOptions.some((option) => option.id === lessonView) ? lessonView : (viewOptions[0] && viewOptions[0].id) || 'player'
+  const activeViewLabel = (LESSON_VIEWS.find((view) => view.id === activeView) || {}).label || 'Game'
   const activeMode = cbModeFor(activeView)
   // One switcher, always in the header, at every pane width. The three names never disappear: a
   // view this document cannot render stays as a disabled choice with its reason in plain words,
@@ -13086,7 +15294,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         }, 'back'),
         jsx('span', {
           style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-          children: [place, activeView === 'textbook' ? 'Textbook' : activeView === 'guided' ? 'Guided' : 'Field Quest'].filter(Boolean).join(' · ')
+          children: [place, activeViewLabel].filter(Boolean).join(' · ')
         }, 'place'),
         jsx(CbStatePill, { state: section.state }, 'state'),
         section.evidence_target
@@ -13120,7 +15328,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
       : null,
     children: [
       body,
-      page && document
+      page && document && !playerSurface
         ? jsx('div', {
             'data-cb-section-footer': '',
             style: {
@@ -13278,8 +15486,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
             style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
             children: [
               jsx(PlateHead, {
-                title: `${objectives.length} ${objectives.length === 1 ? 'section' : 'sections'}`,
-                caption: progress.statement || progressStatement(progress.independent, progress.total)
+                title: `${objectives.length} ${objectives.length === 1 ? 'section' : 'sections'}`
               }),
               jsx(RouteSpine, {
                 objectives,
@@ -13369,7 +15576,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
               jsx(StatusRow, {
                 label: 'Evidence',
                 value: `${Number(summary.independent || 0)} independent`,
-                detail: `${Number(summary.total_objectives || 0)} objectives · ${Number(summary.review_due || 0)} due`
+                detail: `${plural(Number(summary.total_objectives || 0), 'objective', 'objectives')} · ${plural(Number(summary.review_due || 0), 'due', 'due')}`
               }),
               jsx(StatusRow, {
                 label: 'Where it came from',
@@ -13716,7 +15923,7 @@ function TextbookIndexDetails({ rows }) {
 }
 
 /** Textbook — a scannable section list, not one endless thread. */
-function TextbookView({ row, page, pageState, review, notebooks, outline, implemented, openSectionId, onOpenSection, onCloseSection, onChanged, targetBlockId }) {
+function TextbookView({ row, page, pageState, review, notebooks, outline, implemented, defaultLessonView, openSectionId, onOpenSection, onCloseSection, onChanged, targetBlockId }) {
   const rows = sectionRows({ row, review, notebooks, outline, page })
   const hasOutline = Boolean(outline && Array.isArray(outline.objectives))
   const objectives = hasOutline ? outline.objectives.filter(Boolean) : []
@@ -13758,6 +15965,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
     return jsx(SectionPage, {
       row,
       objectiveId: openSectionId,
+      defaultLessonView,
       page: page && page.section && page.section.objective_id === openSectionId ? page : null,
       pageStatus: pageState.status,
       pageError: pageState.error,
@@ -14602,33 +16810,56 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
     children: [
       jsxs('div', {
         className: 'flex flex-col',
+        'data-cb-evidence-block': 'l3',
         children: [
-          jsx(CbLabel, { children: 'L3 · current recommendation' }),
+          jsx(CbLabel, { children: 'What to do next' }),
           (l3.recommendations || []).length === 0
-            ? jsx(QuietNote, { children: 'No recommendation was derived from the recorded evidence.' })
+            ? jsx(QuietNote, { children: 'Nothing is suggested yet, because no evidence has been recorded.' })
             : (l3.recommendations || []).map((item, index) =>
-                jsxs(
+                jsx(
                   'div',
                   {
                     className: 'flex flex-col gap-0.5 py-1',
-                    children: [
-                      jsx('div', { className: 'text-sm text-(--ui-text-secondary)', children: item.text }),
-                      jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `basis: ${item.basis}` })
-                    ]
+                    children: jsx('div', { className: 'text-sm text-(--ui-text-secondary)', children: item.text })
                   },
                   `${item.kind}-${index}`
                 )
               ),
-          jsx(QuietNote, { children: `Revisable and derived from layer 2. Not a persona claim. As of ${whenLabel(l3.as_of)}.` })
+          jsx(QuietNote, {
+            children: `It changes when new evidence is recorded, and it describes that evidence rather than judging you. Updated ${whenLabel(l3.as_of)}.`
+          }),
+          (l3.recommendations || []).length > 0
+            ? jsxs('details', {
+                'data-cb-evidence-technical': 'l3',
+                className: 'flex flex-col',
+                children: [
+                  jsx('summary', {
+                    className: 'cursor-pointer text-xs text-(--ui-text-secondary)',
+                    children: 'Technical detail'
+                  }),
+                  jsxs('div', {
+                    className: 'flex flex-col gap-0.5 pt-1',
+                    children: (l3.recommendations || []).map((item, index) =>
+                      jsx(
+                        'code',
+                        { className: 'break-words text-xs text-(--ui-text-secondary)', children: `basis: ${item.basis}` },
+                        `basis-${item.kind}-${index}`
+                      )
+                    )
+                  })
+                ]
+              })
+            : null
         ]
       }),
 
       jsxs('div', {
         className: 'flex flex-col',
+        'data-cb-evidence-block': 'l2',
         children: [
-          jsx(CbLabel, { children: 'L2 · objective evidence' }),
+          jsx(CbLabel, { children: 'What the evidence shows' }),
           (l2.objectives || []).length === 0
-            ? jsx(QuietNote, { children: 'No approved-plan objective has evidence yet.' })
+            ? jsx(QuietNote, { children: 'No objective in your plan has evidence yet.' })
             : jsx('div', {
                 className: 'flex flex-col',
                 children: (l2.objectives || []).map((objective) =>
@@ -14661,8 +16892,9 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
 
       jsxs('div', {
         className: 'flex flex-col',
+        'data-cb-evidence-block': 'l1',
         children: [
-          jsx(CbLabel, { children: 'L1 · attempts and events' }),
+          jsx(CbLabel, { children: 'Your attempts' }),
           jsxs('div', {
             className: 'flex flex-col',
             children: [
@@ -14891,7 +17123,7 @@ function CourseExportView({ row, implemented }) {
         read.sections
           ? jsx('div', {
               className: 'text-xs text-(--ui-text-secondary)',
-              children: `${Number(read.sections.validated)} of ${Number(read.sections.total)} lesson page(s) validated.`
+              children: `${Number(read.sections.validated)} of ${plural(Number(read.sections.total), 'lesson page', 'lesson pages')} validated.`
             })
           : null,
         jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: query.reload, children: 'Check again' })
@@ -15026,7 +17258,7 @@ function CourseExportView({ row, implemented }) {
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
  * control; below ~47.5rem it collapses into one labelled picker so the strip can never clip.
  */
-function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, reloadSignal, onChangeGoal, onNewSyllabus }) {
+function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, defaultLessonView, reloadSignal, onChangeGoal, onNewSyllabus }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   // A route in from the Field Desk names the section to open; otherwise the course opens on its
   // overview with the backend's own current objective already selected.
@@ -15104,8 +17336,11 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
   }, [])
 
   const selectView = useCallback((nextView) => {
-    setView(nextView)
-    if (nextView === 'textbook') setOpenSectionId(null)
+    // `learn` is the primary surface; the reading path itself is the textbook index, and the
+    // section page offers Textbook / Guided / Field Quest over the same document.
+    const target = nextView === 'learn' ? 'textbook' : nextView
+    setView(target)
+    if (target === 'textbook') setOpenSectionId(null)
   }, [])
 
   const viewLabel = (LEARNING_VIEWS.find((option) => option.id === view) || { label: view }).label
@@ -15195,6 +17430,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       notebooks: notebooks.data,
       outline: outline.data,
       implemented,
+      // H-147: the Home default (or this classroom's override) is the view the section opens in.
+      defaultLessonView,
       openSectionId,
       onOpenSection: openSection,
       onCloseSection: closeSection,
@@ -15275,22 +17512,21 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     dueCount !== null && dueCount > 0 ? { value: String(dueCount), label: 'Due for review' } : null
   ].filter(Boolean)
   const parentIdentity = row.recipe === 'parent' ? 'plum' : 'lamp'
-  const tierOne = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'textbook', label: 'Textbook', mode: true },
-    { id: 'notebook', label: 'Notebook' },
-    { id: 'quizzes', label: 'Quizzes' },
-    { id: 'evidence', label: 'Evidence' }
-  ]
-  const tierTwo = [
-    { id: 'plan', label: 'Plan' },
-    { id: 'sources', label: 'Sources' },
-    supports('course.export.read') ? { id: 'export', label: 'Export' } : null
-  ].filter(Boolean)
-  const tierTwoActive = tierTwo.some((option) => option.id === view)
+  // Four primary surfaces. Learn hosts the reading path in its three lesson views (Textbook,
+  // Guided, Field Quest, chosen on the section page), so the learner sees one way in, not a
+  // control panel. Everything that is reference or administration sits behind one `More`
+  // disclosure: Plan, Sources, Export and the record of graded attempts.
+  const primaryTabs = COURSE_PRIMARY_TABS
+  const moreTabs = courseMoreTabs(supports)
+  const primaryActive = primarySurfaceFor(view)
+  const moreActive = moreTabs.some((option) => option.id === view)
   const layout = cbLayoutFor(useCbViewportWidth())
   const phone = layout === 'phone'
   const compactHero = layout !== 'wide'
+  const [moreOpen, setMoreOpen] = useState(moreActive)
+  useEffect(() => {
+    if (moreActive) setMoreOpen(true)
+  }, [moreActive])
 
   return jsxs('div', {
     'data-cb-course-detail': view,
@@ -15317,7 +17553,6 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
             gap: phone ? '0.75rem' : '1.75rem'
           },
           children: [
-            jsx(SurveyMark, { courseId: row.course_id, identity: parentIdentity, size: phone ? 40 : 64 }),
             jsxs('div', {
               style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, flex: compactHero ? '1 1 100%' : '1 1 16rem' },
               children: [
@@ -15394,37 +17629,60 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
 
       jsx(NoticeLine, { notice, busy }),
 
-      // Two tiers, every surface one click away. The reading modes carry their dot; the reference
-      // tier is a plain text row so it never competes with the reading path.
+      // Four primary surfaces, then one `More` disclosure for reference and administration. Every
+      // surface stays one click away and every legacy view id still resolves, so a direct link
+      // lands on the surface it names.
       jsxs('div', {
         style: { display: 'flex', flexDirection: 'column', gap: '0.15rem' },
         children: [
-          jsx(LearningTabs, { options: tierOne, value: view, onChange: selectView, phone, ariaLabel: 'Course surfaces' }),
-          jsx('div', {
-            'data-cb-tier-two': view,
-            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.15rem 0.9rem' },
-            children: tierTwo.map((option) =>
-              jsx(
-                sdk.Button,
-                {
-                  variant: 'text',
-                  size: 'sm',
-                  'data-cb-tab': option.id,
-                  'aria-current': option.id === view ? 'page' : undefined,
-                  onClick: () => selectView(option.id),
-                  children: option.label
-                },
-                option.id
-              )
-            )
+          jsx(LearningTabs, {
+            options: primaryTabs,
+            value: primaryActive,
+            onChange: selectView,
+            phone,
+            ariaLabel: 'Course surfaces'
+          }),
+          jsxs('details', {
+            'data-cb-more': moreActive ? 'active' : 'idle',
+            open: moreOpen,
+            onToggle: (event) => setMoreOpen(Boolean(event.currentTarget.open)),
+            style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('summary', {
+                'data-cb-more-summary': '',
+                style: { cursor: 'pointer', padding: '0.3rem 0', width: 'fit-content' },
+                children: moreActive
+                  ? `More · ${(moreTabs.find((option) => option.id === view) || { label: '' }).label}`
+                  : 'More'
+              }),
+              jsx('div', {
+                'data-cb-tier-two': view,
+                style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.15rem 0.9rem', padding: '0.1rem 0 0.35rem' },
+                children: moreTabs.map((option) =>
+                  jsx(
+                    sdk.Button,
+                    {
+                      variant: 'text',
+                      size: 'sm',
+                      'data-cb-tab': option.id,
+                      'aria-current': option.id === view ? 'page' : undefined,
+                      onClick: () => selectView(option.id),
+                      children: option.label
+                    },
+                    option.id
+                  )
+                )
+              })
+            ]
           })
         ]
       }),
 
-      tierTwoActive
+      moreActive
         ? jsx('div', {
+            'data-cb-outside-route': view,
             style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-            children: `You are reading ${viewLabel.toLowerCase()}, outside the course route. Overview, Textbook, Notebook, Quizzes and Evidence stay one click away above.`
+            children: `You are reading ${((moreTabs.find((option) => option.id === view) || {}).label || viewLabel).toLowerCase()} from More. Overview, Learn, Notebook and Evidence stay one click away above.`
           })
         : null,
       review.data && review.data.total_overdue > 0 && view !== 'overview'
@@ -16150,7 +18408,7 @@ function StudioJobLine({ jobId, job: providedJob, onSettled, onRunAgain }) {
 }
 
 /** The studio list: lesson plans the parent prepared. Imported packs stay in Library. */
-function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
+function StudioList({ implemented, onCreate, onOpen, reloadSignal, sessionMinutes, onOpenSettings, triggerRef }) {
   const supported = Boolean(implemented && implemented.has('library.list'))
   const query = useRpcQuery(
     'library.list',
@@ -16192,7 +18450,7 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
     })
   }
 
-  return jsx(StudioLanding, { rows, onCreate, onOpen })
+  return jsx(StudioLanding, { rows, onCreate, onOpen, sessionMinutes, onOpenSettings, triggerRef })
 }
 
 /**
@@ -16200,7 +18458,7 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
  * carries no create action, so this in-page primary is the only `variant=default` control on the
  * surface (H-94 V2-4; H-91 P2-4 removed the duplicate header button).
  */
-function StudioLanding({ rows, onCreate, onOpen }) {
+function StudioLanding({ rows, onCreate, onOpen, sessionMinutes, onOpenSettings, triggerRef }) {
   const groups = groupShelfRows(rows)
   return jsxs('div', {
     'data-cb-studio-landing': '',
@@ -16218,9 +18476,11 @@ function StudioLanding({ rows, onCreate, onOpen }) {
       jsx(PlateHead, {
         label: 'Parent Studio',
         title: 'Plans for your child',
-        caption: 'Each brief you write is kept as its own plan, so you can compare versions without losing the first.',
+        caption:
+          'Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first.',
         actions: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'New lesson plan' })
       }),
+      jsx(ChildSafeLine, { sessionMinutes, onOpenSettings, triggerRef }),
       ...groups.map((group) =>
         jsx(
           CourseCover,
@@ -16308,7 +18568,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
           jsx('h2', { className: 'text-sm font-semibold', children: initial ? 'Duplicate this brief' : 'Write a lesson brief' }),
           jsx(QuietNote, {
             children:
-              'You are the operator. Coursebook prepares the material for you to teach: there is no child chat, no child persona and no grading of the child. Everything here is a plan you review before any page is generated.'
+              'Prepare a lesson for a child. You are the operator: Coursebook prepares the material for you to teach, and there is no child chat, no child persona and no grading of the child. Everything here is a plan you review before any page is generated.'
           }),
           note
             ? jsx('div', {
@@ -18649,6 +20909,14 @@ function StudioDetail({ course, implemented, revision, onRevision, onBack, onCha
                     ? jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: 'Export ready' })
                     : null
                 ]
+              }),
+              // H-156 — what this view reports. The parent sees evidence and their own reports;
+              // there is no XP, level or ranking to read here, and the line says so.
+              jsx('div', {
+                'data-cb-parent-evidence': 'parent_reported',
+                className: 'text-xs text-(--ui-text-secondary)',
+                children:
+                  'Parent view · what your child did and what you observed, never points, levels or rankings.'
               })
             ]
           }),
@@ -18710,15 +20978,46 @@ function FocusReturningDialog({ open, ...props }) {
   return jsx(sdk.ConfirmDialog, dialogProps)
 }
 
+/**
+ * H-145 — the product wordmark. It is type, not an ornament: the seal read as an avatar or a
+ * refresh glyph and needed an explanation, so the route header carries the name instead. It is a
+ * plain div, never a heading, so the page `h1` stays the only page label.
+ */
+function CoursebookWordmark() {
+  return jsx('div', {
+    'data-cb-wordmark': '',
+    style: {
+      fontFamily: CB_SERIF,
+      fontSize: CB_TYPE.meta,
+      fontWeight: 600,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+      lineHeight: 1.2,
+      color: 'var(--cb-ink-soft)'
+    },
+    children: 'Coursebook'
+  })
+}
+
 function CoursebookPage() {
   const { state: health, reload: reloadHealth } = useHealth()
   const implemented = useRuntime(health.status)
+  // H-147: appearance and motion are the learner's own settings, so they are read here and every
+  // surface below (route and pane) paints from the same document. `system` defers to the host.
+  const [homePrefs, updateHomePrefs, resetHomePrefs] = useCbHomePrefs()
   // The scoped Ink & Field Notes layer: every Coursebook surface paints from `--cb-*`, and the
   // layer stops at this root, so Hermes chrome keeps its own theme untouched.
-  const cbMode = useCbMode()
-  const cbMotion = useCbMotion()
+  const hostMode = useCbMode()
+  const cbMode = cbAppliedMode(hostMode, homePrefs.appearance)
+  const systemMotion = useCbMotion()
+  const cbMotion = homePrefs.reducedMotion === 'reduce' ? 'reduced' : systemMotion
+  const online = useOnline()
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsTriggerRef = useRef(null)
+  // The classroom the Home rail has selected, named so the classroom section of the sheet can say
+  // which classroom its override belongs to rather than "this one".
+  const [homeClassroom, setHomeClassroom] = useState(null)
   const [destination, setDestination] = useState(rememberedDestination)
-  const [coursesMode, setCoursesMode] = useState('desk')
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
   const [syllabusFlow, setSyllabusFlow] = useState(false)
@@ -18729,6 +21028,10 @@ function CoursebookPage() {
   // then drops its duplicate "New course" button: one screen, one primary action (UX-01).
   const [coursesEmpty, setCoursesEmpty] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
+  // H-146: the selected classroom is shell state, not a backend field and not localStorage. It
+  // survives Course Detail because it lives here, beside `openCourse`, and it is never written to
+  // progress. A slot switch changes this value only.
+  const [selectedCourseId, setSelectedCourseId] = useState(null)
   // H-103: "Change the goal" carries the rejected plan's own choices into the create form instead
   // of asking the learner to retype them. It is a seed, not an automatic submit.
   const [createSeed, setCreateSeed] = useState(null)
@@ -18747,11 +21050,20 @@ function CoursebookPage() {
     setCreating(false)
     setImporting(false)
     setSyllabusFlow(false)
-    setCoursesMode('desk')
     setOpenCourse(null)
     setStudioCourse(null)
     setStudioSeed(null)
     setDestination(next)
+  }, [])
+
+  // H-147: the sheet closes back onto the control that opened it — Escape, Close and a backdrop
+  // click all land here, so keyboard focus never drops to <body>.
+  const openSettings = useCallback(() => setSettingsOpen(true), [])
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false)
+    const wrap = settingsTriggerRef.current
+    const button = wrap && typeof wrap.querySelector === 'function' ? wrap.querySelector('button') : null
+    if (button && typeof button.focus === 'function') button.focus({ preventScroll: true })
   }, [])
 
   // A created companion course is opened from the library read, never from the create response:
@@ -18770,6 +21082,7 @@ function CoursebookPage() {
       if (row) {
         rememberedDestination = 'courses'
         setDestination('courses')
+        setSelectedCourseId(row.course_id)
         setOpenCourse({ row, objectiveId: null, view: 'plan' })
         setCompanionTarget(null)
         return
@@ -18934,6 +21247,9 @@ function CoursebookPage() {
       body = jsx(StudioList, {
         implemented,
         reloadSignal: studioReload,
+        sessionMinutes: homePrefs.sessionMinutes,
+        onOpenSettings: openSettings,
+        triggerRef: settingsTriggerRef,
         onCreate: () => setStudioSeed({ initial: null, note: null }),
         onOpen: (row) => {
           setStudioCourse(row)
@@ -18945,6 +21261,11 @@ function CoursebookPage() {
     body = jsx(LibraryView, {
       createOpen: creating,
       implemented,
+      onOpen: (row) => {
+        rememberedDestination = 'courses'
+        setDestination('courses')
+        setOpenCourse({ row, objectiveId: null })
+      },
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
       onStartImport: canImport ? onImportPlaceholder : null
     })
@@ -18954,6 +21275,10 @@ function CoursebookPage() {
       focusObjectiveId: openCourse.objectiveId,
       focusBlockId: openCourse.blockId || null,
       focusView: openCourse.view || null,
+      // H-147: the view the lesson opens in is the classroom's own override, else the Home default.
+      defaultLessonView:
+        CB_PRESENTATION_VIEW[cbEffectiveMode(homePrefs, openCourse.row ? openCourse.row.course_id : null)] ||
+        'textbook',
       implemented,
       profile: currentScope().profile,
       onBack: () => setOpenCourse(null),
@@ -18967,44 +21292,60 @@ function CoursebookPage() {
       },
       onNewSyllabus: openNewSyllabusRevision
     })
-  } else if (coursesMode === 'list') {
+  } else if (destination === 'courses') {
     body = jsx(CoursesView, {
       createOpen: creating,
       implemented,
       onEmptyChange: setCoursesEmpty,
       onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
-      onOpen: (row) => setOpenCourse({ row, objectiveId: null }),
-      onShowDesk: () => setCoursesMode('desk')
+      onBrowseLibrary: () => changeDestination('library'),
+      onOpen: (row) => {
+        if (row && row.recipe !== 'parent') setSelectedCourseId(row.course_id)
+        setOpenCourse({ row, objectiveId: null })
+      },
+      onShowDesk: () => changeDestination('home')
     })
   } else {
+    // H-145/H-146: Home is the launcher. It carries the classroom rail and exactly one Continue
+    // surface for the selected classroom; the all-courses catalog lives behind Courses, not here.
     body = jsx(FieldDesk, {
       implemented,
       profile: currentScope().profile,
+      online,
+      selectedCourseId,
+      onSelectCourse: setSelectedCourseId,
+      onSelectedClassroom: setHomeClassroom,
+      onOpenStudio: () => changeDestination('studio'),
       onEmptyChange: setCoursesEmpty,
-      onOpen: (row, objectiveId, blockId, view) =>
-        setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null }),
-      onShowAll: () => setCoursesMode('list'),
+      onOpen: (row, objectiveId, blockId, view) => {
+        if (row && row.recipe !== 'parent') setSelectedCourseId(row.course_id)
+        setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null })
+      },
+      onShowAll: () => changeDestination('courses'),
       onStartCreate: () => beginCreate(),
-      onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null
+      onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
+      onBrowseLibrary: () => changeDestination('library')
     })
   }
 
   const statusCopy = backendCopy(health.status)
-  const online = useOnline()
   const showDestinationNav = health.status === 'ready' && !creating && !importing && !syllabusFlow
-  // One stable page title per destination. It is the route's only `h1` in every health and flow
+  // One stable page title per surface. It is the route's only `h1` in every health and flow
   // state, so the first heading is the page title and never a card's objective; every surface
-  // below it is an `h2` region.
-  const pageTitle = ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
+  // below it is an `h2` region. An open course is its own page ("Course"), not a second "Home"
+  // or a second course title (CourseDetail already prints the course name at h2).
+  const pageTitle = openCourse
+    ? 'Course'
+    : ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
 
   return jsxs('div', {
-    className: 'relative flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
+    className: 'relative flex h-full min-h-0 flex-col',
     'data-cb-destination': destination,
     'data-cb-route': ROUTE_PATH,
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion,
-    style: cbScopeStyle(cbMode),
+    style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance), paddingLeft: routePad, paddingRight: routePad },
     children: [
       jsx(SkipToContent, {}),
       jsxs('header', {
@@ -19014,15 +21355,30 @@ function CoursebookPage() {
             className: 'flex flex-wrap items-start justify-between gap-3',
             children: [
               jsxs('div', {
-                className: 'flex min-w-0 items-center gap-2',
+                className: 'flex min-w-0 flex-col gap-1',
                 children: [
-                  jsx(SurveyMark, { courseId: 'coursebook', size: 24 }),
+                  jsx(CoursebookWordmark, {}),
                   jsx('h1', {
                     'data-cb-page-title': '',
-                    className: 'text-base font-semibold',
-                    style: { margin: 0 },
+                    style: {
+                      margin: 0,
+                      fontFamily: CB_SERIF,
+                      fontSize: CB_TYPE.display,
+                      fontWeight: 600,
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.02em',
+                      color: 'var(--cb-ink)'
+                    },
                     children: pageTitle
-                  })
+                  }),
+                  destination === 'home' && !openCourse
+                    ? jsx(HomeDefaultsLine, {
+                        prefs: homePrefs,
+                        classroom: homeClassroom,
+                        onOpenSettings: openSettings,
+                        triggerRef: settingsTriggerRef
+                      })
+                    : null
                 ]
               }),
               jsxs('div', {
@@ -19062,7 +21418,17 @@ function CoursebookPage() {
             : null
         ]
       }),
-      jsx(PageBody, { label: `${pageTitle} content`, children: body })
+      jsx(PageBody, { label: `${pageTitle} content`, children: body }),
+      // H-147: the sheet lives over the route, not at a route of its own. It is only mounted while
+      // open, so Home is the only place a reader meets it.
+      jsx(HomeSettingsSheet, {
+        open: settingsOpen,
+        prefs: homePrefs,
+        classroom: homeClassroom,
+        onUpdate: updateHomePrefs,
+        onReset: resetHomePrefs,
+        onClose: closeSettings
+      })
     ]
   })
 }
@@ -19116,9 +21482,13 @@ function CbDestinationNav({ value, onChange }) {
  */
 function CoursebookPane() {
   const { state, storedId, reload } = useSessionBinding()
-  // The pane is part of the same scoped surface as the route: same token table, same mode.
-  const cbMode = useCbMode()
-  const cbMotion = useCbMotion()
+  // The pane is part of the same scoped surface as the route: same token table, same mode, and
+  // the same H-147 appearance/motion settings the learner chose on Home.
+  const [panePrefs] = useCbHomePrefs()
+  const hostMode = useCbMode()
+  const cbMode = cbAppliedMode(hostMode, panePrefs.appearance)
+  const systemMotion = useCbMotion()
+  const cbMotion = panePrefs.reducedMotion === 'reduce' ? 'reduced' : systemMotion
   const scopeProfile = currentScope().profile
   const routingUnavailable = profileRouteState.status === 'unavailable'
   const [bindNote, setBindNote] = useState(null)
@@ -19244,7 +21614,7 @@ function CoursebookPane() {
     'data-cb-binding-id': (state.binding && state.binding.binding_id) || '',
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion,
-    style: cbScopeStyle(cbMode),
+    style: { ...cbScopeStyle(cbMode), ...cbHostVars(panePrefs.appearance) },
     children: [
       jsx(CbLabel, { children: 'Coursebook' }),
       routingUnavailable
@@ -19416,7 +21786,7 @@ function SessionDiagnostics() {
         label: 'Wire contract',
         value: `cb.rpc v${backendWire.contractVersion}`,
         detail: implemented
-          ? `${implemented.length} implemented command(s): ${implemented.join(', ')}`
+          ? `${plural(implemented.length, 'implemented command', 'implemented commands')}: ${implemented.join(', ')}`
           : 'Backend method registry unavailable; commands are attempted, not assumed.'
       })
     ]
@@ -19451,6 +21821,21 @@ export {
   practiceFeedback,
   useOpenCheck,
   BackendUnavailable,
+  CB_HOME_PREF_DEFAULTS,
+  CB_PRESENTATION_LABEL,
+  CB_PRESENTATION_OPTIONS,
+  CB_PRESENTATION_VIEW,
+  CbSettingsSection,
+  HomeDefaultsLine,
+  HomeSettingsSheet,
+  sanitizeCbHomePrefs,
+  readCbHomePrefs,
+  updateCbHomePrefs,
+  resetCbHomePrefsSection,
+  cbEffectiveMode,
+  cbAppliedMode,
+  cbHostVars,
+  cbPlayCheckCue,
   CB_TOKENS,
   CB_TOKEN_NAMES,
   CB_TYPE,
@@ -19460,6 +21845,12 @@ export {
   FieldDesk,
   deskEstimateState,
   CreateCourseFlow,
+  LessonPlayer,
+  PlayerVerdict,
+  PlayerClose,
+  playerSteps,
+  playerCheckCount,
+  playerConcept,
   FIRST_RUN_COPY,
   FirstRun,
   GOAL_EXAMPLES,
@@ -19468,6 +21859,7 @@ export {
   LIBRARY_COPY,
   TITLE_PLACEHOLDER,
   EvidenceClassText,
+  EvidenceView,
   EVIDENCE_TARGET_OPTIONS,
   RECIPE_COPY,
   courseToolsVisible,
@@ -19530,16 +21922,30 @@ export {
   WorkspaceShell,
   blockSaveExcerpt,
   buildDeskModel,
+  hubSlots,
+  hubSlotName,
+  selectedHubSlot,
+  SlotRail,
   cbCourseGoalLine,
   cbCourseMonogram,
   cbCoursePathCaption,
   cbCoursePathSegments,
+  CheckpointPath,
+  cbCheckStateWord,
+  cbPathCurrentId,
+  cbPathNextId,
+  cbPathNodeKind,
+  cbPathNodeSize,
+  cbPathEvidenceCaption,
   cbSealStation,
   cbShelfFingerprint,
   cbShelfGroupKey,
   cbStableHash,
   CourseCover,
   PackShelfRow,
+  PackShelfSplit,
+  shelfFocusTarget,
+  PackFacts,
   CoursePath,
   groupShelfRows,
   ShelfDisclosure,
@@ -19564,7 +21970,12 @@ export {
   pronPercent,
   pronunciationAvailabilityCopy,
   questMissions,
+  missionBriefLine,
   planJobBrief,
+  plural,
+  COURSE_PRIMARY_TABS,
+  courseMoreTabs,
+  primarySurfaceFor,
   planRejectView,
   PlanRejectPanel,
   PLAN_VALIDATION_LINES,

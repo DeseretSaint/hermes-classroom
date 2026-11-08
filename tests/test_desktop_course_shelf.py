@@ -343,20 +343,27 @@ class CourseShelfTest(unittest.TestCase):
         self.assertTrue(all(0 <= station <= 3 for station in stations))
         self.assertEqual([row["monogram"] for row in result["rows"]], ["WS", "CJ"])
 
-    def test_four_segment_path_is_exactly_four_and_honest(self) -> None:
+    def test_one_segment_per_objective_and_only_real_evidence_is_painted(self) -> None:
         cases = [
-            (0, 0, 0, ["empty"] * 4),
-            (0, 0, 4, ["current", "quiet", "quiet", "quiet"]),
-            (0, 2, 4, ["due", "quiet", "quiet", "quiet"]),
-            (2, 0, 6, ["done", "current", "quiet", "quiet"]),
-            (6, 0, 6, ["done", "done", "done", "done"]),
-            (1, 2, 4, ["done", "due", "quiet", "quiet"]),
+            (0, 0, 0, []),
+            (0, 0, 4, ["quiet", "quiet", "quiet", "quiet"]),
+            (0, 2, 4, ["due", "due", "quiet", "quiet"]),
+            (2, 0, 6, ["done", "done", "quiet", "quiet", "quiet", "quiet"]),
+            (6, 0, 6, ["done", "done", "done", "done", "done", "done"]),
+            (1, 2, 4, ["done", "due", "due", "quiet"]),
         ]
         for independent, due, total, expected in cases:
             row = shelf_row(evidence_summary={"independent": independent, "review_due": due, "total_objectives": total})
             result = self.run_harness({"mode": "pure", "rows": [row]})["rows"][0]
-            self.assertEqual(len(result["path"]), 4, f"path for {total} objectives must have four segments")
+            self.assertEqual(len(result["path"]), total, f"path for {total} objectives must be one segment each")
             self.assertEqual([segment["state"] for segment in result["path"]], expected)
+            self.assertNotIn("current", [segment["state"] for segment in result["path"]])
+
+    def test_a_course_too_large_to_draw_honestly_shows_the_count_only(self) -> None:
+        row = shelf_row(evidence_summary={"independent": 4, "review_due": 0, "total_objectives": 20})
+        result = self.run_harness({"mode": "pure", "rows": [row]})["rows"][0]
+        self.assertEqual(result["path"], [])
+        self.assertEqual(result["caption"], "4 of 20 with evidence")
 
     def test_path_caption_carries_exact_counts(self) -> None:
         row = shelf_row(evidence_summary={"independent": 2, "review_due": 1, "total_objectives": 6})
@@ -366,6 +373,10 @@ class CourseShelfTest(unittest.TestCase):
             {"mode": "pure", "rows": [shelf_row(evidence_summary={"independent": 0, "review_due": 0, "total_objectives": 0})]}
         )["rows"][0]
         self.assertEqual(empty["caption"], "No sections yet")
+        zero = self.run_harness(
+            {"mode": "pure", "rows": [shelf_row(evidence_summary={"independent": 0, "review_due": 0, "total_objectives": 4})]}
+        )["rows"][0]
+        self.assertEqual(zero["caption"], "0 of 4 with evidence")
 
     def test_goal_line_is_real_or_says_it_is_missing(self) -> None:
         with_goal = self.run_harness({"mode": "pure", "rows": [shelf_row(goal="Cut a sandwich into eighths.")]})["rows"][0]

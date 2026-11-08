@@ -1,0 +1,255 @@
+{
+  "widths": {
+    "460": {
+      "innerWidth": 460,
+      "view": "textbook",
+      "primaryCount": 4,
+      "primaryLabels": [
+        "Overview",
+        "Learn",
+        "Notebook",
+        "Evidence"
+      ],
+      "selected": [
+        "Learn"
+      ],
+      "moreSummary": "More",
+      "moreOpen": false,
+      "moreCount": 4,
+      "moreLabels": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "moreVisible": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "headingTag": "H2",
+      "headingText": "Japanese affection and register — an L0 demonstration classroom",
+      "h1Count": 1,
+      "h2Count": 2,
+      "tabRowHeight": 45,
+      "tabRowScroll": 0,
+      "routeWidth": 460,
+      "pageOverflow": 0,
+      "routeOverflow": 0,
+      "moreOverflow": 0,
+      "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/detail-460.png",
+      "tabsScreenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/tabs-460.png"
+    },
+    "900": {
+      "innerWidth": 900,
+      "view": "textbook",
+      "primaryCount": 4,
+      "primaryLabels": [
+        "Overview",
+        "Learn",
+        "Notebook",
+        "Evidence"
+      ],
+      "selected": [
+        "Learn"
+      ],
+      "moreSummary": "More",
+      "moreOpen": false,
+      "moreCount": 4,
+      "moreLabels": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "moreVisible": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "headingTag": "H2",
+      "headingText": "Japanese affection and register — an L0 demonstration classroom",
+      "h1Count": 1,
+      "h2Count": 2,
+      "tabRowHeight": 45,
+      "tabRowScroll": 0,
+      "routeWidth": 640,
+      "pageOverflow": 0,
+      "routeOverflow": 0,
+      "moreOverflow": 0,
+      "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/detail-900.png",
+      "tabsScreenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/tabs-900.png"
+    },
+    "1049": {
+      "innerWidth": 1049,
+      "view": "textbook",
+      "primaryCount": 4,
+      "primaryLabels": [
+        "Overview",
+        "Learn",
+        "Notebook",
+        "Evidence"
+      ],
+      "selected": [
+        "Learn"
+      ],
+      "moreSummary": "More",
+      "moreOpen": false,
+      "moreCount": 4,
+      "moreLabels": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "moreVisible": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "headingTag": "H2",
+      "headingText": "Japanese affection and register — an L0 demonstration classroom",
+      "h1Count": 1,
+      "h2Count": 2,
+      "tabRowHeight": 45,
+      "tabRowScroll": 0,
+      "routeWidth": 789,
+      "pageOverflow": 0,
+      "routeOverflow": 0,
+      "moreOverflow": 0,
+      "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/detail-1049.png",
+      "tabsScreenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/tabs-1049.png"
+    }
+  },
+  "text200": {
+    "innerWidth": 460,
+    "view": "overview",
+    "primaryCount": 4,
+    "primaryLabels": [
+      "Overview",
+      "Learn",
+      "Notebook",
+      "Evidence"
+    ],
+    "selected": [
+      "Overview"
+    ],
+    "moreSummary": "More",
+    "moreOpen": true,
+    "moreCount": 4,
+    "moreLabels": [
+      "Attempts",
+      "Plan",
+      "Sources",
+      "Export"
+    ],
+    "moreVisible": [
+      "Attempts",
+      "Plan",
+      "Sources",
+      "Export"
+    ],
+    "headingTag": "H2",
+    "headingText": "Japanese affection and register — an L0 demonstration classroom",
+    "h1Count": 1,
+    "h2Count": 4,
+    "tabRowHeight": 176,
+    "tabRowScroll": 0,
+    "routeWidth": 460,
+    "pageOverflow": 0,
+    "routeOverflow": 0,
+    "moreOverflow": 0,
+    "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/tabs-460-text200.png"
+  },
+  "keyboard": {
+    "stops": [
+      {
+        "tag": "BUTTON",
+        "tab": "overview",
+        "selected": "true",
+        "outlineWidth": "3px",
+        "outlineColor": "color(srgb 0.901961 0.929412 0.952941 / 0.54)",
+        "innerText": "Overview"
+      },
+      {
+        "tag": "BUTTON",
+        "tab": "learn",
+        "selected": "true",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(168, 192, 242)",
+        "innerText": "Learn"
+      },
+      {
+        "tag": "BUTTON",
+        "tab": "notebook",
+        "selected": "true",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(168, 192, 242)",
+        "innerText": "Notebook"
+      },
+      {
+        "tag": "BUTTON",
+        "tab": "evidence",
+        "selected": "true",
+        "outlineWidth": "2px",
+        "outlineColor": "rgb(168, 192, 242)",
+        "innerText": "Evidence"
+      }
+    ],
+    "viewAfter": "evidence",
+    "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/tabs-1049-keyboard.png"
+  },
+  "evidence": {
+    "blocks": [
+      {
+        "block": "l3",
+        "label": "What to do next"
+      },
+      {
+        "block": "l2",
+        "label": "What the evidence shows"
+      },
+      {
+        "block": "l1",
+        "label": "Your attempts"
+      }
+    ],
+    "hasL3": false,
+    "hasLayer": false,
+    "technicalOpen": false,
+    "technicalText": "Technical detail",
+    "text": "Skip to course content\nCourses\nCourses\nLibrary\nParent Studio\nAll courses\nJapanese affection and register — an L0 demonstration classroom\nNeeds review\nA little at a time\nSource stale\nSection 1 of 4\nTell everyday affection from a direct romantic declaration\n·\n0 of 4\nWith independent evidence\n·\n1\nDue for review\nStart a fresh run\nOpen the textbook\nWhy this is next\nOverview\nLearn\nNotebook\nEvidence\nMore\nAttempts\nPlan\nSources\nExport\nReview due\n1 section is due for review.\nSee what is due\nWhat to do next\n1 objective(s) have no cold independent evidence yet.\n\nIt changes when new evidence is recorded, and it describes that evidence rather than judging you. Updated 1 d ago.\n\nTechnical detail\nWhat the e",
+    "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/evidence-1049.png"
+  },
+  "more": {
+    "openBefore": true,
+    "after": {
+      "open": true,
+      "labels": [
+        "Attempts",
+        "Plan",
+        "Sources",
+        "Export"
+      ],
+      "visible": [
+        "Attempts",
+        "Plan",
+        "Sources",
+        "Export"
+      ],
+      "summary": "More"
+    },
+    "screenshot": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/more-1049.png",
+    "plan": {
+      "view": "plan",
+      "moreOpen": true,
+      "summary": "More · Plan",
+      "notice": "You are reading plan from More. Overview, Learn, Notebook and Evidence stay one click away above.",
+      "selectedPrimary": []
+    },
+    "screenshotActive": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_821f0924/docs/h157-shots/more-plan-1049.png"
+  }
+}

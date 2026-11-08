@@ -1,0 +1,493 @@
+{
+  "port": "9362",
+  "target": "http://127.0.0.1:5174/#/coursebook",
+  "deployedPlugin": {
+    "title": "Hermes",
+    "scripts": [
+      "",
+      "http://127.0.0.1:5174/@vite/client",
+      "",
+      "http://127.0.0.1:5174/src/entry.ts?t=1794028184763"
+    ]
+  },
+  "light": {
+    "rootFontSize": "16px"
+  },
+  "wide": {
+    "focusRing": {
+      "tag": "button",
+      "label": "Preview Parent demo: measuring ingredients together",
+      "text": "",
+      "isBody": false,
+      "isRowOverlay": true,
+      "insidePreview": false,
+      "visible": true,
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "outlineOffset": "-1.1156px",
+      "focusVisible": true,
+      "rect": {
+        "x": 248,
+        "y": 382,
+        "w": 377,
+        "h": 195
+      },
+      "rowRect": {
+        "x": 248,
+        "y": 381,
+        "w": 377,
+        "h": 196
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 237,
+        "y": 34,
+        "w": 407,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": true,
+      "previewPanel": false,
+      "selectedCount": 0,
+      "innerWidth": 1049,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "focusRingFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/focus-ring-light-1049.png",
+    "focusRingFull": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/focus-ring-light-1049-full.png",
+    "blurred": {
+      "tag": "body",
+      "label": null,
+      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-left-width: 0; border",
+      "isBody": true,
+      "isRowOverlay": false,
+      "insidePreview": false,
+      "visible": false,
+      "outline": null,
+      "outlineOffset": null,
+      "focusVisible": false,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 1050,
+        "h": 1004
+      },
+      "rowRect": {
+        "x": 248,
+        "y": 381,
+        "w": 377,
+        "h": 196
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 237,
+        "y": 34,
+        "w": 407,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": true,
+      "previewPanel": false,
+      "selectedCount": 0,
+      "innerWidth": 1049,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "blurredFull": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/focus-ring-light-1049-blurred.png",
+    "beforeEnter": {
+      "tag": "button",
+      "label": "Preview Parent demo: measuring ingredients together",
+      "text": "",
+      "isBody": false,
+      "isRowOverlay": true,
+      "insidePreview": false,
+      "visible": true,
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "outlineOffset": "-1.1156px",
+      "focusVisible": true,
+      "rect": {
+        "x": 248,
+        "y": 382,
+        "w": 377,
+        "h": 195
+      },
+      "rowRect": {
+        "x": 248,
+        "y": 381,
+        "w": 377,
+        "h": 196
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 237,
+        "y": 34,
+        "w": 407,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": true,
+      "previewPanel": false,
+      "selectedCount": 0,
+      "innerWidth": 1049,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "afterKeyboardEnter": {
+      "tag": "button",
+      "label": "Preview Parent demo: measuring ingredients together",
+      "text": "",
+      "isBody": false,
+      "isRowOverlay": true,
+      "insidePreview": false,
+      "visible": true,
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "outlineOffset": "-1.1156px",
+      "focusVisible": true,
+      "rect": {
+        "x": 248,
+        "y": 382,
+        "w": 377,
+        "h": 195
+      },
+      "rowRect": {
+        "x": 248,
+        "y": 381,
+        "w": 377,
+        "h": 196
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 237,
+        "y": 34,
+        "w": 407,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": true,
+      "previewPanel": true,
+      "selectedCount": 1,
+      "innerWidth": 1049,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "afterKeyboardEnterFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/overlay-open-enter-1049.png",
+    "beforeSpace": {
+      "tag": "button",
+      "label": "Preview Japanese affection and register — an L0 demonstration classroom",
+      "text": "",
+      "isBody": false,
+      "isRowOverlay": false,
+      "insidePreview": false,
+      "visible": true,
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "outlineOffset": "-1.1156px",
+      "focusVisible": true,
+      "rect": {
+        "x": 248,
+        "y": 533,
+        "w": 377,
+        "h": 174
+      },
+      "rowRect": {
+        "x": 248,
+        "y": 335,
+        "w": 377,
+        "h": 196
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 237,
+        "y": 34,
+        "w": 407,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": true,
+      "previewPanel": false,
+      "selectedCount": 0,
+      "innerWidth": 1049,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "afterKeyboardSpace": {
+      "tag": "button",
+      "label": "Preview Japanese affection and register — an L0 demonstration classroom",
+      "text": "",
+      "isBody": false,
+      "isRowOverlay": false,
+      "insidePreview": false,
+      "visible": true,
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "outlineOffset": "-1.1156px",
+      "focusVisible": true,
+      "rect": {
+        "x": 248,
+        "y": 533,
+        "w": 377,
+        "h": 174
+      },
+      "rowRect": {
+        "x": 248,
+        "y": 335,
+        "w": 377,
+        "h": 196
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 237,
+        "y": 34,
+        "w": 407,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": true,
+      "previewPanel": true,
+      "selectedCount": 1,
+      "innerWidth": 1049,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "afterKeyboardSpaceFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/overlay-open-space-1049.png"
+  },
+  "narrow": {
+    "focusRing": {
+      "tag": "button",
+      "label": "Preview Parent demo: measuring ingredients together",
+      "text": "",
+      "isBody": false,
+      "isRowOverlay": true,
+      "insidePreview": false,
+      "visible": true,
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "outlineOffset": "-1.1156px",
+      "focusVisible": true,
+      "rect": {
+        "x": 11,
+        "y": 480,
+        "w": 185,
+        "h": 263
+      },
+      "rowRect": {
+        "x": 11,
+        "y": 479,
+        "w": 185,
+        "h": 264
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 0,
+        "y": 34,
+        "w": 215,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": true,
+      "previewPanel": false,
+      "selectedCount": 0,
+      "innerWidth": 460,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "focusRingFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/focus-ring-light-460.png",
+    "focusRingFull": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/focus-ring-light-460-full.png",
+    "blurred": {
+      "tag": "body",
+      "label": null,
+      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-left-width: 0; border",
+      "isBody": true,
+      "isRowOverlay": false,
+      "insidePreview": false,
+      "visible": false,
+      "outline": null,
+      "outlineOffset": null,
+      "focusVisible": false,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 461,
+        "h": 1004
+      },
+      "rowRect": {
+        "x": 11,
+        "y": 479,
+        "w": 185,
+        "h": 264
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 0,
+        "y": 34,
+        "w": 215,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": true,
+      "previewPanel": false,
+      "selectedCount": 0,
+      "innerWidth": 460,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "blurredFull": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/focus-ring-light-460-blurred.png",
+    "beforeSpace": {
+      "tag": "button",
+      "label": "Preview Parent demo: measuring ingredients together",
+      "text": "",
+      "isBody": false,
+      "isRowOverlay": true,
+      "insidePreview": false,
+      "visible": true,
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "outlineOffset": "-1.1156px",
+      "focusVisible": true,
+      "rect": {
+        "x": 11,
+        "y": 480,
+        "w": 185,
+        "h": 263
+      },
+      "rowRect": {
+        "x": 11,
+        "y": 479,
+        "w": 185,
+        "h": 264
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 0,
+        "y": 34,
+        "w": 215,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": true,
+      "previewPanel": false,
+      "selectedCount": 0,
+      "innerWidth": 460,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "afterKeyboardSpace": {
+      "tag": "button",
+      "label": null,
+      "text": "All packs",
+      "isBody": false,
+      "isRowOverlay": false,
+      "insidePreview": true,
+      "visible": true,
+      "outline": "none 1.1156px rgb(229, 151, 0)",
+      "outlineOffset": "0px",
+      "focusVisible": true,
+      "rect": {
+        "x": 11,
+        "y": 479,
+        "w": 68,
+        "h": 24
+      },
+      "rowRect": {
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 0
+      },
+      "pageScroll": {
+        "x": 0,
+        "y": 0
+      },
+      "routeRect": {
+        "x": 0,
+        "y": 34,
+        "w": 215,
+        "h": 950
+      },
+      "documentOverflow": 0,
+      "rowVisible": false,
+      "previewPanel": true,
+      "selectedCount": 1,
+      "innerWidth": 460,
+      "innerHeight": 1004,
+      "rootFontSize": "16px",
+      "bodyFontSize": "13px"
+    },
+    "afterKeyboardSpaceFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/overlay-open-space-460.png"
+  },
+  "text200": {
+    "tag": "body",
+    "label": null,
+    "text": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-left-width: 0; border",
+    "isBody": true,
+    "isRowOverlay": false,
+    "insidePreview": false,
+    "visible": false,
+    "outline": null,
+    "outlineOffset": null,
+    "focusVisible": false,
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 461,
+      "h": 1004
+    },
+    "rowRect": {
+      "x": 22,
+      "y": 631,
+      "w": 154,
+      "h": 1127
+    },
+    "pageScroll": {
+      "x": 0,
+      "y": 0
+    },
+    "routeRect": {
+      "x": 0,
+      "y": 34,
+      "w": 215,
+      "h": 914
+    },
+    "documentOverflow": 0,
+    "rowVisible": true,
+    "previewPanel": false,
+    "selectedCount": 0,
+    "innerWidth": 460,
+    "innerHeight": 1004,
+    "rootFontSize": "32px",
+    "bodyFontSize": "26px",
+    "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/text200-measured-light-460.png",
+    "full": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/text200-measured-light-460-full.png"
+  }
+}

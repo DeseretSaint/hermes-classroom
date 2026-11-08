@@ -97,14 +97,18 @@ if (payload.kind === 'first-run') {
   html = renderToStaticMarkup(
     React.createElement(FirstRun, {
       implemented: new Set(['course.create', 'pack.import']),
-      onCreate: () => {}
+      onCreate: () => {},
+      onBrowseLibrary: () => {},
+      onRetry: () => {}
     })
   )
 } else if (payload.kind === 'first-run-no-import') {
   html = renderToStaticMarkup(
     React.createElement(FirstRun, {
       implemented: new Set(['course.create']),
-      onCreate: () => {}
+      onCreate: () => {},
+      onBrowseLibrary: () => {},
+      onRetry: () => {}
     })
   )
 } else if (payload.kind === 'first-run-syllabus') {
@@ -112,7 +116,47 @@ if (payload.kind === 'first-run') {
     React.createElement(FirstRun, {
       implemented: new Set(['course.create', 'pack.import', 'syllabus.intake.create']),
       onCreate: () => {},
-      onSyllabus: () => {}
+      onSyllabus: () => {},
+      onBrowseLibrary: () => {},
+      onRetry: () => {}
+    })
+  )
+} else if (payload.kind === 'first-run-nothing') {
+  html = renderToStaticMarkup(
+    React.createElement(FirstRun, {
+      implemented: new Set([]),
+      onCreate: () => {},
+      onBrowseLibrary: () => {},
+      onRetry: () => {}
+    })
+  )
+} else if (payload.kind === 'first-run-unavailable') {
+  html = renderToStaticMarkup(
+    React.createElement(FirstRun, {
+      implemented: new Set(['pack.import', 'syllabus.intake.create']),
+      onCreate: () => {},
+      onSyllabus: () => {},
+      onBrowseLibrary: () => {},
+      onRetry: () => {}
+    })
+  )
+} else if (payload.kind === 'first-run-no-handler') {
+  html = renderToStaticMarkup(
+    React.createElement(FirstRun, {
+      implemented: new Set(['course.create', 'pack.import']),
+      onCreate: () => {}
+    })
+  )
+} else if (payload.kind === 'first-run-offline') {
+  // The plate reads `navigator.onLine`, the same signal the route header uses.
+  Object.defineProperty(globalThis, 'navigator', { value: { onLine: false }, configurable: true })
+  html = renderToStaticMarkup(
+    React.createElement(FirstRun, {
+      implemented: new Set(['course.create', 'pack.import', 'syllabus.intake.create']),
+      onCreate: () => {},
+      onSyllabus: () => {},
+      onBrowseLibrary: () => {},
+      onRetry: () => {}
     })
   )
 } else if (payload.kind === 'create-step-one') {
@@ -169,74 +213,88 @@ def _run(payload: dict) -> dict:
 
 @unittest.skipIf(shutil.which("node") is None, "node is required to run the runtime desktop plugin")
 class FirstRunCopyTest(unittest.TestCase):
-    """UX-01: one promise, one primary action, one secondary path, no governance vocabulary."""
+    """H-153: one start plate — one headline, one short what-happens line, one primary, and at most
+    one secondary door. The three-step explainer, the progress paragraph and the capability
+    inventory are gone; every entry is gated on the command that serves it."""
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.out = _run({"kind": "first-run"})
 
-    def test_one_primary_action_and_one_secondary_path(self) -> None:
+    def test_one_primary_action_and_at_most_one_secondary(self) -> None:
         html = self.out["html"]
         self.assertIn("Start with a goal", html)
         self.assertIn("Use a course I already have", html)
-        # The primary action is a default-variant button: the only filled control on the screen.
+        # The primary is a default-variant button: the only filled control on the screen.
         self.assertEqual(html.count('data-variant="default"'), 1, html)
-        self.assertIn('data-variant="secondary"', html)
+        self.assertEqual(html.count('data-variant="secondary"'), 1, html)
+        self.assertEqual(html.count("<button"), 2, html)
 
-    def test_the_start_plate_names_the_goal_and_what_pressing_does(self) -> None:
+    def test_the_plate_is_one_headline_and_one_what_happens_line(self) -> None:
         html = self.out["html"]
         self.assertIn("What do you want to be able to do?", html)
-        self.assertIn("Name one goal, review the plan, then learn.", html)
-        self.assertIn("Nothing is created until you approve the plan.", html)
-        self.assertIn("Next you choose how big the course is.", html)
-        self.assertIn("Nothing is marked complete without a check you can see.", html)
+        self.assertIn(
+            "Name one goal, review the plan, then learn. Nothing is created until you approve the plan.",
+            html,
+        )
+        self.assertEqual(html.count("data-cb-first-run-line"), 1, html)
+        # No numbered path, no second "next" sentence, no progress paragraph.
+        self.assertNotIn("data-cb-first-run-path", html)
+        self.assertNotIn("Next you choose how big the course is.", html)
+        self.assertNotIn("Nothing is marked complete without a check you can see.", html)
 
-    def test_the_path_is_three_numbered_rows_not_an_onboarding_flow(self) -> None:
-        html = self.out["html"]
-        self.assertIn("data-cb-first-run-path", html)
-        for ordinal, label in ((1, "Name a goal"), (2, "Review the plan"), (3, "Learn and adapt")):
-            self.assertIn(label, html)
-            self.assertIn('data-cb-first-run-step="%d"' % ordinal, html)
-        # One plate, no deck of cards, no welcome overlay, no current-step marker before a course exists.
-        self.assertNotIn('role="dialog"', html)
-        self.assertNotIn("Step 1 of 3", html)
-        self.assertNotIn("Welcome", html)
+    def test_the_support_and_inventory_note_is_gone(self) -> None:
+        for kind in ("first-run", "first-run-no-import", "first-run-syllabus", "first-run-nothing"):
+            html = _run({"kind": kind})["html"]
+            for banned in ("Not in this", "backend build", "sample data", "pack preview", "plan generation jobs"):
+                self.assertNotIn(banned, html, kind)
 
-    def test_no_decorative_eyebrow_above_the_heading(self) -> None:
-        # H-84 removed the uppercase kicker; H-86 keeps the plate opening on the question itself.
+    def test_the_plate_carries_no_seal_or_decorative_mark(self) -> None:
         html = self.out["html"]
-        self.assertNotIn(">New course<", html)
-        self.assertLess(html.index("What do you want to be able to do?"), html.index("Start with a goal"))
+        self.assertNotIn("<svg", html)
+        self.assertNotIn("data-cb-seal", html)
+
+    def test_no_tour_no_sample_course_no_praise(self) -> None:
+        html = self.out["html"]
+        for banned in ('role="dialog"', "Step 1 of 3", "Welcome", "ready to go", "You're all set"):
+            self.assertNotIn(banned, html)
+
+    def test_the_secondary_opens_the_library_only_when_a_door_is_mounted(self) -> None:
+        # Import (pack.import) and college syllabus (syllabus.intake.create) are the Library's two
+        # doors. With neither mounted the secondary is absent, not a dead control.
+        out = _run({"kind": "first-run-nothing"})
+        html = out["html"]
+        self.assertNotIn("Use a course I already have", html)
+        self.assertNotIn("<button", html)
+        self.assertIn("cannot create or add a course yet", html)
+
+    def test_a_build_without_course_create_says_so_and_keeps_the_library(self) -> None:
+        out = _run({"kind": "first-run-unavailable"})
+        html = out["html"]
+        self.assertIn("cannot create a course yet", html)
+        self.assertNotIn("data-cb-first-run-primary", html)
+        self.assertIn("Use a course I already have", html)
+        self.assertNotIn("Not in this", html)
+
+    def test_offline_is_a_state_with_one_action(self) -> None:
+        out = _run({"kind": "first-run-offline"})
+        html = out["html"]
+        self.assertIn('data-cb-first-run-state="offline"', html)
+        self.assertIn("paused while this profile is offline", html)
+        self.assertIn("Try again", html)
+        self.assertNotIn("Start with a goal", html)
+        self.assertEqual(html.count('data-variant="default"'), 1, html)
+
+    def test_the_secondary_is_still_gated_by_its_handler(self) -> None:
+        # A caller that cannot route to the Library gets no door (the harness above always can).
+        out = _run({"kind": "first-run-no-handler"})
+        self.assertNotIn("Use a course I already have", out["html"])
+        self.assertIn("Start with a goal", out["html"])
 
     def test_governance_vocabulary_is_gone(self) -> None:
         html = self.out["html"]
         for banned in ("governed learning", "real evidence", "nothing advances on its own"):
             self.assertNotIn(banned.lower(), html.lower())
-
-    def test_the_pack_path_explains_itself_before_it_is_used(self) -> None:
-        self.assertIn("who made it", self.out["html"])
-        self.assertIn("before anything is added", self.out["html"])
-
-    def test_the_two_alternate_entries_say_what_they_do(self) -> None:
-        out = _run({"kind": "first-run-syllabus"})
-        html = out["html"]
-        self.assertIn("Use my college syllabus", html)
-        self.assertIn("Your syllabus sets the scope.", html)
-        self.assertIn("Coursebook writes its own lessons alongside it", html)
-
-    def test_syllabus_path_appears_only_when_the_backend_implements_it(self) -> None:
-        # H-27 ships the real flow as `syllabus.intake.create`; the welcome offers it exactly when the
-        # capability is mounted and a handler is supplied, and never as a dead control otherwise.
-        html = self.out["html"]
-        self.assertNotIn("Use my college syllabus", html)
-        out = _run({"kind": "first-run-syllabus"})
-        self.assertIn("Use my college syllabus", out["html"])
-        self.assertEqual(out["html"].count('data-variant="default"'), 1, out["html"])
-
-    def test_missing_import_support_removes_the_secondary_path(self) -> None:
-        out = _run({"kind": "first-run-no-import"})
-        self.assertNotIn("Use a course someone already made", out["html"])
-        self.assertIn("Start with a goal", out["html"])
 
 
 @unittest.skipIf(shutil.which("node") is None, "node is required to run the runtime desktop plugin")
@@ -324,7 +382,10 @@ class LearnerVocabularyTest(unittest.TestCase):
     def test_library_copy_moves_the_absence_into_a_disclosure(self) -> None:
         library = self.out["copy"]["library"]
         self.assertNotIn("provenance", library["lead"].lower())
-        self.assertIn("Courses made by other people", library["lead"])
+        # H-150: the lead must not claim every pack was made by someone else — bundled packs are
+        # on the same shelf. It names both provenances the filters actually return.
+        self.assertIn("ship with Coursebook", library["lead"])
+        self.assertIn("from someone else", library["lead"])
         self.assertIn("no marketplace ranking and no verified badge", library["whatWeDoNotCheck"].lower())
         self.assertIn("What we check", library["whatWeCheck"])
         self.assertIn("hashes", library["whatWeCheck"].lower())

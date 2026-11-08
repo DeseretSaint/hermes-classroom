@@ -181,8 +181,11 @@ class TokenContractTest(unittest.TestCase):
     def test_the_route_and_pane_roots_are_the_scope(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
         # Both registered surfaces paint the layer; nothing else declares a colour.
-        self.assertEqual(source.count("style: cbScopeStyle(cbMode)"), 2)
+        self.assertEqual(source.count("cbScopeStyle(cbMode)"), 2)
         self.assertEqual(source.count("'data-cb-scope': cbMode"), 2)
+        # H-148: the route gutter is measured from the route, not the window; no unused `routePad`.
+        self.assertIn("paddingLeft: routePad", source)
+        self.assertIn("paddingRight: routePad", source)
 
 
 class RouteShellRenderTest(unittest.TestCase):
