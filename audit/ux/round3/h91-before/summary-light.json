@@ -1,0 +1,77 @@
+{
+  "theme": "light",
+  "sectionReached": false,
+  "results": [
+    {
+      "kind": "section",
+      "width": 1049,
+      "ok": false,
+      "path": "/home/deseretsaint/.hermes/kanban/boards/coursebook/workspaces/t_2ebaafa6/repo/audit/ux/round3/h91-before/section-1049-light.png",
+      "innerWidth": 1048,
+      "hash": "#/coursebook",
+      "routeMounted": false,
+      "boundary": true,
+      "errorText": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nArtifacts\nScheduled jobs\nCoursebook\nPINNED\nHermes Classroom Plugin Feasibility Plan\nnow\nSESSIONS\nCasual vs polite Japanese confession\n4h\nYESTERDAY\nRevive Marketing LLC business details\n1d\nLaunch multiple Hermes sessions on Omarchy\n1d\nResume Hermes classroom plugin chat\n1d\n[Message withheld: a pre_llm_call policy hook blocked it.]\n1d\nDiagnos",
+      "sectionActions": false,
+      "heading": null,
+      "textHead": null
+    },
+    {
+      "kind": "section",
+      "width": 900,
+      "ok": false,
+      "path": "/home/deseretsaint/.hermes/kanban/boards/coursebook/workspaces/t_2ebaafa6/repo/audit/ux/round3/h91-before/section-900-light.png",
+      "innerWidth": 899,
+      "hash": "#/coursebook",
+      "routeMounted": false,
+      "boundary": true,
+      "errorText": "1\nSESSIONS\nBOTS\nNew session\nCtrl\nN\nCapabilities\nMessaging\nArtifacts\nScheduled jobs\nCoursebook\nPINNED\nHermes Classroom Plugin Feasibility Plan\nnow\nSESSIONS\nCasual vs polite Japanese confession\n4h\nYESTERDAY\nRevive Marketing LLC business details\n1d\nLaunch multiple Hermes sessions on Omarchy\n1d\nResume Hermes classroom plugin chat\n1d\n[Message withheld: a pre_llm_call policy hook blocked it.]\n1d\nDiagnos",
+      "sectionActions": false,
+      "heading": null,
+      "textHead": null
+    },
+    {
+      "kind": "section",
+      "width": 460,
+      "ok": false,
+      "path": "/home/deseretsaint/.hermes/kanban/boards/coursebook/workspaces/t_2ebaafa6/repo/audit/ux/round3/h91-before/section-460-light.png",
+      "innerWidth": 459,
+      "hash": "#/coursebook",
+      "routeMounted": false,
+      "boundary": true,
+      "errorText": "“plugin:coursebook:coursebook:page” failed to render\n\nCannot read properties of null (reading 'binding_status')\n\nRetry\nCoursebook\n\nNo lesson chat open\n\nA lesson runs in a chat. Open Coursebook, pick a course and start a run; the teaching stays beside the chat once it begins.\n\nOpen Coursebook\nTERMINAL\n127.0.0.1:44219\nBackend\nchecking\ndeseretsaint\nSmart\nclient v0.23.0+1",
+      "sectionActions": false,
+      "heading": null,
+      "textHead": null
+    },
+    {
+      "kind": "library",
+      "width": 1049,
+      "ok": false,
+      "path": "/home/deseretsaint/.hermes/kanban/boards/coursebook/workspaces/t_2ebaafa6/repo/audit/ux/round3/h91-before/library-1049-light.png",
+      "missing": true
+    },
+    {
+      "kind": "library",
+      "width": 900,
+      "ok": false,
+      "path": "/home/deseretsaint/.hermes/kanban/boards/coursebook/workspaces/t_2ebaafa6/repo/audit/ux/round3/h91-before/library-900-light.png",
+      "missing": true
+    },
+    {
+      "kind": "library",
+      "width": 460,
+      "ok": false,
+      "path": "/home/deseretsaint/.hermes/kanban/boards/coursebook/workspaces/t_2ebaafa6/repo/audit/ux/round3/h91-before/library-460-light.png",
+      "missing": true
+    }
+  ],
+  "failures": [
+    "V2-1 1049px: boundary=true actions=false",
+    "V2-1 900px: boundary=true actions=false",
+    "V2-1 460px: boundary=true actions=false",
+    "V2-2 1049px: routeOverflow=undefined body=undefined",
+    "V2-2 900px: routeOverflow=undefined body=undefined",
+    "V2-2 460px: routeOverflow=undefined body=undefined"
+  ]
+}

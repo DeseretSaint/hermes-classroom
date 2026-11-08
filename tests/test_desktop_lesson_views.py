@@ -45,7 +45,9 @@ if (payload.kind === 'section') {
       evidence_target: 'discrimination',
       last_opened_at: null
     },
-    runtime: { lesson_run_id: 'run_1', binding_id: null, binding_status: 'detached', session_state: 'stored_only' },
+    runtime: payload.runtimeNull
+      ? null
+      : { lesson_run_id: 'run_1', binding_id: null, binding_status: 'detached', session_state: 'stored_only' },
     segments: [],
     attempts: [],
     notebook_entries: [],
@@ -401,6 +403,29 @@ class LessonViewRenderTest(unittest.TestCase):
         self.assertIn("Textbook only", html)
         self.assertIn("This older lesson has no guided view.", html)
         self.assertNotIn('aria-pressed="true"', html)
+
+    # -- H-91 regression: a section with no runtime read at all ------------------------------
+    def test_a_section_with_a_null_runtime_renders_instead_of_throwing(self) -> None:
+        """H-85 V2-1: `page.runtime` is null in the no-chat case.
+
+        H-86 made the no-chat sentence unconditional but left `data-cb-detached` reading
+        `runtime.binding_status`, which threw during render and replaced the whole route with the
+        host error boundary. The harness renders the real module with react-dom/server, so a throw
+        here is a non-zero exit (asserted in render()) — the test cannot pass on broken code.
+        """
+        doc = document(guided=True, blocks=COMPLETE_BLOCKS, check_id="chk_0123456789abcdef")
+        payload = self.section_payload(doc)
+        payload["runtimeNull"] = True
+        html = self.render(payload)
+
+        # The sentence is still unconditional, and the attribute degrades to its detached default.
+        self.assertIn("This section has no lesson chat yet.", html)
+        self.assertIn('data-cb-detached="detached"', html)
+        # The one live action for a section with no chat is "start", never "resume".
+        self.assertIn('data-cb-section-actions="start"', html)
+        self.assertNotIn('data-cb-section-actions="resume"', html)
+        # The section itself rendered.
+        self.assertIn('data-cb-lesson-view="textbook"', html)
 
 
 if __name__ == "__main__":

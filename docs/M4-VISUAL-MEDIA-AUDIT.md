@@ -3,10 +3,10 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on `master` at `7d0f9cf` (after H-83's Atlas Lamp composition, H-84's plain-language
-pass and H-86's wayfinding pass) and is pinned to the module that ships from that tree:
-`desktop/plugin.js` sha256
-`2f806531aa840e53ecd0418ea13906d88e39909e4c858ed6f1b5e6f9af6b8240`.
+regenerated on `master` after H-91 (H-83's Atlas Lamp composition, H-84's plain-language pass,
+H-86's wayfinding pass and H-91's section-crash / Library-clipping fixes) and is pinned to the
+module that ships from that tree: `desktop/plugin.js` sha256
+`80725f67bbc8569e676100f5e8b50b0da517082546df1f602722fcdf86347910`.
 
 This is **not** release evidence. Nothing here was published, tagged, pushed or merged, and the
 audit makes no claim that Coursebook is installable.
@@ -32,21 +32,21 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
-Run twice back to back on this pin (`2f80653…`), verbatim:
+Run twice back to back on this pin (`80725f6…`), verbatim:
 
 ```
 $ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-5jddotsa/run-a
-run B → …/cb-m4v-repro-5jddotsa/run-b
+run A → …/cb-m4v-repro-b4usqzsz/run-a
+run B → …/cb-m4v-repro-b4usqzsz/run-b
 PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 2f806531aa840e53ecd0418ea13906d88e39909e4c858ed6f1b5e6f9af6b8240
+  plugin_sha256: 80725f67bbc8569e676100f5e8b50b0da517082546df1f602722fcdf86347910
   reference_time: 2026-11-07T10:00:00.000Z
 
 $ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-n54o0bid/run-a
-run B → …/cb-m4v-repro-n54o0bid/run-b
+run A → …/cb-m4v-repro-wr9072gm/run-a
+run B → …/cb-m4v-repro-wr9072gm/run-b
 PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 2f806531aa840e53ecd0418ea13906d88e39909e4c858ed6f1b5e6f9af6b8240
+  plugin_sha256: 80725f67bbc8569e676100f5e8b50b0da517082546df1f602722fcdf86347910
   reference_time: 2026-11-07T10:00:00.000Z
 ```
 

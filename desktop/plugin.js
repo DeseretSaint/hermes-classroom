@@ -11319,7 +11319,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
 
         !bindingActive
           ? jsx('div', {
-              'data-cb-detached': runtime.binding_status || 'detached',
+              // A section may have no runtime read at all (the no-chat case): page.runtime is null,
+              // and only `bindingActive` is guaranteed. Never dereference `runtime` unguarded here.
+              'data-cb-detached': (runtime && runtime.binding_status) || 'detached',
               style: {
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -16849,7 +16851,10 @@ function CoursebookPage() {
                 ]
               }),
               jsxs('div', {
-                className: 'flex shrink-0 flex-wrap items-center justify-end gap-2',
+                // The actions must give way before the route does: at a 460 px window the route pane
+                // is ~214 px, and two nowrap buttons refused to shrink (V2-2: 19 px at 900, 45 px at
+                // 460). Shrinkable + wrapping lets them stack onto their own rows instead of clipping.
+                className: 'flex min-w-0 flex-wrap items-center justify-end gap-2',
                 children: [
                   online ? null : jsx(sdk.Badge, { variant: 'warn', children: 'Offline' }),
                   statusCopy ? jsx(sdk.Badge, { variant: health.status === 'unavailable' ? 'warn' : 'muted', children: statusCopy }) : null,
@@ -16862,9 +16867,9 @@ function CoursebookPage() {
                   health.status === 'ready' && !creating && !importing && !syllabusFlow && destination === 'library' && canImport
                     ? jsx(sdk.Button, { onClick: onImportPlaceholder, size: 'sm', variant: 'default', children: 'Import pack' })
                     : null,
-                  health.status === 'ready' && online && !studioSeed && destination === 'studio' && !studioCourse && canAuthor
-                    ? jsx(sdk.Button, { onClick: () => setStudioSeed({ initial: null, note: null }), size: 'sm', variant: 'default', children: 'New lesson plan' })
-                    : null
+                  // H-91 P2-4: the Parent Studio landing plate already carries the one
+                  // "New lesson plan" primary, so the route header must not repeat it (the gate
+                  // counted two primaries with the same label on that surface).
                 ]
               })
             ]
