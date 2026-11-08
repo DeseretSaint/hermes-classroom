@@ -1,0 +1,52 @@
+{
+  "frames": [
+    {
+      "label": "export-1049",
+      "innerWidth": 1049,
+      "rootFont": "16px",
+      "overflowX": 0,
+      "routeWidth": 789,
+      "detailWidth": 697,
+      "hash": "sha256:962db9a0ebd7dce54aed53a6ef2f3bebe21f47733a45b3c1669f48f04890d4b3",
+      "stays": true,
+      "leaves": true,
+      "clipped": []
+    },
+    {
+      "label": "export-1049-200pct",
+      "innerWidth": 1049,
+      "rootFont": "32px",
+      "overflowX": 0,
+      "routeWidth": 789,
+      "detailWidth": 689,
+      "hash": "sha256:962db9a0ebd7dce54aed53a6ef2f3bebe21f47733a45b3c1669f48f04890d4b3",
+      "stays": true,
+      "leaves": true,
+      "clipped": []
+    },
+    {
+      "label": "export-460",
+      "innerWidth": 460,
+      "rootFont": "16px",
+      "overflowX": 0,
+      "routeWidth": 460,
+      "detailWidth": 412,
+      "hash": "sha256:962db9a0ebd7dce54aed53a6ef2f3bebe21f47733a45b3c1669f48f04890d4b3",
+      "stays": true,
+      "leaves": true,
+      "clipped": []
+    },
+    {
+      "label": "export-460-200pct",
+      "innerWidth": 460,
+      "rootFont": "32px",
+      "overflowX": 0,
+      "routeWidth": 460,
+      "detailWidth": 364,
+      "hash": "sha256:962db9a0ebd7dce54aed53a6ef2f3bebe21f47733a45b3c1669f48f04890d4b3",
+      "stays": true,
+      "leaves": true,
+      "clipped": []
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+import { connect } from '../../scripts/cb015-lib.mjs'
+const cdp = await connect()
+await cdp.clearViewport(); await cdp.wait(500)
+await cdp.eval(`document.querySelector('[data-cb-export-leaves]').scrollIntoView({block:'center'})`)
+await cdp.wait(400)
+console.log(await cdp.shot('audit/h121/shots/export-1049-stays.png'))
+await cdp.setViewport(460, 900); await cdp.wait(700)
+await cdp.eval(`document.querySelector('[data-cb-export-leaves]').scrollIntoView({block:'center'})`)
+await cdp.wait(400)
+console.log(await cdp.shot('audit/h121/shots/export-460-stays.png'))
+await cdp.clearViewport()
+cdp.close()

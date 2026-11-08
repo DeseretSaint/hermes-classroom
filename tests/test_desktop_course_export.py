@@ -23,7 +23,10 @@ PLUGIN_JS = ROOT / "desktop" / "plugin.js"
 HARNESS = """
 import {
   courseExportRequest,
+  courseExportRepair,
   COURSE_EXPORT_BLOCKED_COPY,
+  COURSE_EXPORT_PRIVATE_ROWS,
+  COURSE_EXPORT_REPAIR,
   LEARNING_VIEWS
 } from './plugin.js'
 
@@ -37,6 +40,9 @@ process.stdout.write(
     second,
     reasons: Object.keys(COURSE_EXPORT_BLOCKED_COPY),
     copy: COURSE_EXPORT_BLOCKED_COPY,
+    private_rows: COURSE_EXPORT_PRIVATE_ROWS,
+    repair: COURSE_EXPORT_REPAIR,
+    repairs: Object.keys(COURSE_EXPORT_BLOCKED_COPY).map((reason) => [reason, courseExportRepair(reason)]),
     views: LEARNING_VIEWS
   })
 )
@@ -120,17 +126,60 @@ class CourseExportSurfaceTest(unittest.TestCase):
 
     def test_the_pack_backed_copy_points_at_pack_export(self) -> None:
         self.assertIn("pack surface", self.out["copy"]["course_pack_backed"])
+        # A pack-backed course's one repair is the Library, where pack export lives.
+        self.assertEqual(self.out["repair"]["course_pack_backed"]["target"], "library")
+
+    def test_every_refusal_that_has_a_repair_points_at_a_real_surface(self) -> None:
+        repairs = {reason: repair for reason, repair in self.out["repairs"]}
+        for reason in (
+            "plan_not_approved",
+            "lessons_not_validated",
+            "no_generated_content",
+            "changes_need_review",
+            "export_not_exportable",
+        ):
+            with self.subTest(reason=reason):
+                self.assertIsNotNone(repairs[reason], reason)
+                self.assertEqual(repairs[reason]["target"], "plan")
+                self.assertGreater(len(repairs[reason]["label"]), 10)
+        # A write failure has no repair but trying again, so it is not silently given a fake one.
+        self.assertIsNone(repairs["export_write_failed"])
+
+    def test_the_preview_names_what_stays_behind(self) -> None:
+        rows = self.out["private_rows"]
+        self.assertGreaterEqual(len(rows), 4)
+        labels = " ".join(row["label"] for row in rows).lower()
+        for needle in ("attempt", "notebook", "observation", "provider", "enrollment"):
+            self.assertIn(needle, labels)
+        # The panel is a statement, not a list of files: none of its rows may name an archive file.
+        self.assertFalse(any(row["value"] for row in rows if ".md" in row["value"]))
 
     def test_the_surface_is_wired_into_the_course_detail(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        self.assertIn("jsx(CourseExportView, { row, implemented })", source)
-        self.assertIn("'Export course…'", source)
+        self.assertIn("jsx(CourseExportView, {", source)
+        self.assertIn("onRepair: () => selectView('plan')", source)
+        self.assertIn("'Export this course'", source)
         self.assertIn("'course.export.read'", source)
         # The no-upload statement and the rights line are the backend's text, printed verbatim.
         self.assertIn("read.no_upload", source)
         self.assertIn("read.rights", source)
         # No fake artifact: the surface only offers a download when the backend named one.
         self.assertIn("artifact.download.url", source)
+        # H-121: the stays/goes preview and the one-repair action are stable handles for a live probe.
+        self.assertIn("'data-cb-export-leaves': ''", source)
+        self.assertIn("'data-cb-export-blocked':", source)
+        self.assertIn("'data-cb-export-repair':", source)
+        self.assertIn("data-cb-export-hash", source)
+        self.assertIn("data-cb-export-done", source)
+        self.assertIn("data-cb-export-portable", source)
+
+    def test_the_import_confirmation_keeps_pack_and_enrollment_identity_apart(self) -> None:
+        source = PLUGIN_JS.read_text(encoding="utf-8")
+        self.assertIn("Pack (shared content)", source)
+        self.assertIn("Enrollment (this profile)", source)
+        self.assertIn("data-cb-import-done", source)
+        self.assertIn("data-cb-import-identity", source)
+        self.assertIn("setMode(mode)", source)
 
 
 if __name__ == "__main__":

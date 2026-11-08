@@ -1802,6 +1802,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
   const [folder, setFolder] = useState(null)
   const [entries, setEntries] = useState([])
   const [result, setResult] = useState(null)
+  const [mode, setMode] = useState(null)
 
   const libraryKey = JSON.stringify({ filter: 'all', limit: 50, sort: 'title' })
   const library = useRpcQuery(
@@ -1880,6 +1881,7 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
           { idempotencyKey: `cb-pack-import-${staged}-${mode}` }
         )
         if (!response.ok) throw new Error(`${response.error.code}: ${describeError(response.error)}`)
+        setMode(mode)
         setResult(response.result)
         setStep('done')
       } catch (failure) {
@@ -2026,11 +2028,27 @@ function PackImportFlow({ implemented, onCancel, onImported }) {
         jsx('div', { className: 'text-sm font-medium', children: parentResult ? 'Blueprint imported into Parent Studio' : 'Pack imported' }),
         jsxs('div', {
           className: 'flex flex-col',
+          'data-cb-import-done': `${result.pack_id}|${result.enrollment_id || 'none'}|${mode || 'unknown'}`,
           children: [
-            jsx(PackReviewLine, { label: 'Pack', value: `${result.pack_id}` }),
+            jsx(PackReviewLine, {
+              label: 'Pack (shared content)',
+              value: `${result.pack_id} · manifest ${(preview && preview.manifest && preview.manifest.content_hash) || 'not read this session'}`
+            }),
             jsx(PackReviewLine, { label: 'Course', value: result.course_id }),
-            jsx(PackReviewLine, { label: 'Enrollment', value: result.enrollment_id || 'none' })
+            jsx(PackReviewLine, { label: 'Enrollment (this profile)', value: result.enrollment_id || 'none' }),
+            jsx(PackReviewLine, {
+              label: 'Mode',
+              value: mode === 'resume' ? 'resumed the existing classroom' : 'fresh enrollment'
+            })
           ]
+        }),
+        jsx('div', {
+          className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+          'data-cb-import-identity': '',
+          children:
+            'Two identities, kept separate: the pack id and hash above name the immutable content every profile ' +
+            'shares, while the enrollment belongs to this profile’s progress. Resuming never writes a second course ' +
+            'for the same pack; a fresh run is a new enrollment on the same content, not a duplicated pack.'
         }),
         jsx('div', {
           className: 'text-xs text-(--ui-text-secondary)',
@@ -17694,6 +17712,40 @@ const COURSE_EXPORT_BLOCKED_COPY = {
     'This course came from a pack. Its file list and licence belong to that pack, so re-export it from the pack surface — this course cannot export its own copy.'
 }
 
+/**
+ * What a course archive holds and what it never holds.
+ *
+ * The right-hand list is the backend's own contract: `course_export` builds its manifest from the
+ * authored lesson rows and has no read path to these tables. There is deliberately no control to
+ * opt any of them in — this build offers no way to put learner history in a course archive, so the
+ * surface states that instead of showing a toggle that would do nothing.
+ */
+const COURSE_EXPORT_PRIVATE_ROWS = [
+  { label: 'Attempts, answers and grades', value: 'learner evidence, never read' },
+  { label: 'Notebook notes and saved excerpts', value: 'personal prose, never read' },
+  { label: 'Parent observations and chat transcripts', value: 'teaching history, never read' },
+  { label: 'Provider settings, bindings and enrollment id', value: 'local state, never read' }
+]
+
+/**
+ * The one repair each refusal offers (H-121). A refusal writes nothing, so the useful next step is
+ * the surface that can clear the gate: the plan (approve, generate, re-approve the lesson set), or
+ * the Library for a pack-backed course whose bytes belong to `pack.export`. `export_write_failed`
+ * has no repair beyond trying again, so it keeps only the re-check action.
+ */
+const COURSE_EXPORT_REPAIR = {
+  plan_not_approved: { target: 'plan', label: 'Review and approve the plan' },
+  no_generated_content: { target: 'plan', label: 'Generate the lessons' },
+  lessons_not_validated: { target: 'plan', label: 'Open the plan to fix the pages' },
+  changes_need_review: { target: 'plan', label: 'Review and re-approve the lesson set' },
+  export_not_exportable: { target: 'plan', label: 'Open the plan to fix the lessons' },
+  course_pack_backed: { target: 'library', label: 'Export the pack from Library' }
+}
+
+function courseExportRepair(reason) {
+  return COURSE_EXPORT_REPAIR[reason] || null
+}
+
 /** The exact write call, including the reviewed-content fence. Pure so a test can assert it. */
 function courseExportRequest(row, reviewedContentHash) {
   return {
@@ -17706,7 +17758,7 @@ function courseExportRequest(row, reviewedContentHash) {
   }
 }
 
-function CourseExportView({ row, implemented }) {
+function CourseExportView({ row, implemented, onRepair, onOpenLibrary }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const key = `course-export-${row.enrollment_id}`
   const query = useRpcQuery(
@@ -17777,8 +17829,11 @@ function CourseExportView({ row, implemented }) {
   const files = read.files || []
 
   if (!read.ready) {
+    const repair = courseExportRepair(read.blocked_reason)
+    const repairAction = repair ? (repair.target === 'library' ? onOpenLibrary : onRepair) : null
     return jsxs('div', {
       className: 'flex max-w-3xl flex-col gap-3',
+      'data-cb-export-blocked': read.blocked_reason || 'unstated',
       children: [
         jsx('div', { className: 'text-sm font-semibold', children: 'This course cannot be packaged yet' }),
         jsx('div', {
@@ -17802,7 +17857,26 @@ function CourseExportView({ row, implemented }) {
               children: `${Number(read.sections.validated)} of ${plural(Number(read.sections.total), 'lesson page', 'lesson pages')} validated.`
             })
           : null,
-        jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: query.reload, children: 'Check again' })
+        // One repair, not a menu: the refusal names the surface that can clear it. The re-check
+        // stays secondary so a learner who fixed the gate can come straight back here.
+        repair && repairAction
+          ? jsx('div', {
+              className: 'flex flex-wrap items-center gap-2',
+              'data-cb-export-repair': repair.target,
+              children: [
+                jsx(CbAction, {
+                  variant: 'primary',
+                  onClick: repair.target === 'library' ? onOpenLibrary : onRepair,
+                  children: repair.label
+                }),
+                jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: query.reload, children: 'Check again' })
+              ]
+            })
+          : jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: query.reload, children: 'Check again' }),
+        jsx('div', {
+          className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+          children: 'Nothing was exported: a refused review writes no archive and sends nothing anywhere.'
+        })
       ]
     })
   }
@@ -17811,14 +17885,14 @@ function CourseExportView({ row, implemented }) {
     className: 'flex max-w-3xl flex-col gap-3',
     children: [
       jsx(PlateHead, {
-        title: 'Export course…',
-        caption: 'Review the files, the licence and the rights statement before anything is packaged.'
+        title: 'Export this course',
+        caption: 'Review what goes with the course, what stays behind, and the exact text hash before anything is packaged.'
       }),
+      jsx(CbLabel, { children: 'GOES IN THE ARCHIVE' }),
       jsx('div', {
         className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-        children:
-          'Every file below is in the archive. Attempts, notebook notes, evidence, transcripts and provider ' +
-          'settings are not part of a pack and are excluded by construction.'
+        'data-cb-export-stays': '',
+        children: `${files.length} file(s): this course’s own lesson text and its guides, and nothing else.`
       }),
       jsxs('div', {
         className: 'flex flex-col',
@@ -17843,8 +17917,23 @@ function CourseExportView({ row, implemented }) {
           )
         )
       }),
+      jsx(CbLabel, { children: 'STAYS ON THIS PROFILE' }),
+      jsx('div', {
+        className: 'flex flex-col',
+        'data-cb-export-leaves': '',
+        children: COURSE_EXPORT_PRIVATE_ROWS.map((item) =>
+          jsx(PackReviewLine, { label: item.label, value: item.value }, item.label)
+        )
+      }),
+      jsx('div', {
+        className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+        children:
+          'There is no option here to add learner history to a course archive. The backend builds the archive from ' +
+          'the lesson rows only, so notes and answers are absent by construction, not by a setting this page forgot.'
+      }),
       jsxs('div', {
         className: 'flex flex-col',
+        'data-cb-export-hash': read.content_hash || '',
         children: [
           jsx(PackReviewLine, { label: 'Files', value: String(files.length) }),
           jsx(PackReviewLine, {
@@ -17886,6 +17975,7 @@ function CourseExportView({ row, implemented }) {
       exported
         ? jsxs('div', {
             className: 'flex flex-col',
+            'data-cb-export-done': exported.content_hash,
             children: [
               jsx(CbLabel, { children: 'Exported' }),
               jsx(PackReviewLine, {
@@ -17897,11 +17987,21 @@ function CourseExportView({ row, implemented }) {
                 label: 'Pack',
                 value: `${exported.pack.pack_id} v${exported.pack.pack_version}`
               }),
+              jsx(PackReviewLine, {
+                label: 'Pack manifest hash',
+                value: jsx('code', { className: 'text-xs', children: exported.pack.manifest_hash })
+              }),
               jsx(PackReviewLine, { label: 'Files', value: String((exported.files || []).length) }),
               jsx(PackReviewLine, {
                 label: 'Archive bytes',
                 value: bytesLabel(exported.artifacts && exported.artifacts[0] ? exported.artifacts[0].bytes : 0)
               }),
+              artifact
+                ? jsx(PackReviewLine, {
+                    label: 'Archive file hash',
+                    value: jsx('code', { className: 'text-xs', children: artifact.content_hash })
+                  })
+                : null,
               artifact
                 ? jsx(sdk.Button, {
                     asChild: true,
@@ -17919,6 +18019,14 @@ function CourseExportView({ row, implemented }) {
                 children:
                   'The download link is the host route the backend named; the session is checked there and the ' +
                   'handle expires. The file is byte-identical to the hash above.'
+              }),
+              jsx('div', {
+                className: 'mt-1 text-xs leading-relaxed text-(--ui-text-secondary)',
+                'data-cb-export-portable': '',
+                children:
+                  'The archive travels: open Library → Import pack on another profile, review the same hash, then ' +
+                  'resume an existing classroom for this pack or start a fresh enrollment. The pack identity (id and ' +
+                  'hash above) is the shared course; the enrollment identity is created by the profile that imports it.'
               })
             ]
           })
@@ -17933,7 +18041,7 @@ function CourseExportView({ row, implemented }) {
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
  * control; below ~47.5rem it collapses into one labelled picker so the strip can never clip.
  */
-function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, defaultLessonView, reloadSignal, onChangeGoal, onNewSyllabus }) {
+function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, defaultLessonView, reloadSignal, onChangeGoal, onNewSyllabus, onOpenLibrary }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   // A route in from the Field Desk names the section to open; otherwise the course opens on its
   // overview with the backend's own current objective already selected.
@@ -18152,7 +18260,14 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
   } else if (view === 'evidence') {
     body = jsx(EvidenceView, { evidence: evidence.data, implemented, onOpenSection: openSection })
   } else if (view === 'export') {
-    body = jsx(CourseExportView, { row, implemented })
+    // A refusal names the surface that clears it; the plan is a local tab, the Library is a
+    // destination. Neither navigates on its own — the learner presses the one repair button.
+    body = jsx(CourseExportView, {
+      row,
+      implemented,
+      onRepair: () => selectView('plan'),
+      onOpenLibrary
+    })
   } else {
     body = jsx(SourcesView, { pageState: page })
   }
@@ -21939,6 +22054,11 @@ function CoursebookPage() {
       profile: currentScope().profile,
       onBack: () => setOpenCourse(null),
       onChanged: () => reloadHealth(),
+      onOpenLibrary: () => {
+        setOpenCourse(null)
+        rememberedDestination = 'library'
+        setDestination('library')
+      },
       reloadSignal: courseReloadTick,
       onChangeGoal: (seed) => {
         setOpenCourse(null)
@@ -22672,7 +22792,10 @@ export {
   readNotebookRef,
   stripExcerpt,
   courseExportRequest,
-  COURSE_EXPORT_BLOCKED_COPY
+  courseExportRepair,
+  COURSE_EXPORT_BLOCKED_COPY,
+  COURSE_EXPORT_PRIVATE_ROWS,
+  COURSE_EXPORT_REPAIR
 }
 
 export default {

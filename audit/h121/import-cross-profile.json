@@ -1,0 +1,58 @@
+{
+  "base": "http://127.0.0.1:44320",
+  "wire_version": 16,
+  "archive": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_04d37587/audit/h121/exported.zip",
+  "profile_b_before": {
+    "courses": 0,
+    "packs": 0,
+    "enrollments": 0,
+    "notebook_entries": 0
+  },
+  "preview": {
+    "pack_id": "authored-crs-10e768d8bbfa4dba90498149fafa3983",
+    "pack_version": "1.0.0",
+    "content_hash": "sha256:e0562c3d96671f60cca27917fee1729819437ade3cf130aad0a9f7cc96e412d8",
+    "file_count": 6,
+    "hashes_match": true
+  },
+  "fresh": {
+    "pack_id": "authored-crs-10e768d8bbfa4dba90498149fafa3983",
+    "course_id": "crs_9bc2fa02858c4d028f107b20c2f6b5de",
+    "enrollment_id": "enr_b5ddff9e1629448bab50dc4d7509cf25",
+    "revision": 0
+  },
+  "resume": {
+    "pack_id": "authored-crs-10e768d8bbfa4dba90498149fafa3983",
+    "course_id": "crs_9bc2fa02858c4d028f107b20c2f6b5de",
+    "enrollment_id": "enr_b5ddff9e1629448bab50dc4d7509cf25",
+    "revision": 0
+  },
+  "fresh_again": {
+    "pack_id": "authored-crs-10e768d8bbfa4dba90498149fafa3983",
+    "course_id": "crs_e5eecaf7e3a04650917704e183ca10a3",
+    "enrollment_id": "enr_f9e7a555920644229544b186fb442a24",
+    "revision": 0
+  },
+  "profile_b_after": {
+    "courses": 2,
+    "packs": 1,
+    "enrollments": 2,
+    "attempts": 0,
+    "notebook_entries": 0,
+    "evidence": 0
+  },
+  "library_rows": [
+    {
+      "course_id": "crs_9bc2fa02858c4d028f107b20c2f6b5de",
+      "enrollment_id": "enr_b5ddff9e1629448bab50dc4d7509cf25",
+      "pack_id": "authored-crs-10e768d8bbfa4dba90498149fafa3983",
+      "title": "Braising at home, H-121"
+    },
+    {
+      "course_id": "crs_e5eecaf7e3a04650917704e183ca10a3",
+      "enrollment_id": "enr_f9e7a555920644229544b186fb442a24",
+      "pack_id": "authored-crs-10e768d8bbfa4dba90498149fafa3983",
+      "title": "Braising at home, H-121"
+    }
+  ]
+}
