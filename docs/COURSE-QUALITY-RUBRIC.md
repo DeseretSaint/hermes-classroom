@@ -144,6 +144,14 @@ Where to look: each objective's `evidence_target` and `evidence_criteria`, the m
 - 4: the check measures the target cold, with no cue leakage, and a second check samples the
   same target differently.
 
+0.1.0 ceiling on anchor 2: a course that declares `evidence_target: procedure` and collects only
+a checklist scores at most 2 here, whatever its labels say. Honest wording and the named
+observable acts make the weakness visible; they do not change what was collected, because the
+attempt still stores a `selection` of ticked item ids with `evidence_class = self_reported`
+(`coursebook/grading.py:40`). A validator pass on `evidence_target_fit` is not a D3 pass: that
+criterion asks whether the check is the strongest lane this build can give the declared target,
+while D3 asks whether the task is as strong as the target the course claims.
+
 Does not count: the label `production` on a multiple-choice item, or a rubric weight as proof
 that the target was measured.
 
