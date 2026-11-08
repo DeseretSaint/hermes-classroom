@@ -7028,6 +7028,20 @@ function checklistItems(stimulus) {
   return Array.isArray(stimulus.items) ? stimulus.items.filter((item) => item && item.id && item.label) : []
 }
 
+/**
+ * What a learner reads when the question could not be loaded.
+ *
+ * It names the failure when the backend did (a refusal code, a transport message) and never claims
+ * the question is above. The check itself stays open, so this is a read failure and not a lost
+ * attempt: the only action offered is one Retry.
+ */
+function stimulusUnavailableDescription(error) {
+  const detail = error ? `${error.code || 'STIMULUS_UNAVAILABLE'}${error.message ? `: ${error.message}` : ''}` : null
+  return detail
+    ? `The check opened, but its question did not load (${detail}). Submitting here would be blind, so the answer form stays closed. Retry the read; the check itself is still open.`
+    : 'The check opened, but the backend returned no question. Submitting here would be blind, so the answer form stays closed. Retry the read; the check itself is still open.'
+}
+
 // Frozen learner-facing breadth copy (`docs/ASSESSMENT-BREADTH.md` §7). One static disclosure for
 // every plan and every check: this build grades written answers, choices and checklists only. The
 // strings are not keyed to a topic — a keyword classifier over the learner's goal would announce a
@@ -7176,20 +7190,40 @@ function whenLabel(value) {
  * an older intent is refused as STALE_REVISION rather than silently winning.
  */
 function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemented }) {
-  const [state, setState] = useState({ status: 'idle', check: null, error: null })
+  // `stimulusStatus` is a state of its own, not a property inferred from `check.stimulus`: a failed
+  // or empty `check.get` and a build without that command are different facts, and neither one is
+  // "the question is here". `loading` holds the form back rather than offering a blind textarea.
+  //   idle → unsupported (no check.get) | loading → ready | unavailable
+  const [state, setState] = useState({
+    status: 'idle',
+    check: null,
+    error: null,
+    stimulusStatus: 'idle',
+    stimulusError: null
+  })
   const [ticket, setTicket] = useState(0)
   // `check.open` returns identity only; the learner-facing stimulus (prompt, choices, items) is a
   // separate read. A build that does not implement `check.get` keeps today's answer-only surface
-  // rather than guessing a question.
+  // (the question lives in the teaching chat) rather than guessing a question.
   const canReadStimulus = Boolean(implemented && implemented.has('check.get'))
 
   useEffect(() => {
     if (!enabled || !enrollmentId || !objectiveId) {
-      setState({ status: 'idle', check: null, error: null })
+      setState({ status: 'idle', check: null, error: null, stimulusStatus: 'idle', stimulusError: null })
       return undefined
     }
     let cancelled = false
-    setState((previous) => ({ status: 'loading', check: previous.check, error: null }))
+    setState((previous) => ({
+      status: 'loading',
+      check: previous.check,
+      error: null,
+      stimulusStatus: canReadStimulus ? 'loading' : 'unsupported',
+      stimulusError: null
+    }))
+    const settleStimulus = (checkId, update) =>
+      setState((previous) =>
+        previous.check && previous.check.check_id === checkId ? { ...previous, ...update } : previous
+      )
     rpc(
       'check.open',
       { enrollment_id: enrollmentId, objective_id: objectiveId },
@@ -7198,29 +7232,65 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemente
       .then((response) => {
         if (cancelled) return
         if (!response || !response.ok) {
-          setState({ status: 'error', check: null, error: (response && response.error) || null })
+          setState({
+            status: 'error',
+            check: null,
+            error: (response && response.error) || null,
+            stimulusStatus: 'idle',
+            stimulusError: null
+          })
           return
         }
         const opened = response.result
-        setState({ status: 'ready', check: opened, error: null })
+        setState({
+          status: 'ready',
+          check: opened,
+          error: null,
+          stimulusStatus: canReadStimulus ? 'loading' : 'unsupported',
+          stimulusError: null
+        })
         if (!canReadStimulus || !opened || !opened.check_id) return
+        // A rejection, a refused envelope and an `ok` answer with no stimulus are all "we cannot
+        // show this question". Each keeps the opened check on screen and names the failure; none
+        // of them may leave the answer form looking as if the prompt were above it.
         rpc('check.get', { enrollment_id: enrollmentId, check_id: opened.check_id })
           .then((detail) => {
-            if (cancelled || !detail || !detail.ok || !detail.result || !detail.result.stimulus) return
+            if (cancelled) return
+            if (!detail || !detail.ok) {
+              settleStimulus(opened.check_id, {
+                stimulusStatus: 'unavailable',
+                stimulusError: (detail && detail.error) || null
+              })
+              return
+            }
+            const stimulus = detail.result && detail.result.stimulus ? detail.result.stimulus : null
+            if (!stimulus) {
+              settleStimulus(opened.check_id, { stimulusStatus: 'unavailable', stimulusError: null })
+              return
+            }
+            settleStimulus(opened.check_id, { stimulusStatus: 'ready', stimulusError: null })
             setState((previous) =>
               previous.check && previous.check.check_id === opened.check_id
-                ? { ...previous, check: { ...previous.check, stimulus: detail.result.stimulus } }
+                ? { ...previous, check: { ...previous.check, stimulus } }
                 : previous
             )
           })
-          .catch(() => {})
+          .catch((error) => {
+            if (cancelled) return
+            settleStimulus(opened.check_id, {
+              stimulusStatus: 'unavailable',
+              stimulusError: { code: 'HOST_UNAVAILABLE', message: describeError(error) }
+            })
+          })
       })
       .catch((error) => {
         if (!cancelled) {
           setState({
             status: 'error',
             check: null,
-            error: { code: 'HOST_UNAVAILABLE', message: describeError(error) }
+            error: { code: 'HOST_UNAVAILABLE', message: describeError(error) },
+            stimulusStatus: 'idle',
+            stimulusError: null
           })
         }
       })
@@ -7638,7 +7708,10 @@ function AttemptControls({
   implemented,
   bindingState,
   onCommitted,
-  parentLed = false
+  parentLed = false,
+  stimulusStatus = null,
+  stimulusError = null,
+  onRetryStimulus = null
 }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const [text, setText] = useState('')
@@ -7657,6 +7730,15 @@ function AttemptControls({
   // What this card is asking for. A `verification` stimulus with declared items is a checklist and
   // is answered with the item ids; every other stimulus keeps the written-answer path.
   const stimulus = check ? check.stimulus || null : null
+  // The form is only offered for a question the learner can actually see. `stimulusStatus` comes
+  // from `useOpenCheck`; a direct render that does not pass it keeps the pre-existing behaviour
+  // (a served stimulus is ready; otherwise the build speaks about the teaching chat).
+  const stimulusState = stimulusStatus || (stimulus ? 'ready' : 'unsupported')
+  const promptPresent = Boolean(stimulus && stimulus.prompt)
+  const stimulusLoading = stimulusState === 'loading'
+  const stimulusUnavailable = stimulusState === 'unavailable'
+  const stimulusReady = stimulusState === 'ready'
+  const mayAnswer = stimulusReady || stimulusState === 'unsupported'
   const servedItems = stimulus && Array.isArray(stimulus.items) ? stimulus.items : []
   // A parent-led lesson is observed by an adult through the observation control (H-21), never ticked here.
   const checklist = parentLed ? [] : checklistItems(stimulus)
@@ -7933,7 +8015,41 @@ function AttemptControls({
           })
         : null,
 
-      showForm
+      showForm && stimulusLoading
+        ? jsxs('div', {
+            className: 'flex items-center gap-2 text-xs text-(--ui-text-secondary)',
+            'data-cb-check-stimulus-state': 'loading',
+            children: [
+              jsx(sdk.Loader, { label: 'Loading the question' }),
+              jsx('span', { children: 'The answer form stays closed until the question is here.' })
+            ]
+          })
+        : null,
+
+      showForm && stimulusUnavailable
+        ? jsxs('div', {
+            className: 'flex flex-col gap-2',
+            'data-cb-check-stimulus-state': 'unavailable',
+            children: [
+              jsx(sdk.ErrorState, {
+                title: 'The question could not be loaded',
+                description: stimulusUnavailableDescription(stimulusError)
+              }),
+              onRetryStimulus
+                ? jsx(sdk.Button, {
+                    className: 'self-start',
+                    size: 'sm',
+                    variant: 'secondary',
+                    disabled: locked,
+                    onClick: onRetryStimulus,
+                    children: 'Retry'
+                  })
+                : null
+            ]
+          })
+        : null,
+
+      showForm && mayAnswer
         ? jsxs('div', {
             className: 'flex flex-col gap-2',
             'data-cb-answer-kind': checklist.length > 0 ? 'selection' : 'text',
@@ -7967,7 +8083,7 @@ function AttemptControls({
                     id: 'cb-attempt-help',
                     className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                     style: { maxWidth: CB_MEASURE },
-                    children: supports('check.get')
+                    children: stimulusReady && promptPresent
                       ? 'The question and any choices are shown above; this field records what you answered.'
                       : 'The question and any choices are in the teaching chat. This field records your answer and the backend grades it once.'
                   }),
@@ -11813,7 +11929,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
             ? `${check.error.code}: ${describeError(check.error)}`
             : 'The current check could not be opened.'
         })
-      : jsx(AttemptControls, {
+      : check.status === 'loading' && !check.check
+        ? jsx(sdk.Loader, { label: 'Opening the current check' })
+        : jsx(AttemptControls, {
           enrollmentId: row.enrollment_id,
           objectiveId,
           check: check.check,
@@ -11821,6 +11939,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
           implemented,
           bindingState: runtime ? runtime.binding_status : 'detached',
           parentLed,
+          stimulusStatus: check.stimulusStatus,
+          stimulusError: check.stimulusError,
+          onRetryStimulus: check.reload,
           onCommitted: () => {
             if (onChanged) onChanged()
           }
@@ -14886,6 +15007,9 @@ function LessonPaneBody({ binding, storedId }) {
                 implemented: backendWire.implemented,
                 bindingState: bindingStatus,
                 parentLed: Boolean(row && row.recipe === 'parent'),
+                stimulusStatus: check.stimulusStatus,
+                stimulusError: check.stimulusError,
+                onRetryStimulus: check.reload,
                 onCommitted: () => {
                   page.reload()
                   library.reload()
@@ -18065,6 +18189,7 @@ function CoursebookSettings() {
 export {
   AttemptControls,
   AttemptVerdict,
+  useOpenCheck,
   BackendUnavailable,
   CB_TOKENS,
   CB_TOKEN_NAMES,
