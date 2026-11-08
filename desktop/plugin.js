@@ -140,6 +140,30 @@ let pluginContext = null
 
 /** Resolved once from `host.profileRoutes()` (async in current builds) — profile → connection. */
 let profileRouteCache = []
+/**
+ * What `host.profileRoutes()` answered. `unavailable` is a visible state, not an empty list: an
+ * empty cache makes `currentScope().connectionId` null, which is harmless on a one-connection
+ * install and a route to the wrong backend on a multi-connection one.
+ */
+let profileRouteState = { status: 'loading', error: null }
+
+async function loadProfileRoutes(attempt = 0) {
+  try {
+    const routes = await (typeof host.profileRoutes === 'function' ? host.profileRoutes() : [])
+    profileRouteCache = Array.isArray(routes) ? routes : []
+    profileRouteState = { status: 'ready', error: null }
+  } catch (error) {
+    if (attempt < 2) {
+      setTimeout(() => { loadProfileRoutes(attempt + 1) }, 150 * (attempt + 1))
+      return
+    }
+    profileRouteCache = []
+    profileRouteState = {
+      status: 'unavailable',
+      error: String((error && error.message) || error || 'profile routes could not be read')
+    }
+  }
+}
 
 /** The host door, imported once. Everything below calls `host.*` exactly as documented. */
 const host = sdk.host
@@ -428,7 +452,7 @@ function currentScope() {
   const routes = Array.isArray(profileRouteCache) ? profileRouteCache : []
   const match = routes.find((route) => route && route.profile === profile)
   if (match && match.connectionId) connectionId = match.connectionId
-  return { profile, connectionId }
+  return { profile, connectionId, routingUnavailable: profileRouteState.status === 'unavailable' }
 }
 
 /**
@@ -16785,6 +16809,7 @@ function CoursebookPane() {
   const cbMode = useCbMode()
   const cbMotion = useCbMotion()
   const scopeProfile = currentScope().profile
+  const routingUnavailable = profileRouteState.status === 'unavailable'
   const [bindNote, setBindNote] = useState(null)
   const attemptedBind = useRef(null)
   // Which bundled learner skill this chat's next turn loads. Read from the backend's own rule
@@ -16910,7 +16935,18 @@ function CoursebookPane() {
     'data-cb-motion': cbMotion,
     style: cbScopeStyle(cbMode),
     children: [
-      jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }),
+      jsx(CbLabel, { children: 'Coursebook' }),
+      routingUnavailable
+        ? jsx('div', {
+            className: 'pb-2 text-xs text-(--ui-text-secondary)',
+            role: 'status',
+            'data-cb-routing': 'unavailable',
+            children:
+              'Routing unavailable: Coursebook could not read this window’s profile routes, so ' +
+              'requests go without a connection id. Reopen the pane or restart Desktop; on a ' +
+              'single-connection install nothing is lost.'
+          })
+        : null,
       bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-secondary)', children: bindNote }) : null,
       skillNote
         ? jsx('div', {
@@ -17211,19 +17247,10 @@ export default {
     pluginContext = ctx
 
     // `host.profileRoutes()` is async in current Desktop builds (CB-021): resolve it once into a
-    // cache instead of calling it from render, where a Promise is not an array.
-    profileRouteCache = []
-    try {
-      Promise.resolve(typeof host.profileRoutes === 'function' ? host.profileRoutes() : [])
-        .then((routes) => {
-          if (Array.isArray(routes)) profileRouteCache = routes
-        })
-        .catch(() => {
-          profileRouteCache = []
-        })
-    } catch (error) {
-      profileRouteCache = []
-    }
+    // cache instead of calling it from render, where a Promise is not an array. A failed read is
+    // retried twice, then kept as a visible `unavailable` state rather than an empty route list.
+    profileRouteState = { status: 'loading', error: null }
+    loadProfileRoutes()
 
     // Read the mounted backend's wire version + method registry. Best-effort and non-blocking:
     // a backend that is off leaves the defaults in place, and the page renders "unavailable".

@@ -100,12 +100,29 @@ def is_single_home_host() -> bool:
     return os.environ.get(SINGLE_HOME_FLAG, "").strip().lower() in {"1", "true", "yes"}
 
 
+class StoreScopeUnresolved(RuntimeError):
+    """The single-home flag is set but the launch home cannot be resolved.
+
+    Fail closed: returning ``None`` here is indistinguishable from "not a single-home host" and
+    from "the scope is already the launch home", so the caller would resolve storage against the
+    ambient profile — the wrong-home failure H-69 fixed. A backend that declared one home must
+    answer with an explicit error instead of silently reading or writing another home.
+    """
+
+    code = "STORE_SCOPE_UNRESOLVED"
+
+
 def single_home_pin() -> Path | None:
     """The launch home to pin storage to, or None to let the host resolve it as usual.
 
     Only acts when :data:`SINGLE_HOME_FLAG` is set (a dedicated single-home backend). Even then
     it returns None while the active scope is the launch home or a profile inside it, so a
     gateway that really does serve several profiles keeps the host's per-profile storage.
+
+    Under the flag a pin is REQUIRED: if the host module cannot be imported or the homes cannot
+    be read, this raises :class:`StoreScopeUnresolved` rather than answering None. Callers must
+    let that error surface (a health/status read reports ``STORE_SCOPE_UNRESOLVED``); they must
+    not catch it and fall back to the ambient profile.
     """
     if not is_single_home_host():
         return None
@@ -114,8 +131,12 @@ def single_home_pin() -> Path | None:
 
         launch = Path(get_process_hermes_home())
         active = Path(get_hermes_home())
-    except Exception:  # noqa: BLE001 - no host, no pin: never invent a scope
-        return None
+    except Exception as exc:  # noqa: BLE001 - a declared single home must not degrade silently
+        raise StoreScopeUnresolved(
+            f"single-home backend ({SINGLE_HOME_FLAG}=1) cannot resolve its storage scope: "
+            f"{exc}. Refusing to fall back to the ambient profile's store; set HERMES_HOME to "
+            f"the launch home or unset the flag on a multi-profile gateway."
+        ) from exc
     return None if _within(active, launch) else launch
 
 

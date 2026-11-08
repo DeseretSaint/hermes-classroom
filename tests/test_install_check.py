@@ -12,6 +12,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from coursebook import install_check
 
@@ -203,6 +204,29 @@ class InstallCheckTests(unittest.TestCase):
         actions = install_check.clean_stale_sockets(short, apply=False)
         self.assertEqual([action["action"] for action in actions], ["would_remove"])
         self.assertTrue((profile / "SingletonSocket").exists())
+
+    def test_declared_single_home_without_a_scope_is_an_error_not_a_silent_fallback(self) -> None:
+        import sys
+        from unittest import mock
+
+        from coursebook import db
+
+        with mock.patch.dict(os.environ, {db.SINGLE_HOME_FLAG: "1"}), \
+                mock.patch.dict(sys.modules, {"hermes_constants": None}):
+            report = install_check.inspect_install(self.home, self.source)
+        self.assertFalse(report.ok)
+        finding = next(f for f in report.findings if f.code == "SCOPE_UNRESOLVED")
+        self.assertIn("Refusing to fall back", finding.message)
+        self.assertIn("unset", finding.fix or "")
+
+    def test_scope_flag_off_adds_no_scope_finding(self) -> None:
+        from coursebook import db
+
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop(db.SINGLE_HOME_FLAG, None)
+            report = install_check.inspect_install(self.home, self.source)
+        self.assertNotIn("SCOPE_AMBIENT", {f.code for f in report.findings})
+        self.assertNotIn("SCOPE_UNRESOLVED", {f.code for f in report.findings})
 
     def test_no_sockets_is_not_an_error(self) -> None:
         self.assertEqual(install_check.clean_stale_sockets(self.root), [])

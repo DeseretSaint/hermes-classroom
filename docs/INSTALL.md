@@ -206,6 +206,13 @@ The `.hermes-package.json` marker records the Desktop **directory**, not `plugin
 be paired back to its package, so Doctor could not see it as stale. The check reports that legacy
 marker (`MARKER_NAMES_FILE`) and the refresh rewrites it.
 
+The same check reports the storage scope when `HERMES_COURSEBOOK_SINGLE_HOME` is exported. A
+single-home backend that cannot resolve its launch home fails closed with `STORE_SCOPE_UNRESOLVED`
+instead of resolving against the ambient profile: under the flag the pin is required, and `None` is
+kept only for "not a single-home host" and "the active scope already is the launch home". The
+Desktop half's `profileRoutes()` read retries twice, then shows a `role=status` "Routing
+unavailable" notice in the pane rather than silently sending requests with a null connection id.
+
 `hermes plugins doctor` on the checkout and on the installed id resolves the same symlink to the
 same checkout; Doctor stages a copy of it. In a development checkout that copy includes the
 gitignored `.worktrees/` farm. Run the gates on an export (`scripts/validate.sh`,
@@ -385,6 +392,9 @@ app is the scoped, previewed data deletion (`enrollment.delete`).
 | `install-check: refusing to rewrite the machine-level home …` | `--refresh-desktop` will not install into `~/.hermes` by default; that is an operator decision | The check's suggested command there carries `--force`; run it deliberately, from a closed/restarted gateway |
 | `MARKER_NAMES_FILE` from the check | `.hermes-package.json` names `plugin.js`, the old `install-local.sh` bug; Hermes resolves `source` as a directory and cannot pair the copy | Run the printed refresh command; it rewrites the marker with the Desktop directory |
 | `hermes plugins doctor` dies with `[Errno 6] No such device or address` on `…/.chromium/SingletonSocket` | Doctor stages a copy of the directory it is given; the gitignored `.worktrees/` farm holds Chromium sockets from the frame scripts. Host state, not the package | `bash scripts/clean-test-sockets.sh` removes stale locks (live profiles are kept); the package gates run Doctor on an export and never hit this |
+| `SCOPE_UNRESOLVED` / `STORE_SCOPE_UNRESOLVED` from the check or a status read | `HERMES_COURSEBOOK_SINGLE_HOME` is set but the runtime cannot resolve the launch home, so storage would fall back to the ambient profile. The pin is **required** under the flag: it fails closed instead of answering `None` (H-110 decision; H-114 F17) | Start the backend through `hermes serve` with the host runtime importable, set `HERMES_HOME` to the launch home, or unset the flag on a multi-profile gateway |
+| `SCOPE_AMBIENT` from the check with the flag exported | The current process's active home IS its launch home, so there is nothing to pin — normal when you export `coursebook-single-home.env` in a shell to run the check | None; the backend process is the scope that matters |
+| Pane says "Routing unavailable: Coursebook could not read this window's profile routes" | `host.profileRoutes()` failed after two retries, so `currentScope().connectionId` is null. Harmless on a one-connection install; a wrong-backend risk on a multi-connection one (H-114 F26) | Reopen the pane or restart Desktop; the retry is automatic. The notice is `role=status` and `data-cb-routing="unavailable"` |
 
 If the pane cannot reach the backend at all, it shows the error code with a Check again button.
 Those codes come from `contracts/errors.v2.json`; they are contract values, not prose.

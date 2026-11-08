@@ -115,6 +115,24 @@ class SingleHomeScope(unittest.TestCase):
             self.assertEqual(db.database_path(),
                              self.launch / "plugin-data" / "coursebook" / "data.db")
 
+    def test_flag_set_without_the_host_module_fails_closed(self) -> None:
+        """A declared single home must not degrade to the ambient profile's store.
+
+        ``None`` cannot tell "no host module" from "not a single-home host", so the old code
+        silently resolved storage against the root profile. That is H-69's wrong-home class.
+        """
+        import sys
+
+        with mock.patch.dict(os.environ, {db.SINGLE_HOME_FLAG: "1"}), \
+                mock.patch.dict(sys.modules, {"hermes_constants": None}):
+            with self.assertRaises(db.StoreScopeUnresolved) as caught:
+                db.single_home_pin()
+            self.assertEqual(caught.exception.code, "STORE_SCOPE_UNRESOLVED")
+            with self.assertRaises(db.StoreScopeUnresolved):
+                db.store_root()
+            self.assertFalse((self.escaped / "plugin-data" / "coursebook").exists(),
+                             "a failed pin wrote to the ambient (root-profile) home")
+
 
 class DesktopSingleHomeScope(unittest.TestCase):
     """The Desktop half must not let the app guess a profile on a single-home backend.

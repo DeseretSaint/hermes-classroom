@@ -173,6 +173,38 @@ def live_worker_pids(home: Path, proc_root: Path | None = None) -> list[int]:
     return sorted(found)
 
 
+def _scope_finding() -> Finding | None:
+    """Report a declared single-home backend whose storage scope cannot be resolved.
+
+    The flag lives in ``<home>/coursebook-single-home.env``; when it is exported, storage MUST
+    resolve to that home (H-69). A backend that cannot import the host module would otherwise
+    fall back to the ambient profile's store with no diagnostic, so this surfaces it as a
+    finding instead.
+    """
+    try:
+        from . import db
+    except ImportError:  # run as a bare script: add the checkout root, then import normally
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        from coursebook import db
+
+    if not db.is_single_home_host():
+        return None
+    try:
+        pin = db.single_home_pin()
+    except db.StoreScopeUnresolved as exc:
+        return Finding(
+            "error", "SCOPE_UNRESOLVED",
+            f"{db.SINGLE_HOME_FLAG} is set but the storage scope does not resolve: {exc}",
+            "start the backend with the Hermes runtime on PYTHONPATH (hermes serve), or unset "
+            f"{db.SINGLE_HOME_FLAG} on a multi-profile gateway")
+    if pin is None:
+        return Finding(
+            "warning", "SCOPE_AMBIENT",
+            f"{db.SINGLE_HOME_FLAG} is set but storage resolves to the active profile, not a "
+            f"pinned launch home (expected only when the active scope IS the launch home)")
+    return Finding("ok", "SCOPE_PINNED", f"single-home storage pinned to {pin}")
+
+
 def inspect_install(home: Path, source: Path, *, proc_root: Path | None = None) -> CheckReport:
     """Compare the installed halves with *source*; never writes anything."""
     home = home.expanduser().resolve()
@@ -241,6 +273,9 @@ def inspect_install(home: Path, source: Path, *, proc_root: Path | None = None) 
                 command))
 
     report.live_pids = live_worker_pids(home, proc_root)
+    scope = _scope_finding()
+    if scope is not None:
+        report.findings.append(scope)
     if report.live_pids:
         pids = ", ".join(str(pid) for pid in report.live_pids)
         report.findings.append(Finding(
