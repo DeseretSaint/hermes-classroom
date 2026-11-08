@@ -1509,6 +1509,49 @@ v10. Every earlier payload still validates; nothing becomes required.
 * No method, request/response field, table, column, migration, error code, job kind or vocabulary
   value changes.
 
+## Error codes and subsystem sub-reasons (`details.reason`)
+
+Decision t_d43c0dc1 (H-130). `cb.errors` v4 stands; there is no `errors.v5` for this. The
+catalogue is the authority for the three facts a client must branch on without parsing prose:
+`category`, `retryable` and the HTTP mapping. It is deliberately *not* the authority for every
+subsystem-specific refusal.
+
+The rule:
+
+* A failure whose category, retryability and HTTP status already fit a catalogue code carries its
+  subsystem-specific label in `error.details.reason`. `details` is an open object
+  (`additionalProperties: true`, `maxProperties: 32`), so this is a zero-version-bump seam.
+* `details.reason` values are snake_case labels matching `^[a-z][a-z0-9_]{2,63}$`. They name the
+  cause, not the surface: `brief_unreadable`, not `BRIEF_UNREADABLE` or `job_brief_dialog_error`.
+* `details` may carry the matching structured context alongside `reason` (a `stage`, a `kind`, the
+  preflight arithmetic). Values stay non-sensitive: no answer text, key, raw grader output or path.
+* A **new catalogue code** is warranted only when at least one of `category`, `retryable` or HTTP
+  status differs from every existing code, or the contract intends the client to branch on `code`
+  alone as an exhaustively-switchable enum. "Same category, same retryability, same status, only
+  the label differs" is a `details.reason`, not a version.
+
+Documented sub-reasons at v4 (not exhaustive of every emitter, but the ones a client may key on):
+
+| `details.reason` | catalogue `code` | emitted by |
+|---|---|---|
+| `brief_unreadable` | `VALIDATION_FAILED` | `job_service.run_pending` when a persisted brief cannot be parsed or resolved (H-130). Non-retryable; the row is claimed under the lease fence and failed durably. |
+| `cancel_state_unreadable` | `VALIDATION_FAILED` | `job_service` when the cancel flag cannot be read (H-129). |
+| `cost_ceiling_exceeded` | `POLICY_VIOLATION` | a lessons stage that hit the dollar ceiling; the recovery facts also land in `jobs.checkpoint`. |
+| `cost_preflight_insufficient` | `POLICY_VIOLATION` | `jobs.create` preflight refuses a ceiling that cannot pay the plan minimum; no job row is created. |
+| `plan_empty`, `plan_not_validated` | `VALIDATION_FAILED` | `parent.plan.edit` / approval fences. |
+| `course_not_pack_backed`, `export_not_exportable` | `POLICY_VIOLATION` | `pack_flow` export gates; `problems` carries the per-question detail. |
+
+The same naming rule applies to `jobs.checkpoint` labels, which are also an open object
+(`maxProperties: 40`): `cost_ceiling_exceeded`, `checkpoint_serializer_failed`.
+
+Consequences for clients (H-117 and the retry surface):
+
+* branch on `code` for behaviour (retry button, status copy class, whether a second attempt is
+  offered at all);
+* read `details.reason` for the specific message and for the narrow discriminations listed above;
+* a reason value is part of the observable contract even though the schema does not enumerate it.
+  Renaming one is a visible change: record it in this section, and do not rename one that shipped.
+
 ## Changing a contract
 
 1. Open an Atlas decision in the task thread. A semantic change is **not** a patch.
@@ -1540,6 +1583,7 @@ v10. Every earlier payload still validates; nothing becomes required.
 | v13 | 2026-11-07 | H-08 additive amendment: a learner-authored course packages itself. Two methods appended (`course.export.read`, `course.export`) to the 61 v12 methods, so a course created from a goal can export instead of only a pack-backed course or a Parent Studio blueprint; `pack.export` keeps the pack-backed bytes with its own allowlist and unchanged behaviour. The gate is an approved plan plus every lesson page in `validated` state; a stored active final approval is honoured as a hash fence, and the caller's reviewed `expected_content_hash` is the second. No new cb.db table, column, migration, error code, job kind or vocabulary value. Numbered v13 because v11 is H-21's unit contract and v12 is H-26's syllabus intake; `rpc.v12.json` is pinned by sha256. |
 | v13 (H-18) | 2026-11-07 | Additive inside v13: `$defs/lesson_document` gains optional `lang` (BCP-47-ish text tag, ≤ 35) and `direction` (`ltr`/`rtl`), both absent on documents projected from pages that never recorded a locale, so old documents keep their content hash and id (pinned by `test_legacy_document_hash_unchanged_by_locale`). `direction` is derived from the text's script, never from a claim about the learner, and it changes no block, check, media or evidence semantics. H-18b was authored against v11 and landed there on its own branch; in the union it lands inside v13 rather than opening a version, because v11 is the frozen H-21 unit contract, v12 is H-26a's syllabus intake and v13 is H-08b's authored export, and the change adds two optional properties to one existing definition — the same shape as the v10 (H-17) amendment. `contracts/rpc.v11.json` is byte-identical to its shipped snapshot. The generation-side `check.scaffolds` contract moves from the fixed Japanese triple to the bounded open list `[{kind, script?, gloss?, direction?}]` with the legacy object still read; that schema is not on the cb.rpc wire. No method, request/response field, table, column, migration, error code or job kind changes. |
 | v14 | 2026-11-07 | H-53 additive amendment (contract and migration only). One method appended, `observation.record`, so the layer-1 observation `domain.record_observation` has written since CB-002 is reachable from a client — `docs/ASSESSMENT-BREADTH.md` §11 **B-2**: `self_reported`/`parent_reported` are frozen classes that no learner could produce. Request: `enrollment_id`, `objective_id`, `evidence_class` (the full six-label vocabulary; the **kernel** refuses `cold`/`hinted`/`answer_shown`/`override` with `POLICY_VIOLATION`) and optional `note` (≤ 1000 characters). Response: `evidence_id`, `evidence_class`, `revision`. Envelope: `idempotency_key`, no `expected_revision`. cb.db **v9** adds nullable `evidence.note` via migration 0009, additive with no backfill and no row rewrite. 64 RPC methods; no new error code, job kind, vocabulary value, check kind, answer kind, upload path or learner-media retention. `rpc.v13.json` and `db.v8.json` are pinned by sha256. The handler, the API registration and the UI are follow-up cards; this card ships the contract, the migration and the tests that pin them. |
+| no bump (t_d43c0dc1) | 2026-11-07 | H-130 decision: a subsystem-specific reason does not become a catalogue code when `category`/`retryable`/HTTP already fit one. `BRIEF_UNREADABLE` lands as `error.details.reason = "brief_unreadable"` under `VALIDATION_FAILED` (non-retryable, 422), and `checkpoint.reason` uses `checkpoint_serializer_failed`. `cb.errors` stays v4; no enum, catalog, `$defs` or `CONTRACT_FILES` change. The convention and the reason labels a client may key on are frozen in the section above. |
 
 ## Deliberate omissions (do not "helpfully" add these)
 
