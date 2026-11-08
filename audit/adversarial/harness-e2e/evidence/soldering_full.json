@@ -1450,11 +1450,17 @@
       "segments": [],
       "sources": [
         {
+          "content_hash": "sha256:02cba856b6719f4fd0751c438874518c58ca59a0c59c920254ceb1d8b1fc19bd",
+          "excerpt": "A recorded page used only so the research seam returns a source. It states that joints are heated pad and lead together, solder is fed in after the joint reaches temperature, and a shiny fillet is the inspection criterion.",
+          "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
+          "licence": null,
+          "modality": null,
           "published_at": null,
-          "publisher": null,
+          "publisher": "Recorded publisher",
           "source_id": "0000000000000008",
           "source_type": "web_page",
+          "support_assessment": "unverified",
           "support_status": "unassessed",
           "title": "Recorded page: through-hole soldering",
           "url": "https://example.invalid/recorded/through-hole-soldering"

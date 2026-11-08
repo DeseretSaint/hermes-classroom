@@ -2998,6 +2998,11 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
         sources = connection.execute(
             "SELECT * FROM sources WHERE course_id = ? ORDER BY fetched_at DESC LIMIT 200", (course["id"],)
         ).fetchall()
+        # H-106: the ledger row carries provenance and a support *class*; the fetched excerpt and
+        # publisher live only in the immutable research-run snapshot. Read them here so the Sources
+        # panel can show why a claim is (or is not) supported. A snapshot that cannot be read is
+        # typed `unreadable`, never rendered as "no excerpt".
+        source_details, source_detail_state = source_ledger.display_details(connection, str(course["id"]))
         artifacts = connection.execute(
             "SELECT * FROM artifacts WHERE course_id = ? ORDER BY created_at DESC LIMIT 200", (course["id"],)
         ).fetchall()
@@ -3112,11 +3117,11 @@ def lesson_page(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int,
                 "source_id": row["id"],
                 "title": row["title"],
                 "url": row["url"],
-                "publisher": None,
                 "source_type": row["source_type"],
                 "support_status": row["support_status"],
                 "published_at": row["published_at"],
                 "fetched_at": row["fetched_at"],
+                **source_ledger.display_fields(row, source_details, source_detail_state),
             }
             for row in sources
         ],
@@ -4394,6 +4399,9 @@ def _blueprint_sources(connection, course_id: str) -> list[dict[str, Any]]:
         " WHERE course_id = ? ORDER BY created_at LIMIT 200",
         (course_id,),
     ).fetchall()
+    # H-106: same snapshot join as `lesson.page`, so plan review's sources rail can show the
+    # publisher, the exact excerpt and the model's own assessment word — or the typed absence.
+    details, detail_state = source_ledger.display_details(connection, course_id)
     return [
         {
             "source_id": str(row["id"]),
@@ -4401,6 +4409,7 @@ def _blueprint_sources(connection, course_id: str) -> list[dict[str, Any]]:
             "url": row["url"],
             "support_status": str(row["support_status"]),
             "fetched_at": row["fetched_at"],
+            **source_ledger.display_fields(row, details, detail_state),
         }
         for row in rows
     ]
@@ -4459,6 +4468,14 @@ def _pack_backed_blueprint(course) -> tuple[dict[str, list[dict[str, Any]]], lis
                 "publisher": source.get("publisher"),
                 "support_status": str(source.get("support_status") or "unassessed"),
                 "fetched_at": source.get("fetched_at") or "1970-01-01T00:00:00Z",
+                # A pack declares provenance and rights; it does not ship a fetched excerpt, so the
+                # excerpt is typed absent rather than looked up on the network.
+                "excerpt": None,
+                "excerpt_state": "missing",
+                "content_hash": source.get("content_hash"),
+                "modality": source.get("modality"),
+                "licence": source.get("licence"),
+                "support_assessment": source.get("support_assessment"),
             }
         )
     current_hash = authoring.content_hash(str(course["id"]), "", str(manifest["content_hash"]), [])
