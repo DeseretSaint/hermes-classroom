@@ -9,20 +9,59 @@
  *   CB015_CDP_PORT=9341 node scripts/audit-ux-practice.mjs            # capture
  *   CB015_CDP_PORT=9341 node scripts/audit-ux-practice.mjs discover   # print the route text
  *
- * Writes `audit/ux/practice-live.json` and PNGs under `audit/ux/practice-shots/`.
+ * Writes `audit/ux/practice-live.json`, `audit/ux/practice-manifest.json` (viewport, seed inputs,
+ * plugin sha256 and one row per frame) and PNGs under `audit/ux/practice-shots/`.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { attach, measure, setMode, setRootText, clearRootText, setReducedMotion, tabWalk, focusNow, esc, ROUTE, setViewportCss } from './audit-ux-lib.mjs'
 
 const PORT = process.env.CB015_CDP_PORT || '9341'
 const OUT = 'audit/ux/practice-live.json'
+const MANIFEST = 'audit/ux/practice-manifest.json'
 const SHOTS = 'audit/ux/practice-shots'
 const SEED = 'audit/ux/practice-seed.json'
+const PLUGIN = 'desktop/plugin.js'
+const COMMAND = 'CB015_CDP_PORT=9341 node scripts/audit-ux-practice.mjs capture'
 const mode = process.argv[2] || 'capture'
+
+const pluginSha256 = createHash('sha256').update(readFileSync(PLUGIN)).digest('hex')
 
 mkdirSync(SHOTS, { recursive: true })
 const seed = existsSync(SEED) ? JSON.parse(readFileSync(SEED, 'utf8')) : null
-const results = { rig: { cdp: PORT, seed: seed ? { course_id: seed.course_id, objective_id: seed.objective_id, check_id: seed.check_id, session_id: seed.session_id } : null, at: new Date().toISOString() }, variants: {} }
+const results = { rig: { cdp: PORT, plugin: PLUGIN, plugin_sha256: pluginSha256, command: COMMAND, seed: seed ? { course_id: seed.course_id, objective_id: seed.objective_id, check_id: seed.check_id, session_id: seed.session_id } : null, at: new Date().toISOString() }, variants: {} }
+
+function writeManifest() {
+  const frames = Object.values(results.variants).map((v) => ({
+    variant: v.variant,
+    shot: v.shot,
+    footShot: v.footShot || null,
+    viewport: v.viewport,
+    rootFont: v.rootFont,
+    practiceState: v.practiceState,
+    controls: v.controls,
+    feedback: v.feedback
+  }))
+  const manifest = {
+    generated_by: 'scripts/audit-ux-practice.mjs capture',
+    command: COMMAND,
+    at: results.rig.at,
+    plugin: PLUGIN,
+    plugin_sha256: pluginSha256,
+    cdp: PORT,
+    seed: results.rig.seed,
+    seed_inputs: seed ? {
+      course_title: seed.course_title,
+      objective_title: seed.objective_title,
+      turns_said: seed.turns_said,
+      check_id: seed.check_id,
+      session_id: seed.session_id
+    } : null,
+    frames
+  }
+  writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`)
+}
+
 
 const cdp = await attach(PORT)
 const wait = (ms) => cdp.wait(ms)
@@ -119,14 +158,24 @@ async function snapshot(variant, viewport) {
   await cdp.clearViewport()
   await setReducedMotion(cdp, false)
   await setMode(cdp, 'dark')
-  if (variant === 'text200') await setRootText(cdp, 32)
   if (viewport) {
     await setViewportCss(cdp, viewport.width, viewport.height)
     await wait(400)
   }
+  // After the viewport override, so a resize-driven re-render cannot drop the 200% root size.
+  if (variant.startsWith('text200')) {
+    await setRootText(cdp, 32)
+    await wait(500)
+  }
+  // The shot is viewport-only: put the practice card in the frame, not below the fold.
+  await cdp.eval(`(() => { const n = document.querySelector('[data-cb-practice]'); if (n) n.scrollIntoView({ block: 'center', inline: 'nearest' }); return !!n })()`)
+  await wait(400)
   const metrics = await measure(cdp)
   metrics.variant = variant
   metrics.at = new Date().toISOString()
+  if (variant.startsWith('text200') && metrics.rootFont !== '32px') {
+    throw new Error(`${variant}: root font is ${metrics.rootFont}, not 32px - the 200% frame is not real`)
+  }
   metrics.practiceState = await practiceState()
   metrics.practiceText = await text()
   metrics.feedback = await cdp.eval(`(() => { const n = document.querySelector('[data-cb-practice-feedback]'); return n ? n.textContent.trim() : null })()`)
@@ -134,6 +183,13 @@ async function snapshot(variant, viewport) {
   const shot = `${SHOTS}/practice-${variant}.png`
   await cdp.shot(shot)
   metrics.shot = shot
+  // A viewport frame at 200% text cannot hold the whole card; a second frame scrolled to the card's
+  // foot puts the controls in evidence instead of below the fold.
+  const footShot = `${SHOTS}/practice-${variant}-foot.png`
+  await cdp.eval(`(() => { const bs = document.querySelectorAll('[data-cb-practice] button'); const last = bs[bs.length - 1]; if (last) last.scrollIntoView({ block: 'end', inline: 'nearest' }); return !!last })()`)
+  await wait(300)
+  await cdp.shot(footShot)
+  metrics.footShot = footShot
   results.variants[variant] = metrics
   writeFileSync(OUT, `${JSON.stringify(results, null, 2)}\n`)
   console.log(`captured ${variant}: state=${metrics.practiceState} controls=${JSON.stringify(metrics.controls)} clipped=${(metrics.clipped || []).length} small=${(metrics.smallTargets || []).length}`)
@@ -232,6 +288,7 @@ if (stateBefore === null) {
 await snapshot('desktop-1049', { width: 1049, height: 900 })
 await snapshot('narrow-460', { width: 460, height: 900 })
 await snapshot('text200-1049', { width: 1049, height: 900 })
+await snapshot('text200-460', { width: 460, height: 900 })
 
 // Keyboard: every practice control is reachable with Tab from the route.
 await clearRootText(cdp)
@@ -277,4 +334,6 @@ results.end.criteriaCount = await cdp.eval(`document.querySelectorAll('[data-cb-
 await snapshot('graded-review-1049', { width: 1049, height: 900 })
 
 writeFileSync(OUT, `${JSON.stringify(results, null, 2)}\n`)
-console.log('wrote', OUT)
+writeManifest()
+console.log('wrote', OUT, 'and', MANIFEST)
+process.exit(0)
