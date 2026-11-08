@@ -98,8 +98,13 @@ const mounted = await evaluate(`Boolean(document.querySelector('[data-cb-route]'
 if (!mounted) throw new Error('coursebook route did not mount')
 
 const navTo = async (destination) => {
-  await evaluate(`(() => { const b = document.querySelector('[data-cb-nav-item="${destination}"]'); if (b) b.click() })()`)
-  await sleep(900)
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    await evaluate(`(() => { const b = document.querySelector('[data-cb-nav-item="${destination}"]'); if (b) b.click() })()`)
+    await sleep(700)
+    const mounted = await evaluate(`(() => { const route = document.querySelector('[data-cb-route]'); return route ? route.getAttribute('data-cb-destination') : null })()`)
+    if (mounted === destination) return
+  }
+  throw new Error(`navigation to ${destination} did not take`)
 }
 
 const clickFilter = async (label) => {
@@ -122,6 +127,9 @@ const facts = () =>
     const lead = routeText.split('\\n').map((s) => s.trim()).find((s) => s.startsWith('Every pack installed on this profile')) || ''
     return {
       innerWidth: window.innerWidth,
+      rootFontSize: getComputedStyle(document.documentElement).fontSize,
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
       mode: route && route.getAttribute('data-cb-scope'),
       destination: route && route.getAttribute('data-cb-destination'),
       h1: { count: h1s.length, text: text(title), fontSize: title ? getComputedStyle(title).fontSize : null },
@@ -184,6 +192,7 @@ for (const mode of ['light', 'dark']) {
     await setWidth(width)
     await sleep(260)
     const snapshot = await facts()
+    if (snapshot.destination !== 'library') throw new Error(`capture left Library: destination=${snapshot.destination} at ${mode}-${width}`)
     results.facts[`${mode}-${width}`] = snapshot
     results.frames.push({ mode, width, file: await shoot(`${mode}-${width}`) })
   }
