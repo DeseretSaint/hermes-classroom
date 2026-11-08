@@ -6,7 +6,7 @@
 | Status | Frozen. H-120 implements against this document; H-140 writes no product code |
 | Base | `25467cf` (master) |
 | Authority | `PREBUILD_SPEC.md` section 8 (grading gate), section 5 (evidence classes), `docs/GRADING-LANES.md`, `docs/ASSESSMENT-BREADTH.md` sections 2.2 and 9 |
-| Contract delta | additive `cb.rpc` v15 (4 methods, 1 optional stimulus property) |
+| Contract delta | additive `cb.rpc` v16 (4 methods, 1 optional stimulus property) — authored as a v15 before H-139 froze v15 |
 | Storage delta | additive `cb.db` v11 (2 tables, no backfill, no rewrite) |
 | Out of scope | audio, pronunciation, model-assessed feedback (H-108), pack-declared practices, parent-recipe practices |
 
@@ -421,12 +421,16 @@ Every route to a verdict, and what it does:
 A pass therefore requires a stored, non-empty learner transcript of at least `turns.min` turns in
 which every declared target was produced. There is no other path to `pass`.
 
-## 9. Contract delta, `cb.rpc` v15
+## 9. Contract delta, `cb.rpc` v16
 
-Additive over v14: every v14 method name and payload is preserved; the version echo moves to 15; the
+Additive over v15: every v15 method name and payload is preserved; the version echo moves to 16; the
 method enum grows from 64 to 68. No `answer_kind`, `verdict`, `evidence_class`, `evidence_target`,
 `next_action` or error code is added. New refusals ride as `error.details.reason` under an existing
 code, the same shape H-130 blessed.
+
+This delta was authored as a v15 on `wt/h120-practice`; H-139 froze v15 before that branch reached
+master, so the amendment is v16 and `contracts/rpc.v15.json` stays byte-identical. Nothing in this
+document changes except the number.
 
 ### 9.1 `check.get.stimulus.practice`
 
@@ -517,7 +521,7 @@ detach call sites), `coursebook/turn.py` (practice branch, explicit controls, tu
 version `lesson-prompt.v8` -> `v9`, `_check_payloads`), `coursebook/pack_flow.py` (refuse a pack
 check that declares a practice), `coursebook/db.py` and `coursebook/migrations/0011_*`.
 
-Contract: `contracts/rpc.v15.json` (new), `contracts/db.v11.json` (new), `docs/CONTRACTS.md` v15 and
+Contract: `contracts/rpc.v16.json` (new), `contracts/db.v11.json` (new), `docs/CONTRACTS.md` v16 and
 cb.db v11 deltas citing this document, `docs/GRADING-LANES.md` section 2.1 amendment.
 
 UI (Vellum, in H-120 or its UI child): the practice surfaces in `desktop/plugin.js` and the frozen
@@ -551,8 +555,9 @@ check, one fake model only where a chat turn is simulated):
 | `test_transcript_hash` | `transcript_sha256` equals the canonical transcript hash and the attempt `answer_json` carries the same turns |
 | `test_commit_parity` | `attempt.submit` and `practice.end` produce the same attempt, transition and evidence rows for the same verdict |
 
-`tests/test_contracts.py` additions: v15 is additive over v14 (every v14 method and payload still
-validates); the four new methods validate and refuse unknown properties; `check_stimulus.practice`
+`tests/test_contracts.py` additions: v16 is additive over v15 (every v15 method and payload still
+validates); the four new methods validate and refuse unknown properties; the three commands are
+revision-fenced in the envelope and `practice.state` is not; `check_stimulus.practice`
 is nullable, drops a smuggled `match` key, and omits `label` when `targets_visible` is false;
 `cb.db` v11 schema matches `contracts/db.v11.json` and a v10 database migrates with no row changes.
 
