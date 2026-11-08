@@ -3,10 +3,17 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on the merged release candidate (local `master` plus `origin/master`: H-83's Atlas Lamp composition,
-H-84's plain-language pass, H-86's wayfinding pass and H-91's section-crash / Library-clipping fixes)
-and is pinned to the module that ships from that tree: `desktop/plugin.js` sha256
-`71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`.
+regenerated on the `cb.rpc` v16 tree — `origin/master` `14a6443` (H-83's Atlas Lamp composition,
+H-84's plain-language pass, H-86's wayfinding pass, H-91's section-crash / Library-clipping fixes,
+the P0 react-key sweep `80b39b8` and H-144 `14a6443`) plus the H-120a amendment — and is pinned to
+the module that ships from that tree: `desktop/plugin.js` sha256
+`035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d`.
+
+That module is byte-identical at the merged commit `c6b658e` (H-120a does not touch
+`desktop/plugin.js`), so this is the audit of the shipping module, not of a branch. The previous
+pin, `desktop/plugin.js` sha256
+`71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`, is history for the H-91 tree;
+the two `audit.json` files differ only in `generated_at` and the recorded branch name.
 
 This is **not** release evidence. Nothing here was published, tagged, pushed or merged, and the
 audit makes no claim that Coursebook is installable.
@@ -32,14 +39,14 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
-Run back to back on this pin (`50b446c1…`), verbatim (scratch roots elided):
+Run back to back on this pin (`0355970…`), verbatim (scratch roots elided):
 
 ```
 $ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-fubf16ia/run-a
-run B → …/cb-m4v-repro-fubf16ia/run-b
+run A → …/cb-m4v-repro-gm1ry1tt/run-a
+run B → …/cb-m4v-repro-gm1ry1tt/run-b
 PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 50b446c1deeb705efaa5f4948cc2fc202274367621a83e5c9ef404cc1facbb60
+  plugin_sha256: 035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d
   reference_time: 2026-11-07T10:00:00.000Z
 ```
 

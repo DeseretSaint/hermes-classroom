@@ -1,47 +1,47 @@
 {
-  "measured_commit": "b33a42f5756b4cb1065c5384929f520a81d0f629",
-  "measured_commit_short": "b33a42f",
+  "measured_commit": "c6b658ea923f1fe14f1e342e9fb816097e3727ea",
+  "measured_commit_short": "c6b658e",
   "measured_at": "2026-11-08",
   "branch": "master",
-  "merge_commit": "b33a42f5756b4cb1065c5384929f520a81d0f629",
+  "merge_commit": "c6b658ea923f1fe14f1e342e9fb816097e3727ea",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "ran": 1779,
+    "ran": 1968,
     "skipped": 1,
     "verdict": "OK (skipped=1)"
   },
   "rpc": {
     "contract": "cb.rpc",
-    "version": 14,
-    "declared_methods": 64,
-    "handlers": 64
+    "version": 16,
+    "declared_methods": 68,
+    "handlers": 68
   },
   "db": {
     "contract": "cb.db",
-    "version": 10,
-    "schema_version": 10,
-    "migrations": "0001-0010"
+    "version": 11,
+    "schema_version": 11,
+    "migrations": "0001-0011"
   },
   "plugin": {
     "path": "desktop/plugin.js",
-    "sha256": "71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5"
+    "sha256": "035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d"
   },
   "m4": {
     "frames": 62,
     "claims_pass": 15,
     "claims_total": 15,
-    "text_nodes": 2266,
+    "text_nodes": 2282,
     "forced_color_frames": 6,
     "min_authored_ratio": 5.93,
     "ax_controls": 364,
     "ax_unnamed": 0,
     "overflow_px": 0,
-    "source": "audit/visual/m4-visual/audit.json at this commit"
+    "source": "audit/visual/m4-visual/audit.json at this commit; text_nodes is the sum over the 56 non-forced-colour frames (2,602 over all 62 frames)"
   },
   "m4_repro": {
     "command": "python3 scripts/m4v-repro-check.py",
     "result": "PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots",
-    "plugin_sha256": "71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5"
+    "plugin_sha256": "035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d"
   },
   "adversarial_state": {
     "command": "python3 tests/adversarial/attack_state.py",

@@ -89,7 +89,7 @@ $HERMES_HOME/plugin-data/coursebook/data.db
 
 Not inside the plugin directory, because removing the plugin deletes that directory. The path is
 resolved per call so a profile switch cannot reuse another profile's handle. `health.get`
-provisions the store on first contact and applies migrations `0001`-`0010` (schema v10); the hooks
+provisions the store on first contact and applies migrations `0001`-`0011` (schema v11); the hooks
 and the tool never create it. `scripts/install-local.sh` also writes
 `<home>/coursebook-single-home.env`, which sets `HERMES_COURSEBOOK_SINGLE_HOME=1` so an isolated
 backend pins storage to that install's home instead of escaping to the default profile.

@@ -561,7 +561,8 @@ class StructuredCheckItemsSeamTest(RenderCase):
     """``stimulus.items[]`` is the structured checklist, projected by ``check.get``.
 
     Contract v8's ``check_stimulus`` (``contracts/rpc.v8.json#/$defs/check_stimulus``) admits
-    ``prompt``, ``format``, ``choices``, ``learner_instructions`` and ``items``;
+    ``prompt``, ``format``, ``choices``, ``learner_instructions``, ``items`` and the optional
+    ``practice`` stimulus;
     ``domain._stimulus_view`` projects that closed allowlist and validates the list on the way out.
     """
 
@@ -606,13 +607,15 @@ class StructuredCheckItemsSeamTest(RenderCase):
                     "format",
                     "items",
                     "learner_instructions",
+                    "practice",
                     "prompt",
                 ],
                 "verdict": "PASS: items[] projected, unknown keys still dropped",
             }
         )
         self.assertEqual(
-            sorted(stimulus), ["choices", "format", "items", "learner_instructions", "prompt"]
+            sorted(stimulus),
+            ["choices", "format", "items", "learner_instructions", "practice", "prompt"],
         )
         self.assertEqual(stimulus["items"], self.structured_items())
         self.assertNotIn("reference_answer", stimulus)
