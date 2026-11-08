@@ -1,0 +1,1369 @@
+{
+  "generated_at": "2026-11-08T20:34:07.730Z",
+  "kind": "shipped desktop/plugin.js mounted in jsdom (real effects, real clicks) against recorded real backend payloads, painted in headless Chromium",
+  "plugin_sha256": "c8e98f29b6ac2270a379a4bbc2dbd39a798c70189d4e77bb067a7953a99793e0",
+  "chromium": "Chrome/155.0.8059.84",
+  "frames": [
+    {
+      "id": "01-storefront-first-impression-light-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 2007,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Continue",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "artifact",
+        "artifact",
+        "typographic",
+        "artifact"
+      ],
+      "cover_first_w_px": 541,
+      "cover_first_h_px": 330,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            541,
+            304
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            232,
+            155
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            232,
+            155
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 2007,
+      "text_head": "Discover\nLibrary\nProvenance\nPack visual — generated plate; not a diagram of the course.\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say "
+    },
+    {
+      "id": "02-storefront-dark-1049",
+      "view": "workshop",
+      "mode": "dark",
+      "width": 1049,
+      "height": 2007,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Continue",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "artifact",
+        "artifact",
+        "typographic",
+        "artifact"
+      ],
+      "cover_first_w_px": 541,
+      "cover_first_h_px": 330,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            541,
+            304
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            232,
+            155
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            232,
+            155
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 2007,
+      "text_head": "Discover\nLibrary\nProvenance\nPack visual — generated plate; not a diagram of the course.\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say "
+    },
+    {
+      "id": "03-storefront-light-900",
+      "view": "workshop",
+      "mode": "light",
+      "width": 900,
+      "height": 2037,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Continue",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "artifact",
+        "artifact",
+        "typographic",
+        "artifact"
+      ],
+      "cover_first_w_px": 459,
+      "cover_first_h_px": 312,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            459,
+            258
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            271,
+            181
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            271,
+            181
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 900,
+      "client_width": 900,
+      "document_height": 2037,
+      "text_head": "Discover\nLibrary\nProvenance\nPack visual — generated plate; not a diagram of the course.\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say "
+    },
+    {
+      "id": "04-storefront-dark-900",
+      "view": "workshop",
+      "mode": "dark",
+      "width": 900,
+      "height": 2037,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Continue",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "artifact",
+        "artifact",
+        "typographic",
+        "artifact"
+      ],
+      "cover_first_w_px": 459,
+      "cover_first_h_px": 312,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            459,
+            258
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            271,
+            181
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            271,
+            181
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 900,
+      "client_width": 900,
+      "document_height": 2037,
+      "text_head": "Discover\nLibrary\nProvenance\nPack visual — generated plate; not a diagram of the course.\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say "
+    },
+    {
+      "id": "05-storefront-light-460",
+      "view": "workshop",
+      "mode": "light",
+      "width": 460,
+      "height": 2530,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Continue",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "artifact",
+        "artifact",
+        "typographic",
+        "artifact"
+      ],
+      "cover_first_w_px": 432,
+      "cover_first_h_px": 269,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            432,
+            243
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            439,
+            293
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            439,
+            293
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 2530,
+      "text_head": "Discover\nLibrary\nProvenance\nPack visual — generated plate; not a diagram of the course.\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say "
+    },
+    {
+      "id": "06-storefront-dark-460",
+      "view": "workshop",
+      "mode": "dark",
+      "width": 460,
+      "height": 2530,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Continue",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "artifact",
+        "artifact",
+        "typographic",
+        "artifact"
+      ],
+      "cover_first_w_px": 432,
+      "cover_first_h_px": 269,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            432,
+            243
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            439,
+            293
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            439,
+            293
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 2530,
+      "text_head": "Discover\nLibrary\nProvenance\nPack visual — generated plate; not a diagram of the course.\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say "
+    },
+    {
+      "id": "07-storefront-200pct-460",
+      "view": "workshop",
+      "mode": "light",
+      "width": 460,
+      "height": 4932,
+      "font": "32px",
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "32px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Continue",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "artifact",
+        "artifact",
+        "typographic",
+        "artifact"
+      ],
+      "cover_first_w_px": 407,
+      "cover_first_h_px": 468,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            407,
+            384
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            418,
+            279
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            418,
+            279
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 4932,
+      "text_head": "Discover\nLibrary\nProvenance\nPack visual — generated plate; not a diagram of the course.\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say "
+    },
+    {
+      "id": "08-storefront-reduced-motion-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 2007,
+      "font": null,
+      "motion": "reduced",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "reduced",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Continue",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "artifact",
+        "artifact",
+        "typographic",
+        "artifact"
+      ],
+      "cover_first_w_px": 541,
+      "cover_first_h_px": 330,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            541,
+            304
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            232,
+            155
+          ]
+        },
+        {
+          "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            232,
+            155
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 2007,
+      "text_head": "Discover\nLibrary\nProvenance\nPack visual — generated plate; not a diagram of the course.\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say "
+    },
+    {
+      "id": "09-cover-detail-light-1049",
+      "view": "detail",
+      "mode": "light",
+      "width": 1049,
+      "height": 2438,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "artifact"
+      ],
+      "cover_first_w_px": 1049,
+      "cover_first_h_px": 616,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            1049,
+            590
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Japanese affection and register — a Sample L0 classroom",
+      "detail_primary": [
+        "← All packs",
+        "Continue this course",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 7,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance",
+        "Your evidence"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 2438,
+      "text_head": "← All packs\nPack visual — generated plate; not a diagram of the course.\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits.\n\nValidated\nLangua"
+    },
+    {
+      "id": "10-cover-detail-dark-900",
+      "view": "detail",
+      "mode": "dark",
+      "width": 900,
+      "height": 2372,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "artifact"
+      ],
+      "cover_first_w_px": 900,
+      "cover_first_h_px": 532,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            900,
+            506
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Japanese affection and register — a Sample L0 classroom",
+      "detail_primary": [
+        "← All packs",
+        "Continue this course",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 7,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance",
+        "Your evidence"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 900,
+      "client_width": 900,
+      "document_height": 2372,
+      "text_head": "← All packs\nPack visual — generated plate; not a diagram of the course.\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits.\n\nValidated\nLangua"
+    },
+    {
+      "id": "11-cover-detail-light-460",
+      "view": "detail",
+      "mode": "light",
+      "width": 460,
+      "height": 2600,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "artifact"
+      ],
+      "cover_first_w_px": 460,
+      "cover_first_h_px": 285,
+      "images": [
+        {
+          "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1024,
+            576
+          ],
+          "displayed": [
+            460,
+            259
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Japanese affection and register — a Sample L0 classroom",
+      "detail_primary": [
+        "← All packs",
+        "Continue this course",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 7,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance",
+        "Your evidence"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 2600,
+      "text_head": "← All packs\nPack visual — generated plate; not a diagram of the course.\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits.\n\nValidated\nLangua"
+    },
+    {
+      "id": "12-cover-fallback-light-1049",
+      "view": "detail",
+      "mode": "light",
+      "width": 1049,
+      "height": 1833,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "typographic"
+      ],
+      "cover_first_w_px": 1049,
+      "cover_first_h_px": 592,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Parent demo: measuring ingredients together",
+      "detail_primary": [
+        "← All packs",
+        "Add to library",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 3,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 1833,
+      "text_head": "← All packs\nFOR PARENTS\nParent demo: measuring ingredients together\nParent demo: measuring ingredients together\n\nRead a measuring jug and double a quantity, with a parent guiding and the answers kept off the learner page.\n\nValidated\nFor par"
+    }
+  ]
+}

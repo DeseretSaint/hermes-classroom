@@ -372,6 +372,8 @@ Same as the spine node, but the content is a mission block:
 - Icons: `sdk.Codicon` only, 16px, `currentColor`. No emoji, no second icon set, no icon font.
 - Ornament: the seal and the spine are the only recurring motifs. Meridian ticks appear on the
   hero, the empty plate and the seal. Not on rows, not on chips.
+- Ornament may include one approved cover illustration lane; it is not a second icon set. A cover
+  is a composed plate, never a raw stock image with a title.
 - A section does not get an icon. A mode does not get an illustration. The type and the route are
   enough.
 
@@ -885,7 +887,7 @@ Acceptance for the whole card:
 
 - No XP, streak, league, level, mastery percentage, progress ring or invented goal. Ever.
 - No gradient, shadow, glass, blur, glow or pseudo-3D. The lit page is a flat field.
-- No external asset, illustration pipeline, icon font or second icon set.
+- No second icon set, icon font, or unreconciled external asset. Icons remain sdk.Codicon only. One approved illustration lane may supply a course cover or empty-state figure from a permissively licensed or host-generated asset, composed in the Atlas Lamp language, recorded in docs/ASSET-PROVENANCE.md, and never presented as evidence, a technical authority, or a trademark.
 - No new route, RPC method, pack field, grade rule or chat surface.
 - No host `styles.css`, desktop asar or app chrome edit.
 - No raw hex outside the token literal.

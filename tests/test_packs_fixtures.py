@@ -35,7 +35,11 @@ class BuilderTests(unittest.TestCase):
         cls.builder = load_builder()
 
     def test_committed_manifests_match_the_builder(self) -> None:
-        for directory, build in ((JAPANESE, self.builder.japanese_manifest), (PARENT, self.builder.parent_manifest)):
+        for directory, build in (
+            (JAPANESE, self.builder.japanese_manifest),
+            (PARENT, self.builder.parent_manifest),
+            (PACKS / "technical-demo-pack", self.builder.technical_manifest),
+        ):
             with self.subTest(pack=directory.name):
                 committed = packs.load_manifest(directory / "pack.json")
                 self.assertEqual(committed, build(), "rebuild bundled/packs/*/pack.json; it is stale")
@@ -125,7 +129,9 @@ class JapanesePackTests(unittest.TestCase):
 
     def test_media_links_name_the_real_assets_and_their_sections(self) -> None:
         media = self.manifest["media"]
-        self.assertEqual(len(media), 2)
+        # H-197: two real assets plus the composed cover plate, which is linked first so the
+        # Workshop storefront can present it as the pack's cover.
+        self.assertEqual(len(media), 3)
         by_path = {entry["path"]: entry for entry in self.manifest["files"]}
         sections = {
             section["path"]
@@ -144,6 +150,7 @@ class JapanesePackTests(unittest.TestCase):
         self.assertEqual(
             {link["path"]: link["section_path"] for link in media},
             {
+                "content/cover-16x9.png": "content/section-01-two-ways.md",
                 "content/narration-polite-confession.mp3": "content/section-02-choosing.md",
                 "content/relationship-map.png": "content/section-01-two-ways.md",
             },
@@ -193,7 +200,12 @@ class JapanesePackTests(unittest.TestCase):
             self.assertIn(cue, text.lower())
 
     def test_relationship_visual_has_a_text_equivalent(self) -> None:
-        visual = next(entry for entry in self.manifest["files"] if entry["role"] == "visual")
+        # H-197 added a cover plate as the pack's first visual; the schematic is still the only
+        # visual that carries register facts, so it is named explicitly here.
+        visual = next(
+            entry for entry in self.manifest["files"] if entry["path"] == "content/relationship-map.png"
+        )
+        self.assertEqual(visual["role"], "visual")
         self.assertEqual(visual["mime"], "image/png")
         self.assertIn("register", visual["text_equivalent"].lower())
         self.assertTrue(visual["text_equivalent"])

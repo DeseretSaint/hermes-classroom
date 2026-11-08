@@ -6,9 +6,9 @@
   "packs": [
     {
       "pack_id": "japanese-affection-context-l0",
-      "pack_version": "2.0.0",
+      "pack_version": "2.1.0",
       "directory": "japanese-affection-context-l0",
-      "content_hash": "sha256:ad6f5432ba9873f1cb0e1f0ec2a5e3a87231246c11560937846a73146db51210",
+      "content_hash": "sha256:5343526daa29a310df666ca8940d3908b5e507f34b0f83b04afb853cce5449f9",
       "featured": true,
       "categories": ["Languages", "Japanese", "Register"],
       "outcome": "Choose the Japanese expression that fits the person you are speaking to, and say why it fits.",
@@ -19,11 +19,17 @@
         "Listening or speaking assessment: no listening or pronunciation evidence is graded here."
       ],
       "cover": {
-        "path": "content/relationship-map.png",
-        "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
-        "caption": "Pack visual — the relationship and register map"
+        "path": "content/cover-16x9.png",
+        "crop": "content/cover-3x2.png",
+        "alt": "Pack visual — generated plate: a pale gold field crossed by a solid indigo plane with one slanted ink cut edge, over a gold band along the bottom. Not a diagram of the course.",
+        "caption": "Pack visual — generated plate; not a diagram of the course."
       },
       "changelog": [
+        {
+          "version": "2.1.0",
+          "date": "2026-11-08",
+          "note": "A Press Plate cover (16:9 master plus its mechanical 3:2 crop) is linked as the pack's first visual, so the Store, the Library row and the course detail present the same plate. Five flat inks, no text, no object: the plate carries no register facts, and the relationship map remains the deterministic schematic."
+        },
         {
           "version": "2.0.0",
           "date": "2026-11-07",
@@ -61,9 +67,9 @@
     },
     {
       "pack_id": "technical-demo-pack",
-      "pack_version": "1.0.0",
+      "pack_version": "2.0.0",
       "directory": "technical-demo-pack",
-      "content_hash": "sha256:603c0b7de57110ff31ec58f8e7d1dab7211c3312e369f880000deac7fda66174",
+      "content_hash": "sha256:ff5594a816570084de47465695f4e1025b4e5d19331589c4e421cebe2a73b95d",
       "featured": false,
       "categories": ["Technical", "Pack format", "For authors"],
       "outcome": "Read what a pack manifest declares and what its trust labels can and cannot prove.",
@@ -73,8 +79,18 @@
         "Any external standard or third-party specification.",
         "A human review claim: its two checks are recorded as unreviewed, which the second section explains."
       ],
-      "cover": null,
+      "cover": {
+        "path": "content/cover-16x9.png",
+        "crop": "content/cover-3x2.png",
+        "alt": "Pack visual — generated plate: a solid near-black plane with one pale grey cut edge beside a pale gold field, over a gold band along the bottom. Not a diagram of the pack format.",
+        "caption": "Pack visual — generated plate; not a diagram of the course."
+      },
       "changelog": [
+        {
+          "version": "2.0.0",
+          "date": "2026-11-08",
+          "note": "Moved to cb.pack v2 so the pack can carry one Press Plate cover as a real media artifact (16:9 master plus the 3:2 crop). Five flat inks, no text: the plate states no field, count or schema rule."
+        },
         {
           "version": "1.0.0",
           "date": "2026-11-08",
