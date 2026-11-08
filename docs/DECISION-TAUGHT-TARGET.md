@@ -86,9 +86,10 @@ the session and the score at 2.
 | File | Change |
 |---|---|
 | `coursebook/generation.py:4391` `_narrative_text` | Skips `kind: model` segments and `role: narration` media; skips the projected document block whose `deep` equals a model body. Everything else is scanned as before. |
-| `coursebook/generation.py:4455` `assert_no_answer_leak` | Docstring states the rule. Behaviour follows `_narrative_text`; no other logic changed. |
+| `coursebook/generation.py:4457` `assert_no_answer_leak` | Docstring states the rule. Behaviour follows `_narrative_text`; no other logic changed. |
 | `coursebook/lesson_document.py:995` `narrative_text` | Two optional keyword predicates, `skip_block` and `skip_media`; defaults scan the whole document, so every other caller (`leaks_answer`, the tests) is unchanged. |
 | `tests/test_lesson_document.py` `TaughtTargetLeakRuleTest` | 5 tests: the model segment may present the keyed form end to end (page + document); the same string in an explain step, in the guided practice, in the worked example answer and in an illustration media item is still refused; narration is permitted. |
+| `tests/test_course_quality_s2_repair.py` | 2 tests on the real S2 fixture: the model segment amended to present こんにちは is admitted, and the same string added to `segments[1]` (explain) is still refused. |
 
 Both call sites of the gate — authoring (`run_lesson_job`) and read (`learner_page`) — use the same
 `_narrative_text`, so a stored page is served under the same rule it was admitted under.
@@ -130,11 +131,20 @@ Nothing, yet. The artifact is unchanged, so:
 ## 8. Evidence
 
 ```
+$ python3 -m unittest discover -s tests -t .
+Ran 2355 tests in 624.238s
+
+OK (skipped=1)
+```
+
+Before the full run, the three touched modules alone:
+
+```
 $ python3 -m unittest tests.test_lesson_document tests.test_generation tests.test_course_quality_s2_repair
 Ran 127 tests in 0.563s
+
 OK
 ```
 
-Full-suite result and the exact commands are in the card's completion record. The S2 fixture is
-still admitted by the gate (`tests/test_course_quality_s2_repair.py` passes unchanged), which is the
+The S2 fixture is still admitted by the gate (`tests/test_course_quality_s2_repair.py` passes unchanged), which is the
 point: the rule change does not retroactively bless the unmodelled target.
