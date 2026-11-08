@@ -18,18 +18,26 @@ The only database handle is ``plugins.plugin_storage.plugin_db("coursebook")``
 ``<plugin data>/coursebook`` through ``hermes_constants.get_hermes_home()`` — exactly the path
 ``plugin_data_dir`` returns — because ``plugin_data_dir`` ``mkdir``s on every call and a read must
 never create the store it is asking about.
+
+One path is an exception, and it is deliberate: under :data:`SINGLE_HOME_FLAG` the pinned file is
+opened through the host's private ``hermes_cli.sqlite_util.open_db`` (:func:`_host_open_db`),
+because the public seam takes a filename and would re-resolve the escaped profile. That coupling is
+guarded — module, attribute and call shape — and fails as :class:`HostSeamUnavailable` naming the
+moved surface (``docs/ARCHITECTURE.md`` §"Host seam debt", H-115-D4).
 """
 
 from __future__ import annotations
 
 import hashlib
+import importlib
+import inspect
 import os
 import sqlite3
 import threading
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterator, cast
 
 from . import PACKAGE_ID
 from .contracts import contract
@@ -54,6 +62,146 @@ _TX_LOCK = threading.Lock()
 
 class DatabaseUnavailable(RuntimeError):
     """The database cannot be opened in this process/profile."""
+
+
+#: The one private host surface this package depends on, and the only reason it must be private.
+#:
+#: ``plugins.plugin_storage.plugin_db`` is the documented SQLite seam, but it takes a *filename* and
+#: resolves the directory from the request's profile scope on every call — so under the single-home
+#: pin it would reopen the escaped home. The host offers no public way to open a database at an
+#: explicit path, so the pinned path is opened through the host's own ``open_db`` policy (WAL with
+#: the network-FS fallback, foreign keys, busy timeout). That module is host-internal: catalog rule 9
+#: flags it, and a host release may move it without a plugin-version bump. Decision (b) of H-115-D4:
+#: keep the import, but name it here, guard it (module, attribute *and* call shape) and fail with a
+#: message that says exactly which surface moved. See ``docs/ARCHITECTURE.md`` §"Host seam debt".
+HOST_SEAM_MODULE = "hermes_cli.sqlite_util"
+HOST_SEAM_ATTR = "open_db"
+
+#: Keyword arguments the pinned open needs; a host refactor that renames one of these breaks the
+#: dedicated-backend install path exactly like moving the module, so the guard checks all three.
+HOST_SEAM_KWARGS = ("db_label", "foreign_keys", "check_same_thread")
+
+#: The host build this seam was last verified against. There is no lower bound claimed: the guard
+#: checks the live module, not a version number, so an older build that still ships the surface
+#: works and a newer one that moved it fails with the message below.
+HOST_SEAM_VERIFIED = "hermes-agent v0.23.0..c02e6e0180 (2026-11-07)"
+
+
+class HostSeamUnavailable(DatabaseUnavailable):
+    """The private host seam behind the single-home pin is missing or has drifted.
+
+    A subclass of :class:`DatabaseUnavailable` so every existing caller keeps failing the same way;
+    the distinct type lets a test (and the health read) say *coupling break*, not *I/O error*.
+    """
+
+    code = "HOST_SEAM_UNAVAILABLE"
+
+
+def _host_seam_remedy(detail: str) -> str:
+    return (
+        f"the single-home pin ({SINGLE_HOME_FLAG}=1) opens the launch home's database through the "
+        f"host's private {HOST_SEAM_MODULE}.{HOST_SEAM_ATTR}, which this Hermes build no longer "
+        f"offers as this package calls it ({detail}). This package last verified that surface "
+        f"against {HOST_SEAM_VERIFIED}; a host release that moved it broke the pinned open. "
+        f"Re-point coursebook/db.py::_host_open_db at the new host build, or unset "
+        f"{SINGLE_HOME_FLAG} on a host that already resolves the launch profile itself. Refusing to "
+        f"fall back to the ambient profile's store."
+    )
+
+
+def _host_module() -> Any:
+    """Import the private host module — the single import site (tests replace this function).
+
+    The path is a literal *here* on purpose: Hermes's admission lint
+    (``hermes_cli/plugin_validate_private_imports.py``) reads ``importlib.import_module`` string
+    arguments, and catalog rule 9 must keep *reporting* this coupling instead of having it hidden
+    behind a constant. :func:`_seam_identity_problem` stops the literal and
+    :data:`HOST_SEAM_MODULE` from drifting apart.
+    """
+    return importlib.import_module("hermes_cli.sqlite_util")
+
+
+def _seam_identity_problem(module: Any) -> str:
+    """The module the lint reports and the module the messages name must be the same one."""
+    imported = getattr(module, "__name__", HOST_SEAM_MODULE)
+    if imported == HOST_SEAM_MODULE:
+        return ""
+    return f"imported {imported}, but this package declares {HOST_SEAM_MODULE}"
+
+
+def host_seam_status() -> dict[str, Any]:
+    """Whether the private host seam is usable *as called* — for health reads and the upgrade canary.
+
+    Reports facts only; it never opens a database and never writes.
+    """
+    status: dict[str, Any] = {
+        "module": HOST_SEAM_MODULE,
+        "attribute": HOST_SEAM_ATTR,
+        "kwargs": list(HOST_SEAM_KWARGS),
+        "verified_against": HOST_SEAM_VERIFIED,
+        "available": False,
+        "detail": "",
+    }
+    try:
+        module = _host_module()
+    except Exception as exc:  # noqa: BLE001 - any import failure is the same coupling fact
+        status["detail"] = f"module is not importable: {exc}"
+        return status
+    if problem := _seam_identity_problem(module):
+        status["detail"] = problem
+        return status
+    opener = getattr(module, HOST_SEAM_ATTR, None)
+    if not callable(opener):
+        status["detail"] = f"module has no callable {HOST_SEAM_ATTR}"
+        return status
+    missing = _missing_seam_kwargs(opener)
+    if missing:
+        status["detail"] = f"{HOST_SEAM_ATTR} no longer accepts {', '.join(missing)}"
+        return status
+    status["available"] = True
+    return status
+
+
+def _missing_seam_kwargs(opener: Any) -> list[str]:
+    """Keywords this package passes that ``opener`` does not accept (empty when it takes ``**kw``)."""
+    try:
+        parameters = inspect.signature(opener).parameters
+    except (TypeError, ValueError):  # a C-level or wrapped callable: cannot inspect, do not guess
+        return []
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in parameters.values()):
+        return []
+    return [name for name in HOST_SEAM_KWARGS if name not in parameters]
+
+
+def _host_open_db(path: Path) -> sqlite3.Connection:
+    """Open ``path`` through the host's own connection policy — the single private-host call site.
+
+    Import/attribute/signature failures are :class:`HostSeamUnavailable` (a coupling break). An
+    error raised *by* the opener (permissions, disk, a lock) is not: it travels unlabelled to
+    :func:`connect`, which reports it as :class:`DatabaseUnavailable` exactly as before.
+    """
+    try:
+        module = _host_module()
+    except Exception as exc:  # noqa: BLE001 - fail loud, never fall back to the ambient store
+        raise HostSeamUnavailable(_host_seam_remedy(f"module is not importable: {exc}")) from exc
+    if problem := _seam_identity_problem(module):
+        raise HostSeamUnavailable(_host_seam_remedy(problem))
+    opener = getattr(module, HOST_SEAM_ATTR, None)
+    if not callable(opener):
+        raise HostSeamUnavailable(_host_seam_remedy(f"module has no callable {HOST_SEAM_ATTR}"))
+    if missing := _missing_seam_kwargs(opener):
+        raise HostSeamUnavailable(
+            _host_seam_remedy(f"{HOST_SEAM_ATTR} no longer accepts {', '.join(missing)}")
+        )
+    return cast(
+        sqlite3.Connection,
+        opener(
+            path,
+            db_label=f"plugin-data/{PACKAGE_ID}/data.db",
+            foreign_keys=True,
+            check_same_thread=False,
+        ),
+    )
 
 
 class SchemaDrift(RuntimeError):
@@ -226,14 +374,7 @@ def connect() -> sqlite3.Connection:
 
             connection = plugin_db(PACKAGE_ID)
         else:  # single-home backend: same policy, path pinned to the launch home
-            from hermes_cli.sqlite_util import open_db
-
-            connection = open_db(
-                database_path(),
-                db_label=f"plugin-data/{PACKAGE_ID}/data.db",
-                foreign_keys=True,
-                check_same_thread=False,
-            )
+            connection = _host_open_db(database_path())
     except Exception as exc:  # noqa: BLE001 - surfaced as a typed failure, never swallowed
         raise DatabaseUnavailable(f"cannot open coursebook database: {exc}") from exc
     connection.row_factory = sqlite3.Row

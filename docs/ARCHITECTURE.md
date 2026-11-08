@@ -296,3 +296,80 @@ live reconciliation, reaper thread, end-to-end pump) and `probes/h66-liveness.py
 the three stalls offline and reported `host_seam_stall=False provider_stall=False
 heartbeat_not_renewed=False` after the fix. The before/after transcript and the live incident row
 are in `docs/H66-EVIDENCE.md`.
+
+## 9. Host seam debt: `hermes_cli.sqlite_util.open_db` (H-115-D4)
+
+One line of this package depends on a host **internal**, and it is accepted debt with a guard
+rather than a hidden import. Recorded here with its exact host range because a reader asked to
+audit the coupling should not have to grep for it.
+
+**What is coupled.** `plugins.plugin_storage.plugin_db(name, filename="data.db")` is the documented
+SQLite seam (§3) and the handle for every ordinary open. It accepts a *filename* only: the directory
+comes from `plugin_data_dir(name)` → `hermes_constants.get_hermes_home()` on every call. Under
+`HERMES_COURSEBOOK_SINGLE_HOME=1` (§`db.single_home_pin`) the request's `?profile=` scope points
+*outside* the launch home, so `plugin_db` would reopen the escaped home — the exact bug the pin
+exists to prevent. The host publishes no way to open a database at an explicit path, so the pinned
+file is opened through `hermes_cli.sqlite_util.open_db`, the host's own connect+PRAGMA stack (WAL
+with the network-FS fallback and the WAL-reset-bug gate, `foreign_keys`, busy timeout). That module
+is not on the plugin allowlist (`hermes_cli/plugin_validate_private_imports.py`), so `hermes plugins
+validate` reports it under catalog rule 9 — deliberately still reported, see below.
+
+**Host range.** Last verified against `hermes-agent v0.23.0..c02e6e0180` (2026-11-07), where
+`hermes_cli/sqlite_util.py::open_db(path, *, db_label, foreign_keys=, check_same_thread=, …)`
+exists with the three keywords this package passes. No lower bound is claimed and none is
+enforced: the guard inspects the live module, not a version string, so a build that still ships
+the surface works whatever its number.
+
+**Why not (a) — a public seam — yet.** The host would have to expose a path-taking open (or a
+`plugin_db(..., path=)`). That is a host release with its own review and tests; until it ships, the
+plugin cannot use it and would keep the private import as a fallback anyway. The debt is retired
+the day the host publishes the seam: this package then calls it and `HOST_SEAM_*` disappears.
+
+**Why not a local re-implementation.** A raw `sqlite3.connect` at the pinned path would drop the
+host's WAL policy — the network-FS silent-refusal fallback and the never-live-downgrade invariant
+are exactly the rules a plugin must not re-carry by hand (a `PRAGMA journal_mode=WAL` on a WAL-reset-
+bug build is a known corruption path). Opening the *right* file with the *wrong* policy trades one
+failure for a worse one.
+
+**Why not fall back to a local open when the seam is gone.** The pin's whole promise is that a
+single-home backend never reads or writes the ambient profile. A fallback would restore service on
+the wrong store the moment the host moves a module — the failure mode H-69 fixed. It fails loud
+instead: `DatabaseUnavailable` (subclass `HostSeamUnavailable`).
+
+**The guard, and what it turns a host refactor into.** `coursebook/db.py` names the surface once
+(`HOST_SEAM_MODULE`, `HOST_SEAM_ATTR`, `HOST_SEAM_KWARGS`, `HOST_SEAM_VERIFIED`), imports it at one
+site (`_host_module`), and checks the module identity, the attribute and the three keyword names
+before calling it. A move becomes one sentence naming the surface, the host build it was verified
+against, and the two fixes (re-point, or unset the flag):
+
+> the single-home pin (HERMES_COURSEBOOK_SINGLE_HOME=1) opens the launch home's database through the
+> host's private hermes_cli.sqlite_util.open_db, which this Hermes build no longer offers as this
+> package calls it (…). … Refusing to fall back to the ambient profile's store.
+
+`db.host_seam_status()` reports the same fact without opening anything, and
+`install_check --home` (the doctor) already answers it as `SCOPE_PINNED` or an `HOST_SEAM_UNAVAILABLE`
+error finding with the fix, so a broken dedicated backend is diagnosable before a request is made.
+An error raised *by* the opener (permissions, disk, lock) stays a plain `DatabaseUnavailable`: a
+coupling break and an I/O error are different facts.
+
+The import is spelled as a literal inside `_host_module` on purpose. Hermes's admission lint reads
+`importlib.import_module("<literal>")`, so keeping the literal means the coupling stays *reported*
+under catalog rule 9 instead of being hidden behind the constant; `_seam_identity_problem` fails if
+the literal and the constant ever diverge.
+
+**Upgrade procedure.** After bumping the host: `python3 -m unittest tests.test_host_seam_guard`
+— the first two tests are the canary and fail with the message above (plus the new surface to
+point at) if the host moved it. Then update `HOST_SEAM_VERIFIED` and this section.
+
+**What is still true, stated plainly.** On a host that moved the module without a replacement, a
+dedicated single-home backend cannot open its store at all until this package is updated — that is
+the price of the pin, and it is loud, not silent. A multi-profile gateway must not set the flag;
+nothing here protects an operator who sets it on one.
+
+Evidence: `tests/test_host_seam_guard.py` (12 tests: the live canary, missing module, moved
+attribute, renamed keyword, module-identity drift, `**kwargs` acceptance, an opener I/O error not
+reported as coupling, the pinned `connect()` opening the launch home through the guard, the
+drifted-seam `connect()`, and both doctor findings). Mutation check: with the declared module path
+pointed at a name the host does not ship, the canary fails with exactly the message quoted above.
+`hermes plugins validate .` still prints `coursebook/db.py:119 hermes_cli.sqlite_util` under
+catalog rule 9.
