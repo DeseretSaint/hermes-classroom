@@ -1,0 +1,876 @@
+{
+  "port": "9362",
+  "target": "http://127.0.0.1:5174/#/coursebook",
+  "frames": [
+    {
+      "mode": "light",
+      "width": 1049,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/docs/h150-shots/light-1049.png"
+    },
+    {
+      "mode": "light",
+      "width": 900,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/docs/h150-shots/light-900.png"
+    },
+    {
+      "mode": "light",
+      "width": 460,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/docs/h150-shots/light-460.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/docs/h150-shots/dark-1049.png"
+    },
+    {
+      "mode": "dark",
+      "width": 900,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/docs/h150-shots/dark-900.png"
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/docs/h150-shots/dark-460.png"
+    },
+    {
+      "mode": "light",
+      "width": 460,
+      "text": "200%",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/docs/h150-shots/text200-light-460.png"
+    }
+  ],
+  "facts": {
+    "light-1049": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nParent demo: measuring ingredients together\nLocal pack\n2 sections\n\nResume Double a recipe quantity and explain the operation\n\n0 of 2 with evidence\nPreview\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\n4 sections\n\nReview 3 objectives\n\n0 of 4 with evidence · 3 due\nPreview\nWhat we check / what we do not check"
+    },
+    "light-900": {
+      "innerWidth": 900,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "36.702px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nParent demo: measuring ingredients together\nLocal pack\n2 sections\n\nResume Double a recipe quantity and explain the operation\n\n0 of 2 with evidence\nPreview\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\n4 sections\n\nReview 3 objectives\n\n0 of 4 with evidence · 3 due\nPreview\nWhat we check / what we do not check"
+    },
+    "light-460": {
+      "innerWidth": 460,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "36px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nParent demo: measuring ingredients together\nLocal pack\n2 sections\n\nResume Double a recipe quantity and explain the operation\n\n0 of 2 with evidence\nPreview\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\n4 sections\n\nReview 3 objectives\n\n0 of 4 with evidence · 3 due\nPreview\nWhat we check / what we do not check"
+    },
+    "dark-1049": {
+      "innerWidth": 1049,
+      "mode": "dark",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nParent demo: measuring ingredients together\nLocal pack\n2 sections\n\nResume Double a recipe quantity and explain the operation\n\n0 of 2 with evidence\nPreview\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\n4 sections\n\nReview 3 objectives\n\n0 of 4 with evidence · 3 due\nPreview\nWhat we check / what we do not check"
+    },
+    "dark-900": {
+      "innerWidth": 900,
+      "mode": "dark",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "36.702px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nParent demo: measuring ingredients together\nLocal pack\n2 sections\n\nResume Double a recipe quantity and explain the operation\n\n0 of 2 with evidence\nPreview\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\n4 sections\n\nReview 3 objectives\n\n0 of 4 with evidence · 3 due\nPreview\nWhat we check / what we do not check"
+    },
+    "dark-460": {
+      "innerWidth": 460,
+      "mode": "dark",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "36px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nParent demo: measuring ingredients together\nLocal pack\n2 sections\n\nResume Double a recipe quantity and explain the operation\n\n0 of 2 with evidence\nPreview\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\n4 sections\n\nReview 3 objectives\n\n0 of 4 with evidence · 3 due\nPreview\nWhat we check / what we do not check"
+    },
+    "text200-light-460": {
+      "innerWidth": 460,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "72px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else",
+        "All packs"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": "true",
+          "selectedCue": "Selected",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 1,
+      "selectedCueText": [
+        "Selected"
+      ],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [
+        {
+          "open": true,
+          "label": "Technical details"
+        }
+      ],
+      "previewPanel": true,
+      "previewPrimary": [
+        "Resume lesson"
+      ],
+      "previewSecondary": [
+        "Archive"
+      ],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nAll packs\nParent demo: measuring ingredients together\nLocal pack\nWhat this pack shows\nNext step\nResume Double a recipe quantity and explain the operation\nEnrolment\nActive\nEvidence\n0 reviews due\n0 of 2 sections\nLast change\n11/7/2026, 5:45:09 PM\nResume lesson\nArchive\nParent Studio blueprint: the adult prepares and teaches from this plan. Checks are observations, not graded child answers, and this course is never offered as an adult graded course.\nTechnical details\nPack ID\nparent-measurement-practice\nPack version\nv1.0.0\nRecord revision\n0\nWhat we check / what we do not check"
+    }
+  },
+  "actions": {
+    "afterClick": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else",
+        "All packs"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": "true",
+          "selectedCue": "Selected",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 1,
+      "selectedCueText": [
+        "Selected"
+      ],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [
+        {
+          "open": false,
+          "label": "Technical details"
+        }
+      ],
+      "previewPanel": true,
+      "previewPrimary": [
+        "Resume lesson"
+      ],
+      "previewSecondary": [
+        "Archive"
+      ],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nAll packs\nParent demo: measuring ingredients together\nLocal pack\nWhat this pack shows\nNext step\nResume Double a recipe quantity and explain the operation\nEnrolment\nActive\nEvidence\n0 reviews due\n0 of 2 sections\nLast change\n11/7/2026, 5:45:09 PM\nResume lesson\nArchive\nParent Studio blueprint: the adult prepares and teaches from this plan. Checks are observations, not graded child answers, and this course is never offered as an adult graded course.\nTechnical details\nWhat we check / what we do not check"
+    },
+    "cleared": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nParent demo: measuring ingredients together\nLocal pack\n2 sections\n\nResume Double a recipe quantity and explain the operation\n\n0 of 2 with evidence\nPreview\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\n4 sections\n\nReview 3 objectives\n\n0 of 4 with evidence · 3 due\nPreview\nWhat we check / what we do not check"
+    },
+    "afterKeyboardEnter": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else",
+        "All packs"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": "true",
+          "selectedCue": "Selected",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 1,
+      "selectedCueText": [
+        "Selected"
+      ],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [
+        {
+          "open": false,
+          "label": "Technical details"
+        }
+      ],
+      "previewPanel": true,
+      "previewPrimary": [
+        "Open course"
+      ],
+      "previewSecondary": [
+        "Archive"
+      ],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nAll packs\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\nSource stale\nWhat this pack shows\nNext step\nReview 3 objectives\nEnrolment\nActive\nEvidence\n3 reviews due\n0 of 4 sections\nLast change\n11/6/2026, 2:58:27 PM\nA source behind this course changed. Existing evidence is kept; the source needs review.\nOpen course\nArchive\nTechnical details\nWhat we check / what we do not check"
+    },
+    "afterKeyboardSpace": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else",
+        "All packs"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": "true",
+          "selectedCue": "Selected",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 1,
+      "selectedCueText": [
+        "Selected"
+      ],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [
+        {
+          "open": false,
+          "label": "Technical details"
+        }
+      ],
+      "previewPanel": true,
+      "previewPrimary": [
+        "Open course"
+      ],
+      "previewSecondary": [
+        "Archive"
+      ],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nAll packs\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\nSource stale\nWhat this pack shows\nNext step\nReview 3 objectives\nEnrolment\nActive\nEvidence\n3 reviews due\n0 of 4 sections\nLast change\n11/6/2026, 2:58:27 PM\nA source behind this course changed. Existing evidence is kept; the source needs review.\nOpen course\nArchive\nTechnical details\nWhat we check / what we do not check"
+    },
+    "bundled": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "bundled",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nNo bundled pack on this profile\nA pack is a zip file someone else made: lessons, sources and a manifest that lists every file. Bundled packs ship with Coursebook; a pack from someone else is added from the Import flow, where you review it first.\nWhat we check / what we do not check"
+    },
+    "fromSomeoneElse": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nParent demo: measuring ingredients together\nLocal pack\n2 sections\n\nResume Double a recipe quantity and explain the operation\n\n0 of 2 with evidence\nPreview\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\n4 sections\n\nReview 3 objectives\n\n0 of 4 with evidence · 3 due\nPreview\nWhat we check / what we do not check"
+    },
+    "allPacks": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 0,
+      "selectedCueText": [],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [],
+      "previewPanel": false,
+      "previewPrimary": [],
+      "previewSecondary": [],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nParent demo: measuring ingredients together\nLocal pack\n2 sections\n\nResume Double a recipe quantity and explain the operation\n\n0 of 2 with evidence\nPreview\nJapanese affection and register — an L0 demonstration classroom\nLocal pack\n4 sections\n\nReview 3 objectives\n\n0 of 4 with evidence · 3 due\nPreview\nWhat we check / what we do not check"
+    },
+    "technicalClosed": {
+      "innerWidth": 1049,
+      "mode": "light",
+      "destination": "library",
+      "h1": {
+        "count": 1,
+        "text": "Library",
+        "fontSize": "37.7485px"
+      },
+      "libraryLabels": 1,
+      "plateLabels": 1,
+      "leadCount": 1,
+      "lead": "Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.",
+      "filters": [
+        "All packs",
+        "Bundled",
+        "From someone else",
+        "All packs"
+      ],
+      "rows": [
+        {
+          "title": "Parent demo: measuring ingredients together",
+          "source": "",
+          "empty": "false",
+          "selected": "true",
+          "selectedCue": "Selected",
+          "buttons": 2,
+          "overlayLabel": "Preview Parent demo: measuring ingredients together"
+        },
+        {
+          "title": "Japanese affection and register — an L0 demonstration classroom",
+          "source": "",
+          "empty": "false",
+          "selected": null,
+          "selectedCue": "",
+          "buttons": 2,
+          "overlayLabel": "Preview Japanese affection and register — an L0 demonstration classroom"
+        }
+      ],
+      "selectedCount": 1,
+      "selectedCueText": [
+        "Selected"
+      ],
+      "emptyRows": 0,
+      "noSectionsCount": 0,
+      "rawRevision": false,
+      "rawPackId": false,
+      "technical": [
+        {
+          "open": false,
+          "label": "Technical details"
+        }
+      ],
+      "previewPanel": true,
+      "previewPrimary": [
+        "Resume lesson"
+      ],
+      "previewSecondary": [
+        "Archive"
+      ],
+      "emptyState": "",
+      "overflow": 0,
+      "routeText": "Skip to course content\nCOURSEBOOK\nLibrary\nUse my college syllabus\nImport pack\nHome\nCourses\nLibrary\nParent Studio\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.\n\nAll packs\nBundled\nFrom someone else\nAll packs\nParent demo: measuring ingredients together\nLocal pack\nWhat this pack shows\nNext step\nResume Double a recipe quantity and explain the operation\nEnrolment\nActive\nEvidence\n0 reviews due\n0 of 2 sections\nLast change\n11/7/2026, 5:45:09 PM\nResume lesson\nArchive\nParent Studio blueprint: the adult prepares and teaches from this plan. Checks are observations, not graded child answers, and this course is never offered as an adult graded course.\nTechnical details\nWhat we check / what we do not check"
+    },
+    "technicalOpen": {
+      "open": true,
+      "text": "Technical detailsPack IDparent-measurement-practicePack versionv1.0.0Record revision0"
+    },
+    "focus": {
+      "tag": "button",
+      "label": "Preview Parent demo: measuring ingredients together",
+      "outline": "none 2.2312px rgb(26, 23, 19)"
+    }
+  }
+}

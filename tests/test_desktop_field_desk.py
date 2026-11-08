@@ -208,6 +208,7 @@ const pass = (props) => {
 }
 
 export const Button = (props) => el('button', pass(props), textOf(props))
+export const RowButton = (props) => el('button', pass(props), textOf(props))
 export const Badge = (props) => el('span', { className: 'badge', 'data-variant': props.variant || null }, textOf(props))
 export const PanelSectionLabel = (props) => el('div', { className: 'panel-label' }, textOf(props))
 export const PanelEmpty = (props) => el('div', { className: 'panel-empty' }, textOf(props))

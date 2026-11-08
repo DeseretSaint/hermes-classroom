@@ -1449,7 +1449,7 @@ function PackPreview({ preview, existing }) {
           }),
           jsx(PackReviewLine, {
             label: 'Files',
-            value: `${preview.integrity.file_count} file(s) · ${bytesLabel(preview.integrity.expanded_bytes)} expanded`
+            value: `${plural(preview.integrity.file_count, 'file', 'files')} · ${bytesLabel(preview.integrity.expanded_bytes)} expanded`
           }),
           jsx(PackReviewLine, {
             label: 'Hashes match the manifest',
@@ -1527,7 +1527,7 @@ function PackPreview({ preview, existing }) {
                     jsx(sdk.Badge, {
                       size: 'xs',
                       variant: 'outline',
-                      children: `${(objective.checks || []).length} check(s)`
+                      children: plural((objective.checks || []).length, 'check', 'checks')
                     })
                   ]
                 }),
@@ -2478,8 +2478,7 @@ function ShelfDisclosure({ group, onOpen, label }) {
             [
               jsxs('span', { style: { minWidth: 0, overflowWrap: 'anywhere' }, children: [
                 jsx('span', { children: member.title || 'Untitled' }),
-                jsx('span', { children: ` · ${whenLabel(member.updated_at)}` }),
-                jsx('span', { children: ` · ${cbShelfFingerprint(member)}` })
+                jsx('span', { children: ` · ${whenLabel(member.updated_at)}` })
               ] }),
               onOpen
                 ? jsx(sdk.Button, {
@@ -2587,23 +2586,50 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
  * (the manifest is inspectable) without a four-segment path that would imply content.
  */
 function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
   const summary = (row && row.evidence_summary) || {}
   const total = Math.max(0, Number(summary.total_objectives || 0))
   const empty = total === 0
+  const title = row.title || 'Untitled pack'
+  const source = sourceLabel(row.provenance && row.provenance.source)
+  const openPreview = () => { if (onPreview) onPreview(row) }
   return jsxs('article', {
     'data-cb-pack-row': cbShelfFingerprint(row),
     'data-cb-pack-empty': empty ? 'true' : 'false',
+    'data-cb-pack-selected': selected ? 'true' : undefined,
     style: {
+      position: 'relative',
       display: 'flex',
       flexDirection: 'column',
       gap: '0.35rem',
       minWidth: 0,
-      paddingTop: '0.55rem',
-      borderTop: '1px solid var(--cb-rule)'
+      padding: '0.55rem 0.6rem',
+      borderTop: '1px solid var(--cb-rule)',
+      background: selected ? 'var(--cb-accent-soft)' : 'transparent'
     },
     children: [
+      // H-150: the whole row is the target. One real button paints over the row's empty space
+      // and takes the keyboard (Enter/Space); the row content is inert, and the single Preview
+      // affordance below sits above the overlay. This mirrors the host's own RowButton pattern.
+      onPreview
+        ? jsx(sdk.RowButton, {
+            'aria-label': `Preview ${title}`,
+            'aria-pressed': selected ? 'true' : 'false',
+            className: 'absolute inset-0 rounded-[2px]',
+            onBlur: () => setKeyboardFocus(false),
+            onFocus: () => setKeyboardFocus(true),
+            style: keyboardFocus ? { outline: '2px solid var(--cb-accent)', outlineOffset: '2px' } : undefined,
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                openPreview()
+              }
+            },
+            onClick: openPreview
+          })
+        : null,
       jsxs('div', {
-        className: 'flex flex-wrap items-start justify-between gap-2',
+        className: 'pointer-events-none flex flex-wrap items-start justify-between gap-2',
         children: [
           jsxs('div', {
             style: { display: 'flex', minWidth: 0, flexDirection: 'column', gap: '0.2rem' },
@@ -2618,40 +2644,38 @@ function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
                   color: 'var(--cb-ink)',
                   overflowWrap: 'anywhere'
                 },
-                children: row.title || 'Untitled pack'
+                children: title
               }),
               jsxs('div', {
                 className: 'flex flex-wrap items-center gap-2',
                 style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
                 children: [
-                  jsx(sdk.Badge, {
-                    variant: 'muted',
-                    size: 'xs',
-                    children: sourceLabel(row.provenance && row.provenance.source)
-                  }),
+                  jsx(sdk.Badge, { variant: 'muted', size: 'xs', children: source }),
                   jsx('span', {
-                    children: empty ? 'No sections yet' : `${total} objective${total === 1 ? '' : 's'}`
-                  })
+                    children: empty ? 'No sections yet' : plural(total, 'section', 'sections')
+                  }),
+                  selected
+                    ? jsxs('span', {
+                        'data-cb-pack-selected-cue': '',
+                        className: 'inline-flex items-center gap-1 font-semibold',
+                        style: { color: 'var(--cb-accent)' },
+                        children: [
+                          jsx(sdk.Codicon, { name: 'check', size: '0.75rem' }),
+                          jsx('span', { children: 'Selected' })
+                        ]
+                      })
+                    : null
                 ]
               })
             ]
-          }),
-          onPreview
-            ? jsx(sdk.Button, {
-                'aria-label': `Preview ${row.title || 'pack'}`,
-                onClick: () => onPreview(row),
-                size: 'sm',
-                variant: selected ? 'secondary' : 'text',
-                children: 'Preview'
-              })
-            : null
+          })
         ]
       }),
       empty
         ? jsx('p', {
             'data-cb-pack-empty-note': '',
             style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
-            children: 'This pack has no sections yet. Preview it to see the manifest; there is nothing to open.'
+            children: 'Nothing to open yet. Preview it to see the manifest.'
           })
         : jsxs('div', {
             style: { display: 'flex', flexDirection: 'column', gap: '0.2rem' },
@@ -2664,7 +2688,17 @@ function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
               jsx(CoursePath, { row })
             ]
           }),
-      group && group.label ? jsx(ShelfDisclosure, { group, onOpen: onOpenMember }) : null
+      group && group.label ? jsx(ShelfDisclosure, { group, onOpen: onOpenMember }) : null,
+      onPreview
+        ? jsx(sdk.Button, {
+            className: 'relative self-start',
+            'aria-label': `Preview ${title}`,
+            onClick: openPreview,
+            size: 'sm',
+            variant: selected ? 'secondary' : 'text',
+            children: 'Preview'
+          })
+        : null
     ]
   })
 }
@@ -3989,12 +4023,77 @@ function enrollmentStatusLabel(value) {
   return ENROLLMENT_STATUS_COPY[value] || value || 'Unknown'
 }
 
-function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPack, onDeletePack, onBack, showBack }) {
+/**
+ * Maintenance actions for one pack. They sit under overflow so the preview keeps one primary
+ * (Open/Resume) and one secondary; nothing destructive competes with the learner's next step.
+ */
+function PackMenu({ row, supports, onExportPack, onDelete, onDeletePack }) {
+  const items = []
+  const packBacked = Boolean(row.provenance && row.provenance.pack_id)
+  if (packBacked && supports('pack.export')) {
+    items.push(
+      jsx(sdk.DropdownMenuItem, { onSelect: () => onExportPack(row), children: 'Export pack…' }, 'export')
+    )
+  }
+  if (supports('enrollment.delete')) {
+    items.push(
+      jsx(
+        sdk.DropdownMenuItem,
+        { onSelect: () => onDelete(row), variant: 'destructive', children: 'Delete enrollment…' },
+        'delete-enrollment'
+      )
+    )
+  }
+  if (packBacked && supports('pack.delete') && row.warning !== 'pack_frozen') {
+    items.push(
+      jsx(
+        sdk.DropdownMenuItem,
+        { onSelect: () => onDeletePack(row), variant: 'destructive', children: 'Remove pack…' },
+        'delete-pack'
+      )
+    )
+  }
+  if (items.length === 0) return null
+  return jsxs(sdk.DropdownMenu, {
+    children: [
+      jsx(sdk.DropdownMenuTrigger, {
+        asChild: true,
+        children: jsx(sdk.Button, {
+          'aria-label': `More actions for ${row.title || 'this pack'}`,
+          size: 'icon-sm',
+          variant: 'ghost',
+          children: jsx(sdk.Codicon, { name: 'kebab-vertical', size: '0.875rem' })
+        })
+      }),
+      jsx(sdk.DropdownMenuContent, { align: 'end', children: items })
+    ]
+  })
+}
+
+/**
+ * H-150 — a pack preview, not an inspector. It answers what this pack is and what to do next:
+ * one primary, one secondary, maintenance under overflow. Pack identifiers and record revisions
+ * are real but they are not learner facts, so they live under a closed Technical details
+ * disclosure instead of in the header and the status lines.
+ */
+function PackFacts({ row, implemented, onOpen, onResume, onArchive, onDelete, onExportPack, onDeletePack, onBack, showBack }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const next = row.next_step || {}
   const warning = WARNING_COPY[row.warning]
+  const summary = row.evidence_summary || {}
+  const total = Math.max(0, Number(summary.total_objectives || 0))
+  const independent = Math.max(0, Number(summary.independent || 0))
+  const due = Math.max(0, Number(summary.review_due || 0))
+  const canResume = next.kind === 'resume_lesson' && supports('binding.get')
+  const provenance = row.provenance || {}
+  const technical = [
+    provenance.pack_id ? { label: 'Pack ID', value: provenance.pack_id } : null,
+    provenance.pack_version ? { label: 'Pack version', value: `v${provenance.pack_version}` } : null,
+    { label: 'Record revision', value: String(row.revision == null ? 0 : row.revision) }
+  ].filter(Boolean)
   return jsxs('div', {
     className: 'flex min-w-0 flex-1 flex-col gap-3',
+    'data-cb-pack-preview': '',
     children: [
       showBack
         ? jsx(sdk.Button, { className: 'self-start', onClick: onBack, size: 'sm', variant: 'text', children: 'All packs' })
@@ -4002,55 +4101,41 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx('h2', { className: 'text-sm font-semibold', children: row.title }),
+          jsx('h2', { className: 'text-sm font-semibold', children: row.title || 'Untitled pack' }),
           jsxs('div', {
             className: 'mt-1 flex flex-wrap items-center gap-2',
             children: [
-              jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: sourceLabel(row.provenance && row.provenance.source) }),
-              row.provenance && row.provenance.pack_id
-                ? jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: row.provenance.pack_id })
-                : null,
-              row.provenance && row.provenance.pack_version
-                ? jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: `v${row.provenance.pack_version}` })
-                : null,
+              jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: sourceLabel(provenance.source) }),
               warning ? jsx(WarningBadge, { warning: row.warning }) : null
             ]
           })
         ]
       }),
-      jsx(CbLabel, { children: 'What the record shows' }),
+      jsx(CbLabel, { children: 'What this pack shows' }),
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx(StatusRow, { label: 'Next step', value: next.label || '—' }),
-          jsx(StatusRow, {
-            label: 'Enrolment',
-            value: enrollmentStatusLabel(row.enrollment_status),
-            detail: `revision ${row.revision}`
-          }),
+          jsx(StatusRow, { label: 'Next step', value: learnerNextLabel(next.label) || '—' }),
+          jsx(StatusRow, { label: 'Enrolment', value: enrollmentStatusLabel(row.enrollment_status) }),
           jsx(StatusRow, {
             label: 'Evidence',
-            value: `${Number((row.evidence_summary || {}).independent || 0)} independent`,
-            detail: `${Number((row.evidence_summary || {}).total_objectives || 0)} objectives · ${Number((row.evidence_summary || {}).review_due || 0)} due`
+            value: total === 0 ? 'None recorded' : `${independent} of ${plural(total, 'section', 'sections')}`,
+            detail: total === 0 ? 'This pack has no lesson sections.' : `${plural(due, 'review', 'reviews')} due`
           }),
-          jsx(StatusRow, {
-            label: 'Last change',
-            value: formatWhen(row.updated_at)
-          })
+          jsx(StatusRow, { label: 'Last change', value: formatWhen(row.updated_at) })
         ]
       }),
       warning
-        ? jsx('div', {
-            className: 'text-xs text-(--ui-text-secondary)',
-            children: warning.detail
-          })
+        ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: warning.detail })
         : null,
       jsxs('div', {
         className: 'flex flex-wrap items-center gap-2 pt-1',
         children: [
-          next.kind === 'resume_lesson' && supports('binding.get')
+          canResume && onResume
             ? jsx(sdk.Button, { onClick: () => onResume(row), size: 'sm', variant: 'default', children: 'Resume lesson' })
-            : null,
+            : onOpen
+              ? jsx(sdk.Button, { onClick: () => onOpen(row), size: 'sm', variant: 'default', children: 'Open course' })
+              : null,
           supports('enrollment.update')
             ? jsx(sdk.Button, {
                 onClick: () => onArchive(row, row.enrollment_status === 'archived' ? 'unarchive' : 'archive'),
@@ -4059,15 +4144,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
                 children: row.enrollment_status === 'archived' ? 'Unarchive' : 'Archive'
               })
             : null,
-          supports('enrollment.delete')
-            ? jsx(sdk.Button, { onClick: () => onDelete(row), size: 'sm', variant: 'secondary', children: 'Delete enrollment…' })
-            : null,
-          row.provenance && row.provenance.pack_id && supports('pack.export')
-            ? jsx(sdk.Button, { onClick: () => onExportPack(row), size: 'sm', variant: 'secondary', children: 'Export pack…' })
-            : null,
-          row.provenance && row.provenance.pack_id && supports('pack.delete') && row.warning !== 'pack_frozen'
-            ? jsx(sdk.Button, { onClick: () => onDeletePack(row), size: 'sm', variant: 'secondary', children: 'Remove pack…' })
-            : null
+          jsx(PackMenu, { row, supports, onExportPack, onDelete, onDeletePack })
         ]
       }),
       row.recipe === 'parent'
@@ -4078,11 +4155,23 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
               'not graded child answers, and this course is never offered as an adult graded course.'
           })
         : null,
-      jsx('div', {
-        className: 'mt-2 text-xs leading-relaxed text-(--ui-text-secondary)',
-        children:
-          'Sources, rights, checks and file integrity come from the pack preview command. This build ' +
-          'shows only what the backend recorded for this pack, so nothing here is inferred.'
+      jsxs('details', {
+        'data-cb-pack-technical': '',
+        className: 'mt-1',
+        children: [
+          jsx('summary', {
+            className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
+            style: { listStyle: 'none', minHeight: '1.75rem', color: 'var(--ui-text-secondary)' },
+            children: [
+              jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+              jsx('span', { children: 'Technical details' })
+            ]
+          }),
+          jsxs('div', {
+            className: 'flex flex-col',
+            children: technical.map((item) => jsx(StatusRow, { label: item.label, value: item.value }, item.label))
+          })
+        ]
       })
     ]
   })
@@ -4103,7 +4192,7 @@ function formatWhen(value) {
  * meaning and nobody reads a pack as endorsed.
  */
 const LIBRARY_COPY = {
-  lead: 'Courses made by other people. You will see who made it, where it came from and what has been checked before you add one.',
+  lead: 'Every pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, where it came from and what has been checked.',
   whatWeCheck:
     'What we check — that every file matches the hashes in the pack’s manifest, that its structure and teaching minima pass the automated checks, and whether a named reviewer and a model assessment are recorded. Those are separate labels on every pack and they are never merged into a score.',
   whatWeDoNotCheck:
@@ -4113,7 +4202,7 @@ const LIBRARY_COPY = {
     'A pack is a zip file someone else made: lessons, sources and a manifest that lists every file. Bundled packs ship with Coursebook; a pack from someone else is added from the Import flow, where you review it first.'
 }
 
-function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }) {
+function LibraryView({ implemented, createOpen, onOpen, onStartSyllabus, onStartImport }) {
   const [view, setView] = useState('all')
   const [selected, setSelected] = useState(null)
   const [packPanel, setPackPanel] = useState(null)
@@ -4197,10 +4286,13 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
   }, [pendingDelete, deleteScope, reload])
 
   const allRows = data && Array.isArray(data.items) ? data.items : []
+  // H-150: the labels must describe the rows they return. Bundled means the packs that ship with
+  // Coursebook; "From someone else" is every imported pack (community or added from a file), and
+  // never an authored course. There is no "Local" bucket that quietly includes community packs.
   const filteredRows = allRows.filter((row) => {
     const source = (row.provenance && row.provenance.source) || 'authored'
     if (view === 'bundled') return source === 'bundled'
-    if (view === 'local') return source === 'local' || source === 'community'
+    if (view === 'other') return source === 'community' || source === 'local'
     return true
   })
   // H-99: one shelf object per course/pack. Fourteen enrollments of the same pack are one row
@@ -4226,18 +4318,17 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
       ]
     })
   } else if (rows.length === 0) {
-    listBody = jsxs('div', {
+    listBody = jsx('div', {
       className: 'flex flex-col gap-3',
-      children: [
-        jsx(EmptyState, {
-          title: view === 'bundled' ? 'No bundled pack on this profile' : view === 'local' ? 'No pack from someone else on this profile' : LIBRARY_COPY.emptyTitle,
-          description: LIBRARY_COPY.emptyBody
-        }),
-        jsx('p', {
-          style: { margin: 0, maxWidth: CB_MEASURE, fontSize: CB_TYPE.body, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
-          children: LIBRARY_COPY.lead
-        })
-      ]
+      children: jsx(EmptyState, {
+        title:
+          view === 'bundled'
+            ? 'No bundled pack on this profile'
+            : view === 'other'
+              ? 'No pack from someone else on this profile'
+              : LIBRARY_COPY.emptyTitle,
+        description: LIBRARY_COPY.emptyBody
+      })
     })
   } else {
     listBody = jsxs('div', {
@@ -4271,56 +4362,36 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
     className: 'flex flex-col',
     style: { maxWidth: CB_MEASURE },
     children: [
+      // H-150: the route shell already prints the page h1 "Library". This plate names the shelf
+      // region once and carries the single lead; it must not repeat the destination name.
       jsx(PlateHead, {
-        label: 'Library',
         title: 'Packs on this profile',
         caption: jsx('span', { children: LIBRARY_COPY.lead })
       }),
+      stale
+        ? jsx('div', {
+            className: 'mb-2 text-xs text-(--ui-text-secondary)',
+            children: 'Reconnecting. Showing the last packs that were read.'
+          })
+        : null,
       // H-99: the two import paths live in the route header — one primary `Import pack` and one
       // secondary `Use my college syllabus`. They are no longer repeated here under a second set
       // of labels; one surface, one primary per object (see the H-94 rule).
-      jsxs('div', {
-        className: 'mb-2 flex flex-col gap-2',
-        children: [
-          jsxs('div', {
-            className: 'flex flex-wrap items-center justify-between gap-2',
-            children: [
-              jsx('div', {
-                className: 'max-w-prose leading-relaxed text-(--ui-text-secondary)',
-                style: { maxWidth: CB_MEASURE, fontSize: CB_TYPE.body },
-                children: stale ? 'Reconnecting. Showing the last packs that were read.' : ''
-              }),
-              jsx(sdk.SegmentedControl, {
-                onChange: setView,
-                options: [
-                  { id: 'all', label: 'All' },
-                  { id: 'bundled', label: 'Bundled' },
-                  { id: 'local', label: 'Local' }
-                ],
-                sizing: 'content',
-                value: view
-              })
-            ]
-          }),
-          jsxs('details', {
-            'data-cb-pack-trust': '',
-            className: 'max-w-prose leading-relaxed text-(--ui-text-secondary)',
-            style: { maxWidth: CB_MEASURE, fontSize: CB_TYPE.body },
-            children: [
-              jsx('summary', {
-                'data-cb-affordance': 'disclosure',
-                className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
-                style: { listStyle: 'none', minHeight: '1.75rem' },
-                children: [
-                  jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
-                  jsx('span', { children: 'What we check / what we do not check' })
-                ]
-              }),
-              jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeCheck }),
-              jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeDoNotCheck })
-            ]
-          })
-        ]
+      jsx('div', {
+        className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
+        children: jsx(sdk.SegmentedControl, {
+          onChange: (next) => {
+            setView(next)
+            setSelected(null)
+          },
+          options: [
+            { id: 'all', label: 'All packs' },
+            { id: 'bundled', label: 'Bundled' },
+            { id: 'other', label: 'From someone else' }
+          ],
+          sizing: 'content',
+          value: view
+        })
       }),
       jsxs('div', {
         className: 'flex flex-col gap-4 min-[47.5rem]:flex-row',
@@ -4335,6 +4406,7 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
                 onArchive,
                 onBack: () => setSelected(null),
                 onDelete,
+                onOpen,
                 onDeletePack: (row) => {
                   setPackPanelRow(row)
                   setPackPanel('delete')
@@ -4355,6 +4427,26 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
                   description: 'Preview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.'
                 })
               })
+        ]
+      }),
+      // H-150: trust is read after the shelf, not before it. The learner browses packs first;
+      // what is and is not checked sits below the list as one closed disclosure.
+      jsxs('details', {
+        'data-cb-pack-trust': '',
+        className: 'mt-4 max-w-prose leading-relaxed text-(--ui-text-secondary)',
+        style: { maxWidth: CB_MEASURE, fontSize: CB_TYPE.body },
+        children: [
+          jsx('summary', {
+            'data-cb-affordance': 'disclosure',
+            className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
+            style: { listStyle: 'none', minHeight: '1.75rem' },
+            children: [
+              jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+              jsx('span', { children: 'What we check / what we do not check' })
+            ]
+          }),
+          jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeCheck }),
+          jsx('p', { className: 'mt-1', style: { fontSize: CB_TYPE.body, lineHeight: 1.55 }, children: LIBRARY_COPY.whatWeDoNotCheck })
         ]
       }),
       packPanel && packPanelRow
@@ -9017,9 +9109,22 @@ function cbCourseGoalLine(row) {
   if (goal) return goal
   const subtitle = row && typeof row.subtitle === 'string' ? row.subtitle.trim() : ''
   if (subtitle) return subtitle
-  const label = row && row.next_step && typeof row.next_step.label === 'string' ? row.next_step.label.trim() : ''
+  const label = learnerNextLabel(row && row.next_step && row.next_step.label)
   if (label) return label
   return 'No next step recorded'
+}
+
+/**
+ * The backend's next-step label is plain English except for its `objective(s)` placeholder. The
+ * shelf shows the sentence the learner acts on, so the placeholder is resolved here; the backend
+ * keeps its contract string untouched.
+ */
+function learnerNextLabel(label) {
+  const text = String(label || '').trim()
+  if (!text) return ''
+  const match = text.match(/^Review (\d+) objective\(s\)$/)
+  if (match) return `Review ${plural(Number(match[1]), 'objective', 'objectives')}`
+  return text.replace(/\bobjective\(s\)/g, 'objectives').replace(/\brun\(s\)/g, 'runs')
 }
 
 /**
@@ -18322,6 +18427,11 @@ function CoursebookPage() {
     body = jsx(LibraryView, {
       createOpen: creating,
       implemented,
+      onOpen: (row) => {
+        rememberedDestination = 'courses'
+        setDestination('courses')
+        setOpenCourse({ row, objectiveId: null })
+      },
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
       onStartImport: canImport ? onImportPlaceholder : null
     })
@@ -18927,6 +19037,7 @@ export {
   cbStableHash,
   CourseCover,
   PackShelfRow,
+  PackFacts,
   CoursePath,
   groupShelfRows,
   ShelfDisclosure,

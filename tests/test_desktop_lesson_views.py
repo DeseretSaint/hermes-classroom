@@ -117,6 +117,16 @@ export const Button = (props) => {
   }
   return el('button', attrs, textOf(props))
 }
+export const RowButton = (props) => {
+  const attrs = { type: 'button', onClick: props.onClick }
+  if (props.className) attrs.className = props.className
+  for (const [name, value] of Object.entries(props)) {
+    if ((name.startsWith('data-') || name.startsWith('aria-')) && value !== undefined && !(name in attrs)) {
+      attrs[name] = value
+    }
+  }
+  return el('button', attrs, textOf(props))
+}
 export const Badge = (props) => el('span', { className: 'badge', 'data-variant': props.variant || null }, textOf(props))
 export const PanelSectionLabel = (props) => el('div', { className: 'panel-label' }, textOf(props))
 export const PanelEmpty = (props) => el('div', { className: 'panel-empty' }, textOf(props))
