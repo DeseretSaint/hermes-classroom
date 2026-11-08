@@ -77,7 +77,7 @@ LIVE_HARNESS = """
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { JSDOM } from 'jsdom'
-import plugin, { AttemptControls } from './plugin.js'
+import plugin, { AttemptControls, useOpenCheck } from './plugin.js'
 
 const fs = await import('node:fs')
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
@@ -128,6 +128,36 @@ const ctx = {
         }
       }
     }
+    if (body.method === 'check.open') {
+      return {
+        ok: true,
+        contract_version: 18,
+        operation_id: body.operation_id,
+        result: {
+          check_id: 'chk_0123456789abcdef',
+          check_version: 1,
+          evidence_target: 'discrimination',
+          revision: 3
+        }
+      }
+    }
+    if (body.method === 'check.get') {
+      return {
+        ok: true,
+        contract_version: 18,
+        operation_id: body.operation_id,
+        result: {
+          check_id: 'chk_0123456789abcdef',
+          objective_id: 'obj_0123456789abcdef',
+          check_version: 1,
+          evidence_target: 'discrimination',
+          state: 'open',
+          audit_state: 'passed',
+          attempt_count: payload.attemptCount === undefined ? 3 : payload.attemptCount,
+          stimulus: payload.stimulus || null
+        }
+      }
+    }
     if (body.method === 'evidence.inspect') {
       return {
         ok: true,
@@ -146,6 +176,35 @@ const ctx = {
 plugin.register(ctx)
 
 const root = createRoot(document.getElementById('root'))
+let seenCheck = null
+// `mode: "open"` mounts the shipped `useOpenCheck` and feeds its result to the same
+// `AttemptControls` SectionPage renders, so the assertion covers the wiring (check.get →
+// check object → chip) rather than a hand-built check payload handed straight to the component.
+const OpenHost = () => {
+  const open = useOpenCheck({
+    enrollmentId: 'enr_0123456789abcdef',
+    objectiveId: 'obj_0123456789abcdef',
+    revision: 3,
+    enabled: true,
+    implemented: new Set(payload.implemented || ['check.get'])
+  })
+  seenCheck = open.check
+  if (!open.check) return React.createElement('div', { 'data-cb-check-waiting': open.status })
+  return React.createElement(AttemptControls, {
+    enrollmentId: 'enr_0123456789abcdef',
+    objectiveId: 'obj_0123456789abcdef',
+    check: open.check,
+    revision: 3,
+    implemented: new Set(payload.implemented || ['check.get']),
+    bindingState: 'active',
+    stimulusStatus: open.stimulusStatus,
+    onRetryStimulus: () => {},
+    onCommitted: () => {}
+  })
+}
+if (payload.mode === 'open') {
+  root.render(React.createElement(OpenHost))
+} else {
 root.render(
   React.createElement(AttemptControls, {
     enrollmentId: 'enr_0123456789abcdef',
@@ -159,6 +218,7 @@ root.render(
     onCommitted: () => {}
   })
 )
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const waitFor = async (predicate, timeout = 5000) => {
@@ -219,6 +279,8 @@ process.stdout.write(
     keyWorked,
     selectedText,
     selectedWords,
+    checkKeys: seenCheck ? Object.keys(seenCheck) : null,
+    attemptCount: seenCheck ? seenCheck.attempt_count : null,
     verdict: (document.querySelector('[data-cb-verdict]') || {}).getAttribute
       ? document.querySelector('[data-cb-verdict]').getAttribute('data-cb-verdict')
       : null,
@@ -360,6 +422,40 @@ class IntegrityChipTest(FieldStopBase):
         out = self.live({"check": check_payload(attempt_count=1), "implemented": ["check.get"], "mode": "plain"})
         self.assertEqual(out["initial"]["value"], "hinted")
 
+    def test_the_shipped_hook_carries_check_get_attempt_count_to_the_chip(self) -> None:
+        """The retry chip must read `attempt_count` through `useOpenCheck`, not a fixture.
+
+        `check.open` returns identity only; `check.get` is the read that reports `attempt_count`.
+        A merge that drops it makes the second attempt print "First try, no hints" while the
+        backend commits `hinted`.
+        """
+        out = self.live(
+            {
+                "mode": "open",
+                "attemptCount": 3,
+                "stimulus": choice_stimulus(),
+                "implemented": ["check.get"],
+            }
+        )
+        self.assertIn("check.open", out["calls"])
+        self.assertIn("check.get", out["calls"])
+        self.assertIn("attempt_count", out["checkKeys"])
+        self.assertEqual(out["attemptCount"], 3)
+        self.assertEqual(out["initial"]["value"], "hinted")
+        self.assertIn("A hint was recorded before this answer", out["initial"]["text"])
+
+    def test_the_shipped_hook_keeps_a_first_attempt_cold(self) -> None:
+        out = self.live(
+            {
+                "mode": "open",
+                "attemptCount": 0,
+                "stimulus": choice_stimulus(),
+                "implemented": ["check.get"],
+            }
+        )
+        self.assertEqual(out["attemptCount"], 0)
+        self.assertEqual(out["initial"]["value"], "cold")
+
     def test_a_first_attempt_is_cold_and_the_hint_changes_it_from_the_response(self) -> None:
         out = self.live(
             {
@@ -373,6 +469,9 @@ class IntegrityChipTest(FieldStopBase):
         self.assertEqual(out["afterAssist"]["value"], "hinted")
         self.assertIn("lesson.assist", out["calls"])
         self.assertEqual(out["afterSubmit"]["value"], "hinted")
+        # The assist returned revision 4; the submit after it must fence on that revision, not the
+        # page's stale 3, or the backend refuses it as STALE_REVISION (review round 1, item 3).
+        self.assertEqual(out["submitted"]["revision"], 4)
 
 
 class ChoiceSurfaceTest(FieldStopBase):
@@ -448,6 +547,12 @@ class FieldStopCloseTest(FieldStopBase):
         html = self.static({"kind": "close", "progress": {}})
         self.assertNotIn("data-cb-player-gate", html)
         self.assertNotIn("study companion", html)
+
+    def test_a_close_without_a_recorded_class_prints_no_chip(self) -> None:
+        """A stop with no check finishes without an attempt; nothing was earned, so nothing is claimed."""
+        html = self.static({"kind": "close", "progress": {}})
+        self.assertIn("Return to the trail", html)
+        self.assertNotIn("data-cb-evidence-chip", html)
 
 
 class FieldStopHonestyTest(unittest.TestCase):

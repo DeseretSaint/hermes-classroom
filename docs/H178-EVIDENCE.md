@@ -1,28 +1,42 @@
 # H-178 · Field Stop — evidence
 
-Status: implemented and unit-proven on `wt/h178-field-stop` (base `5cc8cca`, includes merged H-177
-and H-176). **Live Desktop captures were not produced in this run**; see §5. Not pushed.
+Status: implemented; review-round-1 code defects fixed and unit-proven on
+`wt/h178-field-stop` (base `5cc8cca`). **Live Desktop frames are not captured yet** — the rigs are
+built, running and bound; §5 lists exactly what remains. Not pushed.
 
-## 1. What changed (`desktop/plugin.js`)
+## 0. Review round 1 — what changed in this run
 
-**Header.** `LessonPlayer` now opens with `STOP n OF m` (n = section ordinal, m =
-`evidence_summary.total_objectives`), the section title as an `h2`, and one objective sentence
-composed from the recorded `evidence_target` (`By the end of this stop you can show: <learner
-target>.`). The course metadata strip, the `Check 1 of n` count strip and the shell's duplicate
-title block are gone while the player is on screen; the breadcrumb and the view switcher move to
-one slim navigation row above the reading column (`data-cb-workspace-actions`).
+1. **`attempt_count` now reaches the chip.** `useOpenCheck` merges the facts `check.get` already
+   returns (`attempt_count`, `state`) alongside `stimulus` (`desktop/plugin.js` `useOpenCheck`).
+   Before this, the pending chip's `attemptCount > 0 ⇒ hinted` branch was dead in the shipped path,
+   so a retry printed "First try, no hints" while the backend committed `hinted`.
+   New tests mount the real hook (`mode: "open"` in `tests/test_desktop_h178_field_stop.py`) against
+   contract-shaped `check.open` + `check.get`, and assert `attempt_count` is present on the object
+   `AttemptControls` receives — no hand-built `check_payload(attempt_count=...)`.
+2. **`lesson.assist`'s revision is adopted.** `AttemptControls` keeps `assistRevision` from the
+   response and submits against `fenceRevision = max(page.revision, assistRevision)` for the assist
+   itself, `attempt.submit` and the retry submit. A hint followed immediately by Check can no longer
+   be refused as `STALE_REVISION`. Test asserts the post-assist submit carries revision 4, not 3.
+3. **Chip comment corrected**: it now states that `self_reported` is also an authored override
+   (learner voice), not only `answer_shown`.
+4. **Close can no longer claim an unearned class.** `LessonPlayer` passes
+   `state.evidenceClass` (recorded) only; a stop with no check closes without a chip. Test added.
+5. Harness scripts for the live run: `scripts/h178-nav.mjs` (route → course → Learn → stop → Game →
+   check step), `scripts/h178-send.mjs` (one real chat turn, which is what binds the armed lesson
+   run), `scripts/h178-eval.mjs` (single CDP eval with a hard timeout; `h149-cdp.mjs`'s evaluate has
+   none and hung once on a dead context).
 
-**Answer surface.** The authored stimulus decides the surface. `format: "selection"` with declared
-choices renders a `role="radiogroup"` of large option rows:
+## 1. What the Field Stop is (`desktop/plugin.js`)
 
-- keys `1`–`8` select by number, arrows move and select, Home/End jump; roving `tabIndex`;
-- selected state is words (`Selected` on the row, `Selected: 2. <choice>` in a live line);
-- the answer travels as `choiceAnswer(choice)` = `{kind:'selection', selection:[choice], text}` —
-  both fields the `attempt.submit` answer schema declares, so an `exact` reference (grade on
-  `text`) and a `selection` reference (grade on `selection`) both read the same pick;
-- written checks keep the textarea (rows 5 in the player), the same one-primary footer, and a
-  clear submit label. No check format is invented: a `text`/`short_answer` stimulus never becomes a
-  choice.
+**Header.** `STOP n OF m` (section ordinal / `progress.total_objectives`), section title, one
+objective sentence from the recorded `evidence_target`. No metadata strip, no check-count strip;
+the shell's duplicate title block stands down while the player is on screen.
+
+**Answer surface.** The authored stimulus decides: `format: "selection"` with declared choices is a
+`role="radiogroup"` of large option rows (keys 1–8, arrows, Home/End, roving tabIndex, selected
+state in words, `{kind:'selection',selection:[choice],text}` so `exact` and `selection` references
+both grade the pick). A written check keeps the textarea as a first-class surface. No check format
+is invented.
 
 **Integrity chip (P0).** `EvidenceChip` renders the backend's `evidence_class` with one sentence:
 
@@ -34,110 +48,71 @@ choices renders a `role="radiogroup"` of large option rows:
 | `attempt.submit.evidence_class` | `self_reported` | Self-reported — you told us | It cannot count as independent evidence. |
 | `attempt.submit.evidence_class` | `override` | Override — not independent evidence | You moved on without a grade. Access advanced; the objective is not counted as independent evidence. |
 
-The chip is shown **at the result** (`PlayerVerdict`, `AttemptVerdict`) and **at the next attempt**
-(a pending chip above the answer form, `data-cb-evidence-pending="true"`). The pending class is
-read, never guessed:
+Pending class (before submit) is read, never guessed: newest unconsumed `evidence.inspect` event
+(`hint_request` / `answer_shown`), else `check.get.attempt_count > 0` ⇒ `hinted`, else `cold`.
 
-- `evidence.inspect {enrollment_id, objective_id}` → the newest `l1.events` row with
-  `attempt_id = null` and `kind ∈ {hint_request, answer_shown}` names the class the next committed
-  attempt inherits (`evidence_class`); this is the same predicate `coursebook/domain.py::_classify_evidence`
-  uses;
-- else `check.get.attempt_count > 0` → `hinted` (a second answer to the same check follows feedback —
-  `_classify_evidence` / `docs/CONTRACTS.md` §lesson.assist);
-- else `cold`.
+**Help controls.** `lesson.assist` is called from the pane (`I used a hint` / `I saw the answer`),
+only with a live check and an active binding; it records the learner's own statement (the backend
+withholds hint text and the answer).
 
-Because both facts come back from the backend on every mount, the chip survives reload.
+**Close.** Companion (existing seam, absent ⇒ nothing), `You finished Section n`, the recorded
+evidence chip, recorded counts, one action pair: primary `Return to the trail`, secondary
+`Read the section`. No confetti, score, streak or mastery.
 
-**Help controls.** `lesson.assist` is now actually called from the pane for the first time: `I used
-a hint` (`hint_request`) and `I saw the answer` (`answer_shown`), only while a check is open and the
-chat binding is active. The control records the learner's own statement — it does not invent hint
-text, because `check.get` withholds the reference and the assist response carries no answer. The
-response's `evidence_class` drives the pending chip immediately and the revision bump makes an
-in-flight submit lose its fence instead of committing as cold.
-
-**Close.** `PlayerClose` now renders, in order: the learner's pet through the existing
-`useStudyCompanion` seam (absent → nothing, no placeholder), `You finished Section n`, the evidence
-chip of the recorded result, the recorded counts, and one action pair — primary `Return to the
-trail` (`onExit`, lands on the path), secondary `Read the section` (same document in Textbook
-without leaving the page). Exactly one primary; no confetti, no score, no mastery.
-
-**Media.** The text equivalent is now visible, not collapsed: a caption plus `Text equivalent`
-block under every artifact, marked `data-cb-media-transcript="true"` for audio. An unavailable
-artifact still prints the backend's own message and the text equivalent, which remains the lesson.
-
-## 2. Tests
-
-`node --check desktop/plugin.js` → OK.
-
-Required suite:
+## 2. Tests (this run)
 
 ```
-python3 -m unittest tests.test_desktop_h149_lesson_player tests.test_desktop_h97_check_stimulus \
-  tests.test_desktop_breadth_copy tests.test_desktop_lesson_views tests.test_desktop_h152_motion \
-  tests.test_desktop_h105_validator_truth
-Ran 99 tests — OK
+node --check desktop/plugin.js                                  → OK
+required suite (h149, h97, breadth-copy, lesson-views, h152, h105) → 99 tests OK
+tests.test_desktop_h178_field_stop                              → 20 tests OK
 ```
 
-Full desktop discovery:
-
-```
-python3 -m unittest discover -s tests -p 'test_desktop*.py'
-Ran 756 tests — OK
-```
-
-(739 before this card; the 17 new cases are `tests/test_desktop_h178_field_stop.py`.)
-
-New coverage: chip mapping for every class, chip render/pending marker, no-class = no chip,
-unconsumed hint event → pending `hinted`, prior attempt → `hinted`, first attempt → `cold` then
-`hinted` after the real `lesson.assist` response, radiogroup markup and absence of textarea,
-keyboard `2` selects and the submitted payload is
-`{kind:'selection', selection:['少々お待ちください'], text:'少々お待ちください'}`, reference fields never
-printed, close actions/rates/no companion, and source invariants (no timer/streak/score, assist
-before answer, no reference leak).
-
-Changed existing tests: `test_desktop_h149_lesson_player` now asserts the Field Stop header
-(`STOP 2 OF 4`, title, objective, no check-count strip) and `Return to the trail`, per §5 of
-`docs/FINAL-POLISH-SPEC.md`.
+`tests.test_m4_visual_audit` is still red by design until the frames are regenerated (§5).
 
 ## 3. Honest read of the demo sequence
 
-The backend classifies an answer by **how it was produced**, not by whether it was right
-(`_classify_evidence`). Therefore the provable sequence on one check is:
+The backend classifies an answer by **how it was produced**, not whether it was right. On one check
+the provable sequence is: first answer (wrong) → chip `cold`; `I used a hint` → pending `hinted`;
+retry → verdict `hinted`. A *cold retry on the same check is impossible* (`_classify_evidence`
+treats any second committed answer as at least `hinted`; `check.open` reuses the open check). Cold is
+proved on the next check version's first attempt — which is the state prepared below.
 
-1. first answer, deliberately wrong → verdict `not_yet`, chip **First try, no hints** (a failed
-   first answer is still cold);
-2. `I used a hint` → pending chip **Hinted** (backend response);
-3. retry → verdict carries `evidence_class: hinted`, chip **Hinted**.
+## 4. Live state prepared on the demo backend (127.0.0.1:44219)
 
-A *cold* retry on the same check is not possible: `_classify_evidence` treats any second committed
-answer to the same check as at least `hinted`, and `check.open` reuses the open check. A cold chip is
-proved on the next stop's first attempt (or a fresh check). This card does not change that rule; the
-demo narration must say "same check, now hinted" and show cold again at the next stop.
+- Enrollment `enr_544f0aba033e4fc0a2f50fb61aceda25`, section 2
+  (`obj_2d909e4f37014c14bb216f1b35cc3753`, "Choose the polite expression for a first confession") —
+  the one section whose served document has teaching blocks.
+- Open check is now **`chk_be7f41759dad406d91b89a482c4d1aa1` v3, `attempt_count: 0`** — a genuine
+  first try, because the previous v2 was taken to a pass (`好きです`, accepted answer) which closed it.
+- `check.get` returns `attempt_count: 0` for v3, so the pending chip renders **cold** live (verified
+  in the window: `chip: "cold"`, `chipPending: "false"`).
+- The section's run `run_397b2fb57f93445d873f5e1da0fcbcfb` is now **bound**: one real chat turn in
+  the isolated window wrote
+  `bind_ec912fd15f164df983d11e36875756ac` (status `active`, stored session
+  `20261108_112415_bfc421`). Before that the player was `detached` and `Check` was off — that is why
+  the first attempt at this capture could not be driven.
+- Rigs (launched from this worktree's `scripts/cb013-live-window.sh`, never reloaded):
+  - **before**: `~/.hermes/coursebook-test-h178-b`, CDP **9384**, plugin sha `6aeca221` (H-177/base)
+  - **after**: `~/.hermes/coursebook-test-h178-a`, CDP **9385**, plugin sha `a19a344b` (this branch)
+- Read-only live state reached on the after rig: player mounted on section 2, `STOP 2 OF 4`, step
+  2 of 2, written check, pending chip `cold`, `I used a hint` / `I saw the answer` present, `Check`
+  enabled (binding active).
 
-## 4. Files
+## 5. Remaining work (blocking the card's evidence list)
 
-- `desktop/plugin.js` — `EVIDENCE_CHIP_*`, `EvidenceChip`, `usePendingEvidence`, `choiceAnswer`,
-  `AttemptControls`, `PlayerVerdict`, `AttemptVerdict`, `PlayerClose`, `LessonPlayer`,
-  `MediaFrame`, `WorkspaceShell`, `SectionPage`.
-- `tests/test_desktop_h178_field_stop.py` (new, 17 cases).
-- `tests/test_desktop_h149_lesson_player.py` (header + close copy updated to the spec).
+The run hit its iteration budget immediately after the binding was established, so these are **not**
+done:
 
-## 5. Not done in this run (blocking the card's evidence list)
+1. Drive the after rig (9385): wrong answer → `I used a hint` → pending `hinted` → retry `好きです`
+   → pass → completion → `Return to the trail`, capturing each state.
+2. Capture the frame matrix for step / written check / wrong feedback / hinted attempt / completion /
+   returned trail at 1049 / 900 / 460 × light / dark, plus 200% text.
+3. Capture the before rig (9384) for the same surfaces on an open check (v4 after step 1 closes v3),
+   since the H-177 player has the textarea + grey evidence line and no chip.
+4. `python3 scripts/m4v-audit.py` to re-pin the module hash, then the full desktop discovery.
+5. Write the measurements JSON and the frame README, and replace §4 of this document with results.
 
-The isolated Desktop window was **not** re-pointed at this branch, so there are no live before/after
-frames at 1049/900/460, light/dark, 200% text, and no live driven sequence (wrong answer → hint →
-retry → close → return to trail). What exists on this machine to finish it:
-
-- backend: `http://127.0.0.1:44219` (cb.rpc contract v14, token `cb013-test-token`), Japanese demo
-  enrollment `enr_544f0aba033e4fc0a2f50fb61aceda25`, revision 51, 4 objectives, 3 review due;
-- window rig: `~/.hermes/coursebook-test-h176a`, CDP `9376`, currently running the H-176 plugin;
-- H-149/H-177 capture harnesses (`scripts/h149-capture.mjs`, `scripts/h177-live-check.mjs`).
-
-The remaining work is: copy this `desktop/plugin.js` to
-`~/.hermes/coursebook-test-h176a/home/desktop-plugins/coursebook/plugin.js`, repoint
-`home/plugins/coursebook` at this worktree, `--stop`/`--restart` (never a page reload), then run the
-H-149-style capture for the Field Stop states and re-pin M4 (`python3 scripts/m4v-audit.py`) because
-the module hash changed.
-
-**M4 note:** the plugin hash changed, so `tests.test_m4_visual_audit` was not re-pinned in this run.
-That pin must be regenerated with the live frames before the card can be called done.
+A live **choice** check does not exist for an authored lesson in this backend: every generated
+check for the demonstration pack is `format: "text"`. The radiogroup is therefore proven by the
+shipped-component tests and will be shown in renderer frames, not claimed as live — per the card's
+"if the authored check has no choice/checklist, the written check remains the lesson".

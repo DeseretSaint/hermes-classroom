@@ -9368,8 +9368,11 @@ const EVIDENCE_CLASS_NOTICE = {
  *
  * The chip is the product's one original mechanic made legible: the evidence class is *how the
  * answer was produced*, not how good it was. Labels stay the frozen learner vocabulary
- * (`EVIDENCE_CLASS_COPY`) except `answer_shown`, where the spec's full sentence is the label
- * because "Answer shown" alone reads like a neutral fact rather than a downgrade.
+ * (`EVIDENCE_CLASS_COPY`) except for two authored overrides: `answer_shown` prints the spec's full
+ * sentence because "Answer shown" alone reads like a neutral fact rather than a downgrade, and
+ * `self_reported` prints the learner's own voice ("you told us") rather than the report register of
+ * "Reported by you — not independently verified." Both still say, in words, that the attempt is not
+ * independent evidence — the meaning is the frozen one, only the register differs.
  *
  * The sentence under the label says what the class means for *this* answer. Nothing here is
  * computed: every value is the backend's own `evidence_class` from `attempt.submit`,
@@ -9820,17 +9823,29 @@ function useOpenCheck({ enrollmentId, objectiveId, revision, enabled, implemente
               })
               return
             }
-            const stimulus = detail.result && detail.result.stimulus ? detail.result.stimulus : null
-            if (!stimulus) {
-              settleStimulus(opened.check_id, { stimulusStatus: 'unavailable', stimulusError: null })
-              return
+            // `check.open` returns identity only; `check.get` is where the facts the surface needs
+            // already live: the stimulus, the check's state, and `attempt_count`. Keeping the last
+            // two is not bookkeeping — the pending integrity chip reads `attempt_count` to tell a
+            // first try from a retry on the same check, and a dropped field made the chip print
+            // "First try, no hints" while the backend committed the answer as `hinted`.
+            const detailResult = (detail.result || {})
+            const facts = {}
+            if (detailResult.attempt_count !== undefined && detailResult.attempt_count !== null && Number.isFinite(Number(detailResult.attempt_count))) {
+              facts.attempt_count = Math.max(0, Number(detailResult.attempt_count))
             }
-            settleStimulus(opened.check_id, { stimulusStatus: 'ready', stimulusError: null })
+            if (detailResult.state) facts.state = detailResult.state
+            const stimulus = detailResult.stimulus || null
             setState((previous) =>
               previous.check && previous.check.check_id === opened.check_id
-                ? { ...previous, check: { ...previous.check, stimulus } }
+                ? {
+                    ...previous,
+                    ...(stimulus ? {} : { stimulusStatus: 'unavailable', stimulusError: null }),
+                    check: { ...previous.check, ...facts, ...(stimulus ? { stimulus } : {}) }
+                  }
                 : previous
             )
+            if (!stimulus) return
+            settleStimulus(opened.check_id, { stimulusStatus: 'ready', stimulusError: null })
           })
           .catch((error) => {
             if (cancelled) return
@@ -10979,6 +10994,12 @@ function AttemptControls({
   const [selected, setSelected] = useState(-1)
   const [assistClass, setAssistClass] = useState(null)
   const [assistBusy, setAssistBusy] = useState(false)
+  // H-178: `lesson.assist` bumps the enrollment revision (`docs/CONTRACTS.md` §lesson.assist), and
+  // its response states the new revision. Adopting it locally means pressing "I used a hint" and
+  // then "Check" inside the refresh window still carries the current fence instead of losing the
+  // submit to STALE_REVISION. Revisions only increase, so the larger of the page's and the assist's
+  // is always the newest fact this card holds.
+  const [assistRevision, setAssistRevision] = useState(0)
   const [phase, setPhase] = useState('awaiting_input')
   const [result, setResult] = useState(null)
   const [resultCheck, setResultCheck] = useState(null)
@@ -11027,6 +11048,8 @@ function AttemptControls({
   })
   const attemptCount = check && Number(check.attempt_count) > 0 ? Number(check.attempt_count) : 0
   const nextEvidenceClass = assistClass || uncommittedClass || (attemptCount > 0 ? 'hinted' : 'cold')
+  // The fence this card submits against. See `assistRevision`.
+  const fenceRevision = Math.max(Number(revision) || 0, Number(assistRevision) || 0)
 
   // The answer form unmounts when a verdict arrives; put focus on the verdict itself so a keyboard
   // user is not dropped back on <body> with no idea whether the submission went through.
@@ -11113,7 +11136,7 @@ function AttemptControls({
       },
       {
         idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
-        expectedRevision: Number(revision) || 0
+        expectedRevision: fenceRevision
       }
     )
     if (!response.ok) {
@@ -11130,7 +11153,7 @@ function AttemptControls({
     cbPlayCheckCue(graded.verdict)
     if (graded.verdict === 'needs_retry') void resolveNeedsRetryLane(graded.attempt_id)
     if (onCommitted) onCommitted(graded)
-  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
+  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, fenceRevision, onCommitted, resolveNeedsRetryLane])
 
   const retryGrading = useCallback(async () => {
     if (!check || !nonceRef.current) return
@@ -11147,7 +11170,7 @@ function AttemptControls({
       },
       {
         idempotencyKey: `cb-attempt-${check.check_id}-${nonceRef.current}`,
-        expectedRevision: Number(revision) || 0
+        expectedRevision: fenceRevision
       }
     )
     if (!response.ok) {
@@ -11162,7 +11185,7 @@ function AttemptControls({
     cbPlayCheckCue(response.result.verdict)
     if (response.result.verdict === 'needs_retry') void resolveNeedsRetryLane(response.result.attempt_id)
     if (onCommitted) onCommitted(response.result)
-  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
+  }, [check, text, ticked, checklist, choiceMode, selectedChoice, enrollmentId, fenceRevision, onCommitted, resolveNeedsRetryLane])
 
   const moveOn = useCallback(async () => {
     if (!check) return
@@ -11223,7 +11246,7 @@ function AttemptControls({
         { enrollment_id: enrollmentId, objective_id: objectiveId, kind },
         {
           idempotencyKey: newOperationId('assist'),
-          expectedRevision: Number(revision) || 0
+          expectedRevision: fenceRevision
         }
       )
       setAssistBusy(false)
@@ -11233,9 +11256,13 @@ function AttemptControls({
       }
       const recorded = response.result && response.result.evidence_class
       setAssistClass(recorded || (kind === 'answer_shown' ? 'answer_shown' : 'hinted'))
+      // The assist moved the enrollment revision; adopt it before the async page refresh lands so
+      // a hint followed immediately by a submit cannot be refused as STALE_REVISION.
+      const bumped = response.result ? Number(response.result.revision) : NaN
+      if (Number.isFinite(bumped) && bumped > 0) setAssistRevision(bumped)
       if (onCommitted) onCommitted(response.result)
     },
-    [check, assistBusy, enrollmentId, objectiveId, revision, onCommitted]
+    [check, assistBusy, enrollmentId, objectiveId, fenceRevision, onCommitted]
   )
 
   /** Radio-group keys: 1–8 pick by number, arrows move and select, Home/End jump. */
@@ -15841,7 +15868,10 @@ function LessonPlayer({
       progress,
       onBack: onExit,
       onReadSection,
-      evidenceClass: state.evidenceClass || state.nextEvidenceClass || null
+      // Only a *recorded* class belongs on the close. A stop whose document carries no check is
+      // finished without an attempt, so `nextEvidenceClass` (a prediction) must not become the
+      // claim that something was earned. With nothing recorded the close renders without a chip.
+      evidenceClass: state.evidenceClass || null
     })
   }
 
