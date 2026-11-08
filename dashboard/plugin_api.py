@@ -155,13 +155,39 @@ async def pronunciation_attempt(body: dict[str, Any] = Body(...)) -> dict[str, A
 
 
 @router.get("/pronunciation/status")
-async def pronunciation_status() -> dict[str, Any]:
-    """Whether this process could score a take right now. Never downloads a model.
+async def pronunciation_status(
+    enrollment_id: str | None = None,
+    objective_id: str | None = None,
+    media_artifact_id: str | None = None,
+) -> dict[str, Any]:
+    """Whether this pane can record and score a take right now, and why not.
 
-    ``available: false`` is the honest practice-only state the Desktop shows; it is not an error.
+    Four stable states: ``available``, ``practice_only``, ``no_audio``, ``unavailable``, each
+    with a bounded ``reason`` and one ``next_action`` (see ``H-108``). ``available: false`` is the
+    honest practice-only state the Desktop shows; it is not an error.
+
+    Query context is optional: with an ``objective_id`` (optionally ``enrollment_id``) or a
+    ``media_artifact_id`` the probe also answers whether this block has a usable narration audio
+    child, which is what makes the studio ``no_audio``. No model download, no audio read, no
+    provider key.
     """
-    stt = _stt()
-    return {"ok": True, **stt.described()}
+    pronunciation = _pronunciation()
+    try:
+        result = pronunciation.availability(
+            enrollment_id=enrollment_id,
+            objective_id=objective_id,
+            media_artifact_id=media_artifact_id,
+        )
+    except Exception:  # noqa: BLE001 - a probe failure is still an answer the pane can render
+        logger.exception("coursebook: pronunciation availability probe failed")
+        result = {
+            "available": False,
+            "status": "unavailable",
+            "reason": "availability_unreadable",
+            "next_action": "Reload the section; if this persists, check the Coursebook backend log.",
+            "local_only": True,
+        }
+    return {"ok": True, **result}
 
 
 @router.get("/packs/intake")
@@ -298,6 +324,11 @@ def _media() -> Any:
 def _stt() -> Any:
     _load_backend()
     return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.stt")
+
+
+def _pronunciation() -> Any:
+    _load_backend()
+    return importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.pronunciation")
 
 
 def _bindings() -> Any:

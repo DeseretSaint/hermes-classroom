@@ -57,12 +57,31 @@ class SttUnavailable(RuntimeError):
     """No transcript could be produced. ``reason`` is a bounded, log-safe code.
 
     The text of the exception is for logs only; callers must expose ``reason``, never ``str()``,
-    because it may carry a filesystem path or a library message.
+    because it may carry a filesystem path or a library message. ``detail`` is the exception
+    *class name* only (bounded, no message, no path) so an operator can tell an OOM from a
+    model-architecture mismatch without leaking a library string to the learner.
     """
 
-    def __init__(self, reason: str) -> None:
+    def __init__(self, reason: str, detail: str | None = None) -> None:
+        global _LAST_FAILURE
         self.reason = str(reason)
+        self.detail = _bounded_detail(detail)
+        if self.detail is not None:
+            _LAST_FAILURE = {"reason": self.reason, "detail": self.detail}
         super().__init__(self.reason)
+
+
+#: The last bounded recogniser failure this process produced. Diagnostics only; never learner copy.
+_LAST_FAILURE: dict[str, str] | None = None
+
+
+def _bounded_detail(value: Any) -> str | None:
+    """Reduce an exception to a bare class-name token; never carry a message or a path."""
+    text = str(value or "").strip()
+    if not text:
+        return None
+    token = text.rsplit(".", 1)[-1]
+    return "".join(ch for ch in token if ch.isalnum() or ch == "_")[:60] or None
 
 
 @dataclass(frozen=True)
@@ -96,7 +115,7 @@ def _import_whisper() -> Any:
     try:
         import faster_whisper  # type: ignore import-not-found
     except Exception as exc:  # noqa: BLE001 - any import failure means unavailable
-        raise SttUnavailable("stt_dependency_missing") from exc
+        raise SttUnavailable("stt_dependency_missing", type(exc).__name__) from exc
     return faster_whisper
 
 
@@ -153,7 +172,7 @@ class LocalWhisperAdapter:
                     download_root=str(cache_dir),
                 )
             except Exception as exc:  # noqa: BLE001 - offline/missing model becomes unavailable
-                raise SttUnavailable("model_unavailable") from exc
+                raise SttUnavailable("model_unavailable", type(exc).__name__) from exc
             _MODEL_CACHE[key] = model
             return model
 
@@ -186,9 +205,9 @@ class LocalWhisperAdapter:
                 check=False,
             )
         except subprocess.TimeoutExpired as exc:
-            raise SttUnavailable("decode_timeout") from exc
+            raise SttUnavailable("decode_timeout", type(exc).__name__) from exc
         except OSError as exc:
-            raise SttUnavailable("decode_failed") from exc
+            raise SttUnavailable("decode_failed", type(exc).__name__) from exc
         if done.returncode != 0 or not done.stdout:
             raise SttUnavailable("decode_failed")
         if len(done.stdout) > MAX_PCM_BYTES:
@@ -203,7 +222,7 @@ class LocalWhisperAdapter:
         try:
             import numpy as np  # faster-whisper depends on numpy; a missing one is unavailable
         except Exception as exc:  # noqa: BLE001
-            raise SttUnavailable("numpy_missing") from exc
+            raise SttUnavailable("numpy_missing", type(exc).__name__) from exc
 
         samples = np.frombuffer(pcm, dtype="<i2").astype(np.float32) / 32768.0
         duration = float(samples.size) / float(SAMPLE_RATE)
@@ -229,7 +248,7 @@ class LocalWhisperAdapter:
             collected = list(segments)
         except Exception as exc:  # noqa: BLE001 - inference failure is unavailable, never a score
             logger.warning("coursebook stt: inference failed (%s)", type(exc).__name__)
-            raise SttUnavailable("transcription_failed") from exc
+            raise SttUnavailable("transcription_failed", type(exc).__name__) from exc
 
         text = "".join(str(segment.text or "") for segment in collected).strip()
         words: list[dict[str, Any]] = []
@@ -283,6 +302,7 @@ def get_adapter() -> SttAdapter:
 def described() -> dict[str, Any]:
     """Small honest availability block for diagnostics. Never triggers a model download."""
     adapter = get_adapter()
+    failure = dict(_LAST_FAILURE) if _LAST_FAILURE is not None else None
     if isinstance(adapter, LocalWhisperAdapter):
         available, reason = adapter.availability()
         return {
@@ -290,14 +310,18 @@ def described() -> dict[str, Any]:
             "model": adapter.model_name,
             "available": available,
             "reason": reason,
+            "reason_detail": failure["detail"] if (failure and failure["reason"] == reason) else None,
             "model_cached": adapter.model_cached(),
             "local_only": True,
+            "last_failure": failure,
         }
     return {
         "provider": PROVIDER,
         "model": None,
         "available": True,
         "reason": None,
+        "reason_detail": None,
         "model_cached": None,
         "local_only": True,
+        "last_failure": failure,
     }

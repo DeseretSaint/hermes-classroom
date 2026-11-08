@@ -18,6 +18,17 @@ narrow on purpose:
   separate from ``attempts`` (a text/selection answer) and no transition or revision is written;
 * a dispute is appended to the attempt's own record and never rewrites the verdict.
 
+Availability is a separate, stable four-state answer (:func:`availability`) with a bounded reason
+and one next action: ``available``, ``practice_only``, ``no_audio``, ``unavailable``. The pane
+renders that answer instead of inferring one from ``available``/``model_cached``. A take is only
+staged after the payload is proven well-formed *and* the recogniser preflight says it could run;
+the recogniser is still the authority and a model/decoding failure inside ``transcribe`` remains
+``unavailable`` with no score.
+
+Retention policy: a take is deleted in a ``finally`` block on every path, and a take orphaned by a
+process kill is swept after :data:`MAX_TAKE_AGE_SECONDS`. Nothing is written to a pack, export,
+notebook or telemetry, and this module never reads a provider key.
+
 The handler is revision-fenced: the caller sends the enrollment revision it saw before recording.
 If the enrollment moved while the take was in flight the result is ``STALE_REVISION`` and nothing is
 written. Duplicate submissions are handled twice: an identical idempotency key replays the stored
@@ -32,6 +43,8 @@ import hashlib
 import json
 import logging
 import os
+import sqlite3
+import time
 import unicodedata
 import uuid
 from pathlib import Path
@@ -74,6 +87,35 @@ CLOSE = 0.6
 
 EVIDENCE_CLASS = "model_assessed"
 VERDICTS = ("meets_target", "close", "needs_practice", "unavailable")
+
+#: The four stable availability states the pane renders. Never a fifth, never a percentage.
+AVAILABILITY_STATES = ("available", "practice_only", "no_audio", "unavailable")
+
+#: Retention policy for a staged take. A take is deleted in a ``finally`` block on every path;
+#: this bound only reclaims a file orphaned by a process kill. It is disclosed to the pane.
+MAX_TAKE_AGE_SECONDS = 15 * 60
+
+#: One next action per state. The pane shows the reason-specific one when it has a code.
+_NEXT_ACTION = {
+    "available": "Record one short take; the result is practice evidence, not a pronunciation verdict.",
+    "practice_only": "Ask the operator to install the local recogniser (faster-whisper and ffmpeg), and practise by ear until then.",
+    "no_audio": "Ask a parent to author narration audio for this block, then reopen the section.",
+    "unavailable": "Reload the section; if this persists, check the Coursebook backend log.",
+}
+
+_REASON_NEXT_ACTION = {
+    "stt_dependency_missing": "Ask the operator to install faster-whisper in the plugin runtime.",
+    "ffmpeg_missing": "Ask the operator to install ffmpeg so a take can be decoded.",
+    "model_unavailable": "Ask the operator to make the local Whisper model available; the first take downloads it once.",
+    "decode_failed": "Ask the operator to check the ffmpeg install; the take could not be decoded.",
+    "decode_timeout": "Ask the operator to check the ffmpeg install; decoding a take timed out.",
+    "audio_too_long": "Record a shorter take (30 seconds or less).",
+    "narration_missing": "Ask a parent to author narration audio for this block, then reopen the section.",
+    "narration_degraded": "Ask a parent to regenerate this block's narration; the authored item has no audio artifact.",
+    "no_authored_media": "Ask a parent to generate the lesson's authored media, then reopen the section.",
+    "objective_not_in_approved_plan": "Reopen the lesson from its current approved plan.",
+    "availability_unreadable": "Reload the section; if this persists, check the Coursebook backend log.",
+}
 
 
 def _kernel() -> Any:
@@ -167,6 +209,221 @@ def _discard_take(path: Path) -> None:
         path.unlink(missing_ok=True)
     except OSError:  # pragma: no cover - a locked temp file is logged, never fatal
         logger.warning("pronunciation: could not remove a temporary take")
+
+
+# ── availability + retention ────────────────────────────────────────────────
+
+def _temp_root() -> Path:
+    """The take directory without creating it (the probe must leave the disk untouched)."""
+    return db.store_root() / "pronunciation-tmp"
+
+
+def _sweep_stale_takes(*, now: float | None = None) -> int:
+    """Delete only takes orphaned by a process kill; never a take inside its attempt window.
+
+    A normal attempt deletes its take in ``finally``. This is the crash-recovery half of the
+    retention policy: anything older than :data:`MAX_TAKE_AGE_SECONDS` is removed before the next
+    attempt or probe. Errors are logged and never change an availability answer.
+    """
+    root = _temp_root()
+    if not root.is_dir():
+        return 0
+    cutoff = (time.time() if now is None else float(now)) - MAX_TAKE_AGE_SECONDS
+    removed = 0
+    for path in root.glob("take-*.bin"):
+        try:
+            if path.stat().st_mtime >= cutoff:
+                continue
+            path.unlink(missing_ok=True)
+            removed += 1
+        except OSError:  # pragma: no cover - a locked file is retried on the next probe
+            logger.warning("pronunciation: could not sweep a stale take")
+    return removed
+
+
+def _artifact_is_audio(connection: Any, artifact_id: Any) -> bool:
+    if not artifact_id:
+        return False
+    row = _row(
+        connection,
+        "SELECT kind, mime FROM artifacts WHERE id = ?",
+        (str(artifact_id),),
+    )
+    if row is None:
+        return False
+    return str(row["kind"]) == "audio" or str(row["mime"] or "").startswith("audio/")
+
+
+def _narration_from_artifact(connection: Any, artifact_id: str) -> tuple[str, str | None]:
+    if _artifact_is_audio(connection, artifact_id):
+        return "present", None
+    return "missing", "narration_missing"
+
+
+def _narration_from_objective(
+    connection: Any, *, enrollment_id: str | None, objective_id: str
+) -> tuple[str, str | None]:
+    """Resolve the objective's authored narration media child. Read-only, no projection write."""
+    objective = _row(
+        connection,
+        "SELECT plan_id, ordinal FROM objectives WHERE id = ?",
+        (str(objective_id),),
+    )
+    if objective is None:
+        return "unknown", "objective_not_found"
+    if enrollment_id:
+        enrollment = _row(
+            connection, "SELECT course_id FROM enrollments WHERE id = ?", (str(enrollment_id),)
+        )
+        if enrollment is None:
+            return "unknown", "objective_not_found"
+        plan = _row(connection, "SELECT course_id, state FROM plans WHERE id = ?", (str(objective["plan_id"]),))
+        if (
+            plan is None
+            or plan["course_id"] != enrollment["course_id"]
+            or plan["state"] != "approved"
+        ):
+            return "unknown", "objective_not_in_approved_plan"
+    try:
+        document = _row(
+            connection,
+            "SELECT plan_hash FROM gen_plan_documents WHERE plan_id = ? ORDER BY created_at DESC LIMIT 1",
+            (str(objective["plan_id"]),),
+        )
+        if document is None:
+            return "missing", "no_authored_media"
+        section = _row(
+            connection,
+            "SELECT id FROM gen_plan_sections WHERE plan_id = ? AND plan_hash = ?"
+            " AND json_extract(objective_refs_json, '$[0]') = ? ORDER BY ordinal LIMIT 1",
+            (str(objective["plan_id"]), str(document["plan_hash"]), int(objective["ordinal"])),
+        )
+    except sqlite3.OperationalError:
+        # A profile that never ran the generation pipeline has no gen_* tables: there is no
+        # authored narration to point at, and that is a fact, not a read failure.
+        return "missing", "no_authored_media"
+    if section is None:
+        return "missing", "no_authored_media"
+    lesson = _row(
+        connection,
+        "SELECT media_json FROM gen_lessons WHERE section_id = ? AND plan_hash = ?"
+        " AND state = 'validated' ORDER BY version DESC LIMIT 1",
+        (str(section["id"]), str(document["plan_hash"])),
+    )
+    if lesson is None:
+        return "missing", "no_authored_media"
+    items = _json_load(lesson["media_json"], [])
+    if not isinstance(items, list):
+        return "missing", "no_authored_media"
+    narration = None
+    for item in items:
+        if isinstance(item, dict) and (
+            str(item.get("role") or "") == "narration" or str(item.get("kind") or "") == "audio"
+        ):
+            narration = item
+            break
+    if narration is None:
+        return "missing", "narration_missing"
+    if not narration.get("artifact_id"):
+        # The authored item exists but no audio artifact was produced (degraded media).
+        return "missing", "narration_degraded"
+    if not _artifact_is_audio(connection, narration.get("artifact_id")):
+        return "missing", "narration_missing"
+    return "present", None
+
+
+def _next_action(state: str, reason: str | None) -> str:
+    if reason and reason in _REASON_NEXT_ACTION:
+        return _REASON_NEXT_ACTION[reason]
+    return _NEXT_ACTION.get(state, _NEXT_ACTION["unavailable"])
+
+
+def availability(
+    *,
+    enrollment_id: str | None = None,
+    objective_id: str | None = None,
+    media_artifact_id: str | None = None,
+) -> dict[str, Any]:
+    """The stable availability answer the pane renders: state, bounded reason, one next action.
+
+    States, in precedence order:
+
+    * ``no_audio`` — the caller named a block/objective/artifact and there is no usable narration
+      audio child, so there is nothing to listen to or compare against. The studio is not seated.
+    * ``unavailable`` — the caller named a context but the backend could not establish it (store
+      unreadable, objective not in the enrollment's approved plan). Not a score, not a guess.
+    * ``practice_only`` — narration exists but this process cannot recognise speech right now
+      (dependency, ffmpeg, model, decode/inference). Listen and repeat without a score.
+    * ``available`` — narration exists (or no block context was asked for) and the recogniser can
+      run. First use may download the model weights once; no audio leaves the machine.
+
+    ``available`` is kept as a boolean for the pre-H-108 pane; ``status`` is the stable field.
+    This function never downloads a model, never reads a provider key and never loads audio.
+    """
+    recognizer = stt.described()
+    recognizer_ready = bool(recognizer.get("available"))
+    recognizer_reason = recognizer.get("reason") or "recognizer_unavailable"
+    swept = _sweep_stale_takes()
+
+    checked = bool(media_artifact_id or objective_id)
+    narration = "unknown"
+    narration_reason: str | None = None
+    if checked:
+        try:
+            db.ensure_schema()
+            with db.read() as connection:
+                if media_artifact_id:
+                    narration, narration_reason = _narration_from_artifact(
+                        connection, str(media_artifact_id)
+                    )
+                else:
+                    narration, narration_reason = _narration_from_objective(
+                        connection,
+                        enrollment_id=(str(enrollment_id) if enrollment_id else None),
+                        objective_id=str(objective_id),
+                    )
+        except Exception:  # noqa: BLE001 - a probe failure is an answer, never an exception
+            logger.warning("pronunciation: availability probe could not read the store")
+            narration, narration_reason = "unknown", "availability_unreadable"
+
+    if narration == "missing":
+        state, reason = "no_audio", narration_reason or "narration_missing"
+    elif checked and narration == "unknown":
+        state, reason = "unavailable", narration_reason or "availability_unreadable"
+    elif recognizer_ready:
+        state, reason = "available", None
+    else:
+        state, reason = "practice_only", recognizer_reason
+
+    return {
+        # Backward-compatible fields the pre-H-108 pane already reads.
+        "provider": recognizer.get("provider"),
+        "model": recognizer.get("model"),
+        "model_cached": recognizer.get("model_cached"),
+        "local_only": True,
+        "available": state == "available",
+        # Stable H-108 contract.
+        "status": state,
+        "reason": reason,
+        "next_action": _next_action(state, reason),
+        "recognizer": {
+            "available": recognizer_ready,
+            "reason": recognizer_reason if not recognizer_ready else None,
+            "detail": recognizer.get("reason_detail"),
+            "last_failure": recognizer.get("last_failure"),
+        },
+        "narration": {
+            "checked": checked,
+            "present": narration == "present",
+            "reason": narration_reason,
+        },
+        "retention": {
+            "audio_retained": False,
+            "staged_take_ttl_seconds": MAX_TAKE_AGE_SECONDS,
+            "swept_stale_takes": swept,
+        },
+    }
+
 
 
 # ── comparison ──────────────────────────────────────────────────────────────
@@ -407,6 +664,28 @@ def attempt(payload: dict[str, Any], envelope: dict[str, Any]) -> tuple[int, dic
             return revision, _result_from_row(prior, revision)
 
     audio, mime = decode_data_url(payload.get("audio_data_url"))
+    _sweep_stale_takes()
+
+    # Preflight the recogniser after the payload is proven well-formed: a process that already
+    # knows it cannot recognise must not write the take to disk at all. No model is downloaded
+    # here (``stt.described`` is a probe), and a missing model still fails closed inside
+    # ``transcribe`` with ``model_unavailable``.
+    preflight = stt.described()
+    if not preflight.get("available"):
+        reason = str(preflight.get("reason") or "recognizer_unavailable")
+        assessment = unavailable_assessment(
+            target=target, locale=locale, reason=reason, model=preflight.get("model")
+        )
+        result = {
+            "status": "unavailable",
+            "recorded": False,
+            "attempt_id": None,
+            "revision": int(expected_revision),
+            "assessment": assessment,
+            "reason": reason,
+        }
+        return _remember_outcome(method, envelope, payload_hash, result, int(expected_revision))
+
     take = _stage_take(audio)
     failure: str | None = None
     transcription: stt.Transcription | None = None
