@@ -932,7 +932,9 @@ class FieldDeskRenderTest(unittest.TestCase):
     # -- the module's shape -----------------------------------------------------------------
     def test_path_titles_wrap_without_colliding_with_the_state_label(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        path = source.split("function CheckpointPath(", 1)[1].split("function SourcesDrawer(", 1)[0]
+        # H-177 moved the row into `PathStop`; the wrap contract is the trail's, wherever the row
+        # component lives.
+        path = source.split("function PathStop(", 1)[1].split("function SourcesDrawer(", 1)[0]
         self.assertIn("whiteSpace: 'normal'", path)
         self.assertIn("flex: '1 1 8rem'", path)
 
