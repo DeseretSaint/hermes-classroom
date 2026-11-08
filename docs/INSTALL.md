@@ -36,8 +36,9 @@ That is the same command catalog CI runs.
 
 ## 1. Get the source
 
-The public repository is TODO (owner: DeseretSaint; pushing requires operator approval). Until it
-exists, use a local checkout:
+The repository is **private** on 2026-11-08 (`DeseretSaint/hermes-classroom`); making it public is
+publication and stays closed under `docs/SUBMISSION.md` §0, so there is no unauthenticated clone
+command to give here. With access, clone it; without access, use a local checkout:
 
 ```
 cd /path/to/hermes-classroom

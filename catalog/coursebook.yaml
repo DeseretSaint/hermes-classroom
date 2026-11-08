@@ -6,9 +6,18 @@
 # quotes; an entry cannot carry its own hash, so the catalog update itself is one commit above it.
 # `version` is kept in step with `plugin.yaml` (0.1.0).
 #
-# The entry is still withheld: gates 5, 7, 9 and 10 of docs/SUBMISSION.md are partial or open
+# H-181 repaired the media, not the pin. `image` and every `screenshots` entry pointed at
+# `f5b84632d7201448e43992b2c1b160f9ea8deeb3`, which is not on the remote: all seven URLs were 404
+# (checked 2026-11-08). They now point at this pinned commit, where all nine `docs/assets` PNGs
+# return 200. The pin stays at `1ba8ec6` on purpose: it is 126 commits behind `origin/master`, and
+# re-pinning to "the final commit" is not possible until a final commit exists and is named -
+# nothing on this worktree is pushed, and the H-176 Trailhead (`2b0324e`) and the H-186 demo pack
+# (`1c223cc`) are unmerged. Re-pinning to an unpushed commit would recreate the defect above.
+#
+# The entry is still withheld: gates 7, 9, 12, 13, 14 and 15 of docs/SUBMISSION.md are open
 # (live drive of this commit, demo scenarios, license, publication sign-off). CB-QA-09 is not a
 # plugin defect; Atlas reclassified it as P3-operational (docs/REVIEW_CB017-FINAL.md §3.1).
+
 name: coursebook
 repo: https://github.com/DeseretSaint/hermes-classroom
 sha: 1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299
@@ -38,25 +47,21 @@ category: desktop
 requires_hermes: ">=0.23.0"
 version: "0.1.0"
 docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/INSTALL.md
-image: https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-overview-light.png
+image: https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-overview-light.png
 screenshots:
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-overview-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-library-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-textbook-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-lesson-pane-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-notebook-dark.png
-  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-parent-studio-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-overview-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-library-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-textbook-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-lesson-pane-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-notebook-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-parent-studio-dark.png
 readme: true
 platforms: []
 known_issues:
-  - "No license file is present in this repository yet; do not redistribute until one is added (operator decision, board card t_6f2d2080)."
-  - "Desktop route #/coursebook mounts against a reachable backend. A window with no gateway renders no route page for any hash (host shell degradation); CB-QA-09 was reclassified P3-operational, a one-gateway-per-host binding owned by the default profile, not a plugin defect. An isolated window therefore has no chat composer until the operator resolves the recording path."
-  - "No demo is recorded; the demo gate is not met and no release tag exists. The plugin is not published to the catalog."
-  - "Research runs inside plan jobs only; there is no standalone research command."
-  - "Image and speech generation are implemented through the host's configured providers since M0 (3cead45), with text equivalents and honest degraded states, but the lesson-preview route is covered by tests rather than driven live on this tree. Pronunciation scoring ships as local practice-only scoring; it is not a graded or verified pronunciation assessment, and no provider key is read."
-  - "Reminders are absent: no command, no job kind and no storage."
-  - "The auxiliary open-response grader lane is disabled; closed checks are graded locally against a stored reference."
-  - "A live Desktop window has not driven the merged release candidate; several views are proved by render and parity tests or by live captures on earlier commits."
+  - "No license: there is no LICENSE file in this repository. The decision is open with the owner (board card t_6f2d2080: MIT, Apache-2.0, or ship without) and no license is claimed here. Do not redistribute until it is recorded."
+  - "No demo video and no release tag. The demo gate (board card t_6a32ffe9) is open: this host runs one gateway, so an isolated window cannot drive chat beside the pane, and the bundled demo pack imports its objectives but zero checks, so the graded attempt and evidence row cannot be shown yet. The 88-second shot list is docs/HACKATHON-DEMO.md; the open rows are docs/STORY-GAPS.md."
+  - "The frames in image and screenshots are real captures from the pinned 0.1.0 asset set, not the current Home. The Home has since been rebuilt as the Trailhead (H-176, 2b0324e, unmerged), and two frames show a demonstration course title and a developer status strip. Replacement frames are blocked on the clean seed and the gateway binding (docs/STORY-GAPS.md G2, G3, G5)."
+
 capabilities:
   provides_tools:
     - coursebook_status

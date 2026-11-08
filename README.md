@@ -1,23 +1,60 @@
 # Coursebook
 
-Coursebook is a Hermes Desktop learning workspace for adults and parents. It is designed to turn
-a goal or a reusable course pack into a governed, resumable sequence of lessons: one objective at
-a time, typed checks, bounded grading, transactional transitions, inspectable evidence, and
-generated lesson media with text equivalents and honest degraded states. Parent mode prepares lesson
-packs that a parent teaches; children do not chat with Coursebook.
+**Coursebook is a Hermes Desktop learning workspace where a lesson is governed state, not chat:**
+one objective at a time, typed checks, bounded grading, exactly one permitted transition per
+committed answer, and an evidence row you can inspect, export and resume. It is for an adult
+learning a real skill, and for a parent preparing a lesson pack that the parent then teaches:
+children do not chat with Coursebook.
 
-Coursebook is not a prompt. A chat prompt can answer a question; it cannot make the answer
-change what happens next. In Coursebook the model teaches, while the plugin owns the objective,
-the attempt, the rubric, the evidence, the next permitted transition, and the durable record.
+![Coursebook 0.1.0 course overview](https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/1ba8ec626ae6ac0e4262dc93c0d28ebeb86cf299/docs/assets/readme-overview-light.png)
 
-This repository is the 0.1.0 contest candidate. The backend, the pack pipeline and the Parent
-Studio authoring surface are implemented and tested. The Desktop route mounts when the window
-reaches a backend that can serve the session. The route finding CB-QA-09 was reclassified by
-Atlas as P3-operational — a host gateway binding, not a plugin defect: a window with no gateway
-renders no route page for any hash, host routes included (`docs/REVIEW_CB017-FINAL.md` §3.1).
-No demo has been recorded. Read the status table before installing.
+*Real capture from the pinned asset set at `1ba8ec6`, frame labelled in `docs/README-SHOTS.md`. The
+Home surface has since been rebuilt as the Trailhead (H-176, `2b0324e`, branch
+`wt/h176-trailhead-identity`, unmerged), so this README does not yet show today's Home; the
+replacement frame set is open in `docs/STORY-GAPS.md`.*
 
-## Status
+## Install locally
+
+```bash
+# the repository is private on 2026-11-08; with access to it:
+git clone https://github.com/DeseretSaint/hermes-classroom && cd hermes-classroom
+scripts/install-local.sh --home ~/.hermes/profiles/<your-profile>   # link, enable, verify
+hermes gateway restart
+```
+
+Requirements: Hermes Agent 0.23.0 or newer, Python 3.11 or newer on the interpreter Hermes runs,
+Node.js for `node --check` only. `--home` must be a profile or a disposable test home; the script
+refuses the machine-level home on purpose. Full path, dependencies and the observed result:
+`docs/INSTALL.md`.
+
+## Three things this tree can be held to
+
+Each is asserted by a test in the 2,242-test suite or by a state matrix run on this tree on
+2026-11-08. None of them is a claim about learning outcomes, and none is a video.
+
+1. **One answer, one transition.** `tests/test_kernel_transitions.py` (37 tests) asserts a pass
+   commits exactly one transition, a duplicate nonce is ignored, an idempotency replay returns the
+   persisted result, and two concurrent submits yield one commit and one `STALE_REVISION` — not two
+   transitions.
+2. **The answer key never leaves the backend.** `check.open` and `course.outline` carry
+   `check_spec_withheld` in place of the reference, and `test_criteria_observations_never_contain_the_reference`
+   covers the committed row. Re-run here: `python3 tests/adversarial/attack_state.py` →
+   `SUMMARY total=23 fail=0 pass=23`, reference-leak scenarios included.
+3. **An export is hash-verified.** `tests/test_course_export.py` re-hashes the zip bytes on disk and
+   asserts they equal the artifact's declared `content_hash` ("never trust the writer"), and that
+   the manifest carries teaching material rather than learner history.
+
+## Status, 2026-11-08
+
+The source repository is private today; `catalog/coursebook.yaml` is committed but **not
+submitted**, and no release tag exists. **No demo video is recorded yet**: the demo gate
+`t_6a32ffe9` is open because this host runs one gateway and no profile can yet drive chat and the
+pane together; the 88-second shot list is ready and timed in `docs/HACKATHON-DEMO.md`. There is no
+`LICENSE` file (owner decision `t_6f2d2080`): do not redistribute. Publication stays closed under
+`docs/SUBMISSION.md` §0. Everything below is the measured record, limitations included — the
+current candidate still has open gates 7, 9, 12, 13, 14 and 15.
+
+## Release record (0.1.0 and the product line)
 
 Version 0.1.0. The release gates and the route evidence for the 0.1.0 tree are in
 `docs/CB017-RELEASE-VERIFICATION.md` (CB-017 line, merged master `29bede7`); the adversarial
