@@ -8,19 +8,22 @@
     "command": "python3 -m unittest discover -s tests -t .",
     "ran": 2242,
     "skipped": 1,
-    "verdict": "OK (skipped=1)"
+    "verdict": "OK (skipped=1)",
+    "note": "the measured packet at eed7dc7; the same command reports Ran 2511 tests, OK on the H-194 tree, which has not been re-measured into this record (a full re-derive must also re-run the M4 audit, whose pinned build is 179db275)"
   },
   "rpc": {
     "contract": "cb.rpc",
-    "version": 17,
-    "declared_methods": 68,
-    "handlers": 68
+    "version": 20,
+    "declared_methods": 73,
+    "handlers": 73,
+    "note": "current tree baseline after H-194/H-194b; the measured packet rows below (tests, plugin, M4) were produced on eed7dc7 at cb.rpc v17"
   },
   "db": {
     "contract": "cb.db",
-    "version": 11,
-    "schema_version": 11,
-    "migrations": "0001-0011"
+    "version": 12,
+    "schema_version": 12,
+    "migrations": "0001-0012",
+    "note": "v12 adds the H-194 fine-tune ledgers (migration 0012_fine_tune_revisions: plan_revisions, lesson_revisions); the eed7dc7 measurement was schema 11"
   },
   "plugin": {
     "path": "desktop/plugin.js",

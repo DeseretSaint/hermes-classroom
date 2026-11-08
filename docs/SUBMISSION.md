@@ -18,10 +18,15 @@ Every current-tree number in this file is re-derived there and checked by
 `python3 scripts/check-docs-truth.py`; what was measured, and what is branch-only, is
 `docs/RELEASE-EVIDENCE.md`.
 
-The tree carries `cb.rpc` v17 (68 declared methods, 68 handlers) and `cb.db` v11 (schema v11,
-migrations `0001`-`0011`): v17 is additive over the conversation-practice amendment, carrying six
-optional source-provenance fields on `lesson.page` and a populated `publisher`. The
-suite is `Ran 2242 tests … OK (skipped=1)` at that commit, measured independently of the branch.
+The tree carries `cb.rpc` v20 (73 declared methods, 73 handlers) and `cb.db` v12 (schema v12,
+migrations `0001`-`0012`): v20 is additive over v19 — `parent.blueprint.read` now returns the
+`sections[]` identity a fine-tune call needs (section id, objective, ordinal, title, lesson
+state/version, page hash) and adds no method — and v19 itself added the fine-tune commands
+(`plan.edit`, `plan.undo`, `lesson.revise`, `lesson.regenerate`, `parent.review.read`,
+`parent.final.approve`); v12 adds the two fine-tune ledgers (`plan_revisions`, `lesson_revisions`)
+in migration `0012_fine_tune_revisions`. The suite is `Ran 2242 tests … OK (skipped=1)` at the
+measured commit `eed7dc7`, measured independently of the branch, and `Ran 2511 tests … OK` on this
+H-194 tree.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
@@ -50,9 +55,9 @@ invalidates the earlier evidence.
 
 | # | Gate | Owner | Evidence on `eed7dc7` | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Contracts frozen | Atlas | `contracts/rpc.v17.json` (68 declared methods), `contracts/db.v11.json`, `docs/REVIEW_CB001.md` | [x] |
+| 1 | Contracts frozen | Atlas | `contracts/rpc.v20.json` (73 declared methods), `contracts/db.v12.json`, `docs/REVIEW_CB001.md` | [x] |
 | 2 | Platform skeleton passes admission | Sable | `bash scripts/validate-plugin.sh --ref b33a42f`: admission PASS, `node --check` PASS, desktop contract tests PASS; not re-run in this docs pass | [x] |
-| 3 | Backend kernel with migrations | Cinder | `cb.db` v11 / `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011`; suite `Ran 2242 tests … OK (skipped=1)` | [x] |
+| 3 | Backend kernel with migrations | Cinder | At `eed7dc7`: `cb.db` v11 / `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011`; suite `Ran 2242 tests … OK (skipped=1)`. The H-194 tree is `cb.db` v12 / `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012`, `Ran 2511 tests … OK` | [x] |
 | 4 | Packs import and export | Lattice | Pack round-trip and export hash were last driven live at `29bede7`; the pack tests pass inside the 2,242-test suite on this tree, but no pack round-trip was re-driven here | [~] |
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | `PROBES.md`: 7 probes run, `pre_llm_call` replay FAIL, compression and Desktop render segments BLOCKED; not re-run in this pass | [~] |
