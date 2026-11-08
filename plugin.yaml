@@ -19,6 +19,7 @@ tags:
 # Declared, and registered by __init__.py. An undeclared registration fails admission.
 provides_tools:
   - coursebook_status
+  - coursebook_due
 provides_hooks:
   - pre_llm_call
   - post_llm_call
