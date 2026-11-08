@@ -2561,6 +2561,101 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
   })
 }
 
+/**
+ * One pack on the Library shelf: a compact row, not a course cover.
+ *
+ * A pack is not a course. Reusing `CourseCover` here put a 16:9 decorative field, a 40 px
+ * Atlas Lamp seal and a title-derived monogram above every pack. Two test packs whose titles
+ * began with the same two words therefore showed the same "HL" mark and the same empty cover,
+ * which read as a product logo and made the rows impossible to tell apart. The pack's own title,
+ * source and state are the identity; no seal or monogram is invented for it.
+ *
+ * An empty pack keeps the row honest: it names the missing sections and still offers Preview
+ * (the manifest is inspectable) without a four-segment path that would imply content.
+ */
+function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
+  const summary = (row && row.evidence_summary) || {}
+  const total = Math.max(0, Number(summary.total_objectives || 0))
+  const empty = total === 0
+  return jsxs('article', {
+    'data-cb-pack-row': cbShelfFingerprint(row),
+    'data-cb-pack-empty': empty ? 'true' : 'false',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.35rem',
+      minWidth: 0,
+      paddingTop: '0.55rem',
+      borderTop: '1px solid var(--cb-rule)'
+    },
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-start justify-between gap-2',
+        children: [
+          jsxs('div', {
+            style: { display: 'flex', minWidth: 0, flexDirection: 'column', gap: '0.2rem' },
+            children: [
+              jsx('h3', {
+                style: {
+                  margin: 0,
+                  fontFamily: CB_SERIF,
+                  fontSize: CB_TYPE.lead,
+                  fontWeight: 600,
+                  lineHeight: 1.3,
+                  color: 'var(--cb-ink)',
+                  overflowWrap: 'anywhere'
+                },
+                children: row.title || 'Untitled pack'
+              }),
+              jsxs('div', {
+                className: 'flex flex-wrap items-center gap-2',
+                style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+                children: [
+                  jsx(sdk.Badge, {
+                    variant: 'muted',
+                    size: 'xs',
+                    children: sourceLabel(row.provenance && row.provenance.source)
+                  }),
+                  jsx('span', {
+                    children: empty ? 'No sections yet' : `${total} objective${total === 1 ? '' : 's'}`
+                  })
+                ]
+              })
+            ]
+          }),
+          onPreview
+            ? jsx(sdk.Button, {
+                'aria-label': `Preview ${row.title || 'pack'}`,
+                onClick: () => onPreview(row),
+                size: 'sm',
+                variant: selected ? 'secondary' : 'text',
+                children: 'Preview'
+              })
+            : null
+        ]
+      }),
+      empty
+        ? jsx('p', {
+            'data-cb-pack-empty-note': '',
+            style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: 'This pack has no sections yet. Preview it to see the manifest; there is nothing to open.'
+          })
+        : jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.2rem' },
+            children: [
+              jsx('p', {
+                'data-cb-pack-goal': '',
+                style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                children: cbCourseGoalLine(row)
+              }),
+              jsx(CoursePath, { row })
+            ]
+          }),
+      group && group.label ? jsx(ShelfDisclosure, { group, onOpen: onOpenMember }) : null
+    ]
+  })
+}
+
 /** A real-state progress strip: one segment per objective, painted from its own state. */
 function DeskProgress({ objectives }) {
   const list = Array.isArray(objectives) ? objectives.slice(0, 12) : []
@@ -4160,25 +4255,13 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
         groups.map((group) => {
           const row = group.primary
           return jsx(
-            CourseCover,
+            PackShelfRow,
             {
               row,
               group,
+              selected: row.enrollment_id === selected,
               onOpenMember: (member) => setSelected(member.enrollment_id),
-              detail: jsxs('span', {
-                className: 'flex flex-wrap items-center gap-2',
-                children: [
-                  jsx(sdk.Badge, { variant: 'muted', size: 'xs', children: sourceLabel(row.provenance && row.provenance.source) }),
-                  jsx('span', { children: `${Number((row.evidence_summary || {}).total_objectives || 0)} objectives` })
-                ]
-              }),
-              action: jsx(sdk.Button, {
-                'aria-label': `Preview ${row.title}`,
-                onClick: () => setSelected(row.enrollment_id),
-                size: 'sm',
-                variant: row.enrollment_id === selected ? 'secondary' : 'text',
-                children: 'Preview'
-              })
+              onPreview: (member) => setSelected(member.enrollment_id)
             },
             group.key
           )
@@ -18665,6 +18748,7 @@ export {
   cbShelfGroupKey,
   cbStableHash,
   CourseCover,
+  PackShelfRow,
   CoursePath,
   groupShelfRows,
   ShelfDisclosure,
