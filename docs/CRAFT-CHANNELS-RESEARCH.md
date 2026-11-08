@@ -28,8 +28,8 @@ channels a learning product uses, with a job and a budget for each. Visual judge
 **Calm** (Linear): does anything compete for attention it hasn't earned? [3] **Alive** (Duolingo,
 Things): is there one physical cause-and-effect that answers the learner? [4][5] **Honest**
 (Coursebook): is every claim traceable to a recorded fact? Only calm gives formatted text — the
-current state; only alive gives slop; only honest gives an audit report. `QUALITY-BAR.md` permits
-"one authored functional beat" but never defines it. That is the gap.
+current state; only alive gives slop; only honest gives an audit report. `EXPERIENCE-QUALITY-BAR.md`
+permits "one authored functional beat" but never defines it. That is the gap.
 
 ## 3. What transfers
 

@@ -200,6 +200,13 @@ disjoint and can run in parallel.
 | H-156 `t_1589e6f8` | Parent and child defaults | vellum | P2 | H-147 | Parent Studio stays separate; child defaults do not use loss pressure. |
 | H-157 `t_821f0924` | Course Detail and Field Quest composition | vellum | P2 | H-148 | Counts as caption, one-line missions, four primary tabs. |
 
+**Queue note:** the UI cards above are dependency-linked so only one writer touches
+`desktop/plugin.js` at a time. H-145 → H-146 → H-148 → H-149, with H-150/H-151/H-153 after H-145
+and H-147 after H-146; H-152 after H-148/H-149. H-154 and H-155 are disjoint and may run in
+parallel. Do not unlink a UI card to "go faster" without a merge order. The dispatcher briefly
+started the dependent cards before the links existed; they were reclaimed and returned to todo,
+not completed.
+
 **Already covered; do not duplicate:**
 
 - H-144: Library pack rows, no seal/monogram/cover.
