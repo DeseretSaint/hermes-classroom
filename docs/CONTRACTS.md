@@ -1,6 +1,9 @@
 # Coursebook contracts — authoritative files and owners
 
-Status: **frozen at v16** (H-120 bounded conversation practice: `cb.rpc` v16 appends the four
+Status: **frozen at v17** (H-106 source provenance: `cb.rpc` v17 additively gives the source item of
+`lesson.page` and `parent.blueprint.read` six optional fields — `excerpt`, `excerpt_state`,
+`content_hash`, `modality`, `licence`, `support_assessment` — and moves no method, required key or
+other payload; v16 = H-120 bounded conversation practice, which appends the four
 `practice.*` commands and one optional `check_stimulus.practice` declaration, and `cb.db` v11 adds
 the two practice tables; v15 = H-139 job `activity` read model, a reference refresh over
 v14 and `cb.jobs` v5 additively adds `job.activity`; v14 = H-53 `observation.record`, additive over H-08 authored-course export at v13,
@@ -22,19 +25,19 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 |---|---|---|---|---|
 | `cb.vocabulary` | `contracts/vocabulary.v1.json` | 1 | Atlas | every other contract (shared enums, hashes, ids) |
 | `cb.errors` | `contracts/errors.v4.json` | 4 | Atlas | RPC envelope, job errors, HTTP mapping |
-| `cb.rpc` | `contracts/rpc.v16.json` | 16 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*`), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
+| `cb.rpc` | `contracts/rpc.v17.json` | 17 | Cinder (kernel + learning-loop + `parent.*` + `source.revalidate` + `pronunciation.*` + `syllabus.*` + `course.export*` + `observation.record` + `practice.*` + source provenance), Sable (transport), Lattice (`pack.*` + `lesson_document`) | Desktop half, Coursebook tools, `pre_llm_call` |
 | `cb.db` | `contracts/db.v11.json` | 11 | Cinder | migrations, every command, evidence views |
 | `cb.jobs` | `contracts/jobs.v5.json` | 5 | Cinder | job service, Activity view |
 | `cb.pack` | `contracts/pack-manifest.v1.json` (v2 also accepted: `pack-manifest.v2.json`) | 1 (v2 accepted) | Cinder (v2 media link, H-137) | import/export, bundled demo packs |
 | `cb.projection` | `contracts/projection.v1.json` | 1 | Atlas (contract), Lattice (importer) | pack import, Parent Studio generation, community upload review |
 | `cb.frequency_inventory` | `contracts/frequency-inventory.v1.json` | 1 | Atlas | plan author + validator, imported/pack-supplied frequency inventories (H-89; no third-party list is bundled — see `docs/FREQUENCY-INVENTORY.md`) |
 
-The v1 **to v15** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
-`rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json` and `rpc.v15.json`), the
+The v1 **to v16** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
+`rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json` and `rpc.v16.json`), the
 v1 **to v10** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
 `db.v8.json`, `db.v9.json` and `db.v10.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
-as immutable history: the superseded current files are `rpc.v15.json`, `db.v10.json`,
+as immutable history: the superseded current files are `rpc.v16.json`, `db.v10.json`,
 `errors.v3.json` and `jobs.v4.json`.
 
 `cb.pack` is the one contract with a version map: v1 (`pack-manifest.v1.json`) and v2
@@ -44,7 +47,7 @@ declared `narration`/`visual` file to the section that may play it, with a short
 not named there stays stored evidence only, exactly as every v1 pack behaves. No `cb.rpc` method,
 `cb.db` column or migration changes (H-137 implements `docs/PACK-MEDIA-PLAYBACK.md` §4, §8).
 
-The inventory current stays **v1** because every frozen `cb.rpc` file (v4…v15) and
+The inventory current stays **v1** because every frozen `cb.rpc` file (v4…v16) and
 `cb.projection` v1 resolve `$ref` targets to `pack-manifest/v1`; naming v2 current would either
 break those references or require editing a frozen wire contract. v2 is therefore an accepted
 *document* version, selected per pack by `contract_version`, not a change to the cross-document
@@ -1604,6 +1607,7 @@ Consequences for clients (H-117 and the retry surface):
 | v13 (H-18) | 2026-11-07 | Additive inside v13: `$defs/lesson_document` gains optional `lang` (BCP-47-ish text tag, ≤ 35) and `direction` (`ltr`/`rtl`), both absent on documents projected from pages that never recorded a locale, so old documents keep their content hash and id (pinned by `test_legacy_document_hash_unchanged_by_locale`). `direction` is derived from the text's script, never from a claim about the learner, and it changes no block, check, media or evidence semantics. H-18b was authored against v11 and landed there on its own branch; in the union it lands inside v13 rather than opening a version, because v11 is the frozen H-21 unit contract, v12 is H-26a's syllabus intake and v13 is H-08b's authored export, and the change adds two optional properties to one existing definition — the same shape as the v10 (H-17) amendment. `contracts/rpc.v11.json` is byte-identical to its shipped snapshot. The generation-side `check.scaffolds` contract moves from the fixed Japanese triple to the bounded open list `[{kind, script?, gloss?, direction?}]` with the legacy object still read; that schema is not on the cb.rpc wire. No method, request/response field, table, column, migration, error code or job kind changes. |
 | v14 | 2026-11-07 | H-53 additive amendment (contract and migration only). One method appended, `observation.record`, so the layer-1 observation `domain.record_observation` has written since CB-002 is reachable from a client — `docs/ASSESSMENT-BREADTH.md` §11 **B-2**: `self_reported`/`parent_reported` are frozen classes that no learner could produce. Request: `enrollment_id`, `objective_id`, `evidence_class` (the full six-label vocabulary; the **kernel** refuses `cold`/`hinted`/`answer_shown`/`override` with `POLICY_VIOLATION`) and optional `note` (≤ 1000 characters). Response: `evidence_id`, `evidence_class`, `revision`. Envelope: `idempotency_key`, no `expected_revision`. cb.db **v9** adds nullable `evidence.note` via migration 0009, additive with no backfill and no row rewrite. 64 RPC methods; no new error code, job kind, vocabulary value, check kind, answer kind, upload path or learner-media retention. `rpc.v13.json` and `db.v8.json` are pinned by sha256. The handler, the API registration and the UI are follow-up cards; this card ships the contract, the migration and the tests that pin them. |
 | v16 | 2026-11-07 | H-120 additive amendment (contract, migration and the grading lane's router). Four methods appended to the 64 v15 methods — `practice.start`, `practice.state`, `practice.end`, `practice.cancel` — plus one optional `check_stimulus.practice` declaration, so a bounded conversation practice is a `quiz` check the learner actually talks through. 68 RPC methods. Grading is provider-free: `practice.end` hands the stored learner turns to `conversation.grade_transcript` through the same `_commit_attempt` path `attempt.submit` uses, and `attempt.submit` on a practice check is refused `POLICY_VIOLATION` / `practice_requires_practice_end`, so one chat line can never produce a verdict. cb.db **v11** adds `practice_sessions` and `practice_turns` via migration 0011, additive with no backfill; practice turns are learner-owned and never reach `pack.export` or `course.export`. No new error code, job kind, vocabulary value, answer kind, evidence class or evidence target; the new refusals ride `error.details.reason`. Authored as a v15 on `wt/h120-practice`, but v15 was already frozen by H-139 when that branch reached master, so the amendment took the next free number instead of editing a frozen document. `rpc.v15.json` and `db.v10.json` are pinned by sha256. |
+| v17 | 2026-11-08 | H-106 additive amendment (contract only). The source item in `lesson.page` and `parent.blueprint.read` responses gains six optional properties: `excerpt` (≤ 20000 characters or null), `excerpt_state` (`recorded`/`missing`/`unreadable`), `content_hash` (sha256 or null), `modality` (≤ 60 or null), `licence` (≤ 200 or null) and `support_assessment` (`supported`/`partial`/`unverified`/`contradictory` or null). 68 RPC methods — no method added. Both `required` lists and `additionalProperties: false` are untouched, so every v16 payload still validates. `excerpt_state` is the typed absence: an excerpt that was never recorded or could not be read is reported as `missing`/`unreadable` with `excerpt: null`, never a fabricated excerpt. No `cb.db`, `cb.errors`, `cb.jobs` or vocabulary change. Authored as a v15 on `wt/h106-provenance`, but v15 and v16 were already frozen, so the amendment takes the next free number. `rpc.v15.json` and `rpc.v16.json` are pinned by sha256. |
 | no bump (t_d43c0dc1) | 2026-11-07 | H-130 decision: a subsystem-specific reason does not become a catalogue code when `category`/`retryable`/HTTP already fit one. `BRIEF_UNREADABLE` lands as `error.details.reason = "brief_unreadable"` under `VALIDATION_FAILED` (non-retryable, 422), and `checkpoint.reason` uses `checkpoint_serializer_failed`. `cb.errors` stays v4; no enum, catalog, `$defs` or `CONTRACT_FILES` change. The convention and the reason labels a client may key on are frozen in the section above. |
 
 ## Deliberate omissions (do not "helpfully" add these)
@@ -1953,3 +1957,54 @@ v5. No v10 table, column, index or unique key is dropped, retyped or rewritten.
 **Regression guard.** `tests/test_contracts.py::V16AmendmentTest` pins the two added tables, every
 v10 column and index, the migration's forward-only statements, and the byte-identity of
 `db.v10.json`. `tests/test_conversation_practice.py` runs the migration against a real database.
+
+## v17 delta (H-106) — six optional source-provenance fields on the two source reads
+
+A source item already carried `source_id`, `title`, `url`, `publisher`, `source_type`,
+`support_status`, `published_at` and `fetched_at`. That was enough to name a source and not enough
+to show what was actually read from it: the provenance pane has to display the exact excerpt behind
+a claim, its hash, its medium and its licence, and it has to say honestly when there is no excerpt.
+v17 adds six **optional** properties to the source item inside exactly two responses —
+`lesson.page` and `parent.blueprint.read`. No method is appended or removed (68 before, 68 after),
+no required list changes, `additionalProperties: false` stays, and no request payload moves.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `excerpt` | string ≤ 20000 or null | The exact passage the plan or lesson relies on, as recorded when the source was read. Absent or null when no excerpt was recorded. |
+| `excerpt_state` | `recorded` / `missing` / `unreadable` | The typed absence: whether an excerpt was stored, was never captured, or existed but could not be read. |
+| `content_hash` | sha256 or null | Hash of the excerpted bytes, so a later re-read can prove the text the verdict was built on has not changed. |
+| `modality` | string ≤ 60 or null | How the source is carried — `text`, `audio`, `video`, `image`, `dataset`, and the like. Free-form and bounded; the vocabulary is not closed by this contract. |
+| `licence` | string ≤ 200 or null | The licence or terms statement recorded for the source. Null means the licence was not recorded, never that the source is unlicensed. |
+| `support_assessment` | `supported` / `partial` / `unverified` / `contradictory` or null | The model's own assessment of how far this source supports the claim it is attached to. Null means no assessment was made. |
+
+**The typed absence rule.** `excerpt_state` is what a missing or unreadable excerpt reports. An
+excerpt that was never recorded is `missing`; one that existed but could not be read is
+`unreadable`; either is paired with `excerpt: null`. A client must never render an empty string, a
+placeholder sentence or a reconstructed passage as though it were the source's own words — the
+contract has no default that would let it, and **never a fabricated excerpt** is the rule the pane
+is tested against. `excerpt_state` itself is optional only so a v16 payload still validates; a
+producer that knows the state should always send it.
+
+**Additivity.** Every one of the six is optional, so any v16 payload validates unchanged against
+v17 and the only wire-visible bump is the version echo (17 in both response envelopes, the request
+envelope and `health.get`). `support_assessment` is distinct from `support_status`: the latter is
+the stored classification the kernel already gates on, the former is the model's own word about
+this source and this claim, and neither is derived from the other. No `cb.db` table or column, no
+`cb.errors` code, no `cb.jobs` kind, no vocabulary value and no answer/evidence enum moves.
+
+**Why v17 and not v16.** The pane was authored as a v15 contract edit on `wt/h106-provenance`. By
+the time it reached integration both v15 (H-139) and v16 (H-120) were frozen on master, so the
+amendment takes the next free number: `rpc.v15.json` and `rpc.v16.json` are byte-identical to their
+shipped bytes (pinned by sha256) and `x-supersedes` names `.../rpc/v16`. The H-106 branch's own
+`contracts/rpc.v15.json` hunk is dropped, not merged.
+
+**One writer.** The contract is Atlas's lane. `desktop/plugin.js`, `coursebook/domain.py` and
+`coursebook/sources.py` fill these fields on the H-106 branch; a branch that edits a frozen
+contract file must not merge.
+
+**Regression guard.** `tests/test_contracts.py::V17AmendmentTest` fails if a v16 method or payload
+moves, if either source item gains anything but the six fields, if a field's bounds or enum drift,
+if any `required` list changes, if the echo drifts from 17, or if `rpc.v15.json` / `rpc.v16.json`
+stop being byte-identical history. `V15AmendmentTest`, `V16AmendmentTest` and the carried-over
+v1-v14 tests compare through `_without_v17_source_fields`, so the additive fields are removed
+before the older snapshot comparison rather than the older assertion being weakened.
