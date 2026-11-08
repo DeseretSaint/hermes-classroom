@@ -240,7 +240,7 @@ class CoursePathTruthTest(PathHarness):
         self.assertEqual([segment["state"] for segment in result["segments"]], ["quiet"] * 4)
         self.assertNotIn("current", [segment["state"] for segment in result["segments"]])
         self.assertNotIn("done", [segment["state"] for segment in result["segments"]])
-        self.assertEqual(result["shelfCaption"], "No evidence yet")
+        self.assertEqual(result["shelfCaption"], "0 of 4 with evidence")
 
     def test_one_evidence_paints_one_segment_not_half_the_bar(self) -> None:
         row = {"evidence_summary": {"independent": 1, "review_due": 0, "total_objectives": 4}}
@@ -333,8 +333,8 @@ class CheckpointPathRenderTest(PathHarness):
         html = rendered["html"]
         self.assertEqual(rendered["desk"]["settled"], 0)
         self.assertIn("Overridden", html)
-        self.assertIn("No evidence yet", html)
-        self.assertEqual(html.count("with evidence"), 0, html)
+        # H-155 owns the caption rule: a zero count is said as a count, never as a slogan.
+        self.assertIn("0 of 2 sections with evidence", html)
 
     def test_no_lock_star_percentage_xp_streak_or_cumulative_checkpoint(self) -> None:
         html = self.render()["html"]

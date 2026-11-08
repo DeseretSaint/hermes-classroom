@@ -376,7 +376,7 @@ class CourseShelfTest(unittest.TestCase):
         zero = self.run_harness(
             {"mode": "pure", "rows": [shelf_row(evidence_summary={"independent": 0, "review_due": 0, "total_objectives": 4})]}
         )["rows"][0]
-        self.assertEqual(zero["caption"], "No evidence yet")
+        self.assertEqual(zero["caption"], "0 of 4 with evidence")
 
     def test_goal_line_is_real_or_says_it_is_missing(self) -> None:
         with_goal = self.run_harness({"mode": "pure", "rows": [shelf_row(goal="Cut a sandwich into eighths.")]})["rows"][0]

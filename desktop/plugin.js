@@ -3509,7 +3509,8 @@ function cbPathEvidenceCaption(settled, total, due) {
   if (all === 0) return 'No sections yet'
   const done = Math.max(0, Math.min(all, Number(settled) || 0))
   const waiting = Math.max(0, Number(due) || 0)
-  if (done === 0) return waiting > 0 ? `No evidence yet · ${waiting} due` : 'No evidence yet'
+  // H-155: the caption is a count or it says there is no count. "No evidence yet" hid a real
+  // "0 of 4 with evidence" behind a slogan; the number is the honest statement.
   const noun = all === 1 ? 'section' : 'sections'
   return `${done} of ${all} ${noun} with evidence${waiting > 0 ? ` · ${waiting} due` : ''}`
 }
@@ -11281,6 +11282,9 @@ function groupShelfRows(rows) {
 /** Small enough to draw one segment per objective without turning the row into a texture. */
 const CB_COURSE_PATH_MAX = 12
 
+/** The placeholder bar: how many unpainted parts stand in when there is no readable count. */
+const CB_COURSE_PATH_PARTS = 4
+
 /**
  * The evidence record on a cover. Segments are objectives, not quarters: `done` only where the
  * count of independent evidence actually reaches, `due` only for the objectives due for review,
@@ -11289,10 +11293,18 @@ const CB_COURSE_PATH_MAX = 12
  */
 function cbCoursePathSegments(row) {
   const summary = (row && row.evidence_summary) || {}
-  const total = Math.max(0, Number(summary.total_objectives || 0))
-  const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
-  const due = Math.max(0, Math.min(total - independent, Number(summary.review_due || 0)))
+  const rawTotal = Number(summary.total_objectives)
+  // A count this projection cannot read (a hostile or truncated summary) is not zero evidence:
+  // it is no answer. Every part is `empty` so nothing is painted as reached (H-155 ENG-D1).
+  if (!Number.isFinite(rawTotal)) {
+    const empty = []
+    for (let index = 0; index < CB_COURSE_PATH_PARTS; index += 1) empty.push({ index, state: 'empty' })
+    return empty
+  }
+  const total = Math.max(0, Math.floor(rawTotal))
   if (total === 0 || total > CB_COURSE_PATH_MAX) return []
+  const independent = Math.max(0, Math.min(total, Number(summary.independent) || 0))
+  const due = Math.max(0, Math.min(total - independent, Number(summary.review_due) || 0))
   const segments = []
   for (let index = 0; index < total; index += 1) {
     let state = 'quiet'
@@ -11307,10 +11319,11 @@ function cbCoursePathSegments(row) {
 function cbCoursePathCaption(row) {
   const summary = (row && row.evidence_summary) || {}
   const total = Math.max(0, Number(summary.total_objectives || 0))
-  if (total === 0) return 'No sections yet'
+  // H-155: the caption is a count or it says there is no count. "No evidence yet" replaced a real
+  // "0 of 4 with evidence" with a slogan, and a learner cannot tell the two apart from it.
+  if (total === 0 || !Number.isFinite(total)) return 'No sections yet'
   const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
   const due = Math.max(0, Number(summary.review_due || 0))
-  if (independent === 0) return due > 0 ? `No evidence yet · ${due} due` : 'No evidence yet'
   const parts = [`${independent} of ${total} with evidence`]
   if (due > 0) parts.push(`${due} due`)
   return parts.join(' · ')
