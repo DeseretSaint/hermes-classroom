@@ -4213,16 +4213,62 @@ function planTimingCopy(scope) {
 }
 
 /**
- * Topic-diverse examples (UX-02). The default form is a general harness, not a Japanese demo: a
- * bike repair, a conversation and a statistics class, so a new learner sees themselves in it.
+ * A neutral goal gallery (H-100). The default form is a general harness, not a single-topic demo:
+ * one language, one practical skill, one academic concept and one everyday skill, so a new learner
+ * sees four different shapes of course in one glance.
+ *
+ * These are examples, never defaults. They appear as buttons and a greyed placeholder only; nothing
+ * reaches the goal or title field until the learner presses one or types their own words.
  */
-const GOAL_PLACEHOLDER = 'Replace the tube on my road bike without pinching it.'
-const TITLE_PLACEHOLDER = 'Bike tube replacement'
 const GOAL_EXAMPLES = [
-  'Replace the tube on my road bike',
-  'Hold a six-minute conversation in Spanish',
-  'Understand the first month of a statistics class'
+  { domain: 'Language', text: 'Hold a six-minute conversation in Spanish' },
+  { domain: 'Skill', text: 'Wire a lamp safely' },
+  { domain: 'Concept', text: 'Understand the first month of a statistics class' },
+  { domain: 'Everyday', text: 'Read a nutrition label for added sugar' }
 ]
+const GOAL_PLACEHOLDER = 'e.g. Hold a six-minute conversation in Spanish'
+const TITLE_PLACEHOLDER = 'e.g. Six-minute Spanish conversation'
+
+/**
+ * The examples, labelled as examples and inert until chosen. Pressing one fills the goal field the
+ * learner can still edit; it never submits the form or starts a job.
+ */
+function GoalGallery({ examples, onChoose }) {
+  const rows = examples || GOAL_EXAMPLES
+  return jsxs('div', {
+    'data-cb-goal-examples': '',
+    className: 'flex flex-col gap-1.5',
+    children: [
+      jsx('div', {
+        className: 'text-xs text-(--ui-text-secondary)',
+        id: 'cb-goal-examples-label',
+        children: 'Examples — press one to start from it, or write your own:'
+      }),
+      jsx('div', {
+        'aria-labelledby': 'cb-goal-examples-label',
+        className: 'flex flex-wrap gap-1.5',
+        role: 'group',
+        children: rows.map((example) =>
+          jsxs(
+            sdk.Button,
+            {
+              'aria-label': `${example.text} — ${example.domain} example`,
+              className: 'max-w-full text-left',
+              onClick: () => onChoose && onChoose(example.text),
+              size: 'sm',
+              variant: 'outline',
+              children: [
+                jsx('span', { className: 'whitespace-normal text-(--ui-text-secondary)', children: `${example.domain}: ` }),
+                jsx('span', { className: 'whitespace-normal', children: example.text })
+              ]
+            },
+            example.text
+          )
+        )
+      })
+    ]
+  })
+}
 
 /** The create result speaks before the receipt does (UX-03). */
 const CREATE_RESULT_COPY = {
@@ -4628,9 +4674,10 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                     id: 'cb-goal-help',
                     children:
                       goal.trim().length === 0
-                        ? `Be specific about the situation you want to handle. Examples: ${GOAL_EXAMPLES.join(' · ')}.`
-                        : `${goal.trim().length} characters. Examples if you want a different shape: ${GOAL_EXAMPLES.join(' · ')}.`
-                  })
+                        ? 'Say it as the situation you want to handle. The examples below are starting points, not a course yet.'
+                        : `${goal.trim().length} characters. Keep editing, or start from a different example.`
+                  }),
+                  jsx(GoalGallery, { onChoose: setGoal })
                 ]
               }),
               jsxs('div', {
@@ -4701,7 +4748,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                             id: 'cb-subject',
                             maxLength: 60,
                             onChange: (event) => setSubjectDomain(event.target.value),
-                            placeholder: 'e.g. bike repair, Spanish, statistics',
+                            placeholder: 'e.g. Spanish, statistics, electrical safety',
                             value: subjectDomain
                           })
                         ]
@@ -17609,6 +17656,7 @@ export {
   FirstRun,
   GOAL_EXAMPLES,
   GOAL_PLACEHOLDER,
+  GoalGallery,
   LIBRARY_COPY,
   TITLE_PLACEHOLDER,
   EvidenceClassText,

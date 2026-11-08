@@ -75,7 +75,7 @@ const copyBlocks = {
   library: LIBRARY_COPY,
   scopes: COURSE_SCOPES,
   recipes: RECIPE_COPY,
-  goalExamples: GOAL_EXAMPLES,
+  goalExamples: GOAL_EXAMPLES.map((example) => `${example.domain}: ${example.text}`),
   goalPlaceholder: GOAL_PLACEHOLDER,
   titlePlaceholder: TITLE_PLACEHOLDER,
   evidenceTargets: EVIDENCE_TARGET_OPTIONS.map((option) => option.label),
@@ -297,13 +297,17 @@ class LearnerVocabularyTest(unittest.TestCase):
         self.assertIn("not a quiz", one_off["description"].lower())
 
     def test_default_examples_are_topic_diverse(self) -> None:
+        # H-100 replaced the bike-repair starter with a neutral gallery: a language, a practical
+        # skill, an academic concept and an everyday skill. No single domain owns the form.
         examples = " ".join(self.out["copy"]["goalExamples"]).lower()
-        for topic in ("bike", "spanish", "statistics"):
+        for topic in ("spanish", "lamp", "statistics", "nutrition"):
             self.assertIn(topic, examples)
-        self.assertIn("bike", self.out["copy"]["goalPlaceholder"].lower())
+        self.assertNotIn("bike", examples)
         self.assertNotIn("register", examples)
         self.assertNotIn("friend", examples)
         self.assertNotIn("manager", examples)
+        self.assertNotIn("bike", self.out["copy"]["goalPlaceholder"].lower())
+        self.assertNotIn("bike", self.out["copy"]["titlePlaceholder"].lower())
         self.assertNotIn("japanese", self.out["copy"]["titlePlaceholder"].lower())
 
     def test_parent_language_uses_plain_words(self) -> None:
