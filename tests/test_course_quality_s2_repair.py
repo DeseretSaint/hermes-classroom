@@ -107,6 +107,34 @@ class RepairedFixtureGateTest(unittest.TestCase):
         # The keyed phrase is a permitted stimulus choice, never an announced narrative answer.
         self.assertIn(check["reference_answer"], check["stimulus"]["choices"])
 
+    def _gate(self, lesson: dict) -> None:
+        section = self.plan["sections"][0]
+        page = gen._build_learner_page(lesson, section, [source_record()], locale="ja-JP")
+        document = lesson_document.document_from_page(page, check_id="chk_s2_fixture")
+        gen.assert_no_answer_leak({**page, "document": document}, lesson)
+
+    def test_a_model_segment_that_presents_the_keyed_form_is_admitted(self) -> None:
+        """H-173d: the repair the D5 finding asks for must be legal.
+
+        The model segment may print the item the check keys, so the greeting gets script, reading
+        and function in one place. See `docs/DECISION-TAUGHT-TARGET.md`.
+        """
+        lesson = json.loads(json.dumps(self.lesson))
+        lesson["segments"][0]["body"] = (
+            "こんにちは (konnichiwa) is the standard daytime greeting you give when you enter a "
+            "shop. " + str(lesson["segments"][0]["body"])
+        )
+        self._gate(lesson)  # no violation
+
+    def test_the_same_form_outside_the_model_segment_is_still_refused(self) -> None:
+        lesson = json.loads(json.dumps(self.lesson))
+        lesson["segments"][1]["body"] = (
+            "こんにちは is the phrase to choose at the check. "
+            + str(lesson["segments"][1]["body"])
+        )
+        with self.assertRaises(gen._RuleViolation):
+            self._gate(lesson)
+
 
 class RepairedReviewRecordTest(unittest.TestCase):
     def test_record_passes_the_packet_checker(self) -> None:

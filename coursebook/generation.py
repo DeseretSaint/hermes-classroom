@@ -4372,20 +4372,56 @@ def _normalize_answer(text: str) -> str:
     return " ".join(str(text).casefold().split())
 
 
+def _segment_kind(segment: Mapping[str, Any]) -> str:
+    return str(segment.get("kind") or "").strip().casefold()
+
+
+#: The one authored surface where a lesson is *supposed* to introduce the form it later checks.
+#: A model segment (and the audio narration that reads it aloud) presents the target; naming the
+#: function in the explain step is not presentation, and the answer-leak rule exists to stop the
+#: second thing, not the first. See docs/DECISION-TAUGHT-TARGET.md.
+_PRESENTING_SEGMENT_KIND = "model"
+_MEDIA_ROLE_NARRATION = "narration"
+
+
+def _is_presenting_media(item: Mapping[str, Any]) -> bool:
+    return str(item.get("role") or "").strip().casefold() == _MEDIA_ROLE_NARRATION
+
+
 def _narrative_text(page: dict[str, Any]) -> str:
-    """The parts of a learner page where an answer must never be spelled out.
+    """The parts of a learner page where an answer must not be *announced*.
 
     Stimulus prompts and selection choices are excluded on purpose: in a selection check the
     correct choice necessarily appears in the page. The invariant is that the *key* is not
     announced — not that a correct string cannot exist among the options.
+
+    A ``model`` segment is excluded for the same reason, one step further back: it is the
+    surface that presents the target form, function and reading together, and a lesson that
+    checks a form it never shows is unanswerable (H-173d S2 D5). Every other segment kind, the
+    worked example, the explanation, the recap, the parent notes and non-narration media stay in
+    the scan, so "the answer you should pick is X" in an explain step or a recap is still
+    refused.
     """
     parts: list[str] = []
+    presented_deeps: set[str] = set()
     for segment in page.get("segments") or []:
-        parts.append(str(segment.get("heading") or ""))
-        parts.append(str(segment.get("body") or ""))
-        # A short sits on the same learner-facing surface as the body it was cut from: an answer
-        # smuggled into a guided step announces the key just as surely as the segment body would.
-        parts.append(str(segment.get("short") or ""))
+        if not isinstance(segment, Mapping):
+            continue
+        fields = (
+            str(segment.get("heading") or ""),
+            str(segment.get("body") or ""),
+            # A short sits on the same learner-facing surface as the body it was cut from: an
+            # answer smuggled into a guided step announces the key just as surely as the body
+            # would.
+            str(segment.get("short") or ""),
+        )
+        if _segment_kind(segment) == _PRESENTING_SEGMENT_KIND:
+            # Presenting surface: teaching the form is the job. Not scanned for the key.
+            presented = _normalize_answer(fields[1])
+            if presented:
+                presented_deeps.add(presented)
+            continue
+        parts.extend(fields)
     example = page.get("worked_example") or {}
     parts.extend([str(example.get("prompt") or ""), str(example.get("answer") or "")])
     parts.extend(str(step) for step in example.get("steps") or [])
@@ -4394,19 +4430,38 @@ def _narrative_text(page: dict[str, Any]) -> str:
     parts.append(str(page.get("learner_explanation_short") or ""))
     parts.append(str(page.get("parent_notes") or ""))
     for item in page.get("media") or []:
+        if isinstance(item, Mapping) and _is_presenting_media(item):
+            continue
         parts.append(str(item.get("purpose") or ""))
         parts.append(str(item.get("text_equivalent") or ""))
     # The v8 block document is another rendering of the same page. If a projection ever put an
     # answer into a block headline or media label, the learner-facing surface would announce it
-    # just as surely as a segment body would.
+    # just as surely as a segment body would. The model segment's block keeps the same exemption
+    # the segment has: the projection copies the model body into an ``example`` block verbatim,
+    # so the block is identified by its deep text rather than by role (the worked example is also
+    # an ``example`` block and stays in the scan).
     document = page.get("document")
     if isinstance(document, dict):
-        parts.append(lesson_document.narrative_text(document))
+
+        def _skip_presented_block(block: Mapping[str, Any]) -> bool:
+            return _normalize_answer(block.get("deep") or "") in presented_deeps
+
+        parts.append(
+            lesson_document.narrative_text(
+                document, skip_block=_skip_presented_block, skip_media=_is_presenting_media
+            )
+        )
     return _normalize_answer("\n".join(parts))
 
 
 def assert_no_answer_leak(page: dict[str, Any], lesson: dict[str, Any]) -> None:
-    """A reference answer must not be announced anywhere in the learner-facing narrative."""
+    """A reference answer must not be *announced* on the non-presenting learner surfaces.
+
+    The rule is not "the target string may never appear": a lesson has to be able to teach the
+    item it checks. The model segment (and the narration that reads it) is presentation; every
+    other learner surface is answer-adjacent and is scanned. See
+    ``docs/DECISION-TAUGHT-TARGET.md``.
+    """
     narrative = _narrative_text(page)
     check = lesson.get("check") or {}
     secrets = [str(check.get("reference_answer") or "")] + [str(item) for item in check.get("accepted_answers") or []]

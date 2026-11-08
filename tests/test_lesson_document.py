@@ -396,6 +396,101 @@ class NoAnswerLeakTest(unittest.TestCase):
         self.assertIn("reference answer", str(caught.exception))
 
 
+class TaughtTargetLeakRuleTest(unittest.TestCase):
+    """H-173d: a lesson may present the item it checks, and only on the model surface.
+
+    `docs/DECISION-TAUGHT-TARGET.md` rules that the answer-leak gate forbids *announcing* the key,
+    not *teaching* it. These tests pin both halves: the model segment is exempt end to end
+    (page and projected document), and every other surface still refuses the keyed string.
+    """
+
+    ANSWER = "こんにちは"
+    MODEL_BODY = "こんにちは (konnichiwa) is the standard daytime greeting when you enter a shop."
+
+    def _lesson(self) -> dict:
+        return {
+            "check": {
+                "reference_answer": self.ANSWER,
+                "accepted_answers": [self.ANSWER],
+                "accepted_alternatives": [["konnichiwa"]],
+                "rubric": [{"criterion": "polite greeting", "description": "Chooses the phrase that opens the interaction"}],
+            }
+        }
+
+    def _page(self, *, presenting_kind: str = "model", presenting_text: str | None = None) -> dict:
+        page = {
+            "section_title": "Greeting and opening",
+            "segments": [
+                {
+                    "kind": presenting_kind,
+                    "heading": "Three phrases at the counter",
+                    "body": presenting_text if presenting_text is not None else self.MODEL_BODY,
+                    "short": "Onegaishimasu requests, arigatou gozaimasu thanks, sayounara says farewell.",
+                },
+                {
+                    "kind": "explain",
+                    "heading": "Why register and timing matter",
+                    "body": "The opening phrase is the standard daytime greeting: it is neither the request, nor the thanks, nor the farewell.",
+                    "short": "The greeting is not the request, thanks or farewell.",
+                },
+                {
+                    "kind": "guided",
+                    "heading": "Tell the greeting apart",
+                    "body": "At the check you will see three phrases. Set the thanks and the farewell aside.",
+                    "short": "Set aside the thanks and the farewell.",
+                },
+            ],
+            "worked_example": {
+                "prompt": "You walk into a café and the staff look up. Which phrase opens the interaction politely?",
+                "steps": ["Notice the moment: you are entering and greeting", "Set aside the thanks and the farewell"],
+                "answer": "the remaining phrase, the standard daytime greeting",
+                "short": "Entering is a greeting moment; choose the remaining phrase.",
+            },
+            "learner_explanation": "Three phrases are shown. Set aside the thanks and the farewell; the remaining phrase is the daytime greeting.",
+            "learner_explanation_short": "Set the thanks and farewell aside; pick the remaining daytime greeting.",
+            "media": [],
+        }
+        page["document"] = lesson_document.document_from_page(page, check_id=CHECK_ID)
+        return page
+
+    def test_the_model_segment_may_present_the_form_the_check_keys(self) -> None:
+        page = self._page()
+        generation.assert_no_answer_leak(page, self._lesson())  # no violation
+        # The exemption is load-bearing only if the projected document really carries the form.
+        self.assertIn(self.ANSWER, lesson_document.narrative_text(page["document"]))
+        # ...and the gate is not scanning it.
+        self.assertNotIn(self.ANSWER, generation._narrative_text(page))
+
+    def test_the_same_string_in_an_explain_segment_is_still_refused(self) -> None:
+        with self.assertRaises(generation._RuleViolation) as caught:
+            generation.assert_no_answer_leak(self._page(presenting_kind="explain"), self._lesson())
+        self.assertIn("reference answer", str(caught.exception))
+
+    def test_the_same_string_in_the_guided_practice_is_still_refused(self) -> None:
+        with self.assertRaises(generation._RuleViolation):
+            generation.assert_no_answer_leak(self._page(presenting_kind="guided"), self._lesson())
+
+    def test_the_worked_example_answer_may_not_be_the_keyed_form(self) -> None:
+        page = self._page()
+        page["worked_example"]["answer"] = self.ANSWER
+        with self.assertRaises(generation._RuleViolation):
+            generation.assert_no_answer_leak(page, self._lesson())
+
+    def test_narration_is_a_presenting_surface_and_an_illustration_is_not(self) -> None:
+        page = self._page()
+        page["media"] = [
+            {"kind": "audio", "role": "narration", "purpose": "Reads the model aloud.", "text_equivalent": self.MODEL_BODY},
+        ]
+        page["document"] = lesson_document.document_from_page(page, check_id=CHECK_ID)
+        generation.assert_no_answer_leak(page, self._lesson())
+        page["media"] = [
+            {"kind": "visual", "role": "illustration", "purpose": self.ANSWER, "text_equivalent": self.ANSWER},
+        ]
+        page["document"] = lesson_document.document_from_page(page, check_id=CHECK_ID)
+        with self.assertRaises(generation._RuleViolation):
+            generation.assert_no_answer_leak(page, self._lesson())
+
+
 class ContractSurfaceTest(unittest.TestCase):
     def test_the_wire_contract_is_current_and_keeps_the_older_files_on_disk(self) -> None:
         self.assertEqual(contracts.contract_version("cb.rpc"), contracts.WIRE_CONTRACT_VERSION)

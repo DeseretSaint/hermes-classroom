@@ -43,7 +43,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from . import localization, text_completeness
 
@@ -992,17 +992,32 @@ def document_from_blocks(
     )
 
 
-def narrative_text(document: Mapping[str, Any]) -> str:
-    """Every learner-facing string in the document, normalised for answer matching."""
+def narrative_text(
+    document: Mapping[str, Any],
+    *,
+    skip_block: Callable[[Mapping[str, Any]], bool] | None = None,
+    skip_media: Callable[[Mapping[str, Any]], bool] | None = None,
+) -> str:
+    """Every learner-facing string in the document, normalised for answer matching.
+
+    ``skip_block`` and ``skip_media`` let an answer-leak caller leave out the surfaces where a
+    lesson is *allowed* to present the item it teaches (``generation._narrative_text`` uses them
+    for the model block and narration). Defaults scan everything, so every other caller sees the
+    whole document.
+    """
     parts: list[str] = [str(document.get("section_title") or "")]
     for block in document.get("blocks") or []:
         if not isinstance(block, Mapping):
+            continue
+        if skip_block is not None and skip_block(block):
             continue
         parts.append(str(block.get("headline") or ""))
         parts.append(str(block.get("short") or ""))
         parts.append(str(block.get("deep") or ""))
         for item in block.get("media") or []:
             if isinstance(item, Mapping):
+                if skip_media is not None and skip_media(item):
+                    continue
                 parts.append(str(item.get("purpose") or ""))
                 parts.append(str(item.get("text_equivalent") or ""))
                 parts.append(str(item.get("label") or ""))
