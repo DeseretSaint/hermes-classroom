@@ -52,6 +52,7 @@ if (payload.kind === 'model') {
         onCreate: () => {},
         onPrimary: () => {},
         onOpenSection: () => {},
+        onRetryEstimate: () => {},
         onOpen: () => {},
         onShowAll: () => {},
         sourcesOpen: Boolean(payload.sourcesOpen),
@@ -67,6 +68,119 @@ if (payload.kind === 'model') {
   process.stdout.write(html)
 }
 """
+
+DOM_HARNESS = r"""
+import React, { act } from 'react'
+import { JSDOM } from 'jsdom'
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
+  url: 'http://127.0.0.1/',
+  pretendToBeVisual: true
+})
+globalThis.window = dom.window
+globalThis.document = dom.window.document
+globalThis.HTMLElement = dom.window.HTMLElement
+globalThis.Node = dom.window.Node
+globalThis.Event = dom.window.Event
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
+
+const fs = await import('node:fs')
+const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+
+const IMPLEMENTED = ['library.list', 'course.outline', 'parent.brief.get', 'pack.inspect', 'notebook.list']
+const calls = []
+const rpcMethods = []
+let queues = {}
+
+// One scripted answer per method. An array is consumed in order, repeating the last entry, so a
+// retry can be proven to issue a second read that paints a different result.
+const answer = (method) => {
+  const entry = (payload.responses || {})[method]
+  if (entry === undefined) throw new Error('unexpected rpc ' + method)
+  if (!Array.isArray(entry)) return entry
+  const index = queues[method] || 0
+  queues[method] = index + 1
+  return entry[Math.min(index, entry.length - 1)]
+}
+
+const fakeRest = async (path, options) => {
+  const base = String(path).split('?')[0]
+  const httpMethod = (options && options.method) || 'GET'
+  calls.push({ path: base, method: httpMethod })
+  if (base === '/runtime') return { wire_version: 10, implemented_methods: IMPLEMENTED }
+  if (base !== '/rpc') throw new Error('unexpected rest path ' + path)
+  const body = typeof options.body === 'string' ? JSON.parse(options.body) : options.body
+  rpcMethods.push(body.method)
+  const plan = answer(body.method)
+  if (plan && plan.__throw) throw new Error(plan.__throw)
+  if (plan && plan.__refuse) {
+    return { ok: false, contract_version: 10, operation_id: body.operation_id, error: plan.__refuse }
+  }
+  return { ok: true, contract_version: 10, operation_id: body.operation_id, result: plan.result || {} }
+}
+
+const mod = await import('./plugin.js')
+mod.default.register({
+  rest: fakeRest,
+  register: () => {},
+  onDispose: () => {},
+  setTimeout: (fn, ms) => setTimeout(fn, ms)
+})
+
+const { createRoot } = await import('react-dom/client')
+const root = createRoot(document.getElementById('root'))
+const props = {
+  implemented: new Set(IMPLEMENTED),
+  onOpen: () => {},
+  onShowAll: () => {},
+  onStartCreate: () => {},
+  onStartSyllabus: () => {},
+  profile: 'default',
+  onEmptyChange: () => {}
+}
+
+const flush = async (ms = 40) => {
+  await act(async () => { await new Promise((done) => setTimeout(done, ms)) })
+}
+
+const read = () => {
+  const node = document.querySelector('[data-cb-continue-minutes]')
+  const buttons = [...document.querySelectorAll('button')]
+  return {
+    html: document.getElementById('root').innerHTML,
+    minutes: node ? (node.textContent || '').trim() : null,
+    state: node ? node.getAttribute('data-cb-continue-minutes-state') : null,
+    title: node ? node.getAttribute('title') : null,
+    retryControls: buttons.filter(
+      (button) => button.getAttribute('aria-label') === 'Retry reading the session length'
+    ).length,
+    retryLabels: buttons.map((button) => (button.textContent || '').trim()).filter((text) => text === 'Retry'),
+    rpc: calls.filter((call) => call.path === '/rpc').length,
+    methods: rpcMethods.slice()
+  }
+}
+
+await act(async () => { root.render(React.createElement(mod.FieldDesk, props)) })
+await flush()
+
+const observed = { steps: [] }
+observed.steps.push({ step: 'initial', ...read() })
+
+if (payload.script === 'retry') {
+  const retry = [...document.querySelectorAll('button')].find(
+    (button) => button.getAttribute('aria-label') === 'Retry reading the session length'
+  )
+  if (!retry) throw new Error('no retry control rendered for the failed estimate read')
+  await act(async () => { retry.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })) })
+  await flush()
+  observed.steps.push({ step: 'after-retry', ...read() })
+}
+
+// A second read of the scripted queue proves the retry issues a new request.
+observed.rpcMethods = calls.filter((call) => call.path === '/rpc').map((call) => call.path)
+process.stdout.write(JSON.stringify({ observed, html: document.getElementById('root').innerHTML }))
+"""
+
 
 SDK_STUB = """
 import React from 'react'
@@ -87,7 +201,7 @@ export const useTheme = () => ({ renderedMode: 'light', resolvedMode: 'light' })
 
 const pass = (props) => {
   const out = { type: 'button', onClick: props.onClick, disabled: Boolean(props.disabled) }
-  for (const key of ['className', 'aria-expanded', 'aria-controls', 'aria-current', 'id', 'role', 'title']) {
+  for (const key of ['className', 'aria-expanded', 'aria-controls', 'aria-current', 'aria-label', 'id', 'role', 'title']) {
     if (props[key] !== undefined) out[key] = props[key]
   }
   return out
@@ -277,9 +391,10 @@ class FieldDeskRenderTest(unittest.TestCase):
         root = Path(cls.tmp.name)
         (root / "plugin.js").write_text(PLUGIN_JS.read_text(encoding="utf-8"), encoding="utf-8")
         (root / "harness.mjs").write_text(HARNESS, encoding="utf-8")
+        (root / "dom.mjs").write_text(DOM_HARNESS, encoding="utf-8")
         node_modules = root / "node_modules"
         node_modules.mkdir()
-        for name in ("react", "react-dom", "scheduler"):
+        for name in ("react", "react-dom", "scheduler", "jsdom"):
             source = modules / name
             if source.is_dir():
                 (node_modules / name).symlink_to(source, target_is_directory=True)
@@ -334,6 +449,41 @@ class FieldDeskRenderTest(unittest.TestCase):
         payload.update(overrides)
         return json.loads(self.run_harness(payload))
 
+    def run_dom(self, payload: dict) -> dict:
+        """Mount the real FieldDesk container against a scripted `ctx.rest`."""
+        case = self.root / "dom-case.json"
+        case.write_text(json.dumps(payload), encoding="utf-8")
+        env = dict(os.environ)
+        env["CB_TEST_WIDTH"] = str(payload.get("width", 1280))
+        result = subprocess.run(
+            ["node", str(self.root / "dom.mjs"), str(case)],
+            cwd=self.root,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-3000:])
+        return json.loads(result.stdout)
+
+    def desk_dom(self, responses: dict, *, script: str = "none", row: dict | None = None) -> dict:
+        return self.run_dom(
+            {
+                "script": script,
+                "library": library(row or library_row()),
+                "outline": OUTLINE,
+                "responses": {
+                    "library.list": {"result": library(row or library_row())},
+                    "course.outline": {"result": OUTLINE},
+                    "notebook.list": {"result": {"items": [], "next_cursor": None, "total": 0}},
+                    **responses,
+                },
+            }
+        )
+
+    def first_step(self, observed: dict) -> dict:
+        return observed["observed"]["steps"][0]
+
     # -- the Continue card ------------------------------------------------------------------
     def test_continue_names_the_section_the_next_action_and_the_position(self) -> None:
         html = self.render()
@@ -371,15 +521,129 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn("Session length not recorded", html)
         self.assertNotRegex(html, r"≈ \d+ min")
 
+    def test_a_failed_estimate_read_is_not_reported_as_not_recorded(self) -> None:
+        """A read failure is `error`, never the author's silence: 'could not be read' + one retry."""
+        html = self.render(
+            estimate={
+                "status": "error",
+                "minutes": None,
+                "source": None,
+                "error": {"code": "HOST_UNAVAILABLE", "message": "the backend did not answer"},
+            }
+        )
+        self.assertIn("Session length could not be read", html)
+        self.assertNotIn("not recorded", html)
+        self.assertIn('data-cb-continue-minutes-state="error"', html)
+        self.assertEqual(html.count('aria-label="Retry reading the session length"'), 1)
+
+    def test_a_successful_answer_without_an_estimate_still_says_not_recorded(self) -> None:
+        html = self.render(estimate={"status": "none", "minutes": None, "source": None, "error": None})
+        self.assertIn("Session length not recorded", html)
+        self.assertIn('data-cb-continue-minutes-state="none"', html)
+        self.assertNotIn("could not be read", html)
+        self.assertNotIn('aria-label="Retry reading the session length"', html)
+
     def test_estimate_label_never_derives_minutes(self) -> None:
         self.assertEqual(self.model(estimate={"status": "none"})["label"], "Session length not recorded")
         self.assertEqual(self.model(estimate={"status": "loading"})["label"], "Reading the estimate")
         self.assertEqual(self.model(estimate={"status": "ready", "minutes": 0})["label"], "Session length not recorded")
+        self.assertEqual(self.model(estimate={"status": "error"})["label"], "Session length could not be read")
         self.assertEqual(
             self.model(estimate={"status": "ready", "minutes": 15, "source": "pack_manifest"})["label"], "≈ 15 min"
         )
 
-    # -- the path ---------------------------------------------------------------------------
+    # -- the estimate read, mounted against a scripted ctx.rest ------------------------------
+    def test_a_thrown_parent_brief_read_renders_could_not_be_read_with_one_retry(self) -> None:
+        observed = self.desk_dom({"parent.brief.get": {"__throw": "the backend did not answer"}})
+        step = self.first_step(observed)
+        self.assertEqual(step["minutes"], "Session length could not be read")
+        self.assertEqual(step["state"], "error")
+        self.assertEqual(step["retryControls"], 1)
+        # The failure offers a next action, and it is a Retry, not a second path.
+        self.assertEqual(step["retryLabels"], ["Retry"])
+        self.assertNotIn("not recorded", step["html"])
+        self.assertIn("HOST_UNAVAILABLE", step["title"])
+        # The failed read really was attempted: the desk did not decide "none" without asking.
+        self.assertIn("parent.brief.get", step["methods"])
+
+    def test_a_thrown_pack_manifest_read_renders_the_same_failure_state(self) -> None:
+        row = library_row(provenance={"source": "pack", "pack_id": "pk_0123456789abcdef", "pack_version": 2})
+        observed = self.desk_dom({"pack.inspect": {"__throw": "pack manifest unreadable"}}, row=row)
+        step = self.first_step(observed)
+        self.assertEqual(step["minutes"], "Session length could not be read")
+        self.assertEqual(step["state"], "error")
+        self.assertEqual(step["retryControls"], 1)
+        self.assertNotIn("not recorded", step["html"])
+
+    def test_a_refused_estimate_read_is_a_failure_but_parent_brief_not_found_is_an_answer(self) -> None:
+        refused = self.first_step(
+            self.desk_dom(
+                {
+                    "parent.brief.get": {
+                        "__refuse": {
+                            "code": "INTERNAL_ERROR",
+                            "message": "the brief store failed",
+                            "category": "internal",
+                            "retryable": True,
+                        }
+                    }
+                }
+            )
+        )
+        self.assertEqual(refused["minutes"], "Session length could not be read")
+        self.assertEqual(refused["state"], "error")
+        self.assertIn("INTERNAL_ERROR", refused["title"])
+        # An authored course that never had a parent brief is a successful "no estimate", not a
+        # failure: NOT_FOUND keeps the original copy.
+        not_found = self.first_step(
+            self.desk_dom(
+                {
+                    "parent.brief.get": {
+                        "__refuse": {
+                            "code": "NOT_FOUND",
+                            "message": "this course has no parent brief",
+                            "category": "not_found",
+                            "retryable": False,
+                        }
+                    }
+                }
+            )
+        )
+        self.assertEqual(not_found["minutes"], "Session length not recorded")
+        self.assertEqual(not_found["state"], "none")
+        self.assertEqual(not_found["retryControls"], 0)
+
+    def test_retry_re_reads_the_estimate_and_paints_the_real_answer(self) -> None:
+        observed = self.desk_dom(
+            {
+                "parent.brief.get": [
+                    {"__throw": "the backend did not answer"},
+                    {"result": {"brief": {"duration_minutes": 25}}},
+                ]
+            },
+            script="retry",
+        )
+        steps = {step["step"]: step for step in observed["observed"]["steps"]}
+        self.assertEqual(steps["initial"]["state"], "error")
+        self.assertEqual(steps["after-retry"]["minutes"], "≈ 25 min")
+        self.assertEqual(steps["after-retry"]["state"], "ready")
+        self.assertEqual(steps["after-retry"]["retryControls"], 0)
+        # The retry issued a second read instead of repainting the same stale state.
+        self.assertGreater(steps["after-retry"]["rpc"], steps["initial"]["rpc"])
+        self.assertEqual(
+            steps["after-retry"]["methods"].count("parent.brief.get"),
+            steps["initial"]["methods"].count("parent.brief.get") + 1,
+        )
+
+    def test_a_successful_empty_answer_mounted_in_the_desk_still_says_not_recorded(self) -> None:
+        observed = self.desk_dom({"parent.brief.get": {"result": {"brief": {"duration_minutes": None}}}})
+        step = self.first_step(observed)
+        self.assertEqual(step["minutes"], "Session length not recorded")
+        self.assertEqual(step["state"], "none")
+        self.assertEqual(step["retryControls"], 0)
+        self.assertNotIn("could not be read", step["html"])
+
+
     def test_path_lists_every_objective_with_its_state_word(self) -> None:
         html = self.render()
         for title in ("Name the three things an engine needs", "Diagnose a no-start",
@@ -434,7 +698,7 @@ class FieldDeskRenderTest(unittest.TestCase):
 
     def test_empty_sources_say_the_backend_recorded_none(self) -> None:
         html = self.render(sourcesOpen=True, sourcesStatus="ready", sources=[])
-        self.assertIn("The backend recorded no sources for this section.", html)
+        self.assertIn("No sources are recorded for this section yet.", html)
 
     # -- course selection -------------------------------------------------------------------
     def test_model_continues_the_due_review_when_the_next_step_says_so(self) -> None:
