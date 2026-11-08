@@ -59,6 +59,7 @@ from . import artifacts
 from . import deadline as deadline_mod
 from . import lesson_document
 from . import localization
+from . import mastery_path
 from . import policy as capability_policy
 from . import practice
 from . import prompts
@@ -2912,6 +2913,7 @@ def _plan_instructions_v2(
             )
         )
     )
+    lines.extend(mastery_path.plan_policy_lines())
     angle, angle_reason = capability_policy.recipe_check_angle(recipe)
     if angle is not None:
         lines.append(
@@ -3819,6 +3821,21 @@ def _enforce_plan_rules_v2(
             reasons.append(
                 f"check for objective {item.get('objective_ref')} carries a removed v1 field; "
                 "count and independent_evidence are not part of a v2 check plan"
+            )
+
+    # Rule 5b — the check family is the node's capability. A plan whose check measures a
+    # different family than the objective declares is a topic with a bolt-on quiz, not a node
+    # that teaches what its exit performance claims (docs/MASTERY-PATH-POLICY.md §2).
+    by_ordinal = {int(objective.get("ordinal", 0)): objective for objective in objectives}
+    for item in check_plan:
+        objective = by_ordinal.get(int(item.get("objective_ref", 0)))
+        if objective is None:
+            continue
+        family = str(objective.get("evidence_target") or "")
+        if str(item.get("evidence_target") or "") != family:
+            reasons.append(
+                f"check for objective {item.get('objective_ref')} targets "
+                f"{item.get('evidence_target')!r} but that node's check family is {family!r}"
             )
 
     # Rule 6 — prerequisite edges point backwards, are unique, no self ref. The schema bounds

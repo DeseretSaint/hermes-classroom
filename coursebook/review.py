@@ -13,6 +13,12 @@ a deliberate constraint of ``cb.db`` v2, which has no review-schedule table: a s
 Intervals are a declared **heuristic**, not a validated forgetting curve (``AUDIT.md`` R9/R10):
 the ladder is a product default, shown to the learner, and never presented as an attainment
 prediction.
+
+Two rules are structural, not stylistic (``docs/MASTERY-PATH-POLICY.md`` §7): a failed review
+writes no layer-2 pass event, so the objective keeps its rung instead of resetting to the first
+one, and a pass advances exactly one rung via :func:`coursebook.mastery_path.review_step` instead
+of jumping to the end of the ladder. ``needs_review`` stays in this queue; it never resets a
+course and never locks the path.
 """
 
 from __future__ import annotations
@@ -22,17 +28,12 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from . import db
+from .mastery_path import DEFAULT_LADDER, LADDERS, review_step
 
-#: Days until the next cold retrieval, per evidence target. A heuristic default, not a law.
-LADDERS: dict[str, tuple[int, ...]] = {
-    "recall": (1, 3, 7, 16, 35),
-    "comprehension": (2, 5, 12, 28),
-    "production": (3, 7, 16, 35),
-    "discrimination": (3, 7, 16, 35),
-    "procedure": (3, 7, 16, 35),
-    "transfer": (7, 21, 45),
-}
-DEFAULT_LADDER: tuple[int, ...] = (2, 5, 12, 28)
+#: Days until the next cold retrieval, per evidence target. The table itself lives in
+#: :mod:`coursebook.mastery_path` so the generation policy and the scheduler cannot disagree.
+#: A declared heuristic, not a law (research §5).
+__all__ = ["LADDERS", "DEFAULT_LADDER", "queue", "item", "refresh_due", "apply_action"]
 
 ACTIONS: tuple[str, ...] = ("snooze", "stretch", "drop", "resume")
 
@@ -93,6 +94,7 @@ def _item(connection, objective, *, enrollment_id: str, now: datetime) -> dict[s
     dropped = False
     index = 0
     base = _parse(passes[-1]["created_at"])
+    ladder = _ladder(objective["evidence_target"])
     for event in events:
         if event["kind"] == "review_drop":
             dropped = True
@@ -101,13 +103,12 @@ def _item(connection, objective, *, enrollment_id: str, now: datetime) -> dict[s
         elif event["kind"] == "review_snooze":
             base = _parse(event["created_at"])
         elif event["kind"] == "review_stretch":
-            index += 1
+            index = review_step(index, passed=True, ladder=ladder)
         elif event["kind"] == "delayed_retrieval":
-            index += 1
+            index = review_step(index, passed=True, ladder=ladder)
     if dropped or base is None:
         return None
-    ladder = _ladder(objective["evidence_target"])
-    step = ladder[min(index, len(ladder) - 1)]
+    step = ladder[index]
     due = base + timedelta(days=step)
     return {
         "objective_id": objective["id"],
