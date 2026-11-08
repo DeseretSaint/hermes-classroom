@@ -95,6 +95,12 @@ document depends on it being restarted; rows 3 and 4 stay UNPROVEN and NOT MET u
 A branch commit is not a merge. `git merge-base --is-ancestor <commit> master; echo $?` answers
 whether any of the above is on the merged tree; at this base the answer is `1` for all but `498b1da`.
 
+Plan review reads the same distinction from the plan job's validation record rather than restating
+it: a `model_assessed` pass (including every pass under an empty `validator_model`) is shown as
+"Checked by the same model", and only a recorded `independent` pass is shown as "Checked by a
+second model" (`docs/GENERATION.md` §1, "What plan review shows"). A row above being on a branch
+is not a licence to render its claim as shipped.
+
 ## 4. CB-QA-10 reconciliation (audit finding D-06)
 
 `README.md`, `docs/PRIVACY_EGRESS.md`, `DEFECTS.md` and `docs/SUBMISSION.md` §7 carried a
