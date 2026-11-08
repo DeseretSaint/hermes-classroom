@@ -5497,14 +5497,13 @@ def _parse_validation_answer(
     the honest label is :class:`ModelOutputInvalid` → ``VALIDATION_FAILED``, non-retryable. A
     blind re-run spends the same call to get the same malformed answer.
 
-    The schema checked is the pass's own narrowed schema when the pass is claim-only (it has no
-    criteria and must not be judged against the wide schema); a criteria pass keeps the wide
-    ``VALIDATION_SCHEMA`` it has always been parsed against, because the host gate already
-    enforced the narrowed claim set before this module saw the answer.
+    The schema checked is the pass's own narrowed schema, always. H-192b splits the criteria set
+    across passes, so a criteria pass now owns five criteria: judging its answer against the wide
+    ten-criterion ``VALIDATION_SCHEMA`` would reject every honest answer (``criteria`` too short).
+    The request's schema *is* the contract the validator was handed; the merge, not this parse,
+    is what guarantees the union is the full reviewed set.
     """
-    properties = (request.schema or {}).get("properties", {})
-    claim_only = "claim_verdicts" in properties and "criteria" not in properties
-    schema = request.schema if claim_only and request.schema is not None else VALIDATION_SCHEMA
+    schema = request.schema if request.schema is not None else VALIDATION_SCHEMA
     try:
         return _parse_structured(
             response, schema, what=what, max_bytes=MAX_VALIDATION_BYTES
@@ -7454,7 +7453,14 @@ def run_plan_job(
             ]
             report = merge_validation_reports(reports)
             validation_request = validation_requests[0]
-            validation_response = validation_responses[0]
+            # H-192b: the review is several passes. Provenance is recorded from an answering
+            # pass; when one pass needed a shape re-ask, report *that* pass's count rather than
+            # pretending the review was first-time clean (all passes answer with the same model,
+            # so identity is unchanged).
+            validation_response = max(
+                validation_responses,
+                key=lambda item: int(getattr(item, "shape_repair_attempts", 0) or 0),
+            )
             independence = validation_independence(
                 model_identity(response), model_identity(validation_response)
             )
