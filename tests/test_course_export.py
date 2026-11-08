@@ -763,5 +763,141 @@ class CourseExportCrossProfileImportTest(AuthoredCourseCase):
         self.assertEqual(origin_attempts, 1)
 
 
+#: The reference answer ``seed_validated_lessons`` writes for every check.
+CHECK_KEY = "When the oil shimmers and the pan is hot"
+
+
+class AuthoredAnswerLeakGateTest(AuthoredCourseCase):
+    """H-173d follow-up: pack export mirrors the presenting-surface rule.
+
+    A lesson may present the form it checks on exactly one surface (``kind: model`` segments,
+    ``role: narration`` media, and the model's projected block); every other learner surface stays
+    scanned. An authored ``document`` carries no segment kind, so it has no presenting surface and
+    every block is scanned (the strict reading recorded in docs/DECISION-TAUGHT-TARGET.md §7).
+    """
+
+    def set_page(self, seeded: dict, page: dict) -> None:
+        self.execute(
+            "UPDATE gen_lessons SET page_json = ? WHERE id = ?",
+            (json.dumps(page), f"lsn_1_{seeded['plan_id']}"),
+        )
+
+    def one_section(self) -> dict:
+        seeded = self.seed_course(sections=1)
+        self.seed_validated_lessons(seeded, sections=1)
+        return seeded
+
+    def read(self, seeded: dict) -> dict:
+        return self.ok("course.export.read", {"enrollment_id": seeded["enrollment_id"]})["result"]
+
+    def test_the_key_in_the_model_segment_exports(self) -> None:
+        seeded = self.one_section()
+        page = page_document("Section 1: the sear")
+        # The model segment is the one authored surface allowed to teach the keyed form.
+        page["segments"][1] = {
+            "kind": "model",
+            "heading": "What good looks like",
+            "body": CHECK_KEY,
+        }
+        self.set_page(seeded, page)
+
+        read = self.read(seeded)
+        self.assertTrue(read["ready"], read)
+        self.assertIsNone(read["blocked_reason"])
+
+        result = self.export(seeded["enrollment_id"], read["content_hash"], key="key-model-export")
+        archive = self.archive_path(result)
+        with zipfile.ZipFile(archive) as bundle:
+            lessons = sorted(name for name in bundle.namelist() if "/lessons/" in name)
+            self.assertEqual(len(lessons), 1)
+            # The exported learner page really does present it: this is not a gate-only exemption.
+            self.assertIn(CHECK_KEY, bundle.read(lessons[0]).decode("utf-8"))
+
+    def test_the_key_in_the_explanation_still_blocks_the_export(self) -> None:
+        seeded = self.one_section()
+        page = page_document("Section 1: the sear")
+        page["learner_explanation"] = f"Choose this: {CHECK_KEY}"
+        self.set_page(seeded, page)
+
+        read = self.read(seeded)
+        self.assertFalse(read["ready"])
+        self.assertEqual(read["blocked_reason"], "answer_leak_in_learner_page")
+        self.assertEqual(read["files"], [])
+
+        error = self.err(
+            "course.export",
+            {
+                "enrollment_id": seeded["enrollment_id"],
+                "expected_content_hash": "sha256:" + "3" * 64,
+            },
+            idempotency_key="key-explanation-leak",
+        )
+        self.assertEqual(error["details"]["reason"], "answer_leak_in_learner_page")
+        self.assertEqual(self.artifacts(), 0)
+        self.assertEqual(self.export_files(), [])
+
+    def test_the_key_in_a_guided_segment_still_blocks_the_export(self) -> None:
+        seeded = self.one_section()
+        page = page_document("Section 1: the sear")
+        page["segments"][0] = {
+            "kind": "guided",
+            "heading": "Try it",
+            "body": f"Say: {CHECK_KEY}",
+        }
+        self.set_page(seeded, page)
+
+        read = self.read(seeded)
+        self.assertFalse(read["ready"])
+        self.assertEqual(read["blocked_reason"], "answer_leak_in_learner_page")
+        self.assertEqual(self.artifacts(), 0)
+
+    def test_an_authored_document_that_presents_its_key_is_refused(self) -> None:
+        # No segment kinds: a document block can only present through a role that also carries
+        # the worked example, so under the strict reading it is scanned.
+        seeded = self.one_section()
+        page = {
+            "section_title": "Section 1: the sear",
+            "document": {
+                "section_title": "Section 1: the sear",
+                "blocks": [
+                    {
+                        "role": "example",
+                        "headline": "What good looks like",
+                        "short": "",
+                        "deep": CHECK_KEY,
+                    }
+                ],
+            },
+        }
+        self.set_page(seeded, page)
+
+        read = self.read(seeded)
+        self.assertFalse(read["ready"])
+        self.assertEqual(read["blocked_reason"], "answer_leak_in_learner_page")
+        self.assertEqual(self.artifacts(), 0)
+
+    def test_an_authored_document_without_the_key_still_exports(self) -> None:
+        seeded = self.one_section()
+        page = {
+            "section_title": "Section 1: the sear",
+            "document": {
+                "section_title": "Section 1: the sear",
+                "blocks": [
+                    {
+                        "role": "example",
+                        "headline": "What good looks like",
+                        "short": "",
+                        "deep": "The ribs are dark brown on every face before they meet the liquid.",
+                    }
+                ],
+            },
+        }
+        self.set_page(seeded, page)
+
+        read = self.read(seeded)
+        self.assertTrue(read["ready"], read)
+        self.assertIsNone(read["blocked_reason"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -3,12 +3,12 @@
 | | |
 |---|---|
 | Card | `H-173d` finding 1 / `t_fdf16735` (from the independent re-score `t_99f1cb89`) |
-| Branch | `wt/h173d-answer-leak-rule` |
+| Branch | `wt/h173d-answer-leak-rule` (rule), `wt/h173d-pack-rule` (pack-path follow-up `t_61171ca0`, branched from `719e507`) |
 | Base | `4358249` (master at pickup) |
 | Author | Atlas (architecture), 2026-11-08 |
 | Status | **Decided.** The gate forbids *announcing* the key, not *teaching* the form. The model segment is the presentation surface and is exempt from the key scan; every other learner surface stays scanned. |
 | Contract / DB delta | **None.** No `cb.rpc` bump, no `cb.db` migration, no validator criterion change, no new field. |
-| Code delta | `coursebook/generation.py` (`_narrative_text`, `assert_no_answer_leak`), `coursebook/lesson_document.py` (`narrative_text` gains two optional skip predicates), `tests/test_lesson_document.py` (5 tests). |
+| Code delta | `coursebook/generation.py` (`_narrative_text`, `assert_no_answer_leak`), `coursebook/lesson_document.py` (`narrative_text` gains two optional skip predicates), `coursebook/parent_authoring.py` (`_learner_scan_text`, `_assert_no_answer_leak`), `tests/test_lesson_document.py` (5 tests), `tests/test_course_export.py` (5 tests, `AuthoredAnswerLeakGateTest`). |
 | Score delta | **None.** No fixture, rubric or author record is edited here, so S2 D5 stays 2. |
 
 ---
@@ -89,6 +89,8 @@ the session and the score at 2.
 | `coursebook/generation.py:4457` `assert_no_answer_leak` | Docstring states the rule. Behaviour follows `_narrative_text`; no other logic changed. |
 | `coursebook/lesson_document.py:995` `narrative_text` | Two optional keyword predicates, `skip_block` and `skip_media`; defaults scan the whole document, so every other caller (`leaks_answer`, the tests) is unchanged. |
 | `tests/test_lesson_document.py` `TaughtTargetLeakRuleTest` | 5 tests: the model segment may present the keyed form end to end (page + document); the same string in an explain step, in the guided practice, in the worked example answer and in an illustration media item is still refused; narration is permitted. |
+| `coursebook/parent_authoring.py:772` `_assert_no_answer_leak` | The authored pack path (`parent.export`, `course.export`, `course.export.read`) scans the page's `segments[]` through `_learner_scan_text` instead of the rendered learner page: `kind: model` segments and `role: narration` media are exempt, every other segment, the worked example, the explanation, non-narration media and every authored document block are scanned. The narration export file is a reading of those segment bodies, so it is a presenting surface and is not scanned separately. |
+| `tests/test_course_export.py` `AuthoredAnswerLeakGateTest` | 5 tests through the real export commands: the key in the model segment exports and the archive carries it; the same string in the explanation, in a guided segment, or in an authored document's `example` block refuses with `answer_leak_in_learner_page`; an authored document without the key still exports. |
 | `tests/test_course_quality_s2_repair.py` | 2 tests on the real S2 fixture: the model segment amended to present こんにちは is admitted, and the same string added to `segments[1]` (explain) is still refused. |
 
 Both call sites of the gate — authoring (`run_lesson_job`) and read (`learner_page`) — use the same
@@ -119,14 +121,14 @@ Nothing, yet. The artifact is unchanged, so:
   forbid the taught string; the payload text is left alone so no stored idempotency fingerprint or
   prompt label changes.
 
-## 7. Open items
+## 7. Open items and closed follow-ups
 
-| Item | Owner | Why it is not in this card |
+| Item | Owner | Outcome |
 |---|---|---|
-| Repair `lesson_ja.json` so the model segment presents こんにちは, then re-run the S2 re-score | cinder | Artifact work; this card moves no score without it |
-| Apply the same presenting-surface predicate to `coursebook/parent_authoring.py:772` `_assert_no_answer_leak`, which renders the learner page to flat text and would still refuse a parent pack whose lesson teaches its answer | cinder | Separate export path, needs its own fixture and test |
-| Decide the exemption for a pack-supplied *authored* `document`: its blocks carry no segment kind, so `document_from_page` cannot tell a model block from the rest and the gate scans all of them. Generated lessons are unaffected (the projection is built from `segments[]`), but a hand-authored pack that teaches its key is still refused | cinder | Same pack path as the row above; one ruling should cover both |
-| Word the D5 rubric note: a model segment that prints the target with reading and function is presentation; naming only the function is not | quill | Rubric wording is Quill's |
+| Repair `lesson_ja.json` so the model segment presents こんにちは, then re-run the S2 re-score | cinder | Open. Artifact work; this card moves no score without it (`t_364eafe1`, re-score gate `t_8280268a`) |
+| Apply the presenting-surface predicate to `coursebook/parent_authoring.py:772` `_assert_no_answer_leak`, which rendered the learner page to flat text and still refused a parent pack whose lesson teaches its answer | cinder | **Closed (`t_61171ca0`, `wt/h173d-pack-rule`).** The gate scans the page's `segments[]` (`_learner_scan_text`) instead of the rendered file, so `kind: model` segments and `role: narration` media are exempt while explain/guided/retrieval segments, the worked example, the explanation, non-narration media and every document block are still scanned. The `narration` export file is a reading of those segment bodies, so it is a presenting surface and is not scanned separately. `tests/test_course_export.py` `AuthoredAnswerLeakGateTest` proves the export and the refusals through the real commands |
+| Decide the exemption for a pack-supplied *authored* `document`: its blocks carry no segment kind, so `document_from_page` cannot tell a model block from the rest and the gate scans all of them | cinder | **Closed: strict reading (`t_61171ca0`).** `lesson_document.BLOCK_ROLES` has no `model` role and the projection maps `model` to `example`, so no document block can be identified as presenting without also exempting the worked example. Under the strict reading every authored document block is scanned, and a pack whose only presentation is an `example` block carrying the key is refused with `answer_leak_in_learner_page`. A presenting marker on the document contract is not adopted: it would need its own contract review, not this card |
+| Word the D5 rubric note: a model segment that prints the target with reading and function is presentation; naming only the function is not | quill | Open. Rubric wording is Quill's (`t_8f7689e2`) |
 
 ## 8. Evidence
 
@@ -148,3 +150,24 @@ OK
 
 The S2 fixture is still admitted by the gate (`tests/test_course_quality_s2_repair.py` passes unchanged), which is the
 point: the rule change does not retroactively bless the unmodelled target.
+
+Follow-up `t_61171ca0` (pack export gate), same command in a clean `HERMES_HOME`:
+
+```
+$ python3 -m unittest discover -s tests -t .
+Ran 2360 tests in 410.717s
+
+OK (skipped=1)
+```
+
+The new module on its own, after the change:
+
+```
+$ python3 -m unittest tests.test_course_export.AuthoredAnswerLeakGateTest -v
+Ran 5 tests in 1.788s
+
+OK
+```
+
+The 5 new tests fail against `719e507` before the change: the model-segment pack is refused and
+the authored document's key is not scanned at all.
