@@ -771,7 +771,10 @@ class CompanionCourseTest(SyllabusCase):
             self.assertEqual(self.scalar(f"SELECT COUNT(*) FROM {table}"), 0, table)
         # Coursebook evidence is untouched by a syllabus deletion.
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM courses"), 1)
-        self.assertEqual(self.scalar("SELECT COUNT(*) FROM plans"), 2)
+        # H-190: the plan job authors into the draft plan ``course.create`` minted, so the course
+        # holds exactly one plan row (the authored one) instead of an empty placeholder plus an
+        # orphan.
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM plans"), 1)
 
     def test_rejections_are_typed_and_write_nothing(self) -> None:
         sid, rev = self.intake_ok(text=(FIXTURES / "cs340-databases.md").read_text())

@@ -191,12 +191,43 @@ class LearnerPlanFlowTest(KernelCase):
             connection.close()
         self.assertEqual(result["course_id"], flow["course_id"])
         self.assertEqual(result["status"], "draft")
-        # The generated draft is the newest version; the course.create draft stays version 1.
-        self.assertEqual(int(result["plan_version"]), 2)
+        # H-190: the authored document lands on the plan id ``course.create`` already returned.
+        # Generation must not mint a second plan beside the course's empty draft, because the
+        # learner surface approves the id it was handed at creation.
+        self.assertEqual(result["plan_id"], flow["draft_plan_id"])
+        self.assertEqual(int(result["plan_version"]), 1)
+        self.assertEqual(
+            self.scalar("SELECT COUNT(*) AS n FROM plans WHERE course_id = ?", (flow["course_id"],)),
+            1,
+        )
         outline = self.ok("course.outline", {"enrollment_id": flow["enrollment_id"]})["result"]
-        self.assertEqual(outline["plan"]["plan_id"], result["plan_id"])
+        self.assertEqual(outline["plan"]["plan_id"], flow["draft_plan_id"])
         self.assertEqual(outline["plan"]["state"], "draft")
         self.assertGreater(len(outline["objectives"]), 0)
+        # The id the caller holds is approvable, and a read on it carries the authored
+        # objectives. Before H-190 this id pointed at the empty course.create draft and
+        # ``plan.approve`` refused with "an empty plan cannot be approved".
+        connection = db.connect()
+        try:
+            authored = generation.plan_document(connection, flow["draft_plan_id"])
+        finally:
+            connection.close()
+        self.assertEqual(authored["plan_id"], flow["draft_plan_id"])
+        self.assertGreater(len(authored["objectives"]), 0)
+        approved = self.ok(
+            "plan.approve",
+            {
+                "enrollment_id": flow["enrollment_id"],
+                "plan_id": flow["draft_plan_id"],
+                "plan_hash": domain.plan_hash(flow["draft_plan_id"]),
+            },
+            expected_revision=0,
+            idempotency_key="cb-h190-approve-created-id",
+        )
+        self.assertEqual(approved["result"]["revision"], 1)
+        self.assertEqual(
+            self.scalar("SELECT state FROM plans WHERE id = ?", (flow["draft_plan_id"],)), "approved"
+        )
 
     # ── the hash rule ───────────────────────────────────────────────────────
     def generated_draft(self) -> dict:
