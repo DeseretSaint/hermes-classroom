@@ -9,11 +9,11 @@ no pack, no review, no merge was changed by this card.
 | --- | --- |
 | base | `e3d01f7` — H-196a tip (`wt/t_5ef6be7f`), carried over `ce5014b` / `0e46f38` / `f2c312b` |
 | H-196a merged to master? | **no** — master was `179880d` when this card started; the card's fallback ("shoot the green branch") applies and the parent card `t_5ef6be7f` was completed green |
-| commit the gates ran on | `9980a5c425c2a15cbf6045d1501d5d9afbd5e3d0` |
+| commit the gates ran on | `9980a5c425c2a15cbf6045d1501d5d9afbd5e3d0` (frames + scripts), then `c3c0839659e64ba08392a2df4c9f961323f81d11` (adds this record; re-run below) |
 | module under test | `desktop/plugin.js` sha256 `c8e98f29b6ac2270a379a4bbc2dbd39a798c70189d4e77bb067a7953a99793e0` |
 
-This record is committed as a doc-only commit immediately after `9980a5c`. `git diff --stat
-9980a5c..HEAD` shows one file, `audit/visual/h196-workshop/STATUS.md`, so the tree the gates ran on
+This record is committed as a doc-only commit immediately after `c3c0839`. `git diff --stat
+c3c0839..HEAD` shows one file, `audit/visual/h196-workshop/STATUS.md`, so the tree the gates ran on
 is the tree in this branch with no code difference.
 
 ## Commands, exactly as run
@@ -41,6 +41,21 @@ OK (skipped=1)
 
 The frame builder exits 0 with `{"frames": 27, ...}`; the shot script exits 0 with
 `{"frames":27,...}` and Chromium `Chrome/155.0.8059.84`.
+
+### Both gates re-run on `c3c0839` (the record commit's parent, same code)
+
+```
+== 4/4 runtime contracts: PASS ==
+Release gate passed: 4/4 checks on c3c0839659e64ba08392a2df4c9f961323f81d11 (2417 files).
+```
+
+```
+Ran 2459 tests in 411.367s
+
+OK (skipped=1)
+```
+
+The file count differs (2416 → 2417) only because this record file is in `c3c0839`.
 
 ## What the captures are
 
