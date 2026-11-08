@@ -13959,6 +13959,49 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
 }
 
 /**
+ * A teaching turn that reached the chat but not the lesson page.
+ *
+ * `binding.get` answers `snapshot_failures = {recorded, last_at}` for the bound lesson run: the
+ * count of teaching turns whose durable `lesson_segments` row could not be written after one
+ * retry. This is an integrity notice, not a blocking error — the chat still holds the turn, so
+ * there is no dialog, no disabled control and no retry (a retry writes a *new* turn, not the lost
+ * one). The three states are kept distinct: a positive count names the loss, an explicit zero is
+ * silent, and `null` is "unknown", never a zero.
+ */
+function SnapshotLossNotice({ failures }) {
+  const recorded = failures && typeof failures === 'object' ? failures.recorded : undefined
+  if (recorded === 0) return null
+  const count = Number(recorded)
+  if (Number.isFinite(count) && count > 0) {
+    const lastAt = failures && failures.last_at
+    return jsxs('div', {
+      className: 'flex flex-col gap-1 border-l-2 border-(--ui-stroke-secondary) pl-3',
+      role: 'status',
+      'data-cb-snapshot-loss': 'recorded',
+      'data-cb-snapshot-count': String(count),
+      children: [
+        jsx('div', {
+          className: 'text-xs leading-relaxed',
+          children: `${count} teaching ${count === 1 ? 'turn' : 'turns'} could not be saved to this lesson. The chat has them; this page does not.`
+        }),
+        lastAt
+          ? jsx('div', {
+              className: 'text-xs text-(--ui-text-secondary)',
+              children: `Last recorded ${whenLabel(lastAt)}.`
+            })
+          : null
+      ]
+    })
+  }
+  return jsx('div', {
+    className: 'border-l-2 border-(--ui-stroke-secondary) pl-3 text-xs leading-relaxed text-(--ui-text-secondary)',
+    role: 'status',
+    'data-cb-snapshot-loss': 'unknown',
+    children: 'Coursebook could not check whether any teaching turn was lost.'
+  })
+}
+
+/**
  * The bound lesson pane.
  *
  * Scope is the focused chat's stored session id → binding → enrollment. Nothing here falls back to
@@ -14102,6 +14145,8 @@ function LessonPaneBody({ binding, storedId }) {
           })
         ]
       }),
+
+      jsx(SnapshotLossNotice, { failures: binding.snapshot_failures }),
 
       bindingStatus !== 'active'
         ? jsxs('div', {
@@ -17347,6 +17392,8 @@ export {
   PronunciationStudio,
   QuestMission,
   SectionPage,
+  SnapshotLossNotice,
+  LessonPaneBody,
   WorkspaceShell,
   blockSaveExcerpt,
   buildDeskModel,
