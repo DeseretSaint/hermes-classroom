@@ -217,12 +217,27 @@ class DeclaredNarrationImportTest(PackMediaCase):
 
 
 class UnchangedAndRefusedTest(PackMediaCase):
+    def v1_pack(self) -> tuple[dict, dict[str, bytes]]:
+        """The bundled pack's bytes re-stamped as a document that predates ``media[]``.
+
+        H-186 made the shipped pack v2, so the "no links, no player" behaviour needs a v1
+        fixture built from the same content rather than the shipped manifest.
+        """
+        manifest, files = archive.read_directory(JAPANESE)
+        manifest = copy.deepcopy(manifest)
+        manifest["contract_version"] = 1
+        manifest["pack_version"] = "1.0.0"
+        manifest.pop("media", None)
+        manifest.pop("content_hash", None)
+        return packs.with_content_hash(manifest), files
+
     def test_a_pack_without_media_is_unchanged(self) -> None:
-        """The v1 Japanese pack stays stored-only: no artifact, no media segment, no player."""
+        """A v1 pack stays stored-only: no artifact, no media segment, no player."""
         before = self.counts()
-        staged_id = self.grant(*archive.read_directory(JAPANESE), name="v1.zip")
+        manifest, files = self.v1_pack()
+        staged_id = self.grant(manifest, files, name="v1.zip")
         preview = self.ok("pack.preview", {"staged_id": staged_id})["result"]
-        result = self.import_pack(self.grant(*archive.read_directory(JAPANESE), name="v1-import.zip"))
+        result = self.import_pack(self.grant(manifest, files, name="v1-import.zip"))
 
         self.assertEqual(self.counts()["artifacts"], before["artifacts"])
         self.assertEqual(self.media_segments(), [])

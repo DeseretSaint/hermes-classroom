@@ -381,7 +381,7 @@ class ExportTest(PackFlowCase):
         self.assertEqual(second["content_hash"], first["content_hash"])
         self.assertEqual(second["file_count"], first["file_count"])
         self.assertEqual(second["bytes"], first["bytes"])
-        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM artifacts")), 1)
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM artifacts WHERE kind = 'export'")), 1)
         self.assertEqual(
             int(self.scalar("SELECT ref_count FROM artifacts WHERE id = ?", (first["artifact_id"],))),
             2,
@@ -401,7 +401,7 @@ class ExportTest(PackFlowCase):
         second = self.ok("pack.export", {"enrollment_id": parent["enrollment_id"]})["result"]
         self.assertNotEqual(second["artifact_id"], first["artifact_id"])
         self.assertNotEqual(second["content_hash"], first["content_hash"])
-        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM artifacts")), 2)
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM artifacts WHERE kind = 'export'")), 2)
 
     def test_export_refuses_a_hash_the_reviewer_did_not_see(self) -> None:
         imported = self.import_pack(self.grant()[0])["result"]
@@ -413,7 +413,7 @@ class ExportTest(PackFlowCase):
             },
         )
         self.assertEqual(error["code"], "DELETE_SCOPE_STALE")
-        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM artifacts")), 0)
+        self.assertEqual(int(self.scalar("SELECT COUNT(*) FROM artifacts WHERE kind = 'export'")), 0)
 
     def test_export_refuses_an_unknown_option_instead_of_ignoring_it(self) -> None:
         imported = self.import_pack(self.grant()[0])["result"]

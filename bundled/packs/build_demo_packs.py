@@ -47,6 +47,18 @@ NARRATION_TEXT = (
     "\"I like you. Please go out with me.\" One line, spoken as the first-confession example the "
     "pack teaches. Synthetic speech, not a native-speaker pronunciation model."
 )
+#: The one-line caption a learner sees beside the audio. It is the media child's ``purpose`` and
+#: ``text_equivalent`` (cb.pack v2), and it repeats the file's own transcript rather than inventing
+#: a new claim about the audio.
+NARRATION_CAPTION = (
+    '好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — '
+    '"I like you. Please go out with me."'
+)
+#: The caption beside the relationship map. The long text equivalent stays on the file record.
+VISUAL_CAPTION = (
+    "Relationship and register map: friend to casual (suki da yo); respected addressee to polite "
+    "(suki desu); long-term partner to intimate (aishiteru)."
+)
 UNSPECIFIED_LICENSE = {
     "id": "unspecified",
     "redistribution": "local_only",
@@ -420,39 +432,43 @@ def japanese_manifest() -> dict:
             ],
         },
         {
+            # H-186: this objective used to be a free-English "explain the register" prompt with an
+            # empty accepted-alternatives list. The import projection stores a ``transfer`` target as
+            # ``rubric_only``, and this build has no configured aux grader, so the one check the
+            # library pointed Resume at could only answer ``needs_retry``. It is now a closed choice
+            # about a third situation: one register genuinely fits, and the learner names it. No
+            # model-assessed score is claimed, and the open explanation is no longer graded at all.
             "objective_id": "obj-register-transfer",
             "ordinal": 4,
-            "title": "Explain why register changes with the relationship",
-            "evidence_target": "transfer",
+            "title": "Choose the register for a close friend in public",
+            "evidence_target": "discrimination",
             "evidence_criteria": [
-                "Explains the change in terms of addressee, relationship and setting",
-                "Transfers the reasoning to a third situation without a model answer",
+                "Picks the casual register for a close friend in public",
+                "Does not apply the intimate line to a friend in public",
+                "Reads the choice from the addressee and the public setting",
             ],
             "estimated_minutes": 7,
             "sections": [
-                {"section_id": "sec-new-context-2", "title": "Explain your choice", "path": "content/section-03-new-context.md"}
+                {"section_id": "sec-new-context-2", "title": "A close friend in public", "path": "content/section-03-new-context.md"}
             ],
             "checks": [
                 {
-                    "check_id": "chk-register-transfer-1",
+                    "check_id": "chk-friend-public-choice-1",
                     "version": 1,
-                    "evidence_target": "transfer",
+                    "evidence_target": "discrimination",
                     "stimulus": (
-                        "In English, explain why a first confession to someone you respect calls for a different line "
-                        "from a settled partnership. Name the addressee, the relationship and the setting, and then "
-                        "say what would change if the same words were said to a close friend in public."
+                        "A close friend, in public, after an outing: you want to say something affectionate "
+                        "without making it a confession and without overstating the relationship. Which "
+                        "register fits? Answer A, B or C. A: casual register (suki da yo). B: polite "
+                        "register (suki desu). C: intimate register (aishiteru)."
                     ),
                     "rubric": [
-                        "Names the addressee and the relationship as the reason for the polite form",
-                        "Names the setting (private, deliberate) as part of the choice",
-                        "Transfers the reasoning to the friend-in-public case instead of repeating the first answer",
+                        "Chooses the casual register for a close friend in public",
+                        "Does not choose the polite or intimate register for that relationship",
+                        "Keeps the choice tied to the addressee and the public setting",
                     ],
-                    "reference_answer": (
-                        "A first confession to someone you are not close to needs the polite desu form, while "
-                        "aishiteru is intimate and belongs to a settled private relationship; said to a close "
-                        "friend in public, the same heavy line would overstate the relationship."
-                    ),
-                    "accepted_alternatives": [],
+                    "reference_answer": "A (casual register)",
+                    "accepted_alternatives": ["A", "a", "casual", "casual register", "suki da yo", "suki dayo"],
                     "locale": "ja-JP",
                     "audit_state": "unreviewed",
                 }
@@ -462,18 +478,28 @@ def japanese_manifest() -> dict:
 
     return packs.build_manifest(
         pack_id="japanese-affection-context-l0",
-        pack_version="1.0.0",
-        title="Japanese affection and register — an L0 demonstration classroom",
+        pack_version="2.0.0",
+        title="Japanese affection and register — a Sample L0 classroom",
         subtitle="Four lines, three addressees, one decision: who is listening, how close, and where.",
         recipe="casual",
         locale="ja-JP",
         level_label="CEFR A1 · ab initio (L0)",
         minimum_coursebook_version="0.1.0",
-        # H-73 §13 ordering: the bundled pack stays at ``cb.pack`` v1 until the release that
-        # ships v2 media playback is the version this demo names. Re-issuing v2 first would make
-        # the bundled pack unimportable on every build that only knows v1 — a worse defect than
-        # an unplayed file.
-        contract_version=1,
+        # H-186: the release now ships v2 media playback, so the bundled demo declares its two
+        # real assets as ``media[]`` links. A v1 document may not carry them (M1-M7 in packs.py).
+        contract_version=2,
+        media=[
+            {
+                "path": NARRATION_PATH,
+                "section_path": "content/section-02-choosing.md",
+                "caption": NARRATION_CAPTION,
+            },
+            {
+                "path": "content/relationship-map.png",
+                "section_path": "content/section-01-two-ways.md",
+                "caption": VISUAL_CAPTION,
+            },
+        ],
         license={
             **UNSPECIFIED_LICENSE,
             "per_artifact": [
@@ -505,6 +531,9 @@ def japanese_manifest() -> dict:
         content_notes=[
             "Fresh verification: every Japanese wording and usage claim was re-read against the linked sources on "
             "2026-11-06. No native-speaker review is recorded, and none is claimed.",
+            "Pack revision note: this pack now declares cb.pack v2 and links its two real assets through media[]. "
+            "No Japanese wording changed in that revision, so the 2026-11-06 wording check still describes the "
+            "language taught here. No new language or native-speaker review was performed for it.",
             "L0 script policy: Japanese script is always paired with romaji and an English meaning. Romaji is a "
             "scaffold that fades; a romaji-only answer is not evidence of reading Japanese.",
             "Register is taught as a function of addressee, relationship and setting, not as one correct translation "
@@ -516,6 +545,9 @@ def japanese_manifest() -> dict:
             "encoded to 64 kbps MP3 with LAME 4.0. Its text equivalent carries the Japanese line, its romaji and "
             "its English meaning. Fading scaffold: the audio is a model of the line, not a substitute for the "
             "script or the romaji.",
+            "The fourth objective is a closed choice about a third situation, graded by exact comparison against "
+            "its accepted registers. It is not a model-assessed explanation, and the pack claims no score for an "
+            "open-response answer.",
         ],
         safety_notes=[
             "Audio is bundled and is synthetic. It is not a native-speaker pronunciation model, and this pack "
@@ -524,9 +556,10 @@ def japanese_manifest() -> dict:
         ],
         accessibility_notes=[
             "Every Japanese line carries romaji and an English meaning.",
-            "The relationship schematic has a text equivalent in the manifest.",
-            "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent, "
-            "and the lesson does not depend on hearing it.",
+            "The relationship schematic has a text equivalent on its file record and a short caption beside it on "
+            "the lesson page.",
+            "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent and as "
+            "its lesson caption, and the lesson does not depend on hearing it.",
             "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities.",
         ],
         default_dials={"pace": "light", "depth": "survey", "assessment": "self_check", "autonomy": "guided"},

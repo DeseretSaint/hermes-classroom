@@ -2560,6 +2560,30 @@ def _latest_binding(connection, enrollment_id: str, lesson_run_id: str | None = 
     )
 
 
+#: Objectives a learner can still make progress on. ``review_due`` and ``needs_review`` are
+#: handled before the pace query; ``independent_evidence``, ``delayed_evidence`` and
+#: ``overridden`` are settled, so they are not the current objective.
+_INCOMPLETE_OBJECTIVE_STATES = ("not_started", "introduced", "needs_review")
+
+
+def _current_objective(connection, course_id: str) -> Any:
+    """The plan's earliest objective that still needs learner work, or ``None``.
+
+    Order is ``ordinal``, not lesson-run recency. A pack import writes one active run per
+    objective up front, so ordering runs by ``updated_at`` made the library point at the last
+    imported section (H-186). The ordinal is the course's own sequence and is what "first not
+    started" means.
+    """
+    return _row(
+        connection,
+        "SELECT o.* FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
+        f" WHERE pl.course_id = ? AND {_current_plan_sql()}"
+        f" AND o.state IN ({','.join('?' for _ in _INCOMPLETE_OBJECTIVE_STATES)})"
+        " ORDER BY o.ordinal ASC LIMIT 1",
+        (course_id, *_INCOMPLETE_OBJECTIVE_STATES),
+    )
+
+
 def _library_next_step(connection, enrollment, course) -> dict[str, str]:
     review_due = _row(
         connection,
@@ -2570,23 +2594,29 @@ def _library_next_step(connection, enrollment, course) -> dict[str, str]:
     )
     if review_due and int(review_due["n"]) > 0:
         return {"kind": "resolve_review_due", "label": f"Review {int(review_due['n'])} objective(s)"}
-    run = _row(
-        connection,
-        "SELECT r.*, o.title AS objective_title FROM lesson_runs r"
-        " JOIN objectives o ON o.id = r.objective_id"
-        " WHERE r.enrollment_id = ? AND r.state IN ('active', 'paused')"
-        " ORDER BY r.updated_at DESC, r.rowid DESC LIMIT 1",
-        (enrollment["id"],),
-    )
-    if run is not None:
-        binding = _latest_binding(connection, enrollment["id"], run["id"])
-        if binding is not None and binding["status"] in ("detached", "branched", "orphaned"):
-            return {"kind": "rebind_session", "label": f"Rebind the chat for {run['objective_title']}"}
-        if binding is None or binding["status"] != "active":
-            return {"kind": "resume_lesson", "label": f"Resume {run['objective_title']}"}
-        return {"kind": "resume_lesson", "label": f"Continue {run['objective_title']}"}
     if _approved_plan(connection, course["id"]) is None:
         return {"kind": "review_plan", "label": "Review and approve the plan"}
+    # H-186: the current section is the earliest objective that still needs work, not the most
+    # recently updated lesson run. Import writes an active run per objective, so recency alone
+    # lands Resume on the last section of the pack.
+    objective = _current_objective(connection, course["id"])
+    if objective is not None:
+        run = _row(
+            connection,
+            "SELECT * FROM lesson_runs WHERE enrollment_id = ? AND objective_id = ?"
+            " AND state IN ('active', 'paused')"
+            " ORDER BY updated_at DESC, rowid DESC LIMIT 1",
+            (enrollment["id"], objective["id"]),
+        )
+        title = str(objective["title"])
+        binding = _latest_binding(connection, enrollment["id"], run["id"]) if run is not None else None
+        if binding is not None and binding["status"] in ("detached", "branched", "orphaned"):
+            return {"kind": "rebind_session", "label": f"Rebind the chat for {title}"}
+        if binding is None:
+            # No chat is bound to this section yet. "Resume" would name a session that does not
+            # exist, so the next step is honestly a Start.
+            return {"kind": "start_lesson", "label": f"Start {title}"}
+        return {"kind": "resume_lesson", "label": f"Continue {title}"}
     pack = _row(connection, "SELECT state FROM packs WHERE id = ?", (course["pack_id"],)) if course["pack_id"] else None
     if pack is not None and pack["state"] == "frozen":
         return {"kind": "review_pack", "label": "Review the frozen imported pack"}

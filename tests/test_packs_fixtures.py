@@ -96,19 +96,67 @@ class JapanesePackTests(unittest.TestCase):
                     with self.subTest(check=check["check_id"], file=path):
                         self.assertNotIn(answer, text)
 
-    def test_checks_cover_discrimination_selection_recall_and_transfer(self) -> None:
+    def test_checks_cover_discrimination_comprehension_and_recall(self) -> None:
         targets = [
             check["evidence_target"]
             for objective in self.manifest["objectives"]
             for check in objective["checks"]
         ]
-        self.assertEqual(targets, ["discrimination", "comprehension", "recall", "transfer"])
+        # H-186: the fourth check is a closed choice, so it measures discrimination; the pack no
+        # longer declares a transfer target that only an aux-graded explanation could satisfy.
+        self.assertEqual(targets, ["discrimination", "comprehension", "recall", "discrimination"])
         for objective in self.manifest["objectives"]:
             for check in objective["checks"]:
                 self.assertGreaterEqual(len(check["rubric"]), 3)
                 self.assertEqual(check["audit_state"], "unreviewed")
                 self.assertTrue(check["reference_answer"])
                 self.assertTrue(check["stimulus"])
+
+    def test_every_check_is_gradable_without_a_model(self) -> None:
+        """What the library offers as Resume must not be the one check that cannot grade."""
+        for objective in self.manifest["objectives"]:
+            for check in objective["checks"]:
+                with self.subTest(check=check["check_id"]):
+                    self.assertNotIn(check["evidence_target"], {"production", "transfer"})
+                    self.assertTrue(
+                        check["accepted_alternatives"],
+                        "a deterministic exact check needs a non-empty accepted set",
+                    )
+
+    def test_media_links_name_the_real_assets_and_their_sections(self) -> None:
+        media = self.manifest["media"]
+        self.assertEqual(len(media), 2)
+        by_path = {entry["path"]: entry for entry in self.manifest["files"]}
+        sections = {
+            section["path"]
+            for objective in self.manifest["objectives"]
+            for section in objective["sections"]
+        }
+        for link in media:
+            with self.subTest(path=link["path"]):
+                file_entry = by_path[link["path"]]
+                self.assertIn(file_entry["role"], {"narration", "visual"})
+                self.assertIn(link["section_path"], sections)
+                self.assertTrue(1 <= len(link["caption"]) <= 200)
+                self.assertTrue(file_entry["text_equivalent"])
+                rights = {item["path"]: item for item in self.manifest["license"]["per_artifact"]}
+                self.assertIn(link["path"], rights)
+        self.assertEqual(
+            {link["path"]: link["section_path"] for link in media},
+            {
+                "content/narration-polite-confession.mp3": "content/section-02-choosing.md",
+                "content/relationship-map.png": "content/section-01-two-ways.md",
+            },
+        )
+
+    def test_title_labels_the_sample_and_avoids_ticket_names(self) -> None:
+        self.assertIn("Sample", self.manifest["title"])
+        printed = " ".join(
+            [self.manifest["title"], self.manifest.get("subtitle") or ""]
+            + list(self.manifest.get("content_notes") or [])
+            + list(self.manifest.get("safety_notes") or [])
+        )
+        self.assertNotRegex(printed, r"\bH-[0-9]{3}\b")
 
     def test_sources_are_fresh_linked_and_rights_aware(self) -> None:
         sources = self.manifest["sources"]

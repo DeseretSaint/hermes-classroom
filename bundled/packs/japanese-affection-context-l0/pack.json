@@ -1,21 +1,23 @@
 {
   "accessibility_notes": [
     "Every Japanese line carries romaji and an English meaning.",
-    "The relationship schematic has a text equivalent in the manifest.",
-    "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent, and the lesson does not depend on hearing it.",
+    "The relationship schematic has a text equivalent on its file record and a short caption beside it on the lesson page.",
+    "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent and as its lesson caption, and the lesson does not depend on hearing it.",
     "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities."
   ],
   "attribution": "Original teaching text, schematic and narration: Coursebook demo pack. The narration clip is synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
-  "content_hash": "sha256:447aace8ee718f73834af324192e3395ada63da81f7625e613af7e0e66983856",
+  "content_hash": "sha256:ad6f5432ba9873f1cb0e1f0ec2a5e3a87231246c11560937846a73146db51210",
   "content_notes": [
     "Fresh verification: every Japanese wording and usage claim was re-read against the linked sources on 2026-11-06. No native-speaker review is recorded, and none is claimed.",
+    "Pack revision note: this pack now declares cb.pack v2 and links its two real assets through media[]. No Japanese wording changed in that revision, so the 2026-11-06 wording check still describes the language taught here. No new language or native-speaker review was performed for it.",
     "L0 script policy: Japanese script is always paired with romaji and an English meaning. Romaji is a scaffold that fades; a romaji-only answer is not evidence of reading Japanese.",
     "Register is taught as a function of addressee, relationship and setting, not as one correct translation of the English phrase 'I love you'.",
     "Culture claims are kept narrow and attributed; regional, generational and personal variation is stated in the lesson rather than smoothed away.",
-    "One narration clip is bundled: content/narration-polite-confession.mp3, the polite first-confession line, synthesized offline on 2026-11-07 with Kokoro-82M voice jf_alpha (Apache-2.0), 24 kHz mono, encoded to 64 kbps MP3 with LAME 4.0. Its text equivalent carries the Japanese line, its romaji and its English meaning. Fading scaffold: the audio is a model of the line, not a substitute for the script or the romaji."
+    "One narration clip is bundled: content/narration-polite-confession.mp3, the polite first-confession line, synthesized offline on 2026-11-07 with Kokoro-82M voice jf_alpha (Apache-2.0), 24 kHz mono, encoded to 64 kbps MP3 with LAME 4.0. Its text equivalent carries the Japanese line, its romaji and its English meaning. Fading scaffold: the audio is a model of the line, not a substitute for the script or the romaji.",
+    "The fourth objective is a closed choice about a third situation, graded by exact comparison against its accepted registers. It is not a model-assessed explanation, and the pack claims no score for an open-response answer."
   ],
   "contract": "cb.pack",
-  "contract_version": 1,
+  "contract_version": 2,
   "contributors": [
     {
       "name": "Coursebook demo pack",
@@ -66,11 +68,11 @@
       "sha256": "sha256:2098fe3d56cd888489f7682f6c62dbeb6a7e61ea47d071a4f8597824ecc0e7c0"
     },
     {
-      "bytes": 1698,
+      "bytes": 2092,
       "mime": "text/markdown",
       "path": "content/section-03-new-context.md",
       "role": "section",
-      "sha256": "sha256:80e26bb5d820603c003295234bdfd8f89dae9a75f273c69d1f9a3666ffdd555b"
+      "sha256": "sha256:f0881d0dbdb9d6b521b81b5776e2b72f7e04caa7064802a157aa9cdcb5c3c38d"
     },
     {
       "bytes": 3251,
@@ -99,6 +101,18 @@
     "redistribution": "local_only"
   },
   "locale": "ja-JP",
+  "media": [
+    {
+      "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+      "path": "content/narration-polite-confession.mp3",
+      "section_path": "content/section-02-choosing.md"
+    },
+    {
+      "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+      "path": "content/relationship-map.png",
+      "section_path": "content/section-01-two-ways.md"
+    }
+  ],
   "minimum_coursebook_version": "0.1.0",
   "objectives": [
     {
@@ -225,41 +239,49 @@
     {
       "checks": [
         {
-          "accepted_alternatives": [],
-          "audit_state": "unreviewed",
-          "check_id": "chk-register-transfer-1",
-          "evidence_target": "transfer",
-          "locale": "ja-JP",
-          "reference_answer": "A first confession to someone you are not close to needs the polite desu form, while aishiteru is intimate and belongs to a settled private relationship; said to a close friend in public, the same heavy line would overstate the relationship.",
-          "rubric": [
-            "Names the addressee and the relationship as the reason for the polite form",
-            "Names the setting (private, deliberate) as part of the choice",
-            "Transfers the reasoning to the friend-in-public case instead of repeating the first answer"
+          "accepted_alternatives": [
+            "A",
+            "a",
+            "casual",
+            "casual register",
+            "suki da yo",
+            "suki dayo"
           ],
-          "stimulus": "In English, explain why a first confession to someone you respect calls for a different line from a settled partnership. Name the addressee, the relationship and the setting, and then say what would change if the same words were said to a close friend in public.",
+          "audit_state": "unreviewed",
+          "check_id": "chk-friend-public-choice-1",
+          "evidence_target": "discrimination",
+          "locale": "ja-JP",
+          "reference_answer": "A (casual register)",
+          "rubric": [
+            "Chooses the casual register for a close friend in public",
+            "Does not choose the polite or intimate register for that relationship",
+            "Keeps the choice tied to the addressee and the public setting"
+          ],
+          "stimulus": "A close friend, in public, after an outing: you want to say something affectionate without making it a confession and without overstating the relationship. Which register fits? Answer A, B or C. A: casual register (suki da yo). B: polite register (suki desu). C: intimate register (aishiteru).",
           "version": 1
         }
       ],
       "estimated_minutes": 7,
       "evidence_criteria": [
-        "Explains the change in terms of addressee, relationship and setting",
-        "Transfers the reasoning to a third situation without a model answer"
+        "Picks the casual register for a close friend in public",
+        "Does not apply the intimate line to a friend in public",
+        "Reads the choice from the addressee and the public setting"
       ],
-      "evidence_target": "transfer",
+      "evidence_target": "discrimination",
       "objective_id": "obj-register-transfer",
       "ordinal": 4,
       "sections": [
         {
           "path": "content/section-03-new-context.md",
           "section_id": "sec-new-context-2",
-          "title": "Explain your choice"
+          "title": "A close friend in public"
         }
       ],
-      "title": "Explain why register changes with the relationship"
+      "title": "Choose the register for a close friend in public"
     }
   ],
   "pack_id": "japanese-affection-context-l0",
-  "pack_version": "1.0.0",
+  "pack_version": "2.0.0",
   "recipe": "casual",
   "safety_notes": [
     "Audio is bundled and is synthetic. It is not a native-speaker pronunciation model, and this pack implements no listening check and no pronunciation score, so no listening evidence is claimed.",
@@ -334,5 +356,5 @@
     }
   ],
   "subtitle": "Four lines, three addressees, one decision: who is listening, how close, and where.",
-  "title": "Japanese affection and register — an L0 demonstration classroom"
+  "title": "Japanese affection and register — a Sample L0 classroom"
 }
