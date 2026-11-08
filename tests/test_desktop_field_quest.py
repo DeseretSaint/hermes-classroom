@@ -371,7 +371,7 @@ class FieldQuestRenderTest(unittest.TestCase):
         self.assertNotIn("data-cb-block-media", html)
         self.assertIn("Short explain.", html)
 
-    def test_a_media_child_keeps_its_text_equivalent(self) -> None:
+    def test_a_media_child_stays_in_textbook_not_in_the_brief(self) -> None:
         doc = quest_document()
         doc["blocks"][1]["media"] = [{
             "kind": "visual",
@@ -383,9 +383,51 @@ class FieldQuestRenderTest(unittest.TestCase):
             "degraded": False,
             "reason": None,
         }]
-        html = self.quest(doc)
-        self.assertEqual(html.count("data-cb-block-media"), 1)
-        self.assertIn("A shelf with two labelled jars, warm on the left.", html)
+        quest = self.quest(doc)
+        self.assertNotIn("data-cb-block-media", quest)
+        self.assertNotIn("A shelf with two labelled jars, warm on the left.", quest)
+        textbook = self.other_view("textbook", doc)
+        self.assertEqual(textbook.count("data-cb-block-media"), 1)
+        self.assertIn("A shelf with two labelled jars, warm on the left.", textbook)
+
+    # -- the heading and the caption ----------------------------------------------------------
+    def test_the_section_title_is_the_heading_and_the_counts_are_a_caption(self) -> None:
+        html = self.quest()
+        heading = re.search(r"<h2[^>]*data-cb-quest-title[^>]*>(.*?)</h2>", html)
+        self.assertTrue(heading, "the quest must carry the section title as its h2")
+        heading_text = heading.group(1) if heading else ""
+        self.assertEqual(heading_text, "Affection and register")
+        self.assertNotIn("mission", heading_text.lower())
+        self.assertIn('data-cb-quest-caption=""', html)
+        self.assertIn(">4 missions, 1 checkpoint<", html)
+
+    def test_the_counts_are_not_a_hero_and_the_disclosure_is_gone(self) -> None:
+        html = self.quest()
+        self.assertNotIn("data-cb-hero-facts", html)
+        self.assertNotIn("What these counts mean", html)
+        self.assertNotIn('data-cb-quest-note', html)
+
+    def test_one_real_evidence_line_follows_the_caption(self) -> None:
+        html = self.quest()
+        self.assertIn(">2 of 5 with independent evidence · 1 due for review<", html)
+        self.assertNotIn(">2 independent · 1 due<", html)
+
+    def test_a_mission_brief_is_one_line_and_one_way_in(self) -> None:
+        mission = PLUGIN_JS.read_text(encoding="utf-8").split("function QuestMission(", 1)[1].split(
+            "\nfunction FieldQuestView(", 1)[0]
+        self.assertIn("missionBriefLine(block, checkLabels)", mission)
+        self.assertIn("whiteSpace: 'nowrap'", mission)
+        self.assertIn("textOverflow: 'ellipsis'", mission)
+        self.assertEqual(mission.count("'data-cb-mission-read'"), 1, "one way into Textbook per mission")
+        self.assertNotIn("ProseText", mission)
+        self.assertNotIn("BlockMedia", mission)
+
+    def test_a_mission_row_is_not_a_second_invisible_control(self) -> None:
+        mission = PLUGIN_JS.read_text(encoding="utf-8").split("function QuestMission(", 1)[1].split(
+            "\nfunction FieldQuestView(", 1)[0]
+        self.assertNotIn("role: 'link'", mission)
+        self.assertNotIn("tabIndex: 0", mission)
+        self.assertNotIn("onKeyDown: openMissionOnKey", mission)
 
     def test_the_quest_ships_static_motion_and_says_which_preference_it_read(self) -> None:
         html = self.quest()
@@ -462,13 +504,13 @@ class FieldQuestModelTest(FieldQuestRenderTest):
             ],
         }))
 
-    def test_mission_brief_is_a_pointer_and_keyboard_target(self) -> None:
+    def test_the_brief_line_is_one_sentence_and_keeps_the_short_prose(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        mission = source.split("function QuestMission(", 1)[1].split("\nfunction FieldQuestView(", 1)[0]
-        self.assertIn("onClick: openMission", mission)
-        self.assertIn("onKeyDown: openMissionOnKey", mission)
-        self.assertIn("role: 'link'", mission)
-        self.assertIn("target.closest('button, a, input, textarea, select", mission)
+        brief = source.split("function missionBriefLine(", 1)[1].split("\n}", 1)[0]
+        self.assertIn("block.short || block.deep", brief)
+        self.assertIn("textOverflow", source)
+        self.assertIn("function missionBriefLine(block, checkLabels)", source)
+        self.assertIn("return first.length > 140", brief)
 
     def test_model_lists_one_mission_per_block(self) -> None:
         model = self.model()
