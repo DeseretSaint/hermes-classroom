@@ -5,7 +5,11 @@ before implementation. It does not change the release gate in `docs/SUBMISSION.m
 
 **M0 implementation status:** the host media adapter, lesson-post media generation, cache/fallback,
 lesson-run media projection and the inline Desktop preview are merged on `master` at `3cead45`
-(698 tests, `node --check`, validate 3/3 on 924 files). M1–M4 below remain the product plan.
+(698 tests, `node --check`, validate 3/3 on 924 files). H-169 then closed the state filter: media
+is generated for every page a learner can open (`validated` and `model_assessed`), so the default
+install — which has no second validator model, and therefore authors `model_assessed` lessons —
+produces the images and audio the lesson declares. `needs_review`/rejected pages generate nothing.
+M1–M4 below remain the product plan.
 
 ## 1. The problem this plan solves
 
@@ -300,6 +304,13 @@ Reuse `coursebook/artifacts.py` unchanged:
 
 Generation writes bytes before the DB row, then records metadata in one short transaction. The
 lesson job records media artifacts in `gen_lessons.media_json` only after the bytes exist.
+
+**Eligible lesson states.** `media.MEDIA_ELIGIBLE_LESSON_STATES` is `{validated, model_assessed}`.
+A `model_assessed` page is readable (with its provenance warning), so its media is content and is
+generated; the artifact records `lesson_state = "model_assessed"` and `independent = false` in its
+provenance and is never described as independently validated. The preview route returns those two
+keys beside the bytes, so the reader can see which page produced the media. A `needs_review` or
+rejected page generates none and keeps its complete text.
 
 ### 5.4 Rendering
 

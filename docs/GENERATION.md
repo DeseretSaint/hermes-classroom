@@ -336,9 +336,19 @@ v10). They are their own fields; they are never written into `dials`, which stay
 
 For an **approved** plan only (`PlanNotApproved` otherwise) the pipeline writes one lesson per
 section: 2–6 teaching segments, one worked example, one check, a learner explanation, a source list
-and a declarative media spec. After the lesson is validated, the media caller generates a host
+and a declarative media spec. After the lesson is authored, the media caller generates a host
 illustration, deterministic schematic or TTS narration through `ctx.dispatch_tool`, caches the
 artifact by spec/source hash, and leaves a complete text equivalent when the provider fails.
+
+**Which lesson states may generate media.** `coursebook.media.MEDIA_ELIGIBLE_LESSON_STATES` is
+`{validated, model_assessed}`. The default configuration has no second validator model, so the
+normal lesson is `model_assessed`; its page is readable (`learner_page()` serves it with the
+provenance warning), so its declared media is content and is generated. A `needs_review` or
+rejected page generates nothing: a page the learner cannot open has no media to deliver. Media is
+never evidence for either state. An artifact produced for a model-assessed page records
+`lesson_state = "model_assessed"` and `independent = false` in its own provenance, and its label is
+the role's honesty label (illustration, schematic, narration) — never a claim of independent
+validation. Reuse is by `spec_hash` + `source_hash`, so a second run does not pay twice.
 
 Every deep field also carries an authored `short` for the Guided view: `segments[].short`,
 `worked_example.short` and a top-level `learner_explanation_short`. A short is a rendering of the
@@ -498,7 +508,11 @@ Two stored shapes project into the same `$defs/lesson_document`:
   The row is not rewritten: an older page keeps its v7 bytes and gains `document` at read.
 * `lesson.page` prefers the run's **authored** page: an objective whose plan has a
   `gen_lessons` row in state `validated` is projected with `document_from_page`, which publishes
-  the authored `short` beside each `deep`. Every other section — a pack/composed section, a
+  the authored `short` beside each `deep`. A `model_assessed` lesson is deliberately not promoted
+  here until the wire carries its provenance warning (see `docs/H15-VALIDATOR-INDEPENDENCE.md`);
+  it keeps the durable `lesson_segments` projection, and its generated media reaches the run as
+  `lesson_segments(kind='media')` seeded by `media.seed_authored_media`, which accepts both
+  `validated` and `model_assessed` lessons. Every other section — a pack/composed section, a
   chat-written transcript, a page that predates the guided writer, or a stored page that no longer
   validates — keeps the durable `lesson_segments` projection and therefore reports
   `textbook_only`. Teaching prose maps positionally to `orient`/`explain`/`recap`, a

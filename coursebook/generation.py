@@ -8338,6 +8338,13 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
             f"lesson {lesson_id!r} is {row['state']!r}: no learner-facing check is enabled"
         )
     page = _load_json(row["page_json"], {})
+    # ``page_json`` is the authoring snapshot; ``media_json`` is the authoritative record after
+    # the media caller attached artifact ids, MIME and honest degraded reasons. A page in state
+    # ``model_assessed`` is served too, so its generated media must be projected here rather than
+    # the pre-generation media the stored page snapshot still holds.
+    media = _stored_lesson_media(row)
+    if media:
+        page["media"] = media
     if _leaks(page):
         raise LessonNotAvailable("stored lesson page contains answer material; refusing to serve it")
     check_rows = connection.execute(
@@ -8381,6 +8388,42 @@ def learner_page(connection: sqlite3.Connection, lesson_id: str) -> dict[str, An
             "warning": None,
         }
     return page
+
+
+#: The only media fields a learner-facing page publishes. ``spec``, ``transcript`` and
+#: ``facts`` stay out: they are authoring input, and the text equivalent is the learner's copy.
+_LESSON_MEDIA_FIELDS = (
+    "kind",
+    "role",
+    "purpose",
+    "text_equivalent",
+    "artifact_id",
+    "mime",
+    "label",
+    "degraded",
+    "reason",
+)
+
+
+def _stored_lesson_media(row: dict[str, Any]) -> list[dict[str, Any]]:
+    """The generated media list for a lesson row, projected through the learner allowlist.
+
+    ``media.generate_for_lessons`` writes ``media_json`` after the bytes exist; it carries the
+    artifact id, the MIME and the honest degraded reason. The authoring snapshot in ``page_json``
+    has none of those yet. A malformed or empty column yields an empty list so an older row keeps
+    whatever its page snapshot already recorded.
+    """
+    try:
+        items = json.loads(row.get("media_json") or "[]")
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(items, list):
+        return []
+    return [
+        {field: item.get(field) for field in _LESSON_MEDIA_FIELDS}
+        for item in items
+        if isinstance(item, Mapping)
+    ]
 
 
 def _leaks(value: Any) -> bool:

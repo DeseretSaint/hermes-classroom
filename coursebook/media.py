@@ -48,6 +48,12 @@ MAX_PREVIEW_BYTES = 4 * 1024 * 1024
 MAX_MEDIA_PER_LESSON = 4
 MAX_MEDIA_PER_JOB = 12
 
+#: Lesson states whose page may generate media. ``validated`` is an independent pass;
+#: ``model_assessed`` is a readable page that only the author's own model assessed, so its media is
+#: content, never evidence, and the page-level provenance warning travels with it. ``needs_review``
+#: and rejected pages generate nothing: a page a learner cannot open has no media to deliver.
+MEDIA_ELIGIBLE_LESSON_STATES = frozenset({"validated", "model_assessed"})
+
 #: The image tool returns a provider URL. Only these hosts are accepted for the download; this is
 #: a narrower allowlist than "any URL returned by a tool", not a general web fetcher.
 _ALLOWED_IMAGE_HOSTS = ("fal.media", "fal.run")
@@ -410,10 +416,13 @@ def generate_for_lessons(
     store: artifacts.ArtifactStore | None = None,
     now: datetime | None = None,
 ) -> MediaGenerationSummary:
-    """Generate and attach media for already-authored, validated lessons.
+    """Generate and attach media for authored lessons a learner can open.
 
-    Called after ``generation.run_lesson_job`` outside any transaction. Cached artifacts are
-    reused by spec/source hash; provider failures are recorded on the media item as a degraded
+    Called after ``generation.run_lesson_job`` outside any transaction. Both ``validated`` and
+    ``model_assessed`` pages are eligible (see ``MEDIA_ELIGIBLE_LESSON_STATES``); a ``needs_review``
+    or rejected page is skipped. An artifact generated for a model-assessed page records that
+    state in its own provenance and is never labelled as independently validated. Cached artifacts
+    are reused by spec/source hash; provider failures are recorded on the media item as a degraded
     text fallback. Each lesson's ``media_json`` is updated in its own short transaction.
     """
     host = host if host is not None else host_media()
@@ -423,7 +432,8 @@ def generate_for_lessons(
     summary = MediaGenerationSummary(artifact_ids=[], usage=[])
     used = 0
     for row in _lesson_rows(connection, lesson_ids):
-        if str(row.get("state")) != "validated":
+        lesson_state = str(row.get("state"))
+        if lesson_state not in MEDIA_ELIGIBLE_LESSON_STATES:
             summary.skipped += 1
             continue
         try:
@@ -491,6 +501,11 @@ def generate_for_lessons(
                     "model": "host-configured",
                     "prompt_hash": artifacts.spec_hash({"prompt": spec.prompt, "transcript": spec.transcript}),
                     "source_hash": source_fp,
+                    # The page's own provenance travels with the bytes: a model-assessed lesson's
+                    # media must never read as independently validated evidence.
+                    "lesson_id": str(row.get("id")),
+                    "lesson_state": lesson_state,
+                    "independent": lesson_state == "validated",
                     "notes": f"generated for lesson {row.get('id')}" + (f" / job {job_id}" if job_id else ""),
                 },
             )
@@ -564,8 +579,8 @@ def seed_authored_media(connection: Any, *, lesson_run_id: str, objective_id: st
     if section is None:
         return 0
     lesson = connection.execute(
-        "SELECT media_json FROM gen_lessons WHERE section_id = ? AND plan_hash = ?"
-        " AND state = 'validated' ORDER BY version DESC LIMIT 1",
+        "SELECT media_json, state FROM gen_lessons WHERE section_id = ? AND plan_hash = ?"
+        " AND state IN ('validated', 'model_assessed') ORDER BY version DESC LIMIT 1",
         (str(section["id"]), str(document["plan_hash"])),
     ).fetchone()
     if lesson is None:
@@ -698,5 +713,9 @@ def preview_artifact(artifact_id: str) -> dict[str, Any]:
         # and attribution, so the reader can see whose bytes these are.
         "license_id": provenance.get("license_id") or None,
         "attribution": provenance.get("attribution") or None,
+        # H-169: the page's provenance travels with the bytes. ``None`` on an older artifact that
+        # recorded none; a reader must not infer "validated" from its absence.
+        "lesson_state": provenance.get("lesson_state") or None,
+        "independent": provenance.get("independent") if "independent" in provenance else None,
         "data_url": f"data:{detected};base64," + base64.b64encode(data).decode("ascii"),
     }
