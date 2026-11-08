@@ -17,8 +17,10 @@ Three non-Japanese briefs are driven through the real product surface in a throw
 What is **FAKE** and labelled so: the model. Every response is that scenario's recorded transcript
 (``transcripts/*.json``, authored by ``build_transcripts.py``) replayed through the real pipeline,
 with two distinct recorded model identities for author and validator so H-36 independence is
-exercised rather than asserted. No provider is called and no spend occurs. The research fetch is an
-in-memory recorded page through the real search seam, not the live web.
+exercised rather than asserted. No provider is called and no spend occurs. The research fetch is a
+recorded result set passed through the real search seam, not the live web: the soldering fixture
+holds six pages that were really fetched for the queries the full-scope research floor derives,
+and every page's bytes are a recording.
 
 What is **real**: every schema, rule, transaction, approval check, projection, check payload,
 grading lane and verdict under test. The script reports what it read; it does not assert a verdict
@@ -180,27 +182,56 @@ def _shorten(text: str) -> str:
 
 
 class RecordedSearch:
-    """One in-memory page through the real search seam (not the live web)."""
+    """A fixed research recording replayed through the real search seam (not the live web).
+
+    Two shapes are accepted, both recorded data and never authored at replay time:
+
+    * a single page mapping (``{"url", "title", "content"}``) — the recorded seam returned that
+      page for every query, which is how the original H-40 fixtures were recorded;
+    * an explicit result set (``{"pages": [...]}``) — the recorded seam returns that fixed set
+      for every query, and the pipeline's own dedupe, source-type ranking and page budget decide
+      which URLs are actually fetched.
+
+    A fetch for a URL the recording does not hold raises, so a fixture can never be answered by
+    an invented page. Publisher and publication date come from the recording when it has them; a
+    missing date stays ``None`` rather than being guessed.
+    """
 
     def __init__(self, page: dict) -> None:
-        self.page = page
+        self.record = page
+        if isinstance(page.get("pages"), list):
+            self.pages = [dict(entry) for entry in page["pages"]]
+        else:
+            self.pages = [dict(page)]
+        self.by_url: dict[str, dict] = {}
+        for entry in self.pages:
+            self.by_url.setdefault(str(entry["url"]), entry)
         self.queries: list[str] = []
         self.fetches: list[str] = []
 
     def search(self, query: str, limit: int) -> list[dict]:
         self.queries.append(query)
-        return [{"url": self.page["url"], "title": self.page["title"],
-                 "description": "recorded result"}][:limit]
+        return [
+            {"url": entry["url"], "title": entry["title"], "description": "recorded result"}
+            for entry in self.pages
+        ][:limit]
 
     def fetch(self, url: str, max_chars: int) -> dict:
         self.fetches.append(url)
-        return {
-            "url": self.page["url"],
-            "title": self.page["title"],
-            "publisher": "Recorded publisher",
-            "published_at": None,
-            "content": self.page["content"][:max_chars],
+        entry = self.by_url.get(str(url))
+        if entry is None:
+            raise AssertionError(f"recording has no page for {url!r}; the packet was not recorded "
+                                 "for this query")
+        page = {
+            "url": entry["url"],
+            "title": entry["title"],
+            "content": entry["content"][:max_chars],
         }
+        if entry.get("publisher"):
+            page["publisher"] = entry["publisher"]
+        if entry.get("published_at"):
+            page["published_at"] = entry["published_at"]
+        return page
 
 
 class RecordedLLM:
@@ -569,13 +600,18 @@ def _run_scenario(name: str, *, home: Path) -> dict:
     scenario = transcript["scenario"]
     llm = transcribe(transcript)
     search = RecordedSearch(transcript["research"])
+    recorded_set = isinstance(transcript["research"].get("pages"), list)
 
     evidence: dict = {
         "scenario": scenario,
         "labels": {
             "model": "RECORDED TRANSCRIPT (hand-authored, replayed through the real pipeline)",
             "validator": "RECORDED TRANSCRIPT, distinct recorded model identity (H-36)",
-            "research": "RECORDED PAGE (fetched through the real search seam, bytes are a recording)",
+            "research": (
+                "RECORDED PAGES (fetched through the real search seam; bytes are a recording)"
+                if recorded_set else
+                "RECORDED PAGE (fetched through the real search seam, bytes are a recording)"
+            ),
             "provider_calls": 0,
             "provider_spend_usd": 0.0,
         },

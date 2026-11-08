@@ -699,7 +699,7 @@
           "licence": null,
           "modality": null,
           "published_at": null,
-          "publisher": "Recorded publisher",
+          "publisher": "example.invalid",
           "source_id": "0000000000000008",
           "source_type": "web_page",
           "support_assessment": "unverified",
@@ -833,7 +833,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5075,
+            "input_tokens": 5071,
             "output_tokens": 1673,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -963,7 +963,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5131,
+            "input_tokens": 5128,
             "output_tokens": 1729,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1200,7 +1200,7 @@
           "calls": 2,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 2203,
+          "input_tokens": 2202,
           "output_tokens": 904,
           "unknown_calls": 0,
           "unknown_cost": false
@@ -1319,7 +1319,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1831,
+            "input_tokens": 1830,
             "output_tokens": 525,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1378,7 +1378,7 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 1849,
+            "input_tokens": 1847,
             "output_tokens": 524,
             "unknown_calls": 0,
             "unknown_cost": false

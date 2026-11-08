@@ -79,12 +79,12 @@
     "model": "RECORDED TRANSCRIPT (hand-authored, replayed through the real pipeline)",
     "provider_calls": 0,
     "provider_spend_usd": 0.0,
-    "research": "RECORDED PAGE (fetched through the real search seam, bytes are a recording)",
+    "research": "RECORDED PAGES (fetched through the real search seam; bytes are a recording)",
     "validator": "RECORDED TRANSCRIPT, distinct recorded model identity (H-36)"
   },
   "lesson_rows": [
     {
-      "lesson_id": "0000000000000052",
+      "lesson_id": "0000000000000057",
       "page": {
         "check": {
           "assistance_policy": {
@@ -137,11 +137,11 @@
           ]
         }
       },
-      "section_id": "0000000000000028",
+      "section_id": "000000000000002d",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000055",
+      "lesson_id": "000000000000005a",
       "page": {
         "check": {
           "assistance_policy": {
@@ -194,11 +194,11 @@
           ]
         }
       },
-      "section_id": "0000000000000029",
+      "section_id": "000000000000002e",
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000005e",
+      "lesson_id": "0000000000000063",
       "page": {
         "check": {
           "assistance_policy": {
@@ -251,11 +251,11 @@
           ]
         }
       },
-      "section_id": "000000000000002f",
+      "section_id": "0000000000000034",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000061",
+      "lesson_id": "0000000000000066",
       "page": {
         "check": {
           "assistance_policy": {
@@ -308,11 +308,11 @@
           ]
         }
       },
-      "section_id": "0000000000000030",
+      "section_id": "0000000000000035",
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000006a",
+      "lesson_id": "000000000000006f",
       "page": {
         "check": {
           "assistance_policy": {
@@ -365,11 +365,11 @@
           ]
         }
       },
-      "section_id": "0000000000000036",
+      "section_id": "000000000000003b",
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000006d",
+      "lesson_id": "0000000000000072",
       "page": {
         "check": {
           "assistance_policy": {
@@ -422,11 +422,11 @@
           ]
         }
       },
-      "section_id": "0000000000000037",
+      "section_id": "000000000000003c",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000076",
+      "lesson_id": "000000000000007b",
       "page": {
         "check": {
           "assistance_policy": {
@@ -479,11 +479,11 @@
           ]
         }
       },
-      "section_id": "000000000000003d",
+      "section_id": "0000000000000042",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000079",
+      "lesson_id": "000000000000007e",
       "page": {
         "check": {
           "assistance_policy": {
@@ -536,11 +536,11 @@
           ]
         }
       },
-      "section_id": "000000000000003e",
+      "section_id": "0000000000000043",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000082",
+      "lesson_id": "0000000000000087",
       "page": {
         "check": {
           "assistance_policy": {
@@ -593,11 +593,11 @@
           ]
         }
       },
-      "section_id": "0000000000000044",
+      "section_id": "0000000000000049",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000085",
+      "lesson_id": "000000000000008a",
       "page": {
         "check": {
           "assistance_policy": {
@@ -650,11 +650,11 @@
           ]
         }
       },
-      "section_id": "0000000000000045",
+      "section_id": "000000000000004a",
       "state": "validated"
     },
     {
-      "lesson_id": "000000000000008e",
+      "lesson_id": "0000000000000093",
       "page": {
         "check": {
           "assistance_policy": {
@@ -707,11 +707,11 @@
           ]
         }
       },
-      "section_id": "000000000000004b",
+      "section_id": "0000000000000050",
       "state": "validated"
     },
     {
-      "lesson_id": "0000000000000091",
+      "lesson_id": "0000000000000096",
       "page": {
         "check": {
           "assistance_policy": {
@@ -764,7 +764,7 @@
           ]
         }
       },
-      "section_id": "000000000000004c",
+      "section_id": "0000000000000051",
       "state": "validated"
     }
   ],
@@ -778,57 +778,27 @@
     },
     "attempt_rows": [
       {
-        "check_id": "0000000000000053",
+        "check_id": "0000000000000058",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:a584036c58bec84268da0f48bc2c9dd1cb37778a58696daaec992ee25300155c\"}",
-        "id": "att_0000000000000000000000000000009c",
+        "id": "att_000000000000000000000000000000a1",
         "state": "committed",
         "verdict": "pass"
       },
       {
-        "check_id": "0000000000000056",
+        "check_id": "000000000000005b",
         "evidence_class": "cold",
         "grading_provenance_json": "{\"grader\":\"deterministic:exact\",\"reference_sha256\":\"sha256:91075c69b554ba156c9217b2becefa7bb24045d55e7b0e05d829d65b251720de\"}",
-        "id": "att_000000000000000000000000000000a2",
+        "id": "att_000000000000000000000000000000a7",
         "state": "committed",
         "verdict": "not_yet"
       }
     ],
     "check_lanes": [
       {
-        "objective_id": "0000000000000010",
-        "reference_kind": "exact",
-        "state": "closed",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "0000000000000011",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "0000000000000012",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "0000000000000013",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
-        "objective_id": "0000000000000014",
-        "reference_kind": "exact",
-        "state": "open",
-        "stimulus_format": "text"
-      },
-      {
         "objective_id": "0000000000000015",
         "reference_kind": "exact",
-        "state": "open",
+        "state": "closed",
         "stimulus_format": "text"
       },
       {
@@ -863,6 +833,36 @@
       },
       {
         "objective_id": "000000000000001b",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "000000000000001c",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "000000000000001d",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "000000000000001e",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "000000000000001f",
+        "reference_kind": "exact",
+        "state": "open",
+        "stimulus_format": "text"
+      },
+      {
+        "objective_id": "0000000000000020",
         "reference_kind": "exact",
         "state": "open",
         "stimulus_format": "text"
@@ -1291,13 +1291,13 @@
     ],
     "approve": {
       "approval_provenance": null,
-      "plan_hash": "sha256:846c65eca040806b2453887a14beaf0edacb68790ce39f0c7390ae243ef1d88c",
+      "plan_hash": "sha256:720d4669462652c05e3365f178eb04d4dbaa3a1f30ba022ded4796ccad293dcc",
       "revision": 1,
       "state_after": "approved"
     },
     "grading": [
       {
-        "check_id": "0000000000000053",
+        "check_id": "0000000000000058",
         "label": "correct",
         "objective_ordinal": 1,
         "open": {
@@ -1308,9 +1308,9 @@
         "submit": {
           "contract_version": 17,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-00009b",
+          "operation_id": "op-h40-attempt-submit-0000a0",
           "result": {
-            "attempt_id": "att_0000000000000000000000000000009c",
+            "attempt_id": "att_000000000000000000000000000000a1",
             "criteria": [
               {
                 "id": "c1",
@@ -1327,7 +1327,7 @@
         }
       },
       {
-        "check_id": "0000000000000056",
+        "check_id": "000000000000005b",
         "label": "wrong",
         "objective_ordinal": 2,
         "open": {
@@ -1338,9 +1338,9 @@
         "submit": {
           "contract_version": 17,
           "ok": true,
-          "operation_id": "op-h40-attempt-submit-0000a1",
+          "operation_id": "op-h40-attempt-submit-0000a6",
           "result": {
-            "attempt_id": "att_000000000000000000000000000000a2",
+            "attempt_id": "att_000000000000000000000000000000a7",
             "criteria": [
               {
                 "id": "c1",
@@ -1364,7 +1364,7 @@
         {
           "attempt_count": 0,
           "audit_state": "passed",
-          "check_id": "0000000000000053",
+          "check_id": "0000000000000058",
           "evidence_target": "recall",
           "state": "open",
           "version": 1
@@ -1387,7 +1387,7 @@
             "source_ids": []
           },
           {
-            "check_id": "0000000000000053",
+            "check_id": "0000000000000058",
             "deep": "The three hazards are the hot iron, the solder fumes and flying clippings near the eyes.",
             "headline": "Do it",
             "id": "blk_cccb4749265a6c5f10ef",
@@ -1417,10 +1417,10 @@
             "source_ids": []
           }
         ],
-        "check_id": "0000000000000053",
-        "content_hash": "sha256:4d257b0da0bf98e76d34d4f54f7a6cb7ca321a6f2b04c97d1c3062d61925c26f",
+        "check_id": "0000000000000058",
+        "content_hash": "sha256:c6cf11efc266c29daaa55964d82eedc1c450a3e3a024f18e67223021124a8584",
         "direction": "ltr",
-        "document_id": "doc_4d257b0da0bf98e76d34",
+        "document_id": "doc_c6cf11efc266c29daaa5",
         "lang": "en-US",
         "objective_id": null,
         "schema_version": 1,
@@ -1442,7 +1442,7 @@
       "section": {
         "evidence_target": "recall",
         "last_opened_at": null,
-        "objective_id": "0000000000000010",
+        "objective_id": "0000000000000015",
         "ordinal": 1,
         "state": "not_started",
         "title": "Name the three burn and fume hazards at the bench"
@@ -1450,20 +1450,100 @@
       "segments": [],
       "sources": [
         {
-          "content_hash": "sha256:02cba856b6719f4fd0751c438874518c58ca59a0c59c920254ceb1d8b1fc19bd",
-          "excerpt": "A recorded page used only so the research seam returns a source. It states that joints are heated pad and lead together, solder is fed in after the joint reaches temperature, and a shiny fillet is the inspection criterion.",
+          "content_hash": "sha256:8d35aa82ce62ba1aed94e1808a398e5d20641679bf80960d1d2f7bc1e94ef08d",
+          "excerpt": "150909 SOLDERING, ASSEMBLY, # AND MANUFACTURING [Image: Image6] George Hadley ©2014, Images Property of their Respective Owners. --- ## OUTLINE • Importance of soldering • Soldering equipment, tools, and supplies • How do solder and flux work? • Electrostatic discharge (ESD) and safety considerations • Through-hole soldering techniques • Surface mount soldering techniques • Hot air rework • Common soldering pitfalls --- ## IMPORTANCE OF SOLDERING • Valuable engineering skill (in research, entrepreneurship, or industry) • Able to correct minor hardware issues discovered after PCB is received (“",
           "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
           "licence": null,
           "modality": null,
           "published_at": null,
-          "publisher": "Recorded publisher",
+          "publisher": "Purdue University",
           "source_id": "0000000000000008",
+          "source_type": "academic",
+          "support_assessment": "unverified",
+          "support_status": "unassessed",
+          "title": "Soldering, Assembly, and Manufacturing (ECE 477 lecture)",
+          "url": "https://engineering.purdue.edu/ece477/Course/Lectures/ToSource/Slides/9-SolderingAndAssembly/9-AssemblyAndSoldering.pdf"
+        },
+        {
+          "content_hash": "sha256:4f4de4ce3cd779e3b9e82e4944f3eb50bdc3386f4dab8a8204e558e4214f76b6",
+          "excerpt": "[Skip to main content](https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/#main-content) [Skip to navigation](https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/#navigation) [![University of Colorado Boulder](https://physicslabs.colorado.edu/static/images/cu-boulder-logo-text-black.eb244410a485.svg)](https://www.colorado.edu/) [![University of Colorado Boulder](https://physicslabs.colorado.edu/static/images/cu-boulder-logo-text-white.2e4e8b108057.svg)](https://www.colorado.edu/) You will likely need to solder components during the course, particularly fo",
+          "excerpt_state": "recorded",
+          "fetched_at": "2026-11-07T12:00:00Z",
+          "licence": null,
+          "modality": null,
+          "published_at": null,
+          "publisher": "University of Colorado Boulder",
+          "source_id": "0000000000000009",
+          "source_type": "academic",
+          "support_assessment": "unverified",
+          "support_status": "unassessed",
+          "title": "Soldering Resources | Physics Undergraduate Labs | University of Colorado Boulder",
+          "url": "https://physicslabs.colorado.edu/courses/phys-3330/resources/soldering/"
+        },
+        {
+          "content_hash": "sha256:b3a0187de6742fa2d57f887d854d6df2ab33c46ac5c5d5b17a1e9b9b0d937083",
+          "excerpt": "## TN1225 ### Mounting instructions for THD (through-hole device) packages #### Introduction The mounting instructions herein provide the main recommendations to appropriately handle, assemble and rework through‑hole device packages. It is necessary to follow some basic assembly rules to limit thermal and mechanical stresses or ensure optimal thermal conduction and electrical insulation. STPOWER --- ### Package description In the through-hole device packages the leads of these type of devices (THD packages) are longer and straight at the end, so that they can be inserted into drilled holes in",
+          "excerpt_state": "recorded",
+          "fetched_at": "2026-11-07T12:00:00Z",
+          "licence": null,
+          "modality": null,
+          "published_at": "2026-09-16T00:00:00Z",
+          "publisher": "STMicroelectronics",
+          "source_id": "000000000000000a",
           "source_type": "web_page",
           "support_assessment": "unverified",
           "support_status": "unassessed",
-          "title": "Recorded page: through-hole soldering",
-          "url": "https://example.invalid/recorded/through-hole-soldering"
+          "title": "Mounting instructions for THD (through-hole device) packages - Technical note",
+          "url": "https://www.st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf"
+        },
+        {
+          "content_hash": "sha256:465d8f2308a00d9cb8cd4e332089f4e29567dc8fe46a905a20b60498eca40731",
+          "excerpt": "[Skip to main content](https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering#content) [Shop the Holiday Gift Guide](https://www.ifixit.com/Store/Black-Friday-Holiday) Free Shipping on Domestic Orders $75+ Perhaps you’re at the same point in your repair journey as me: I know my way around a screwdriver and spudger, have popped many a cable and swapped my share of puffy batteries. But whenever I would come across soldered connections, the ghastly anti-repair corporate rhetoric swirled in my mind: _Contact a certified technician!_ Determined to overcome",
+          "excerpt_state": "recorded",
+          "fetched_at": "2026-11-07T12:00:00Z",
+          "licence": null,
+          "modality": null,
+          "published_at": null,
+          "publisher": "iFixit",
+          "source_id": "000000000000000b",
+          "source_type": "web_page",
+          "support_assessment": "unverified",
+          "support_status": "unassessed",
+          "title": "Soldering Simplified: A Newbie's Guide to Through-Hole Soldering - iFixit",
+          "url": "https://www.ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering"
+        },
+        {
+          "content_hash": "sha256:7cf979fceeebb5f92d946f0ce075e993274c135cc691352c2001dc7fc83b7955",
+          "excerpt": "[![Promo](https://images.ctfassets.net/jl5ii4oqrdmc/2sg2gIR1EMvVwICYXq2w0b/059624113c9e65dbeb83f5ca17bc342f/26_020_FM_Student_contest_Ad_1940x500_2x-100.jpg?w=970&fm=webp)](https://www.instructables.com/contest/yoursforthemaking1?utm_source=instructables_us&utm_medium=int_ref&utm_campaign=edumkt_la28) # Soldering Through Hole Components \\| Soldering Basics By [How Do You - DIY](https://www.instructables.com/member/How%20Do%20You%20-%20DIY) in [Circuits](https://www.instructables.com/circuits/projects) [Soldering](https://www.instructables.com/circuits/soldering/projects) 10,798 39 [4](https://",
+          "excerpt_state": "recorded",
+          "fetched_at": "2026-11-07T12:00:00Z",
+          "licence": null,
+          "modality": null,
+          "published_at": "2020-10-21T00:00:00Z",
+          "publisher": "Instructables",
+          "source_id": "000000000000000c",
+          "source_type": "web_page",
+          "support_assessment": "unverified",
+          "support_status": "unassessed",
+          "title": "Soldering Through Hole Components | Soldering Basics : 8 Steps - Instructables",
+          "url": "https://www.instructables.com/Soldering-Through-Hole-Components/"
+        },
+        {
+          "content_hash": "sha256:71a8d510b5fbd24d6cd167b48e49fe3cd52fb752774ea9f15e39716fbc3c0fc3",
+          "excerpt": "[Skip to main content](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#content) [Soldering Glossary of Terms](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#main) - [Alloy](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Alloy) - [Bridging](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Bridging) - [Cold Joint](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Cold_Joint) - [Desoldering](https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms#Section_Desoldering) - [Desoldering Pump](https://www.ifixit.com/Wiki/Soldering_Glossary_",
+          "excerpt_state": "recorded",
+          "fetched_at": "2026-11-07T12:00:00Z",
+          "licence": null,
+          "modality": null,
+          "published_at": null,
+          "publisher": "iFixit",
+          "source_id": "000000000000000d",
+          "source_type": "web_page",
+          "support_assessment": "unverified",
+          "support_status": "unassessed",
+          "title": "Soldering Glossary of Terms - iFixit",
+          "url": "https://www.ifixit.com/Wiki/Soldering_Glossary_of_Terms"
         }
       ],
       "state": "not_started"
@@ -1479,16 +1559,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000051",
+          "job_id": "job_00000000000000000000000000000056",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000053",
-              "lesson_id": "0000000000000052",
+              "check_id": "0000000000000058",
+              "lesson_id": "0000000000000057",
               "reused": false,
-              "section_id": "0000000000000028",
+              "section_id": "000000000000002d",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1511,17 +1591,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "0000000000000054",
+              "validation_id": "0000000000000059",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000056",
-              "lesson_id": "0000000000000055",
+              "check_id": "000000000000005b",
+              "lesson_id": "000000000000005a",
               "reused": false,
-              "section_id": "0000000000000029",
+              "section_id": "000000000000002e",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1544,7 +1624,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "0000000000000057",
+              "validation_id": "000000000000005c",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -1552,7 +1632,7 @@
           "needs_review": [],
           "next_unit_ordinal": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -1591,7 +1671,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5110,
+            "input_tokens": 10119,
             "output_tokens": 1678,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1609,16 +1689,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000005d",
+          "job_id": "job_00000000000000000000000000000062",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000005f",
-              "lesson_id": "000000000000005e",
+              "check_id": "0000000000000064",
+              "lesson_id": "0000000000000063",
               "reused": false,
-              "section_id": "000000000000002f",
+              "section_id": "0000000000000034",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1641,17 +1721,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "0000000000000060",
+              "validation_id": "0000000000000065",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000062",
-              "lesson_id": "0000000000000061",
+              "check_id": "0000000000000067",
+              "lesson_id": "0000000000000066",
               "reused": false,
-              "section_id": "0000000000000030",
+              "section_id": "0000000000000035",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1674,7 +1754,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "0000000000000063",
+              "validation_id": "0000000000000068",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -1682,7 +1762,7 @@
           "needs_review": [],
           "next_unit_ordinal": 3,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -1721,7 +1801,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5094,
+            "input_tokens": 10104,
             "output_tokens": 1685,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1739,16 +1819,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000069",
+          "job_id": "job_0000000000000000000000000000006e",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000006b",
-              "lesson_id": "000000000000006a",
+              "check_id": "0000000000000070",
+              "lesson_id": "000000000000006f",
               "reused": false,
-              "section_id": "0000000000000036",
+              "section_id": "000000000000003b",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1771,17 +1851,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "000000000000006c",
+              "validation_id": "0000000000000071",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000006e",
-              "lesson_id": "000000000000006d",
+              "check_id": "0000000000000073",
+              "lesson_id": "0000000000000072",
               "reused": false,
-              "section_id": "0000000000000037",
+              "section_id": "000000000000003c",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1804,7 +1884,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "000000000000006f",
+              "validation_id": "0000000000000074",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -1812,7 +1892,7 @@
           "needs_review": [],
           "next_unit_ordinal": 4,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -1851,7 +1931,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5023,
+            "input_tokens": 10031,
             "output_tokens": 1663,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1869,16 +1949,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000075",
+          "job_id": "job_0000000000000000000000000000007a",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000077",
-              "lesson_id": "0000000000000076",
+              "check_id": "000000000000007c",
+              "lesson_id": "000000000000007b",
               "reused": false,
-              "section_id": "000000000000003d",
+              "section_id": "0000000000000042",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1901,17 +1981,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "0000000000000078",
+              "validation_id": "000000000000007d",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000007a",
-              "lesson_id": "0000000000000079",
+              "check_id": "000000000000007f",
+              "lesson_id": "000000000000007e",
               "reused": false,
-              "section_id": "000000000000003e",
+              "section_id": "0000000000000043",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -1934,7 +2014,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "000000000000007b",
+              "validation_id": "0000000000000080",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -1942,7 +2022,7 @@
           "needs_review": [],
           "next_unit_ordinal": 5,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -1981,7 +2061,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5001,
+            "input_tokens": 10009,
             "output_tokens": 1636,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -1999,16 +2079,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000081",
+          "job_id": "job_00000000000000000000000000000086",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000083",
-              "lesson_id": "0000000000000082",
+              "check_id": "0000000000000088",
+              "lesson_id": "0000000000000087",
               "reused": false,
-              "section_id": "0000000000000044",
+              "section_id": "0000000000000049",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -2031,17 +2111,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "0000000000000084",
+              "validation_id": "0000000000000089",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000086",
-              "lesson_id": "0000000000000085",
+              "check_id": "000000000000008b",
+              "lesson_id": "000000000000008a",
               "reused": false,
-              "section_id": "0000000000000045",
+              "section_id": "000000000000004a",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -2064,7 +2144,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "0000000000000087",
+              "validation_id": "000000000000008c",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -2072,7 +2152,7 @@
           "needs_review": [],
           "next_unit_ordinal": 6,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -2111,7 +2191,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5060,
+            "input_tokens": 10068,
             "output_tokens": 1681,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -2129,16 +2209,16 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000008d",
+          "job_id": "job_00000000000000000000000000000092",
           "job_kind": "lesson",
           "lessons": [
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "000000000000008f",
-              "lesson_id": "000000000000008e",
+              "check_id": "0000000000000094",
+              "lesson_id": "0000000000000093",
               "reused": false,
-              "section_id": "000000000000004b",
+              "section_id": "0000000000000050",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -2161,17 +2241,17 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "0000000000000090",
+              "validation_id": "0000000000000095",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             },
             {
               "audit_state": "passed",
               "check_enabled": true,
-              "check_id": "0000000000000092",
-              "lesson_id": "0000000000000091",
+              "check_id": "0000000000000097",
+              "lesson_id": "0000000000000096",
               "reused": false,
-              "section_id": "000000000000004c",
+              "section_id": "0000000000000051",
               "state": "validated",
               "validation": {
                 "cost_usd": null,
@@ -2194,7 +2274,7 @@
                 "waived_unknown": [],
                 "warning": null
               },
-              "validation_id": "0000000000000093",
+              "validation_id": "0000000000000098",
               "validation_model": "recorded-validator-h40",
               "validation_verdict": "pass"
             }
@@ -2202,7 +2282,7 @@
           "needs_review": [],
           "next_unit_ordinal": null,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "plan_schema": "coursebook.plan.v2",
           "preflight": {
             "budget_source": "caller",
@@ -2241,7 +2321,7 @@
             "calls": 4,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 5072,
+            "input_tokens": 10081,
             "output_tokens": 1681,
             "unknown_calls": 0,
             "unknown_cost": false
@@ -2259,7 +2339,7 @@
           "evidence_target": "recall",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000010",
+          "objective_id": "0000000000000015",
           "ordinal": 1,
           "state": "not_started",
           "title": "Name the three burn and fume hazards at the bench"
@@ -2270,7 +2350,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000011",
+          "objective_id": "0000000000000016",
           "ordinal": 2,
           "state": "not_started",
           "title": "Set an iron to the temperature a leaded joint needs"
@@ -2281,7 +2361,7 @@
           "evidence_target": "comprehension",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000012",
+          "objective_id": "0000000000000017",
           "ordinal": 3,
           "state": "not_started",
           "title": "Read a resistor value from its colour bands"
@@ -2292,7 +2372,7 @@
           "evidence_target": "discrimination",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000013",
+          "objective_id": "0000000000000018",
           "ordinal": 4,
           "state": "not_started",
           "title": "Inspect a pad for lift before inserting a part"
@@ -2303,7 +2383,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000014",
+          "objective_id": "0000000000000019",
           "ordinal": 5,
           "state": "not_started",
           "title": "Form a lead so the part seats flush"
@@ -2314,7 +2394,7 @@
           "evidence_target": "comprehension",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000015",
+          "objective_id": "000000000000001a",
           "ordinal": 6,
           "state": "not_started",
           "title": "Insert a part in the right orientation"
@@ -2325,7 +2405,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000016",
+          "objective_id": "000000000000001b",
           "ordinal": 7,
           "state": "not_started",
           "title": "Heat the pad and lead together before feeding solder"
@@ -2336,7 +2416,7 @@
           "evidence_target": "discrimination",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000017",
+          "objective_id": "000000000000001c",
           "ordinal": 8,
           "state": "not_started",
           "title": "Recognise a cold joint from its surface"
@@ -2347,7 +2427,7 @@
           "evidence_target": "transfer",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000018",
+          "objective_id": "000000000000001d",
           "ordinal": 9,
           "state": "not_started",
           "title": "Inspect a finished joint against the fillet criterion"
@@ -2358,7 +2438,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "0000000000000019",
+          "objective_id": "000000000000001e",
           "ordinal": 10,
           "state": "not_started",
           "title": "Wick a solder bridge without lifting the pad"
@@ -2369,7 +2449,7 @@
           "evidence_target": "procedure",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "000000000000001a",
+          "objective_id": "000000000000001f",
           "ordinal": 11,
           "state": "not_started",
           "title": "Desolder a two-lead part without overheating it"
@@ -2380,15 +2460,15 @@
           "evidence_target": "transfer",
           "independent": false,
           "last_opened_at": null,
-          "objective_id": "000000000000001b",
+          "objective_id": "0000000000000020",
           "ordinal": 12,
           "state": "not_started",
           "title": "Prove continuity with a meter after rework"
         }
       ],
       "plan": {
-        "plan_hash": "sha256:846c65eca040806b2453887a14beaf0edacb68790ce39f0c7390ae243ef1d88c",
-        "plan_id": "0000000000000009",
+        "plan_hash": "sha256:720d4669462652c05e3365f178eb04d4dbaa3a1f30ba022ded4796ccad293dcc",
+        "plan_id": "000000000000000e",
         "state": "approved",
         "units": [
           {
@@ -2400,7 +2480,7 @@
                 "evidence_target": "recall",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000010",
+                "objective_id": "0000000000000015",
                 "ordinal": 1,
                 "state": "not_started",
                 "title": "Name the three burn and fume hazards at the bench"
@@ -2411,7 +2491,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000011",
+                "objective_id": "0000000000000016",
                 "ordinal": 2,
                 "state": "not_started",
                 "title": "Set an iron to the temperature a leaded joint needs"
@@ -2432,7 +2512,7 @@
                 "evidence_target": "comprehension",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000012",
+                "objective_id": "0000000000000017",
                 "ordinal": 3,
                 "state": "not_started",
                 "title": "Read a resistor value from its colour bands"
@@ -2443,7 +2523,7 @@
                 "evidence_target": "discrimination",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000013",
+                "objective_id": "0000000000000018",
                 "ordinal": 4,
                 "state": "not_started",
                 "title": "Inspect a pad for lift before inserting a part"
@@ -2457,13 +2537,13 @@
             "title": "Components and the board",
             "unmet": [
               {
-                "objective_id": "0000000000000010",
+                "objective_id": "0000000000000015",
                 "ordinal": 1,
                 "state": "not_started",
                 "title": "Name the three burn and fume hazards at the bench"
               },
               {
-                "objective_id": "0000000000000011",
+                "objective_id": "0000000000000016",
                 "ordinal": 2,
                 "state": "not_started",
                 "title": "Set an iron to the temperature a leaded joint needs"
@@ -2479,7 +2559,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000014",
+                "objective_id": "0000000000000019",
                 "ordinal": 5,
                 "state": "not_started",
                 "title": "Form a lead so the part seats flush"
@@ -2490,7 +2570,7 @@
                 "evidence_target": "comprehension",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000015",
+                "objective_id": "000000000000001a",
                 "ordinal": 6,
                 "state": "not_started",
                 "title": "Insert a part in the right orientation"
@@ -2504,13 +2584,13 @@
             "title": "Through-hole insertion",
             "unmet": [
               {
-                "objective_id": "0000000000000012",
+                "objective_id": "0000000000000017",
                 "ordinal": 3,
                 "state": "not_started",
                 "title": "Read a resistor value from its colour bands"
               },
               {
-                "objective_id": "0000000000000013",
+                "objective_id": "0000000000000018",
                 "ordinal": 4,
                 "state": "not_started",
                 "title": "Inspect a pad for lift before inserting a part"
@@ -2526,7 +2606,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000016",
+                "objective_id": "000000000000001b",
                 "ordinal": 7,
                 "state": "not_started",
                 "title": "Heat the pad and lead together before feeding solder"
@@ -2537,7 +2617,7 @@
                 "evidence_target": "discrimination",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000017",
+                "objective_id": "000000000000001c",
                 "ordinal": 8,
                 "state": "not_started",
                 "title": "Recognise a cold joint from its surface"
@@ -2551,13 +2631,13 @@
             "title": "Soldering a joint",
             "unmet": [
               {
-                "objective_id": "0000000000000014",
+                "objective_id": "0000000000000019",
                 "ordinal": 5,
                 "state": "not_started",
                 "title": "Form a lead so the part seats flush"
               },
               {
-                "objective_id": "0000000000000015",
+                "objective_id": "000000000000001a",
                 "ordinal": 6,
                 "state": "not_started",
                 "title": "Insert a part in the right orientation"
@@ -2573,7 +2653,7 @@
                 "evidence_target": "transfer",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000018",
+                "objective_id": "000000000000001d",
                 "ordinal": 9,
                 "state": "not_started",
                 "title": "Inspect a finished joint against the fillet criterion"
@@ -2584,7 +2664,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "0000000000000019",
+                "objective_id": "000000000000001e",
                 "ordinal": 10,
                 "state": "not_started",
                 "title": "Wick a solder bridge without lifting the pad"
@@ -2598,13 +2678,13 @@
             "title": "Inspection and rework",
             "unmet": [
               {
-                "objective_id": "0000000000000016",
+                "objective_id": "000000000000001b",
                 "ordinal": 7,
                 "state": "not_started",
                 "title": "Heat the pad and lead together before feeding solder"
               },
               {
-                "objective_id": "0000000000000017",
+                "objective_id": "000000000000001c",
                 "ordinal": 8,
                 "state": "not_started",
                 "title": "Recognise a cold joint from its surface"
@@ -2620,7 +2700,7 @@
                 "evidence_target": "procedure",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "000000000000001a",
+                "objective_id": "000000000000001f",
                 "ordinal": 11,
                 "state": "not_started",
                 "title": "Desolder a two-lead part without overheating it"
@@ -2631,7 +2711,7 @@
                 "evidence_target": "transfer",
                 "independent": false,
                 "last_opened_at": null,
-                "objective_id": "000000000000001b",
+                "objective_id": "0000000000000020",
                 "ordinal": 12,
                 "state": "not_started",
                 "title": "Prove continuity with a meter after rework"
@@ -2645,13 +2725,13 @@
             "title": "Desoldering and final check",
             "unmet": [
               {
-                "objective_id": "0000000000000018",
+                "objective_id": "000000000000001d",
                 "ordinal": 9,
                 "state": "not_started",
                 "title": "Inspect a finished joint against the fillet criterion"
               },
               {
-                "objective_id": "0000000000000019",
+                "objective_id": "000000000000001e",
                 "ordinal": 10,
                 "state": "not_started",
                 "title": "Wick a solder bridge without lifting the pad"
@@ -2682,8 +2762,8 @@
         ]
       },
       "research": {
-        "fetches": 1,
-        "queries": 4,
+        "fetches": 6,
+        "queries": 10,
         "status": "ok"
       },
       "result": {
@@ -2708,9 +2788,9 @@
         "locale": "en-US",
         "next_unit_ordinal": 1,
         "objectives": 12,
-        "plan_content_hash": "sha256:846c65eca040806b2453887a14beaf0edacb68790ce39f0c7390ae243ef1d88c",
+        "plan_content_hash": "sha256:720d4669462652c05e3365f178eb04d4dbaa3a1f30ba022ded4796ccad293dcc",
         "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-        "plan_id": "0000000000000009",
+        "plan_id": "000000000000000e",
         "plan_schema": "coursebook.plan.v2",
         "plan_version": 2,
         "research": {
@@ -2718,17 +2798,23 @@
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering.",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official procedure steps safety limits",
             "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. how to teach curriculum sequence",
-            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. prerequisite knowledge learning progression"
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. prerequisite knowledge learning progression",
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. reference documentation",
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. official guidance",
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. common mistakes",
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. examples and practice",
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. step by step",
+            "Prepare for a first soldering repair on a through-hole PCB: safety, component placement, joints, inspection and desoldering. glossary"
           ],
           "reason": null,
           "status": "ok"
         },
-        "research_id": "000000000000001c",
+        "research_id": "0000000000000021",
         "reused": false,
         "scope": "full",
         "scope_cap_weeks": 104,
         "sections": 0,
-        "sources": 1,
+        "sources": 6,
         "status": "draft",
         "subject_domain": "technical_procedure",
         "target_language": null,
@@ -2754,7 +2840,7 @@
           "calls": 2,
           "cost_usd": 0.0,
           "estimated_cost_usd": 0.0,
-          "input_tokens": 3390,
+          "input_tokens": 6661,
           "output_tokens": 1620,
           "unknown_calls": 0,
           "unknown_cost": false
@@ -2785,7 +2871,7 @@
           "waived_unknown": [],
           "warning": null
         },
-        "validation_id": "000000000000001d",
+        "validation_id": "0000000000000022",
         "validation_verdict": "pass",
         "vocabulary": {
           "band": null,
@@ -2859,18 +2945,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000027",
+          "job_id": "job_0000000000000000000000000000002c",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 2,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "0000000000000028",
-            "0000000000000029"
+            "000000000000002d",
+            "000000000000002e"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -2897,12 +2983,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2731,
+            "input_tokens": 5779,
             "output_tokens": 517,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "000000000000002a",
+          "validation_id": "000000000000002f",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 1
@@ -2918,18 +3004,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000002e",
+          "job_id": "job_00000000000000000000000000000033",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 3,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "000000000000002f",
-            "0000000000000030"
+            "0000000000000034",
+            "0000000000000035"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -2956,12 +3042,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2724,
+            "input_tokens": 5772,
             "output_tokens": 504,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "0000000000000031",
+          "validation_id": "0000000000000036",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 2
@@ -2977,18 +3063,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000035",
+          "job_id": "job_0000000000000000000000000000003a",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 4,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "0000000000000036",
-            "0000000000000037"
+            "000000000000003b",
+            "000000000000003c"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -3015,12 +3101,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2713,
+            "input_tokens": 5761,
             "output_tokens": 503,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "0000000000000038",
+          "validation_id": "000000000000003d",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 3
@@ -3036,18 +3122,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000003c",
+          "job_id": "job_00000000000000000000000000000041",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 5,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "000000000000003d",
-            "000000000000003e"
+            "0000000000000042",
+            "0000000000000043"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -3074,12 +3160,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2719,
+            "input_tokens": 5767,
             "output_tokens": 505,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "000000000000003f",
+          "validation_id": "0000000000000044",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 4
@@ -3095,18 +3181,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_00000000000000000000000000000043",
+          "job_id": "job_00000000000000000000000000000048",
           "job_kind": "unit_sections",
           "next_unit_ordinal": 6,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "0000000000000044",
-            "0000000000000045"
+            "0000000000000049",
+            "000000000000004a"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -3133,12 +3219,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2724,
+            "input_tokens": 5773,
             "output_tokens": 509,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "0000000000000046",
+          "validation_id": "000000000000004b",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 5
@@ -3154,18 +3240,18 @@
             "max_cost_usd": 100.0,
             "source": "caller"
           },
-          "job_id": "job_0000000000000000000000000000004a",
+          "job_id": "job_0000000000000000000000000000004f",
           "job_kind": "unit_sections",
           "next_unit_ordinal": null,
           "owners": 2,
           "plan_hash": "sha256:c10d6f141e91a4023b550d50132d351c1763c6c668cc7f2310cb2b0b09631e3f",
-          "plan_id": "0000000000000009",
+          "plan_id": "000000000000000e",
           "rejection_reasons": [],
           "reused": false,
           "reviews": 0,
           "section_ids": [
-            "000000000000004b",
-            "000000000000004c"
+            "0000000000000050",
+            "0000000000000051"
           ],
           "sections": 2,
           "stage": "unit_sections",
@@ -3192,12 +3278,12 @@
             "calls": 2,
             "cost_usd": 0.0,
             "estimated_cost_usd": 0.0,
-            "input_tokens": 2741,
+            "input_tokens": 5789,
             "output_tokens": 508,
             "unknown_calls": 0,
             "unknown_cost": false
           },
-          "validation_id": "000000000000004d",
+          "validation_id": "0000000000000052",
           "validation_verdict": "pass"
         },
         "unit_ordinal": 6

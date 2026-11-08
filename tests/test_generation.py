@@ -1878,5 +1878,35 @@ class SourceTrustTest(GenerationTestBase):
         self.assertIn("provenance flagged", verdict["claim_verdicts"][0]["reason"])
 
 
+class BoundedRequestInputTest(unittest.TestCase):
+    """The provider request is JSON; the byte bound must never cut it mid-token.
+
+    A deep research ledger plus a full-scope ceiling plan can exceed the indented spelling of the
+    request. Truncating the text at the bound handed the provider invalid JSON, so a payload that
+    fits compactly is re-spelled, and one that cannot fit at all is a typed rejection.
+    """
+
+    def test_a_small_payload_keeps_the_indented_spelling(self) -> None:
+        payload = {"goal": "solder a joint", "sources": [{"id": "s1"}]}
+        text = gen._bounded_input(payload)
+        self.assertEqual(json.loads(text), payload)
+        self.assertIn("\n", text, "the readable spelling should survive when it fits")
+
+    def test_a_payload_over_the_indented_bound_is_encoded_compactly(self) -> None:
+        payload = {f"k{index:05d}": f"v{index:05d}" for index in range(1250)}
+        indented = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=1)
+        compact = json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                             separators=(",", ":"))
+        self.assertGreater(len(indented), 24000, "fixture must exceed the bound indented")
+        self.assertLess(len(compact), 24000, "fixture must fit compactly")
+        text = gen._bounded_input(payload)
+        self.assertEqual(text, compact)
+        self.assertEqual(json.loads(text), payload)
+
+    def test_a_payload_that_cannot_fit_is_rejected_rather_than_cut(self) -> None:
+        with self.assertRaises(gen.GenerationRejected):
+            gen._bounded_input({"big": "x" * 30000})
+
+
 if __name__ == "__main__":
     unittest.main()

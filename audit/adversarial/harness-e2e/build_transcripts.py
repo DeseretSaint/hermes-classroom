@@ -237,11 +237,11 @@ SCENARIOS: dict[str, dict] = {
             "subject_domain": "technical_procedure",
         },
         "research": {
-            "url": "https://example.invalid/recorded/through-hole-soldering",
-            "title": "Recorded page: through-hole soldering",
-            "content": "A recorded page used only so the research seam returns a source. It states "
-                       "that joints are heated pad and lead together, solder is fed in after the "
-                       "joint reaches temperature, and a shiny fillet is the inspection criterion.",
+            # The soldering fixture's research is a *recorded result set*: six pages that were
+            # really fetched through the host extract seam (see the transcript's research.pages).
+            # This builder must not author page bytes for it, so it preserves the recorded block
+            # that is already on disk instead of writing a placeholder over it.
+            "preserve_recorded_result_set": True,
         },
         "shape": {
             "weeks": 12,
@@ -597,6 +597,29 @@ def _leaks(title: str, shape_objective: dict, lesson: dict) -> list[str]:
     ]
 
 
+def _research_block(name: str, authored: dict) -> dict:
+    """The transcript's research recording, authored or preserved as recorded.
+
+    A scenario whose pages were really fetched declares ``preserve_recorded_result_set``: its
+    recording lives in the transcript on disk (real bytes from the host extract seam) and this
+    builder must never replace it with authored text. The failure mode is loud — a missing
+    recording is an error, not a silently different fixture.
+    """
+    research = authored["research"]
+    if not research.get("preserve_recorded_result_set"):
+        return research
+    path = TRANSCRIPTS / f"{name}.json"
+    recorded = {}
+    if path.exists():
+        recorded = json.loads(path.read_text(encoding="utf-8")).get("research") or {}
+    if not recorded.get("pages"):
+        raise SystemExit(
+            f"{name}: the recorded research result set is missing from {path.name}; refetch the "
+            "pages through the host extract seam and rebuild the recording before regenerating"
+        )
+    return recorded
+
+
 def build(name: str) -> dict:
     authored = SCENARIOS[name]
     shape = authored["shape"]
@@ -620,7 +643,7 @@ def build(name: str) -> dict:
     return {
         "transcript_version": "h40/blueprint-v2",
         "scenario": authored["scenario"],
-        "research": authored["research"],
+        "research": _research_block(name, authored),
         "shape": shape,
         "lessons": lessons,
     }

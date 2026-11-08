@@ -29,7 +29,7 @@ provider was called, no credential was used and no network request was made.
 | `course.outline`, `lesson.page`, `check.open`, `attempt.submit` | **live** | two attempts per committed course |
 | model responses | **RECORDED TRANSCRIPT**, hand-authored | `transcripts/*.json`, `labels.model` |
 | validator identity | **RECORDED TRANSCRIPT**, a distinct recorded identity (`recorded-validator-h40`) | H-36 compares the reported model names; a same-name validator can only ever be `same_model` |
-| research pages | **RECORDED PAGE**, fetched through the real search seam | `research` in each transcript |
+| research pages | **RECORDED PAGES**, fetched through the real search seam | `research` in each transcript: `bicycle_single`/`music_short` record one page, `soldering_full` a six-page result set really fetched for the queries the full-scope research floor derives (H-175) |
 | provider calls / spend | **none** | `labels.provider_calls = 0`, `provider_spend_usd = 0.0` |
 
 The replay engine reads every property of the *request* (schema constant, capability policy, rubric
@@ -310,6 +310,66 @@ evidence 7e47d683ddaf5427d4ab69b21eb6a06aad9812610fca8727a3bed14c2d00d498  evide
 evidence f65e748b04f6c715af579381e0d3b1f7eca5e31a19e5f98065f4aef3e591ff7f  evidence/soldering_full.json
 evidence ea566e9a1f0d195fdfef9f054894820aa640d955d8f46305839003730c687a87  evidence/summary.json
 ```
+
+### H-175: the soldering recording was re-fetched against the research floor
+
+H-168 (`3d378a1`) floors research depth by course scope: a `full` course runs `deep` whatever
+depth the dial declares. For this scenario that means **10 derived queries** where the H-40
+recording answered a goal-only `survey`/`working` pass with one placeholder page. The packet's
+claim is byte reproduction, so the recording — not the product — had to move.
+
+`soldering_full.json` now holds a **recorded result set** (`research.mode =
+"recorded_result_set"`, six `pages`), each page really fetched through the host extract seam on
+2026-11-08 for one of the six queries the floor adds:
+
+| `recorded_for` | publisher | URL |
+|---|---|---|
+| reference documentation | STMicroelectronics | `st.com/resource/en/technical_note/tn1225-mounting-instructions-for-thd-throughhole-device-packages-stmicroelectronics.pdf` |
+| official guidance | Purdue University | `engineering.purdue.edu/ece477/.../9-AssemblyAndSoldering.pdf` |
+| common mistakes | University of Colorado Boulder | `physicslabs.colorado.edu/courses/phys-3330/resources/soldering/` |
+| examples and practice | iFixit | `ifixit.com/News/97850/soldering-simplified-a-newbies-guide-to-through-hole-soldering` |
+| step by step | Instructables | `instructables.com/Soldering-Through-Hole-Components/` |
+| glossary | iFixit | `ifixit.com/Wiki/Soldering_Glossary_of_Terms` |
+
+The replay returns the fixed set for every derived query and the pipeline's own dedupe,
+source-type ranking and page budget decide what is fetched; a fetch for a URL the recording does
+not hold raises rather than inventing a page. Page text is the seam's own output, never authored
+at replay time. `build_transcripts.py` preserves this block instead of writing a placeholder over
+it (`preserve_recorded_result_set`), and fails loudly if the recording is missing.
+
+Two consequences worth recording rather than hiding:
+
+* the validation request for the 12-unit / 40-objective ceiling plan now exceeds 24,000 bytes when
+  spelled with `indent=1`, and `_bounded_input` used to cut that text mid-token — handing the
+  recorded validator invalid JSON and failing `plan_at_declared_bound_accepted`. It now falls back
+  to the compact encoding of the same document (20,364 bytes here) and raises a typed
+  `GenerationRejected` only if even that cannot fit. The request byte bound is unchanged.
+* the two single-page recordings now carry no `publisher`, so the ledger derives it from the URL
+  (`example.invalid`) instead of the old hard-coded `"Recorded publisher"`. That is the only byte
+  change in `bicycle_single`/`music_short`, and their verdicts are unchanged.
+
+`labels.provider_calls` stays `0`: nothing here called a provider. The pages were fetched once,
+at recording time; the replayed run is offline and spends nothing.
+
+Current pins (`--verify`, this tree):
+
+```text
+harness  366d4456eaf279212957a7a3939ba90b381ae0a81e254d98dd2a23316c721a7e  harness_e2e.py
+input    9be57663269cf5ae3cbdedf638cb6273dff7e40d998cc51eb6a814834031e938  transcripts/bicycle_single.json  scope=single
+input    542687d37f2501ef96b1cfcd35174d396f85e052cea44e8ac930188ba004d1e5  transcripts/music_short.json  scope=short
+input    05933d564cec4ad51e0af3104746229150cc6a892a931be0cc324100a1d12644  transcripts/soldering_full.json  scope=full
+evidence a780008490fc2a716901a153b179059b74a277109454be0f32721d6ff7d75635  evidence/bicycle_single.json
+evidence 729e1c642d90f317c2b0c8bccbd82282d184f55e1e09e0203466ab46963938c8  evidence/music_short.json
+evidence 06dba5cf350f6e3e5c3bca813a00a41385307a60a95f62099daa0608c2a92a88  evidence/run-output.txt
+evidence 3e9eef77aff04d77f1b80181d4704b94291af9f7d37cb4a66fa40302567a6fd9  evidence/soldering_full.json
+```
+
+The packet reports 10 queries, 6 fetches, 6 sources and `status: ok` on `soldering_full`, and the
+three scenarios are 3/3 PASS. `evidence/focused-tests.txt` and `evidence/full-suite.txt` are the
+H-45 runs and were not regenerated here, so the manifest still pins those older bytes; this card
+ran `tests.test_harness_e2e` (26 tests), `tests.test_research_floor` (5 tests) and
+`tests.test_generation` (87 tests) and all passed.
+
 
 ### Finding raised rather than fixed (P3, gate false positive) — resolved by H-51
 

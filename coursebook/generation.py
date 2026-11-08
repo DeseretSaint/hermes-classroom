@@ -4586,8 +4586,24 @@ def _feedback(rejections: Sequence[dict[str, Any]]) -> str:
 
 
 def _bounded_input(payload: dict[str, Any], limit: int = 24000) -> str:
+    """Request JSON, bounded without ever cutting the document mid-token.
+
+    ``indent=1`` makes a captured prompt readable for a human. When that spelling would push the
+    request past its byte bound, the compact encoding of the *same* document is used instead —
+    every key and value survives, only the whitespace goes. Truncating the text at ``limit`` used
+    to hand the provider invalid JSON (a full-scope 40-objective plan plus a real research ledger
+    is over 24 kB indented), so a payload that cannot fit even compactly is now a typed rejection
+    rather than a silently corrupt request.
+    """
     text = json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=1)
-    return text if len(text) <= limit else text[:limit]
+    if len(text) <= limit:
+        return text
+    compact = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(compact) <= limit:
+        return compact
+    raise GenerationRejected(
+        f"request payload is {len(compact)} bytes compact, over the {limit}-byte request bound"
+    )
 
 
 def _source_brief(sources: Iterable[SourceRecord]) -> list[dict[str, Any]]:

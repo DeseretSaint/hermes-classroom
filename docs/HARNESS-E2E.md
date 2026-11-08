@@ -105,5 +105,7 @@ enforces the verdicts and assertions, not the ids.
 - model: `RECORDED TRANSCRIPT (recorded-transcript-h40)`, replayed through the real pipeline;
 - validator: `RECORDED TRANSCRIPT (recorded-validator-h40)`, a distinct recorded identity so H-36's
   independence comparison is real;
-- research: `RECORDED PAGE` through the real search seam;
+- research: `RECORDED PAGES` through the real search seam (`soldering_full` records six pages
+  really fetched for the queries the full-scope research floor derives; the other two scenarios
+  record one page each);
 - provider calls: 0; provider spend: $0.00; network: none; credentials: none.
