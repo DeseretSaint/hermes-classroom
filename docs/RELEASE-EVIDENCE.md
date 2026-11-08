@@ -20,9 +20,9 @@ No tag, catalog pull request or announcement was made.
 | `cb.rpc` | v16, 68 declared methods | `contracts/rpc.v16.json` (`$defs.method.enum` length) |
 | Handlers | 68, asserted by the registry test inside the suite | registry test in the suite |
 | `cb.db` | v11, `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011` | `coursebook/db.py`, `contracts/db.v11.json` |
-| Shipped module | `desktop/plugin.js` sha256 `9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547` | `sha256sum desktop/plugin.js` |
+| Shipped module | `desktop/plugin.js` sha256 `687613abde8d77ab6c1825a92b1bd3e0d0293d71a9f665c38d3bf44fa87bcc66` | `sha256sum desktop/plugin.js` |
 | M4 audit | 62 frames, 15/15 claims PASS, 2,282 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 364 AX controls, 0 px overflow | `audit/visual/m4-visual/audit.json` |
-| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 9735300e…` | `python3 scripts/m4v-repro-check.py` |
+| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 9735300e…` — recorded at `9735300e`; **not re-run** at the current `687613ab` module | `python3 scripts/m4v-repro-check.py` |
 | Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `python3 tests/adversarial/attack_state.py` |
 | Catalog validity | `OK: 1 file(s) valid` | `python3 ~/.hermes/hermes-agent/scripts/validate_plugin_catalog.py catalog/coursebook.yaml` |
 

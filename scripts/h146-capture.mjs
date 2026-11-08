@@ -78,6 +78,7 @@ const facts = () =>
     const main = document.querySelector('[data-cb-desk]')
     return {
       innerWidth: window.innerWidth,
+      rootFont: getComputedStyle(document.documentElement).fontSize,
       mode: route && route.getAttribute('data-cb-scope'),
       destination: route && route.getAttribute('data-cb-destination'),
       rail: rail && rail.getAttribute('data-cb-slot-rail'),
@@ -208,32 +209,68 @@ for (const width of [1049, 460]) {
 }
 await evaluate(`document.documentElement.style.removeProperty('font-size')`)
 
-// Keyboard: the skip path is the first stop; the selected classroom tab is reachable, 44 px tall
-// and takes a visible focus ring; Tab moves through the rail into Continue.
+// Keyboard: a real Tab keypress, not `element.focus()`, because the tabs paint their ring on
+// `:focus-visible` and Chromium only grants that to a keyboard-driven focus move.
 await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] })
 await setWidth(1049)
 await sleep(250)
+const focusedInfo = () =>
+  evaluate(`(() => {
+    const node = document.activeElement
+    const text = (n) => ((n && n.textContent) || '').replace(/\\s+/g, ' ').trim()
+    if (!node) return null
+    const style = getComputedStyle(node)
+    return {
+      tag: node.tagName.toLowerCase(),
+      label: (node.getAttribute('aria-label') || text(node)).slice(0, 60),
+      slotTab: node.hasAttribute('data-cb-slot-tab'),
+      ringState: node.getAttribute('data-cb-focus-ring'),
+      outline: style.outlineStyle + ' ' + style.outlineWidth + ' ' + style.outlineColor,
+      outlineOffset: style.outlineOffset,
+      height: Math.round(node.getBoundingClientRect().height),
+      focusVisible: (() => { try { return node.matches(':focus-visible') } catch (error) { return null } })()
+    }
+  })()`)
+const pressTab = async () => {
+  await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 })
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 })
+  await sleep(140)
+}
+await evaluate(`(() => {
+  const route = document.querySelector('[data-cb-route]')
+  const skip = route.querySelector('a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])')
+  skip.focus()
+  return true
+})()`)
+const skipInfo = await focusedInfo()
+const stops = []
+let tabStop = null
+for (let i = 0; i < 16; i += 1) {
+  await pressTab()
+  const info = await focusedInfo()
+  stops.push(info)
+  if (info && info.slotTab) { tabStop = info; break }
+}
+const tabFocusFile = await shoot(`focus-${mode}-1049`)
+results.frames = results.frames.filter((frame) => !(frame.mode === mode && frame.focus === true))
+results.frames.push({ mode, width: 1049, focus: true, file: tabFocusFile })
 const keyboard = await evaluate(`(() => {
   const route = document.querySelector('[data-cb-route]')
-  const text = (node) => ((node && node.textContent) || '').replace(/\\s+/g, ' ').trim()
-  const focusables = [...route.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
-    .filter((node) => node.getAttribute('aria-hidden') !== 'true')
-  const skip = focusables[0]
-  skip.focus()
-  const skipRect = skip.getBoundingClientRect()
   const tab = route.querySelector('[data-cb-slot-tab]')
-  tab.focus()
-  const style = getComputedStyle(tab)
+  const style = tab ? getComputedStyle(tab) : null
   return {
-    firstStop: skip.tagName.toLowerCase(),
-    firstLabel: (skip.getAttribute('aria-label') || text(skip)).slice(0, 60),
-    skipRevealed: skipRect.width > 1 && skipRect.height > 1,
-    tabLabel: text(tab),
-    tabHeight: Math.round(tab.getBoundingClientRect().height),
-    tabOutline: style.outlineStyle + ' ' + style.outlineWidth + ' ' + style.outlineColor,
-    focusRingVisible: style.outlineStyle !== 'none' && style.outlineWidth !== '0px'
+    firstStop: ${JSON.stringify(skipInfo && skipInfo.tag)},
+    firstLabel: ${JSON.stringify(skipInfo && skipInfo.label)},
+    tabLabel: tab ? ((tab.textContent || '').replace(/\\s+/g, ' ').trim()) : null,
+    tabHeight: tab ? Math.round(tab.getBoundingClientRect().height) : null,
+    tabOutline: style ? style.outlineStyle + ' ' + style.outlineWidth + ' ' + style.outlineColor : null,
+    tabOutlineOffset: style ? style.outlineOffset : null
   }
 })()`)
+keyboard.stops = stops
+keyboard.tabStop = tabStop
+keyboard.focusRingVisible = Boolean(tabStop && tabStop.outline && !/^none/.test(tabStop.outline))
+keyboard.focusFrame = tabFocusFile
 results.keyboard = results.keyboard || {}
 results.keyboard[mode] = keyboard
 

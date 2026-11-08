@@ -24,24 +24,25 @@
   },
   "plugin": {
     "path": "desktop/plugin.js",
-    "sha256": "9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547"
+    "sha256": "687613abde8d77ab6c1825a92b1bd3e0d0293d71a9f665c38d3bf44fa87bcc66"
   },
   "m4": {
     "frames": 62,
     "claims_pass": 15,
     "claims_total": 15,
-    "text_nodes": 2282,
+    "text_nodes": 2266,
     "forced_color_frames": 6,
     "min_authored_ratio": 5.93,
     "ax_controls": 364,
     "ax_unnamed": 0,
     "overflow_px": 0,
-    "source": "audit/visual/m4-visual/audit.json at this commit; text_nodes is the sum over the 56 non-forced-colour frames (2,602 over all 62 frames)"
+    "source": "audit/visual/m4-visual/audit.json regenerated on wt/h146-classroom-rail at ae2494f (plugin 687613ab); text_nodes is the sum over the 56 non-forced-colour frames"
   },
   "m4_repro": {
     "command": "python3 scripts/m4v-repro-check.py",
-    "result": "PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots",
-    "plugin_sha256": "9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547"
+    "result": "NOT RE-RUN at this pin. The last reproducibility pair was measured at plugin 9735300e (62 frames: identical audit.json modulo generated_at, 62 identical screenshots). This commit regenerated the audit once at 687613ab, 15/15 claims pass; re-run scripts/m4v-repro-check.py before quoting reproducibility here.",
+    "plugin_sha256": "9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547",
+    "status": "stale_at_687613ab"
   },
   "adversarial_state": {
     "command": "python3 tests/adversarial/attack_state.py",
