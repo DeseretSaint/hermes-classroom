@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-11-08T12:39:26-0700",
+  "request_identity": {
+    "criteria": [
+      "objective_alignment",
+      "source_support",
+      "factual_correctness",
+      "answer_uniqueness",
+      "alternative_coverage",
+      "rubric_consistency",
+      "internal_contradiction",
+      "answer_leakage",
+      "hazard_age_appropriateness",
+      "evidence_target_fit"
+    ],
+    "criteria_count": 10,
+    "declared_deadline_s": 180.0,
+    "input_text_bytes": 10237,
+    "max_tokens": 2000,
+    "prompt_version": "validation-prompt.v3",
+    "purpose": "coursebook.plan.validate",
+    "schema_name": "coursebook_validation_v1",
+    "scope": "single",
+    "wire_messages_bytes": 15421
+  },
+  "source_db": "/home/deseretsaint/.hermes/h187-live-gen/single/home/plugin-data/coursebook/data.db",
+  "source_worktree": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_027b48f4",
+  "steps": [
+    {
+      "claim_verdict_entries": null,
+      "criterion_entries": null,
+      "criterion_ids": null,
+      "deadline_s": 300.0,
+      "elapsed_s": 38.316,
+      "ended": "12:39:26",
+      "forwards_patched": true,
+      "input_text_bytes": 10237,
+      "instructions_bytes": 1584,
+      "instructions_sha256": "9e9e9bad1bafaffb",
+      "max_tokens": 2000,
+      "max_tokens_forwarded": true,
+      "outcome": "returned",
+      "parsed": false,
+      "purpose": "probe.cap-forwarded",
+      "reported": {
+        "input_tokens": 3954,
+        "model": "z-ai/glm-5.3-flash",
+        "output_tokens": 2000,
+        "provider": "nous",
+        "text_chars": 0
+      },
+      "started": "12:38:47",
+      "step": "exact 10-criterion request, max_tokens forwarded (2000)",
+      "text_tail": "",
+      "usage": {
+        "budget": {
+          "max_calls": 32,
+          "max_cost_usd": 0.75,
+          "source": "declared"
+        },
+        "by_purpose": {
+          "probe.cap-forwarded": {
+            "calls": 1,
+            "cost_usd": 0.0,
+            "unknown_cost": true
+          }
+        },
+        "calls": 1,
+        "cost_usd": null,
+        "estimated_cost_usd": 0.04,
+        "input_tokens": 3954,
+        "output_tokens": 2000,
+        "unknown_calls": 1,
+        "unknown_cost": true
+      }
+    }
+  ],
+  "validator_route": {
+    "model": "z-ai/glm-5.3-flash",
+    "provider": "nous"
+  }
+}

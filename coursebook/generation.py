@@ -43,6 +43,7 @@ import os
 import re
 import secrets
 import sqlite3
+import threading
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -141,6 +142,13 @@ __all__ = [
     "LESSON_PROMPT_VERSION",
     "VALIDATION_PROMPT_VERSION",
     "VALIDATION_CRITERIA",
+    "VALIDATION_CRITERIA_PASSES",
+    "build_plan_validation_requests",
+    "validation_pass_schema",
+    "validation_pass_instructions",
+    "validation_pass_criteria",
+    "plan_claim_labels",
+    "merge_validation_reports",
     "run_plan_job",
     "run_unit_sections_job",
     "run_lesson_job",
@@ -909,6 +917,25 @@ class _Usage:
     #: job stops at a *call* boundary instead of waiting out a multi-minute stage. ``None``
     #: means the call is not attached to a durable job (tests, pure helpers).
     cancel_probe: Any = None
+    #: The validator's passes run together (H-191 follow-up), so the call ceiling and the running
+    #: totals are shared between threads: reserve and record under one lock, or four passes could
+    #: each see the same call count and cross a ceiling together.
+    _lock: Any = field(default_factory=threading.Lock, repr=False, compare=False)
+    #: Call slots held for passes that have been submitted but have not started yet. A reservation
+    #: is consumed by the ``before_call`` that starts the pass, so the ceiling counts calls in
+    #: flight, not just calls that already returned.
+    _reserved: int = 0
+
+    def reserve(self, count: int) -> None:
+        """Hold *count* call slots before a group of parallel passes is submitted."""
+        with self._lock:
+            if len(self.calls) + self._reserved + int(count) > self.budget.max_calls:
+                raise CostCeilingExceeded(
+                    f"job already made {len(self.calls)} provider calls and holds "
+                    f"{self._reserved} reservation(s); {count} more would exceed the ceiling "
+                    f"{self.budget.max_calls}"
+                )
+            self._reserved += int(count)
 
     @property
     def estimated_spend_usd(self) -> float:
@@ -927,41 +954,54 @@ class _Usage:
             # and keeps the checkpoint. Spending another provider call after the user asked to
             # stop is the defect H-66 names.
             raise ResearchCancelled(f"job cancelled before {request.purpose}")
-        if len(self.calls) >= self.budget.max_calls:
-            raise CostCeilingExceeded(
-                f"job already made {len(self.calls)} provider calls (ceiling {self.budget.max_calls})"
-            )
-        if self.budget.max_cost_usd is not None and self.estimated_spend_usd >= self.budget.max_cost_usd:
-            raise CostCeilingExceeded(
-                f"spend {self.estimated_spend_usd:.4f} USD ({len(self.calls)} calls, "
-                f"{self.unknown_calls} with unknown cost) already reaches the "
-                f"{self.budget.max_cost_usd:.4f} USD ceiling"
-            )
+        with self._lock:
+            if self._reserved > 0:
+                self._reserved -= 1
+            elif len(self.calls) >= self.budget.max_calls:
+                raise CostCeilingExceeded(
+                    f"job already made {len(self.calls)} provider calls (ceiling {self.budget.max_calls})"
+                )
+            if (
+                self.budget.max_cost_usd is not None
+                and self.estimated_spend_usd >= self.budget.max_cost_usd
+            ):
+                raise CostCeilingExceeded(
+                    f"spend {self.estimated_spend_usd:.4f} USD ({len(self.calls)} calls, "
+                    f"{self.unknown_calls} with unknown cost) already reaches the "
+                    f"{self.budget.max_cost_usd:.4f} USD ceiling"
+                )
 
     def record(self, request: LLMRequest, response: LLMResponse, duration_ms: int) -> None:
         cost = response.cost_usd
-        if cost is None:
-            self.unknown_cost = True
-            self.unknown_calls += 1
-        else:
-            self.known_cost += float(cost)
-        self.input_tokens += int(response.input_tokens or 0)
-        self.output_tokens += int(response.output_tokens or 0)
-        self.calls.append(
-            {
-                "purpose": request.purpose,
-                "prompt_version": request.prompt_version,
-                "provider": response.provider,
-                "model": response.model,
-                "input_tokens": response.input_tokens,
-                "output_tokens": response.output_tokens,
-                "cost_usd": cost,
-                "duration_ms": duration_ms,
-            }
-        )
-        if self.budget.max_cost_usd is not None and self.estimated_spend_usd > self.budget.max_cost_usd:
+        with self._lock:
+            if cost is None:
+                self.unknown_cost = True
+                self.unknown_calls += 1
+            else:
+                self.known_cost += float(cost)
+            self.input_tokens += int(response.input_tokens or 0)
+            self.output_tokens += int(response.output_tokens or 0)
+            self.calls.append(
+                {
+                    "purpose": request.purpose,
+                    "prompt_version": request.prompt_version,
+                    "provider": response.provider,
+                    "model": response.model,
+                    "input_tokens": response.input_tokens,
+                    "output_tokens": response.output_tokens,
+                    "cost_usd": cost,
+                    "duration_ms": duration_ms,
+                }
+            )
+            over_ceiling = (
+                self.budget.max_cost_usd is not None
+                and self.estimated_spend_usd > self.budget.max_cost_usd
+            )
+            spend = self.estimated_spend_usd
+            unknown = self.unknown_calls
+        if over_ceiling:
             raise CostCeilingExceeded(
-                f"spend {self.estimated_spend_usd:.4f} USD ({self.unknown_calls} calls with unknown "
+                f"spend {spend:.4f} USD ({unknown} calls with unknown "
                 f"cost) exceeded the {self.budget.max_cost_usd:.4f} USD ceiling"
             )
 
@@ -2212,6 +2252,232 @@ VALIDATION_SCHEMA: dict[str, Any] = {
         },
     },
 }
+
+
+#: How the validator's ten criteria are grouped across validation passes.
+#:
+#: H-191 follow-up, measured live on `nous` / `z-ai/glm-5.3-flash` (2026-11-08), on the exact
+#: reconstructed single-scope request:
+#:
+#: * one call demanding ten verdicts *and* a support verdict per claim: 243–286 s / 12–16 k
+#:   completion tokens against a 180 s deadline, and the host does not forward ``max_tokens`` on
+#:   this route (a forwarded 2 000-token cap returned 2 000 tokens of reasoning and **no**
+#:   content, so a cap is not the repair);
+#: * the same reviewed set split into five concurrent two-criterion passes: four returned in
+#:   48–87 s and the fifth missed the deadline; ~21 k completion tokens total. The provider
+#:   staggers concurrent calls, so the split bought extra spend, not wall time;
+#: * one pass over all ten criteria, with the claim-verdict set bounded to the plan's own named
+#:   claims (``plan_claim_labels``) and one-sentence reasons: **145.0 s / 8 246 tokens**.
+#:
+#: So the shipped grouping is ONE pass. The pass machinery stays because a caller may need to
+#: narrow further (a cheaper validator route, a smaller deadline): the aggregation, the
+#: narrowed schema and the merge are the same code for one pass or for several.
+VALIDATION_CRITERIA_PASSES: tuple[tuple[str, ...], ...] = (VALIDATION_CRITERIA,)
+
+#: Criteria whose pass also judges actions that "must not reach a learner" and the curriculum
+#: sequence; the plan-specific addendum belongs to the pass that actually rules on alignment.
+_PLAN_SEQUENCE_CRITERION = "objective_alignment"
+
+
+def plan_claim_labels(plan: Mapping[str, Any]) -> list[str]:
+    """Deterministic labels for the plan's own claims, in a stable order.
+
+    A claim support verdict is linked to the ledger by ``source_id`` plus a verbatim
+    ``evidence_quote`` (``research.claim_verdict_link_problem``), so the label only records *which*
+    plan claim a verdict answers. Naming the claims here — instead of letting the model enumerate
+    them — is what bounds the output demand, and it makes two passes' verdict sets comparable.
+    """
+    labels: list[str] = []
+    for objective in plan.get("objectives") or []:
+        if isinstance(objective, Mapping):
+            labels.append(f"objective:{objective.get('ordinal')}")
+    for unit in plan.get("units") or []:
+        if isinstance(unit, Mapping):
+            labels.append(f"unit:{unit.get('ordinal')}")
+    outcome = plan.get("learner_outcome")
+    if isinstance(outcome, str) and outcome.strip():
+        labels.append("plan:learner_outcome")
+    return labels
+
+
+def validation_pass_schema(
+    criteria: Sequence[str], claim_labels: Sequence[str] = ()
+) -> dict[str, Any]:
+    """``VALIDATION_SCHEMA`` narrowed to one pass's criteria and (optionally) its claim labels.
+
+    Narrowing the *instructions* alone does not bound the answer: measured on the exact H-187
+    request, asking for one criterion still produced ten entries and 14 409 completion tokens. The
+    schema is what makes an out-of-pass answer impossible — a pass that returns a criterion it was
+    not given fails validation instead of quietly widening the record.
+
+    A pass with no claim labels does not carry ``claim_verdicts`` at all: the top-level
+    ``additionalProperties: False`` then turns a stray claim verdict into a schema violation, so a
+    criteria pass cannot spend its budget re-judging support that another pass owns.
+    """
+    schema = copy.deepcopy(VALIDATION_SCHEMA)
+    properties = schema["properties"]
+    criteria_schema = properties["criteria"]
+    criteria_schema["minItems"] = len(criteria)
+    criteria_schema["maxItems"] = len(criteria)
+    criteria_schema["items"]["properties"]["id"]["enum"] = list(criteria)
+    properties["rejections"]["items"]["properties"]["criterion"]["enum"] = list(criteria)
+    if claim_labels:
+        claim_schema = properties["claim_verdicts"]
+        claim_schema["minItems"] = len(claim_labels)
+        claim_schema["maxItems"] = len(claim_labels)
+        claim_schema["items"]["properties"]["item"] = {
+            "type": "string",
+            "enum": list(claim_labels),
+        }
+    else:
+        properties.pop("claim_verdicts", None)
+    return schema
+
+
+def validation_pass_instructions(
+    *, subject: str, criteria: Sequence[str], claim_labels: Sequence[str] = ()
+) -> str:
+    """One pass's instruction text: its criteria, its claims, and nothing else to write about."""
+    text = (
+        f"Independently validate this {subject}. This pass judges exactly {len(criteria)} "
+        f"criterion/criteria: {', '.join(criteria)}. Return exactly one entry for each criterion "
+        "named here and no others. Keep each reason to one sentence (at most 200 characters) that "
+        "names the concrete artifact feature it rests on; do not restate the artifact, restate the "
+        "author's rationale, or explain your method. Reject any item that must not reach a learner, "
+        "with the item reference and a concrete reason."
+    )
+    if claim_labels:
+        text += (
+            " Also return a support verdict for these plan claims: "
+            + ", ".join(claim_labels)
+            + ". Use source_id only when the supplied source ledger actually contains that source. "
+            "Support is not the same as provenance: to mark a claim 'supported' or 'partial' you "
+            "must set source_id and quote in 'excerpt' the exact words from that source that carry "
+            "the claim. Without an exact quoted excerpt the harness keeps the claim 'unverified', "
+            "and a title, publisher, URL, DOI or ISBN you cite must appear in the ledger or the "
+            "verdict is flagged."
+        )
+    else:
+        text += " Return no claim_verdicts: claim support is judged by another pass."
+    if subject == "plan" and _PLAN_SEQUENCE_CRITERION in criteria:
+        text += (
+            " Also judge curriculum sequence under objective_alignment: every unit after the "
+            "first must name the earlier unit(s) it builds on and explain why it comes at that "
+            "point; no unit may require a concept taught later. Reject a plan whose order is "
+            "arbitrary, whose prerequisite edges do not match the stated dependencies, or whose "
+            "language-coverage claim is unsourced or treats coverage as comprehension."
+        )
+    return text
+
+
+def validation_pass_criteria(request: LLMRequest) -> tuple[str, ...]:
+    """The criteria one pass was given, read back from its own narrowed schema.
+
+    The request is the record of what the validator was asked to judge, so the merge reads
+    ownership from there instead of from a second list that could drift.
+    """
+    enum = (
+        request.schema.get("properties", {})
+        .get("criteria", {})
+        .get("items", {})
+        .get("properties", {})
+        .get("id", {})
+        .get("enum")
+    )
+    return tuple(enum or VALIDATION_CRITERIA)
+
+
+def merge_validation_reports(
+    passes: Sequence[tuple[Sequence[str], Mapping[str, Any]]],
+) -> dict[str, Any]:
+    """Combine one report per validation pass into the single report ``validation_verdict`` reads.
+
+    ``passes`` is one ``(owned_criteria, report)`` pair per pass. Nothing is dropped to make the
+    merge succeed: every one of the ten criteria must arrive from the pass that owns it, so a pass
+    that answered only part of its batch is a typed rejection rather than a smaller review. The
+    merged report keeps the shape and the meaning ``validation_verdict`` already relies on
+    (``outcome``, ``independence`` and the recorded validator identity are computed there, not
+    here). Rejections are concatenated, and a pass that declared ``reject`` makes the whole
+    validation declare ``reject``.
+
+    A pass's answer is filtered to the criteria it owns. On the real route the host rejects an
+    out-of-pass answer against the narrowed schema before it reaches this function, so the filter
+    only matters for a caller that hands in raw reports (tests, replays): it can never widen the
+    reviewed set, and it can never stand in for a missing pass.
+    """
+    by_criterion: dict[str, dict[str, Any]] = {}
+    rejections: list[dict[str, Any]] = []
+    claim_verdicts: list[dict[str, Any]] = []
+    seen_rejections: set[tuple[Any, Any, Any]] = set()
+    seen_claims: set[str] = set()
+    declared = "pass"
+    for owned, report in passes:
+        owned_ids = {str(criterion) for criterion in owned}
+        if str(report.get("verdict")) != "pass":
+            declared = "reject"
+        for entry in report.get("criteria") or []:
+            criterion = str(entry.get("id"))
+            if criterion not in owned_ids:
+                continue
+            if criterion in by_criterion:
+                raise GenerationRejected(
+                    f"validator reported criterion {criterion!r} more than once"
+                )
+            by_criterion[criterion] = dict(entry)
+        for entry in report.get("rejections") or []:
+            key = (entry.get("item"), entry.get("criterion"), entry.get("reason"))
+            if key in seen_rejections:
+                continue
+            seen_rejections.add(key)
+            rejections.append(dict(entry))
+        for entry in report.get("claim_verdicts") or []:
+            item = str(entry.get("item"))
+            if item in seen_claims:
+                continue
+            seen_claims.add(item)
+            claim_verdicts.append(dict(entry))
+    missing = [criterion for criterion in VALIDATION_CRITERIA if criterion not in by_criterion]
+    if missing:
+        raise GenerationRejected(f"validator omitted criteria: {', '.join(missing)}")
+    return {
+        "verdict": declared,
+        "criteria": [by_criterion[criterion] for criterion in VALIDATION_CRITERIA],
+        "rejections": rejections,
+        "claim_verdicts": claim_verdicts,
+    }
+
+
+def _run_validation_passes(
+    llm: "LLM", requests: Sequence[LLMRequest], usage: "_Usage"
+) -> list["LLMResponse"]:
+    """Run the validator's passes together, each with its own deadline and its own schema.
+
+    A pass that times out or fails fails the *whole* validation: a partial criteria set is never
+    merged and never recorded as a review, so a lost pass is ``needs_retry``, never a pass. Every
+    pass is submitted before the first result is awaited, which is what keeps the aggregate wall
+    time at the slowest pass instead of the sum.
+    """
+    if len(requests) <= 1:
+        return [_call_llm(llm, request, usage) for request in requests]
+    from concurrent.futures import ThreadPoolExecutor
+
+    # Reserve every pass's slot before any of them starts: five threads that each check the call
+    # ceiling as they begin would all see the same "calls so far" and cross it together.
+    usage.reserve(len(requests))
+    with ThreadPoolExecutor(max_workers=len(requests), thread_name_prefix="coursebook-validation") as pool:
+        futures = [pool.submit(_call_llm, llm, request, usage) for request in requests]
+        responses: list[LLMResponse | None] = [None] * len(requests)
+        first_error: BaseException | None = None
+        for index, future in enumerate(futures):
+            try:
+                responses[index] = future.result()
+            except BaseException as exc:  # noqa: BLE001 - re-raised after every pass is settled
+                if first_error is None:
+                    first_error = exc
+    if first_error is not None:
+        raise first_error
+    assert all(response is not None for response in responses)
+    return [response for response in responses if response is not None]
 
 
 def validate_artifact(schema: dict[str, Any], instance: Any, *, what: str) -> None:
@@ -5027,7 +5293,7 @@ def build_plan_request(
     )
 
 
-def build_plan_validation_request(
+def build_plan_validation_requests(
     *,
     plan: dict[str, Any],
     goal: str,
@@ -5042,7 +5308,20 @@ def build_plan_validation_request(
     parent_brief: dict[str, Any] | None = None,
     frequency_selection: frequency.InventorySelection | None = None,
     frequency_status: dict[str, Any] | None = None,
-) -> LLMRequest:
+) -> list[LLMRequest]:
+    """The plan's independent validation, as one request per criteria pass.
+
+    H-191 follow-up: one call demanding ten verdicts *and* a support verdict per claim did not
+    finish inside the declared deadline on the measured route. The same reviewed set is now judged
+    by ``VALIDATION_CRITERIA_PASSES`` — each pass carries its own narrowed schema, all passes carry
+    the same payload and prompt version, and they run together (see
+    :func:`_run_validation_passes`). The claim labels are distributed across the passes so no
+    single pass owns the whole support judgement.
+
+    Every pass has the same ``purpose`` and the same declared deadline: the purpose still means
+    "the plan's validation", the usage record still attributes the spend to it, and an operator's
+    ``COURSEBOOK_PLAN_VALIDATE_TIMEOUT_SECONDS`` still bounds each pass.
+    """
     declared_level = level or _dial_text(dials, "level")
     declared_domain = subject_domain or _dial_text(dials, "subject_domain")
     normal_domain = (
@@ -5076,17 +5355,44 @@ def build_plan_validation_request(
     frequency_block = _frequency_block(frequency_selection, frequency_status)
     if frequency_block is not None:
         payload["vocabulary_inventory"] = frequency_block
-    return LLMRequest(
-        purpose="coursebook.plan.validate",
-        prompt_version=VALIDATION_PROMPT_VERSION,
-        system_prompt=VALIDATION_SYSTEM_PROMPT,
-        instructions=_validation_instructions(subject="plan", criteria=VALIDATION_CRITERIA),
-        input_text=_bounded_input(payload, limit=_request_bound(scope)),
-        schema=VALIDATION_SCHEMA,
-        schema_name="coursebook_validation_v1",
-        max_tokens=2000,
-        timeout_s=_timeout_for("coursebook.plan.validate", timeout_s),
-    )
+    input_text = _bounded_input(payload, limit=_request_bound(scope))
+    timeout = _timeout_for("coursebook.plan.validate", timeout_s)
+    claims = plan_claim_labels(plan)
+    return [
+        LLMRequest(
+            purpose="coursebook.plan.validate",
+            prompt_version=VALIDATION_PROMPT_VERSION,
+            system_prompt=VALIDATION_SYSTEM_PROMPT,
+            instructions=validation_pass_instructions(
+                subject="plan", criteria=pass_criteria, claim_labels=pass_claims
+            ),
+            input_text=input_text,
+            schema=validation_pass_schema(pass_criteria, pass_claims),
+            schema_name="coursebook_validation_v1",
+            max_tokens=2000,
+            timeout_s=timeout,
+        )
+        for pass_criteria, pass_claims in _validation_pass_plan(claims)
+    ]
+
+
+def _validation_pass_plan(
+    claim_labels: Sequence[str],
+) -> list[tuple[tuple[str, ...], tuple[str, ...]]]:
+    """Pair each criteria pass with its share of the claim labels, in a stable order.
+
+    Claims are distributed round-robin so a plan with many objectives (a full-course plan) does not
+    load the whole support judgement onto one pass. A pass with no share carries no
+    ``claim_verdicts`` at all, which the narrowed schema enforces.
+    """
+    passes = len(VALIDATION_CRITERIA_PASSES)
+    shares: list[list[str]] = [[] for _ in range(passes)]
+    for index, label in enumerate(claim_labels):
+        shares[index % passes].append(label)
+    return [
+        (VALIDATION_CRITERIA_PASSES[index], tuple(shares[index]))
+        for index in range(passes)
+    ]
 
 
 def build_lesson_request(
@@ -6491,7 +6797,7 @@ def run_plan_job(
                 feedback = "The plan broke required rules:\n- " + "\n- ".join(exc.reasons)
                 continue
 
-            validation_request = build_plan_validation_request(
+            validation_requests = build_plan_validation_requests(
                 plan=candidate,
                 goal=planning_goal,
                 recipe=recipe,
@@ -6505,11 +6811,24 @@ def run_plan_job(
                 frequency_selection=frequency_selection,
                 frequency_status=frequency_status,
             )
-            assert_separate_pass(plan_request, validation_request)
-            validation_response = _call_llm(validator, validation_request, usage)
-            report = _parse_structured(
-                validation_response, VALIDATION_SCHEMA, what="plan validation", max_bytes=MAX_VALIDATION_BYTES
-            )
+            for validation_request in validation_requests:
+                assert_separate_pass(plan_request, validation_request)
+            validation_responses = _run_validation_passes(validator, validation_requests, usage)
+            reports = [
+                (
+                    validation_pass_criteria(validation_request),
+                    _parse_structured(
+                        validation_response, VALIDATION_SCHEMA, what="plan validation",
+                        max_bytes=MAX_VALIDATION_BYTES,
+                    ),
+                )
+                for validation_request, validation_response in zip(
+                    validation_requests, validation_responses
+                )
+            ]
+            report = merge_validation_reports(reports)
+            validation_request = validation_requests[0]
+            validation_response = validation_responses[0]
             independence = validation_independence(
                 model_identity(response), model_identity(validation_response)
             )
