@@ -202,7 +202,18 @@ def _scope_finding() -> Finding | None:
             "warning", "SCOPE_AMBIENT",
             f"{db.SINGLE_HOME_FLAG} is set but storage resolves to the active profile, not a "
             f"pinned launch home (expected only when the active scope IS the launch home)")
-    return Finding("ok", "SCOPE_PINNED", f"single-home storage pinned to {pin}")
+    seam = db.host_seam_status()
+    if not seam["available"]:
+        return Finding(
+            "error", "HOST_SEAM_UNAVAILABLE",
+            f"single-home storage is pinned to {pin}, but the host surface that opens it moved: "
+            f"{seam['module']}.{seam['attribute']} — {seam['detail']} (last verified against "
+            f"{seam['verified_against']})",
+            "update this package for the installed Hermes build, or unset "
+            f"{db.SINGLE_HOME_FLAG} on a host that already resolves the launch profile itself")
+    return Finding(
+        "ok", "SCOPE_PINNED",
+        f"single-home storage pinned to {pin} via {seam['module']}.{seam['attribute']}")
 
 
 def inspect_install(home: Path, source: Path, *, proc_root: Path | None = None) -> CheckReport:
