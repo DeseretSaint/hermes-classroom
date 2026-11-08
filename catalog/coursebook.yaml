@@ -1,53 +1,61 @@
-# Draft catalog entry for Coursebook. NOT SUBMITTED.
+# Catalog entry for Coursebook. NOT SUBMITTED.
 #
-# The sha below is the merged code commit (29bede7: the CB-017 line on master). The release record
-# that re-derives the docs is a docs-only commit above it, so at the pinned tree the README still
-# carries the pre-re-pin wording; land that record on master and re-pin before opening the pull
-# request. The entry is still a draft: gates 5, 7, 9 and 10 of docs/SUBMISSION.md are open or
-# partial (host gateway binding for the recording, demo gate, license, publication sign-off).
-# CB-QA-09 is not a plugin defect; Atlas reclassified it as P3-operational
-# (docs/REVIEW_CB017-FINAL.md §3.1).
-# Before the catalog pull request, merge every code change, re-run `scripts/validate-plugin.sh` on
-# the final commit, then set sha and docs_url to that commit and keep version in step with the
-# pinned code — all in one change. See docs/SUBMISSION.md sections 3 and 4. Do not submit this file
-# while sha and description disagree; gate 11 is exactly that check.
+# `sha` is `f5b8463`, the docs commit on top of the merged release candidate `e564e07` (merge
+# `494a540`, H-135). The pin is the commit whose documents and images this entry quotes; an entry
+# cannot carry its own hash, so the catalog update itself is one commit above it.
+# `version` is kept in step with `plugin.yaml` (0.1.0).
+#
+# The entry is still withheld: gates 5, 7, 9 and 10 of docs/SUBMISSION.md are partial or open
+# (live drive of this commit, demo scenarios, license, publication sign-off). CB-QA-09 is not a
+# plugin defect; Atlas reclassified it as P3-operational (docs/REVIEW_CB017-FINAL.md §3.1).
 name: coursebook
 repo: https://github.com/DeseretSaint/hermes-classroom
-sha: 29bede7643403cd9d608499232125e6347c680dd
+sha: f5b84632d7201448e43992b2c1b160f9ea8deeb3
 description: >-
   A native Hermes Desktop learning workspace where a lesson is governed state rather than chat:
   one objective at a time, typed checks, bounded grading, transactional transitions, inspectable
   evidence, and sourced visuals and audio, plus parent-prepared lesson packs. Coursebook 0.1.0
-  holds no vendor credentials, makes no outbound HTTP request of its own and declares no required
-  environment variables: every provider call goes through a seam the Hermes profile already
-  configures. Disclosure - lesson chat reaches the selected chat provider and any configured
-  external memory provider; plan and lesson generation, and Parent Studio planning, reach the host
-  plugin LLM route with the goal or parent brief, dials, locale, bounded research queries and
-  source excerpts; research reaches the host web_search and web_extract tools, so the configured
-  search backend and the named sites; closed checks are graded locally against a stored reference;
-  the auxiliary open-response grader lane is disabled, so an open answer is sent nowhere; image
-  and speech generation are not implemented and no media provider is wired; state persists in
-  profile-scoped SQLite under $HERMES_HOME; pack import reads a local file and pack export writes
-  a local downloadable archive, and neither uploads; parent briefs require an acknowledged egress
-  disclosure before a course is created. No telemetry, no usage reporting, no credential storage,
-  no self-update.
+  holds no vendor credentials and declares no required environment variables: provider calls go
+  through seams the Hermes profile already configures. Disclosure - lesson chat reaches the
+  selected chat provider and any configured external memory provider; plan and lesson generation,
+  and Parent Studio planning, reach the host plugin LLM route with the goal or parent brief, dials,
+  locale, bounded research queries and source excerpts; research reaches the host web_search and
+  web_extract tools, so the configured search backend and the named sites; closed checks are
+  graded locally against a stored reference; the auxiliary open-response grader lane is disabled,
+  so an open answer is sent nowhere; image and speech generation call the host's configured
+  image/TTS providers through ctx.dispatch_tool, and two direct outbound requests exist of
+  Coursebook's own - downloading the provider's image artifact bytes from an allowlisted fal host,
+  and a first-use download of faster-whisper model weights from Hugging Face (weights only, no
+  audio or learner data sent); state persists in profile-scoped SQLite under $HERMES_HOME; pack
+  import reads a local file and pack export writes a local downloadable archive, and neither
+  uploads; parent briefs require an acknowledged egress disclosure before a course is created. No
+  telemetry, no usage reporting, no credential storage, no self-update.
 maintainer: DeseretSaint
 title: Coursebook
 tier: community
 category: desktop
 requires_hermes: ">=0.23.0"
 version: "0.1.0"
-docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/29bede7643403cd9d608499232125e6347c680dd/docs/INSTALL.md
+docs_url: https://github.com/DeseretSaint/hermes-classroom/blob/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/INSTALL.md
+image: https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-overview-light.png
+screenshots:
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-overview-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-library-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-textbook-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-lesson-pane-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-notebook-dark.png
+  - https://raw.githubusercontent.com/DeseretSaint/hermes-classroom/f5b84632d7201448e43992b2c1b160f9ea8deeb3/docs/assets/readme-parent-studio-dark.png
 readme: true
 platforms: []
 known_issues:
+  - "No license file is present in this repository yet; do not redistribute until one is added (operator decision, board card t_6f2d2080)."
   - "Desktop route #/coursebook mounts against a reachable backend. A window with no gateway renders no route page for any hash (host shell degradation); CB-QA-09 was reclassified P3-operational, a one-gateway-per-host binding owned by the default profile, not a plugin defect. An isolated window therefore has no chat composer until the operator resolves the recording path."
-  - "No license file is present in this repository yet; do not redistribute until one is added."
+  - "No demo is recorded; the demo gate is not met and no release tag exists. The plugin is not published to the catalog."
   - "Research runs inside plan jobs only; there is no standalone research command."
-  - "Image and speech generation are absent: lesson generation emits declarative media specs with text equivalents and no provider is wired."
+  - "Image and speech generation are implemented through the host's configured providers since M0 (3cead45), with text equivalents and honest degraded states, but the lesson-preview route is covered by tests rather than driven live on this tree. Pronunciation scoring ships as local practice-only scoring; it is not a graded or verified pronunciation assessment, and no provider key is read."
   - "Reminders are absent: no command, no job kind and no storage."
   - "The auxiliary open-response grader lane is disabled; closed checks are graded locally against a stored reference."
-  - "evidence.inspect returns an open check's reference answer in the L2 projection (CB-QA-10); the UI does not render it."
+  - "A live Desktop window has not driven the merged release candidate; several views are proved by render and parity tests or by live captures on earlier commits."
 capabilities:
   provides_tools:
     - coursebook_status
