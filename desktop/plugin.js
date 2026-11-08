@@ -1475,16 +1475,11 @@ function FirstRun({ implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry 
             style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.6rem' },
             children: [
               showAction
-                ? jsx(sdk.Button, {
+                ? jsx(CbAction, {
                     'data-cb-first-run-primary': '',
-                    variant: 'default',
+                    variant: 'primary',
                     onClick: action,
-                    style: {
-                      ...buttonStyle,
-                      background: 'var(--cb-lamp)',
-                      color: 'var(--cb-on-lamp)',
-                      border: '1px solid var(--cb-on-lamp)'
-                    },
+                    style: { whiteSpace: 'normal', textAlign: 'center', lineHeight: 1.3 },
                     children: actionLabel
                   })
                 : null,
@@ -3015,7 +3010,7 @@ function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
                         className: 'inline-flex items-center gap-1 font-semibold',
                         style: { color: 'var(--cb-accent)' },
                         children: [
-                          jsx(sdk.Codicon, { name: 'check', size: '0.75rem' }),
+                          jsx(sdk.Codicon, { name: 'check', size: CB_ICON_UI }),
                           jsx('span', { children: 'Selected' })
                         ]
                       })
@@ -3418,17 +3413,10 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem', paddingTop: '0.2rem' },
         children: [
-          jsx(sdk.Button, {
-            variant: 'default',
+          jsx(CbAction, {
+            variant: 'primary',
             disabled: Boolean(busy) || !canPrimary,
             onClick: onPrimary,
-            style: {
-              background: busy || !canPrimary ? 'var(--cb-paper)' : 'var(--cb-lamp)',
-              color: busy || !canPrimary ? 'var(--cb-ink-soft)' : 'var(--cb-on-lamp)',
-              border: `1px solid ${busy || !canPrimary ? 'var(--cb-rule)' : 'var(--cb-on-lamp)'}`,
-              borderRadius: '2px',
-              minHeight: '36px'
-            },
             children: busy ? 'Opening' : desk.primaryLabel
           }),
           jsx(CbAction, {
@@ -3650,8 +3638,8 @@ function CheckpointPath({ desk, onOpenSection, outlineStatus, outlineError, onRe
                       background: 'var(--cb-rule)'
                     }
                   }, 'spine'),
-                  jsx(sdk.Button, {
-                    variant: 'text',
+                  jsx(CbAction, {
+                    variant: 'row',
                     className: 'w-full justify-start',
                     'aria-current': isCurrent ? 'step' : undefined,
                     'aria-label': `Checkpoint ${objective.ordinal}: ${objective.title}, ${stateWord}, ${checkWord}`,
@@ -4684,10 +4672,9 @@ function FieldDeskHome({
           title: 'Parent Studio holds your lesson plans.',
           description:
             'This profile has parent-led lesson plans, not a learner classroom. Continue belongs to a learner classroom.',
-          children: jsx(sdk.Button, {
-            variant: 'default',
+          children: jsx(CbAction, {
+            variant: 'primary',
             onClick: onOpenStudio,
-            style: { background: 'var(--cb-lamp)', color: 'var(--cb-on-lamp)', border: '1px solid var(--cb-on-lamp)', borderRadius: '2px', minHeight: '44px' },
             children: 'Open Parent Studio'
           })
         })
@@ -5465,7 +5452,7 @@ function PackMenu({ row, supports, onExportPack, onDelete, onDeletePack }) {
           'aria-label': `More actions for ${row.title || 'this pack'}`,
           size: 'icon-sm',
           variant: 'ghost',
-          children: jsx(sdk.Codicon, { name: 'kebab-vertical', size: '0.875rem' })
+          children: jsx(sdk.Codicon, { name: 'kebab-vertical', size: CB_ICON_UI })
         })
       }),
       jsx(sdk.DropdownMenuContent, { align: 'end', children: items })
@@ -5542,14 +5529,14 @@ function PackFacts({ row, implemented, onOpen, onResume, onArchive, onDelete, on
         className: 'flex flex-wrap items-center gap-2 pt-1',
         children: [
           canResume && onResume
-            ? jsx(sdk.Button, { onClick: () => onResume(row), size: 'sm', variant: 'default', children: 'Resume lesson' })
+            ? jsx(CbAction, { onClick: () => onResume(row), variant: 'primary', children: 'Resume lesson' })
             : onOpen
-              ? jsx(sdk.Button, { onClick: () => onOpen(row), size: 'sm', variant: 'default', children: 'Open course' })
+              ? jsx(CbAction, { onClick: () => onOpen(row), variant: 'primary', children: 'Open course' })
               : null,
           supports('enrollment.update')
             ? jsx(CbAction, {
                 onClick: () => onArchive(row, row.enrollment_status === 'archived' ? 'unarchive' : 'archive'),
-                variant: 'tertiary',
+                variant: 'secondary',
                 children: row.enrollment_status === 'archived' ? 'Unarchive' : 'Archive'
               })
             : null,
@@ -5572,7 +5559,7 @@ function PackFacts({ row, implemented, onOpen, onResume, onArchive, onDelete, on
             className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
             style: { listStyle: 'none', minHeight: '1.75rem', color: 'var(--ui-text-secondary)' },
             children: [
-              jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+              jsx(sdk.Codicon, { name: 'chevron-right', size: CB_ICON_UI }),
               jsx('span', { children: 'Technical details' })
             ]
           }),
@@ -5946,7 +5933,7 @@ function LibraryView({ implemented, createOpen, onOpen, onStartSyllabus, onStart
             className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
             style: { listStyle: 'none', minHeight: '1.75rem' },
             children: [
-              jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+              jsx(sdk.Codicon, { name: 'chevron-right', size: CB_ICON_UI }),
               jsx('span', { children: 'What we check / what we do not check' })
             ]
           }),
@@ -9788,9 +9775,8 @@ function PracticeSurface({
         ? jsxs('div', {
             className: 'flex flex-wrap items-center gap-2',
             children: [
-              jsx(sdk.Button, {
-                variant: 'default',
-                size: 'sm',
+              jsx(CbAction, {
+                variant: 'primary',
                 disabled: busy || detached,
                 onClick: end,
                 children: phase === 'ending' ? 'Ending practice' : 'End practice'
@@ -9815,9 +9801,8 @@ function PracticeSurface({
           ? jsxs('div', {
               className: 'flex flex-wrap items-center gap-2',
               children: [
-                jsx(sdk.Button, {
-                  variant: 'default',
-                  size: 'sm',
+                jsx(CbAction, {
+                  variant: 'primary',
                   disabled: busy || detached,
                   onClick: start,
                   children:
@@ -10562,7 +10547,7 @@ function AttemptControls({
                 : jsxs('div', {
                     className: 'flex flex-wrap items-center gap-2',
                     children: [
-                      jsx(sdk.Button, { variant: 'default', size: 'sm', onClick: retryGrading, children: 'Retry grading' }),
+                      jsx(CbAction, { variant: 'primary', onClick: retryGrading, children: 'Retry grading' }),
                   jsx(sdk.Button, {
                     variant: 'secondary',
                     size: 'sm',
@@ -14308,7 +14293,7 @@ function PlayerVerdict({ result, criteria, checklist, answer }) {
       jsxs('div', {
         style: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
         children: [
-          jsx(sdk.Codicon, { name: passed ? 'pass-filled' : 'circle-slash', size: '0.95rem' }),
+          jsx(sdk.Codicon, { name: passed ? 'pass-filled' : 'circle-slash', size: CB_ICON_UI }),
           jsx('strong', {
             style: { fontFamily: CB_SANS, fontSize: CB_TYPE.body, fontWeight: 700, color: 'var(--cb-ink)' },
             children: override ? 'Recorded — not a pass' : passed ? 'Correct' : 'Not quite'
@@ -14381,7 +14366,7 @@ function PlayerClose({ section, progress, onBack }) {
         style: {
           margin: 0,
           fontFamily: CB_SERIF,
-          fontSize: CB_TYPE.display,
+          fontSize: CB_TYPE.heading,
           fontWeight: 600,
           lineHeight: 1.1,
           letterSpacing: '-0.015em',
@@ -14405,11 +14390,9 @@ function PlayerClose({ section, progress, onBack }) {
         style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
         children: 'The path shows which section is next. Nothing is lost when you leave.'
       }),
-      jsx(sdk.Button, {
+      jsx(CbAction, {
         'data-cb-player-close-primary': '',
-        variant: 'default',
-        size: 'sm',
-        style: CB_PRIMARY_STYLE,
+        variant: 'primary',
         onClick: onBack,
         children: 'Back to the path'
       })
@@ -14617,11 +14600,9 @@ function LessonPlayer({
           borderTop: '1px solid var(--cb-rule)'
         },
         children: [
-          jsx(sdk.Button, {
+          jsx(CbAction, {
             'data-cb-player-primary': action.label,
-            variant: 'default',
-            size: 'sm',
-            style: CB_PRIMARY_STYLE,
+            variant: 'primary',
             disabled: action.disabled,
             onClick: action.run || undefined,
             children: action.label
@@ -15117,11 +15098,9 @@ function SectionPage({
           'data-cb-section-actions': bindingActive ? 'resume' : 'start',
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
           children: [
-            jsx(sdk.Button, {
+            jsx(CbAction, {
               'data-cb-section-primary': playerSurface ? 'secondary' : '',
-              variant: playerSurface ? 'secondary' : 'default',
-              size: 'sm',
-              style: playerSurface ? undefined : CB_PRIMARY_STYLE,
+              variant: playerSurface ? 'secondary' : 'primary',
               disabled: busy,
               onClick: () => begin(bindingActive ? 'resume' : 'fresh'),
               children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start a fresh run'
@@ -18911,7 +18890,7 @@ function StudioLanding({ rows, onCreate, onOpen, sessionMinutes, onOpenSettings,
         title: 'Plans for your child',
         caption:
           'Prepare a lesson for a child. Each brief you write is kept as its own plan, so you can compare versions without losing the first.',
-        actions: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'New lesson plan' })
+        actions: jsx(CbAction, { onClick: onCreate, variant: 'primary', children: 'New lesson plan' })
       }),
       jsx(ChildSafeLine, { sessionMinutes, onOpenSettings, triggerRef }),
       ...groups.map((group) =>
