@@ -1535,10 +1535,10 @@ Documented sub-reasons at v4 (not exhaustive of every emitter, but the ones a cl
 | `details.reason` | catalogue `code` | emitted by |
 |---|---|---|
 | `brief_unreadable` | `VALIDATION_FAILED` | `job_service.run_pending` when a persisted brief cannot be parsed or resolved (H-130). Non-retryable; the row is claimed under the lease fence and failed durably. |
-| `cancel_state_unreadable` | `VALIDATION_FAILED` | `job_service` when the cancel flag cannot be read (H-129). |
+| `cancel_state_unreadable` | whatever `_stage_error` maps the stage's exception to (`HOST_UNAVAILABLE`, `POLICY_VIOLATION` or `INTERNAL_ERROR`) | `job_service` when the cancel flag cannot be read (H-129); the job rests `interrupted_requires_retry`. |
 | `cost_ceiling_exceeded` | `POLICY_VIOLATION` | a lessons stage that hit the dollar ceiling; the recovery facts also land in `jobs.checkpoint`. |
 | `cost_preflight_insufficient` | `POLICY_VIOLATION` | `jobs.create` preflight refuses a ceiling that cannot pay the plan minimum; no job row is created. |
-| `plan_empty`, `plan_not_validated` | `VALIDATION_FAILED` | `parent.plan.edit` / approval fences. |
+| `plan_empty`, `plan_not_validated` | `VALIDATION_FAILED` | plan approval and edit fences in `domain.py`. |
 | `course_not_pack_backed`, `export_not_exportable` | `POLICY_VIOLATION` | `pack_flow` export gates; `problems` carries the per-question detail. |
 
 The same naming rule applies to `jobs.checkpoint` labels, which are also an open object
