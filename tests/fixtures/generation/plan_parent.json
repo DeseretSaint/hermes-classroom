@@ -1,6 +1,6 @@
 {
   "title": "Kitchen science: warm and cold",
-  "learner_outcome": "With a parent, the child sorts safe kitchen actions into warm and cold and explains one example in their own words.",
+  "learner_outcome": "With a parent, the child names and sorts warm and cold things, says why the kettle is a grown-up job, and explains one example in their own words.",
   "delivery": "parent_led",
   "time_estimate": {
     "sessions_per_week": 2,
@@ -18,7 +18,9 @@
       "title": "Name one warm and one cold thing in the kitchen",
       "evidence_target": "recall",
       "evidence_criteria": [
-        "Names one of each with a parent present"
+        "Names one warm and one cold thing with a parent present",
+        "Points at the warm object before naming it",
+        "Gives one cold example from the kitchen"
       ],
       "support": "unverified"
     },
@@ -145,10 +147,11 @@
   "exclusions": [
     "No child chat: the parent leads every step.",
     "No heat, flame or kettle operation by the child; the kettle stays unplugged and out of reach.",
+    "No sourced safety claim: the kettle rule is a parent-supplied house rule for this home, not a general fact.",
     "No claim of developmental assessment."
   ],
   "spaced_review": false,
-  "evidence_note": null,
+  "evidence_note": "The kettle rule is a house rule the parent supplied for this home. It is recorded as unverified and is not presented as a sourced general safety finding.",
   "parent": {
     "age_band": "6-8",
     "reading_level": "early reader, large print preferred",

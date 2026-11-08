@@ -1,0 +1,81 @@
+{
+  "section_title": "Warm things at home",
+  "segments": [
+    {
+      "kind": "model",
+      "heading": "Warm things",
+      "body": "The kettle, the toaster and the oven make things warm. The fridge and the ice tray make things cold. A grown-up is the only person who fills or switches on the kettle, because hot water can burn.",
+      "short": "Kettle, toaster and oven are warm; fridge and ice are cold. A grown-up works the kettle."
+    },
+    {
+      "kind": "guided",
+      "heading": "Sort the cards",
+      "body": "Lay the four picture cards on the table. Ask the child to put the warm cards in one pile and the cold cards in the other, then point at each card and name it. The kettle card is only a picture: the kettle itself stays unplugged and out of reach.",
+      "short": "Sort the four cards into warm and cold, then point and name each one."
+    }
+  ],
+  "worked_example": {
+    "prompt": "Which cards are warm, and which are cold?",
+    "steps": [
+      "Pick up the kettle card and say: the kettle is warm because a grown-up heats water in it.",
+      "Pick up the fridge card and say: the fridge is cold because it keeps food cool.",
+      "Put the kettle card in the warm pile and the fridge card in the cold pile."
+    ],
+    "answer": "kettle and toaster in the warm pile; fridge and ice in the cold pile",
+    "short": "Kettle is warm and fridge is cold: put each card in its pile."
+  },
+  "learner_explanation": "Warm things get heat from an appliance such as the kettle, toaster or oven. Cold things come from the fridge or freezer. A grown-up always fills and switches on the kettle, and you sort the cards instead.",
+  "check": {
+    "kind": "observation",
+    "stimulus": {
+      "prompt": "Ask the child to name one warm and one cold thing, then point at a warm thing before naming it.",
+      "format": "text",
+      "choices": []
+    },
+    "learner_instructions": "Parent writes down what the child said and did; no grade is given.",
+    "evidence_target": "recall",
+    "accepted_answers": [
+      "kettle is warm",
+      "toaster is warm",
+      "oven is warm",
+      "fridge is cold",
+      "ice is cold"
+    ],
+    "accepted_alternatives": [],
+    "rubric": [
+      {
+        "criterion": "names one of each",
+        "weight": 1.0,
+        "description": "Child names one warm thing and one cold thing while the parent watches"
+      },
+      {
+        "criterion": "points before naming",
+        "weight": 1.0,
+        "description": "Child points at the warm object before saying its name"
+      },
+      {
+        "criterion": "cold example",
+        "weight": 1.0,
+        "description": "Child gives one cold example from the kitchen"
+      }
+    ],
+    "reference_answer": "kettle warm, fridge cold (any kitchen pair that fits a pile)",
+    "assistance_policy": {
+      "hint": "available",
+      "answer_marks_evidence_class": "none"
+    },
+    "scaffolds": {
+      "romaji": false,
+      "furigana": false,
+      "english_meaning": false
+    }
+  },
+  "sources": [],
+  "media": [],
+  "parent_notes": "Keep your child within arm's reach for the whole activity, and keep the kettle unplugged and out of reach. The child sorts cards and names things; the child never fills or switches on the kettle. If the child reaches for the kettle, stop, move it further away and go back to the cards.",
+  "supervision_notes": [
+    "Adult stays within arm's reach for the whole activity",
+    "Kettle stays unplugged and out of reach"
+  ],
+  "learner_explanation_short": "Warm things come from the kettle, toaster or oven; cold things from the fridge. A grown-up works the kettle."
+}
