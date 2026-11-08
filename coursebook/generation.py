@@ -144,6 +144,7 @@ __all__ = [
     "run_plan_job",
     "run_unit_sections_job",
     "run_lesson_job",
+    "unit_authoring_state",
     "learner_page",
     "ensure_schema",
     "plan_document",
@@ -819,6 +820,11 @@ def preflight_lesson_brief(connection: sqlite3.Connection, brief: dict[str, Any]
 
     This is what ``jobs.create`` calls before inserting a job: a job that cannot pay for its own
     minimum is never created, so the queue cannot hold a guaranteed half-failure.
+
+    A blueprint plan is authored **one unit at a time**, so the count is the section count of the
+    unit this job would actually author — the named ``unit_ordinal`` or, when the brief omits it
+    (the Desktop's payload), the next unit :func:`unit_authoring_state` resolves. Counting the
+    whole plan would refuse a legitimately unit-sized ``brief.budget_usd``.
     """
     brief = dict(brief or {})
     if str(brief.get("stage") or "") != "lessons":
@@ -826,11 +832,43 @@ def preflight_lesson_brief(connection: sqlite3.Connection, brief: dict[str, Any]
     plan_id = brief.get("plan_id")
     if not plan_id:
         return None
-    sections = plan_section_count(connection, str(plan_id))
+    sections = _brief_lesson_sections(connection, brief)
     if sections <= 0:
         return None
     budget = lesson_cost_budget(sections, brief_budget_usd=brief.get("budget_usd"))
     return preflight_lesson_cost(sections, budget=budget)
+
+
+def _brief_lesson_sections(connection: sqlite3.Connection, brief: dict[str, Any]) -> int:
+    """How many sections the lessons job for ``brief`` will author.
+
+    Reads stored rows only. ``0`` means nothing is authorable: no outline yet for a legacy plan,
+    or every unit of a blueprint plan already has its lessons (the job is an honest no-op then).
+    """
+    plan_id = str(brief.get("plan_id") or "")
+    requested = brief.get("unit_ordinal")
+    if requested is not None:
+        try:
+            ordinal = int(requested)
+        except (TypeError, ValueError):
+            return plan_section_count(connection, plan_id)
+        try:
+            units = _plan_units(connection, plan_id)
+        except sqlite3.OperationalError:
+            return plan_section_count(connection, plan_id)
+        unit = next((item for item in units if int(item["ordinal"]) == ordinal), None)
+        if unit is None:
+            # A pre-blueprint plan has no unit rows; its outline is the whole plan.
+            return plan_section_count(connection, plan_id)
+        rows = _unit_section_rows(connection, plan_id, str(unit["id"]))
+        return len(rows) or int(unit["target_lessons"])
+    state = unit_authoring_state(connection, plan_id)
+    if state is None:
+        return plan_section_count(connection, plan_id)
+    next_unit = state.get("next_unit") or {}
+    if not next_unit:
+        return 0
+    return int(next_unit.get("sections") or next_unit.get("target_lessons") or 0)
 
 
 
@@ -7449,6 +7487,85 @@ def run_unit_sections_job(
     except BaseException:
         _record_usage(connection, job_id, usage, now)
         raise
+
+
+def unit_authoring_state(
+    connection: sqlite3.Connection, plan_id: str
+) -> dict[str, Any] | None:
+    """Which unit of an approved blueprint plan still needs authoring, read from stored rows.
+
+    ``None`` means the plan has no unit dimension: a pre-blueprint v1 plan, a plan with no
+    authored document, or a plan whose document predates the unit tables. Those plans keep the
+    original behaviour — one lessons job authors every bundled section — so this function never
+    invents a unit that the stored plan does not have.
+
+    A unit is **complete** when it has exactly its ``target_lessons`` section rows at the stored
+    plan digest and every one of those sections has a stored lesson at that digest. Anything less
+    — no sections, a partial section batch, or sections without lessons — leaves the unit at the
+    front of the queue, so a retried job resumes the unit it was authoring instead of skipping
+    ahead to a later one.
+
+    This is a read of generation rows, not a progress claim: ``units_complete`` counts units whose
+    lessons are actually stored and ``next_unit_ordinal`` is ``None`` only when every unit is.
+    The executor decides *when* to run; this function only says what the rows say.
+    """
+    try:
+        document = _load_plan_document(connection, str(plan_id))
+        if document is None:
+            return None
+        plan = document["document"].get("plan") or {}
+        if str(plan.get("plan_schema") or "") != PLAN_SCHEMA_V2_NAME:
+            return None
+        digest = str(document["plan_hash"])
+        units = _plan_units(connection, str(plan_id))
+        if not units:
+            return None
+        complete: list[int] = []
+        next_unit: dict[str, Any] | None = None
+        for unit in units:
+            ordinal = int(unit["ordinal"])
+            target = int(unit["target_lessons"])
+            section_ids = [
+                str(row["id"])
+                for row in connection.execute(
+                    "SELECT id FROM gen_plan_sections WHERE plan_id = ? AND plan_hash = ?"
+                    " AND unit_id = ? ORDER BY ordinal",
+                    (str(plan_id), digest, str(unit["id"])),
+                ).fetchall()
+            ]
+            lessons = 0
+            if section_ids:
+                placeholders = ",".join("?" for _ in section_ids)
+                row = connection.execute(
+                    f"SELECT COUNT(*) AS n FROM gen_lessons WHERE plan_hash = ? AND version = 1"
+                    f" AND section_id IN ({placeholders})",
+                    (digest, *section_ids),
+                ).fetchone()
+                lessons = int((row["n"] if isinstance(row, sqlite3.Row) else row[0]) or 0)
+            if len(section_ids) == target and lessons == len(section_ids):
+                complete.append(ordinal)
+            elif next_unit is None:
+                next_unit = {
+                    "ordinal": ordinal,
+                    "title": str(unit["title"]),
+                    "target_lessons": target,
+                    "sections": len(section_ids),
+                    "lessons": lessons,
+                }
+    except sqlite3.OperationalError:
+        # A profile that has never generated anything has no staging tables yet; "no unit
+        # dimension" is the honest answer, and the job itself will refuse the real problem.
+        return None
+    return {
+        "plan_id": str(plan_id),
+        "plan_hash": digest,
+        "plan_schema": PLAN_SCHEMA_V2_NAME,
+        "units_total": len(units),
+        "units_complete": complete,
+        "next_unit_ordinal": next_unit["ordinal"] if next_unit else None,
+        "next_unit": next_unit,
+        "complete": next_unit is None,
+    }
 
 
 def _next_unit_ordinal(
