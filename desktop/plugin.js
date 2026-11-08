@@ -2073,42 +2073,33 @@ function CourseMenu({ row, supports, onArchive, onDelete }) {
   })
 }
 
-function CourseRow({ row, implemented, onResume, onArchive, onDelete, onOpen }) {
+function CourseRow({ row, group, implemented, onResume, onArchive, onDelete, onOpen }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const next = row.next_step || {}
   const canResume = next.kind === 'resume_lesson' && supports('binding.get')
   const warning = WARNING_COPY[row.warning]
-  return jsx(sdk.ListRow, {
-    title: jsxs('span', {
+  // H-99: the row is a course object, not a text list item: cover, goal, four-segment path.
+  // `group` carries the other records for the same course so nothing is hidden by collapsing.
+  return jsx(CourseCover, {
+    row,
+    group,
+    onOpenMember: onOpen,
+    detail: jsxs('span', {
       className: 'flex min-w-0 flex-wrap items-center gap-2',
       children: [
-        jsx(CourseStamp, { title: row.title, courseId: row.course_id }),
+        jsx(sdk.Badge, { variant: 'muted', size: 'xs', children: RECIPE_COPY[row.recipe] ? RECIPE_COPY[row.recipe].title : row.recipe }),
+        warning ? jsx(WarningBadge, { warning: row.warning }) : null,
         jsx('span', {
           className: 'min-w-0 break-words',
-          style: { fontFamily: CB_SERIF, fontSize: '1.0625rem', fontWeight: 600 },
-          children: row.title
+          children: next.label ? next.label : 'No next step recorded'
         }),
-        jsx(sdk.Badge, { variant: 'muted', size: 'xs', children: RECIPE_COPY[row.recipe] ? RECIPE_COPY[row.recipe].title : row.recipe }),
-        warning ? jsx(WarningBadge, { warning: row.warning }) : null
-      ]
-    }),
-    description: next.label
-      ? jsx('span', { children: next.label })
-      : jsx('span', { children: 'No next step recorded' }),
-    below: jsxs('div', {
-      className: 'flex flex-col',
-      children: [
-        jsx(EvidenceLine, { summary: row.evidence_summary }),
         warning
-          ? jsx('div', {
-              className: 'mt-1 max-w-prose text-xs text-(--ui-text-secondary)',
-              children: warning.detail
-            })
+          ? jsx('span', { className: 'w-full max-w-prose text-xs text-(--ui-text-secondary)', children: warning.detail })
           : null
       ]
     }),
     action: jsxs('div', {
-      className: 'flex items-center gap-1',
+      className: 'flex flex-wrap items-center gap-1',
       children: [
         canResume
           ? jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: () => onResume(row), children: 'Resume lesson' })
@@ -2288,13 +2279,7 @@ function DeskLabel({ children }) {
 
 /** Deterministic initial stamp: kept as plain text for hosts that render no SVG. */
 function courseStampText(title) {
-  const words = String(title || 'Coursebook')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-  if (words.length === 0) return 'CB'
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
-  return `${words[0][0]}${words[1][0]}`.toUpperCase()
+  return cbCourseMonogram(title)
 }
 
 /** The course cover: the Atlas Lamp seal, deterministic per course, with the title adjacent. */
@@ -2305,6 +2290,204 @@ function CourseStamp({ title, large, courseId, identity }) {
     'aria-hidden': 'true',
     style: { flex: '0 0 auto', display: 'flex', alignItems: 'center' },
     children: jsx(SurveyMark, { courseId: courseId || title || 'Coursebook', identity, size: large ? 64 : 28 })
+  })
+}
+
+/* ── The shelf object: cover, goal and a four-segment path (H-99) ────────────────────────── */
+
+const CB_PATH_TONE = {
+  done: 'var(--cb-field)',
+  due: 'var(--cb-ochre)',
+  current: 'var(--cb-accent)',
+  quiet: 'var(--cb-rule)',
+  empty: 'var(--cb-rule)'
+}
+
+/** The four segments under a cover. Colour never carries the state alone: the caption does. */
+function CoursePath({ row }) {
+  const segments = cbCoursePathSegments(row)
+  return jsxs('div', {
+    'data-cb-course-path': String(segments.length),
+    style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.1rem' },
+    children: [
+      jsx('div', {
+        'aria-hidden': 'true',
+        style: { display: 'flex', gap: '0.2rem', height: '0.3rem', alignItems: 'stretch' },
+        children: segments.map((segment) =>
+          jsx(
+            'span',
+            {
+              style: {
+                flex: '1 1 0',
+                minWidth: 0,
+                background: CB_PATH_TONE[segment.state] || CB_PATH_TONE.quiet,
+                opacity: segment.state === 'quiet' || segment.state === 'empty' ? 0.45 : 1,
+                outline: segment.state === 'current' ? '1px solid var(--cb-accent)' : 'none'
+              }
+            },
+            segment.index
+          )
+        )
+      }),
+      jsx('div', {
+        'data-cb-course-path-caption': '',
+        style: { fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
+        children: cbCoursePathCaption(row)
+      })
+    ]
+  })
+}
+
+/**
+ * The disclosure under a grouped cover. It is the only place the other records for a shared
+ * course are named, so grouping never hides a plan or an enrollment: each line is openable.
+ */
+function ShelfDisclosure({ group, onOpen, label }) {
+  if (!group || !group.label) return null
+  return jsxs('details', {
+    'data-cb-shelf-versions': group.key,
+    style: { marginTop: '0.1rem' },
+    children: [
+      jsx('summary', {
+        className: 'cursor-pointer',
+        'aria-label': `${label || 'Records'} for ${group.primary.title}`,
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.3rem',
+          minHeight: '1.75rem',
+          fontFamily: CB_SANS,
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          color: 'var(--cb-ink-soft)'
+        },
+        children: [
+          jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+          jsx('span', { children: group.label })
+        ]
+      }),
+      jsx('ul', {
+        style: {
+          margin: '0.2rem 0 0',
+          padding: 0,
+          listStyle: 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.25rem'
+        },
+        children: group.members.map((member) =>
+          jsxs(
+            'li',
+            {
+              style: {
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.25rem 0.5rem',
+                fontFamily: CB_SANS,
+                fontSize: '0.75rem',
+                lineHeight: 1.45,
+                color: 'var(--cb-ink-soft)'
+              }
+            },
+            [
+              jsxs('span', { style: { minWidth: 0, overflowWrap: 'anywhere' }, children: [
+                jsx('span', { children: member.title || 'Untitled' }),
+                jsx('span', { children: ` · ${whenLabel(member.updated_at)}` }),
+                jsx('span', { children: ` · ${cbShelfFingerprint(member)}` })
+              ] }),
+              onOpen
+                ? jsx(sdk.Button, {
+                    size: 'sm',
+                    variant: 'text',
+                    'aria-label': `Open ${member.title || 'record'} from ${whenLabel(member.updated_at)}`,
+                    onClick: () => onOpen(member),
+                    children: 'Open'
+                  })
+                : null
+            ],
+            member.enrollment_id
+          )
+        )
+      })
+    ]
+  })
+}
+
+/**
+ * One course on a shelf: a 16:9 cover field on `paper-raised` carrying the seal and the
+ * two-letter monogram, then the title, the goal line and the four-segment path. The cover is
+ * deterministic (`cbSealStation(course_id)` and the monogram from the title), so reloading the
+ * route paints the same object, and `data-cb-course-cover` carries the content fingerprint.
+ */
+function CourseCover({ row, identity, detail, action, group, onOpenMember, testId }) {
+  return jsxs('article', {
+    'data-cb-course-cover': cbShelfFingerprint(row),
+    'data-cb-course-id': row.course_id || '',
+    'data-cb-all-courses-row': testId || undefined,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.35rem',
+      minWidth: 0,
+      paddingTop: '0.55rem',
+      borderTop: '1px solid var(--cb-rule)'
+    },
+    children: [
+      jsxs('div', {
+        'data-cb-cover-field': '',
+        style: {
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '0.5rem',
+          aspectRatio: '16 / 9',
+          minHeight: '3rem',
+          maxHeight: '7.5rem',
+          padding: '0.5rem 0.6rem',
+          boxSizing: 'border-box',
+          background: 'var(--cb-paper-raised)',
+          overflow: 'hidden'
+        },
+        children: [
+          jsx(SurveyMark, { courseId: row.course_id || row.title || 'Coursebook', identity, size: 40 }),
+          jsx('div', {
+            'aria-hidden': 'true',
+            style: {
+              fontFamily: CB_SERIF,
+              fontSize: '1.25rem',
+              fontWeight: 600,
+              letterSpacing: '0.02em',
+              lineHeight: 1,
+              color: 'var(--cb-ink-soft)'
+            },
+            children: cbCourseMonogram(row.title)
+          })
+        ]
+      }),
+      jsx('h3', {
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: '1.0625rem',
+          fontWeight: 600,
+          lineHeight: 1.3,
+          color: 'var(--cb-ink)',
+          overflowWrap: 'anywhere'
+        },
+        children: row.title || 'Untitled course'
+      }),
+      jsx('p', {
+        'data-cb-course-goal': '',
+        style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        children: cbCourseGoalLine(row)
+      }),
+      jsx(CoursePath, { row }),
+      detail ? jsx('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem' }, children: detail }) : null,
+      group && group.label ? jsx(ShelfDisclosure, { group, onOpen: onOpenMember }) : null,
+      action ? jsx('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }, children: action }) : null
+    ]
   })
 }
 
@@ -2739,7 +2922,10 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
 
 /** The secondary list: the other courses on this profile, by their own next step. */
 function AllCoursesList({ rows, onOpen, onShowAll }) {
-  const others = rows.slice(1)
+  // H-99: the shelf is one object per course. Repeated enrollments of the same course no longer
+  // become three identical tiles; the group keeps its count for the full list.
+  const groups = groupShelfRows(rows)
+  const others = groups.slice(1)
   // The desk stays one glance: three more courses, then the honest count and the full list.
   const shown = others.slice(0, 3)
   const hidden = others.length - shown.length
@@ -2750,7 +2936,7 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
         children: [
-          jsx(DeskLabel, { children: `All courses · ${rows.length}` }),
+          jsx(DeskLabel, { children: `All courses · ${groups.length}` }),
           jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'Search and manage courses' })
         ]
       }),
@@ -2765,66 +2951,24 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
               gridTemplateColumns: 'repeat(auto-fit, minmax(13rem, 1fr))',
               gap: '0.55rem'
             },
-            children: shown.map((row) => {
-              const summary = row.evidence_summary || {}
-              return jsxs(
-                'article',
+            children: shown.map((group) =>
+              jsx(
+                CourseCover,
                 {
-                  'data-cb-all-courses-row': row.enrollment_id,
-                  style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.4rem',
-                    padding: '0.6rem 0.65rem 0.6rem 0',
-                    borderTop: '1px solid var(--cb-rule)',
-                    background: 'transparent',
-                    minWidth: 0
-                  },
-                  children: [
-                    jsxs('div', {
-                      style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' },
-                      children: [
-                        jsxs('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '0.5rem', minWidth: 0 } , children: [
-                          jsx(CourseStamp, { title: row.title, courseId: row.course_id }),
-                          jsx('div', {
-                            style: {
-                              minWidth: 0,
-                              fontFamily: CB_SERIF,
-                              fontSize: '1rem',
-                              fontWeight: 600,
-                              lineHeight: 1.3,
-                              color: 'var(--cb-ink)',
-                              overflowWrap: 'anywhere'
-                            },
-                            children: row.title
-                          })
-                        ] })
-                      ]
-                    }),
-                    jsx('div', {
-                      style: { minHeight: '2rem', fontSize: '0.75rem', lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
-                      children: (row.next_step && row.next_step.label) || 'No next step recorded'
-                    }),
-                    jsxs('div', {
-                      style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' },
-                      children: [
-                        jsx('span', {
-                          style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)', fontVariantNumeric: 'tabular-nums' },
-                          children: `${Number(summary.independent || 0)} of ${Number(summary.total_objectives || 0)} with evidence`
-                        }),
-                        jsx(sdk.Button, {
-                          variant: 'secondary',
-                          size: 'sm',
-                          onClick: () => onOpen(row),
-                          children: 'Open'
-                        })
-                      ]
-                    })
-                  ]
+                  row: group.primary,
+                  group,
+                  testId: group.primary.enrollment_id,
+                  onOpenMember: onOpen,
+                  action: jsx(sdk.Button, {
+                    variant: 'secondary',
+                    size: 'sm',
+                    onClick: () => onOpen(group.primary),
+                    children: 'Open'
+                  })
                 },
-                row.enrollment_id
+                `all-${group.key}`
               )
-            })
+            )
           }),
       hidden > 0
         ? jsx('div', {
@@ -3480,7 +3624,13 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
     reload()
   }, [pendingDelete, deleteScope, reload])
 
-  const rows = data && Array.isArray(data.items) ? data.items : []
+  const allRows = data && Array.isArray(data.items) ? data.items : []
+  // H-99: one shelf object per distinct course. The review block and the row list both read the
+  // grouped view, so a course cannot appear twice in either place.
+  const groups = groupShelfRows(allRows)
+  const rows = groups.map((group) => group.primary)
+  const groupReviewDue = (group) =>
+    group.members.reduce((sum, member) => sum + Number((member.evidence_summary || {}).review_due || 0), 0)
   const noCourses = data && Number(data.total || 0) === 0
   // A search is a filter too: with rows present on the profile, an empty result set caused by the
   // search box must never be presented as first-run. `applied_filter` alone missed that case.
@@ -3557,14 +3707,14 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
             })
           : null,
         actionError ? jsx(ErrorLine, { error: { message: actionError } }) : null,
-        rows.some((row) => Number((row.evidence_summary || {}).review_due || 0) > 0)
+        groups.some((group) => groupReviewDue(group) > 0)
           ? jsxs('div', {
               className: 'mb-2 flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) pb-2',
               children: [
                 jsx(CbLabel, { children: 'Review due' }),
-                rows
-                  .filter((row) => Number((row.evidence_summary || {}).review_due || 0) > 0)
-                  .map((row) =>
+                groups
+                  .filter((group) => groupReviewDue(group) > 0)
+                  .map((group) =>
                     jsxs(
                       'div',
                       {
@@ -3572,40 +3722,41 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
                         children: [
                           jsx('span', {
                             className: 'min-w-0 break-words text-(--ui-text-secondary)',
-                            children: `${row.title} · ${Number(row.evidence_summary.review_due)} due`
+                            children: `${group.primary.title} · ${groupReviewDue(group)} due`
                           }),
                           jsx(sdk.Button, {
                             variant: 'text',
                             size: 'sm',
-                            onClick: () => onOpen(row),
+                            onClick: () => onOpen(group.primary),
                             children: 'Review'
                           })
                         ]
                       },
-                      `review-${row.enrollment_id}`
+                      `review-${group.key}`
                     )
                   )
               ]
             })
           : null,
-        rows.map((row) =>
+        groups.map((group) =>
           jsx(
             CourseRow,
             {
-              row,
+              row: group.primary,
+              group,
               implemented,
               onResume,
               onArchive,
               onDelete,
               onOpen
             },
-            row.enrollment_id
+            group.key
           )
         ),
-        Number(data.total || 0) > rows.length
+        data.next_cursor
           ? jsx('div', {
               className: 'pt-3 text-xs text-(--ui-text-secondary)',
-              children: `${rows.length} of ${data.total} courses shown. Narrow the filter to see the rest.`
+              children: `${groups.length} courses shown. Narrow the filter to see the rest.`
             })
           : null
       ]
@@ -3907,12 +4058,16 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
   }, [pendingDelete, deleteScope, reload])
 
   const allRows = data && Array.isArray(data.items) ? data.items : []
-  const rows = allRows.filter((row) => {
+  const filteredRows = allRows.filter((row) => {
     const source = (row.provenance && row.provenance.source) || 'authored'
     if (view === 'bundled') return source === 'bundled'
     if (view === 'local') return source === 'local' || source === 'community'
     return true
   })
+  // H-99: one shelf object per course/pack. Fourteen enrollments of the same pack are one row
+  // with an `N enrollments` disclosure, not fourteen identical text cards.
+  const groups = groupShelfRows(filteredRows)
+  const rows = filteredRows
 
   const detailRow = selected ? allRows.find((row) => row.enrollment_id === selected) || null : null
   const narrowDetailOnly = Boolean(detailRow)
@@ -3955,39 +4110,32 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
               children: 'Reconnecting. Showing the last packs that were read.'
             })
           : null,
-        rows.map((row) =>
-          jsxs(
-            'div',
+        groups.map((group) => {
+          const row = group.primary
+          return jsx(
+            CourseCover,
             {
-              className: 'flex items-center gap-1',
-              children: [
-                jsx(sdk.ListRow, {
-                  action: null,
-                  className: 'min-w-0 flex-1',
-                  description: jsxs('span', {
-                    className: 'flex flex-wrap items-center gap-2',
-                    children: [
-                      jsx('span', { children: sourceLabel(row.provenance && row.provenance.source) }),
-                      row.provenance && row.provenance.pack_version
-                        ? jsx('span', { children: `v${row.provenance.pack_version}` })
-                        : null,
-                      jsx('span', { children: `${Number((row.evidence_summary || {}).total_objectives || 0)} objectives` })
-                    ]
-                  }),
-                  title: jsx('span', { className: 'break-words', children: row.title })
-                }),
-                jsx(sdk.Button, {
-                  'aria-label': `Open ${row.title}`,
-                  onClick: () => setSelected(row.enrollment_id),
-                  size: 'sm',
-                  variant: row.enrollment_id === selected ? 'secondary' : 'ghost',
-                  children: 'Preview'
-                })
-              ]
+              row,
+              group,
+              onOpenMember: (member) => setSelected(member.enrollment_id),
+              detail: jsxs('span', {
+                className: 'flex flex-wrap items-center gap-2',
+                children: [
+                  jsx(sdk.Badge, { variant: 'muted', size: 'xs', children: sourceLabel(row.provenance && row.provenance.source) }),
+                  jsx('span', { children: `${Number((row.evidence_summary || {}).total_objectives || 0)} objectives` })
+                ]
+              }),
+              action: jsx(sdk.Button, {
+                'aria-label': `Preview ${row.title}`,
+                onClick: () => setSelected(row.enrollment_id),
+                size: 'sm',
+                variant: row.enrollment_id === selected ? 'secondary' : 'text',
+                children: 'Preview'
+              })
             },
-            row.enrollment_id
+            group.key
           )
-        )
+        })
       ]
     })
   }
@@ -4000,9 +4148,9 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
         title: 'Packs on this profile',
         caption: jsx('span', { children: LIBRARY_COPY.lead })
       }),
-      // Two import paths, side by side and named plainly. A syllabus is not a pack, so it is
-      // never nested behind the pack flow.
-      jsx(SyllabusEntry, { onStartSyllabus, onStartImport }),
+      // H-99: the two import paths live in the route header — one primary `Import pack` and one
+      // secondary `Use my college syllabus`. They are no longer repeated here under a second set
+      // of labels; one surface, one primary per object (see the H-94 rule).
       jsxs('div', {
         className: 'mb-2 flex flex-col gap-2',
         children: [
@@ -4029,7 +4177,15 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
             'data-cb-pack-trust': '',
             className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
             children: [
-              jsx('summary', { className: 'cursor-pointer text-xs font-medium', children: 'What we check / what we do not check' }),
+              jsx('summary', {
+                'data-cb-affordance': 'disclosure',
+                className: 'flex cursor-pointer items-center gap-1 text-xs font-medium',
+                style: { listStyle: 'none', minHeight: '1.75rem' },
+                children: [
+                  jsx(sdk.Codicon, { name: 'chevron-right', size: '0.75rem' }),
+                  jsx('span', { children: 'What we check / what we do not check' })
+                ]
+              }),
               jsx('p', { className: 'mt-1', children: LIBRARY_COPY.whatWeCheck }),
               jsx('p', { className: 'mt-1', children: LIBRARY_COPY.whatWeDoNotCheck })
             ]
@@ -8359,6 +8515,195 @@ function cbSealStation(courseId) {
   let sum = 0
   for (let index = 0; index < text.length; index += 1) sum += text.charCodeAt(index)
   return sum % 4
+}
+
+/* ── The shelf: one object per course, deterministic cover ─────────────────────────────────
+ * H-99. Library, All Courses and Parent Studio all read the same `library.list` rows, and the
+ * store can legitimately hold many enrollments (or many plans) that describe the same course.
+ * Everything below is pure: no sdk, no jsx, no DOM. `tests/test_desktop_course_shelf.py`
+ * imports these functions through Node and executes them, so grouping and cover determinism
+ * are proven by running the shipped code rather than by matching source strings.
+ */
+
+/** FNV-1a over UTF-16 code units: stable across reloads, engines and row order. */
+function cbStableHash(text) {
+  const value = String(text == null ? '' : text)
+  let hash = 0x811c9dc5
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return hash >>> 0
+}
+
+/** The two-letter mark on a cover. Deterministic from the title; never random, never a colour. */
+function cbCourseMonogram(title) {
+  const words = String(title || 'Coursebook')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+  if (words.length === 0) return 'CB'
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return `${words[0][0]}${words[1][0]}`.toUpperCase()
+}
+
+/**
+ * The content the shelf can actually see on one `library.list` row. The per-plan hash lives in
+ * `course.outline`, which the shelf does not call for every row; this projection is the honest
+ * substitute and its fingerprint is shown to the reader, so two rows that share a cover can be
+ * told apart without opening either.
+ */
+function cbShelfContent(row) {
+  const provenance = (row && row.provenance) || {}
+  const summary = (row && row.evidence_summary) || {}
+  return {
+    title: String((row && row.title) || '').trim().replace(/\s+/g, ' ').toLowerCase(),
+    recipe: String((row && row.recipe) || ''),
+    locale: String((row && row.locale) || ''),
+    objectives: Math.max(0, Number(summary.total_objectives || 0)),
+    packId: String(provenance.pack_id || ''),
+    packVersion: String(provenance.pack_version || ''),
+    source: String(provenance.source || '')
+  }
+}
+
+/** The full content fingerprint: the closest thing to a plan hash a shelf row carries. */
+function cbShelfFingerprint(row) {
+  const content = cbShelfContent(row)
+  const text = [
+    content.title,
+    content.recipe,
+    content.locale,
+    content.objectives,
+    content.packId,
+    content.packVersion,
+    content.source
+  ].join('|')
+  return cbStableHash(text).toString(16).padStart(8, '0')
+}
+
+/**
+ * The grouping key. A pack-backed course is one object per pack (docs/COURSEBOOK-VISUAL-
+ * IDENTITY-V2 §5.3: "when several enrollments share one pack, show one row per pack"). An
+ * authored course groups by its normalised title and recipe, so fourteen copies of the same
+ * named plan become one row plus a disclosure — the records are listed there, never deleted.
+ */
+function cbShelfGroupKey(row) {
+  const content = cbShelfContent(row)
+  if (content.packId) return `pack:${content.packId}`
+  const text = [content.title, content.recipe, content.locale].join('|')
+  return `plan:${cbStableHash(text).toString(16)}`
+}
+
+/** Active first, then most recently touched, then highest revision, then the id — no ties. */
+function cbShelfMemberOrder(left, right) {
+  const activeLeft = left && left.enrollment_status === 'active' ? 0 : 1
+  const activeRight = right && right.enrollment_status === 'active' ? 0 : 1
+  if (activeLeft !== activeRight) return activeLeft - activeRight
+  const touchedLeft = String((left && left.updated_at) || '')
+  const touchedRight = String((right && right.updated_at) || '')
+  if (touchedLeft !== touchedRight) return touchedLeft < touchedRight ? 1 : -1
+  const revisionLeft = Number((left && left.revision) || 0)
+  const revisionRight = Number((right && right.revision) || 0)
+  if (revisionLeft !== revisionRight) return revisionRight - revisionLeft
+  return String((left && left.enrollment_id) || '').localeCompare(String((right && right.enrollment_id) || ''))
+}
+
+/**
+ * Group rows into shelf objects. The reader gets the primary enrollment of each object plus a
+ * count; `members` keeps every record so the disclosure can list them and nothing is hidden.
+ */
+function groupShelfRows(rows) {
+  const list = Array.isArray(rows) ? rows : []
+  const buckets = new Map()
+  for (const row of list) {
+    if (!row || !row.enrollment_id) continue
+    const key = cbShelfGroupKey(row)
+    if (!buckets.has(key)) buckets.set(key, { key, members: [] })
+    buckets.get(key).members.push(row)
+  }
+  const groups = []
+  for (const bucket of buckets.values()) {
+    const members = bucket.members.slice().sort(cbShelfMemberOrder)
+    const versions = new Set(members.map(cbShelfFingerprint))
+    const courses = new Set(members.map((member) => member.course_id || member.enrollment_id))
+    let label = ''
+    if (members.length > 1) {
+      const packBacked = Boolean(cbShelfContent(members[0]).packId)
+      if (packBacked) label = `${members.length} enrollments`
+      else if (versions.size > 1) label = `${members.length} plans · ${versions.size} versions`
+      else label = `${members.length} copies of this plan`
+    }
+    groups.push({
+      key: bucket.key,
+      primary: members[0],
+      members,
+      count: members.length,
+      versions: versions.size,
+      courses: courses.size,
+      label
+    })
+  }
+  groups.sort((left, right) => cbShelfMemberOrder(left.primary, right.primary) || String(left.key).localeCompare(String(right.key)))
+  return groups
+}
+
+const CB_COURSE_PATH_PARTS = 4
+
+/**
+ * The four-segment path on a cover. Segments are fractions of the objective list, so the
+ * current segment is the quarter the evidence has reached: `done` behind it, `current` (or
+ * `due` when a review is waiting) at it, `quiet` ahead. With no objectives recorded there is
+ * nothing to fill, and the path says so instead of drawing invented progress.
+ */
+function cbCoursePathSegments(row) {
+  const summary = (row && row.evidence_summary) || {}
+  const total = Math.max(0, Number(summary.total_objectives || 0))
+  const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
+  const due = Math.max(0, Number(summary.review_due || 0))
+  const segments = []
+  if (total === 0) {
+    for (let index = 0; index < CB_COURSE_PATH_PARTS; index += 1) {
+      segments.push({ index, state: 'empty' })
+    }
+    return segments
+  }
+  const quarter = Math.ceil(total / CB_COURSE_PATH_PARTS)
+  const reached = independent >= total ? CB_COURSE_PATH_PARTS : Math.floor(independent / quarter)
+  for (let index = 0; index < CB_COURSE_PATH_PARTS; index += 1) {
+    let state = 'quiet'
+    if (index < reached) state = 'done'
+    else if (index === reached) state = due > 0 ? 'due' : 'current'
+    segments.push({ index, state })
+  }
+  return segments
+}
+
+/** The exact counts under the path. Never a percentage, never a score. */
+function cbCoursePathCaption(row) {
+  const summary = (row && row.evidence_summary) || {}
+  const total = Math.max(0, Number(summary.total_objectives || 0))
+  if (total === 0) return 'No sections yet'
+  const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
+  const due = Math.max(0, Number(summary.review_due || 0))
+  const parts = [`${independent} of ${total} with evidence`]
+  if (due > 0) parts.push(`${due} due`)
+  return parts.join(' · ')
+}
+
+/**
+ * The one line under the title. The shelf row carries no plan goal, so this is the goal the
+ * backend stored when it has one, the course's own subtitle, and otherwise the recorded next
+ * step. It never invents a goal to make a card look fuller.
+ */
+function cbCourseGoalLine(row) {
+  const goal = row && typeof row.goal === 'string' ? row.goal.trim() : ''
+  if (goal) return goal
+  const subtitle = row && typeof row.subtitle === 'string' ? row.subtitle.trim() : ''
+  if (subtitle) return subtitle
+  const label = row && row.next_step && typeof row.next_step.label === 'string' ? row.next_step.label.trim() : ''
+  if (label) return label
+  return 'No next step recorded'
 }
 
 /**
@@ -14791,6 +15136,9 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
     supported
   )
   const rows = query.data && Array.isArray(query.data.items) ? query.data.items : []
+  // H-99: fourteen copies of the same prepared brief are one shelf object with an `N plans`
+  // disclosure, not fourteen identical text rows. The records stay reachable inside it.
+  const groups = groupShelfRows(rows)
 
   if (!supported) {
     return jsx(EmptyState, {
@@ -14839,22 +15187,24 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
         caption: 'Each brief you write is kept as its own plan, so you can compare versions without losing the first.',
         actions: jsx(sdk.Button, { onClick: onCreate, variant: 'default', children: 'New lesson plan' })
       }),
-      ...rows.map((row) =>
+      ...groups.map((group) =>
         jsx(
-          sdk.ListRow,
+          CourseCover,
           {
-            action: jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: () => onOpen(row), children: 'Open plan' }),
-            description: jsxs('span', {
+            row: group.primary,
+            group,
+            identity: 'plum',
+            onOpenMember: onOpen,
+            detail: jsx('span', {
               className: 'flex flex-wrap items-center gap-2',
               children: [
                 jsx('span', { children: 'Lesson plan for a child' }),
-                jsx('span', { children: `updated ${whenLabel(row.updated_at)}` })
+                jsx('span', { children: `updated ${whenLabel(group.primary.updated_at)}` })
               ]
             }),
-            onClick: () => onOpen(row),
-            title: jsx('span', { className: 'min-w-0 break-words', children: row.title })
+            action: jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: () => onOpen(group.primary), children: 'Open plan' })
           },
-          row.enrollment_id
+          group.key
         )
       )
     ]
@@ -17557,6 +17907,18 @@ export {
   WorkspaceShell,
   blockSaveExcerpt,
   buildDeskModel,
+  cbCourseGoalLine,
+  cbCourseMonogram,
+  cbCoursePathCaption,
+  cbCoursePathSegments,
+  cbSealStation,
+  cbShelfFingerprint,
+  cbShelfGroupKey,
+  cbStableHash,
+  CourseCover,
+  CoursePath,
+  groupShelfRows,
+  ShelfDisclosure,
   cbLayoutFor,
   cbModeFromTheme,
   cbMotionPreference,
