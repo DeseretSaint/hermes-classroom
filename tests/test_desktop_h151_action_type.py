@@ -182,7 +182,7 @@ const navTo = async (destination) => {
   await act(async () => { button.click() })
   await flush(160)
 }
-for (const destination of ['courses', 'library', 'studio']) {
+for (const destination of ['courses', 'workshop', 'studio']) {
   await navTo(destination)
   surfaces.push(snapshot(destination))
 }
