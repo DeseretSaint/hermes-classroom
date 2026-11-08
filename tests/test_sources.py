@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 import unittest
 from unittest import mock
 
@@ -281,6 +282,104 @@ class SourceRevalidateRpcTest(SourceCase):
         self.assertEqual(response["error"]["code"], "CHECK_STALE")
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM attempts"), 0)
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM evidence"), 0)
+
+
+class _UnreadableTable:
+    """A connection proxy that fails reads of exactly one table, like a corrupt database page.
+
+    Every other statement reaches the real short-lived connection, so the rest of the kernel
+    behaves normally and the test isolates the one dependency read.
+    """
+
+    def __init__(self, connection: sqlite3.Connection, table: str, error: Exception) -> None:
+        self._connection = connection
+        self._table = table
+        self._error = error
+
+    def execute(self, sql: str, parameters: tuple = ()):
+        if self._table in sql:
+            raise self._error
+        return self._connection.execute(sql, parameters)
+
+    def __getattr__(self, name: str):
+        return getattr(self._connection, name)
+
+
+class UnknownDependencyTest(SourceCase):
+    """H-123: a dependency read that fails is *unknown*, never "nothing depends on this"."""
+
+    def broken_table(self, table: str):
+        """Patch the connection seam so only ``table`` is unreadable."""
+        real_connect = db.connect
+        error = sqlite3.DatabaseError("database disk image is malformed")
+
+        def connect():
+            return _UnreadableTable(real_connect(), table, error)
+
+        return mock.patch.object(db, "connect", side_effect=connect)
+
+    def test_unreadable_plan_sections_refuse_grading_instead_of_passing(self) -> None:
+        lesson = self.prepare_lesson()
+        source_id, _ = self.link_source(lesson, content="old")
+        self.refresh(source_id, "revised")
+        # Baseline: the same store refuses grading while the section table is readable.
+        self.assertEqual(self.submit(lesson, {"kind": "text", "text": "4"})["error"]["code"], "CHECK_STALE")
+
+        before = (self.scalar("SELECT COUNT(*) FROM attempts"),
+                  self.scalar("SELECT COUNT(*) FROM evidence"),
+                  self.scalar("SELECT COUNT(*) FROM transitions"))
+        with self.broken_table("gen_plan_sections"):
+            response = self.submit(lesson, {"kind": "text", "text": "4"})
+
+        self.assertFalse(response["ok"], "an unverifiable stale-source gate must not grade")
+        self.assertEqual(response["error"]["code"], "INTERNAL_ERROR")
+        self.assertEqual(response["error"]["details"]["reason"], "source_dependencies_unknown")
+        self.assertTrue(response["error"]["retryable"])
+        self.assertEqual(
+            (self.scalar("SELECT COUNT(*) FROM attempts"),
+             self.scalar("SELECT COUNT(*) FROM evidence"),
+             self.scalar("SELECT COUNT(*) FROM transitions")),
+            before,
+            "the refusal must write no attempt, evidence or transition",
+        )
+
+    def test_unreadable_lessons_never_shorten_the_impact_list(self) -> None:
+        lesson = self.prepare_lesson()
+        source_id, _ = self.link_source(lesson, content="old")
+        with db.transaction() as connection:
+            generation.ensure_schema(connection)
+            connection.execute(
+                "INSERT INTO gen_lessons (id, plan_id, section_id, plan_hash, version, state,"
+                " page_json, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                ("les_h123_1", lesson["plan_id"], "sec_1", "planhash", 1, "draft", "{}",
+                 "2026-02-02T00:00:00Z", "2026-02-02T00:00:00Z"),
+            )
+
+        with db.read() as connection:
+            self.assertIn("les_h123_1", sources.impact(connection, source_id)["lesson_ids"])
+
+        with self.broken_table("gen_lessons"), db.read() as connection:
+            with self.assertRaises(sources.DependencyStateUnknown):
+                sources.impact(connection, source_id)
+
+    def test_a_table_the_schema_never_had_is_honestly_empty(self) -> None:
+        """A store that never ran generation has no ``gen_lessons``: that absence is a fact."""
+        course_id, plan_id = self.new_course()
+        with db.transaction() as connection:
+            generation.ensure_schema(connection)
+            connection.execute("DROP TABLE gen_lessons")  # simulate a pre-generation store
+            connection.execute(
+                "INSERT INTO sources (id, course_id, url, title, source_type, published_at,"
+                " fetched_at, support_status, claim_count, created_at)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?)",
+                ("src_h123_bare", course_id, "https://example.test/bare", "Bare", "web", None,
+                 "2026-02-01T00:00:00Z", "model_assessed", 0, "2026-02-01T00:00:00Z"),
+            )
+        with db.read() as connection:
+            result = sources.impact(connection, "src_h123_bare")
+        self.assertEqual(result["lesson_ids"], [])
+        self.assertEqual(result["objective_ids"], [])
+        self.assertEqual(result["course_id"], course_id)
 
 
 if __name__ == "__main__":

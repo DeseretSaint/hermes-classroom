@@ -33,13 +33,55 @@ def _iso(moment: datetime) -> str:
     return moment.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def _loads(value: str | None, default: Any) -> Any:
+class DependencyStateUnknown(RuntimeError):
+    """A dependency table exists but its contents could not be read.
+
+    "Nothing depends on this source" and "the dependencies could not be read" are different
+    facts, and only the first may be reported as an empty list. The grading gate treats this
+    exception as a refusal, never as "current": a ledger that cannot be read must not let a
+    stale-source check grade.
+    """
+
+
+def _dependency_json(value: str | None, default: Any) -> Any:
+    """Parse a recorded dependency list; a value that cannot be parsed is *unknown*, not empty."""
     if not value:
         return default
     try:
         return json.loads(value)
-    except (TypeError, ValueError):
-        return default
+    except (TypeError, ValueError) as exc:
+        raise DependencyStateUnknown(f"dependency JSON could not be parsed: {exc}") from exc
+
+
+def _has_table(connection, table: str) -> bool:
+    row = connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (table,)
+    ).fetchone()
+    return row is not None
+
+
+def _dependency_rows(
+    connection,
+    sql: str,
+    params: tuple,
+    *,
+    optional_tables: tuple[str, ...] = (),
+    what: str,
+):
+    """Rows for a dependency query, where "the table predates this plan" is an honest empty.
+
+    ``optional_tables`` are the staging tables a generation stage creates lazily. Empty is honest
+    only when every one of them is genuinely absent from the schema; if one exists and the read
+    still fails, the dependency set is unknowable, so this raises
+    :class:`DependencyStateUnknown` instead of reporting "nothing depends on this". A query with
+    no optional tables (core records) always runs, so a schema that lost one fails closed.
+    """
+    if optional_tables and not any(_has_table(connection, table) for table in optional_tables):
+        return []
+    try:
+        return connection.execute(sql, params).fetchall()
+    except Exception as exc:  # noqa: BLE001 - re-raised as "unknown", never mapped to empty
+        raise DependencyStateUnknown(f"{what} could not be read: {exc}") from exc
 
 
 def ledger(connection, course_id: str) -> list[dict[str, Any]]:
@@ -78,16 +120,16 @@ def stale_sources(connection, course_id: str) -> list[dict[str, Any]]:
 
 def _latest_run_sources(connection, course_id: str) -> dict[str, dict[str, Any]]:
     """Latest recorded hash per source URL/ID, from the immutable research-run snapshots."""
-    try:
-        rows = connection.execute(
-            "SELECT sources_json FROM gen_research_runs WHERE course_id = ? ORDER BY created_at DESC",
-            (course_id,),
-        ).fetchall()
-    except Exception:  # noqa: BLE001 - the table exists only after generation ran; absence is honest
-        return {}
+    rows = _dependency_rows(
+        connection,
+        "SELECT sources_json FROM gen_research_runs WHERE course_id = ? ORDER BY created_at DESC",
+        (course_id,),
+        optional_tables=("gen_research_runs",),
+        what="the recorded research runs",
+    )
     latest: dict[str, dict[str, Any]] = {}
     for row in rows:
-        for entry in _loads(row["sources_json"], []):
+        for entry in _dependency_json(row["sources_json"], []):
             if not isinstance(entry, dict):
                 continue
             for key in (entry.get("source_id"), entry.get("url")):
@@ -98,14 +140,13 @@ def _latest_run_sources(connection, course_id: str) -> dict[str, dict[str, Any]]
 
 def _plan_objective_ordinals(connection, course_id: str) -> dict[str, dict[int, str]]:
     """plan_id -> {ordinal: objective_id} for the course's current plans."""
-    try:
-        rows = connection.execute(
-            "SELECT pl.id AS plan_id, o.ordinal, o.id AS objective_id FROM plans pl"
-            " JOIN objectives o ON o.plan_id = pl.id WHERE pl.course_id = ?",
-            (course_id,),
-        ).fetchall()
-    except Exception:  # noqa: BLE001
-        return {}
+    rows = _dependency_rows(
+        connection,
+        "SELECT pl.id AS plan_id, o.ordinal, o.id AS objective_id FROM plans pl"
+        " JOIN objectives o ON o.plan_id = pl.id WHERE pl.course_id = ?",
+        (course_id,),
+        what="the plan objective ordinals",
+    )
     mapping: dict[str, dict[int, str]] = {}
     for row in rows:
         mapping.setdefault(str(row["plan_id"]), {})[int(row["ordinal"])] = str(row["objective_id"])
@@ -114,29 +155,33 @@ def _plan_objective_ordinals(connection, course_id: str) -> dict[str, dict[int, 
 
 def _sections_citing(connection, course_id: str, source_id: str, url: str | None) -> list[dict[str, Any]]:
     keys = {source_id, url or ""} - {""}
-    try:
-        rows = connection.execute(
-            "SELECT plan_id, objective_refs_json, source_ids_json FROM gen_plan_sections"
-            " WHERE plan_id IN (SELECT id FROM plans WHERE course_id = ?)",
-            (course_id,),
-        ).fetchall()
-    except Exception:  # noqa: BLE001
-        return []
+    rows = _dependency_rows(
+        connection,
+        "SELECT plan_id, objective_refs_json, source_ids_json FROM gen_plan_sections"
+        " WHERE plan_id IN (SELECT id FROM plans WHERE course_id = ?)",
+        (course_id,),
+        optional_tables=("gen_plan_sections",),
+        what="the plan sections citing this source",
+    )
     citing = []
     for row in rows:
-        source_ids = {str(item) for item in _loads(row["source_ids_json"], [])}
+        source_ids = {str(item) for item in _dependency_json(row["source_ids_json"], [])}
         if source_ids & keys:
             citing.append(
                 {
                     "plan_id": row["plan_id"],
-                    "objective_refs": _loads(row["objective_refs_json"], []),
+                    "objective_refs": _dependency_json(row["objective_refs_json"], []),
                 }
             )
     return citing
 
 
 def impact(connection, source_id: str) -> dict[str, Any]:
-    """Everything that depends on this source: objectives, open checks, artifacts, lessons."""
+    """Everything that depends on this source: objectives, open checks, artifacts, lessons.
+
+    Raises :class:`DependencyStateUnknown` when a dependency table exists but cannot be read;
+    an under-reported impact list is a false answer, not a smaller one.
+    """
     row = connection.execute("SELECT * FROM sources WHERE id = ?", (source_id,)).fetchone()
     if row is None:
         raise RpcError.of("NOT_FOUND", f"source {source_id} does not exist.", source_id=source_id)
@@ -158,14 +203,13 @@ def impact(connection, source_id: str) -> dict[str, Any]:
             tuple(objective_ids),
         ).fetchall()
         check_ids = [str(item["id"]) for item in checks]
-    lessons: list[Any] = []
-    try:
-        lessons = connection.execute(
-            "SELECT id FROM gen_lessons WHERE plan_id IN (SELECT id FROM plans WHERE course_id = ?)",
-            (course_id,),
-        ).fetchall()
-    except Exception:  # noqa: BLE001 - generation tables exist only after a plan was generated
-        lessons = []
+    lessons = _dependency_rows(
+        connection,
+        "SELECT id FROM gen_lessons WHERE plan_id IN (SELECT id FROM plans WHERE course_id = ?)",
+        (course_id,),
+        optional_tables=("gen_lessons",),
+        what="the dependent lessons",
+    )
     artifacts = connection.execute(
         "SELECT id FROM artifacts WHERE course_id = ? AND provenance_json LIKE ?",
         (course_id, f'%"{source_id}"%'),
@@ -336,7 +380,11 @@ def apply_run(connection, course_id: str, run: research.ResearchRun) -> dict[str
 
 
 def check_staleness(connection, check_id: str) -> dict[str, Any] | None:
-    """Return the stale-source impact for a check's objective, or ``None`` when current."""
+    """Return the stale-source impact for a check's objective, or ``None`` when current.
+
+    Raises :class:`DependencyStateUnknown` when a dependency read fails: unknown is not
+    "current", and the caller must refuse rather than grade.
+    """
     row = connection.execute(
         "SELECT o.id AS objective_id, pl.course_id AS course_id FROM checks c"
         " JOIN objectives o ON o.id = c.objective_id JOIN plans pl ON pl.id = o.plan_id WHERE c.id = ?",
@@ -358,8 +406,23 @@ def check_staleness(connection, check_id: str) -> dict[str, Any] | None:
 
 
 def assert_check_current(connection, check_id: str) -> None:
-    """Refuse grading a check whose objective depends on a stale/unreachable source."""
-    stale = check_staleness(connection, check_id)
+    """Refuse grading a check whose objective depends on a stale/unreachable source.
+
+    A dependency read that fails is refused too: grading against a ledger whose state cannot be
+    established would be grading blind. The refusal is an ``INTERNAL_ERROR`` (retryable) rather
+    than ``CHECK_STALE``, because the honest complaint is "could not verify", not "the source
+    changed".
+    """
+    try:
+        stale = check_staleness(connection, check_id)
+    except DependencyStateUnknown as exc:
+        raise RpcError.of(
+            "INTERNAL_ERROR",
+            "the source ledger could not be read, so this check's sources cannot be verified;"
+            " grading is refused and nothing was graded.",
+            reason="source_dependencies_unknown",
+            retryable=True,
+        ) from exc
     if stale is None:
         return
     raise RpcError.of(
