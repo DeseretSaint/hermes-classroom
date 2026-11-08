@@ -23,6 +23,15 @@ written on. One row is no longer true of the current tree: **CB-QA-10 is fixed**
 `coursebook/evidence.py` projects criteria through `PUBLIC_CRITERION_FIELDS`. No card claims the fix;
 the derivation is recorded in `docs/HARNESS-STATUS.md` §4. Every other row stands as written.
 
+Status note (H-115-D4, 2026-11-07). The H-115 report's coupling finding — `coursebook/db.py`
+opens the single-home pinned database through the host-internal
+`hermes_cli.sqlite_util.open_db` — is settled as accepted debt with a guard, not a fix: the import
+is named and checked (module, attribute, keyword shape) at its one call site, a drift raises
+`HostSeamUnavailable` naming the surface and the host build it was verified against, and
+`install_check` reports it as `HOST_SEAM_UNAVAILABLE` before a request is made. Host range and the
+upgrade procedure are in `docs/ARCHITECTURE.md` §9; the canary is
+`tests/test_host_seam_guard.py`. The public seam (option a) remains a host-side change.
+
 ---
 
 ## CB-QA-01 — injected context persists and replays

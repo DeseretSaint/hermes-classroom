@@ -371,5 +371,5 @@ attribute, renamed keyword, module-identity drift, `**kwargs` acceptance, an ope
 reported as coupling, the pinned `connect()` opening the launch home through the guard, the
 drifted-seam `connect()`, and both doctor findings). Mutation check: with the declared module path
 pointed at a name the host does not ship, the canary fails with exactly the message quoted above.
-`hermes plugins validate .` still prints `coursebook/db.py:119 hermes_cli.sqlite_util` under
-catalog rule 9.
+`hermes plugins validate .` still lists `coursebook/db.py:121 hermes_cli.sqlite_util` under
+catalog rule 9 (checked in-process with `private_import_findings()` on this tree).
