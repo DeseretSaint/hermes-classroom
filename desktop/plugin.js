@@ -15345,12 +15345,27 @@ function SectionPage({
   const place = ordinal && total ? `Section ${ordinal} of ${total}` : ordinal ? `Section ${ordinal}` : null
   const metaLine = section
     ? [
-        jsx(sdk.Button, {
-          variant: 'text',
-          size: 'sm',
+        // H-160: the course title is a long token at 460 px / 200% text and the host text button
+        // is `shrink-0 whitespace-nowrap`, so it measured 790 px inside a 154 px reading column —
+        // the reading column scrolled sideways at 460 px even at a 16 px root. A breadcrumb is
+        // prose: it may shrink to the column and wrap like the rest of the meta line.
+        jsx(CbAction, {
+          variant: 'tertiary',
           'data-cb-breadcrumb': 'sections',
           className: 'self-start',
           onClick: onBack,
+          style: {
+            display: 'inline-flex',
+            alignItems: 'flex-start',
+            gap: '0.25rem',
+            flexShrink: 1,
+            minWidth: 0,
+            maxWidth: '100%',
+            height: 'auto',
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere',
+            textAlign: 'left'
+          },
           children: [jsx(sdk.Codicon, { name: 'chevron-left', size: CB_ICON_UI }), row.title || 'All sections']
         }, 'back'),
         jsx('span', {
@@ -21375,7 +21390,16 @@ function CoursebookWordmark() {
       letterSpacing: '0.14em',
       textTransform: 'uppercase',
       lineHeight: 1.2,
-      color: 'var(--cb-ink-soft)'
+      color: 'var(--cb-ink-soft)',
+      // H-160: "COURSEBOOK" at 28 px (200% text) plus 0.14em tracking measures 239 px, and the
+      // route pane at a 460 px window is 215 px (170 px of content). The wordmark was therefore
+      // the widest unbreakable token on the route: 46 px of the 53 px routeOverflowX on its own,
+      // 7 px more with the page title beside it. Type must not shrink when the learner scales
+      // text, so the mark reflows instead: it may break rather than push the route sideways.
+      // `anywhere` lowers the min-content width, which is what the wrapping header row sizes from.
+      minWidth: 0,
+      maxWidth: '100%',
+      overflowWrap: 'anywhere'
     },
     children: 'Coursebook'
   })
@@ -21749,7 +21773,15 @@ function CoursebookPage() {
                       fontWeight: 600,
                       lineHeight: 1.05,
                       letterSpacing: '-0.02em',
-                      color: 'var(--cb-ink)'
+                      color: 'var(--cb-ink)',
+                      // H-160: the page title is a single word at the display step. At 460 px with
+                      // 200% text the route column is 154 px and "Course" at 72 px is ~220 px, so
+                      // the unbreakable token pushed the route to routeOverflowX: 53. `anywhere`
+                      // (not `break-word`) also lowers the min-content width, which is what the
+                      // wrapping header row sizes itself from.
+                      minWidth: 0,
+                      maxWidth: '100%',
+                      overflowWrap: 'anywhere'
                     },
                     children: pageTitle
                   }),
@@ -21771,8 +21803,12 @@ function CoursebookPage() {
                 children: [
                   online ? null : jsx(sdk.Badge, { variant: 'warn', children: 'Offline' }),
                   statusCopy ? jsx(sdk.Badge, { variant: health.status === 'unavailable' ? 'warn' : 'muted', children: statusCopy }) : null,
+                  // H-160: UX_SPEC §4 names Courses' page-header primary as **New course**; H-151
+                  // measured zero primaries here because this call site was still `secondary`.
+                  // Only one eligibility check owns it (non-empty catalog, so FirstRun's own
+                  // primary cannot co-exist), so the catalog never carries two.
                   health.status === 'ready' && online && !creating && !importing && destination === 'courses' && canCreate && !coursesEmpty && !openCourse
-                    ? jsx(CbAction, { onClick: () => beginCreate(), variant: 'secondary', children: 'New course' })
+                    ? jsx(CbAction, { onClick: () => beginCreate(), variant: 'primary', children: 'New course' })
                     : null,
                   health.status === 'ready' && !creating && !importing && !syllabusFlow && destination === 'library' && canSyllabus
                     ? jsx(CbAction, { onClick: () => setSyllabusFlow(true), variant: 'secondary', children: SYLLABUS_COPY.action })
