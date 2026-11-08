@@ -462,7 +462,7 @@ class FieldDeskRenderTest(unittest.TestCase):
         row = library_row(next_step={"kind": "start_lesson", "label": "Start Replace a fouled plug"})
         desk = self.model(library=library(row))["desk"]
         self.assertEqual(desk["current"]["objective_id"], "obj_0000000000000003")
-        self.assertEqual(desk["primaryLabel"], "Start the lesson")
+        self.assertEqual(desk["primaryLabel"], "Start a fresh run")
 
     def test_mainline_objective_never_matches_on_title(self) -> None:
         row = library_row(

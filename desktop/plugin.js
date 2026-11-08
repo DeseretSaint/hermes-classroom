@@ -977,14 +977,24 @@ function DegradedBody({ result, reload }) {
  * profile-local and an objective only advances on a check the learner can see.
  */
 const FIRST_RUN_COPY = {
-  title: 'Learn something specific.',
-  promise: 'Coursebook researches what you want to do, builds the lessons, and checks your work.',
-  progress: 'Your progress stays on this profile. Nothing is marked complete without a check you can see.',
+  title: 'What do you want to be able to do?',
+  promise:
+    'Name one goal, review the plan, then learn. Nothing is created until you approve the plan.',
+  progress:
+    'Your progress stays on this profile. Nothing is marked complete without a check you can see.',
   primary: 'Start with a goal',
-  secondary: 'Use a course someone already made',
+  primaryNext: 'Next you choose how big the course is.',
+  path: [
+    { n: 1, title: 'Name a goal', line: 'Say what you want to be able to do.' },
+    { n: 2, title: 'Review the plan', line: 'Check the sections and their sources. No lesson is written yet.' },
+    { n: 3, title: 'Learn and adapt', line: 'Lessons follow the plan you approved.' }
+  ],
+  secondary: 'Use a course I already have',
   secondaryHint:
     'You will see who made it, where it came from and what is checked before anything is added.',
-  syllabus: 'Use my college syllabus'
+  syllabus: 'Use my college syllabus',
+  syllabusHint:
+    'Your syllabus sets the scope. Coursebook writes its own lessons alongside it and stores your file on this profile.'
 }
 
 function supportNote(implemented) {
@@ -1012,87 +1022,159 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
   const canCreate = Boolean(implemented && implemented.has('course.create')) && typeof onCreate === 'function'
   const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
   const canSyllabus = typeof onSyllabus === 'function' && Boolean(implemented && implemented.has('syllabus.intake.create'))
+  const width = useCbViewportWidth()
+  const compact = width > 0 && width < 520
+  const hintStyle = { margin: 0, fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' }
+  // One start plate: what Coursebook is for, one filled action, then the path in three short rows.
+  // The numbers carry the sequence, so step one is never marked current until a course exists.
   return jsxs('div', {
     'data-cb-first-run': '',
     style: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '0.85rem',
+      gap: '1rem',
       width: '100%',
-      maxWidth: '44rem',
+      maxWidth: '42rem',
       margin: '0 auto',
-      padding: '1.25rem 1.25rem 1.35rem',
+      padding: compact ? '1rem 0.9rem 1.1rem' : '1.4rem 1.5rem 1.5rem',
       background: 'var(--cb-lamp-soft)',
+      border: '1px solid var(--cb-rule)',
       borderTop: '1px solid var(--cb-lamp)',
       boxSizing: 'border-box'
     },
     children: [
-      jsx(DeskLabel, { children: 'New course' }),
       jsxs('div', {
-        style: { display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' },
+        style: { display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' },
         children: [
-          jsx(SurveyMark, { courseId: 'first-run', size: 64 }),
-          jsx('h2', {
+          jsx(SurveyMark, { courseId: 'first-run', size: compact ? 40 : 56 }),
+          jsx('h1', {
+            'data-cb-first-run-title': '',
             style: {
               margin: 0,
+              flex: '1 1 12rem',
+              minWidth: 0,
               fontFamily: CB_SERIF,
-              fontSize: 'clamp(1.75rem, 1.35rem + 1.6vw, 2.75rem)',
+              fontSize: compact ? '1.6rem' : 'clamp(1.75rem, 1.35rem + 1.6vw, 2.5rem)',
               fontWeight: 600,
-              lineHeight: 1.04,
+              lineHeight: 1.08,
               letterSpacing: '-0.015em',
               color: 'var(--cb-ink)',
-              maxWidth: '20ch'
+              maxWidth: '22ch',
+              overflowWrap: 'break-word'
             },
             children: FIRST_RUN_COPY.title
           })
         ]
       }),
       jsx('p', {
-        style: { margin: 0, maxWidth: '52ch', fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        style: {
+          margin: 0,
+          maxWidth: '54ch',
+          fontFamily: CB_SANS,
+          fontSize: '1rem',
+          lineHeight: 1.55,
+          color: 'var(--cb-ink)'
+        },
         children: FIRST_RUN_COPY.promise
       }),
       canCreate
-        ? jsx(sdk.Button, {
-            variant: 'default',
-            onClick: onCreate,
-            style: {
-              alignSelf: 'flex-start',
-              background: 'var(--cb-lamp)',
-              color: 'var(--cb-on-lamp)',
-              border: '1px solid var(--cb-on-lamp)',
-              borderRadius: '2px',
-              minHeight: '36px'
-            },
-            children: FIRST_RUN_COPY.primary
+        ? jsxs('div', {
+            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-start' },
+            children: [
+              jsx(sdk.Button, {
+                'data-cb-first-run-primary': '',
+                variant: 'default',
+                onClick: onCreate,
+                style: {
+                  background: 'var(--cb-lamp)',
+                  color: 'var(--cb-on-lamp)',
+                  border: '1px solid var(--cb-on-lamp)',
+                  borderRadius: '2px',
+                  minHeight: '44px',
+                  fontSize: '1rem'
+                },
+                children: FIRST_RUN_COPY.primary
+              }),
+              jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.primaryNext })
+            ]
           })
         : null,
+      jsx('ol', {
+        'data-cb-first-run-path': '',
+        'aria-label': 'How a course is made',
+        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' },
+        children: FIRST_RUN_COPY.path.map((step) =>
+          jsxs(
+            'li',
+            {
+              'data-cb-first-run-step': String(step.n),
+              style: { display: 'flex', alignItems: 'baseline', gap: '0.7rem', padding: '0.5rem 0', borderTop: '1px solid var(--cb-rule)' },
+              children: [
+                jsx('span', {
+                  style: {
+                    flex: '0 0 1.3rem',
+                    fontFamily: CB_SERIF,
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    fontVariantNumeric: 'tabular-nums',
+                    color: 'var(--cb-ink-soft)'
+                  },
+                  children: String(step.n)
+                }),
+                jsxs('span', {
+                  style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
+                  children: [
+                    jsx('span', {
+                      style: { fontFamily: CB_SANS, fontSize: '1rem', fontWeight: 600, color: 'var(--cb-ink)' },
+                      children: step.title
+                    }),
+                    jsx('span', {
+                      style: { fontFamily: CB_SANS, fontSize: '0.875rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+                      children: step.line
+                    })
+                  ]
+                })
+              ]
+            },
+            step.n
+          )
+        )
+      }),
       canImport || canSyllabus
         ? jsxs('div', {
             style: { display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--cb-rule)' },
             children: [
               canImport
                 ? jsxs('div', {
-                    style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', padding: '0.6rem 0' },
+                    style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', alignItems: 'flex-start', padding: '0.65rem 0' },
                     children: [
                       jsx(sdk.Button, {
                         variant: 'secondary',
-                        className: 'self-start',
                         onClick: onImportPlaceholder,
                         children: FIRST_RUN_COPY.secondary
                       }),
-                      jsx('p', { style: { margin: 0, fontFamily: CB_SANS, fontSize: '0.75rem', lineHeight: 1.45, color: 'var(--cb-ink-soft)' }, children: FIRST_RUN_COPY.secondaryHint })
+                      jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.secondaryHint })
                     ]
                   })
                 : null,
               canSyllabus
-                ? jsx('div', {
-                    style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', padding: '0.6rem 0', borderTop: '1px solid var(--cb-rule)' },
-                    children: jsx(sdk.Button, {
-                      variant: 'text',
-                      className: 'justify-start',
-                      onClick: onSyllabus,
-                      children: FIRST_RUN_COPY.syllabus
-                    })
+                ? jsxs('div', {
+                    style: {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.2rem',
+                      alignItems: 'flex-start',
+                      padding: '0.65rem 0',
+                      borderTop: '1px solid var(--cb-rule)'
+                    },
+                    children: [
+                      jsx(sdk.Button, {
+                        variant: 'secondary',
+                        onClick: onSyllabus,
+                        children: FIRST_RUN_COPY.syllabus
+                      }),
+                      jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.syllabusHint })
+                    ]
                   })
                 : null
             ]
@@ -1105,7 +1187,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
           borderTop: '1px solid var(--cb-rule)',
           maxWidth: '56ch',
           fontFamily: CB_SANS,
-          fontSize: '0.75rem',
+          fontSize: '0.8125rem',
           lineHeight: 1.5,
           color: 'var(--cb-ink-soft)'
         },
@@ -2057,7 +2139,7 @@ const DESK_STATE_TONE = {
 }
 
 const DESK_PRIMARY_LABEL = {
-  start_lesson: 'Start the lesson',
+  start_lesson: 'Start a fresh run',
   resume_lesson: 'Resume the lesson',
   resolve_review_due: 'Start the review',
   rebind_session: 'Reconnect the chat',
@@ -4007,7 +4089,7 @@ const GOAL_EXAMPLES = [
 /** The create result speaks before the receipt does (UX-03). */
 const CREATE_RESULT_COPY = {
   lead: 'Your plan is being researched; this may take several minutes and you can leave this page.',
-  body: 'When the plan arrives you can read it and approve it here. No lesson is written until you approve.',
+  body: 'When it arrives it opens here. Approve the plan to start the first lesson; no lesson is written before that.',
   details: 'Details and job state'
 }
 
@@ -4116,6 +4198,13 @@ async function startLearnerPlan({ call, key, title, goal, recipe, dials, locale,
  * stays a real contract field; this only saves the learner from decoding an enum.
  */
 const SCOPE_DEFAULT_RECIPE = { single: 'one_off', short: 'casual', full: 'committed' }
+
+/** The three steps, in the words a learner uses, each with the next thing that will happen. */
+const CREATE_STEP_SPINE = Object.freeze([
+  { n: 1, name: 'Size', next: 'Next: name the goal and the course.' },
+  { n: 2, name: 'Goal', next: 'Next: review what will be created.' },
+  { n: 3, name: 'Review', next: 'Create the course, then review the draft plan.' }
+])
 
 /** A compact staged create flow; every step is editable before the one mutation. */
 function CreateCourseFlow({ onCancel, onCreated }) {
@@ -4239,7 +4328,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
         jsxs('div', {
           className: 'flex flex-wrap items-center gap-2 pt-1',
           children: [
-            jsx(sdk.Button, { onClick: onCancel, variant: 'default', children: 'Open in Courses' }),
+            jsx(sdk.Button, { onClick: onCancel, variant: 'secondary', children: 'Open in Courses' }),
             jsx(sdk.Button, {
               onClick: () => {
                 setResult(null)
@@ -4252,7 +4341,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                 setLocale('')
                 keyRef.current = null
               },
-              variant: 'secondary',
+              variant: 'text',
               children: 'Create another'
             })
           ]
@@ -4273,8 +4362,43 @@ function CreateCourseFlow({ onCancel, onCreated }) {
           jsxs('div', {
             className: 'min-w-0',
             children: [
-              jsx(CbLabel, { children: `STEP ${step} OF 3` }),
-              jsx('h2', { className: 'mt-1 text-sm font-semibold', children: stepTitle })
+              jsx('div', {
+                'data-cb-create-spine': '',
+                className: 'flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-(--ui-text-secondary)',
+                children: CREATE_STEP_SPINE.map((item) =>
+                  jsxs(
+                    'span',
+                    {
+                      'data-cb-create-step': String(item.n),
+                      'aria-current': item.n === step ? 'step' : undefined,
+                      style:
+                        item.n === step
+                          ? {
+                              display: 'inline-flex',
+                              alignItems: 'baseline',
+                              gap: '0.3rem',
+                              fontWeight: 600,
+                              color: 'var(--ui-text-primary)',
+                              borderBottom: '2px solid var(--cb-lamp)',
+                              paddingBottom: '0.1rem'
+                            }
+                          : { display: 'inline-flex', alignItems: 'baseline', gap: '0.3rem' },
+                      children: [
+                        jsx('span', { style: { fontVariantNumeric: 'tabular-nums' }, children: String(item.n) }),
+                        jsx('span', { children: item.name })
+                      ]
+                    },
+                    item.n
+                  )
+                )
+              }),
+              jsx('div', { className: 'mt-1 text-xs text-(--ui-text-secondary)', children: `Step ${step} of 3` }),
+              jsx('h2', { className: 'mt-1 text-lg font-semibold', children: stepTitle }),
+              jsx('p', {
+                'data-cb-create-next': '',
+                className: 'mt-0.5 max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
+                children: CREATE_STEP_SPINE[step - 1].next
+              })
             ]
           }),
           jsx(sdk.Button, { onClick: onCancel, size: 'sm', variant: 'text', children: 'Cancel' })
@@ -4286,7 +4410,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
             children: [
               jsx('p', {
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
-                children: 'Pick how much course you want. You can change this before anything is created.'
+                children: 'Pick how much course you want. Nothing is created yet, and you can go back at any point.'
               }),
               jsx('div', {
                 role: 'listbox',
@@ -4374,7 +4498,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
               jsxs('div', {
                 className: 'flex flex-col gap-1.5',
                 children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Name this course' }),
+                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Name this course (required)' }),
                   jsx(sdk.Input, {
                     id: 'cb-title',
                     onChange: (event) => setTitle(event.target.value),
@@ -4390,7 +4514,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
               jsxs('div', {
                 className: 'flex flex-col',
                 children: [
-                  jsx('div', { className: 'mb-1 text-xs font-medium text-(--ui-text-secondary)', children: 'How will you use it?' }),
+                  jsx('div', { className: 'mb-1 text-xs font-medium text-(--ui-text-secondary)', children: 'What kind of course is this?' }),
                   RECIPES.filter((id) => id !== 'parent').map((id) =>
                     jsx(sdk.ListRow, {
                       action: jsx(sdk.Button, {
@@ -4510,11 +4634,11 @@ function CreateCourseFlow({ onCancel, onCreated }) {
                 ]
               }),
               jsx('div', {
-                className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                'data-cb-create-confirm': '',
+                className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
                 children:
-                  'Creating this writes one course, one draft plan and one enrolment on this profile, then ' +
-                  'queues one plan job. Research and drafting call the model; the plan arrives as a draft you review ' +
-                  'before anything is approved.'
+                  'Create course writes the course and one draft plan. The plan then opens here for you to ' +
+                  'approve, and no lesson is written until you do.'
               }),
               jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: planTimingCopy(scope) }),
               recoverable
@@ -11193,7 +11317,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
           ? jsx(QuietNote, { children: document.view_note })
           : null,
 
-        runtime && !bindingActive
+        !bindingActive
           ? jsx('div', {
               'data-cb-detached': runtime.binding_status || 'detached',
               style: {
@@ -11209,36 +11333,27 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
               children: [
                 jsx('span', {
                   style: { fontFamily: CB_SANS, fontSize: '0.8125rem', lineHeight: 1.5, color: 'var(--cb-ink)' },
-                  children: 'No lesson chat is open for this section yet. Start the lesson to open one that belongs to it.'
+                  children: 'This section has no lesson chat yet. Start one and send the first message to begin.'
                 })
               ]
             })
           : null,
 
-        // One primary action per screen: continue the chat that is already bound, or start the
-        // lesson. A fresh run is a genuinely different action, so it stays available as a tertiary
-        // link rather than competing as a second filled button.
+        // One live action per screen. With no chat open the primary arms a run and opens its
+        // chat; with a chat open it resumes that chat. There is no second button for the same run.
         jsxs('div', {
           'data-cb-section-actions': bindingActive ? 'resume' : 'start',
           style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
           children: [
             jsx(sdk.Button, {
+              'data-cb-section-primary': '',
               variant: 'default',
               size: 'sm',
               style: CB_PRIMARY_STYLE,
               disabled: busy,
               onClick: () => begin(bindingActive ? 'resume' : 'fresh'),
-              children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start the lesson'
-            }),
-            bindingActive
-              ? jsx(sdk.Button, {
-                  variant: 'text',
-                  size: 'sm',
-                  disabled: busy,
-                  onClick: () => begin('fresh'),
-                  children: 'Start a fresh run instead'
-                })
-              : null
+              children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start a fresh run'
+            })
           ]
         }),
         jsx(NoticeLine, { notice, busy }),
@@ -11616,7 +11731,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
                 style: CB_PRIMARY_STYLE,
                 disabled: !section,
                 onClick: () => onResume(section ? section.objective_id : null),
-                children: next.kind === 'resume_lesson' ? 'Resume the lesson' : 'Start the lesson'
+                children: next.kind === 'resume_lesson' ? 'Resume the lesson' : 'Start a fresh run'
               }),
               jsx(sdk.Button, {
                 variant: 'text',
@@ -13725,7 +13840,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
                   style: CB_PRIMARY_STYLE,
                   disabled: busy,
                   onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
-                  children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start the lesson'
+                  children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start a fresh run'
                 }),
                 jsx(sdk.Button, {
                   variant: 'secondary',
@@ -16727,24 +16842,10 @@ function CoursebookPage() {
             className: 'flex flex-wrap items-start justify-between gap-3',
             children: [
               jsxs('div', {
-                className: 'min-w-0',
+                className: 'flex min-w-0 items-center gap-2',
                 children: [
-                  jsx('div', { className: 'text-sm font-semibold', children: ROUTE_TITLE }),
-                  jsx('div', {
-                    className: 'mt-0.5 text-xs text-(--ui-text-secondary)',
-                    children:
-                      destination === 'studio' && !studioSeed
-                        ? studioCourse
-                          ? 'One lesson plan: the brief, the plan, the pages and what you record afterwards.'
-                          : 'Plan lessons for your child here. You teach them; there is no child chat, and answers never reach the learner pages.'
-                        : destination === 'library' && !creating
-                          ? LIBRARY_COPY.lead
-                          : openCourse
-                            ? 'What you are learning, what has been checked, and what to do next.'
-                            : coursesMode === 'list'
-                              ? 'Every course on this profile, with search and the next step the backend recorded.'
-                              : 'Pick up where you left off, or open another course.'
-                  })
+                  jsx(SurveyMark, { courseId: 'coursebook', size: 24 }),
+                  jsx('div', { className: 'text-base font-semibold', children: ROUTE_TITLE })
                 ]
               }),
               jsxs('div', {
@@ -16752,8 +16853,8 @@ function CoursebookPage() {
                 children: [
                   online ? null : jsx(sdk.Badge, { variant: 'warn', children: 'Offline' }),
                   statusCopy ? jsx(sdk.Badge, { variant: health.status === 'unavailable' ? 'warn' : 'muted', children: statusCopy }) : null,
-                  health.status === 'ready' && online && !creating && !importing && destination === 'courses' && canCreate && !coursesEmpty
-                    ? jsx(sdk.Button, { onClick: () => setCreating(true), size: 'sm', variant: 'default', children: 'New course' })
+                  health.status === 'ready' && online && !creating && !importing && destination === 'courses' && canCreate && !coursesEmpty && !openCourse
+                    ? jsx(sdk.Button, { onClick: () => setCreating(true), size: 'sm', variant: 'secondary', children: 'New course' })
                     : null,
                   health.status === 'ready' && !creating && !importing && !syllabusFlow && destination === 'library' && canSyllabus
                     ? jsx(sdk.Button, { onClick: () => setSyllabusFlow(true), size: 'sm', variant: 'secondary', children: SYLLABUS_COPY.action })
@@ -16777,17 +16878,54 @@ function CoursebookPage() {
                   'Creating a course, writing a brief and grading open answers are paused until the connection returns.'
               }),
           showDestinationNav
-            ? jsx(sdk.SegmentedControl, {
-                onChange: changeDestination,
-                options: DESTINATIONS,
-                sizing: 'content',
-                value: destination
-              })
+            ? jsx(CbDestinationNav, { value: destination, onChange: changeDestination })
             : null
         ]
       }),
       jsx(PageBody, { children: body })
     ]
+  })
+}
+
+/**
+ * The three destinations, named, with a selected state a colour-blind learner can still read:
+ * weight and a lamp underline, plus `aria-current="page"`. It replaces a segmented control whose
+ * active state was a fill only.
+ */
+function CbDestinationNav({ value, onChange }) {
+  return jsx('nav', {
+    'data-cb-destination-nav': '',
+    'aria-label': 'Coursebook sections',
+    className: 'flex flex-wrap items-center gap-x-4',
+    children: DESTINATIONS.map((item) => {
+      const current = item.id === value
+      return jsx(
+        'button',
+        {
+          type: 'button',
+          'data-cb-nav-item': item.id,
+          'aria-current': current ? 'page' : undefined,
+          onClick: () => {
+            if (!current) onChange(item.id)
+          },
+          style: {
+            background: 'none',
+            border: 'none',
+            borderRadius: 0,
+            padding: '0.35rem 0',
+            cursor: current ? 'default' : 'pointer',
+            fontFamily: CB_SANS,
+            fontSize: '0.9375rem',
+            fontWeight: current ? 600 : 400,
+            color: current ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
+            borderBottom: current ? '2px solid var(--cb-lamp)' : '2px solid transparent',
+            minHeight: '32px'
+          },
+          children: item.label
+        },
+        item.id
+      )
+    })
   })
 }
 
