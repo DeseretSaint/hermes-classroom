@@ -1,0 +1,22 @@
+{
+  "what": "the learner's Reduce motion setting read by CbAction on the isolated rig (CDP 9391)",
+  "why": "H-179 found the settings switch painted data-cb-motion but nothing consumed it; publishCbMotion() now feeds useCbMotion()",
+  "plugin_sha256": "c61cece72c5d01bbd176aa36a827edb0f4acbc2ad8195902e3dfbaf3f5b2902c",
+  "os_media_prefers_reduced_motion": false,
+  "reads": [
+    {
+      "setting": "Follow system",
+      "route_data_cb_motion": "full",
+      "first_cb_action_transition_property": "transform, border-color",
+      "first_cb_action_transition_duration": "0.1s, 0.1s"
+    },
+    {
+      "setting": "Reduce motion",
+      "route_data_cb_motion": "reduced",
+      "first_cb_action_transition_property": "none",
+      "first_cb_action_transition_duration": "0s"
+    }
+  ],
+  "method": "settings sheet -> data-cb-settings-control=reduced-motion -> option click -> close; then getComputedStyle on the first [data-cb-action]",
+  "note": "the toggle was exercised in both directions on the same window, so the read is not a first-paint artefact"
+}

@@ -12655,18 +12655,57 @@ function cbReducedMotionMedia() {
   return null
 }
 
-function useCbMotion() {
-  const [preference, setPreference] = useState(() => cbMotionPreference(cbReducedMotionMedia()))
+/**
+ * The learner's own motion setting and the OS preference are one answer. A nested surface cannot
+ * see the route's props, so the route publishes its effective choice here: `useCbMotion()` below it
+ * reads the same answer the settings sheet shows instead of shipping a switch with no reader.
+ * `null` means "follow the OS", which is what `system` means.
+ */
+const cbMotionListeners = new Set()
+let cbMotionPublished = null
+function publishCbMotion(motion) {
+  const next = motion && motion.reduced === true ? 'reduced' : null
+  if (next === cbMotionPublished) return
+  cbMotionPublished = next
+  for (const listener of cbMotionListeners) listener()
+}
+
+/**
+ * The OS answer alone. The route must publish its effective choice without reading its own
+ * publication, or a learner who once chose `reduce` could never get motion back.
+ */
+function useCbReducedMedia() {
+  const [reduced, setReduced] = useState(() => cbMotionPreference(cbReducedMotionMedia()) === 'reduced')
   useEffect(() => {
     const media = cbReducedMotionMedia()
     if (!media) return undefined
-    const onChange = () => setPreference(cbMotionPreference(media))
-    onChange()
-    if (typeof media.addEventListener === 'function') media.addEventListener('change', onChange)
-    else if (typeof media.addListener === 'function') media.addListener(onChange)
+    const sync = () => setReduced(cbMotionPreference(media) === 'reduced')
+    sync()
+    if (typeof media.addEventListener === 'function') media.addEventListener('change', sync)
+    else if (typeof media.addListener === 'function') media.addListener(sync)
     return () => {
-      if (typeof media.removeEventListener === 'function') media.removeEventListener('change', onChange)
-      else if (typeof media.removeListener === 'function') media.removeListener(onChange)
+      if (typeof media.removeEventListener === 'function') media.removeEventListener('change', sync)
+      else if (typeof media.removeListener === 'function') media.removeListener(sync)
+    }
+  }, [])
+  return reduced
+}
+
+function useCbMotion() {
+  const [preference, setPreference] = useState(
+    () => cbMotionPublished || cbMotionPreference(cbReducedMotionMedia())
+  )
+  useEffect(() => {
+    const media = cbReducedMotionMedia()
+    const sync = () => setPreference(cbMotionPublished || cbMotionPreference(media))
+    cbMotionListeners.add(sync)
+    sync()
+    if (typeof media?.addEventListener === 'function') media.addEventListener('change', sync)
+    else if (typeof media?.addListener === 'function') media.addListener(sync)
+    return () => {
+      cbMotionListeners.delete(sync)
+      if (typeof media?.removeEventListener === 'function') media.removeEventListener('change', sync)
+      else if (typeof media?.removeListener === 'function') media.removeListener(sync)
     }
   }, [])
   return cbMotionFor(preference)
@@ -23803,8 +23842,13 @@ function CoursebookPage() {
   // layer stops at this root, so Hermes chrome keeps its own theme untouched.
   const hostMode = useCbMode()
   const cbMode = cbAppliedMode(hostMode, homePrefs.appearance)
-  const systemMotion = useCbMotion()
-  const cbMotion = homePrefs.reducedMotion === 'reduce' ? cbMotionFor('reduced') : systemMotion
+  const systemReduced = useCbReducedMedia()
+  const cbMotion = homePrefs.reducedMotion === 'reduce' || systemReduced ? cbMotionFor('reduced') : cbMotionFor('full')
+  // H-179: the setting is published to the surfaces below, so `Reduce motion` actually reaches
+  // every CbAction whether the learner picked it or the OS asked for it.
+  useEffect(() => {
+    publishCbMotion(cbMotion)
+  }, [cbMotion.reduced])
   const online = useOnline()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const settingsTriggerRef = useRef(null)
@@ -24317,8 +24361,11 @@ function CoursebookPane() {
   const [panePrefs] = useCbHomePrefs()
   const hostMode = useCbMode()
   const cbMode = cbAppliedMode(hostMode, panePrefs.appearance)
-  const systemMotion = useCbMotion()
-  const cbMotion = panePrefs.reducedMotion === 'reduce' ? cbMotionFor('reduced') : systemMotion
+  const systemReduced = useCbReducedMedia()
+  const cbMotion = panePrefs.reducedMotion === 'reduce' || systemReduced ? cbMotionFor('reduced') : cbMotionFor('full')
+  useEffect(() => {
+    publishCbMotion(cbMotion)
+  }, [cbMotion.reduced])
   const scopeProfile = currentScope().profile
   const routingUnavailable = profileRouteState.status === 'unavailable'
   const [bindNote, setBindNote] = useState(null)
