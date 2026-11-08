@@ -4,18 +4,22 @@ Disclosure is per operation, not one generic "your model provider" sentence. Thi
 what each Coursebook operation can send, where it goes, and whether that path exists in this
 build.
 
-Scope: version 0.1.0, the CB-014 candidate. Read the state column first. **Working** means the
+Scope: version 0.1.0, the contest candidate. Read the state column first. **Working** means the
 operation was run against this build and passed; **Implemented** means the code path exists and is
 exercised by the test suite; **Disabled** and **Absent** mean there is no path that could send
-anything. The Desktop page does not mount on this candidate (CB-QA-09, `docs/REVIEW_CB014.md`), so
-a shipped backend path is not reachable from the UI. That is a reachability problem, not a privacy
-one: nothing below becomes true only when the page renders.
+anything. The Desktop page mounts whenever the window reaches a backend; a window with no gateway
+renders the session home for every hash (CB-QA-09, reclassified P3-operational, a host gateway
+constraint rather than a plugin defect, in `docs/REVIEW_CB017-FINAL.md` §3.1). Reachability is
+therefore a host condition, not a privacy one: nothing below becomes true only when the page
+renders.
 
 Coursebook holds no vendor credentials and reads no provider key. Its provider calls go through a
 seam the Hermes profile already configures, so the user's provider choice, egress rules and SSRF
-checks apply. The one direct outbound request is the **first-use download of its own local speech
-model weights** from Hugging Face (see the pronunciation row below); no audio is ever uploaded on
-that path.
+checks apply. Two operations are direct outbound requests of Coursebook's own, both in the table
+below: the **provider image-artifact download** from an allowlisted `*.fal.media`/`*.fal.run` host
+(the image and speech row), and the **first-use download of its own local speech model weights**
+from Hugging Face (the pronunciation row). Neither carries schoolwork: the image URL is the
+provider's own artifact URL, and the speech download is weights only with no audio uploaded.
 
 ## Egress inventory on this candidate
 
@@ -24,12 +28,12 @@ that path.
 | Install, enable, load | local only | Nothing. The package is read from disk, and load-time reconciliation is a non-creating schema-version read | Working |
 | Pane health check | the local Hermes backend: `ctx.rest('/health')` → `/api/plugins/coursebook/health` in the same process | Nothing leaves the machine. The first successful `health.get` provisions the profile database; the lifecycle hooks do not (CB-014-R1) | Working |
 | `coursebook_status` tool | local only | Nothing. Reads local health, the mounted-method list and the contract inventory and returns JSON to the agent | Working |
-| Plan and lesson generation (a `plan` job from the job tick) | the host plugin LLM route (`ctx.llm`) — the model configured for the Hermes profile | The goal, recipe, dials and locale; the bounded research query list and source briefs with capped excerpts. Each excerpt is wrapped in an explicit untrusted-data envelope and the prompt says it is data, never instructions; the source id is the only locally minted identifier. For a lesson, the approved plan, the section and the objective. A separate validation call re-reads the candidate artifact, the learner page and the source briefs, including the same enveloped excerpts | Implemented; unreachable from the Desktop behind CB-QA-09 |
+| Plan and lesson generation (a `plan` job from the job tick) | the host plugin LLM route (`ctx.llm`) — the model configured for the Hermes profile | The goal, recipe, dials and locale; the bounded research query list and source briefs with capped excerpts. Each excerpt is wrapped in an explicit untrusted-data envelope and the prompt says it is data, never instructions; the source id is the only locally minted identifier. For a lesson, the approved plan, the section and the objective. A separate validation call re-reads the candidate artifact, the learner page and the source briefs, including the same enveloped excerpts | Implemented; reachable in a window that reaches a backend, otherwise a host gateway limitation (CB-QA-09, P3-operational) |
 | Research inside a plan job | the host `web_search` and `web_extract` tools, so the user's configured search backend, and then the named sites themselves | The goal-derived queries (capped before any call), then the URLs returned by search. Fetched text is kept as a bounded excerpt only and is treated as untrusted data in every later prompt; it cannot change recipe rules, schemas, state or exports | Implemented inside plan jobs. No standalone RPC |
-| Lesson chat | the selected chat provider, plus any configured external memory provider (host behavior, not Coursebook's) | The learner message and the conversation history the host sends for any chat. Coursebook injects only the committed public verdict, the permitted next action and the objective id — never a reference answer, rubric internals or provider text | Implemented; subject to the same CB-QA-09 reachability gap |
+| Lesson chat | the selected chat provider, plus any configured external memory provider (host behavior, not Coursebook's) | The learner message and the conversation history the host sends for any chat. Coursebook injects only the committed public verdict, the permitted next action and the objective id — never a reference answer, rubric internals or provider text | Implemented; subject to the same host gateway condition |
 | Grading, closed checks | local only | Nothing. The answer is compared against the stored reference by a deterministic local grader | Working |
 | Grading, open response (auxiliary lane) | no destination | Nothing. No auxiliary adapter is configured in this build (`configure_aux_grader` is never called), so an open response is not sent anywhere and the attempt is recorded as unable to grade rather than passed | Disabled |
-| Parent Studio planning | the same host plugin LLM route as plan generation, through a queued `plan` job | The parent brief: title, goal, age band, reading level, duration, setting, materials, exclusions, supervision notes, desired pages and visuals, narration script, locale. `parent.brief.create` refuses the brief unless `egress_acknowledged: true`, so no course is created from an unacknowledged paste | Implemented; unreachable from the Desktop behind CB-QA-09 |
+| Parent Studio planning | the same host plugin LLM route as plan generation, through a queued `plan` job | The parent brief: title, goal, age band, reading level, duration, setting, materials, exclusions, supervision notes, desired pages and visuals, narration script, locale. `parent.brief.create` refuses the brief unless `egress_acknowledged: true`, so no course is created from an unacknowledged paste | Implemented; reachable in a window that reaches a backend, otherwise a host gateway limitation (CB-QA-09, P3-operational) |
 | Image and speech generation | the host `image_generate`/`text_to_speech` tools, using the image and TTS providers configured for the Hermes profile; the returned image URL is fetched directly from an allowlisted `*.fal.media`/`*.fal.run` host | The media prompt and text equivalent for an image; the narration transcript, language and voice for audio. The image download is the provider's own artifact URL, never a URL supplied by the model or a learner. A generated lesson's text equivalents, labels and source references are stored locally. | Implemented in the lesson path when the host binds `ctx.dispatch_tool`; a provider failure degrades to text |
 | Pronunciation attempt (`POST /pronunciation/attempt`) | **local only**, with one exception: the first use may download `faster-whisper` model weights from `huggingface.co` and cache them under `<plugin data>/stt-models` | The take is decoded with the host `ffmpeg` binary and scored on this machine by Coursebook's own `coursebook_local_whisper` model. **No audio is uploaded.** The first use fetches model weights only (no learner data) unless the model is already cached. The assessment (transcript, target, locale, provider, model, accuracies, words, verdict) is stored locally; the audio file is deleted after scoring | Implemented and backend-tested; the recording UI is M3-U1 |
 | Pack import | a local file the user chose; no upload | Nothing leaves the machine. The archive is read from disk and hashed; a URL is refused, a symlink is refused, and an archive whose bytes no longer match its manifest is rejected | Working |
@@ -85,7 +89,7 @@ $HERMES_HOME/plugin-data/coursebook/data.db
 
 Not inside the plugin directory, because removing the plugin deletes that directory. The path is
 resolved per call so a profile switch cannot reuse another profile's handle. `health.get`
-provisions the store on first contact and applies migrations `0001`-`0005` (schema v5); the hooks
+provisions the store on first contact and applies migrations `0001`-`0009` (schema v9); the hooks
 and the tool never create it. `scripts/install-local.sh` also writes
 `<home>/coursebook-single-home.env`, which sets `HERMES_COURSEBOOK_SINGLE_HOME=1` so an isolated
 backend pins storage to that install's home instead of escaping to the default profile.
@@ -120,11 +124,12 @@ provider the Hermes profile is configured to use.
   tool calls or learning history.
 - No telemetry and no usage reporting. Usage rows stay in local SQLite and are never sent to
   Coursebook or a third party: no analytics, no crash reporting, no health pings.
-- No credentials. Coursebook declares no `requires_env`, stores no key and does not fetch its own
-  files. Its configuration keys are `status_include_contracts` (a boolean that adds the contract
-  inventory to the `coursebook_status` output) and `validator_model` / `validator_provider` (an
-  optional second model used only for the validation pass; empty by default). The local speech
-  model is a declared Python dependency with a weight download, not a credential.
+- No credentials. Coursebook declares no `requires_env` and stores no key. Its configuration keys
+  are `status_include_contracts` (a boolean that adds the contract inventory to the
+  `coursebook_status` output) and `validator_model` / `validator_provider` (an optional second model
+  used only for the validation pass; empty by default). The local speech model is a declared Python
+  dependency with a weight download, not a credential, and the image download uses the provider's
+  own artifact URL rather than a key Coursebook holds.
 - A pronunciation take is never retained by this slice: it is a private temporary file deleted
   after scoring, it never becomes an artifact, and no raw audio is stored in the database, a pack,
   an export, a notebook entry or telemetry. A missing local recogniser means "practice only, not
@@ -154,7 +159,7 @@ plugin can grant itself, and Coursebook does not claim them.
 
 ## Retention and deletion
 
-`contracts/db.v3.json` carries the deletion policy this build implements: deleting a chat preserves
+`contracts/db.v9.json` carries the deletion policy this build implements: deleting a chat preserves
 course evidence; deleting an imported pack marks its content frozen and retains evidence; deleting
 personal course data is an explicit destructive scope. `enrollment.delete` requires the
 `data_scope_hash` the caller previewed, and removes that enrollment's lesson segments, evidence,

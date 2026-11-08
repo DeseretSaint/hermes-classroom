@@ -175,8 +175,8 @@ Step-by-step install, uninstall and troubleshooting: `docs/INSTALL.md`.
 
 ## Privacy and egress
 
-Coursebook holds no vendor credentials and makes no direct outbound HTTP request of its own.
-Every provider call goes through a seam the Hermes profile already configures:
+Coursebook holds no vendor credentials and reads no provider key. Provider calls go through a
+seam the Hermes profile already configures:
 
 - lesson chat uses the selected chat provider and any configured external memory provider;
 - plan and lesson generation use the host plugin LLM route; the optional auxiliary grader uses
@@ -185,9 +185,24 @@ Every provider call goes through a seam the Hermes profile already configures:
   egress rules and SSRF checks apply;
 - pack import and export are local files and perform no upload, and there is no telemetry.
 
+Two operations do make a direct outbound HTTP request of Coursebook's own, both outside that seam:
+
+- **Provider image download.** When the host binds `ctx.dispatch_tool` and `image_generate`
+  returns an artifact URL, Coursebook downloads the bytes itself from an allowlisted
+  `*.fal.media` / `*.fal.run` host (`coursebook/media.py`). The URL is the provider's own
+  artifact URL, never one supplied by the model or a learner; the redirect target is re-checked
+  against the same allowlist, and a provider or download failure degrades to the text equivalent.
+- **First-use speech-model download.** The first pronunciation attempt with an empty cache
+  downloads `faster-whisper` model weights from Hugging Face into `<plugin data>/stt-models`
+  (`coursebook/stt.py`). Weights only: no audio or learner data is sent, and the take is deleted
+  after local scoring.
+
+Neither request carries a schoolwork payload, and neither uses a credential Coursebook holds.
+
 State lives in profile-scoped SQLite at `$HERMES_HOME/plugin-data/coursebook/data.db` and
-migrates on first use. Usage rows are recorded locally, and only for a session this process
-observed as bound to an enrollment. "Local" describes storage, not inference.
+migrates on first use, through migrations `0001`-`0009` (schema v9) on this tree. Usage rows are
+recorded locally, and only for a session this process observed as bound to an enrollment. "Local"
+describes storage, not inference.
 
 Full text, including what Coursebook refuses to do with schoolwork and what it cannot control at
 the host level: `docs/PRIVACY_EGRESS.md`.
