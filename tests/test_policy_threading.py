@@ -332,14 +332,23 @@ class PolicyThreadingTest(KernelCase):
                 "UPDATE plans SET state = 'approved', approved_at = ? WHERE id = ?",
                 ("2026-11-06T12:05:00Z", plan_result["plan_id"]),
             )
-            # The blueprint authors sections in the unit stage, after approval.
+            # The blueprint authors sections in the unit stage, after approval. The section
+            # declares the required labelled schematic that lesson_one_off.json actually
+            # produces, so the lesson is validated rather than left in review.
+            sections_document = unit_sections_document(unit=unit, objectives=objectives)
+            for section in sections_document["sections"]:
+                section["media_need"] = {
+                    "construct": "the labelled parts diagram of the caliper and its fastener",
+                    "image": {"level": "required", "role": "schematic"},
+                    "audio": {"level": "none", "role": "none"},
+                }
             gen.run_unit_sections_job(
                 connection,
                 {"job_id": "job-h13-sections", "brief": {"plan_id": plan_result["plan_id"], "unit_ordinal": 1}},
                 FakeLLM(
                     {
                         "coursebook.unit_sections.generate": blueprint_response(
-                            unit_sections_document(unit=unit, objectives=objectives)
+                            sections_document
                         ),
                         "coursebook.unit_sections.validate": blueprint_response(validation_pass()),
                     }

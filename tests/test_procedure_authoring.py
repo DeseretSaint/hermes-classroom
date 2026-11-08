@@ -168,7 +168,26 @@ def procedure_lesson(request: gen.LLMRequest) -> gen.LLMResponse:
             "scaffolds": {"romaji": False, "furigana": False, "english_meaning": False},
         },
         "sources": [source_id],
-        "media": [],
+        "media": [
+            {
+                "kind": "visual",
+                "role": "schematic",
+                # The plan's required schematic need: the drawn table restates
+                # procedure.schematic's rows and cites the same source.
+                "purpose": "Show the mounting fastener and the pad model beside the step that uses them.",
+                "spec": "A labelled line drawing of the caliper with the mounting fastener and pad model marked.",
+                "text_equivalent": (
+                    "The mounting fastener is tightened to 40 Nm in a star pattern; the pad model is BR-42."
+                ),
+                "source_ids": [source_id],
+                "facts": {
+                    "rows": [
+                        {"label": "Mounting fastener", "value": "40 Nm"},
+                        {"label": "Pad model", "value": "BR-42"},
+                    ]
+                },
+            }
+        ],
         "parent_notes": None,
         "supervision_notes": [],
         "procedure": {
