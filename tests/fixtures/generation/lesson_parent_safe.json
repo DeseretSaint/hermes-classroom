@@ -32,7 +32,7 @@
       "format": "text",
       "choices": []
     },
-    "learner_instructions": "Parent writes down what the child said and did; no grade is given.",
+    "learner_instructions": "Parent writes down what the child said and did; no grade is given. Hint: point at the card and say its name before asking the child to name it. If the child sorts a card wrong or cannot name one, put the cards back, name each card together, try the sort again, and write down the retry and what the child did the second time.",
     "evidence_target": "recall",
     "accepted_answers": [
       "kettle is warm",
@@ -72,7 +72,7 @@
   },
   "sources": [],
   "media": [],
-  "parent_notes": "Keep your child within arm's reach for the whole activity, and keep the kettle unplugged and out of reach. The child sorts cards and names things; the child never fills or switches on the kettle. If the child reaches for the kettle, stop, move it further away and go back to the cards.",
+  "parent_notes": "Keep your child within arm's reach for the whole activity, and keep the kettle unplugged and out of reach. The child sorts cards and names things; the child never fills or switches on the kettle. If the child reaches for the kettle, stop, move it further away and go back to the cards. If the child sorts a card wrong or cannot name one, put the cards back, name each card together and try the sort again; write down the retry and what the child did the second time.",
   "supervision_notes": [
     "Adult stays within arm's reach for the whole activity",
     "Kettle stays unplugged and out of reach"

@@ -159,6 +159,16 @@ The repaired pair was checked deterministically only: `plan_parent.json` validat
 `lesson_parent_safe.json` validates against `LESSON_SCHEMA` and passes
 `generation.enforce_lesson_rules` with section 1 and objective 1.
 
+### Superseded bytes (H-173d D8 fix)
+
+The lesson bytes this record scored are superseded. `tests/fixtures/generation/lesson_parent_safe.json`
+now has sha256 `69e0c1409b57b5561ea836b2394e4a5689f8c60e9cb1afe89ca54cabceebea50` (the recorded
+`9b59cf96...` is the pre-fix lesson). The change is `check.learner_instructions` and `parent_notes`:
+they now state the hint text that `assistance_policy.hint = available` claims and the same next
+move after a failed sort or a missing word, without touching the hazard stop or the supervision
+rule. No score in this record is rewritten; the D8 re-score with new evidence is
+`docs/reviews/H173d-S3-D8-rescore.md`.
+
 ### Scope
 
 Fixtures and this record only. No RPC, schema, generation, validation, grading or UI behavior

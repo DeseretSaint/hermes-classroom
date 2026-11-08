@@ -59,7 +59,7 @@
         }
       ]
     },
-    "learner_instructions": "Tick what is true. This is a self-report: ticking the photo and second-person items records that you say you did them, and no tick here is presented as independently verified.",
+    "learner_instructions": "Tick what is true; this is a self-report, never independently verified. Hint: if the fastener will not turn by hand, stop and re-read segment 2; if a value is missing, re-read segment 1. If you cannot tick an item, leave it unticked, write down which item and why, re-read the segment that covers it, and submit again: a retry records the same self-report, not a pass.",
     "evidence_target": "procedure",
     "accepted_answers": [
       "all three steps confirmed, including the photo taken and the second person's confirmation"
