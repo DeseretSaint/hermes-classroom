@@ -249,3 +249,21 @@ human walkthrough remains open.
   and external sources are the basis.
 - It does not authorize a publication, marketplace submission or demo claim. The publication gate
   remains untouched.
+
+## 8. Course quality is a separate bar
+
+This review and `docs/EXPERIENCE-QUALITY-BAR.md` judge the product surface a learner touches.
+Neither judges whether a generated plan, lesson or check is pedagogically sound. The independent
+validator's ten criteria (`coursebook/generation.py`) are structural, factual and safety oriented;
+a plan can pass all ten and still be a weak course.
+
+That lens is `docs/COURSE-QUALITY-RUBRIC.md` (H-173 `t_c579dfa7`): eight scorable dimensions, a
+1-4 scale, observable evidence per dimension, and explicit exclusion of engagement metrics,
+mastery claims, learning styles and time-to-complete promises. The bounded review packet is
+`scripts/course_quality_review.py`. The first record is `docs/H173-COURSE-QUALITY-REVIEW.md`.
+
+The rubric is not a second validator and not a public score. The validator's structural pass stays
+the gate; a dimension below 3 becomes a follow-up card with a concrete fix and does not block a
+course a human has approved. A card that changes generated course content must attach a completed
+rubric record in addition to the UI gates in `docs/EXPERIENCE-QUALITY-BAR.md` §8; a UI-only card
+does not.

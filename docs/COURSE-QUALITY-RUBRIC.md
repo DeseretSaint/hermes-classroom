@@ -1,0 +1,351 @@
+# Course quality rubric for generated courses
+
+Status: binding quality lens, 2026-11-08. Card: H-173 `t_c579dfa7`. This file defines what we
+mean by a good generated course. It changes no generation, validation, grading or UI behavior.
+
+Read with:
+
+- `docs/EXPERIENCE-QUALITY-BAR.md` - the UI and product quality bar. That file judges the
+  surface a learner touches. This file judges the course the generator wrote.
+- `docs/GENERATION.md` - the pipeline stages that produce a plan, lesson, check and validation.
+- `docs/RUBRICS.md` - check rubrics, which are scoring guides inside one check, not a judgment
+  of the course.
+- `coursebook/generation.py` - `VALIDATION_CRITERIA`, the ten structural criteria the
+  independent pass owes the pipeline.
+
+## 1. Why this file exists
+
+The independent validator has ten criteria: `objective_alignment`, `source_support`,
+`factual_correctness`, `answer_uniqueness`, `alternative_coverage`, `rubric_consistency`,
+`internal_contradiction`, `answer_leakage`, `hazard_age_appropriateness`,
+`evidence_target_fit` (`coursebook/generation.py`). Every one is structural, factual or safety
+oriented. A plan can pass all ten and still be a weak course:
+
+- objectives that are topics rather than capabilities;
+- units that do not build on each other;
+- one example repeated across a course;
+- checks that test recall while the objective claims production or transfer;
+- a lesson that is accurate but unreadable.
+
+The live H-63 evidence records real failures in that class: a goal that over-promises a general
+skill while its only objective covers C major, negative evidence criteria that mark a true
+answer wrong, and a self-ticked checklist offered as comprehension evidence
+(`audit/adversarial/h63-live-generation/STATUS.md`). The structural gate did not catch those as
+quality defects because they are quality, not shape.
+
+Without a rubric, "high quality" is an adjective and every worker optimises a different thing.
+This file makes the adjective observable.
+
+## 2. What this rubric is and is not
+
+This rubric is:
+
+- a reviewer's checklist with eight dimensions, each scored 1 to 4 against observable evidence;
+- a written record per course, with a named reviewer and a quote or location for every score;
+- a triage rule: any dimension below 3 becomes a follow-up card with a concrete fix.
+
+This rubric is not:
+
+- a mastery score, a mastery percentage or a claim that a learner mastered anything;
+- an engagement metric, a completion metric, a streak, a leaderboard or a public badge;
+- a time-to-complete promise or an attainment-hours estimate;
+- a learning-styles diagnosis or a modality preference test;
+- a second validator. The ten structural criteria stay the gate. This is a lens beside the gate,
+  and it does not replace the validator's structural pass;
+- a reason to block a course a human has approved.
+
+The 1 to 4 values are reviewer judgments about course design. They are never summed, averaged,
+ranked across courses or shown to a learner. A score of 4 is never required for release.
+
+## 3. The scale
+
+| Score | Meaning | Test a reviewer applies |
+|---|---|---|
+| 1 | Absent or contradictory | The evidence for this dimension is missing, or the artifact contradicts itself here in a way that would mislead the learner. |
+| 2 | Present but weak or cosmetic | Something exists, but it does not carry the load. The learner or the reviewer must infer, repair or ignore it. |
+| 3 | Adequate | The evidence is present, specific and usable without repair. This is the minimum for a course presented to a learner. |
+| 4 | Strong | The evidence is specific, varied and honest under scrutiny. A second reviewer reaches the same verdict without the author explaining it. |
+
+Three rules for scoring:
+
+1. Score the artifact in front of you, not the intent in a commit message or card body.
+2. Quote or name the location of the evidence. A score without evidence is not a score.
+3. If a dimension needs more than three minutes of reading to decide, the artifact is at most a
+   2 on that dimension: usable quality does not require the author present.
+
+## 4. The eight dimensions
+
+| ID | Dimension | The question it answers |
+|---|---|---|
+| D1 | `capability_objective_fit` | Does the course promise a capability, and do the objectives name observable performances rather than topics? |
+| D2 | `sequencing_prerequisite_truth` | Does each objective arrive after what it needs, and are prerequisites real rather than decorative? |
+| D3 | `evidence_target_fit` | Does the check measure the evidence target the objective declares? |
+| D4 | `example_explanation_quality` | Do the worked example and explanation teach this case, or restate one generic example? |
+| D5 | `cognitive_load_session_arc` | Can a learner finish the session, in the stated order, without a jump or an unstated prerequisite? |
+| D6 | `source_grounding_citation_honesty` | Is each load-bearing claim traceable to a fetched source or honestly marked unverified? |
+| D7 | `media_necessity` | Does each image or audio artifact carry a job the construct requires, or is it decoration? |
+| D8 | `learner_agency_recoverability` | Can the learner see, choose and recover from their own path without a hidden failure? |
+
+### D1 `capability_objective_fit`
+
+Question: does the course promise a capability, and do the objectives name observable
+performances rather than topics?
+
+Where to look: `learner_outcome`, every `objectives[].title`, every
+`objectives[].evidence_criteria`, and the scope.
+
+- 1: objectives are topics ("cover the circle of fifths", "learn greetings") or the outcome
+  promises a general skill the objectives do not cover.
+- 2: some objectives are performances and some are topics; the outcome is broader than the
+  objectives but a reviewer can guess the intended performance.
+- 3: every objective names something the learner does or produces, and the outcome is
+  consistent with their union.
+- 4: every objective is a performance with a stated criterion, the outcome names the transfer
+  context, and the exclusions say what the course does not claim.
+
+Does not count: a confident title, a longer objective list, or a phrase such as "understand
+deeply" without an observable act.
+
+### D2 `sequencing_prerequisite_truth`
+
+Question: does each objective arrive after what it needs, and are prerequisites real rather than
+decorative?
+
+Where to look: objective order, `units[].prereq_unit_ordinals`,
+`units[].target_lessons`, sections' `objective_refs`, and the schedule arithmetic
+(`sessions_per_week` x `weeks` against the authored target lessons).
+
+- 1: a check or objective requires material that no earlier unit teaches, or the declared
+  prerequisites contradict the order.
+- 2: the order is plausible but a prerequisite is implicit, a unit edge is decorative, or the
+  schedule cannot hold the declared units.
+- 3: each objective is reachable from earlier material, every prerequisite edge is used, and
+  the schedule arithmetic holds.
+- 4: the sequence has a named reason (block first, interleave confusables later) that a
+  reviewer can verify from the plan, and review material points back at the unit it revisits.
+
+Does not count: ordinals alone, or the claim that a subject "naturally" has an order.
+
+### D3 `evidence_target_fit`
+
+Question: does the check measure the evidence target the objective declares?
+
+Where to look: each objective's `evidence_target` and `evidence_criteria`, the matching
+`check_plan[]` entry, and the lesson's `check.kind`, `check.stimulus.format` and
+`check.evidence_target`.
+
+- 1: the check measures a different target (a selection quiz for `production`), or the
+  objective's criteria cannot be observed by the check at all.
+- 2: the target is plausible but the task is weaker than claimed (self-ticked checklist for a
+  procedure, recognition for transfer), or the check's own rubric adds criteria the objective
+  never stated.
+- 3: the check's task matches the declared target and its criteria are the objective's criteria
+  in observable form.
+- 4: the check measures the target cold, with no cue leakage, and a second check samples the
+  same target differently.
+
+Does not count: the label `production` on a multiple-choice item, or a rubric weight as proof
+that the target was measured.
+
+### D4 `example_explanation_quality`
+
+Question: do the worked example and explanation teach this case, or restate one generic example?
+
+Where to look: `segments[]`, `worked_example`, `learner_explanation`, and whether the example's
+answer agrees with the objective, the check and the reference answer.
+
+- 1: the explanation contradicts the example or the check, or the example's answer belongs to a
+  different task.
+- 2: one example is reused for every segment, the steps are named but not shown, or the
+  explanation restates the prompt without explaining why.
+- 3: at least one worked example shows the reasoning step by step, and the explanation names
+  the rule that makes it work.
+- 4: examples vary the case while holding the rule fixed, and at least one near-miss or boundary
+  case is explained.
+
+Does not count: more prose, a second heading, or a worked example whose answer is never used.
+
+### D5 `cognitive_load_session_arc`
+
+Question: can a learner finish the session, in the stated order, without a jump or an unstated
+prerequisite?
+
+Where to look: the number and kind of segments, the session length, the one-concept-per-step
+shape, and the transition from model to guided work to the check.
+
+- 1: the lesson requires a step the lesson never models, or the session cannot fit its own
+  authored content.
+- 2: two concepts arrive in one step, the arc jumps from explanation to assessment with no
+  guided attempt, or the session length and section count disagree.
+- 3: one concept per step, a model, a guided attempt and a check in an order a learner can
+  follow, inside the stated session length.
+- 4: the arc has a deliberate opening, a guided attempt that fades support, and a close that
+  returns the learner to the path with the recorded result.
+
+Does not count: a timer, a progress percentage, or "learn in 15 minutes" copy.
+
+### D6 `source_grounding_citation_honesty`
+
+Question: is each load-bearing claim traceable to a fetched source or honestly marked
+unverified?
+
+Where to look: `source_ids` on the plan, objectives, sections and lesson; each objective's
+`support` value; `evidence_note`; and the lesson `sources` list. A source id must resolve to a
+fetched source in the run's ledger; an invented id is a failure of this dimension.
+
+- 1: a load-bearing or safety claim has no source and no `unverified` mark, or a source id
+  names a page that was never fetched.
+- 2: the honest marks are present but thin: most objectives are `unverified`, a named source is
+  never tied to the claim it supports, or the one fetched source is generic.
+- 3: every load-bearing claim has either a source id tied to what it supports or an explicit
+  `unverified` mark, and the exclusions state what is not claimed.
+- 4: claims are attributed per sentence or per criterion, conflicting sources are named as
+  conflicting, and the plan states what would need a new fetch to upgrade.
+
+Does not count: a bibliography with no claim mapping, a publisher name without a URL, or the
+model's confidence.
+
+### D7 `media_necessity`
+
+Question: does each image or audio artifact carry a job the construct requires, or is it
+decoration?
+
+Where to look: `sections[].media_need` (`image.level`, `image.role`, `audio.level`,
+`audio.role`), the lesson `media` list, and the construct that justified each decision.
+
+- 1: media is present as decoration, or a construct that requires a visual or audio (procedure,
+  pronunciation, listening comprehension) is declared with no media and no reason.
+- 2: a role is named but the level or artifact cannot perform it; or the need is real but the
+  plan leaves it undecided.
+- 3: every media decision names its construct and role, and construct-requiring items have the
+  media they need; everything else is honestly `none`.
+- 4: media is the evidence, not a supplement: a schematic carries the procedure, a model
+  recording carries the pronunciation target, and the lesson says how the artifact is used.
+
+Does not count: a stock illustration, a decorative icon, or audio added because the course is a
+language course.
+
+### D8 `learner_agency_recoverability`
+
+Question: can the learner see, choose and recover from their own path without a hidden failure?
+
+Where to look: `assistance_policy`, `scaffolds`, supervision notes, exclusions, stop
+conditions, retry guidance, and whether parent instructions and learner instructions agree.
+
+- 1: the learner is told to do something the safety or supervision notes forbid, or a failure
+  has no stated next move.
+- 2: a hint or scaffold exists but its timing is unstated, or a failure path exists only in the
+  author's head; parent and learner copy contradict each other.
+- 3: hints, scaffolds and stop conditions are stated, a failed attempt has a next move, and
+  parent and learner instructions agree.
+- 4: the learner can choose to continue with an unresolved item, scaffolds fade by design, and
+  the record says what evidence a retry produces.
+
+Does not count: a generic "try again" button, a tooltip, or an unlockable path.
+
+## 5. What this rubric explicitly excludes
+
+These are refused as evidence, not merely deprioritised:
+
+- engagement metrics: clicks, time in app, streaks, return rate, completion rate;
+- mastery claims: mastery score, mastery percentage, "mastered", a ring or bar that implies
+  mastery, a certificate;
+- time-to-complete promises: "learn this in 20 minutes", attainment hours, a speed claim;
+- learning-styles diagnosis or modality preference (visual/auditory learner);
+- leaderboards, public rankings, quality badges, or any score visible to a learner;
+- average or total quality scores. Eight dimension verdicts stay separate.
+
+A course with strong engagement numbers and weak dimensions is a weak course. A course with
+weak engagement numbers and strong dimensions is still a candidate for use; the product's
+engagement question is separate and lives in `docs/ENGAGEMENT-AUDIT.md`.
+
+## 6. How the validator relates to each dimension
+
+The rubric does not re-run the validator. It reads the validator's recorded verdict and then
+judges what the validator does not.
+
+| Dimension | Depends on validator criterion | What the rubric adds |
+|---|---|---|
+| D1 | `objective_alignment` | Whether the aligned objective is a capability or a topic |
+| D2 | `internal_contradiction` | Whether order and prerequisite edges are true, not merely consistent |
+| D3 | `evidence_target_fit` | Whether the task is as strong as the target label |
+| D4 | `factual_correctness` | Whether the example teaches the case and agrees with the check |
+| D5 | none | Whether the session arc is followable in the authored length |
+| D6 | `source_support` | Whether the grounding is specific and honestly bounded |
+| D7 | none | Whether media is required by the construct or decorative |
+| D8 | `hazard_age_appropriateness` | Whether the learner has agency and a recovery path |
+
+If the validator rejects an artifact, the rubric dimensions may still be scored, but the record
+must say that the artifact did not reach a learner and must not present a quality score as a
+pass. If the validator passes, a low rubric dimension is still a real finding.
+
+## 7. The 15-minute review protocol
+
+One course per record. The reviewer must not be the author of the course being reviewed.
+
+| Minutes | Action | Dimension |
+|---|---|---|
+| 0-2 | Read `learner_outcome`, scope and objective list. Ask what the learner can do at the end that they could not do before. | D1 |
+| 2-5 | Walk the objectives and units in order. Check one prerequisite and the schedule arithmetic. | D2 |
+| 5-8 | Compare every check to its objective's evidence target and criteria. | D3 |
+| 8-11 | Read one lesson end to end: segments, worked example, explanation, check. | D4, D5 |
+| 11-13 | Trace every load-bearing claim to a source id or an honest `unverified`. | D6 |
+| 13-14 | Check each media decision against the construct, then the hints, scaffolds and stop conditions. | D7, D8 |
+| 14-15 | Write the eight verdicts with evidence, then run the record checker. | all |
+
+If the course needs more than 15 minutes, record that as a finding. A course that cannot be
+reviewed in 15 minutes is not yet a 3 on D5, and probably not on D1.
+
+## 8. The review record
+
+The bounded packet is `scripts/course_quality_review.py`. It is stdlib only, reads at most one
+plan, one lesson and one validation record, and never calls a model, the database or the network.
+
+```bash
+python3 scripts/course_quality_review.py packet \
+  --plan tests/fixtures/generation/plan_ja.json \
+  --lesson tests/fixtures/generation/lesson_ja.json \
+  --validation tests/fixtures/generation/validation_reject_check.json \
+  --sample-id S2 --scope short --reviewer "name" \
+  --out docs/reviews/S2-review.md
+
+python3 scripts/course_quality_review.py check docs/reviews/S2-review.md
+```
+
+The `packet` command writes the deterministic facts (input hashes, plan shape, objective and
+media counts, validator verdict and criteria, rejection reasons) plus eight empty dimension
+blocks. It does not fill a score. The reviewer writes each block:
+
+```markdown
+### D3 evidence_target_fit
+Score: 2
+Evidence: The objective declares production but the check is a three-choice selection item
+  (`check.stimulus.format = selection`), so the task measures recognition. The rubric restates
+  the production criteria anyway.
+Follow-up: t_0123456789ab
+```
+
+Rules the checker enforces:
+
+- all eight ids appear exactly once, in D1 to D8 order;
+- each score is an integer 1 to 4;
+- each evidence entry is at least 40 characters and names a location, field or quote;
+- a score below 3 has a follow-up reference (`t_...` or `H-...`); a score of 3 or 4 says
+  `Follow-up: none`;
+- the record names a reviewer and echoes the validator verdict from the packet;
+- the record contains no aggregate score, mastery score, percentage, leaderboard or badge.
+
+A dimension below 3 is not smoothed into a pass. It becomes a follow-up card with a concrete
+fix before the course is called ready.
+
+## 9. Known limits
+
+- This rubric does not prove that a course teaches better. It makes design quality reviewable;
+  it is not an experiment.
+- It judges an artifact, not a learner. Nothing here measures a person.
+- The first recorded review (H-173) is an author-run dry run on fixtures because H-172's live
+  outputs do not exist yet. It records that limitation and asks an independent reviewer to
+  re-score the same samples.
+- Coverage is only as good as the artifact supplied. A plan without a lesson can score D1, D2
+  and part of D6; it cannot score D3, D4, D5, D7 or D8. The record must say which dimensions had
+  no lesson to read.
