@@ -16139,6 +16139,173 @@ const RESEARCH_STATUS_COPY = {
 }
 
 /**
+ * H-105: the validator record, said plainly.
+ *
+ * `model_assessed` is a limitation, not a badge. The one line only names *who* checked; the words
+ * "independently validated" are reserved for a record whose `independence` is `independent` — both
+ * model identities were reported by the provider and the model names differ. A same-model or
+ * unidentified pass, and a pass with research unavailable, can never be presented as independent.
+ * The rule and its consequences are the same as `docs/GENERATION.md` §1 and the status table in
+ * `docs/HARNESS-STATUS.md`; the technical provenance stays behind the disclosure.
+ *
+ * The record travels on the plan job's checkpoint (`checkpoint.validation`), bound to the plan id
+ * that job wrote. A carried plan version (`plan.replan`) has no validation record of its own, so
+ * this model says no check is recorded for this version rather than borrowing the previous one's.
+ */
+const PLAN_VALIDATION_LINES = Object.freeze({
+  independent: 'Checked by a second model',
+  same_model: 'Checked by the same model',
+  unidentified: 'Checked by a model that could not be identified',
+  unrecorded: 'No validator record is stored for this version'
+})
+
+/** Read the recorded independence, or derive it exactly as the backend does. Never upgrade. */
+function planValidationIndependence(validation) {
+  const declared = validation && validation.independence
+  if (declared === 'independent' || declared === 'same_model' || declared === 'unidentified') {
+    return declared
+  }
+  const generator = (validation && validation.generator) || {}
+  const validator = (validation && validation.validator) || {}
+  if (!generator.model || !validator.model) return 'unidentified'
+  return String(generator.model) === String(validator.model) ? 'same_model' : 'independent'
+}
+
+/** `provider/model` only from what the runtime reported; a missing half is not invented. */
+function planValidationModelName(identity) {
+  const model = identity && identity.model ? String(identity.model) : ''
+  const provider = identity && identity.provider ? String(identity.provider) : ''
+  if (model && provider) return `${provider}/${model}`
+  return model || null
+}
+
+/**
+ * The plan-review provenance model.
+ *
+ * `null` means the screen is still reading the job that owns the record: a line is not shown until
+ * the record is, so a pending read can never look like "no check". A record whose `plan_id` names
+ * another version is discarded, because a carried plan is a copy, not a re-validation.
+ */
+function planValidationView({ job, jobHint, plan, reading }) {
+  const planId = plan && plan.plan_id ? String(plan.plan_id) : null
+  const sources = [job, jobHint].filter(Boolean)
+  let checkpoint = null
+  let mismatched = false
+  for (const source of sources) {
+    const candidate = source.checkpoint || {}
+    if (!candidate.validation) continue
+    if (planId && candidate.plan_id && String(candidate.plan_id) !== planId) {
+      mismatched = true
+      continue
+    }
+    checkpoint = candidate
+    break
+  }
+  if (!checkpoint) {
+    // While the owning job is still being read, stay silent rather than claim "no record".
+    if (reading && !mismatched) return null
+    return {
+      state: 'unrecorded',
+      line: PLAN_VALIDATION_LINES.unrecorded,
+      validatorModel: null,
+      generatorModel: null,
+      factsUnverified: false,
+      warning: null,
+      note: null,
+      detail: [
+        'No validation record is bound to this exact plan version, so nothing here claims a second model.',
+        mismatched
+          ? 'The plan job read here checked an earlier plan version; a carried version is a copy, not a re-check.'
+          : null
+      ].filter(Boolean)
+    }
+  }
+  const validation = checkpoint.validation
+  const independence = planValidationIndependence(validation)
+  const outcome = String(validation.outcome || checkpoint.validation_verdict || '')
+  const generatorModel = planValidationModelName(validation.generator)
+  const validatorModel = planValidationModelName(validation.validator)
+  const factsUnverified = Boolean(validation.facts_unverified)
+  const detail = []
+  if (VALIDATION_OUTCOME_COPY[outcome]) detail.push(VALIDATION_OUTCOME_COPY[outcome])
+  else if (outcome === 'pass') detail.push('The validator passed this draft.')
+  if (generatorModel) detail.push(`Writing model: ${generatorModel}.`)
+  detail.push(
+    validatorModel
+      ? `Checking model: ${validatorModel}.`
+      : 'The runtime did not report the checking model.'
+  )
+  if (factsUnverified) detail.push('The sources were not checked, so a pass is not factual verification.')
+  if (validation.warning) detail.push(String(validation.warning))
+  return {
+    // `state` carries the rejection for the screen; the line itself only ever names who checked.
+    state: outcome === 'rejected' ? 'rejected' : independence,
+    independence,
+    outcome,
+    line: PLAN_VALIDATION_LINES[independence],
+    validatorModel,
+    generatorModel,
+    factsUnverified,
+    warning: validation.warning || null,
+    note: factsUnverified
+      ? 'The facts were not checked against sources, so this is not factual verification.'
+      : null,
+    detail
+  }
+}
+
+/**
+ * One plain line plus a disclosure. Never a badge, never an "independently validated" claim for a
+ * same-model pass; the model/provider names appear only when the runtime reported them.
+ */
+function PlanValidationLine({ job, jobHint, plan, reading, learner }) {
+  const model = planValidationView({ job, jobHint, plan, reading })
+  if (!model) return null
+  return jsxs('div', {
+    'data-cb-plan-validation': model.state,
+    className: 'flex max-w-prose flex-col gap-1 text-xs leading-relaxed text-(--ui-text-secondary)',
+    children: [
+      jsx('div', {
+        'data-cb-plan-validation-line': model.independence || model.state,
+        style: { color: 'var(--cb-ink)', fontWeight: 600 },
+        children: model.line
+      }),
+      model.validatorModel
+        ? jsx('div', {
+            'data-cb-plan-validation-model': model.validatorModel,
+            children: `Checking model: ${model.validatorModel}`
+          })
+        : null,
+      model.note
+        ? jsx('div', { 'data-cb-plan-validation-facts': 'unverified', children: model.note })
+        : null,
+      jsxs('details', {
+        'data-cb-plan-validation-detail': '',
+        children: [
+          jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }),
+          jsx('div', {
+            className: 'mt-1 flex flex-col gap-1',
+            children: [
+              ...model.detail.map((line, index) =>
+                jsx('div', { children: line }, `validation-detail-${index}`)
+              ),
+              learner
+                ? null
+                : jsx('div', {
+                    'data-cb-plan-validation-source': 'docs/GENERATION.md',
+                    children:
+                      'Provenance rule: docs/GENERATION.md §1 (validator independence) and ' +
+                      'docs/HARNESS-STATUS.md.'
+                  })
+            ]
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/**
  * The rejection review model. `null` means there is nothing to repair: the job is still running,
  * it finished with a usable draft, or it failed in a way a fresh job cannot repeat.
  */
@@ -16317,6 +16484,7 @@ function StudioPlanView({
   book,
   brief,
   planJobId,
+  planJobHint,
   onChangeGoal,
   onJobSettled,
   onChanged,
@@ -16788,6 +16956,17 @@ function StudioPlanView({
             error: rejectError,
             onAction: runPlanRepair
           })
+        : jsx(PlanValidationLine, {
+            // H-105: who checked this exact plan version, read from the job that wrote it. The
+            // line never claims more than the stored record says; the enums stay in the disclosure.
+            job: planRun,
+            jobHint: planJobHint,
+            plan,
+            reading: Boolean(activePlanJobId && !planRun),
+            learner
+          }),
+      shownRejection
+        ? null
         : jsx(QuietNote, {
             children:
               'Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.'
@@ -17235,6 +17414,9 @@ function LearnerPlanView({
         book,
         brief: null,
         planJobId: showJob ? jobId : null,
+        // H-105: a finished plan job is not re-polled, but its checkpoint already carries the
+        // validator record, so a revisit still shows who checked this version.
+        planJobHint: planJob,
         onChangeGoal,
         onJobSettled: reloadAll,
         onChanged: reloadAll,
@@ -18776,6 +18958,9 @@ export {
   planJobBrief,
   planRejectView,
   PlanRejectPanel,
+  PLAN_VALIDATION_LINES,
+  planValidationView,
+  PlanValidationLine,
   planTimingCopy,
   startLearnerPlan,
   courseCreatePayload,
