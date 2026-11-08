@@ -22,6 +22,41 @@ a self-report: not from a bot, an owner, or a model answer quoted by a probe. Ow
 (contracts, identity, runtime topology), Cinder (learning kernel, grader, DB, jobs), Sable
 (Desktop route/panes/media renderer), Sentinel (verification).
 
+> **H-102 reconciliation (2026-11-07, `master` `48be4af` + the H-102 test edit).** Every
+> `attack_state.py` result below is a record of its own commit (`e5b9686`). The hook has since
+> gained the bundled-skill instruction (`coursebook/lesson_skills.py`), which **changes the
+> expected shape of S08 and S09 and adds S17**:
+>
+> - **S08** no longer forbids the word `reference` (the tutor instruction legitimately says
+>   "Never print the reference answer"). It reads the check's `reference_json` and asserts no
+>   **value** from it and no secret key name (`answer_key`, `reference_json`, `pass_rule`,
+>   `tolerance`, `"value":`) appears in the pre-turn teaching context. In-scenario canaries prove
+>   the detector fires on the real value and on an `answer_key`.
+> - **S09** no longer requires `hook is None`. A clarification now returns a skill instruction,
+>   which is allowed; the scenario asserts attempts stay `0`, the transition delta is `0`, the
+>   enrollment revision is unchanged, and the context is not a grading continuation (no
+>   `Coursebook result:`, `attempt_id`, `evidence_class`). No attempt/revision assertion was
+>   weakened.
+> - **S17** (new): a bound lesson is told to load `skill_view(name="coursebook:lesson-tutoring")`
+>   with its one store path; an unrelated chat in the same profile gets no hook return and no
+>   binding row.
+>
+> Current command, run for H-102:
+>
+> ```
+> $ python3 tests/adversarial/attack_state.py
+> RESULT scenario=S08 verdict=PASS … detail=context_returned=True teaching_verdict=True reference_value_leaks=[] canary_value=True canary_key=True
+> RESULT scenario=S09 verdict=PASS … detail=attempts=0 transitions_delta=0 transitions_total=2 revision=2 unchanged=True skill_instruction=True attempt_markers=[] blocked=False
+> RESULT scenario=S17 verdict=PASS … detail=tutor_namespaced=True store_named=True unrelated_context=None unrelated_rows=True store_untouched=True
+> RESULT scenario=S13 verdict=BLOCKED …
+> SUMMARY total=23 fail=0 pass=23
+> ```
+>
+> `S13` remains `BLOCKED` (aux lane disabled, CB-QA-11). Evidence:
+> `tests/adversarial/evidence/attack-state.json`. The older `22`-scenario / `21 PASS, 1 FAIL`
+> numbers elsewhere in this file are historical records of their own commits, not the current
+> matrix.
+
 ## Evidence run on this candidate (2026-11-06)
 
 All commands were run from this tree at `e5b9686`:
@@ -29,7 +64,7 @@ All commands were run from this tree at `e5b9686`:
 | Command | Result |
 |---|---|
 | `bash scripts/test.sh` | `Ran 636 tests ... OK`; `desktop/plugin.js: syntax OK`; `All checks passed.`, exit 0 |
-| `python3 tests/adversarial/attack_state.py` | 21 PASS, 1 FAIL (S07, CB-QA-10), 1 BLOCKED (S13, aux lane disabled) |
+| `python3 tests/adversarial/attack_state.py` | 21 PASS, 1 FAIL (S07, CB-QA-10), 1 BLOCKED (S13, aux lane disabled) — historical `e5b9686`; current matrix is 23 scenarios, `fail=0`, S13 `BLOCKED` (H-102 note above) |
 | `python3 tests/adversarial/attack_packs.py` | 21/21 PASS, every rejection leaves zero residue |
 | `bash probes/p1_ids.sh` | PASS; compression BLOCKED (CB-QA-06) |
 | `bash probes/p2_injection.sh` | FAIL: injected text persisted in `api_content`; `sentinel_in_earlier_history: true` on the resumed turn (CB-QA-01) |
@@ -71,7 +106,7 @@ Verdicts are the command result on `e5b9686`; the verdict cell names what could 
 | 2 | Backend disabled → enable → brief preserved | seam | `tests/test_job_service.py::test_pump_passes_the_persisted_brief_not_a_live_form` PASS: the brief is durable, not a live form; disable/enable is a Desktop action | Sable |
 | 3 | New goal → cancel generation → reattach → approve edited plan | seam | J03 PASS (cancel queued spends nothing), J05 PASS (restart → `interrupted_requires_retry` with checkpoint), `test_edit_is_draft_only_and_fenced_on_hash_then_revision` PASS; reattach is UI | Cinder |
 | 4 | Chat answer and pane answer race → one attempt | seam | S02 PASS: two concurrent submits at one revision, one ok, one `STALE_REVISION`, exactly 1 attempt and 1 transition; the chat/pane race is UI | Cinder |
-| 5 | Wrong answer → alternate representation → clarification not a retry | seam | S09 PASS (clarification writes no attempt and consumes no retry); S05 PASS (a shown answer produces `answer_shown` evidence, not independence); `test_the_three_v5_methods_are_implemented` PASS; the representation is a Desktop render | Cinder |
+| 5 | Wrong answer → alternate representation → clarification not a retry | seam | S09 PASS (a clarification writes no attempt and no transition, leaves the revision unchanged, and its turn carries only the tutor skill instruction — not a grading continuation); S05 PASS (a shown answer produces `answer_shown` evidence, not independence); `test_the_three_v5_methods_are_implemented` PASS; the representation is a Desktop render | Cinder |
 | 6 | Grader timeout → needs_retry → override recorded | seam | S11 PASS (hung grader fails closed to `needs_retry` in 8.04 s with no transition); S10 PASS (invalid JSON fails closed); S06 PASS (override grants access, never a pass); the retry banner is UI | Cinder |
 | 7 | Hide/reopen/split pane during attempt → no lost/duplicate submit | seam | S01 PASS (same idempotency key replays one attempt); S02 PASS (one commit under concurrency); pane hide/split is UI | Sable/Cinder |
 | 8 | Restart at every attempt state → same objective/pending | pending | S14 PASS for the open-check state only (a separate process resumes the exact revision and refuses the replay); the other attempt states and compression are blocked (CB-QA-06) | Cinder/Atlas |
@@ -101,7 +136,7 @@ Verdicts are the command result on `e5b9686`; the verdict cell names what could 
 | Flawed question/key/rubric fails closed | verified: `test_aux_invalid_output_is_refused`, `test_aux_pass_with_unmet_criteria_is_refused`, `test_aux_exception_is_refused`, `test_aux_deadline_is_bounded` | p4 → Cinder |
 | Answer-shown/hint/override evidence classes | verified: S05 `answer_shown`, S06 `override` is never a pass, zero independent rows | Cinder |
 | Physical completion self-reported | pending: no probe for a self-reported physical objective | Cinder |
-| Pack/web prompt injection cannot change policy | verified: P15 (injected prose imports as data, no spec/plan/AGENTS row changes); S08 (pre-turn context carries no reference key) | Cinder/Atlas |
+| Pack/web prompt injection cannot change policy | verified: P15 (injected prose imports as data, no spec/plan/AGENTS row changes); S08 (the pre-turn teaching context carries no reference value, `answer_key` or rubric key — S08 canaries prove the detector fires) | Cinder/Atlas |
 | Traversal/bombs/links/SVG/remote images/MIME reject | verified: P01-P14 all `PACK_REJECTED` with no residue; P11 refuses remote image fetches | Cinder/Lattice |
 | Offline cached content works; staleness visible | pending: cache/fallback tested, offline lesson UI not probed (row 11) | Cinder/Sable |
 | Rights/ND enforced; exports leak nothing | pending: P17 PASS (the export carries no learner history, notebook or attempt text); ND/rights enforcement has no separate probe | Cinder/Lattice |

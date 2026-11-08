@@ -101,7 +101,10 @@ class Ctx:
         return out
 
     # ── fixtures ────────────────────────────────────────────────────────
-    def lesson(self, *, open_response: bool = False, title: str = "Attack lesson") -> dict:
+    def lesson(self, *, open_response: bool = False, title: str = "Attack lesson",
+               numeric_value: str = "4") -> dict:
+        # ``numeric_value`` lets a scenario store a *distinctive* reference (S08): absence of "4"
+        # is unprovable, absence of "4711.913" is a real assertion.
         course = self.ok("course.create", {"title": title, "recipe": "committed",
                                            "goal": "Attack the gate"})
         plan_id = course["plan_id"]
@@ -117,7 +120,7 @@ class Ctx:
             spec = {
                 "audit_state": "passed",
                 "stimulus": {"prompt": "Compute 2+2."},
-                "reference": {"kind": "numeric", "value": "4", "tolerance": {"abs": "0"}},
+                "reference": {"kind": "numeric", "value": numeric_value, "tolerance": {"abs": "0"}},
                 "rubric": {"construct": "procedure", "pass_rule": "all",
                            "criteria": [{"id": "c1", "description": "Correct value"}]},
             }
@@ -324,41 +327,154 @@ def s07(ctx: Ctx):
                      f"secret_present={secret in blob}"), {"open_surfaces": before, "post_surfaces": after}
 
 
-@scenario("S08", "the pre-turn teaching context carries no reference answer or rubric key")
+# ── reference-secret detection (shared by S08/S09) ────────────────────────
+
+#: Literal names that denote a stored grading secret. A teaching turn must never carry one.
+#: "reference" alone is not on this list: the bundled tutor instruction legitimately says
+#: "reference answer" (it forbids revealing one), so a substring hit there is instruction text,
+#: not a leak. The check is the *value*, not the word.
+_SECRET_KEYS = ("answer_key", "reference_json", "pass_rule", "tolerance", "\"value\":")
+
+
+def _reference_values(reference: dict[str, Any]) -> list[str]:
+    """Every scalar value inside a sealed ``reference_json``, as display text.
+
+    Single-character values (``tolerance.abs = "0"``) are skipped: they occur by accident in any
+    opaque id, so asserting their absence is noise, not evidence. The key name ``tolerance`` is
+    still forbidden below, so the spec cannot ride along unnamed.
+    """
+    values: list[str] = []
+
+    def walk(node: Any) -> None:
+        if isinstance(node, dict):
+            for key, item in node.items():
+                if key == "kind":
+                    continue
+                walk(item)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+        elif isinstance(node, (str, int, float)) and not isinstance(node, bool):
+            values.append(str(node))
+
+    walk(reference or {})
+    return [value for value in values if len(value) >= 3]
+
+
+def _reference_leaks(payload: Any, reference: dict[str, Any]) -> list[str]:
+    """Everything in ``payload`` that would betray the stored answer or the rubric's key.
+
+    Returns ``[]`` for a clean teaching context and a non-empty list for a leak; S08 proves the
+    detector itself fires on the real secret before it trusts a PASS.
+    """
+    blob = payload if isinstance(payload, str) else json.dumps(payload)
+    hits = [f"key:{key}" for key in _SECRET_KEYS if key in blob]
+    hits += [f"value:{value}" for value in _reference_values(reference) if value in blob]
+    return hits
+
+
+@scenario("S08", "the pre-turn teaching context carries no reference value, answer key or rubric key")
 def s08(ctx: Ctx):
-    lesson = ctx.lesson()
+    # A distinctive stored reference, so "absent" is an assertion that can fail. A one-digit
+    # reference cannot be proven absent: it occurs inside opaque ids by accident.
+    reference_value = "4711.913"
+    lesson = ctx.lesson(numeric_value=reference_value)
     ctx.bind(lesson, "sess-context-1")
     from coursebook import hooks
 
+    reference = json.loads(
+        ctx.scalar("SELECT reference_json FROM checks WHERE id = ?", (lesson["check_id"],)) or "{}"
+    )
     # a clarification keeps the check open, then a real answer commits and returns context
     first = hooks.pre_llm_call(session_id="sess-context-1",
                                user_message="Can you explain what this task is asking?",
                                is_first_turn=False)
-    answer = hooks.pre_llm_call(session_id="sess-context-1", user_message="4",
+    answer = hooks.pre_llm_call(session_id="sess-context-1", user_message=reference_value,
                                 is_first_turn=False)
-    blob = json.dumps(answer)
-    forbidden = ["reference", "answer_key", "\"value\": \"4\"", "tolerance"]
-    hits = [token for token in forbidden if token in blob]
-    verdict = "PASS" if answer and answer.get("context") and not hits else "FAIL"
-    return verdict, f"context_returned={bool(answer and answer.get('context'))} forbidden_hits={hits}", \
-        {"clarification": first, "answer_hook": answer}
+    context = answer.get("context") if isinstance(answer, dict) else None
+    context = context if isinstance(context, str) else ""
+    leaks = _reference_leaks(context, reference)
+    # The context must still be a *teaching* turn: a skill note alone would make the leak check
+    # vacuous, because grading never happened.
+    teaching = "Coursebook result:" in context
+    # Canaries: the detector must flag the real secret and the literal key, or PASS means nothing.
+    canary_value = _reference_leaks(f"the answer is {reference_value}", reference)
+    canary_key = _reference_leaks({"answer_key": "x"}, reference)
+    verdict = "PASS" if teaching and not leaks and canary_value and canary_key else "FAIL"
+    return verdict, (f"context_returned={bool(context)} teaching_verdict={teaching} "
+                     f"reference_value_leaks={leaks} canary_value={bool(canary_value)} "
+                     f"canary_key={bool(canary_key)}"), \
+        {"clarification": first, "answer_hook": answer, "reference_json": reference}
 
 
-@scenario("S09", "a clarification inside an open check creates no attempt and consumes no retry")
+@scenario("S09", "a clarification creates no attempt, no transition and no revision, and is not graded")
 def s09(ctx: Ctx):
     lesson = ctx.lesson()
     ctx.bind(lesson, "sess-clarify-1")
     from coursebook import hooks
 
-    before = ctx.scalar("SELECT COUNT(*) FROM attempts WHERE enrollment_id = ?",
-                        (lesson["enrollment_id"],))
+    def snapshot() -> dict:
+        return {
+            "attempts": ctx.scalar("SELECT COUNT(*) FROM attempts WHERE enrollment_id = ?",
+                                   (lesson["enrollment_id"],)),
+            "transitions": ctx.scalar(
+                "SELECT COUNT(*) FROM transitions WHERE enrollment_id = ?",
+                (lesson["enrollment_id"],)),
+            "revision": ctx.scalar("SELECT revision FROM enrollments WHERE id = ?",
+                                   (lesson["enrollment_id"],)),
+        }
+
+    before = snapshot()
     hook = hooks.pre_llm_call(session_id="sess-clarify-1",
                               user_message="What does the question mean?", is_first_turn=False)
-    after = ctx.scalar("SELECT COUNT(*) FROM attempts WHERE enrollment_id = ?",
-                       (lesson["enrollment_id"],))
-    revision = ctx.scalar("SELECT revision FROM enrollments WHERE id = ?", (lesson["enrollment_id"],))
-    verdict = "PASS" if before == after == 0 and hook is None else "FAIL"
-    return verdict, f"attempts={after} hook={hook!r} revision={revision}", {"hook": hook}
+    after = snapshot()
+    context = hook.get("context") if isinstance(hook, dict) else None
+    # A bundled-skill instruction is allowed (and expected). A grading continuation is not: it is
+    # the shape only an attempt produces, so its absence proves the clarification stayed ungraded.
+    markers = [token for token in ("Coursebook result:", "attempt_id", "evidence_class")
+               if isinstance(context, str) and token in context]
+    skill_only = isinstance(context, str) and "coursebook:lesson-tutoring" in context
+    blocked = isinstance(hook, dict) and hook.get("action") == "block"
+    unchanged = before == after
+    transition_delta = after["transitions"] - before["transitions"]
+    verdict = "PASS" if unchanged and before["attempts"] == 0 and transition_delta == 0 \
+        and not markers and skill_only and not blocked else "FAIL"
+    return verdict, (f"attempts={after['attempts']} transitions_delta={transition_delta} "
+                     f"transitions_total={after['transitions']} "
+                     f"revision={after['revision']} unchanged={unchanged} "
+                     f"skill_instruction={skill_only} attempt_markers={markers} blocked={blocked}"), \
+        {"hook": hook, "before": before, "after": after}
+
+
+@scenario("S17", "a bound lesson loads the namespaced tutor skill and an unrelated chat gets nothing")
+def s17(ctx: Ctx):
+    lesson = ctx.lesson()
+    ctx.bind(lesson, "sess-skill-bound")
+    from coursebook import hooks, lesson_skills
+
+    rows_before = ctx.counts()
+    bound = hooks.pre_llm_call(session_id="sess-skill-bound", user_message="What now?",
+                               is_first_turn=False)
+    # A chat the store never recorded, in the same profile and the same live store.
+    unrelated = hooks.pre_llm_call(session_id="sess-skill-unrelated",
+                                   user_message="plan my weekend", is_first_turn=False)
+    rows_after = ctx.counts()
+    context = bound.get("context") if isinstance(bound, dict) else None
+    context = context if isinstance(context, str) else ""
+    namespaced_load = 'skill_view(name="coursebook:lesson-tutoring")' in context
+    store_named = lesson_skills.store_file_path() in context
+    unrelated_clean = unrelated is None
+    unrelated_unrecorded = ctx.scalar(
+        "SELECT COUNT(*) FROM bindings WHERE stored_session_id = ?",
+        ("sess-skill-unrelated",)) == 0
+    untouched = rows_before == rows_after
+    verdict = "PASS" if namespaced_load and store_named and unrelated_clean \
+        and unrelated_unrecorded and untouched else "FAIL"
+    return verdict, (f"tutor_namespaced={namespaced_load} store_named={store_named} "
+                     f"unrelated_context={unrelated!r} unrelated_rows={unrelated_unrecorded} "
+                     f"store_untouched={untouched}"), \
+        {"bound_hook": bound, "unrelated_hook": unrelated,
+         "counts_before": rows_before, "counts_after": rows_after}
 
 
 @scenario("S10", "invalid grader JSON fails closed to needs_retry and advances nothing")

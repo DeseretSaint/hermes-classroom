@@ -1,16 +1,16 @@
 {
-  "home": "/home/deseretsaint/.hermes/profiles/sentinel/cache/scratch/cb014-attack-state-anzld52n",
+  "home": "/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cb014-attack-state-d4xjb6ba",
   "results": {
     "J01": {
-      "detail": "first=job_2715080a51984947acbbf35229877f21 second=job_2715080a51984947acbbf35229877f21 jobs=1",
-      "elapsed_s": 0.08,
+      "detail": "first=job_120f41c840f24359b4da7ff3059d7b54 second=job_120f41c840f24359b4da7ff3059d7b54 jobs=1",
+      "elapsed_s": 0.26,
       "evidence": {
         "first": {
-          "job_id": "job_2715080a51984947acbbf35229877f21",
+          "job_id": "job_120f41c840f24359b4da7ff3059d7b54",
           "state": "queued"
         },
         "second": {
-          "job_id": "job_2715080a51984947acbbf35229877f21",
+          "job_id": "job_120f41c840f24359b4da7ff3059d7b54",
           "state": "queued"
         }
       },
@@ -18,12 +18,12 @@
       "verdict": "PASS"
     },
     "J02": {
-      "detail": "outcomes=['w1:claimed', 'w2:JobLeaseLost']",
-      "elapsed_s": 0.11,
+      "detail": "outcomes=['w2:claimed', 'w1:JobLeaseLost']",
+      "elapsed_s": 0.3,
       "evidence": {
         "outcomes": [
-          "w1:claimed",
-          "w2:JobLeaseLost"
+          "w2:claimed",
+          "w1:JobLeaseLost"
         ]
       },
       "title": "two concurrent claims cannot both own one job",
@@ -31,10 +31,10 @@
     },
     "J03": {
       "detail": "state=cancelled claimed=False usage=0",
-      "elapsed_s": 0.1,
+      "elapsed_s": 0.31,
       "evidence": {
         "cancelled": {
-          "job_id": "job_b1c8c4312cf6487f9d25645fd445433f",
+          "job_id": "job_41b14450abbf4aeb8806d0fde1a14c1d",
           "state": "cancelled"
         }
       },
@@ -42,17 +42,17 @@
       "verdict": "PASS"
     },
     "J04": {
-      "detail": "state=completed_late usage=0",
-      "elapsed_s": 0.55,
+      "detail": "state=cancelled usage=0",
+      "elapsed_s": 0.86,
       "evidence": {
-        "state": "completed_late"
+        "state": "cancelled"
       },
       "title": "a stage that finishes after a cancel becomes completed_late, not a second artifact",
       "verdict": "PASS"
     },
     "J05": {
       "detail": "state_after_restart=interrupted_requires_retry checkpoint={'last_stage': 'gather', 'sources': ['a']}",
-      "elapsed_s": 0.23,
+      "elapsed_s": 0.57,
       "evidence": {
         "checkpoint": {
           "last_stage": "gather",
@@ -67,7 +67,7 @@
     },
     "J06": {
       "detail": "state=completed executed=['plan']",
-      "elapsed_s": 0.23,
+      "elapsed_s": 0.66,
       "evidence": {
         "calls": [
           "plan"
@@ -78,14 +78,14 @@
     },
     "S01": {
       "detail": "same_attempt=True attempts=1 transitions=1 evidence=2",
-      "elapsed_s": 0.33,
+      "elapsed_s": 0.62,
       "evidence": {
         "first": {
-          "contract_version": 6,
+          "contract_version": 14,
           "ok": true,
-          "operation_id": "op-attempt-submit-848d89d8",
+          "operation_id": "op-attempt-submit-4c0777c0",
           "result": {
-            "attempt_id": "att_b000f1bb21b24153b856f3c517aefca2",
+            "attempt_id": "att_b47e2ab57f0a4a43a994618b137ffc8b",
             "criteria": [
               {
                 "id": "c1",
@@ -101,11 +101,11 @@
           "revision": 3
         },
         "second": {
-          "contract_version": 6,
+          "contract_version": 14,
           "ok": true,
-          "operation_id": "op-attempt-submit-2d4431d3",
+          "operation_id": "op-attempt-submit-8a55c952",
           "result": {
-            "attempt_id": "att_b000f1bb21b24153b856f3c517aefca2",
+            "attempt_id": "att_b47e2ab57f0a4a43a994618b137ffc8b",
             "criteria": [
               {
                 "id": "c1",
@@ -126,15 +126,15 @@
     },
     "S02": {
       "detail": "ok=1 refused=1 codes=['STALE_REVISION'] attempts=1 transitions=1",
-      "elapsed_s": 0.28,
+      "elapsed_s": 0.51,
       "evidence": {
         "results": [
           {
-            "contract_version": 6,
+            "contract_version": 14,
             "ok": true,
-            "operation_id": "op-attempt-submit-a6abe55c",
+            "operation_id": "op-attempt-submit-79ce60b5",
             "result": {
-              "attempt_id": "att_b11e2b2fb91044b3a733b14b46d704c1",
+              "attempt_id": "att_4ceca7156fd741c8b480c3d7ce30cf21",
               "criteria": [
                 {
                   "id": "c1",
@@ -150,7 +150,7 @@
             "revision": 3
           },
           {
-            "contract_version": 6,
+            "contract_version": 14,
             "error": {
               "category": "conflict",
               "code": "STALE_REVISION",
@@ -162,7 +162,7 @@
               "retryable": false
             },
             "ok": false,
-            "operation_id": "op-attempt-submit-71a9239d"
+            "operation_id": "op-attempt-submit-b0975682"
           }
         ]
       },
@@ -171,7 +171,7 @@
     },
     "S03": {
       "detail": "code=STALE_REVISION attempts_before=0 after=0",
-      "elapsed_s": 0.24,
+      "elapsed_s": 0.44,
       "evidence": {
         "error": {
           "category": "conflict",
@@ -189,14 +189,14 @@
     },
     "S04": {
       "detail": "second_ok=False code=CHECK_STALE attempts=1 transitions=1",
-      "elapsed_s": 0.27,
+      "elapsed_s": 0.48,
       "evidence": {
         "first": {
-          "contract_version": 6,
+          "contract_version": 14,
           "ok": true,
-          "operation_id": "op-attempt-submit-a110c2c7",
+          "operation_id": "op-attempt-submit-97fd3807",
           "result": {
-            "attempt_id": "att_a3dce653d09f4984b1c99f2dc879fe84",
+            "attempt_id": "att_cf5cbef667ce4db68dcc549047a5b175",
             "criteria": [
               {
                 "id": "c1",
@@ -212,7 +212,7 @@
           "revision": 3
         },
         "second": {
-          "contract_version": 6,
+          "contract_version": 14,
           "error": {
             "category": "conflict",
             "code": "CHECK_STALE",
@@ -225,7 +225,7 @@
             "retryable": false
           },
           "ok": false,
-          "operation_id": "op-attempt-submit-aca7ae42"
+          "operation_id": "op-attempt-submit-9583dc97"
         }
       },
       "title": "a second answer to a closed check writes no attempt and no transition",
@@ -233,14 +233,14 @@
     },
     "S05": {
       "detail": "hook_blocked=False evidence_class=['answer_shown', 'answer_shown']",
-      "elapsed_s": 0.33,
+      "elapsed_s": 0.57,
       "evidence": {
         "attempt": {
-          "contract_version": 6,
+          "contract_version": 14,
           "ok": true,
-          "operation_id": "op-attempt-submit-0210d46a",
+          "operation_id": "op-attempt-submit-6a30157f",
           "result": {
-            "attempt_id": "att_53262f429abb477495b606137c81b147",
+            "attempt_id": "att_9820248ae2a64e6a910e1f2a9a83acb2",
             "criteria": [
               {
                 "id": "c1",
@@ -257,69 +257,97 @@
         },
         "evidence": [
           {
-            "attempt_id": "att_53262f429abb477495b606137c81b147",
-            "created_at": "2026-11-06T16:48:58.172717+00:00",
-            "enrollment_id": "enr_a6455fb8ac6049f8862a092f9a5a0090",
+            "attempt_id": "att_9820248ae2a64e6a910e1f2a9a83acb2",
+            "created_at": "2026-11-08T00:38:33.328562+00:00",
+            "enrollment_id": "enr_7f9540a1ff584e58be8e2a309f4c644f",
             "evidence_class": "answer_shown",
-            "id": "evd_a7ab9ec6fdaf4d76ab935f37c711dd12",
+            "id": "evd_a7b2c82a341b46f1bb4b1179e1c222d9",
             "kind": "answer_shown",
             "layer": 1,
-            "objective_id": "obj_6e6e96d69729454faf332395d721d268"
+            "note": null,
+            "objective_id": "obj_3068bc950e03428a858cc0fbeb0d573e"
           },
           {
-            "attempt_id": "att_53262f429abb477495b606137c81b147",
-            "created_at": "2026-11-06T16:48:58.198347+00:00",
-            "enrollment_id": "enr_a6455fb8ac6049f8862a092f9a5a0090",
+            "attempt_id": "att_9820248ae2a64e6a910e1f2a9a83acb2",
+            "created_at": "2026-11-08T00:38:33.370481+00:00",
+            "enrollment_id": "enr_7f9540a1ff584e58be8e2a309f4c644f",
             "evidence_class": "answer_shown",
-            "id": "evd_8ea7c4f6457044f59160c00d94cea115",
+            "id": "evd_7a9ed8eb3d234c87a7b844bae8ad0705",
             "kind": "attempt",
             "layer": 1,
-            "objective_id": "obj_6e6e96d69729454faf332395d721d268"
+            "note": null,
+            "objective_id": "obj_3068bc950e03428a858cc0fbeb0d573e"
           }
         ],
-        "hook": null
+        "hook": {
+          "context": "[Coursebook] Load the bundled skill `coursebook:lesson-tutoring` before you reply: call skill_view(name=\"coursebook:lesson-tutoring\") and follow it for this turn. This chat governs a lesson run: read the open section out of the Coursebook store (objective, check stimulus, reference answer) rather than guessing it. The only store you may read this turn is `/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cb014-attack-state-d4xjb6ba/S05/plugin-data/coursebook/data.db` and it holds the bound objective `obj_3068bc950e03428a858cc0fbeb0d573e`. Do not probe, glob, or open any other Coursebook store \u2014 another HERMES_HOME, a QA home or a test home \u2014 even if it returns rows for the same shape. Never print the reference answer; end with exactly one check in the section's own answer format."
+        }
       },
       "title": "a shown answer contaminates exactly the next attempt (never independent evidence)",
       "verdict": "PASS"
     },
     "S06": {
-      "detail": "objective_overridden=True objective=[{'objective_id': 'obj_edcef8f672f94d0b997ff5077c2ed533', 'ordinal': 1, 'title': 'Objective', 'evidence_target': 'procedure', 'state': 'overridden', 'check_state': 'closed', 'attempt_count': 1, 'independent': False, 'last_opened_at': '2026-11-06T16:48:58.461700+00:00'}] independent_rows=0",
-      "elapsed_s": 0.29,
+      "detail": "objective_overridden=True objective=[{'objective_id': 'obj_7078160e0f96460caa2ab15c513eab22', 'ordinal': 1, 'title': 'Objective', 'evidence_target': 'procedure', 'state': 'overridden', 'check_state': 'closed', 'attempt_count': 1, 'independent': False, 'last_opened_at': '2026-11-08T00:38:33.916509+00:00'}] independent_rows=0",
+      "elapsed_s": 0.62,
       "evidence": {
         "evidence": [
           {
-            "attempt_id": "att_bb6c85852ec647a4a9747defba55d6ee",
-            "created_at": "2026-11-06T16:48:58.489444+00:00",
-            "enrollment_id": "enr_9273b5c48a6240108f37b73758d8ee17",
+            "attempt_id": "att_577eed12ea7c4f96a214b526d5307be2",
+            "created_at": "2026-11-08T00:38:33.969639+00:00",
+            "enrollment_id": "enr_92955227d529468fb144d0d1a13ca2d1",
             "evidence_class": "override",
-            "id": "evd_645694834c06401c80284986972875e9",
+            "id": "evd_df69bf625c1a46e2b54366cf39f214bc",
             "kind": "override",
             "layer": 1,
-            "objective_id": "obj_edcef8f672f94d0b997ff5077c2ed533"
+            "note": null,
+            "objective_id": "obj_7078160e0f96460caa2ab15c513eab22"
           }
         ],
         "hook": {
-          "context": "Coursebook result: not yet. Access was granted by an override. This is not mastery and is labelled as such. Teach the wrap-up for this objective, then move to the next section. Objective: obj_edcef8f672f94d0b997ff5077c2ed533."
+          "context": "[Coursebook] Load the bundled skill `coursebook:lesson-tutoring` before you reply: call skill_view(name=\"coursebook:lesson-tutoring\") and follow it for this turn. This chat governs a lesson run: read the open section out of the Coursebook store (objective, check stimulus, reference answer) rather than guessing it. The only store you may read this turn is `/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cb014-attack-state-d4xjb6ba/S06/plugin-data/coursebook/data.db` and it holds the bound objective `obj_7078160e0f96460caa2ab15c513eab22`. Do not probe, glob, or open any other Coursebook store \u2014 another HERMES_HOME, a QA home or a test home \u2014 even if it returns rows for the same shape. Never print the reference answer; end with exactly one check in the section's own answer format.\n\nCoursebook result: not yet. Access was granted by an override. This is not mastery and is labelled as such. Teach the wrap-up for this objective, then move to the next section. Objective: obj_7078160e0f96460caa2ab15c513eab22. Never claim that Coursebook ran code, heard a recording, or inspected a photo. You may discuss code, describe how to test it, and ask the learner to explain their result. Coursebook's check verdicts come only from the check surface."
         },
         "outline": {
-          "enrollment_id": "enr_9273b5c48a6240108f37b73758d8ee17",
+          "enrollment_id": "enr_92955227d529468fb144d0d1a13ca2d1",
           "objectives": [
             {
               "attempt_count": 1,
               "check_state": "closed",
               "evidence_target": "procedure",
               "independent": false,
-              "last_opened_at": "2026-11-06T16:48:58.461700+00:00",
-              "objective_id": "obj_edcef8f672f94d0b997ff5077c2ed533",
+              "last_opened_at": "2026-11-08T00:38:33.916509+00:00",
+              "objective_id": "obj_7078160e0f96460caa2ab15c513eab22",
               "ordinal": 1,
               "state": "overridden",
               "title": "Objective"
             }
           ],
           "plan": {
-            "plan_hash": "sha256:e1ff46f1b2dc3516dadddbf3f1a1ee5c197fe0131636fcb65d5014f98ce32228",
-            "plan_id": "pln_da7cf2beb603410195efa2ab6919309e",
+            "plan_hash": "sha256:5f6d12a70adaec6ed51697813e75d8213ce61457d72d233a5e676c9ce394c3fa",
+            "plan_id": "pln_5c5ef28a67e24b39a66ca579a1a2e4bd",
             "state": "approved",
+            "units": [
+              {
+                "goal": "",
+                "objectives": [
+                  {
+                    "attempt_count": 1,
+                    "check_state": "closed",
+                    "evidence_target": "procedure",
+                    "independent": false,
+                    "last_opened_at": "2026-11-08T00:38:33.916509+00:00",
+                    "objective_id": "obj_7078160e0f96460caa2ab15c513eab22",
+                    "ordinal": 1,
+                    "state": "overridden",
+                    "title": "Objective"
+                  }
+                ],
+                "ordinal": 1,
+                "prereq_unit_ordinals": [],
+                "prerequisite_state": "no_edges",
+                "title": "Attack lesson",
+                "unmet": []
+              }
+            ],
             "version": 1
           },
           "total": 1,
@@ -330,49 +358,49 @@
       "verdict": "PASS"
     },
     "S07": {
-      "detail": "open_check_reference_leaks=['/evidence.inspect/result/l2/objectives[0]/criteria[0]/check_spec/reference={\"kind\": \"numeric\", \"tolerance\": {\"abs\": \"0\"}, \"value\": \"4\"}'] post_submit_reference_leaks=['/evidence.inspect/result/l2/objectives[0]/criteria[0]/check_spec/reference={\"kind\": \"numeric\", \"tolerance\": {\"abs\": \"0\"}, \"value\": \"4\"}'] secret_present=False",
-      "elapsed_s": 0.29,
+      "detail": "open_check_reference_leaks=[] post_submit_reference_leaks=[] secret_present=False",
+      "elapsed_s": 0.62,
       "evidence": {
         "open_surfaces": {
           "check.get": {
-            "contract_version": 6,
+            "contract_version": 14,
             "error": {
               "category": "validation",
               "code": "VALIDATION_FAILED",
               "details": {
                 "path": "<payload>"
               },
-              "message": "check.get request payload invalid at <payload>: {'check_id': 'chk_1e1fea3d12d2448eaff9fcad9aa07c78'} is not valid under any of the given schemas",
+              "message": "check.get request payload invalid at <payload>: {'check_id': 'chk_777be60ae7d843faab2c93c001ef78a5'} is not valid under any of the given schemas",
               "retryable": false
             },
             "ok": false,
-            "operation_id": "op-check-get-ec374a05"
+            "operation_id": "op-check-get-5c3eb475"
           },
           "check.open": {
-            "check_id": "chk_1e1fea3d12d2448eaff9fcad9aa07c78",
+            "check_id": "chk_777be60ae7d843faab2c93c001ef78a5",
             "check_version": 1,
             "evidence_target": "procedure",
             "revision": 2
           },
           "evidence.inspect": {
-            "contract_version": 6,
+            "contract_version": 14,
             "ok": true,
-            "operation_id": "op-evidence-inspect-dadb1866",
+            "operation_id": "op-evidence-inspect-37fcaf08",
             "result": {
               "disputes": {
                 "count": 0,
                 "disputes": [],
-                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
                 "truncated": false
               },
               "l1": {
                 "attempts": [],
-                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
                 "events": [],
                 "objective_id": null
               },
               "l2": {
-                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
                 "objective_id": null,
                 "objectives": [
                   {
@@ -380,29 +408,6 @@
                     "attempt_classes": {},
                     "criteria": [
                       {
-                        "check_spec": {
-                          "audit_state": "passed",
-                          "reference": {
-                            "kind": "numeric",
-                            "tolerance": {
-                              "abs": "0"
-                            },
-                            "value": "4"
-                          },
-                          "rubric": {
-                            "construct": "procedure",
-                            "criteria": [
-                              {
-                                "description": "Correct value",
-                                "id": "c1"
-                              }
-                            ],
-                            "pass_rule": "all"
-                          },
-                          "stimulus": {
-                            "prompt": "Compute 2+2."
-                          }
-                        },
                         "description": "graded",
                         "id": "c1"
                       }
@@ -411,7 +416,7 @@
                     "evidence_target": "procedure",
                     "independent": false,
                     "independent_at": null,
-                    "objective_id": "obj_6980b08eeac84b8dbc9ad7252d4d472c",
+                    "objective_id": "obj_f465995b459d488c9ab3ac43028bfc19",
                     "ordinal": 1,
                     "state": "not_started",
                     "title": "Objective"
@@ -420,14 +425,14 @@
               },
               "l3": {
                 "as_of": null,
-                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
                 "is_persona": false,
                 "recommendations": [
                   {
                     "basis": "layer2.independent == false",
                     "kind": "needs_independent_evidence",
                     "objective_ids": [
-                      "obj_6980b08eeac84b8dbc9ad7252d4d472c"
+                      "obj_f465995b459d488c9ab3ac43028bfc19"
                     ],
                     "text": "1 objective(s) have no cold independent evidence yet."
                   }
@@ -437,9 +442,9 @@
             "revision": 2
           },
           "lesson.page": {
-            "contract_version": 6,
+            "contract_version": 14,
             "ok": true,
-            "operation_id": "op-lesson-page-05ea5ac0",
+            "operation_id": "op-lesson-page-9cf5fd1c",
             "result": {
               "artifacts": [],
               "attempts": [],
@@ -447,30 +452,48 @@
                 {
                   "attempt_count": 0,
                   "audit_state": "passed",
-                  "check_id": "chk_1e1fea3d12d2448eaff9fcad9aa07c78",
+                  "check_id": "chk_777be60ae7d843faab2c93c001ef78a5",
                   "evidence_target": "procedure",
                   "state": "open",
                   "version": 1
                 }
               ],
               "course": {
-                "course_id": "crs_a07bb52ce3694cd39a2a6e82ed67942c",
+                "course_id": "crs_652b6effb589402892c8b5437a463134",
                 "title": "Attack lesson"
               },
-              "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+              "document": {
+                "blocks": [],
+                "check_id": null,
+                "content_hash": "sha256:e93663877c65ff0f40630a3466d6c2981f9d3332cbd5acee8c7e3d09aeb9b731",
+                "document_id": "doc_e93663877c65ff0f4063",
+                "objective_id": "obj_f465995b459d488c9ab3ac43028bfc19",
+                "schema_version": 1,
+                "section_title": "Objective",
+                "source_ids": [],
+                "state": "empty",
+                "view_note": "This section has no teaching content yet.",
+                "views": {
+                  "field_notes": false,
+                  "field_quest": false,
+                  "guided": false,
+                  "textbook": false
+                }
+              },
+              "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
               "notebook_entries": [],
               "revision": 2,
               "runtime": {
-                "binding_id": "bind_2cb435eebda04952ab67c902869b4baf",
+                "binding_id": "bind_dfb8e7bd6a984ad2a5e00eccd01332af",
                 "binding_status": "active",
-                "last_active_at": "2026-11-06T16:48:58.747259+00:00",
-                "lesson_run_id": "run_a2c6e1151a8b497c8c3c37e97f69733f",
+                "last_active_at": "2026-11-08T00:38:34.545982+00:00",
+                "lesson_run_id": "run_ddae43ba671740faa92013a0512c2fd8",
                 "session_state": "stored_only"
               },
               "section": {
                 "evidence_target": "procedure",
-                "last_opened_at": "2026-11-06T16:48:58.747259+00:00",
-                "objective_id": "obj_6980b08eeac84b8dbc9ad7252d4d472c",
+                "last_opened_at": "2026-11-08T00:38:34.545982+00:00",
+                "objective_id": "obj_f465995b459d488c9ab3ac43028bfc19",
                 "ordinal": 1,
                 "state": "not_started",
                 "title": "Objective"
@@ -484,11 +507,11 @@
         },
         "post_surfaces": {
           "attempt.submit": {
-            "contract_version": 6,
+            "contract_version": 14,
             "ok": true,
-            "operation_id": "op-attempt-submit-0252d041",
+            "operation_id": "op-attempt-submit-43c986bb",
             "result": {
-              "attempt_id": "att_502a83ac3cb5474b9fd0405a98d8b568",
+              "attempt_id": "att_43a7853cddb942388d009f8a9a081d3b",
               "criteria": [
                 {
                   "id": "c1",
@@ -504,44 +527,44 @@
             "revision": 3
           },
           "check.get": {
-            "contract_version": 6,
+            "contract_version": 14,
             "error": {
               "category": "validation",
               "code": "VALIDATION_FAILED",
               "details": {
                 "path": "<payload>"
               },
-              "message": "check.get request payload invalid at <payload>: {'check_id': 'chk_1e1fea3d12d2448eaff9fcad9aa07c78'} is not valid under any of the given schemas",
+              "message": "check.get request payload invalid at <payload>: {'check_id': 'chk_777be60ae7d843faab2c93c001ef78a5'} is not valid under any of the given schemas",
               "retryable": false
             },
             "ok": false,
-            "operation_id": "op-check-get-ec374a05"
+            "operation_id": "op-check-get-5c3eb475"
           },
           "check.open": {
-            "check_id": "chk_1e1fea3d12d2448eaff9fcad9aa07c78",
+            "check_id": "chk_777be60ae7d843faab2c93c001ef78a5",
             "check_version": 1,
             "evidence_target": "procedure",
             "revision": 2
           },
           "evidence.inspect": {
-            "contract_version": 6,
+            "contract_version": 14,
             "ok": true,
-            "operation_id": "op-evidence-inspect-dadb1866",
+            "operation_id": "op-evidence-inspect-37fcaf08",
             "result": {
               "disputes": {
                 "count": 0,
                 "disputes": [],
-                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
                 "truncated": false
               },
               "l1": {
                 "attempts": [],
-                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
                 "events": [],
                 "objective_id": null
               },
               "l2": {
-                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
                 "objective_id": null,
                 "objectives": [
                   {
@@ -549,29 +572,6 @@
                     "attempt_classes": {},
                     "criteria": [
                       {
-                        "check_spec": {
-                          "audit_state": "passed",
-                          "reference": {
-                            "kind": "numeric",
-                            "tolerance": {
-                              "abs": "0"
-                            },
-                            "value": "4"
-                          },
-                          "rubric": {
-                            "construct": "procedure",
-                            "criteria": [
-                              {
-                                "description": "Correct value",
-                                "id": "c1"
-                              }
-                            ],
-                            "pass_rule": "all"
-                          },
-                          "stimulus": {
-                            "prompt": "Compute 2+2."
-                          }
-                        },
                         "description": "graded",
                         "id": "c1"
                       }
@@ -580,7 +580,7 @@
                     "evidence_target": "procedure",
                     "independent": false,
                     "independent_at": null,
-                    "objective_id": "obj_6980b08eeac84b8dbc9ad7252d4d472c",
+                    "objective_id": "obj_f465995b459d488c9ab3ac43028bfc19",
                     "ordinal": 1,
                     "state": "not_started",
                     "title": "Objective"
@@ -589,14 +589,14 @@
               },
               "l3": {
                 "as_of": null,
-                "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+                "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
                 "is_persona": false,
                 "recommendations": [
                   {
                     "basis": "layer2.independent == false",
                     "kind": "needs_independent_evidence",
                     "objective_ids": [
-                      "obj_6980b08eeac84b8dbc9ad7252d4d472c"
+                      "obj_f465995b459d488c9ab3ac43028bfc19"
                     ],
                     "text": "1 objective(s) have no cold independent evidence yet."
                   }
@@ -606,9 +606,9 @@
             "revision": 2
           },
           "lesson.page": {
-            "contract_version": 6,
+            "contract_version": 14,
             "ok": true,
-            "operation_id": "op-lesson-page-05ea5ac0",
+            "operation_id": "op-lesson-page-9cf5fd1c",
             "result": {
               "artifacts": [],
               "attempts": [],
@@ -616,30 +616,48 @@
                 {
                   "attempt_count": 0,
                   "audit_state": "passed",
-                  "check_id": "chk_1e1fea3d12d2448eaff9fcad9aa07c78",
+                  "check_id": "chk_777be60ae7d843faab2c93c001ef78a5",
                   "evidence_target": "procedure",
                   "state": "open",
                   "version": 1
                 }
               ],
               "course": {
-                "course_id": "crs_a07bb52ce3694cd39a2a6e82ed67942c",
+                "course_id": "crs_652b6effb589402892c8b5437a463134",
                 "title": "Attack lesson"
               },
-              "enrollment_id": "enr_951d8106999444dda5c2cc104d9f8a23",
+              "document": {
+                "blocks": [],
+                "check_id": null,
+                "content_hash": "sha256:e93663877c65ff0f40630a3466d6c2981f9d3332cbd5acee8c7e3d09aeb9b731",
+                "document_id": "doc_e93663877c65ff0f4063",
+                "objective_id": "obj_f465995b459d488c9ab3ac43028bfc19",
+                "schema_version": 1,
+                "section_title": "Objective",
+                "source_ids": [],
+                "state": "empty",
+                "view_note": "This section has no teaching content yet.",
+                "views": {
+                  "field_notes": false,
+                  "field_quest": false,
+                  "guided": false,
+                  "textbook": false
+                }
+              },
+              "enrollment_id": "enr_384767009eda4f8088a958fc9e0be322",
               "notebook_entries": [],
               "revision": 2,
               "runtime": {
-                "binding_id": "bind_2cb435eebda04952ab67c902869b4baf",
+                "binding_id": "bind_dfb8e7bd6a984ad2a5e00eccd01332af",
                 "binding_status": "active",
-                "last_active_at": "2026-11-06T16:48:58.747259+00:00",
-                "lesson_run_id": "run_a2c6e1151a8b497c8c3c37e97f69733f",
+                "last_active_at": "2026-11-08T00:38:34.545982+00:00",
+                "lesson_run_id": "run_ddae43ba671740faa92013a0512c2fd8",
                 "session_state": "stored_only"
               },
               "section": {
                 "evidence_target": "procedure",
-                "last_opened_at": "2026-11-06T16:48:58.747259+00:00",
-                "objective_id": "obj_6980b08eeac84b8dbc9ad7252d4d472c",
+                "last_opened_at": "2026-11-08T00:38:34.545982+00:00",
+                "objective_id": "obj_f465995b459d488c9ab3ac43028bfc19",
                 "ordinal": 1,
                 "state": "not_started",
                 "title": "Objective"
@@ -653,58 +671,79 @@
         }
       },
       "title": "the reference answer never appears in learner-facing API responses while a check is open",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     "S08": {
-      "detail": "context_returned=True forbidden_hits=[]",
-      "elapsed_s": 0.3,
+      "detail": "context_returned=True teaching_verdict=True reference_value_leaks=[] canary_value=True canary_key=True",
+      "elapsed_s": 0.6,
       "evidence": {
         "answer_hook": {
-          "context": "Coursebook result: correct. That counted as independent evidence for this objective. Teach the wrap-up for this objective, then move to the next section. Objective: obj_4c8662748f3b40749761f9195f15daae."
+          "context": "[Coursebook] Load the bundled skill `coursebook:lesson-tutoring` before you reply: call skill_view(name=\"coursebook:lesson-tutoring\") and follow it for this turn. This chat governs a lesson run: read the open section out of the Coursebook store (objective, check stimulus, reference answer) rather than guessing it. The only store you may read this turn is `/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cb014-attack-state-d4xjb6ba/S08/plugin-data/coursebook/data.db` and it holds the bound objective `obj_bb9e05d453fc4d9e819822482ee1598a`. Do not probe, glob, or open any other Coursebook store \u2014 another HERMES_HOME, a QA home or a test home \u2014 even if it returns rows for the same shape. Never print the reference answer; end with exactly one check in the section's own answer format.\n\nCoursebook result: correct. That counted as independent evidence for this objective. Teach the wrap-up for this objective, then move to the next section. Objective: obj_bb9e05d453fc4d9e819822482ee1598a. Never claim that Coursebook ran code, heard a recording, or inspected a photo. You may discuss code, describe how to test it, and ask the learner to explain their result. Coursebook's check verdicts come only from the check surface."
         },
-        "clarification": null
+        "clarification": {
+          "context": "[Coursebook] Load the bundled skill `coursebook:lesson-tutoring` before you reply: call skill_view(name=\"coursebook:lesson-tutoring\") and follow it for this turn. This chat governs a lesson run: read the open section out of the Coursebook store (objective, check stimulus, reference answer) rather than guessing it. The only store you may read this turn is `/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cb014-attack-state-d4xjb6ba/S08/plugin-data/coursebook/data.db` and it holds the bound objective `obj_bb9e05d453fc4d9e819822482ee1598a`. Do not probe, glob, or open any other Coursebook store \u2014 another HERMES_HOME, a QA home or a test home \u2014 even if it returns rows for the same shape. Never print the reference answer; end with exactly one check in the section's own answer format."
+        },
+        "reference_json": {
+          "kind": "numeric",
+          "tolerance": {
+            "abs": "0"
+          },
+          "value": "4711.913"
+        }
       },
-      "title": "the pre-turn teaching context carries no reference answer or rubric key",
+      "title": "the pre-turn teaching context carries no reference value, answer key or rubric key",
       "verdict": "PASS"
     },
     "S09": {
-      "detail": "attempts=0 hook=None revision=2",
-      "elapsed_s": 0.25,
+      "detail": "attempts=0 transitions_delta=0 transitions_total=2 revision=2 unchanged=True skill_instruction=True attempt_markers=[] blocked=False",
+      "elapsed_s": 0.56,
       "evidence": {
-        "hook": null
+        "after": {
+          "attempts": 0,
+          "revision": 2,
+          "transitions": 2
+        },
+        "before": {
+          "attempts": 0,
+          "revision": 2,
+          "transitions": 2
+        },
+        "hook": {
+          "context": "[Coursebook] Load the bundled skill `coursebook:lesson-tutoring` before you reply: call skill_view(name=\"coursebook:lesson-tutoring\") and follow it for this turn. This chat governs a lesson run: read the open section out of the Coursebook store (objective, check stimulus, reference answer) rather than guessing it. The only store you may read this turn is `/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cb014-attack-state-d4xjb6ba/S09/plugin-data/coursebook/data.db` and it holds the bound objective `obj_639bc2a9342647c290fb61867e3c13fb`. Do not probe, glob, or open any other Coursebook store \u2014 another HERMES_HOME, a QA home or a test home \u2014 even if it returns rows for the same shape. Never print the reference answer; end with exactly one check in the section's own answer format."
+        }
       },
-      "title": "a clarification inside an open check creates no attempt and consumes no retry",
+      "title": "a clarification creates no attempt, no transition and no revision, and is not graded",
       "verdict": "PASS"
     },
     "S10": {
       "detail": "response_ok=True attempt_verdict=needs_retry transitions=0",
-      "elapsed_s": 0.22,
+      "elapsed_s": 0.5,
       "evidence": {
         "attempts": [
           {
             "answer_hash": "sha256:b9e8bd219f5f0fd64b9879084f6fcb3a9951e2bf0b88d9a00eb00ccc9487b021",
             "answer_json": "{\"kind\":\"text\",\"text\":\"a wrong but fluent answer\"}",
             "answer_kind": "text",
-            "attempt_nonce": "nonce-e3f1a87bf1e7",
-            "check_id": "chk_d78ec3a9151746b389a65f1db50a0232",
+            "attempt_nonce": "nonce-0e480afe3a65",
+            "check_id": "chk_9f1548cb256c445ab2a9cbd22acebcbb",
             "check_version": 1,
             "committed_at": null,
-            "created_at": "2026-11-06T16:48:59.543989+00:00",
+            "created_at": "2026-11-08T00:38:36.839071+00:00",
             "criteria_json": "[]",
-            "enrollment_id": "enr_573db137f161433aa303fb97c3b5067c",
+            "enrollment_id": "enr_ab854b576b984cf2a35ff9980132c6bf",
             "evidence_class": "cold",
             "grading_provenance_json": "{\"failure\":\"GradingUnavailable: aux grader returned no criteria observations\",\"grader\":\"unavailable\"}",
-            "id": "att_f32752cf500243afa94ca95b8cc13ede",
+            "id": "att_c78d6051da3b4032a32c6a0564e26f0e",
             "state": "failed",
             "verdict": "needs_retry"
           }
         ],
         "result": {
-          "contract_version": 6,
+          "contract_version": 14,
           "ok": true,
-          "operation_id": "op-attempt-submit-10caea8c",
+          "operation_id": "op-attempt-submit-96c820b4",
           "result": {
-            "attempt_id": "att_f32752cf500243afa94ca95b8cc13ede",
+            "attempt_id": "att_c78d6051da3b4032a32c6a0564e26f0e",
             "criteria": [],
             "evidence_class": "cold",
             "next_action": "retry_grading",
@@ -718,15 +757,15 @@
       "verdict": "PASS"
     },
     "S11": {
-      "detail": "elapsed=8.03s attempt=[{'verdict': 'needs_retry'}] transitions=0",
-      "elapsed_s": 8.23,
+      "detail": "elapsed=8.04s attempt=[{'verdict': 'needs_retry'}] transitions=0",
+      "elapsed_s": 8.49,
       "evidence": {
         "result": {
-          "contract_version": 6,
+          "contract_version": 14,
           "ok": true,
-          "operation_id": "op-attempt-submit-ec433a7b",
+          "operation_id": "op-attempt-submit-4ac36237",
           "result": {
-            "attempt_id": "att_84b081b48efb466da0b86c97d11110b0",
+            "attempt_id": "att_cea5d73e9d104e96a5cbac2c39eeac56",
             "criteria": [],
             "evidence_class": "cold",
             "next_action": "retry_grading",
@@ -741,14 +780,14 @@
     },
     "S12": {
       "detail": "response_ok=True transitions=0",
-      "elapsed_s": 0.24,
+      "elapsed_s": 0.49,
       "evidence": {
         "result": {
-          "contract_version": 6,
+          "contract_version": 14,
           "ok": true,
-          "operation_id": "op-attempt-submit-54e8c773",
+          "operation_id": "op-attempt-submit-e04e85b7",
           "result": {
-            "attempt_id": "att_fce3d19219ef40ba9a665accf3a25545",
+            "attempt_id": "att_50f1b3c85efb4f279fb46896d2a736b9",
             "criteria": [],
             "evidence_class": "cold",
             "next_action": "retry_grading",
@@ -763,7 +802,7 @@
     },
     "S13": {
       "detail": "aux_lane_disabled_in_release=True injected_answer_verdict=pass reference_leaked=False (when the aux lane is enabled, learner text can steer the grader; no structural cross-check exists)",
-      "elapsed_s": 0.22,
+      "elapsed_s": 0.51,
       "evidence": {
         "attempt": [
           {
@@ -773,11 +812,11 @@
           }
         ],
         "result": {
-          "contract_version": 6,
+          "contract_version": 14,
           "ok": true,
-          "operation_id": "op-attempt-submit-430be3f5",
+          "operation_id": "op-attempt-submit-42f2ccb2",
           "result": {
-            "attempt_id": "att_e7172141535246149709d17ae4633781",
+            "attempt_id": "att_77367f6b970f4b6bb495f63c63ec20df",
             "criteria": [
               {
                 "id": "c1",
@@ -798,7 +837,7 @@
     },
     "S14": {
       "detail": "same_snapshot=True replayed_code=CHECK_STALE",
-      "elapsed_s": 0.35,
+      "elapsed_s": 0.65,
       "evidence": {
         "child": {
           "replay_code": "CHECK_STALE",
@@ -824,14 +863,14 @@
     },
     "S15": {
       "detail": "segments_before=0 after=0",
-      "elapsed_s": 0.26,
+      "elapsed_s": 0.55,
       "evidence": {
         "submitted": {
-          "contract_version": 6,
+          "contract_version": 14,
           "ok": true,
-          "operation_id": "op-attempt-submit-1ac64bd1",
+          "operation_id": "op-attempt-submit-efd5ecd6",
           "result": {
-            "attempt_id": "att_de6993a621bb4f17ae0a35b430ce8995",
+            "attempt_id": "att_a2e9b3ce0b564602b2a5f0344d603439",
             "criteria": [
               {
                 "id": "c1",
@@ -852,27 +891,27 @@
     },
     "S16": {
       "detail": "binding_get=None hook=None attempts=0",
-      "elapsed_s": 0.26,
+      "elapsed_s": 0.6,
       "evidence": {
         "binding": {
           "binding": {
             "connection_id": null,
-            "enrollment_id": "enr_3a513f23d0f648beac96c71ab0bd176c",
-            "id": "bind_de20095a7e164101b9549f941b2121b6",
-            "lesson_run_id": "run_67d76210477b434fb76c82fc68a976a1",
+            "enrollment_id": "enr_362ff72c9c834f1b817c1185804cd43d",
+            "id": "bind_ec247ff784814874b85fb6e12947e814",
+            "lesson_run_id": "run_583eb620f3aa4f48925947194e628f02",
             "matched_column": "stored_session_id",
-            "objective_id": "obj_e9f1f9e8c9e74790b906d2f1a6b323dc",
+            "objective_id": "obj_8b10951a0c9e4d0ca05de6a7be81d8fc",
             "profile": "cbqa",
             "revision": 0,
             "runtime_session_id": null,
             "status": "active",
             "stored_session_id": "sess-detach-1",
-            "updated_at": "2026-11-06T16:49:09.061413+00:00"
+            "updated_at": "2026-11-08T00:38:48.061921+00:00"
           },
           "created": true
         },
         "get": {
-          "contract_version": 6,
+          "contract_version": 14,
           "error": {
             "category": "validation",
             "code": "VALIDATION_FAILED",
@@ -883,11 +922,57 @@
             "retryable": false
           },
           "ok": false,
-          "operation_id": "op-binding-get-078b2ccd"
+          "operation_id": "op-binding-get-bd5484b6"
         },
         "hook": null
       },
       "title": "a detached binding refuses submission instead of grading into the void",
+      "verdict": "PASS"
+    },
+    "S17": {
+      "detail": "tutor_namespaced=True store_named=True unrelated_context=None unrelated_rows=True store_untouched=True",
+      "elapsed_s": 0.56,
+      "evidence": {
+        "bound_hook": {
+          "context": "[Coursebook] Load the bundled skill `coursebook:lesson-tutoring` before you reply: call skill_view(name=\"coursebook:lesson-tutoring\") and follow it for this turn. This chat governs a lesson run: read the open section out of the Coursebook store (objective, check stimulus, reference answer) rather than guessing it. The only store you may read this turn is `/home/deseretsaint/.hermes/profiles/cbqa/cache/scratch/cb014-attack-state-d4xjb6ba/S17/plugin-data/coursebook/data.db` and it holds the bound objective `obj_94d013bd4d1a47cbb417138e13cb3687`. Do not probe, glob, or open any other Coursebook store \u2014 another HERMES_HOME, a QA home or a test home \u2014 even if it returns rows for the same shape. Never print the reference answer; end with exactly one check in the section's own answer format."
+        },
+        "counts_after": {
+          "artifacts": 0,
+          "attempts": 0,
+          "bindings": 1,
+          "checks": 1,
+          "courses": 1,
+          "enrollments": 1,
+          "evidence": 0,
+          "jobs": 0,
+          "lesson_runs": 1,
+          "notebook_entries": 0,
+          "objectives": 1,
+          "packs": 0,
+          "plans": 1,
+          "transitions": 2,
+          "usage_events": 0
+        },
+        "counts_before": {
+          "artifacts": 0,
+          "attempts": 0,
+          "bindings": 1,
+          "checks": 1,
+          "courses": 1,
+          "enrollments": 1,
+          "evidence": 0,
+          "jobs": 0,
+          "lesson_runs": 1,
+          "notebook_entries": 0,
+          "objectives": 1,
+          "packs": 0,
+          "plans": 1,
+          "transitions": 2,
+          "usage_events": 0
+        },
+        "unrelated_hook": null
+      },
+      "title": "a bound lesson loads the namespaced tutor skill and an unrelated chat gets nothing",
       "verdict": "PASS"
     }
   },

@@ -10,6 +10,13 @@ it lives on **unmerged branches**. Prose that says "the harness works" without s
 it works on, and whether a model or a recording produced the output, is the failure this pass
 repairs. Nothing here is new capability; every row points at a file or a command.
 
+> **Superseded evidence (H-102, 2026-11-07):** §4 and §5 quote `SUMMARY total=22 fail=0 pass=22`
+> from their own commits. That is **not** the current matrix. `S08` and `S09` were written against
+> the pre-skill hook shape and the current tree adds `S17`; the live expected shape is **23
+> scenarios, `fail=0`, `S13` still `BLOCKED`**, with `S08` asserting reference *values* are absent
+> (not the word "reference") and `S09` allowing a skill instruction but no grading continuation.
+> Re-derived command and details are in §7.
+
 ## 1. Status table
 
 Five classes that are routinely confused. They are not a ladder — a later class does not imply an
@@ -156,3 +163,41 @@ rewritten by this docs-only merge.
 A reader may **not** conclude that Coursebook is installable from a catalog, that a live model has
 produced an arbitrary course, that a video exists, that the prepared Japanese pack is evidence for
 other subjects, or that the five P0 findings of `docs/ADVERSARIAL-HARNESS-REVIEW.md` are closed.
+
+## 7. H-102 reconciliation — S08/S09 against the tutor-skill instruction (2026-11-07)
+
+The hook now puts a bundled-skill instruction on every governed turn
+(`coursebook/lesson_skills.py`). Two adversarial scenarios were written against the older shape and
+had gone **red for the wrong reason**; they assert the new shape instead of a substring:
+
+- **S08** forbade the substring `reference`, which the tutor instruction legitimately contains
+  ("Never print the reference answer"). It now reads `checks.reference_json` from the store and
+  asserts that no **value** in it — and no secret key name (`answer_key`, `reference_json`,
+  `pass_rule`, `tolerance`, `"value":`) — appears in the pre-turn teaching context. The scenario
+  also runs canaries against the real value and an `answer_key`, so a PASS cannot come from a
+  detector that never matches. It additionally requires the context to contain a committed
+  `Coursebook result:`, so the leak check cannot pass vacuously on a skill note alone.
+- **S09** required `hook is None`; a clarification now returns the tutor instruction. It now
+  asserts attempts stay `0`, the transition **delta** is `0`, the enrollment revision is unchanged,
+  the hook is not a block, and the context is a skill instruction rather than a grading
+  continuation (no `Coursebook result:`, `attempt_id`, `evidence_class`). Attempt/revision
+  assertions were not relaxed — a positive control that grades the question moves all three and
+  fails the scenario.
+- **S17** (new): a bound lesson's turn names `skill_view(name="coursebook:lesson-tutoring")` and
+  its one absolute store path; an unrelated chat in the same profile gets `None` from the hook,
+  gains no binding row, and leaves the store's row counts unchanged.
+
+Re-derived on `master` `48be4af` with the H-102 test edit:
+
+```
+$ python3 tests/adversarial/attack_state.py
+RESULT scenario=S08 verdict=PASS … detail=context_returned=True teaching_verdict=True reference_value_leaks=[] canary_value=True canary_key=True
+RESULT scenario=S09 verdict=PASS … detail=attempts=0 transitions_delta=0 transitions_total=2 revision=2 unchanged=True skill_instruction=True attempt_markers=[] blocked=False
+RESULT scenario=S17 verdict=PASS … detail=tutor_namespaced=True store_named=True unrelated_context=None unrelated_rows=True store_untouched=True
+RESULT scenario=S13 verdict=BLOCKED … detail=aux_lane_disabled_in_release=True injected_answer_verdict=pass reference_leaked=False
+SUMMARY total=23 fail=0 pass=23
+```
+
+`S13` (CB-QA-11, auxiliary grader) remains `BLOCKED`; the lane is disabled in this build. Evidence
+document: `tests/adversarial/evidence/attack-state.json`. The previous `total=22` lines in §4/§5 are
+historical and must not be quoted as the current matrix.
