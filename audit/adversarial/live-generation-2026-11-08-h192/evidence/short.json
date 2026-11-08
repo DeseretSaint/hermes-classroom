@@ -1,0 +1,532 @@
+{
+  "course": {
+    "course_id": "crs_0931a74e750642a9b35dcf7617d1af2f",
+    "plan_id": "pln_dba75413e909485ea721cec07cb93506",
+    "revision": 0
+  },
+  "dial_s": {
+    "assessment": "none",
+    "autonomy": "guided",
+    "depth": "working",
+    "pace": "light"
+  },
+  "enrollment": {
+    "enrollment_id": "enr_48cf06479e784cae9c14b007ee8b780f",
+    "revision": 0
+  },
+  "finished_at": "2026-11-08T21:51:40Z",
+  "goal": "Plan and cook a week of high-protein meals without repeating a dish",
+  "ok": true,
+  "phases": {
+    "approve": {
+      "error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"the plan has no passing validation record; it cannot be approved.\", \"retryable\": false, \"details\": {\"reason\": \"plan_not_validated\", \"plan_id\": \"pln_dba75413e909485ea721cec07cb93506\", \"generation_state\": \"needs_review\", \"validation_verdict\": \"reject\"}}",
+      "generation_digest": "sha256:651dcca5b5a7afc6161ed6f47ab5191f880e511c7f2850f29840ed76e5d38ab6",
+      "kernel_digest": "sha256:2073d25a74845fb7a65f9f15709abf2887fb03aac84a11f9eadfc281a740c71a",
+      "kernel_digest_source": "parent.blueprint.read",
+      "ok": false,
+      "plan_state_after": "draft",
+      "started_at": "2026-11-08T21:51:40Z"
+    },
+    "lessons": {
+      "facts": {
+        "rows": [],
+        "servable_objectives": [],
+        "states": []
+      },
+      "jobs": [],
+      "started_at": "2026-11-08T21:51:40Z"
+    },
+    "page": {
+      "served": null,
+      "started_at": "2026-11-08T21:51:40Z"
+    },
+    "plan": {
+      "elapsed_s": 686.3,
+      "facts": {
+        "approved_at": null,
+        "generation": {
+          "approval_provenance": {
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independent": false,
+            "needs_review": true,
+            "outcome": "rejected",
+            "prompt_version": "plan-prompt.v9",
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "budget": null,
+          "check_plan": [
+            {
+              "evidence_target": "comprehension",
+              "kind": "verification",
+              "notes": "Learner explains the anchor-and-format map against the concept_explanation rubric; the check catches the five-identical-boxes misconception.",
+              "objective_ref": 1
+            },
+            {
+              "evidence_target": "comprehension",
+              "kind": "verification",
+              "notes": "Learner explains the two-session split and storage order; the check catches the one-long-prep-covers-seven-days misconception.",
+              "objective_ref": 2
+            },
+            {
+              "evidence_target": "comprehension",
+              "kind": "verification",
+              "notes": "Learner explains a substitution and reorder; the check catches the same-dish-is-fine-if-protein-matches misconception.",
+              "objective_ref": 3
+            }
+          ],
+          "delivery": "self_study",
+          "document_plan_state": null,
+          "domain_provenance": {
+            "declared_locale": null,
+            "declared_subject_domain": "general",
+            "resolved_domain": "general",
+            "source": "declared",
+            "target_language": null
+          },
+          "generation_state": "needs_review",
+          "goal": null,
+          "learner_outcome": "By the end, the learner can explain and justify a week of high-protein meals that uses 2\u20133 protein anchors across distinct dish formats, splits cooking into two short prep sessions, stores cooked food for safe use across the week, and adapts the plan when an ingredient runs out\u2014without repeating a dish or relying on a spreadsheet.",
+          "objective_titles": [
+            "Explain how to choose 2\u20133 protein anchors and assign each to a different dish format so a week's menu has no repeated dish.",
+            "Explain how to split cooking into two short prep sessions and store cooked components so each day's meal stays safe and varied.",
+            "Explain how to adapt the week's no-repeat plan when a protein or ingredient runs out while keeping a protein anchor in every meal."
+          ],
+          "plan_hash": "sha256:651dcca5b5a7afc6161ed6f47ab5191f880e511c7f2850f29840ed76e5d38ab6",
+          "plan_schema": "coursebook.plan.v2",
+          "rejection_reasons": [
+            "committed courses need graded checks"
+          ],
+          "section_count": 0,
+          "spaced_review": true,
+          "status": "needs_review",
+          "time_estimate": {
+            "basis": "model",
+            "confidence": "low",
+            "minutes_per_session": 45,
+            "rationale": "Scheduled time only: 3 weeks \u00d7 2 sessions \u00d7 45 minutes = 4.5 hours. This is a planning estimate for a light pace, not a claim of attainment or a self-study conversion.",
+            "sessions_per_week": 2,
+            "weeks": 3
+          },
+          "title": "No-Repeat High-Protein Week: Plan, Prep, Adapt",
+          "units_in_document": [
+            {
+              "ordinal": 1,
+              "prerequisites": [],
+              "title": "Designing a No-Repeat Protein-Anchor Menu"
+            },
+            {
+              "ordinal": 2,
+              "prerequisites": [],
+              "title": "Two-Session Cooking and Safe Storage for the Week"
+            },
+            {
+              "ordinal": 3,
+              "prerequisites": [],
+              "title": "Adapting the No-Repeat Week When Ingredients Change"
+            }
+          ],
+          "validation": {
+            "cost": {
+              "calls": 2,
+              "cost_usd": null,
+              "unknown_cost": true
+            },
+            "cost_usd": null,
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independence": "unidentified",
+            "independent": false,
+            "outcome": "rejected",
+            "research_status": "ok",
+            "shape_violations": 0,
+            "validator": {
+              "known": false,
+              "model": null,
+              "provider": null
+            },
+            "verdict": "reject",
+            "waived_unknown": [],
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "validation_record": null,
+          "validation_verdict": "reject"
+        },
+        "objectives": [
+          {
+            "objective_id": "ed4d12c83101756f",
+            "ordinal": 1,
+            "title": "Explain how to choose 2\u20133 protein anchors and assign each to a different dish format so a week's menu has no repeated dish.",
+            "unit_id": "23faf66af0c3b5b1"
+          },
+          {
+            "objective_id": "4a3d37a9010e4542",
+            "ordinal": 2,
+            "title": "Explain how to split cooking into two short prep sessions and store cooked components so each day's meal stays safe and varied.",
+            "unit_id": "7da0a2680c2f982d"
+          },
+          {
+            "objective_id": "7067ad5a99a1dd75",
+            "ordinal": 3,
+            "title": "Explain how to adapt the week's no-repeat plan when a protein or ingredient runs out while keeping a protein anchor in every meal.",
+            "unit_id": "4ccb697c29b4e09e"
+          }
+        ],
+        "plan_hash": "sha256:651dcca5b5a7afc6161ed6f47ab5191f880e511c7f2850f29840ed76e5d38ab6",
+        "plan_id": "pln_dba75413e909485ea721cec07cb93506",
+        "plan_state": "draft",
+        "research": {
+          "failure_count": 0,
+          "failures": [],
+          "queries": [
+            "Plan and cook a week of high-protein meals without repeating a dish",
+            "Plan and cook a week of high-protein meals without repeating a dish syllabus learning objectives",
+            "Plan and cook a week of high-protein meals without repeating a dish how to teach curriculum sequence",
+            "Plan and cook a week of high-protein meals without repeating a dish prerequisite knowledge learning progression"
+          ],
+          "query_count": 4,
+          "reason": null,
+          "source_count": 8,
+          "sources": [
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-08T21:40:14Z",
+              "source_id": "0afdeab23fbf0d77",
+              "support": null,
+              "title": "High Protein Meals for Weight Loss: 14 Easy Recipes (2027)",
+              "url": "https://obesityfoundation.com/high-protein-meals/"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-08T21:40:14Z",
+              "source_id": "b2850421cb9eac50",
+              "support": null,
+              "title": "High-Protein Meal Prep: 10 Easy Recipes (2026) | FoodiePrep",
+              "url": "https://www.foodieprep.ai/blog/high-protein-meal-prep"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-08T21:40:14Z",
+              "source_id": "ab4441448b500849",
+              "support": null,
+              "title": "High Protein Meal Prep: 6 Easy Recipes for the Week | NutriSmart",
+              "url": "https://nutrismart.app/blog/high-protein-meal-prep/"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-08T21:40:14Z",
+              "source_id": "82044aaa056ffd62",
+              "support": null,
+              "title": "High Protein Meal Prep Without Counting: A Gym Week Plan | Pann",
+              "url": "https://www.pann-app.com/blog/high-protein-meal-prep"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-08T21:40:14Z",
+              "source_id": "cb79d066df52fde3",
+              "support": null,
+              "title": "High Protein Meal Prep: Complete Weekly Guide (2026) | Hoot",
+              "url": "https://www.hootfitness.com/blog/high-protein-meal-prep-weekly-guide"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-08T21:40:14Z",
+              "source_id": "17d9f23a13b78949",
+              "support": null,
+              "title": "High Protein Meal Prep: A Weekly System That Actually Works | Mealdill Blog",
+              "url": "https://www.mealdill.com/blog/high-protein-meal-prep"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-08T21:40:14Z",
+              "source_id": "a60cd10cb8c59b06",
+              "support": null,
+              "title": "High Protein Meal Prep: Practical Weekly Plan | Myo",
+              "url": "https://meetmyo.com/high-protein-meal-prep/"
+            },
+            {
+              "excerpt_chars": 600,
+              "fetched_at": "2026-11-08T21:40:14Z",
+              "source_id": "30ed98acc1fa341b",
+              "support": null,
+              "title": "High Protein Meal Prep Ideas: Fast & Clean \u2013 Drink Koia Online",
+              "url": "https://drinkkoia.com/es/blogs/blog/high-protein-meal-prep-ideas"
+            }
+          ],
+          "status": "ok"
+        },
+        "units": [
+          {
+            "created_at": "2026-11-08T21:51:38Z",
+            "goal": "Establish the menu architecture: choose 2\u20133 protein anchors, assign each to a distinct dish format, and size portions by eye so the week has no repeated dish. This comes first because cooking and storage decisions depend on the menu design.",
+            "id": "23faf66af0c3b5b1",
+            "ordinal": 1,
+            "plan_id": "pln_dba75413e909485ea721cec07cb93506",
+            "prerequisite_refs": [],
+            "target_lessons": 2,
+            "title": "Designing a No-Repeat Protein-Anchor Menu"
+          },
+          {
+            "created_at": "2026-11-08T21:51:38Z",
+            "goal": "Turn the unit 1 menu into two short prep sessions and store cooked components so meals stay safe and varied across the week. It follows unit 1 because the session split and storage plan depend on the chosen anchors and dish formats.",
+            "id": "7da0a2680c2f982d",
+            "ordinal": 2,
+            "plan_id": "pln_dba75413e909485ea721cec07cb93506",
+            "prerequisite_refs": [
+              1
+            ],
+            "target_lessons": 2,
+            "title": "Two-Session Cooking and Safe Storage for the Week"
+          },
+          {
+            "created_at": "2026-11-08T21:51:38Z",
+            "goal": "Adapt the planned week when a protein or ingredient runs out, preserving a protein anchor in every meal and avoiding repeated dishes. It comes last because it requires the menu architecture from unit 1 and the cooking and storage constraints from unit 2.",
+            "id": "4ccb697c29b4e09e",
+            "ordinal": 3,
+            "plan_id": "pln_dba75413e909485ea721cec07cb93506",
+            "prerequisite_refs": [
+              1,
+              2
+            ],
+            "target_lessons": 2,
+            "title": "Adapting the No-Repeat Week When Ingredients Change"
+          }
+        ]
+      },
+      "final_job": {
+        "artifact_ids": [],
+        "attempt_id": "att_53b89c88746245a59b3c7020ceb1a97b",
+        "brief": {
+          "course_id": "crs_0931a74e750642a9b35dcf7617d1af2f",
+          "dials": {
+            "assessment": "none",
+            "autonomy": "guided",
+            "depth": "working",
+            "pace": "light"
+          },
+          "enrollment_id": "enr_48cf06479e784cae9c14b007ee8b780f",
+          "goal": "Plan and cook a week of high-protein meals without repeating a dish",
+          "recipe": "committed",
+          "scope": "short",
+          "stage": "plan",
+          "subject_domain": "general"
+        },
+        "cancel_requested_at": null,
+        "checkpoint": {
+          "approval_provenance": {
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independent": false,
+            "needs_review": true,
+            "outcome": "rejected",
+            "prompt_version": "plan-prompt.v9",
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "domain_provenance": {
+            "declared_locale": null,
+            "declared_subject_domain": "general",
+            "resolved_domain": "general",
+            "source": "declared",
+            "target_language": null
+          },
+          "generation_state": "needs_review",
+          "last_stage": "plan",
+          "next_unit_ordinal": 1,
+          "objectives": 3,
+          "plan_hash": "sha256:651dcca5b5a7afc6161ed6f47ab5191f880e511c7f2850f29840ed76e5d38ab6",
+          "plan_id": "pln_dba75413e909485ea721cec07cb93506",
+          "plan_schema": "coursebook.plan.v2",
+          "plan_version": 1,
+          "rejection_reasons": [
+            "committed courses need graded checks"
+          ],
+          "units": 3,
+          "validation": {
+            "cost": {
+              "calls": 2,
+              "cost_usd": null,
+              "unknown_cost": true
+            },
+            "cost_usd": null,
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independence": "unidentified",
+            "independent": false,
+            "outcome": "rejected",
+            "research_status": "ok",
+            "shape_violations": 0,
+            "validator": {
+              "known": false,
+              "model": null,
+              "provider": null
+            },
+            "verdict": "reject",
+            "waived_unknown": [],
+            "warning": "validation rejected this artifact: it is not approvable as validated."
+          },
+          "validation_verdict": "reject"
+        },
+        "created_at": "2026-11-08T21:40:14Z",
+        "error": null,
+        "job_id": "job_dcd9fa36e56444df900d1c582778b114",
+        "kind": "plan",
+        "lease": null,
+        "operation_id": "h187-jobs-create-1794174014100738733",
+        "progress": {
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "steps_done": 1,
+          "steps_total": 1
+        },
+        "state": "completed",
+        "updated_at": "2026-11-08T21:51:38Z"
+      },
+      "job_id": "job_dcd9fa36e56444df900d1c582778b114",
+      "label": "plan",
+      "pump": {
+        "done_at_s": 684.7,
+        "finished": [
+          "job_dcd9fa36e56444df900d1c582778b114"
+        ]
+      },
+      "started_at": "2026-11-08T21:40:14Z",
+      "terminal_state": "completed",
+      "thread_alive": false,
+      "timeline": [
+        {
+          "elapsed_s": 0.0,
+          "message": "",
+          "stage": "queued",
+          "state": "queued"
+        },
+        {
+          "elapsed_s": 2.0,
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 686.3,
+          "message": "plan authored (needs_review)",
+          "stage": "plan",
+          "state": "completed"
+        }
+      ]
+    }
+  },
+  "plan_job": {
+    "job_id": "job_dcd9fa36e56444df900d1c582778b114",
+    "state": "queued"
+  },
+  "recipe": "committed",
+  "schema_version": 11,
+  "scope": "short",
+  "started_at": "2026-11-08T21:40:13Z",
+  "subject_domain": "general",
+  "tag": "short",
+  "title": "Plan and cook a high-protein week",
+  "total_elapsed_s": 686.7,
+  "usage": {
+    "events": [
+      {
+        "duration_ms": 69115,
+        "job_id": "job_dcd9fa36e56444df900d1c582778b114",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T21:51:38Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 6539,
+          "output_tokens": 12234,
+          "prompt_version": "plan-prompt.v9",
+          "purpose": "coursebook.plan.generate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 62039,
+        "job_id": "job_dcd9fa36e56444df900d1c582778b114",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T21:51:38Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 6013,
+          "output_tokens": 10739,
+          "prompt_version": "validation-prompt.v4",
+          "purpose": "coursebook.plan.validate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 539347,
+        "job_id": "job_dcd9fa36e56444df900d1c582778b114",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T21:51:38Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 6550,
+          "output_tokens": 22325,
+          "prompt_version": "validation-prompt.v4",
+          "purpose": "coursebook.plan.validate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 55184,
+        "job_id": "job_dcd9fa36e56444df900d1c582778b114",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T21:51:38Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 6568,
+          "output_tokens": 9145,
+          "prompt_version": "plan-prompt.v9",
+          "purpose": "coursebook.plan.generate",
+          "unknown_cost": true
+        }
+      }
+    ],
+    "totals": {
+      "by_model": {
+        "nous/deepseek/deepseek-v4.1-flash-1017": {
+          "calls": 2,
+          "total_tokens": 0
+        },
+        "nous/z-ai/glm-5.3-flash": {
+          "calls": 2,
+          "total_tokens": 0
+        }
+      },
+      "calls": 4,
+      "input_tokens": 25670,
+      "output_tokens": 54443,
+      "total_tokens": 0
+    }
+  },
+  "validator_config": {
+    "configured": true,
+    "model": "z-ai/glm-5.3-flash",
+    "provider": "nous",
+    "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+  },
+  "wire_contract_version": 18
+}

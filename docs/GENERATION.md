@@ -656,9 +656,9 @@ The demand is now cut into fixed-size batches (`CLAIM_VERDICTS_PER_PASS = 6` on 
   verdicts from every pass; a claim-only pass cannot reject the artifact or widen the review;
 * `_run_validation_passes` submits all passes together, so wall time stays at the slowest pass.
 
-Consequently no single answer's output grows with plan size. A small plan (single/short, 3–5
-labels measured live) still makes exactly one call. The deadline is unchanged: the repair is a
-smaller answer demand, not more time.
+Consequently no single answer's output grows with plan size. A plan whose claim set fits one batch
+(the measured single-scope plan: 3–5 labels) still makes exactly one call. The deadline is
+unchanged: the repair is a smaller answer demand, not more time.
 
 A validator answer that violates its own narrowed schema is `ModelOutputInvalid` →
 `VALIDATION_FAILED` (`retryable: false`) at the plan, unit-sections and lesson stages, and a
