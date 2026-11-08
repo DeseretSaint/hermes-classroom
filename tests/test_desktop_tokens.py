@@ -180,8 +180,10 @@ class TokenContractTest(unittest.TestCase):
 
     def test_the_route_and_pane_roots_are_the_scope(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        # Both registered surfaces paint the layer; nothing else declares a colour.
-        self.assertEqual(source.count("style: cbScopeStyle(cbMode)"), 2)
+        # Both registered surfaces paint the layer; nothing else declares a colour. H-145 spreads
+        # the route root's style so the measured gutter can ride on the same declaration.
+        self.assertEqual(source.count("cbScopeStyle(cbMode)"), 2)
+        self.assertIn("style: { ...cbScopeStyle(cbMode), paddingLeft: routePad, paddingRight: routePad }", source)
         self.assertEqual(source.count("'data-cb-scope': cbMode"), 2)
 
 
