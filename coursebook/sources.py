@@ -106,6 +106,103 @@ def ledger(connection, course_id: str) -> list[dict[str, Any]]:
     ]
 
 
+#: The research-level support judgements a plan or lesson may quote. The frozen
+#: ``cb.vocabulary`` collapses ``supported``/``partial`` into ``model_assessed``, so the row keeps
+#: only the assessment class while the run snapshot keeps the word the model actually wrote. The
+#: panel needs both: the word to say what the model concluded, the class to say that a model, not
+#: a document, concluded it.
+DISPLAY_ASSESSMENTS = ("supported", "partial", "unverified", "contradictory")
+
+
+def _display_text(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None
+
+
+def _display_entry(entry: dict[str, Any]) -> dict[str, Any]:
+    assessment = entry.get("support_status")
+    return {
+        "publisher": _display_text(entry.get("publisher")),
+        "excerpt": _display_text(entry.get("excerpt")),
+        "content_hash": _display_text(entry.get("content_hash")),
+        "modality": _display_text(entry.get("modality")),
+        "licence": _display_text(entry.get("licence")),
+        "support_assessment": str(assessment) if assessment in DISPLAY_ASSESSMENTS else None,
+    }
+
+
+def display_details(connection, course_id: str) -> tuple[dict[str, dict[str, Any]], str]:
+    """Publisher/excerpt/hash/assessment per source, from the newest recorded research snapshot.
+
+    Returns ``(entries, state)`` where state is one of:
+
+    * ``recorded`` — at least one research run was read; a source missing from ``entries`` was
+      genuinely not in any recorded run;
+    * ``absent`` — this course has no recorded research run (a pack-imported course, or a schema
+      that predates research);
+    * ``unreadable`` — a snapshot exists but could not be read.
+
+    The three are distinct because "no excerpt is stored" and "the excerpt could not be read" are
+    different facts, and the panel must never print the first for the second. The snapshot, not the
+    ``sources`` row, is where the fetched excerpt and publisher live: the row keeps provenance and
+    support class, the immutable run keeps the words.
+    """
+    try:
+        rows = _dependency_rows(
+            connection,
+            "SELECT sources_json FROM gen_research_runs WHERE course_id = ?"
+            " ORDER BY created_at DESC, rowid DESC",
+            (course_id,),
+            optional_tables=("gen_research_runs",),
+            what="the recorded research snapshots",
+        )
+    except DependencyStateUnknown:
+        return {}, "unreadable"
+    if not rows:
+        return {}, "absent"
+    entries: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        try:
+            payload = _dependency_json(row["sources_json"], [])
+        except DependencyStateUnknown:
+            return entries, "unreadable"
+        if not isinstance(payload, list):
+            continue
+        for entry in payload:
+            if not isinstance(entry, dict):
+                continue
+            fields = _display_entry(entry)
+            for key in (entry.get("source_id"), entry.get("url")):
+                if key and str(key) not in entries:
+                    entries[str(key)] = fields
+    return entries, "recorded"
+
+
+def display_fields(row, entries: dict[str, dict[str, Any]], state: str) -> dict[str, Any]:
+    """The additive ``sources[]`` fields a display read may carry for one ledger row.
+
+    ``excerpt_state`` is the typed absence: ``recorded`` (the run stored words), ``missing`` (a run
+    was read and did not carry this source, or carried no excerpt), or ``unreadable`` (the snapshot
+    itself could not be read). A caller renders each differently; none of them become "no excerpt".
+    """
+    entry = entries.get(str(row["id"])) or entries.get(str(row["url"] or "")) or None
+    if entry is None:
+        excerpt_state = "unreadable" if state == "unreadable" else "missing"
+    else:
+        excerpt_state = "recorded" if entry.get("excerpt") else "missing"
+    return {
+        "publisher": entry.get("publisher") if entry else None,
+        "excerpt": entry.get("excerpt") if entry else None,
+        "excerpt_state": excerpt_state,
+        "content_hash": entry.get("content_hash") if entry else None,
+        "modality": entry.get("modality") if entry else None,
+        "licence": entry.get("licence") if entry else None,
+        "support_assessment": entry.get("support_assessment") if entry else None,
+    }
+
+
 def stale_sources(connection, course_id: str) -> list[dict[str, Any]]:
     rows = connection.execute(
         "SELECT id AS source_id, url, title, support_status FROM sources"

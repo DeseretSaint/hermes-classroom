@@ -14110,45 +14110,396 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
   })
 }
 
-/** Sources — support status in words; unverified is never a green "verified". */
-function SourcesView({ page }) {
-  const sources = (page && page.sources) || []
-  if (!page) return jsx('div', { className: 'py-6', children: jsx(sdk.Loader, { label: 'Reading this course’s sources' }) })
-  if (sources.length === 0) {
-    return jsx(EmptyState, {
-      title: 'No sources recorded',
-      description: 'No sources are recorded for this course. Nothing here is presented as cited.'
+/**
+ * H-106 — source provenance, in words a parent can read.
+ *
+ * The frozen `support_status` is a *class* (`model_assessed`, `conflicting`, `unassessed`,
+ * `stale`, `unreachable`); the model's own verdict (`supported`/`partial`/`unverified`/
+ * `contradictory`) travels beside it as `support_assessment`. Neither is a document proof, so the
+ * card always says which one it is showing. The exact fetched words live in a disclosure; a source
+ * with no stored excerpt says so instead of borrowing a citation it cannot back. The raw enums,
+ * ids and hashes stay in the technical disclosure, never in the main line.
+ */
+const SOURCE_SUPPORT_CLASS = Object.freeze({
+  model_assessed: {
+    label: 'Model-assessed',
+    basis: 'A model read this source and rated how it bears on the claim. That is an assessment, not a document proof.'
+  },
+  conflicting: {
+    label: 'Conflicting',
+    basis: 'The model found this source at odds with a claim. A person has to settle the disagreement.'
+  },
+  unassessed: {
+    label: 'Not assessed',
+    basis: 'Nothing has checked this source against a claim, so it is listed as provenance only.'
+  },
+  stale: {
+    label: 'Source changed',
+    basis: 'The stored words changed after this course used them. Dependent checks wait for review rather than grading against old text.'
+  },
+  unreachable: {
+    label: 'Source unreachable',
+    basis: 'The last re-fetch failed. The stored evidence is kept, and reuse triggers review.'
+  },
+  authoritative_documentation: {
+    label: 'Publisher’s own document',
+    basis: 'This is the publisher’s own documentation, which is provenance for the text — not a check that any claim is true.'
+  }
+})
+
+const SOURCE_ASSESSMENT_WORDS = Object.freeze({
+  supported: 'the model judged that this source supports the claim',
+  partial: 'the model judged that this source only partly supports the claim',
+  unverified: 'the model could not verify the claim from this source',
+  contradictory: 'the model judged that this source contradicts the claim'
+})
+
+const SOURCE_TYPE_WORDS = Object.freeze({
+  government: 'Government',
+  academic: 'Academic',
+  reference: 'Reference',
+  documentation: 'Documentation',
+  organization: 'Organization',
+  web_page: 'Web page'
+})
+
+function sourceSupportModel(source) {
+  const status = source && typeof source.support_status === 'string' ? source.support_status : 'unassessed'
+  const known = SOURCE_SUPPORT_CLASS[status] || {
+    label: 'Status unrecorded',
+    basis: 'The backend did not record how this source bears on the claim.'
+  }
+  const assessment = source && SOURCE_ASSESSMENT_WORDS[source.support_assessment]
+    ? source.support_assessment
+    : null
+  return {
+    status,
+    label: known.label,
+    basis: known.basis,
+    assessment,
+    assessmentWords: assessment ? SOURCE_ASSESSMENT_WORDS[assessment] : null
+  }
+}
+
+function sourceTypeLabel(value) {
+  if (!value) return 'Source type not recorded'
+  return SOURCE_TYPE_WORDS[value] || String(value).replace(/_/g, ' ')
+}
+
+function sourceExcerptState(source) {
+  const state = source && source.excerpt_state
+  if (state === 'recorded' || state === 'missing' || state === 'unreadable') return state
+  // A pre-H-106 payload has no typed state: an excerpt is the only evidence of itself.
+  return source && source.excerpt ? 'recorded' : 'missing'
+}
+
+/** The stored words, or the typed reason there are none. A disclosure, never a silent omission. */
+function SourceExcerpt({ source }) {
+  const state = sourceExcerptState(source)
+  const text = source && typeof source.excerpt === 'string' ? source.excerpt : ''
+  if (state !== 'recorded' || !text) {
+    return jsx('div', {
+      'data-cb-source-excerpt': state,
+      style: { fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: CB_MEASURE },
+      children:
+        state === 'unreadable'
+          ? 'The recorded research snapshot could not be read, so this source’s excerpt is unknown — not absent. Nothing here is presented as a quote.'
+          : 'No excerpt is stored for this source. It is listed as provenance only, so no claim on this course is presented as supported by it.'
     })
   }
-  return jsx('div', {
-    className: 'flex max-w-3xl flex-col',
-    children: sources.map((source) =>
-      jsxs(
-        'div',
-        {
-          className: 'flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) py-2 last:border-b-0',
-          children: [
-            jsx('div', { className: 'text-sm font-medium', children: source.title }),
-            jsxs('div', {
-              className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
-              children: [
-                jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.source_type }),
-                jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: source.support_status }),
-                jsx('span', { children: source.fetched_at ? `fetched ${whenLabel(source.fetched_at)}` : 'fetch date unknown' }),
-                source.published_at ? jsx('span', { children: `published ${whenLabel(source.published_at)}` }) : null
-              ]
-            }),
-            source.url
-              ? jsx('div', {
-                  className: 'text-xs text-(--ui-text-secondary)',
-                  children: 'External content opens only when you choose it; the URL is shown, not fetched.'
-                })
-              : null
-          ]
-        },
-        source.source_id
-      )
+  return jsxs('details', {
+    'data-cb-source-excerpt': 'recorded',
+    style: { maxWidth: CB_MEASURE },
+    children: [
+      jsx('summary', {
+        className: 'cursor-pointer',
+        style: { fontSize: CB_TYPE.meta, color: 'var(--cb-ink)' },
+        children: `Exact excerpt (${text.length.toLocaleString()} characters)`
+      }),
+      jsxs('div', {
+        style: { marginTop: '0.35rem' },
+        children: [
+          jsx('blockquote', {
+            style: {
+              margin: 0,
+              paddingLeft: '0.6rem',
+              borderLeft: '2px solid var(--cb-rule)',
+              fontSize: CB_TYPE.meta,
+              lineHeight: 1.55,
+              whiteSpace: 'pre-wrap',
+              overflowWrap: 'anywhere',
+              maxHeight: '14rem',
+              overflowY: 'auto',
+              color: 'var(--cb-ink)'
+            },
+            children: text
+          }),
+          jsx('div', {
+            style: { marginTop: '0.3rem', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children:
+              'These are the words the research step stored when it fetched the page. They are shown as stored; reading them is not a re-fetch and proves nothing beyond what they say.'
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/** One source: title, publisher/URL, support basis, excerpt, and the technical record behind it. */
+function SourceProvenanceCard({ source, dense = false }) {
+  const model = sourceSupportModel(source)
+  const excerptState = sourceExcerptState(source)
+  const publisher = source && source.publisher ? source.publisher : null
+  const modality = source && source.modality ? source.modality : null
+  const licence = source && source.licence ? source.licence : null
+  const facts = []
+  facts.push(publisher ? `Published by ${publisher}` : 'Publisher not recorded')
+  facts.push(sourceTypeLabel(source && source.source_type))
+  if (source && source.published_at) facts.push(`Published ${whenLabel(source.published_at)}`)
+  if (source && source.fetched_at) facts.push(`Fetched ${whenLabel(source.fetched_at)}`)
+  if (source && Number(source.claim_count) > 0) {
+    const count = Number(source.claim_count)
+    facts.push(`${count} claim${count === 1 ? '' : 's'} cite it`)
+  }
+  const detail = [
+    `Source id: ${(source && source.source_id) || 'not recorded'}.`,
+    `Support class: ${model.status}.`,
+    model.assessment ? `Model assessment: ${model.assessment}.` : 'Model assessment: none recorded.',
+    `Excerpt state: ${excerptState}.`,
+    `Content hash: ${(source && source.content_hash) || 'not recorded'}.`,
+    `Modality: ${modality || 'not recorded'}. Licence: ${licence || 'not recorded'}.`
+  ]
+  return jsxs('div', {
+    'data-cb-source-card': (source && source.source_id) || '',
+    'data-cb-source-support': model.status,
+    'data-cb-source-excerpt-state': excerptState,
+    className: 'flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) py-3 last:border-b-0',
+    style: { maxWidth: CB_MEASURE },
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-baseline gap-2',
+        children: [
+          jsx('span', {
+            style: { minWidth: 0, fontSize: dense ? CB_TYPE.meta : CB_TYPE.body, fontWeight: 600, overflowWrap: 'anywhere', color: 'var(--cb-ink)' },
+            children: (source && source.title) || 'Untitled source'
+          }),
+          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: model.label }),
+          !dense && model.assessment
+            ? jsx(sdk.Badge, {
+                size: 'xs',
+                variant: 'muted',
+                'data-cb-source-assessment': model.assessment,
+                children: 'the model’s verdict'
+              })
+            : null
+        ]
+      }),
+      jsx('div', {
+        style: { fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+        children: facts.join(' · ')
+      }),
+      jsx('div', {
+        'data-cb-source-basis': '',
+        style: { fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+        children: model.assessmentWords
+          ? `Support basis: ${model.assessmentWords}, because a model read it. ${model.basis}`
+          : `Support basis: ${model.basis}`
+      }),
+      source && source.url
+        ? jsxs('div', {
+            className: 'flex flex-wrap items-baseline gap-2',
+            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: [
+              jsx('span', {
+                style: { minWidth: 0, overflowWrap: 'anywhere' },
+                children: source.url
+              }),
+              jsx('a', {
+                href: source.url,
+                target: '_blank',
+                rel: 'noreferrer noopener',
+                'data-cb-source-open': '',
+                style: { color: 'var(--cb-ink)', textDecoration: 'underline' },
+                children: 'Open source'
+              })
+            ]
+          })
+        : null,
+      jsx(SourceExcerpt, { source }),
+      !dense || licence || modality
+        ? jsxs('div', {
+            style: { fontSize: CB_TYPE.caption, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+            children: [
+              `Rights: ${licence || 'not recorded'}`,
+              modality ? ` · Modality: ${modality}` : ' · Modality: not recorded',
+              '. A title and a URL are not a licence.'
+            ]
+          })
+        : null,
+      jsxs('details', {
+        'data-cb-source-detail': '',
+        children: [
+          jsx('summary', { className: 'cursor-pointer', style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: 'Technical detail' }),
+          jsxs('div', {
+            style: { marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: detail.map((line, index) => jsx('div', { key: `source-detail-${index}`, children: line }))
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/**
+ * The sources panel. `status` is the read state of the call that produced `sources`, so a failed
+ * read is an error with a retry — never an empty list. An empty list is its own typed state and
+ * says plainly that nothing is presented as cited.
+ */
+function SourceProvenancePanel({
+  sources,
+  status,
+  error,
+  onRetry,
+  intro,
+  emptyTitle,
+  emptyDescription,
+  dense = false,
+  extra = null
+}) {
+  const items = Array.isArray(sources) ? sources : []
+  const frame = (children, state) =>
+    jsxs('div', {
+      'data-cb-provenance-panel': '',
+      'data-cb-provenance-state': state,
+      className: 'flex flex-col gap-2',
+      children: [extra, children].filter(Boolean)
+    })
+  if (status === 'loading') return frame(jsx(sdk.Loader, { label: 'Reading this course’s sources' }), 'loading')
+  if (status === 'error') {
+    return frame(
+      jsx(sdk.ErrorState, {
+        title: 'The sources could not be read',
+        description: `${error && error.code ? error.code + ': ' : ''}${describeError(error)} Nothing is shown from a cached list.`,
+        children: onRetry ? jsx(sdk.Button, { variant: 'secondary', onClick: onRetry, children: 'Try again' }) : null
+      }),
+      'error'
     )
+  }
+  if (status === 'idle' || (!items.length && !status)) {
+    return frame(
+      jsx(EmptyState, {
+        title: 'No source has been read yet',
+        description:
+          'A source list is read with this course’s lesson page. Until that read runs, nothing is presented as cited.'
+      }),
+      'unread'
+    )
+  }
+  if (!items.length) {
+    return frame(
+      jsx(EmptyState, {
+        title: emptyTitle || 'No source is recorded',
+        description:
+          emptyDescription ||
+          'No source is recorded for this course. Nothing on it is presented as cited, and no excerpt is invented to fill the gap.'
+      }),
+      'empty'
+    )
+  }
+  return frame(
+    jsxs('div', {
+      className: 'flex flex-col',
+      children: [
+        intro
+          ? jsx('p', {
+              style: { margin: '0 0 0.25rem', fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)', maxWidth: CB_MEASURE },
+              children: intro
+            })
+          : null,
+        ...items.map((source) =>
+          jsx(SourceProvenanceCard, { source, dense }, (source && source.source_id) || (source && source.url) || source.title)
+        )
+      ]
+    }),
+    'ready'
+  )
+}
+
+/**
+ * H-101's vocabulary provenance, read from the plan job's own checkpoint (`checkpoint.vocabulary`).
+ * An inventory prints its source id, licence, modality, band and rows hash; anything else prints the
+ * typed absence and never a word list or a coverage percentage.
+ */
+function ProvenanceInventoryRow({ vocabulary }) {
+  const record = vocabulary && typeof vocabulary === 'object' ? vocabulary : null
+  const status = (record && record.status) || 'unverified'
+  if (status !== 'inventory') {
+    const notApplicable = status === 'not_applicable'
+    return jsxs('div', {
+      'data-cb-vocabulary-source': notApplicable ? 'not_applicable' : 'unverified',
+      style: { fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)', maxWidth: CB_MEASURE },
+      children: [
+        jsx(sdk.Badge, { size: 'xs', variant: 'muted', children: notApplicable ? 'Not applicable' : 'Unverified' }),
+        jsx('span', {
+          children: notApplicable
+            ? ' No vocabulary inventory applies: this course does not declare a language domain.'
+            : ` No word list is verified for this plan${record && record.detail ? ` — ${record.detail}` : ''}. No word list or coverage claim is shown.`
+        })
+      ]
+    })
+  }
+  const band = record.band || {}
+  const items = Array.isArray(record.items) ? record.items.length : 0
+  const hash = typeof record.content_hash === 'string' && record.content_hash.length > 0
+    ? `${record.content_hash.slice(0, 19)}…`
+    : 'not recorded'
+  return jsxs('div', {
+    'data-cb-vocabulary-source': 'inventory',
+    style: { fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)', maxWidth: CB_MEASURE },
+    children: [
+      jsxs('div', {
+        className: 'flex flex-wrap items-baseline gap-2',
+        children: [
+          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: 'Word list recorded' }),
+          jsx('span', {
+            children: `Vocabulary source ${record.source_id} · ${record.licence} · ${record.modality} · band ${band.id} (ranks ${band.from_rank}–${band.to_rank}) · ${hash}`
+          })
+        ]
+      }),
+      jsx('span', {
+        children:
+          ` ${items} vocabulary item${items === 1 ? '' : 's'} named from this band. The plan may only use words this declared list contains.`
+      }),
+      jsxs('details', {
+        'data-cb-vocabulary-detail': '',
+        children: [
+          jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }),
+          jsx('div', {
+            style: { marginTop: '0.25rem' },
+            children: [
+              `Inventory id: ${record.inventory_id || 'not recorded'}. Rows hash: ${record.content_hash || 'not recorded'}. ` +
+              `Licence URL: ${record.licence_url || 'not recorded'}.`
+            ]
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/** Sources — support status in words; unverified is never a green "verified". */
+function SourcesView({ pageState, inventory }) {
+  const page = pageState && pageState.data
+  const status = pageState ? pageState.status : 'idle'
+  const sources = (page && page.sources) || []
+  return jsx(SourceProvenancePanel, {
+    sources,
+    status: status === 'ready' ? 'ready' : status,
+    error: pageState ? pageState.error : null,
+    onRetry: pageState ? pageState.reload : null,
+    extra: inventory ? jsx(ProvenanceInventoryRow, { vocabulary: inventory }) : null,
+    intro:
+      'Each row is one recorded source. The support class is what the backend stored; the excerpt is the text it fetched. A support verdict came from a model unless it says otherwise, and a listed source is not itself a citation.'
   })
 }
 /**
@@ -14635,7 +14986,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
   } else if (view === 'export') {
     body = jsx(CourseExportView, { row, implemented })
   } else {
-    body = jsx(SourcesView, { page: page.data })
+    body = jsx(SourcesView, { pageState: page })
   }
 
   const nextKind = (row.next_step && row.next_step.kind) || 'start_lesson'
@@ -17214,30 +17565,19 @@ function StudioPlanView({
                 children:
                   'Sources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here.'
               }),
-              sources.length === 0
-                ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'No sources recorded for this course.' })
-                : jsxs('div', {
-                    className: 'flex flex-col',
-                    children: sources.slice(0, 8).map((source) =>
-                      jsx(
-                        'div',
-                        {
-                          className: 'flex flex-col gap-0.5 border-b border-(--ui-stroke-tertiary) py-1.5 last:border-b-0',
-                          children: [
-                            jsx('div', { className: 'min-w-0 break-words text-xs', children: source.title }),
-                            jsxs('div', {
-                              className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
-                              children: [
-                                jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status }),
-                                source.url ? jsx('span', { className: 'min-w-0 break-all', children: source.url }) : null
-                              ]
-                            })
-                          ]
-                        },
-                        source.source_id
-                      )
-                    )
-                  }),
+              jsx(SourceProvenancePanel, {
+                sources,
+                status: book && book.status ? (book.status === 'ready' ? 'ready' : book.status) : 'loading',
+                error: book ? book.error : null,
+                onRetry: book ? book.reload : null,
+                dense: true,
+                emptyTitle: 'No source is recorded for this plan',
+                emptyDescription:
+                  'The plan job recorded no source. Nothing on this plan is presented as cited, and no excerpt is invented to fill the gap.',
+                extra: jsx(ProvenanceInventoryRow, {
+                  vocabulary: planRun && planRun.checkpoint ? planRun.checkpoint.vocabulary : null
+                })
+              }),
               setting === 'car'
                 ? jsx('div', {
                     className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -17467,31 +17807,16 @@ function StudioBlueprintView({ book }) {
         ]
       }),
       tab === 'sources'
-        ? sources.length === 0
-          ? jsx('div', { className: 'py-4 text-xs text-(--ui-text-secondary)', children: 'No sources were recorded for this course.' })
-          : jsx('div', {
-              className: 'flex flex-col',
-              children: sources.map((source) =>
-                jsxs(
-                  'div',
-                  {
-                    className: 'flex flex-col gap-0.5 border-t border-(--ui-stroke-tertiary) py-2',
-                    children: [
-                      jsx('div', { className: 'min-w-0 break-words text-sm', children: source.title }),
-                      jsxs('div', {
-                        className: 'flex flex-wrap items-center gap-2 text-xs text-(--ui-text-secondary)',
-                        children: [
-                          jsx(sdk.Badge, { size: 'xs', variant: 'outline', children: source.support_status }),
-                          source.url ? jsx('a', { className: 'min-w-0 break-all underline', href: source.url, children: source.url }) : null,
-                          jsx('span', { children: source.fetched_at ? whenLabel(source.fetched_at) : '' })
-                        ]
-                      })
-                    ]
-                  },
-                  source.source_id
-                )
-              )
-            })
+        ? jsx(SourceProvenancePanel, {
+            sources,
+            status: book.status === 'ready' ? 'ready' : book.status,
+            error: book.error,
+            onRetry: book.reload,
+            emptyTitle: 'No source is recorded for this course',
+            emptyDescription:
+              'The plan job recorded no source for this course. Nothing here is presented as cited, and no excerpt is invented to fill the gap.',
+            intro: notice
+          })
         : files.length === 0
           ? jsx(EmptyState, {
               title: 'Nothing generated for this tab yet',
@@ -18911,6 +19236,14 @@ export {
   OverviewView,
   ParentObservation,
   ParentObservationRecorded,
+  ProvenanceInventoryRow,
+  SourceExcerpt,
+  SourceProvenanceCard,
+  SourceProvenancePanel,
+  SourcesView,
+  sourceExcerptState,
+  sourceSupportModel,
+  sourceTypeLabel,
   TextbookView,
   PronunciationSeat,
   PronunciationStudio,

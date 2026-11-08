@@ -1881,8 +1881,8 @@ which is why `cb.rpc` is **v15**. v15 is v14 byte-for-byte apart from `$id`, `x-
 other response field are unchanged. `cb.errors` stays **v4**. The method count does not move.
 
 **Tests.** `tests/test_job_progress.py` covers every stage (`plan`, `unit_sections`, `lessons`,
-`syllabus_parse`, a checkpointed stage), a finished job, a provider failure, an interrupted job,
-a cancelled job, idempotent cancellation, backend-sourced usage (including unknown token/cost
+`syllabus_parse`, a checkpointed stage), a finished job, a provider failure, an interrupted job, a
+cancelled job, idempotent cancellation, backend-sourced usage (including unknown token/cost
 fields) and both named read failures. `tests/test_contracts.py::V15AmendmentTest` pins the
 superseded v14 bytes and the additive v5 job shape.
 
