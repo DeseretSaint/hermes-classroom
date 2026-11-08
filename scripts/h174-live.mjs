@@ -6,12 +6,12 @@
  *
  *   1. the Japanese classroom, whose approved plan has a lessons job that never wrote a page
  *      (`lesson.page` answers with a document whose `blocks` is empty) — the "incomplete" state;
- *   2. the draft H-103 classroom, whose plan is not approved — the "unapproved" state;
- *   3. the parent demo, whose document carries real blocks — the unchanged readable player.
+ *   2. the draft H-103 classroom, whose plan is not approved — the "unapproved" state.
  *
  * Running and failed lessons-job states are not produced here: doing so on a shared rig means
  * either running the authoring model or corrupting a stored job. Those two are proven by
- * `scripts/h174-frames.py` (shipped component, real React) and by the jsdom test.
+ * `scripts/h174-frames.py` (shipped component, real React) and by the jsdom test. The readable
+ * player likewise stays proven by `docs/h149-shots/` and the `present` frames.
  *
  *   COURSEBOOK_TEST_STATE=~/.hermes/coursebook-test-h174a CB013_CDP_PORT=9360 \
  *     node scripts/h174-live.mjs
@@ -21,6 +21,8 @@ import { resolve, dirname } from 'node:path'
 
 const PORT = process.env.CB013_CDP_PORT || '9360'
 const OUT = resolve(process.env.H174_SHOTS || 'audit/h174')
+const ROOT = resolve('.')
+const captured = []
 
 const targets = await (await fetch(`http://127.0.0.1:${PORT}/json`)).json()
 const page = targets.find((e) => e.type === 'page' && /Hermes/.test(e.title || '')) || targets.find((t) => t.type === 'page')
@@ -74,6 +76,7 @@ const shot = async (name) => {
   const path = `${OUT}/${name}.png`
   mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, Buffer.from(png.data, 'base64'))
+  captured.push({ id: name, path: path.replace(`${ROOT}/`, '') })
   console.log(`shot ${path}`)
 }
 const setWidth = async (target) => {
@@ -235,6 +238,7 @@ await backToCourses()
 // live by `docs/h149-shots/` on this backend and by the `present` frames here; this script only
 // claims the two missing-page states it actually drove.
 report.parentShelved = await evalJs("[...document.querySelectorAll('[data-cb-course-id]')].map((n) => n.getAttribute('data-cb-course-id'))")
+report.frames = captured
 
 writeFileSync(`${OUT}/h174-live.json`, JSON.stringify(report, null, 2))
 console.log(JSON.stringify(report, null, 2))

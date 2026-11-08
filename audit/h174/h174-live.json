@@ -176,7 +176,32 @@
       "rootFont": "32px"
     }
   ],
-  "frames": [],
+  "frames": [
+    {
+      "id": "h174-live-incomplete-1049",
+      "path": "audit/h174/h174-live-incomplete-1049.png"
+    },
+    {
+      "id": "h174-live-incomplete-460",
+      "path": "audit/h174/h174-live-incomplete-460.png"
+    },
+    {
+      "id": "h174-live-incomplete-460-text200",
+      "path": "audit/h174/h174-live-incomplete-460-text200.png"
+    },
+    {
+      "id": "h174-live-unapproved-1049",
+      "path": "audit/h174/h174-live-unapproved-1049.png"
+    },
+    {
+      "id": "h174-live-unapproved-460",
+      "path": "audit/h174/h174-live-unapproved-460.png"
+    },
+    {
+      "id": "h174-live-unapproved-460-text200",
+      "path": "audit/h174/h174-live-unapproved-460-text200.png"
+    }
+  ],
   "pluginDecisionBefore": "{\"coursebook\":true}",
   "arrived": true,
   "pluginPresent": true,
