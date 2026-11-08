@@ -38,8 +38,17 @@ class StartPlateTest(unittest.TestCase):
         self.assertIn("borderTop: '1px solid var(--cb-lamp)'", body)
 
     def test_no_onboarding_by_overlay(self) -> None:
-        for banned in ("role: 'dialog'", "coachMark", "coach_mark", "ThemePicker", "welcomeTour"):
+        start = self.source.index("function FirstRun({")
+        end = self.source.index("function onImportPlaceholder()")
+        plate = self.source[start:end]
+        # H-147 owns one user-invoked settings sheet: role="dialog", mounted only while `open`
+        # (HomeSettingsSheet returns null when closed), with its own focus trap and Escape close.
+        # That is a settings surface, not onboarding, so the overlay ban is scoped to the start
+        # plate while the onboarding artifacts stay banned module-wide.
+        self.assertNotIn("role: 'dialog'", plate)
+        for banned in ("coachMark", "coach_mark", "ThemePicker", "welcomeTour"):
             self.assertNotIn(banned, self.source)
+        self.assertIn("if (!open) return null", self.source)
 
 
 class WayfindingTest(unittest.TestCase):

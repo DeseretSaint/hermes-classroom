@@ -134,6 +134,240 @@ const DESTINATIONS = [
 ]
 
 /**
+ * H-147 — the one Home settings document.
+ *
+ * `ctx.storage` is the host's namespaced JSON store (VS Code `globalState`'s analog); it writes
+ * under `hermes.plugin.coursebook.*` and there is no account-level preference API. The document is
+ * therefore honestly device state — the sheet says "On this device" and nothing claims a sync —
+ * and it is keyed by the Hermes profile the route is scoped to, so two profiles on this machine
+ * keep separate settings.
+ *
+ * `appearance` and `reducedMotion` default to `system`: the host's own theme and the OS motion
+ * preference stay authoritative until the learner says otherwise.
+ */
+const CB_HOME_PREF_DEFAULTS = Object.freeze({
+  appearance: 'system',
+  defaultMode: 'game',
+  sound: false,
+  reducedMotion: 'system',
+  classrooms: Object.freeze({})
+})
+const CB_APPEARANCE_OPTIONS = Object.freeze([
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' }
+])
+/** Learner-facing names; the stored id is the setting, the lesson view is what it opens. */
+const CB_PRESENTATION_OPTIONS = Object.freeze([
+  { id: 'game', label: 'Game' },
+  { id: 'guided', label: 'Guided' },
+  { id: 'textbook', label: 'Textbook' }
+])
+const CB_PRESENTATION_VIEW = Object.freeze({ game: 'field_quest', guided: 'guided', textbook: 'textbook' })
+const CB_PRESENTATION_LABEL = Object.freeze({ game: 'Game', guided: 'Guided', textbook: 'Textbook' })
+const CB_REDUCED_MOTION_OPTIONS = Object.freeze([
+  { id: 'system', label: 'Follow system' },
+  { id: 'reduce', label: 'Reduce motion' }
+])
+const CB_SETTINGS_TITLE_ID = 'cb-home-settings-title'
+
+/** One listener set, one cache: every mounted Coursebook surface reads the same document. */
+const cbHomePrefsListeners = new Set()
+const cbHomePrefsCache = new Map()
+
+function cbPrefsProfile() {
+  try {
+    return currentScope().profile || 'default'
+  } catch (error) {
+    return 'default'
+  }
+}
+
+function cbPrefsStorage() {
+  const storage = pluginContext && pluginContext.storage
+  return storage && typeof storage.get === 'function' && typeof storage.set === 'function' ? storage : null
+}
+
+/** Nothing stored is trusted: a partial, hand-edited or older document reads as its defaults. */
+function sanitizeCbHomePrefs(raw) {
+  const source = raw && typeof raw === 'object' ? raw : {}
+  const oneOf = (value, allowed, fallback) => (allowed.indexOf(value) >= 0 ? value : fallback)
+  const classrooms = {}
+  if (source.classrooms && typeof source.classrooms === 'object') {
+    for (const courseId of Object.keys(source.classrooms)) {
+      const mode = source.classrooms[courseId]
+      if (courseId && CB_PRESENTATION_VIEW[mode]) classrooms[courseId] = mode
+    }
+  }
+  return {
+    appearance: oneOf(source.appearance, ['system', 'light', 'dark'], CB_HOME_PREF_DEFAULTS.appearance),
+    defaultMode: oneOf(
+      source.defaultMode,
+      Object.keys(CB_PRESENTATION_VIEW),
+      CB_HOME_PREF_DEFAULTS.defaultMode
+    ),
+    sound: source.sound === true,
+    reducedMotion: oneOf(source.reducedMotion, ['system', 'reduce'], CB_HOME_PREF_DEFAULTS.reducedMotion),
+    classrooms
+  }
+}
+
+function cbHomePrefsKey(profile) {
+  return `home-preferences.${profile || 'default'}`
+}
+
+function readCbHomePrefs(profile) {
+  const key = profile || 'default'
+  if (cbHomePrefsCache.has(key)) return cbHomePrefsCache.get(key)
+  let raw = null
+  const storage = cbPrefsStorage()
+  try {
+    raw = storage ? storage.get(cbHomePrefsKey(key), null) : null
+  } catch (error) {
+    raw = null
+  }
+  const value = sanitizeCbHomePrefs(raw)
+  cbHomePrefsCache.set(key, value)
+  return value
+}
+
+function writeCbHomePrefs(profile, next) {
+  const key = profile || 'default'
+  const clean = sanitizeCbHomePrefs(next)
+  cbHomePrefsCache.set(key, clean)
+  const storage = cbPrefsStorage()
+  try {
+    // A failed write must not look saved. The cache still changes for this session, and the
+    // sheet's next mount re-reads storage, so the loss is visible rather than silently assumed.
+    if (storage) storage.set(cbHomePrefsKey(key), clean)
+  } catch (error) {
+    // Leave the in-memory value; there is no sync claim to protect.
+  }
+  for (const listener of cbHomePrefsListeners) {
+    try {
+      listener(clean)
+    } catch (error) {
+      // One broken subscriber must not stop the others.
+    }
+  }
+  return clean
+}
+
+function updateCbHomePrefs(profile, patch) {
+  const current = readCbHomePrefs(profile)
+  return writeCbHomePrefs(profile, { ...current, ...patch })
+}
+
+/** One section's reset. The classroom map is one section; every scalar is its own. */
+function resetCbHomePrefsSection(profile, section) {
+  const current = readCbHomePrefs(profile)
+  const next = { ...current }
+  if (section === 'classroom') next.classrooms = {}
+  else if (Object.prototype.hasOwnProperty.call(CB_HOME_PREF_DEFAULTS, section)) {
+    next[section] = CB_HOME_PREF_DEFAULTS[section]
+  }
+  return writeCbHomePrefs(profile, next)
+}
+
+/** The effective view for one classroom: its own override wins, else the home default. */
+function cbEffectiveMode(prefs, courseId) {
+  const document = prefs || CB_HOME_PREF_DEFAULTS
+  const override = courseId && document.classrooms ? document.classrooms[courseId] : null
+  return override || document.defaultMode
+}
+
+/** The palette the route paints: an explicit appearance wins, `system` follows the host. */
+function cbAppliedMode(hostMode, appearance) {
+  return appearance === 'light' || appearance === 'dark' ? appearance : hostMode
+}
+
+/**
+ * When the learner picks an appearance that differs from the host theme, the SDK controls inside
+ * Coursebook (buttons, rows, switches) would keep the host's own text/background variables and go
+ * unreadable on the plugin's palette. These are the host variables those controls consume, mapped
+ * onto the scoped `--cb-*` table so one surface has one palette. `system` changes nothing.
+ */
+function cbHostVars(appearance) {
+  if (appearance !== 'light' && appearance !== 'dark') return {}
+  return {
+    '--background': 'var(--cb-paper)',
+    '--foreground': 'var(--cb-ink)',
+    '--card': 'var(--cb-paper-raised)',
+    '--card-foreground': 'var(--cb-ink)',
+    '--popover': 'var(--cb-paper-raised)',
+    '--popover-foreground': 'var(--cb-ink)',
+    '--muted': 'var(--cb-paper)',
+    '--muted-foreground': 'var(--cb-ink-soft)',
+    '--border': 'var(--cb-rule)',
+    '--input': 'var(--cb-rule)',
+    '--accent': 'var(--cb-accent-soft)',
+    '--accent-foreground': 'var(--cb-ink)',
+    '--primary': 'var(--cb-lamp)',
+    '--primary-foreground': 'var(--cb-on-lamp)',
+    '--ui-text-primary': 'var(--cb-ink)',
+    '--ui-text-secondary': 'var(--cb-ink-soft)',
+    '--ui-text-tertiary': 'var(--cb-ink-soft)',
+    '--ui-bg-primary': 'var(--cb-paper)',
+    '--ui-bg-secondary': 'var(--cb-paper-raised)',
+    '--ui-bg-tertiary': 'var(--cb-paper)'
+  }
+}
+
+/**
+ * The one sound this build owns when `sound` is on: a short, quiet tone at a check verdict.
+ * It is never narration and never autoplays a media file; a host without Web Audio stays silent.
+ */
+function cbPlayCheckCue(verdict) {
+  const prefs = readCbHomePrefs(cbPrefsProfile())
+  if (!prefs.sound) return false
+  try {
+    const Ctor =
+      typeof window !== 'undefined' ? window.AudioContext || window.webkitAudioContext : null
+    if (!Ctor) return false
+    const context = new Ctor()
+    const osc = context.createOscillator()
+    const gain = context.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = verdict === 'needs_retry' ? 261.63 : 392
+    gain.gain.value = 0.04
+    osc.connect(gain)
+    gain.connect(context.destination)
+    osc.onended = () => {
+      try {
+        context.close()
+      } catch (error) {
+        // Already closed.
+      }
+    }
+    osc.start()
+    osc.stop(context.currentTime + 0.14)
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
+/**
+ * The hook every Coursebook surface uses. `update` and `reset` apply immediately — there is no
+ * Save step — and notify every other mounted surface in the same frame.
+ */
+function useCbHomePrefs() {
+  const profile = cbPrefsProfile()
+  const [prefs, setPrefs] = useState(() => readCbHomePrefs(profile))
+  useEffect(() => {
+    setPrefs(readCbHomePrefs(profile))
+    const listener = (value) => setPrefs(value)
+    cbHomePrefsListeners.add(listener)
+    return () => {
+      cbHomePrefsListeners.delete(listener)
+    }
+  }, [profile])
+  const update = useCallback((patch) => updateCbHomePrefs(profile, patch), [profile])
+  const reset = useCallback((section) => resetCbHomePrefsSection(profile, section), [profile])
+  return [prefs, update, reset, profile]
+}
+
+/**
  * Set true by the pack work package when its import/export screens land in this module. The
  * import action is a two-step trust/rights review that does not exist yet, so the button is
  * absent rather than disabled-forever. Named here so the next package has one place to flip.
@@ -3735,6 +3969,404 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
   })
 }
 
+/**
+ * One settings section: heading, one sentence, the control, and its own Reset.
+ *
+ * The reset is disabled at the default, so "already at the default" is visible instead of
+ * offering a control that would do nothing. Every control fires on change; there is no Save.
+ */
+function CbSettingsSection({ id, title, description, resetLabel, atDefault, onReset, children }) {
+  return jsxs('section', {
+    'data-cb-settings-section': id,
+    'aria-labelledby': `cb-settings-${id}`,
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+      padding: '0.9rem 0',
+      borderTop: '1px solid var(--cb-rule)'
+    },
+    children: [
+      jsxs(
+        'div',
+        {
+          style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', minHeight: '2.75rem' },
+          children: [
+            jsx('h3', {
+              id: `cb-settings-${id}`,
+              style: {
+                margin: 0,
+                fontFamily: CB_SANS,
+                fontSize: CB_TYPE.meta,
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                color: 'var(--cb-ink)'
+              },
+              children: title
+            }),
+            jsx(sdk.Button, {
+              size: 'sm',
+              variant: 'ghost',
+              disabled: Boolean(atDefault),
+              'data-cb-settings-reset': id,
+              'aria-label': resetLabel,
+              style: { minHeight: '44px' },
+              onClick: onReset,
+              children: 'Reset'
+            })
+          ]
+        },
+        'head'
+      ),
+      jsx('p', {
+        style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
+        children: description
+      }),
+      children
+    ]
+  })
+}
+
+/**
+ * H-147 — the one compact settings sheet, opened from Home.
+ *
+ * It is a sheet, not a route and not a second profile: the route stays `/coursebook`, and no
+ * settings tab is added anywhere. It applies on change, names the current value on every control,
+ * says "On this device" because the host has no account preference API, and keeps focus inside
+ * itself until Escape or Close returns the reader to the control that opened it.
+ */
+function HomeSettingsSheet({ open, prefs, classroom, onUpdate, onReset, onClose }) {
+  const panelRef = useRef(null)
+  const courseId = classroom && classroom.courseId ? classroom.courseId : null
+  const override = courseId ? (prefs.classrooms && prefs.classrooms[courseId]) || null : null
+
+  useEffect(() => {
+    if (!open) return undefined
+    const focusables = () => {
+      const panel = panelRef.current
+      if (!panel || typeof panel.querySelectorAll !== 'function') return []
+      return Array.from(
+        panel.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true')
+    }
+    const nodes = focusables()
+    if (nodes.length > 0 && typeof nodes[0].focus === 'function') nodes[0].focus({ preventScroll: true })
+    const onKeyDown = (event) => {
+      if (!event || !event.key) return
+      if (event.key === 'Escape' || event.key === 'Esc') {
+        if (typeof event.preventDefault === 'function') event.preventDefault()
+        if (typeof event.stopPropagation === 'function') event.stopPropagation()
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const items = focusables()
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      const active = typeof document !== 'undefined' ? document.activeElement : null
+      if (event.shiftKey && (active === first || !items.includes(active))) {
+        if (typeof event.preventDefault === 'function') event.preventDefault()
+        last.focus({ preventScroll: true })
+      } else if (!event.shiftKey && (active === last || !items.includes(active))) {
+        if (typeof event.preventDefault === 'function') event.preventDefault()
+        first.focus({ preventScroll: true })
+      }
+    }
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('keydown', onKeyDown, true)
+    }
+    return () => {
+      if (typeof document !== 'undefined' && document.removeEventListener) {
+        document.removeEventListener('keydown', onKeyDown, true)
+      }
+    }
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return jsx('div', {
+    'data-cb-settings-backdrop': '',
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 60,
+      display: 'flex',
+      justifyContent: 'flex-end',
+      // A token-derived scrim: no hard-coded colour enters the palette.
+      background: 'color-mix(in srgb, var(--cb-ink) 26%, transparent)'
+    },
+    onMouseDown: (event) => {
+      if (event && event.target === event.currentTarget) onClose()
+    },
+    children: jsxs(
+      'div',
+      {
+        ref: panelRef,
+        role: 'dialog',
+        'aria-modal': 'true',
+        'aria-labelledby': CB_SETTINGS_TITLE_ID,
+        'data-cb-settings-sheet': 'open',
+        style: {
+          width: '28.75rem',
+          maxWidth: '100%',
+          height: '100%',
+          overflowY: 'auto',
+          background: 'var(--cb-paper-raised)',
+          color: 'var(--cb-ink)',
+          borderLeft: '1px solid var(--cb-rule)',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '0.75rem 1rem 1.25rem'
+        },
+        children: [
+          jsxs(
+            'div',
+            {
+              style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' },
+              children: [
+                jsxs('div', {
+                  style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+                  children: [
+                    jsx('h2', {
+                      id: CB_SETTINGS_TITLE_ID,
+                      style: { margin: 0, fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.1 },
+                      children: 'Settings'
+                    }),
+                    jsx('div', {
+                      'data-cb-settings-scope': 'device',
+                      style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                      children: 'On this device'
+                    })
+                  ]
+                }),
+                jsx(sdk.Button, {
+                  size: 'sm',
+                  variant: 'ghost',
+                  'data-cb-settings-close': '',
+                  'aria-label': 'Close settings',
+                  style: { minHeight: '44px' },
+                  onClick: onClose,
+                  children: 'Close'
+                })
+              ]
+            },
+            'head'
+          ),
+          jsx('p', {
+            style: {
+              margin: '0.4rem 0 0',
+              fontSize: CB_TYPE.caption,
+              lineHeight: 1.5,
+              color: 'var(--cb-ink-soft)'
+            },
+            children:
+              'Stored for this Hermes profile on this device. Coursebook does not sync these settings to another device.'
+          }),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'appearance',
+              title: 'Appearance',
+              description:
+                'The palette Coursebook paints inside its own surfaces. Hermes chrome keeps the app theme.',
+              resetLabel: 'Reset appearance to System',
+              atDefault: prefs.appearance === CB_HOME_PREF_DEFAULTS.appearance,
+              onReset: () => onReset('appearance'),
+              children: jsx('div', {
+                'data-cb-settings-control': 'appearance',
+                'data-cb-settings-value': prefs.appearance,
+                style: { minWidth: 0 },
+                children: jsx(sdk.SegmentedControl, {
+                  options: CB_APPEARANCE_OPTIONS,
+                  value: prefs.appearance,
+                  onChange: (id) => onUpdate({ appearance: id }),
+                  className: 'min-h-11 items-stretch'
+                })
+              })
+            },
+            'appearance'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'default-view',
+              title: 'Default view',
+              description: 'The view a lesson opens in. A single classroom can override it.',
+              resetLabel: 'Reset the default view to Game',
+              atDefault: prefs.defaultMode === CB_HOME_PREF_DEFAULTS.defaultMode,
+              onReset: () => onReset('defaultMode'),
+              children: jsx('div', {
+                'data-cb-settings-control': 'default-view',
+                'data-cb-settings-value': prefs.defaultMode,
+                style: { minWidth: 0 },
+                children: jsx(sdk.SegmentedControl, {
+                  options: CB_PRESENTATION_OPTIONS,
+                  value: prefs.defaultMode,
+                  onChange: (id) => onUpdate({ defaultMode: id }),
+                  className: 'min-h-11 items-stretch'
+                })
+              })
+            },
+            'default-view'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'classroom',
+              title: courseId && classroom.title ? `This classroom · ${classroom.title}` : 'This classroom',
+              description: courseId
+                ? 'This classroom keeps its own view. Choosing the home default clears the override.'
+                : 'Select a classroom on Home to give it its own view.',
+              resetLabel: 'Clear this classroom’s view override',
+              atDefault: !override,
+              onReset: () => onReset('classroom'),
+              children: jsx('div', {
+                'data-cb-settings-control': 'classroom',
+                'data-cb-settings-value': override || 'default',
+                style: { minWidth: 0, opacity: courseId ? 1 : 0.6 },
+                children: jsx(sdk.SegmentedControl, {
+                  options: [{ id: 'default', label: 'Home default' }].concat(CB_PRESENTATION_OPTIONS),
+                  value: override || 'default',
+                  disabled: !courseId,
+                  onChange: (id) => {
+                    if (!courseId) return
+                    const classrooms = { ...(prefs.classrooms || {}) }
+                    if (id === 'default') delete classrooms[courseId]
+                    else classrooms[courseId] = id
+                    onUpdate({ classrooms })
+                  },
+                  className: 'min-h-11 items-stretch'
+                })
+              })
+            },
+            'classroom'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'sound',
+              title: 'Sound',
+              description: 'A short tone when a check is scored. Off by default.',
+              resetLabel: 'Reset sound to off',
+              atDefault: prefs.sound === CB_HOME_PREF_DEFAULTS.sound,
+              onReset: () => onReset('sound'),
+              children: jsx('div', {
+                'data-cb-settings-toggle': 'sound',
+                children: jsx(sdk.ToggleRow, {
+                  checked: prefs.sound === true,
+                  label: 'Check cue sound',
+                  description: 'One quiet tone at a verdict, never narration.',
+                  onChange: (on) => onUpdate({ sound: on === true })
+                })
+              })
+            },
+            'sound'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'haptics',
+              title: 'Haptics',
+              description:
+                'Not available on desktop. This build never claims a haptic response, so the control stays off and does nothing.',
+              resetLabel: 'Haptics are always off on desktop',
+              atDefault: true,
+              onReset: () => {},
+              children: jsx('div', {
+                'data-cb-settings-toggle': 'haptics',
+                children: jsx(sdk.ToggleRow, {
+                  checked: false,
+                  disabled: true,
+                  label: 'Haptics',
+                  description: 'A desktop has no haptic engine to drive.',
+                  onChange: () => {}
+                })
+              })
+            },
+            'haptics'
+          ),
+          jsx(
+            CbSettingsSection,
+            {
+              id: 'reduced-motion',
+              title: 'Reduced motion',
+              description:
+                'Follow the system setting, or hold Coursebook to no transitions even when the system allows them.',
+              resetLabel: 'Reset motion to follow the system',
+              atDefault: prefs.reducedMotion === CB_HOME_PREF_DEFAULTS.reducedMotion,
+              onReset: () => onReset('reducedMotion'),
+              children: jsx('div', {
+                'data-cb-settings-control': 'reduced-motion',
+                'data-cb-settings-value': prefs.reducedMotion,
+                style: { minWidth: 0 },
+                children: jsx(sdk.SegmentedControl, {
+                  options: CB_REDUCED_MOTION_OPTIONS,
+                  value: prefs.reducedMotion,
+                  onChange: (id) => onUpdate({ reducedMotion: id }),
+                  className: 'min-h-11 items-stretch'
+                })
+              })
+            },
+            'reduced-motion'
+          )
+        ]
+      },
+      'sheet'
+    )
+  })
+}
+
+/**
+ * The Home defaults line and its one-interaction Settings trigger. It names the current default
+ * without opening anything, and it names a classroom override when the selected classroom has one.
+ */
+function HomeDefaultsLine({ prefs, classroom, onOpenSettings, triggerRef }) {
+  const courseId = classroom && classroom.courseId ? classroom.courseId : null
+  const override = courseId ? (prefs.classrooms && prefs.classrooms[courseId]) || null : null
+  const effective = cbEffectiveMode(prefs, courseId)
+  return jsxs('div', {
+    'data-cb-home-defaults': prefs.defaultMode,
+    'data-cb-home-effective': effective,
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem', minHeight: '2.75rem' },
+    children: [
+      jsxs('span', {
+        style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+        children: [
+          'Default view · ',
+          jsx('strong', { style: { color: 'var(--cb-ink)', fontWeight: 600 }, children: CB_PRESENTATION_LABEL[prefs.defaultMode] || 'Game' })
+        ]
+      }),
+      override
+        ? jsxs('span', {
+            'data-cb-home-override': override,
+            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            children: [
+              '· This classroom · ',
+              jsx('strong', { style: { color: 'var(--cb-ink)', fontWeight: 600 }, children: CB_PRESENTATION_LABEL[override] || override })
+            ]
+          })
+        : null,
+      jsx('span', {
+        ref: triggerRef,
+        style: { display: 'inline-flex', alignItems: 'center' },
+        children: jsx(sdk.Button, {
+          size: 'sm',
+          variant: 'ghost',
+          'data-cb-settings-open': '',
+          'aria-label': 'Open Coursebook settings',
+          'aria-haspopup': 'dialog',
+          style: { minHeight: '44px' },
+          onClick: onOpenSettings,
+          children: 'Settings'
+        })
+      })
+    ]
+  })
+}
+
 /** The pure desk view. The container below owns the reads; this owns the geometry. */
 function FieldDeskHome({
   desk,
@@ -4055,6 +4687,7 @@ function FieldDesk({
   onSelectCourse,
   onOpenStudio,
   onBrowseLibrary,
+  onSelectedClassroom,
   online
 }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
@@ -4106,6 +4739,15 @@ function FieldDesk({
   useEffect(() => {
     if (desk.selectionLost && selectedCourseKey && onSelectCourse) onSelectCourse(selectedCourseKey)
   }, [desk.selectionLost, selectedCourseKey, onSelectCourse])
+
+  // H-147: the settings sheet names the classroom its override belongs to, so the shell learns the
+  // selected slot's id and title from the same model the rail paints.
+  const selectedCourseTitle = desk.selected ? desk.selected.title || null : null
+  useEffect(() => {
+    if (onSelectedClassroom) {
+      onSelectedClassroom(selectedCourseKey ? { courseId: selectedCourseKey, title: selectedCourseTitle } : null)
+    }
+  }, [selectedCourseKey, selectedCourseTitle, onSelectedClassroom])
 
   const [sourcesOpen, setSourcesOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -9071,6 +9713,7 @@ function AttemptControls({
     setResultCheck(check)
     setOpenLaneUnconfigured(false)
     setPhase(graded.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
+    cbPlayCheckCue(graded.verdict)
     if (graded.verdict === 'needs_retry') void resolveNeedsRetryLane(graded.attempt_id)
     if (onCommitted) onCommitted(graded)
   }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
@@ -9102,6 +9745,7 @@ function AttemptControls({
     setResultCheck(check)
     setOpenLaneUnconfigured(false)
     setPhase(response.result.verdict === 'needs_retry' ? 'needs_retry' : 'graded')
+    cbPlayCheckCue(response.result.verdict)
     if (response.result.verdict === 'needs_retry') void resolveNeedsRetryLane(response.result.attempt_id)
     if (onCommitted) onCommitted(response.result)
   }, [check, text, ticked, checklist, enrollmentId, revision, onCommitted, resolveNeedsRetryLane])
@@ -13070,7 +13714,7 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
   })
 }
 
-function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review, targetBlockId }) {
+function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPage, implemented, onBack, onChanged, review, targetBlockId, defaultLessonView }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const section = page && page.section
   const runtime = page && page.runtime
@@ -13078,7 +13722,11 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   const [saveSeed, setSaveSeed] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
-  const [lessonView, setLessonView] = useState('textbook')
+  // H-147: a lesson opens in the learner's chosen view — this classroom's override, else the Home
+  // default. Textbook stays the floor when the preference names a view this document cannot render.
+  const preferredView =
+    defaultLessonView && LESSON_VIEWS.some((entry) => entry.id === defaultLessonView) ? defaultLessonView : 'textbook'
+  const [lessonView, setLessonView] = useState(preferredView)
   // A mission or a saved moment hands the reader to the same block in Textbook. The target is a
   // block id, so the handoff survives the view switch and lands on the document's own block, not
   // an offset. A target from outside the section (Notebook, Field Desk) arrives the same way.
@@ -13093,9 +13741,9 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
   // One view is on screen at a time, so a single check node serves the Textbook block, the Guided
   // step and the legacy segment list. It is never rendered twice in one view.
   useEffect(() => {
-    setLessonView('textbook')
+    setLessonView(preferredView)
     setFocusBlockId(targetBlockId || null)
-  }, [objectiveId, targetBlockId])
+  }, [objectiveId, targetBlockId, preferredView])
   const check = useOpenCheck({
     enrollmentId: row.enrollment_id,
     objectiveId,
@@ -14242,7 +14890,7 @@ function TextbookIndexDetails({ rows }) {
 }
 
 /** Textbook — a scannable section list, not one endless thread. */
-function TextbookView({ row, page, pageState, review, notebooks, outline, implemented, openSectionId, onOpenSection, onCloseSection, onChanged, targetBlockId }) {
+function TextbookView({ row, page, pageState, review, notebooks, outline, implemented, defaultLessonView, openSectionId, onOpenSection, onCloseSection, onChanged, targetBlockId }) {
   const rows = sectionRows({ row, review, notebooks, outline, page })
   const hasOutline = Boolean(outline && Array.isArray(outline.objectives))
   const objectives = hasOutline ? outline.objectives.filter(Boolean) : []
@@ -14284,6 +14932,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
     return jsx(SectionPage, {
       row,
       objectiveId: openSectionId,
+      defaultLessonView,
       page: page && page.section && page.section.objective_id === openSectionId ? page : null,
       pageStatus: pageState.status,
       pageError: pageState.error,
@@ -15552,7 +16201,7 @@ function CourseExportView({ row, implemented }) {
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
  * control; below ~47.5rem it collapses into one labelled picker so the strip can never clip.
  */
-function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, reloadSignal, onChangeGoal, onNewSyllabus }) {
+function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, defaultLessonView, reloadSignal, onChangeGoal, onNewSyllabus }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   // A route in from the Field Desk names the section to open; otherwise the course opens on its
   // overview with the backend's own current objective already selected.
@@ -15721,6 +16370,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       notebooks: notebooks.data,
       outline: outline.data,
       implemented,
+      // H-147: the Home default (or this classroom's override) is the view the section opens in.
+      defaultLessonView,
       openSectionId,
       onOpenSection: openSection,
       onCloseSection: closeSection,
@@ -19259,11 +19910,21 @@ function CoursebookWordmark() {
 function CoursebookPage() {
   const { state: health, reload: reloadHealth } = useHealth()
   const implemented = useRuntime(health.status)
+  // H-147: appearance and motion are the learner's own settings, so they are read here and every
+  // surface below (route and pane) paints from the same document. `system` defers to the host.
+  const [homePrefs, updateHomePrefs, resetHomePrefs] = useCbHomePrefs()
   // The scoped Ink & Field Notes layer: every Coursebook surface paints from `--cb-*`, and the
   // layer stops at this root, so Hermes chrome keeps its own theme untouched.
-  const cbMode = useCbMode()
-  const cbMotion = useCbMotion()
+  const hostMode = useCbMode()
+  const cbMode = cbAppliedMode(hostMode, homePrefs.appearance)
+  const systemMotion = useCbMotion()
+  const cbMotion = homePrefs.reducedMotion === 'reduce' ? 'reduced' : systemMotion
   const online = useOnline()
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsTriggerRef = useRef(null)
+  // The classroom the Home rail has selected, named so the classroom section of the sheet can say
+  // which classroom its override belongs to rather than "this one".
+  const [homeClassroom, setHomeClassroom] = useState(null)
   const [destination, setDestination] = useState(rememberedDestination)
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -19301,6 +19962,16 @@ function CoursebookPage() {
     setStudioCourse(null)
     setStudioSeed(null)
     setDestination(next)
+  }, [])
+
+  // H-147: the sheet closes back onto the control that opened it — Escape, Close and a backdrop
+  // click all land here, so keyboard focus never drops to <body>.
+  const openSettings = useCallback(() => setSettingsOpen(true), [])
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false)
+    const wrap = settingsTriggerRef.current
+    const button = wrap && typeof wrap.querySelector === 'function' ? wrap.querySelector('button') : null
+    if (button && typeof button.focus === 'function') button.focus({ preventScroll: true })
   }, [])
 
   // A created companion course is opened from the library read, never from the create response:
@@ -19504,6 +20175,10 @@ function CoursebookPage() {
       focusObjectiveId: openCourse.objectiveId,
       focusBlockId: openCourse.blockId || null,
       focusView: openCourse.view || null,
+      // H-147: the view the lesson opens in is the classroom's own override, else the Home default.
+      defaultLessonView:
+        CB_PRESENTATION_VIEW[cbEffectiveMode(homePrefs, openCourse.row ? openCourse.row.course_id : null)] ||
+        'textbook',
       implemented,
       profile: currentScope().profile,
       onBack: () => setOpenCourse(null),
@@ -19540,6 +20215,7 @@ function CoursebookPage() {
       online,
       selectedCourseId,
       onSelectCourse: setSelectedCourseId,
+      onSelectedClassroom: setHomeClassroom,
       onOpenStudio: () => changeDestination('studio'),
       onEmptyChange: setCoursesEmpty,
       onOpen: (row, objectiveId, blockId, view) => {
@@ -19569,7 +20245,7 @@ function CoursebookPage() {
     'data-cb-route': ROUTE_PATH,
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion,
-    style: { ...cbScopeStyle(cbMode), paddingLeft: routePad, paddingRight: routePad },
+    style: { ...cbScopeStyle(cbMode), ...cbHostVars(homePrefs.appearance), paddingLeft: routePad, paddingRight: routePad },
     children: [
       jsx(SkipToContent, {}),
       jsxs('header', {
@@ -19594,7 +20270,15 @@ function CoursebookPage() {
                       color: 'var(--cb-ink)'
                     },
                     children: pageTitle
-                  })
+                  }),
+                  destination === 'home' && !openCourse
+                    ? jsx(HomeDefaultsLine, {
+                        prefs: homePrefs,
+                        classroom: homeClassroom,
+                        onOpenSettings: openSettings,
+                        triggerRef: settingsTriggerRef
+                      })
+                    : null
                 ]
               }),
               jsxs('div', {
@@ -19634,7 +20318,17 @@ function CoursebookPage() {
             : null
         ]
       }),
-      jsx(PageBody, { label: `${pageTitle} content`, children: body })
+      jsx(PageBody, { label: `${pageTitle} content`, children: body }),
+      // H-147: the sheet lives over the route, not at a route of its own. It is only mounted while
+      // open, so Home is the only place a reader meets it.
+      jsx(HomeSettingsSheet, {
+        open: settingsOpen,
+        prefs: homePrefs,
+        classroom: homeClassroom,
+        onUpdate: updateHomePrefs,
+        onReset: resetHomePrefs,
+        onClose: closeSettings
+      })
     ]
   })
 }
@@ -19688,9 +20382,13 @@ function CbDestinationNav({ value, onChange }) {
  */
 function CoursebookPane() {
   const { state, storedId, reload } = useSessionBinding()
-  // The pane is part of the same scoped surface as the route: same token table, same mode.
-  const cbMode = useCbMode()
-  const cbMotion = useCbMotion()
+  // The pane is part of the same scoped surface as the route: same token table, same mode, and
+  // the same H-147 appearance/motion settings the learner chose on Home.
+  const [panePrefs] = useCbHomePrefs()
+  const hostMode = useCbMode()
+  const cbMode = cbAppliedMode(hostMode, panePrefs.appearance)
+  const systemMotion = useCbMotion()
+  const cbMotion = panePrefs.reducedMotion === 'reduce' ? 'reduced' : systemMotion
   const scopeProfile = currentScope().profile
   const routingUnavailable = profileRouteState.status === 'unavailable'
   const [bindNote, setBindNote] = useState(null)
@@ -19816,7 +20514,7 @@ function CoursebookPane() {
     'data-cb-binding-id': (state.binding && state.binding.binding_id) || '',
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion,
-    style: cbScopeStyle(cbMode),
+    style: { ...cbScopeStyle(cbMode), ...cbHostVars(panePrefs.appearance) },
     children: [
       jsx(CbLabel, { children: 'Coursebook' }),
       routingUnavailable
@@ -20023,6 +20721,21 @@ export {
   practiceFeedback,
   useOpenCheck,
   BackendUnavailable,
+  CB_HOME_PREF_DEFAULTS,
+  CB_PRESENTATION_LABEL,
+  CB_PRESENTATION_OPTIONS,
+  CB_PRESENTATION_VIEW,
+  CbSettingsSection,
+  HomeDefaultsLine,
+  HomeSettingsSheet,
+  sanitizeCbHomePrefs,
+  readCbHomePrefs,
+  updateCbHomePrefs,
+  resetCbHomePrefsSection,
+  cbEffectiveMode,
+  cbAppliedMode,
+  cbHostVars,
+  cbPlayCheckCue,
   CB_TOKENS,
   CB_TOKEN_NAMES,
   CB_TYPE,
