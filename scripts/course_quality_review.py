@@ -3,14 +3,17 @@
 
 This script is the mechanical half of ``docs/COURSE-QUALITY-RUBRIC.md`` (H-173). It reads one
 generated plan, optionally one lesson and one validation record, and writes a reviewer packet:
-the deterministic facts a reviewer needs, the validator's recorded verdict, and eight empty
-dimension blocks. It never fills a score, never calls a model, a database or the network, and
-never computes an aggregate, mastery or engagement number.
+the deterministic facts a reviewer needs, a coverage block that says how much of the plan the
+supplied lesson actually covers, the validator's recorded verdict, and eight empty dimension
+blocks. It never fills a score, never calls a model, a database or the network, and never
+computes an aggregate, mastery or engagement number.
 
 The ``check`` subcommand validates a completed record: eight dimensions exactly once, integer
 scores 1 to 4, evidence of real length, a routed follow-up for every dimension below 3, a named
-reviewer on the label's own line, the echoed validator verdict, and no aggregate, percentage or
-mastery claim anywhere in the reviewer's own prose. A record that fails is not a review.
+reviewer on the label's own line, the echoed validator verdict, no aggregate, percentage or
+mastery claim anywhere in the reviewer's own prose, and - when the packet reported fewer reading
+lessons than the plan's scheduled sessions - a stated ``Coverage limit:``. A record that fails is
+not a review.
 
 Usage::
 
@@ -133,6 +136,13 @@ SCOPE_RE = re.compile(r"^Scope:[ \t]*(\S.*)$", re.MULTILINE)
 HEADER_PREFIX_RE = re.compile(
     r"^(?:sample|scope|validator verdict|reviewer|score|evidence|follow-up|question)\s*:", re.I
 )
+#: H-173d coverage: a one-lesson packet must price how much of the plan it can speak to.
+COVERAGE_RE = re.compile(
+    r"^- Lesson coverage:[ \t]*(\d+) of (\d+) authored (session|section)\(s\)", re.MULTILINE
+)
+COVERAGE_LIMIT_RE = re.compile(r"^Coverage limit:[ \t]*(\S.*)$", re.MULTILINE)
+DIMENSION_TOKEN_RE = re.compile(r"\bD[1-8]\b")
+COVERAGE_LIMIT_MIN_CHARS = 40
 HEADING_RE = re.compile(r"^### (D[1-8]) ([a-z_]+)\s*$", re.MULTILINE)
 SCORE_RE = re.compile(r"^Score:[ \t]*(\S.*)$", re.MULTILINE)
 EVIDENCE_RE = re.compile(r"^Evidence:[ \t]*(.*)$", re.MULTILINE)
@@ -427,6 +437,178 @@ def _lesson_facts(lesson: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _coverage_state(plan: dict[str, Any], lesson: dict[str, Any] | None) -> dict[str, Any]:
+    """Measure, mechanically, how much of the plan the supplied lesson covers.
+
+    A packet carries one plan and at most one lesson. Coverage is counted against the sessions the
+    plan schedules (``sessions_per_week`` x ``weeks``), not the raw section count: a plan whose
+    rationale puts four sections inside one session is covered by one lesson, and a plan that
+    schedules one session per section is not. When the plan declares no schedule the packet falls
+    back to the section count and says so. This fills no score.
+    """
+    objectives = _bounded_list(plan.get("objectives"), "plan.objectives", MAX_OBJECTIVES)
+    sections = _bounded_list(plan.get("sections"), "plan.sections", MAX_SECTIONS)
+    check_plan = _bounded_list(plan.get("check_plan"), "plan.check_plan", MAX_OBJECTIVES)
+    estimate_value = plan.get("time_estimate")
+    estimate: dict[str, Any] = estimate_value if isinstance(estimate_value, dict) else {}
+    sessions = _number(estimate.get("sessions_per_week"))
+    weeks = _number(estimate.get("weeks"))
+    capacity = None
+    if sessions is not None and weeks is not None:
+        total = sessions * weeks
+        capacity = int(total) if total >= 1 else None
+    supplied = 1 if lesson is not None else 0
+    authored_sections = len(sections)
+    need = capacity if capacity else (authored_sections or max(len(objectives), 1))
+    objective_ordinals = [
+        index
+        for index, objective in enumerate(objectives, start=1)
+        if isinstance(objective, dict)
+    ]
+
+    matched_ordinal: int | None = None
+    matched_refs: list[int] = []
+    if lesson is not None and sections:
+        title = " ".join(str(lesson.get("section_title") or "").lower().split())
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            if title and " ".join(str(section.get("title") or "").lower().split()) == title:
+                ordinal = section.get("ordinal")
+                matched_ordinal = ordinal if isinstance(ordinal, int) else None
+                refs = _bounded_list(section.get("objective_refs"), "section.objective_refs", 6)
+                matched_refs = [ref for ref in refs if isinstance(ref, int)]
+                break
+
+    complete = supplied >= need
+    mapped = bool(matched_refs)
+    if supplied == 0 or not mapped:
+        unread = list(objective_ordinals)
+    elif complete:
+        unread = []
+    else:
+        unread = [ordinal for ordinal in objective_ordinals if ordinal not in matched_refs]
+    declares_ref = bool(lesson and (lesson.get("section_ordinal") or lesson.get("objective_ref")))
+    return {
+        "capacity": capacity,
+        "sessions_per_week": sessions,
+        "weeks": weeks,
+        "authored_sections": authored_sections,
+        "objectives": len(objectives),
+        "check_plan_entries": len(check_plan),
+        "unit": "session" if capacity else "section",
+        "need": need,
+        "supplied": supplied,
+        "matched_ordinal": matched_ordinal,
+        "matched_refs": matched_refs,
+        "objective_ordinals": objective_ordinals,
+        "unread": unread,
+        "declares_ref": declares_ref,
+        "complete": complete,
+    }
+
+
+def _coverage_facts(state: dict[str, Any], lesson: dict[str, Any] | None) -> list[str]:
+    """Render the coverage block from :func:`_coverage_state`. Facts only; every score stays blank."""
+    capacity = state["capacity"]
+    unit = state["unit"]
+    need = state["need"]
+    supplied = state["supplied"]
+    objectives = state["objectives"]
+    sections = state["authored_sections"]
+    unread: list[int] = state["unread"]
+
+    if capacity:
+        sessions = state["sessions_per_week"]
+        weeks = state["weeks"]
+        schedule = (
+            f"sessions_per_week={sessions} x weeks={weeks} = {capacity} authored session(s)"
+        )
+    else:
+        schedule = "not declared; the packet counts authored sections instead"
+    lines: list[str] = [
+        f"- Schedule: {schedule}; authored sections: {sections or 'none declared'}; "
+        f"objectives: {objectives}; check_plan entries: {state['check_plan_entries']}"
+    ]
+
+    ref_note = (
+        "the lesson declares its own section reference"
+        if state["declares_ref"]
+        else "the lesson carries no `section_ordinal` or `objective_ref`, so any match here is by title only"
+    )
+    if lesson is not None and sections:
+        label = _text(lesson.get("section_title"), 200) or "MISSING"
+        if state["matched_ordinal"] is None:
+            lines.append(
+                f"- Lesson section_title: {label!r} matches no single authored section; {ref_note}"
+            )
+        else:
+            lines.append(
+                f"- Lesson section_title: {label!r} matches authored section "
+                f"{state['matched_ordinal']} (objective_refs={state['matched_refs'] or 'none'}); "
+                f"{ref_note}"
+            )
+    elif lesson is not None:
+        lines.append(
+            "- Lesson section_title: "
+            f"{_text(lesson.get('section_title'), 200) or 'MISSING'!r}; the plan declares no "
+            f"sections, so the packet cannot map this lesson to an objective; {ref_note}"
+        )
+
+    unread_label = ", ".join(str(ordinal) for ordinal in unread)
+    if supplied == 0:
+        lines.append(
+            f"- Lesson coverage: 0 of {need} authored {unit}(s) have a lesson in this packet; "
+            "no objective has an authored check the reviewer can read"
+        )
+        lines.append(
+            "- Coverage limit: D3, D4, D5, D7 and D8 have no lesson to read. D3 sees only the "
+            "plan's check_plan declarations, not the checks themselves. State this limit under "
+            "Reviewer notes."
+        )
+    elif state["complete"]:
+        span = (
+            f"; the plan schedules {sections} section(s) inside those {unit}(s), so one lesson "
+            "can cover more than one section"
+            if sections > need
+            else ""
+        )
+        lines.append(
+            f"- Lesson coverage: {supplied} of {need} authored {unit}(s) have a lesson in this "
+            f"packet{span}"
+        )
+        lines.append(
+            f"- Coverage limit: none; every authored {unit} has a lesson in this packet. Which "
+            "sections a spanning lesson covers is a D4 and D5 reading, not a coverage count."
+            if sections > need
+            else f"- Coverage limit: none; every authored {unit} has a lesson in this packet."
+        )
+    elif state["matched_refs"]:
+        lines.append(
+            f"- Lesson coverage: {supplied} of {need} authored {unit}(s) have a lesson in this "
+            f"packet; {len(unread)} of {objectives} objective(s) have no authored check the "
+            f"reviewer can read ({unread_label})"
+        )
+        lines.append(
+            f"- Coverage limit: D3 can be read for {len(state['matched_refs'])} of {objectives} "
+            f"objectives only (objective_refs={state['matched_refs']}, matched by section title); "
+            "D4, D5, D7 and D8 read one lesson, not the course. State this limit under Reviewer "
+            "notes."
+        )
+    else:
+        lines.append(
+            f"- Lesson coverage: {supplied} of {need} authored {unit}(s) have a lesson in this "
+            "packet, and the packet cannot map that lesson to an objective"
+        )
+        lines.append(
+            "- Coverage limit: D3, D4, D5, D7 and D8 read one lesson that the packet cannot tie "
+            "to an objective; read its check against the objectives yourself. State this limit "
+            "under Reviewer notes."
+        )
+    return lines
+
+
+
 def _validation_facts(validation: dict[str, Any]) -> list[str]:
     verdict = _text(validation.get("verdict"), 40) or "MISSING"
     criteria = _bounded_list(validation.get("criteria"), "validation.criteria", 20)
@@ -500,6 +682,15 @@ def render_packet(
         else:
             lines.append(f"- {label}: `{path}` sha256 `{_sha256(path)}`")
     lines.append("")
+    coverage_state = _coverage_state(plan, lesson)
+    lines.append("## Coverage")
+    lines.append("")
+    lines.append(
+        "What the supplied inputs do and do not let a reviewer read. These are counts, not scores."
+    )
+    lines.append("")
+    lines.extend(_coverage_facts(coverage_state, lesson))
+    lines.append("")
     lines.append("## Observed facts")
     lines.append("")
     lines.append("Facts are extracted mechanically. They are not scores and they do not replace the")
@@ -536,6 +727,12 @@ def render_packet(
         lines.append("")
     lines.append("## Reviewer notes")
     lines.append("")
+    if coverage_state["complete"]:
+        lines.append(
+            "Coverage limit: none; the packet supplies a lesson for every authored section."
+        )
+    else:
+        lines.append("Coverage limit: ")
     lines.append("Limits of this record (missing lesson, author-run review, unverified source ledger,")
     lines.append("fixture instead of a live output) go here. A limit is not a pass.")
     lines.append("")
@@ -608,6 +805,34 @@ def check_record(text: str) -> list[str]:
 
     for label in forbidden_language(text):
         errors.append(f"forbidden aggregate or engagement language: {label}")
+
+    # Coverage (H-173d): a packet that supplies a lesson for only some authored sections must not
+    # produce a record that reads as if the whole course was reviewed. The packet prints the count;
+    # the reviewer must state the limit it creates. Records written before the coverage line
+    # existed carry no count and are not retro-charged (see the rubric's known limits).
+    coverage_match = COVERAGE_RE.search(text)
+    if coverage_match:
+        supplied = int(coverage_match.group(1))
+        authored = int(coverage_match.group(2))
+        unit = coverage_match.group(3)
+        if supplied < authored:
+            limit_match = COVERAGE_LIMIT_RE.search(text)
+            if not limit_match:
+                errors.append(
+                    f"the packet reports {supplied} of {authored} authored {unit}s supplied; the "
+                    "record must state a 'Coverage limit:' naming the dimensions it limits"
+                )
+            else:
+                limit = " ".join(limit_match.group(1).split())
+                if len(limit) < COVERAGE_LIMIT_MIN_CHARS:
+                    errors.append(
+                        f"Coverage limit: is {len(limit)} characters, under the "
+                        f"{COVERAGE_LIMIT_MIN_CHARS}-character minimum"
+                    )
+                elif not DIMENSION_TOKEN_RE.search(limit):
+                    errors.append(
+                        "Coverage limit: must name at least one dimension (D1 to D8) it limits"
+                    )
 
     blocks = _dimension_blocks(text)
     seen: dict[str, list[tuple[str, str]]] = {}
@@ -716,8 +941,11 @@ def command_packet(args: argparse.Namespace) -> int:
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(text, encoding="utf-8")
     verdict = _text(validation.get("verdict"), 40) if validation else "no validation record"
+    coverage = _coverage_state(plan, lesson)
     print(
         f"wrote {destination}: 8 dimensions, validator verdict={verdict}, "
+        f"lesson coverage={coverage['supplied']}/{coverage['need']} authored "
+        f"{coverage['unit']}(s), "
         f"{len(text)} characters (scores intentionally blank)"
     )
     return 0

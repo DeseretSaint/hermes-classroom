@@ -49,7 +49,6 @@ moved again with H-151/H-160 (one `CbAction` primitive, one type hierarchy, Cour
 section-route wrap), H-120c's graded-practice fence, H-152's motion ladder and H-121's export/share,
 so the audit was regenerated on the merged tree:
 `python3 scripts/m4v-audit.py` → 15 PASS, 0 not PASS, 62 frames,
-<<<<<<< HEAD
 `plugin_sha256: 179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163`. The 56
 non-forced frames still measure **2,416** text nodes and the 32 frames with an accessibility tree
 still measure **298** AX controls: the new controls are inside the same surfaces those frames mount,
