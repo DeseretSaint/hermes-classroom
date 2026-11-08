@@ -186,7 +186,7 @@ if all of these are true:
 6. **Access and resilience:** it works at 460/900/1049 px, light/dark, 200% text, keyboard,
    reduced motion, and in the empty/loading/error states.
 7. **Scope:** it is either part of the first vertical slice or explicitly deferred with a reason.
-   It does not smuggle a world map, avatar system, currency or other second product into the slice.
+   It does not smuggle a world map, an invented avatar system, currency or other second product into the slice. The host's existing pet sprite is identity, not a second product.
 8. **Measurability:** there is a way to tell whether it worked, not just whether it shipped.
 
 Verdicts are **ADOPT** (card it), **ADAPT** (card the smaller honest version), **DEFER** (card only
