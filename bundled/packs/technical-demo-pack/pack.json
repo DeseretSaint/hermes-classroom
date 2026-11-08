@@ -1,0 +1,148 @@
+{
+  "accessibility_notes": [
+    "Plain markdown; every field name is written as literal text so it survives a screen reader.",
+    "No diagrams and no media: nothing here depends on seeing an image or hearing audio."
+  ],
+  "attribution": "Original teaching text: Coursebook demo pack. No third-party text or media is bundled.",
+  "content_hash": "sha256:603c0b7de57110ff31ec58f8e7d1dab7211c3312e369f880000deac7fda66174",
+  "content_notes": [
+    "Every claim in this pack is about the cb.pack contract as implemented in this repository (contracts/pack-manifest.v1.json, contracts/pack-manifest.v2.json, contracts/vocabulary.v1.json, coursebook/archive.py). It links no external source and quotes no third-party text.",
+    "The pack claims no human review and no native-speaker or expert review: its checks are recorded audit_state \"unreviewed\", which is the fact the second section teaches.",
+    "This is a technical demo. It teaches the pack format, not the subject of any other pack."
+  ],
+  "contract": "cb.pack",
+  "contract_version": 1,
+  "contributors": [
+    {
+      "name": "Coursebook demo pack",
+      "role": "author"
+    }
+  ],
+  "default_dials": {
+    "assessment": "self_check",
+    "autonomy": "independent",
+    "depth": "survey",
+    "pace": "light"
+  },
+  "files": [
+    {
+      "bytes": 1765,
+      "mime": "text/markdown",
+      "path": "content/section-01-anatomy.md",
+      "role": "section",
+      "sha256": "sha256:5fe8ecc5ac1bb5e6dff7eefc377e09bf44e6f36f662de9e00406c2e9e41f7c9c"
+    },
+    {
+      "bytes": 1341,
+      "mime": "text/markdown",
+      "path": "content/section-02-labels.md",
+      "role": "section",
+      "sha256": "sha256:83890e910b8b1d45b5613c01cb2634cf49c0e7cfe0ee8bcb9f4e8d1371ea343a"
+    },
+    {
+      "bytes": 901,
+      "mime": "text/markdown",
+      "path": "content/source-notes.md",
+      "role": "source_note",
+      "sha256": "sha256:66cd8b84c57c4a29b0935143ca8a78303547706f23f39514b0715707668c8c63"
+    }
+  ],
+  "level_label": "Technical · for pack readers",
+  "license": {
+    "id": "CC0-1.0",
+    "note": "Original Coursebook-authored teaching text about this repository's own pack contract. No third-party text or media is bundled; the repository files it cites are read locally by the pack maintainer, not redistributed.",
+    "redistribution": "local_only"
+  },
+  "locale": "en-US",
+  "minimum_coursebook_version": "0.1.0",
+  "objectives": [
+    {
+      "checks": [
+        {
+          "accepted_alternatives": [
+            "files",
+            "the files field",
+            "files array",
+            "file list"
+          ],
+          "audit_state": "unreviewed",
+          "check_id": "chk-anatomy-files-1",
+          "evidence_target": "comprehension",
+          "locale": "en-US",
+          "reference_answer": "the files list",
+          "rubric": [
+            "Names files[]",
+            "Does not name objectives[] or sources[]",
+            "Says each record's bytes must match its declared size and hash"
+          ],
+          "stimulus": "A pack's manifest declares every file it ships, each with a path, mime, size and sha256. Which manifest field holds that list?",
+          "version": 1
+        }
+      ],
+      "estimated_minutes": 6,
+      "evidence_criteria": [
+        "Names the field that lists every shipped file",
+        "Says what each file record must match"
+      ],
+      "evidence_target": "comprehension",
+      "objective_id": "obj-manifest-anatomy",
+      "ordinal": 1,
+      "sections": [
+        {
+          "path": "content/section-01-anatomy.md",
+          "section_id": "sec-anatomy",
+          "title": "Anatomy of a pack"
+        }
+      ],
+      "title": "Read what a pack manifest declares"
+    },
+    {
+      "checks": [
+        {
+          "accepted_alternatives": [
+            "unreviewed",
+            "no human review",
+            "no human review recorded",
+            "nobody has reviewed it"
+          ],
+          "audit_state": "unreviewed",
+          "check_id": "chk-label-unreviewed-1",
+          "evidence_target": "discrimination",
+          "locale": "en-US",
+          "reference_answer": "that check has no recorded human review",
+          "rubric": [
+            "Says no human review of that check is recorded",
+            "Does not read it as a failed or unsafe pack",
+            "Does not read a matching hash as a human review"
+          ],
+          "stimulus": "A pack's check carries audit_state \"unreviewed\". What does that record mean, and what does it not mean?",
+          "version": 1
+        }
+      ],
+      "estimated_minutes": 6,
+      "evidence_criteria": [
+        "Separates a hash match from a human review",
+        "Reads audit_state as a recorded fact about review"
+      ],
+      "evidence_target": "discrimination",
+      "objective_id": "obj-label-meaning",
+      "ordinal": 2,
+      "sections": [
+        {
+          "path": "content/section-02-labels.md",
+          "section_id": "sec-labels",
+          "title": "What a label can and cannot prove"
+        }
+      ],
+      "title": "Say what an unreviewed check record means"
+    }
+  ],
+  "pack_id": "technical-demo-pack",
+  "pack_version": "1.0.0",
+  "recipe": "one_off",
+  "safety_notes": [
+    "Text only. No media, no external services, no learner data."
+  ],
+  "subtitle": "Two sections on the pack contract: what a manifest declares, and what a trust label can prove.",
+  "title": "Technical demo: reading a pack before you install it"
+}

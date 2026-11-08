@@ -190,6 +190,62 @@ async def pronunciation_status(
     return {"ok": True, **result}
 
 
+@router.get("/workshop/catalog")
+async def workshop_catalog() -> dict[str, Any]:
+    """The local Workshop's Discover read (H-196).
+
+    One call returns every catalogued bundled pack with the facts a storefront needs: identity,
+    verified content hash, structure counts, trust labels, licence, provenance, cover, and whether
+    this profile already holds it. It is static local data: the catalogue file is editorial, and
+    every pack claim is re-derived from that pack's own manifest and bytes at read time. A pack that
+    fails verification is returned in ``refused`` with its reason instead of being rendered.
+    """
+    _load_backend()
+    workshop = importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.workshop")
+    try:
+        return {"ok": True, **workshop.catalog_view()}
+    except workshop.WorkshopError as exc:
+        return {"ok": False, "code": "WORKSHOP_UNAVAILABLE", "message": str(exc)}
+    except Exception:  # noqa: BLE001 - an internal failure is reported as data, not a traceback
+        logger.exception("coursebook: the Workshop catalogue failed outside a policy refusal")
+        return {
+            "ok": False,
+            "code": "INTERNAL_ERROR",
+            "message": "the Workshop catalogue could not be read; nothing was changed",
+        }
+
+
+@router.post("/workshop/install")
+async def workshop_install(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """Add one catalogued bundled pack to this profile (H-196).
+
+    The body carries a ``pack_id`` only. This route never accepts a path: the id is resolved
+    against the shipped catalogue and a lowercase-slug allowlist beneath ``bundled/packs``, then the
+    bytes go through the same atomic ``pack.import`` gate as a pack from a file. An unknown id, a
+    drifted bundle, a frozen pack or a duplicate install is returned as data with a code.
+    """
+    _load_backend()
+    workshop = importlib.import_module(f"{_BACKEND_PACKAGE}.coursebook.workshop")
+    pack_id = body.get("pack_id")
+    if not isinstance(pack_id, str) or not pack_id.strip() or len(pack_id) > 128:
+        return {"ok": False, "code": "VALIDATION_FAILED", "message": "install needs one pack_id"}
+    try:
+        result = workshop.install(pack_id.strip())
+    except workshop.WorkshopError as exc:
+        return {"ok": False, "code": "WORKSHOP_REFUSED", "message": str(exc)}
+    except Exception as exc:  # noqa: BLE001 - pack refusals arrive as typed data below
+        refusals = _refusal_types()
+        if isinstance(exc, refusals):
+            return {"ok": False, "code": "PACK_REJECTED", "message": _message(exc)}
+        logger.exception("coursebook: the Workshop install failed outside a policy refusal")
+        return {
+            "ok": False,
+            "code": "INTERNAL_ERROR",
+            "message": "the pack could not be installed; nothing was adopted",
+        }
+    return {"ok": True, **result}
+
+
 @router.get("/packs/intake")
 async def packs_intake() -> dict[str, Any]:
     """Capability probe for the local pack intake (CB-010).

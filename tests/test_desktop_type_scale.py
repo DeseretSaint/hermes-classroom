@@ -157,8 +157,8 @@ const navTo = async (destination) => {
   await act(async () => { button.click() })
   await flush(120)
 }
-await navTo('library')
-surfaces.push(snapshot('library'))
+await navTo('workshop')
+surfaces.push(snapshot('workshop'))
 await navTo('studio')
 surfaces.push(snapshot('studio'))
 
@@ -350,7 +350,7 @@ class TypeScaleRenderTest(unittest.TestCase):
                     self.assertGreaterEqual(min(item["sizes"]), 12, item["sizes"])
 
     def test_body_copy_is_sixteen_pixels(self) -> None:
-        for name in ("home-desk", "library", "studio", "section"):
+        for name in ("home-desk", "workshop", "studio", "section"):
             with self.subTest(surface=name):
                 item = self.surface(name)
                 self.assertIn(16, item["sizes"], f"{name} has no 16px body copy: {item['sizes']}")

@@ -424,8 +424,10 @@ class LibraryActionTest(unittest.TestCase):
         self.assertEqual(self.source.count("jsx(SyllabusEntry"), 0)
 
     def test_route_header_has_one_primary_and_one_secondary_for_library(self) -> None:
-        header = self.source[self.source.index("destination === 'library' && canSyllabus") :]
-        header = header[: header.index("// H-91 P2-4")]
+        # H-196: the two import paths now sit in the Workshop's Library surface, one primary
+        # (Import pack) and one secondary (syllabus), instead of the route header.
+        header = self.source[self.source.index("'data-cb-workshop-library-actions'") :]
+        header = header[: header.index("jsx(LibraryView")]
         self.assertIn("SYLLABUS_COPY.action", header)
         self.assertIn("children: 'Import pack'", header)
         # H-151: the header's one filed action is the Coursebook primary, not the host default.
