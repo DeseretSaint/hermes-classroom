@@ -6241,33 +6241,92 @@ async function startLearnerPlan({ call, key, title, goal, recipe, dials, locale,
  */
 const SCOPE_DEFAULT_RECIPE = { single: 'one_off', short: 'casual', full: 'committed' }
 
-/** The three steps, in the words a learner uses, each with the next thing that will happen. */
+/**
+ * H-168 mirror: the depth a course size actually gets. `coursebook.research.effective_depth()`
+ * floors the research pass by scope (single/short → working, full → deep); this is the same table
+ * so the create form's default dial agrees with the pass the backend will run. It is a default
+ * only — the learner can still pick a deeper pass in the tune control — and the backend remains
+ * the authority that applies the floor. The payload keeps the closed four-dial object.
+ */
+const SCOPE_MIN_DEPTH = Object.freeze({ single: 'working', short: 'working', full: 'deep' })
+const DEPTH_ORDER = Object.freeze(['survey', 'working', 'deep'])
+
+function effectiveDepth(depth, scope) {
+  const floor = SCOPE_MIN_DEPTH[scope] || 'survey'
+  const declared = DEPTH_ORDER.indexOf(depth) >= 0 ? depth : 'working'
+  return DEPTH_ORDER.indexOf(declared) >= DEPTH_ORDER.indexOf(floor) ? declared : floor
+}
+
+/**
+ * The three steps, in the words a learner uses, each with the next thing that will happen.
+ *
+ * H-170: the goal is first. The first-run plate promises "name one goal, review the plan", so the
+ * flow has to open on the goal field — a first-time learner should never be asked "a single
+ * lesson, a short course or a full course" before they have said what they want to learn. Size
+ * stays a required choice on step 2 (no default is preselected) and Review still gates the single
+ * mutation.
+ */
 const CREATE_STEP_SPINE = Object.freeze([
-  { n: 1, name: 'Size', next: 'Next: name the goal and the course.' },
-  { n: 2, name: 'Goal', next: 'Next: review what will be created.' },
+  { n: 1, name: 'Goal', next: 'Next: choose how much course you want.' },
+  { n: 2, name: 'Size', next: 'Next: review what will be created.' },
   { n: 3, name: 'Review', next: 'Create the course, then review the draft plan.' }
 ])
+
+/**
+ * Which step a seeded create form opens on: the first one whose answer is still missing. A rejected
+ * plan's own choices are prefilled, so re-answering them is not demanded — but the form never
+ * submits itself: with every answer present it opens on Review, where Create is still a press.
+ */
+function createStartStep(seed) {
+  if (!seed) return 1
+  if (!String(seed.goal || '').trim()) return 1
+  if (!String(seed.scope || '').trim()) return 2
+  return 3
+}
+
+/**
+ * A short course name derived from the goal, so naming the course is one keystroke of work rather
+ * than a second question. The learner can always edit it; the goal never changes because of it.
+ * No word is invented: the name is the goal's first sentence, clamped to a list-row width.
+ */
+function suggestedTitle(goal) {
+  const clean = String(goal || '').replace(/\s+/g, ' ').trim()
+  if (!clean) return ''
+  const firstClause = clean.split(/[.!?](\s|$)/)[0].trim()
+  const base = firstClause || clean
+  if (base.length <= 64) return base
+  return `${base.slice(0, 61).trimEnd()}…`
+}
 
 /** A compact staged create flow; every step is editable before the one mutation. */
 function CreateCourseFlow({ onCancel, onCreated, seed }) {
   // H-103: a rejected plan can hand its goal and choices back here. The seed is a starting point,
-  // never a silent submission: the learner still reviews and presses Create. Opening from the plan
-  // rejection lands on the Goal step, because size and recipe were already answered last time.
+  // never a silent submission: the learner still reviews and presses Create. H-170: it opens on the
+  // first step whose answer is still missing (goal, then size, then review), so a seed that already
+  // carries both answers starts at Review rather than re-asking what is known.
   const start = seed || {}
-  const [step, setStep] = useState(seed ? 2 : 1)
+  const [step, setStep] = useState(createStartStep(seed))
   const [goal, setGoal] = useState(start.goal || '')
-  const [title, setTitle] = useState(start.title || '')
+  const [title, setTitle] = useState(start.title || suggestedTitle(start.goal || ''))
+  // H-170: the title follows the goal until the learner edits it, so naming the course costs one
+  // glance instead of a second question. Once edited, it is theirs and stops following.
+  const [titleEdited, setTitleEdited] = useState(Boolean(String(start.title || '').trim()))
   const [recipe, setRecipe] = useState(start.recipe || 'casual')
-  // No scope is preselected: the first screen asks for intent, so "Continue" is only enabled once
+  // No scope is preselected: the size step asks a real question, so "Continue" is only enabled once
   // the learner has said whether this is one lesson, a short course or a full course (UX-09).
   const [scope, setScope] = useState(start.scope || '')
   const [recipeTouched, setRecipeTouched] = useState(Boolean(seed))
   const [level, setLevel] = useState(start.level || '')
   const [subjectDomain, setSubjectDomain] = useState(start.subjectDomain || '')
   const [locale, setLocale] = useState(start.locale || '')
-  const [dials, setDials] = useState(
-    start.dials || { pace: 'light', depth: 'survey', assessment: 'self_check', autonomy: 'guided' }
-  )
+  const [dials, setDials] = useState(() => {
+    const base = start.dials || { pace: 'light', depth: 'working', assessment: 'self_check', autonomy: 'guided' }
+    // A seeded scope raises a too-low stored depth to the floor the backend will actually run.
+    return { ...base, depth: effectiveDepth(base.depth, start.scope || '') }
+  })
+  // H-168: the depth default follows the scope until the learner opens the tune control and picks
+  // one. An explicit pick is kept, but never below the size's floor.
+  const [depthTouched, setDepthTouched] = useState(Boolean(start.dials))
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
   // The course/enrolment can already exist when the plan job fails. Those ids stay on screen so the
@@ -6277,15 +6336,31 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
   const [error, setError] = useState(null)
   const keyRef = useRef(null)
 
-  const goalInvalid = step >= 1 && goal.trim().length === 0
-  const canAdvance = step === 1 ? Boolean(scope) : goal.trim().length > 0 && title.trim().length > 0
+  const goalInvalid = step === 1 && goal.trim().length === 0
+  // Goal step needs the goal (the title is suggested from it), size step needs a scope. Review has
+  // everything, so it is never blocked by this gate.
+  const canAdvance = step === 1 ? goal.trim().length > 0 && title.trim().length > 0 : Boolean(scope)
+
+  const changeGoal = useCallback(
+    (next) => {
+      const value = String(next || '')
+      setGoal(value)
+      if (!titleEdited) setTitle(suggestedTitle(value))
+    },
+    [titleEdited]
+  )
 
   const chooseScope = useCallback(
     (id) => {
       setScope(id)
       if (!recipeTouched) setRecipe(SCOPE_DEFAULT_RECIPE[id] || 'casual')
+      // H-168: an untouched depth follows the size; an explicit one is raised to the size's floor.
+      setDials((current) => {
+        const next = depthTouched ? effectiveDepth(current.depth, id) : SCOPE_MIN_DEPTH[id] || current.depth
+        return next === current.depth ? current : { ...current, depth: next }
+      })
     },
-    [recipeTouched]
+    [depthTouched, recipeTouched]
   )
   const chooseRecipe = useCallback((id) => {
     setRecipeTouched(true)
@@ -6303,7 +6378,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
       title: title.trim(),
       goal: goal.trim(),
       recipe,
-      dials,
+      dials: { ...dials, depth: effectiveDepth(dials.depth, scope) },
       locale: locale.trim() || null,
       level: level.trim() || null,
       subjectDomain: subjectDomain.trim() || null,
@@ -6384,6 +6459,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 setStep(1)
                 setGoal('')
                 setTitle('')
+                setTitleEdited(false)
                 setLevel('')
                 setSubjectDomain('')
                 setLocale('')
@@ -6398,7 +6474,7 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
     })
   }
 
-  const stepTitle = step === 1 ? 'What do you want to make?' : step === 2 ? 'What should it cover?' : 'Review and create'
+  const stepTitle = step === 1 ? 'What do you want to be able to do?' : step === 2 ? 'How much course do you want?' : 'Review and create'
 
   return jsxs('div', {
     className: 'mx-auto flex w-full max-w-2xl flex-col gap-4 py-2',
@@ -6454,7 +6530,60 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
       }),
       step === 1
         ? jsxs('div', {
-            className: 'flex flex-col gap-3',
+            className: 'flex flex-col gap-4',
+            children: [
+              jsxs('div', {
+                className: 'flex flex-col gap-1.5',
+                children: [
+                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-goal', children: 'What do you want to be able to do?' }),
+                  jsx(sdk.Textarea, {
+                    'aria-describedby': 'cb-goal-help',
+                    'aria-invalid': goalInvalid ? true : undefined,
+                    id: 'cb-goal',
+                    onChange: (event) => changeGoal(event.target.value),
+                    placeholder: GOAL_PLACEHOLDER,
+                    rows: 4,
+                    value: goal
+                  }),
+                  jsx('div', {
+                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                    id: 'cb-goal-help',
+                    children:
+                      goal.trim().length === 0
+                        ? 'Say it as the situation you want to handle. The examples below are starting points, not a course yet.'
+                        : `${goal.trim().length} characters. Keep editing, or start from a different example.`
+                  }),
+                  jsx(GoalGallery, { onChoose: changeGoal })
+                ]
+              }),
+              jsxs('div', {
+                className: 'flex flex-col gap-1.5',
+                children: [
+                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Name this course (required)' }),
+                  jsx(sdk.Input, {
+                    id: 'cb-title',
+                    onChange: (event) => {
+                      setTitleEdited(true)
+                      setTitle(event.target.value)
+                    },
+                    placeholder: TITLE_PLACEHOLDER,
+                    value: title
+                  }),
+                  jsx('div', {
+                    'data-cb-title-hint': '',
+                    className: 'text-xs text-(--ui-text-secondary)',
+                    children: titleEdited
+                      ? 'This is the name you will see in your course list.'
+                      : 'Suggested from your goal — edit it if you like. This is the name you will see in your course list.'
+                  })
+                ]
+              })
+            ]
+          })
+        : null,
+      step === 2
+        ? jsxs('div', {
+            className: 'flex flex-col gap-4',
             children: [
               jsx('p', {
                 className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -6512,53 +6641,6 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                 children: scope
                   ? planTimingCopy(scope)
                   : 'Choose one option above to continue. Nothing is generated until you review the plan on the last step.'
-              })
-            ]
-          })
-        : null,
-      step === 2
-        ? jsxs('div', {
-            className: 'flex flex-col gap-4',
-            children: [
-              jsxs('div', {
-                className: 'flex flex-col gap-1.5',
-                children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-goal', children: 'What do you want to be able to do?' }),
-                  jsx(sdk.Textarea, {
-                    'aria-describedby': 'cb-goal-help',
-                    'aria-invalid': goalInvalid ? true : undefined,
-                    id: 'cb-goal',
-                    onChange: (event) => setGoal(event.target.value),
-                    placeholder: GOAL_PLACEHOLDER,
-                    rows: 4,
-                    value: goal
-                  }),
-                  jsx('div', {
-                    className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
-                    id: 'cb-goal-help',
-                    children:
-                      goal.trim().length === 0
-                        ? 'Say it as the situation you want to handle. The examples below are starting points, not a course yet.'
-                        : `${goal.trim().length} characters. Keep editing, or start from a different example.`
-                  }),
-                  jsx(GoalGallery, { onChoose: setGoal })
-                ]
-              }),
-              jsxs('div', {
-                className: 'flex flex-col gap-1.5',
-                children: [
-                  jsx('label', { className: 'text-xs font-medium text-(--ui-text-secondary)', htmlFor: 'cb-title', children: 'Name this course (required)' }),
-                  jsx(sdk.Input, {
-                    id: 'cb-title',
-                    onChange: (event) => setTitle(event.target.value),
-                    placeholder: TITLE_PLACEHOLDER,
-                    value: title
-                  }),
-                  jsx('div', {
-                    className: 'text-xs text-(--ui-text-secondary)',
-                    children: 'This is the name you will see in your course list.'
-                  })
-                ]
               }),
               jsxs('div', {
                 className: 'flex flex-col',
@@ -6640,11 +6722,30 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
                           children: [
                             jsx('div', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: DIALS[dial].label }),
                             jsx(sdk.SegmentedControl, {
-                              onChange: (value) => setDials((current) => ({ ...current, [dial]: value })),
+                              onChange: (value) => {
+                                if (dial === 'depth') {
+                                  // H-168: an explicit pick is honoured, but never below the size's
+                                  // research floor — the control shows the depth that will be sent,
+                                  // so what the learner sees is what the plan runs.
+                                  setDepthTouched(true)
+                                  setDials((current) => ({ ...current, depth: effectiveDepth(value, scope) }))
+                                  return
+                                }
+                                setDials((current) => ({ ...current, [dial]: value }))
+                              },
                               options: DIALS[dial].options,
                               sizing: 'content',
                               value: dials[dial]
-                            })
+                            }),
+                            // H-168: the size's research floor is stated, not hidden — the default
+                            // depth already follows it, and a lower pick is raised to it.
+                            dial === 'depth' && scope
+                              ? jsx('div', {
+                                  'data-cb-depth-floor': scope,
+                                  className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
+                                  children: `This size is researched at ${dialLabel('depth', SCOPE_MIN_DEPTH[scope])} depth or deeper.`
+                                })
+                              : null
                           ]
                         }, dial)
                       ),
@@ -6713,8 +6814,9 @@ function CreateCourseFlow({ onCancel, onCreated, seed }) {
             : null,
           step < 3
             ? jsx(CbAction, {
-                'aria-describedby': step === 1 && !canAdvance ? 'cb-scope-time' : undefined,
-                disabled: step === 1 ? !canAdvance : false,
+                'aria-describedby':
+                  !canAdvance ? (step === 1 ? 'cb-goal-help' : 'cb-scope-time') : undefined,
+                disabled: !canAdvance,
                 onClick: () => setStep(step + 1),
                 variant: 'primary',
                 children: 'Continue'
@@ -11820,47 +11922,6 @@ function HeroField({ identity, children, phone }) {
   })
 }
 
-/** The blank plate: a dashed rectangle and a seal ghost, never an illustration. */
-function BlankPlate({ title, caption, action, tertiary }) {
-  return jsxs('div', {
-    'data-cb-blank-plate': '',
-    style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.85rem', padding: '1.5rem 1rem', textAlign: 'center' },
-    children: [
-      jsx('div', {
-        'aria-hidden': 'true',
-        style: {
-          width: '100%',
-          maxWidth: '240px',
-          height: '120px',
-          border: '1px dashed var(--cb-rule)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        },
-        children: jsx('svg', {
-          viewBox: '0 0 96 96',
-          width: 40,
-          height: 40,
-          'aria-hidden': 'true',
-          children: [
-            jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-rule)', strokeWidth: 1.6 }, 'f'),
-            jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: 'var(--cb-rule)', strokeWidth: 7 }, 'a')
-          ]
-        })
-      }),
-      jsx('h3', {
-        style: { margin: 0, fontFamily: CB_SERIF, fontSize: CB_TYPE.heading, fontWeight: 600, lineHeight: 1.15, color: 'var(--cb-ink)', maxWidth: '28ch' },
-        children: title
-      }),
-      caption
-        ? jsx('p', { style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)', maxWidth: '48ch' }, children: caption })
-        : null,
-      action || null,
-      tertiary || null
-    ]
-  })
-}
-
 /** A mode hue is a 3px dot plus the mode word, never a coloured block. */
 function ModeDot({ mode }) {
   const paint =
@@ -14905,11 +14966,13 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
     if (target && typeof target.focus === 'function') target.focus()
   }, [focusBlockId, focusIndex, view, step])
   if (blocks.length === 0) {
+    // H-174: an approved lesson page with no blocks is incomplete, not a chat prompt. The lessons
+    // job authors this page; a teaching turn adds runtime segments, it does not write the page.
     return jsx(EmptyState, {
-      title: 'This section has no teaching content yet',
+      title: 'This lesson page has no blocks yet',
       description:
         (document && document.view_note) ||
-        'Teaching content appears here after a lesson turn, and Coursebook does not write it for you.'
+        'The lessons job writes this page. It exists, but it carries no teaching blocks yet; re-run the job from Plan to replace it.'
     })
   }
   const checkId = document.check_id
@@ -15024,6 +15087,281 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
   })
 }
 
+/**
+ * H-174: what actually backs a section page.
+ *
+ * A section is not "empty because the learner has not said anything". Lesson pages are authored by
+ * the harness's lessons job (`run_lesson_job` -> `_enforce_lesson_document`) and served by
+ * `lesson.page`; a bound chat may add runtime segments, but it is not the authoring path. This
+ * model answers one question — is there a readable approved page for this section, and if not, who
+ * owns it — so the hero, the section body and the empty state cannot give three different reasons.
+ *
+ * States, in resolution order:
+ *   readable    -- the served document has teaching blocks; the player is the surface
+ *   reading     -- the outline or the page read has not settled yet
+ *   unreadable  -- the page or plan read failed; nothing was lost, the read just did not finish
+ *   no_page     -- a caller that cannot see the plan: the page is missing and the plan is unknown
+ *   unapproved  -- the plan is missing or still a draft; the lessons job cannot run yet
+ *   failed      -- the lessons job stopped; its typed error and a retry are the next step
+ *   running     -- the lessons job is queued or writing; the page is not there yet
+ *   incomplete  -- a document that carries no blocks (an approved plan, or a caller with no plan)
+ *   not_started -- the plan is approved and the lessons job has not run
+ */
+const LESSON_JOB_LIVE_STATES = new Set(['queued', 'running', 'leased', 'pending', 'retrying'])
+
+function lessonsJobFrom(jobs) {
+  const rows = jobs && Array.isArray(jobs.jobs) ? jobs.jobs : []
+  return rows.find((job) => job && ((job.brief || {}).stage || 'plan') === 'lessons') || null
+}
+
+function lessonJobError(job) {
+  if (!job || !job.error) return null
+  const code = job.error.code ? `${job.error.code}: ` : ''
+  return `${code}${job.error.message || 'The job stopped without a message.'}`
+}
+
+function lessonReadiness({ outline, page, jobs, pageStatus, planStatus } = {}) {
+  // Callers that cannot see the plan (a standalone section render) pass no `outline` at all;
+  // production passes `outline.data` and `outline.status`, so "loading" and "no plan" stay distinct.
+  const planProvided = outline !== undefined
+  const planLoading = planStatus === 'loading'
+  const plan = (outline && outline.plan) || null
+  const planApproved = Boolean(plan && plan.state === 'approved')
+  const document = (page && page.document) || null
+  const blocks = document && Array.isArray(document.blocks) ? document.blocks : []
+  // A backend that predates the v8 document projection answers with runtime segments only. Those
+  // segments are real teaching content, so they count as a readable page rather than as an empty one.
+  const segments = page && Array.isArray(page.segments) ? page.segments : []
+  const job = lessonsJobFrom(jobs)
+  const jobState = (job && job.state) || null
+  const jobLive = Boolean(job && LESSON_JOB_LIVE_STATES.has(jobState))
+  const jobFailed = Boolean(
+    job && ['failed', 'cancelled', 'interrupted_requires_retry'].includes(jobState)
+  )
+  const error = lessonJobError(job)
+  const base = {
+    plan,
+    planApproved,
+    job,
+    jobState,
+    document,
+    blockCount: blocks.length,
+    segmentCount: segments.length,
+    error,
+    // A job that settles as completed but wrote no lessons for this plan version is not running
+    // and did not fail: it is the `not_started`/`incomplete` fact the plan surface already reports.
+    lessonsReported: Number((job && job.checkpoint && job.checkpoint.lessons) || 0)
+  }
+
+  if (blocks.length > 0 || (!document && segments.length > 0)) {
+    return { ...base, state: 'readable', headline: null, detail: null, action: null, secondary: null }
+  }
+  if (pageStatus === 'error') {
+    return {
+      ...base,
+      state: 'unreadable',
+      headline: 'The lesson page could not be read',
+      detail: 'Nothing was lost. The saved page is still on this profile; the read just did not finish.',
+      action: { kind: 'check', label: 'Try again' },
+      secondary: null
+    }
+  }
+  if (pageStatus === 'loading' || planLoading) {
+    return {
+      ...base,
+      state: 'reading',
+      headline: 'Reading this lesson page',
+      detail: 'The saved page for this section is still being read.',
+      action: null,
+      secondary: null
+    }
+  }
+  if (planStatus === 'error') {
+    return {
+      ...base,
+      state: 'unreadable',
+      headline: 'The plan could not be read',
+      detail: 'Nothing was lost. The approved plan is still stored; the read just did not finish.',
+      action: { kind: 'check', label: 'Try again' },
+      secondary: null
+    }
+  }
+  if (jobFailed) {
+    return {
+      ...base,
+      state: 'failed',
+      headline: 'The lessons job stopped',
+      detail:
+        (error ? `${error} ` : '') +
+        'The approved plan is unchanged. Re-running the lessons job writes the missing pages; nothing is rewritten from a template.',
+      action: { kind: 'retry', label: 'Retry the lessons job' },
+      secondary: { kind: 'plan', label: 'View the plan' }
+    }
+  }
+  if (jobLive) {
+    return {
+      ...base,
+      state: 'running',
+      headline:
+        jobState === 'queued'
+          ? 'The lessons job is queued'
+          : 'The lessons job is writing lesson pages',
+      detail:
+        'Lesson pages come from the lessons job, one page per approved section. This section appears when the job writes it.',
+      action: { kind: 'check', label: 'Check again' },
+      secondary: { kind: 'plan', label: 'View the plan' }
+    }
+  }
+  if (document && (planApproved || !planProvided)) {
+    // A saved page with no blocks is incomplete whatever the plan says; naming the plan here would
+    // hide the fact that a page exists. A draft plan's document is handled by `unapproved` below,
+    // because the job cannot write that page until the plan is approved.
+    return {
+      ...base,
+      state: 'incomplete',
+      headline: 'This lesson page is incomplete',
+      detail:
+        'The page exists but has no teaching blocks yet. The lessons job owns the page; re-run it from Plan to replace this placeholder.',
+      action: { kind: 'plan', label: 'Open the plan' },
+      secondary: null
+    }
+  }
+  if (!planProvided) {
+    // A caller that cannot see the plan must not claim the plan's state. The page is still missing,
+    // so the owner is named without inventing which step it is on.
+    return {
+      ...base,
+      state: 'no_page',
+      headline: 'This section has no lesson page yet',
+      detail:
+        'Lesson pages are written by the lessons job from an approved plan. Open Plan to see that job’s state; nothing is invented here.',
+      action: { kind: 'plan', label: 'View the plan' },
+      secondary: null
+    }
+  }
+  if (!planApproved) {
+    // An unapproved plan outranks an empty document: the lessons job cannot write a page for a plan
+    // that is not approved, so "re-run the job" would be the wrong instruction here.
+    return {
+      ...base,
+      state: 'unapproved',
+      headline: plan ? 'The plan is not approved yet' : 'The plan has not been written yet',
+      detail: plan
+        ? 'Lesson pages are written after the plan is approved. Approve the plan in Plan, then the lessons job writes one page per section.'
+        : 'Lesson pages are written from an approved plan. Open Plan to write one; nothing is invented to fill the gap.',
+      action: { kind: 'plan', label: 'Open the plan' },
+      secondary: null
+    }
+  }
+  return {
+    ...base,
+    state: 'not_started',
+    headline: 'The lessons job has not run yet',
+    detail:
+      'The plan is approved. The lessons job writes one page per section; it has not started for this course yet.',
+    action: { kind: 'plan', label: 'View the plan' },
+    secondary: null
+  }
+}
+
+/**
+ * The one explanation a section with no approved page gets, with at most one action.
+ *
+ * The panel never renders a primary: nothing on this screen advances learning until the lessons
+ * job has written the page, so there is nothing to point at as "the next lesson". `compact` is the
+ * course-detail hero (a meta-size line under the title); the section body uses the heading size.
+ */
+function LessonReadinessPanel({
+  readiness,
+  onOpenPlan,
+  onCheckAgain,
+  onRetryLessonsJob,
+  busy = false,
+  compact = false
+}) {
+  if (!readiness) return null
+  const handlers = {
+    plan: onOpenPlan,
+    check: onCheckAgain,
+    retry: onRetryLessonsJob
+  }
+  const actionFor = (descriptor) => {
+    if (!descriptor) return null
+    const run = handlers[descriptor.kind]
+    if (typeof run !== 'function') return null
+    return jsx(sdk.Button, {
+      size: 'sm',
+      variant: compact ? 'text' : 'secondary',
+      disabled: busy,
+      'data-cb-readiness-action': descriptor.kind,
+      onClick: run,
+      children: descriptor.label
+    })
+  }
+  const tertiaryFor = (descriptor) => {
+    if (!descriptor) return null
+    const run = handlers[descriptor.kind]
+    if (typeof run !== 'function') return null
+    return jsx(sdk.Button, {
+      size: 'sm',
+      variant: 'text',
+      disabled: busy,
+      'data-cb-readiness-action': descriptor.kind,
+      onClick: run,
+      children: descriptor.label
+    })
+  }
+  const failed = readiness.state === 'failed' || readiness.state === 'unreadable'
+  const heading = readiness.headline || 'This lesson page is not ready'
+  const body = readiness.detail || ''
+  const primaryAction = actionFor(readiness.action)
+  const secondaryAction = tertiaryFor(readiness.secondary)
+  return jsxs('div', {
+    role: 'status',
+    'data-cb-lesson-readiness': readiness.state,
+    'data-cb-lesson-job': (readiness.job && readiness.job.job_id) || 'none',
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: compact ? '0.3rem' : '0.45rem',
+      maxWidth: CB_MEASURE,
+      padding: compact ? '0.55rem 0 0.2rem' : '0.8rem 0.9rem 0.85rem 1rem',
+      borderLeft: `1px solid ${failed ? 'var(--cb-coral)' : 'var(--cb-rule)'}`
+    },
+    children: [
+      jsx('h3', {
+        style: {
+          margin: 0,
+          fontFamily: compact ? CB_SANS : CB_SERIF,
+          fontSize: compact ? CB_TYPE.meta : CB_TYPE.heading,
+          fontWeight: 600,
+          lineHeight: compact ? 1.4 : 1.2,
+          color: 'var(--cb-ink)'
+        },
+        children: heading
+      }),
+      body
+        ? jsx('p', {
+            style: {
+              margin: 0,
+              fontFamily: CB_SANS,
+              fontSize: compact ? CB_TYPE.caption : CB_TYPE.meta,
+              lineHeight: 1.5,
+              color: compact ? 'var(--cb-ink-soft)' : 'var(--cb-ink)'
+            },
+            children: body
+          })
+        : null,
+      primaryAction || secondaryAction
+        ? jsxs('div', {
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', paddingTop: '0.15rem' },
+            children: [primaryAction, secondaryAction]
+          })
+        : null
+    ]
+  })
+}
+
 function SectionPage({
   row,
   objectiveId,
@@ -15036,6 +15374,14 @@ function SectionPage({
   onChanged,
   review,
   targetBlockId,
+  outline,
+  planStatus,
+  jobs,
+  onOpenPlan,
+  onRetryLessonsJob,
+  // A page served by Course Detail's hero; the hero owns the explanation of why a section has no
+  // approved page, so the embedded body never repeats it (H-174).
+  embedded = false,
   // The Home settings sheet (H-147) owns the learner's default presentation mode (Game / Guided /
   // Textbook, docs/EXPERIENCE-QUALITY-BAR.md §7.2) and passes it here. H-149 makes the player the
   // default surface; a preference naming a view this document cannot render falls back to it.
@@ -15045,6 +15391,11 @@ function SectionPage({
   const section = page && page.section
   const runtime = page && page.runtime
   const bindingActive = Boolean(runtime && runtime.binding_status === 'active')
+  // H-174: the section's own read, plus the plan and the lessons job that own the page. A chat
+  // binding never substitutes for an approved page, so `bindingActive` no longer decides whether
+  // this screen offers a run to start.
+  const readiness = lessonReadiness({ outline, page, jobs, pageStatus, planStatus })
+  const pageReadable = readiness.state === 'readable'
   const [saveSeed, setSaveSeed] = useState(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
@@ -15323,19 +15674,35 @@ function SectionPage({
               })
             ]
           })
-        : jsx('div', {
-            style: { padding: '2rem 0', display: 'flex', justifyContent: 'center' },
-            children: jsx(sdk.Loader, { label: 'Reading this section' })
-          })
+        : pageStatus === 'loading'
+          ? jsx('div', {
+              style: { padding: '2rem 0', display: 'flex', justifyContent: 'center' },
+              children: jsx(sdk.Loader, { label: 'Reading this section' })
+            })
+          // H-174: `lesson.page` answered without a section projection. This is not a loader that
+          // never ends — the page the lessons job owns simply does not exist yet, and the readiness
+          // panel says so. The course hero carries the same answer when this page is embedded.
+          : embedded
+            ? null
+            : jsx(LessonReadinessPanel, {
+                readiness,
+                onOpenPlan,
+                onCheckAgain: onRetryPage,
+                onRetryLessonsJob,
+                busy
+              })
   } else {
     body = jsxs('div', {
       className: 'flex flex-col gap-4',
       children: [
-        document && !(document.views && document.views.guided) && document.view_note
+        // H-174: the readiness panel owns the explanation of a page that is not readable. The
+        // backend's own view_note still describes a readable page's lens, so it stays there and
+        // never competes with the panel above it.
+        document && pageReadable && !(document.views && document.views.guided) && document.view_note
           ? jsx(QuietNote, { children: document.view_note })
           : null,
 
-        !bindingActive
+        !bindingActive && pageReadable
           ? jsx('div', {
               // A section may have no runtime read at all (the no-chat case): page.runtime is null,
               // and only `bindingActive` is guaranteed. Never dereference `runtime` unguarded here.
@@ -15359,25 +15726,37 @@ function SectionPage({
             })
           : null,
 
-        // One live action per screen. With no chat open the primary arms a run and opens its
-        // chat; with a chat open it resumes that chat. There is no second button for the same run.
-        jsxs('div', {
-          'data-cb-section-actions': bindingActive ? 'resume' : 'start',
-          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
-          children: [
-            jsx(CbAction, {
-              'data-cb-section-primary': playerSurface ? 'secondary' : '',
-              variant: playerSurface ? 'secondary' : 'primary',
-              disabled: busy,
-              pending: busy,
-              onClick: () => begin(bindingActive ? 'resume' : 'fresh'),
-              children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start a fresh run'
+        // One live action per screen, and only once there is an approved page to teach from. H-174:
+        // a section with no lessons-job page offers no run to start — the readiness panel below
+        // (or the course hero, when embedded) names the job that owns it and the one next action.
+        pageReadable
+          ? jsxs('div', {
+              'data-cb-section-actions': bindingActive ? 'resume' : 'start',
+              style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' },
+              children: [
+                jsx(CbAction, {
+                  'data-cb-section-primary': playerSurface ? 'secondary' : '',
+                  variant: playerSurface ? 'secondary' : 'primary',
+                  disabled: busy,
+                  pending: busy,
+                  onClick: () => begin(bindingActive ? 'resume' : 'fresh'),
+                  children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start a fresh run'
+                })
+              ]
             })
-          ]
-        }),
+          : null,
+        !pageReadable && !embedded
+          ? jsx(LessonReadinessPanel, {
+              readiness,
+              onOpenPlan,
+              onCheckAgain: onRetryPage,
+              onRetryLessonsJob,
+              busy
+            })
+          : null,
         jsx(NoticeLine, { notice, busy }),
 
-        document
+        document && pageReadable
           ? jsx(
               LessonDocumentView,
               {
@@ -15404,7 +15783,7 @@ function SectionPage({
               },
               objectiveId
             )
-          : jsx(CbLabel, { children: 'Teaching segments' }),
+          : null,
         document ? null : page.segments && page.segments.length > 0
           ? jsx('div', {
               className: 'flex flex-col',
@@ -15460,11 +15839,7 @@ function SectionPage({
                 )
               )
             })
-          : jsx(BlankPlate, {
-              title: 'No teaching yet',
-              caption:
-                'A teaching turn in the lesson chat writes the first segment here. Coursebook does not write it for you.'
-            }),
+          : null,
 
         // A parent-recipe page records an observation; it never mounts the graded check node.
         parentLed ? observationNode : null,
@@ -16264,7 +16639,7 @@ function TextbookIndexDetails({ rows }) {
 }
 
 /** Textbook — a scannable section list, not one endless thread. */
-function TextbookView({ row, page, pageState, review, notebooks, outline, implemented, defaultLessonView, openSectionId, onOpenSection, onCloseSection, onChanged, targetBlockId }) {
+function TextbookView({ row, page, pageState, review, notebooks, outline, planStatus, jobs, implemented, defaultLessonView, openSectionId, onOpenSection, onCloseSection, onChanged, onOpenPlan, onRetryLessonsJob, targetBlockId }) {
   const rows = sectionRows({ row, review, notebooks, outline, page })
   const hasOutline = Boolean(outline && Array.isArray(outline.objectives))
   const objectives = hasOutline ? outline.objectives.filter(Boolean) : []
@@ -16313,6 +16688,11 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
       onRetryPage: pageState.reload,
       implemented,
       review,
+      outline,
+      planStatus,
+      jobs,
+      onOpenPlan,
+      onRetryLessonsJob,
       onBack: onCloseSection,
       onChanged,
       targetBlockId: targetBlockId || null,
@@ -18036,6 +18416,28 @@ function CourseExportView({ row, implemented, onRepair, onOpenLibrary }) {
 }
 
 /**
+ * H-174: the hero's action set as data, so "at most one primary" is a property of the model rather
+ * than a promise about three hand-written conditionals. A learner can only get a primary action
+ * when the approved lesson page is readable; every other state is explained by the readiness panel
+ * and has no primary at all.
+ */
+function lessonHeroPlan(readiness, { overview = false, sectionOpen = false } = {}) {
+  const readable = Boolean(readiness && readiness.state === 'readable')
+  if (overview || !readable) return []
+  if (sectionOpen) {
+    return [
+      { id: 'sections', variant: 'secondary', label: 'Back to sections' },
+      { id: 'why', variant: 'text', label: 'Why this is next' }
+    ]
+  }
+  return [
+    { id: 'start', variant: 'primary', label: 'Start the lesson' },
+    { id: 'textbook', variant: 'secondary', label: 'Open the textbook' },
+    { id: 'why', variant: 'text', label: 'Why this is next' }
+  ]
+}
+
+/**
  * Course detail — the durable page for one enrollment.
  *
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
@@ -18088,11 +18490,27 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     `evidence-${row.enrollment_id}`,
     supports('evidence.inspect')
   )
+  // H-174: the section whose page this screen is about. The backend's current objective wins; a
+  // course whose plan exists but whose evidence is empty opens on the plan's mainline section, so
+  // the hero can answer "is there a readable page here?" instead of guessing from an absent id.
+  const outlineObjectives =
+    outline.data && Array.isArray(outline.data.objectives) ? outline.data.objectives.filter(Boolean) : []
+  const pageObjectiveId =
+    objectiveId ||
+    ((mainlineObjective(row, outlineObjectives) || {}).objective_id || null)
+  // The plan and the lessons job are what author this page. The page read alone cannot say why a
+  // section is empty; this row of jobs names the job that owns it (H-174).
+  const jobs = useRpcQuery(
+    'jobs.list',
+    { enrollment_id: row.enrollment_id, limit: 20 },
+    `course-jobs-${row.enrollment_id}`,
+    supports('jobs.list')
+  )
   const page = useRpcQuery(
     'lesson.page',
-    { enrollment_id: row.enrollment_id, objective_id: objectiveId },
-    `page-${row.enrollment_id}-${objectiveId}`,
-    supports('lesson.page') && Boolean(objectiveId)
+    { enrollment_id: row.enrollment_id, objective_id: pageObjectiveId },
+    `page-${row.enrollment_id}-${pageObjectiveId}`,
+    supports('lesson.page') && Boolean(pageObjectiveId)
   )
 
   const refresh = useCallback(() => {
@@ -18101,9 +18519,10 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     quizzes.reload()
     evidence.reload()
     page.reload()
+    jobs.reload()
     if (outline) outline.reload()
     if (onChanged) onChanged()
-  }, [review, notebooks, quizzes, evidence, page, outline, onChanged])
+  }, [review, notebooks, quizzes, evidence, page, jobs, outline, onChanged])
 
   const openSection = useCallback((nextObjectiveId, blockId) => {
     if (nextObjectiveId) setObjectiveId(nextObjectiveId)
@@ -18130,7 +18549,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
 
   const startLesson = useCallback(
     async (mode, explicitObjectiveId) => {
-      const target = explicitObjectiveId || objectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id)
+      const target = explicitObjectiveId || objectiveId || pageObjectiveId || (row.evidence_summary && row.evidence_summary.current_objective_id)
       if (!target) {
         setNotice('This course has no current objective yet; approve the plan first.')
         return
@@ -18179,8 +18598,41 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       if (outcome.ok) refresh()
       else if (outcome.reason === 'no-binding') openSection(target)
     },
-    [objectiveId, row, page.data, profile, refresh, openSection]
+    [objectiveId, pageObjectiveId, row, page.data, profile, refresh, openSection]
   )
+
+  // H-174: re-run the failed lessons job from the brief it stored, keyed by that job so a double
+  // click replays one run. The page never invents content and never fakes a page: the job writes it.
+  const [readinessBusy, setReadinessBusy] = useState(false)
+  const retryLessonsKey = useRef(null)
+  const retryLessonsJob = useCallback(async () => {
+    const job = lessonsJobFrom(jobs.data)
+    if (!job || !job.brief || !job.job_id) {
+      setNotice('The lessons job could not be read yet, so it cannot be re-run from here. Open Plan to start it.')
+      selectView('plan')
+      return
+    }
+    setReadinessBusy(true)
+    setNotice(null)
+    if (!retryLessonsKey.current || retryLessonsKey.current.jobId !== job.job_id) {
+      retryLessonsKey.current = { jobId: job.job_id, key: `cb-lessons-retry-${job.job_id}` }
+    }
+    const response = await rpc(
+      'jobs.create',
+      { kind: job.kind || 'plan', brief: job.brief },
+      { idempotencyKey: retryLessonsKey.current.key }
+    )
+    setReadinessBusy(false)
+    if (!response.ok) {
+      setNotice(
+        `${response.error && response.error.code ? response.error.code + ': ' : ''}${describeError(response.error)} The plan and the pages already written are unchanged.`
+      )
+      return
+    }
+    retryLessonsKey.current = { jobId: response.result.job_id, key: null }
+    setNotice('The lessons job was queued again from its saved brief. Pages already written at this plan version are kept.')
+    refresh()
+  }, [jobs.data, refresh])
 
   const rows = sectionRows({ row, review: review.data, notebooks: notebooks.data, outline: outline.data, page: page.data })
   const currentTitle =
@@ -18212,6 +18664,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       review: review.data,
       notebooks: notebooks.data,
       outline: outline.data,
+      planStatus: outline.status,
+      jobs: jobs.data,
       implemented,
       // H-147: the Home default (or this classroom's override) is the view the section opens in.
       defaultLessonView,
@@ -18219,6 +18673,8 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       onOpenSection: openSection,
       onCloseSection: closeSection,
       onChanged: refresh,
+      onOpenPlan: () => selectView('plan'),
+      onRetryLessonsJob: retryLessonsJob,
       targetBlockId
     })
   } else if (view === 'notebook') {
@@ -18276,6 +18732,21 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
   const topCanResume = Boolean(
     page.data && page.data.runtime && page.data.runtime.binding_status === 'active'
   )
+  // H-174: the hero's action set reads the page, not just the objective id. No approved page means
+  // no run to start and no textbook to open; the panel below the hero names the plan or the
+  // lessons job that owns the page and offers its one next action.
+  const heroReadiness = lessonReadiness({
+    outline: outline.data,
+    page: page.data,
+    jobs: jobs.data,
+    pageStatus: page.status,
+    planStatus: outline.status
+  })
+  const heroReadable = heroReadiness.state === 'readable'
+  const heroPlan = lessonHeroPlan(heroReadiness, {
+    overview: view === 'overview',
+    sectionOpen: Boolean(openSectionId)
+  })
   const objectives = outline.data && Array.isArray(outline.data.objectives) ? outline.data.objectives.filter(Boolean) : []
   const summary = row.evidence_summary || {}
   const courseProgress = objectives.length
@@ -18387,34 +18858,63 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
                 flex: compactHero ? '1 1 100%' : '0 0 13rem',
                 minWidth: 0
               },
-              children: [
-                view === 'overview' || openSectionId ? null : jsx(CbAction, {
-                  variant: 'primary',
-                  disabled: busy,
-                  onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
-                  children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start a fresh run'
-                }),
-                jsx(CbAction, {
-                  variant: 'secondary',
-                  onClick: () => {
-                    setView('textbook')
-                    setOpenSectionId(null)
-                  },
-                  children: 'Open the textbook'
-                }),
-                jsxs('details', {
-                  'data-cb-why-next': '',
-                  style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-                  children: [
-                    jsx('summary', { style: { cursor: 'pointer' }, children: 'Why this is next' }),
-                    jsx('p', { style: { margin: '0.35rem 0 0', lineHeight: 1.5 }, children: currentTitle })
-                  ]
-                })
-              ]
+              children: heroPlan.map((item) =>
+                item.id === 'why'
+                  ? jsxs(
+                      'details',
+                      {
+                        'data-cb-why-next': '',
+                        style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                        children: [
+                          jsx('summary', { style: { cursor: 'pointer' }, children: 'Why this is next' }),
+                          jsx('p', { style: { margin: '0.35rem 0 0', lineHeight: 1.5 }, children: currentTitle })
+                        ]
+                      },
+                      item.id
+                    )
+                  : jsx(
+                      CbAction,
+                      item.id === 'start'
+                        ? {
+                            variant: 'primary',
+                            disabled: busy,
+                            onClick: () => startLesson(nextKind === 'resume_lesson' && topCanResume ? 'resume' : 'fresh'),
+                            children: busy ? 'Opening' : topCanResume ? 'Resume the lesson' : 'Start a fresh run'
+                          }
+                        : {
+                            variant: item.variant,
+                            'data-cb-textbook-entry': item.id === 'sections' ? 'back' : 'open',
+                            onClick: () => {
+                              setView('textbook')
+                              setOpenSectionId(null)
+                            },
+                            children: item.label
+                          },
+                      item.id
+                    )
+              )
             })
           ]
         })
       }),
+
+      // H-174: when there is no approved page, the hero says who owns it and what the one next
+      // action is. It sits between the hero and the surfaces so the reading column never opens on a
+      // contradictory pair of buttons.
+      heroReadable
+        ? null
+        : jsx(LessonReadinessPanel, {
+            readiness: heroReadiness,
+            compact: true,
+            busy: readinessBusy,
+            onOpenPlan: () => selectView('plan'),
+            onCheckAgain: () => {
+              page.reload()
+              jobs.reload()
+              outline.reload()
+            },
+            onRetryLessonsJob: retryLessonsJob
+          }),
 
       jsx(NoticeLine, { notice, busy }),
 
@@ -22641,6 +23141,10 @@ export {
   FieldDesk,
   deskEstimateState,
   CreateCourseFlow,
+  createStartStep,
+  suggestedTitle,
+  effectiveDepth,
+  SCOPE_MIN_DEPTH,
   LessonPlayer,
   PlayerVerdict,
   PlayerClose,
@@ -22702,6 +23206,9 @@ export {
   syllabusStaleNotice,
   LearnerPlanView,
   LessonDocumentView,
+  lessonReadiness,
+  LessonReadinessPanel,
+  lessonHeroPlan,
   MediaFrame,
   NotebookView,
   OBSERVATION_NOTE_MAX,

@@ -1,0 +1,226 @@
+{
+  "port": "9360",
+  "steps": [
+    {
+      "label": "incomplete",
+      "width": 1049,
+      "textScale": false,
+      "hash": "#/coursebook",
+      "via": "textbook",
+      "courseTitle": "Japanese affection and register — an L0 demonstration classroom",
+      "sectionTitle": "Tell everyday affection from a direct romantic declaration",
+      "readiness": "incomplete",
+      "job": "none",
+      "headline": "This lesson page is incomplete",
+      "detail": "The page exists but has no teaching blocks yet. The lessons job owns the page; re-run it from Plan to replace this placeholder.",
+      "readinessActions": [
+        "plan:Open the plan"
+      ],
+      "sectionActions": null,
+      "primaries": [],
+      "heroActions": [],
+      "falseCopy": false,
+      "chatPromptCopy": false,
+      "legacyEmptyCopy": false,
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "16px"
+    },
+    {
+      "label": "incomplete",
+      "width": 459,
+      "textScale": false,
+      "hash": "#/coursebook",
+      "via": "textbook",
+      "courseTitle": "Japanese affection and register — an L0 demonstration classroom",
+      "sectionTitle": "Tell everyday affection from a direct romantic declaration",
+      "readiness": "incomplete",
+      "job": "none",
+      "headline": "This lesson page is incomplete",
+      "detail": "The page exists but has no teaching blocks yet. The lessons job owns the page; re-run it from Plan to replace this placeholder.",
+      "readinessActions": [
+        "plan:Open the plan"
+      ],
+      "sectionActions": null,
+      "primaries": [],
+      "heroActions": [],
+      "falseCopy": false,
+      "chatPromptCopy": false,
+      "legacyEmptyCopy": false,
+      "overflow": {
+        "scrollWidth": 214,
+        "clientWidth": 214
+      },
+      "innerWidth": 459,
+      "rootFont": "16px"
+    },
+    {
+      "label": "incomplete",
+      "width": 459,
+      "textScale": true,
+      "hash": "#/coursebook",
+      "via": "textbook",
+      "courseTitle": "Japanese affection and register — an L0 demonstration classroom",
+      "sectionTitle": "Tell everyday affection from a direct romantic declaration",
+      "readiness": "incomplete",
+      "job": "none",
+      "headline": "This lesson page is incomplete",
+      "detail": "The page exists but has no teaching blocks yet. The lessons job owns the page; re-run it from Plan to replace this placeholder.",
+      "readinessActions": [
+        "plan:Open the plan"
+      ],
+      "sectionActions": null,
+      "primaries": [],
+      "heroActions": [],
+      "falseCopy": false,
+      "chatPromptCopy": false,
+      "legacyEmptyCopy": false,
+      "overflow": {
+        "scrollWidth": 214,
+        "clientWidth": 214
+      },
+      "innerWidth": 459,
+      "rootFont": "32px"
+    },
+    {
+      "label": "unapproved",
+      "width": 1049,
+      "textScale": false,
+      "hash": "#/coursebook",
+      "via": "textbook",
+      "courseTitle": "H103 live reject check",
+      "sectionTitle": "Follow a supervised creek sampling procedure and record observations",
+      "readiness": "unapproved",
+      "job": "none",
+      "headline": "The plan is not approved yet",
+      "detail": "Lesson pages are written after the plan is approved. Approve the plan in Plan, then the lessons job writes one page per section.",
+      "readinessActions": [
+        "plan:Open the plan"
+      ],
+      "sectionActions": null,
+      "primaries": [
+        "Record observation"
+      ],
+      "heroActions": [],
+      "falseCopy": false,
+      "chatPromptCopy": false,
+      "legacyEmptyCopy": false,
+      "overflow": {
+        "scrollWidth": 407,
+        "clientWidth": 407
+      },
+      "innerWidth": 1049,
+      "rootFont": "16px"
+    },
+    {
+      "label": "unapproved",
+      "width": 459,
+      "textScale": false,
+      "hash": "#/coursebook",
+      "via": "textbook",
+      "courseTitle": "H103 live reject check",
+      "sectionTitle": "Follow a supervised creek sampling procedure and record observations",
+      "readiness": "unapproved",
+      "job": "none",
+      "headline": "The plan is not approved yet",
+      "detail": "Lesson pages are written after the plan is approved. Approve the plan in Plan, then the lessons job writes one page per section.",
+      "readinessActions": [
+        "plan:Open the plan"
+      ],
+      "sectionActions": null,
+      "primaries": [
+        "Record observation"
+      ],
+      "heroActions": [],
+      "falseCopy": false,
+      "chatPromptCopy": false,
+      "legacyEmptyCopy": false,
+      "overflow": {
+        "scrollWidth": 214,
+        "clientWidth": 214
+      },
+      "innerWidth": 459,
+      "rootFont": "16px"
+    },
+    {
+      "label": "unapproved",
+      "width": 459,
+      "textScale": true,
+      "hash": "#/coursebook",
+      "via": "textbook",
+      "courseTitle": "H103 live reject check",
+      "sectionTitle": "Follow a supervised creek sampling procedure and record observations",
+      "readiness": "unapproved",
+      "job": "none",
+      "headline": "The plan is not approved yet",
+      "detail": "Lesson pages are written after the plan is approved. Approve the plan in Plan, then the lessons job writes one page per section.",
+      "readinessActions": [
+        "plan:Open the plan"
+      ],
+      "sectionActions": null,
+      "primaries": [
+        "Record observation"
+      ],
+      "heroActions": [],
+      "falseCopy": false,
+      "chatPromptCopy": false,
+      "legacyEmptyCopy": false,
+      "overflow": {
+        "scrollWidth": 214,
+        "clientWidth": 214
+      },
+      "innerWidth": 459,
+      "rootFont": "32px"
+    }
+  ],
+  "frames": [
+    {
+      "id": "h174-live-incomplete-1049",
+      "path": "audit/h174/h174-live-incomplete-1049.png"
+    },
+    {
+      "id": "h174-live-incomplete-460",
+      "path": "audit/h174/h174-live-incomplete-460.png"
+    },
+    {
+      "id": "h174-live-incomplete-460-text200",
+      "path": "audit/h174/h174-live-incomplete-460-text200.png"
+    },
+    {
+      "id": "h174-live-unapproved-1049",
+      "path": "audit/h174/h174-live-unapproved-1049.png"
+    },
+    {
+      "id": "h174-live-unapproved-460",
+      "path": "audit/h174/h174-live-unapproved-460.png"
+    },
+    {
+      "id": "h174-live-unapproved-460-text200",
+      "path": "audit/h174/h174-live-unapproved-460-text200.png"
+    }
+  ],
+  "pluginDecisionBefore": "{\"coursebook\":true}",
+  "arrived": true,
+  "pluginPresent": true,
+  "sidebar": [
+    "Home",
+    "Courses",
+    "Library",
+    "Parent Studio"
+  ],
+  "coursesList": true,
+  "japaneseOpened": true,
+  "japaneseSection": true,
+  "coursesList2": true,
+  "draftOpened": true,
+  "draftSection": true,
+  "parentShelved": [
+    "crs_650052975ca7406aaddda22122c89bad",
+    "crs_dfa2a1aa66e74e8fbbb21662879b0a4f",
+    "crs_638f2201613e4f73a6012911473b1aaa",
+    "crs_8fa43cf082154155a4508a36c721f582"
+  ]
+}

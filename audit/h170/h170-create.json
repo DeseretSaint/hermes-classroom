@@ -1,0 +1,54 @@
+{
+  "stepBefore": "2",
+  "continueToReview": true,
+  "review": {
+    "step": "3",
+    "heading": "Review and create",
+    "hasGoal": true,
+    "hasScope": false,
+    "hasCreate": true,
+    "body": [
+      "How you will use it",
+      "A steady plan",
+      "Pace",
+      "Light",
+      "Depth",
+      "Deep",
+      "Checks",
+      "Self-check",
+      "Guidance",
+      "Guided",
+      "Create course writes the course and one draft plan. The plan then opens here for you to approve, and no lesson is written until you do.",
+      "A full course. Research and drafting may take several minutes and run longest; the plan carries its own estimate once it exists.",
+      "Back",
+      "Create course"
+    ]
+  },
+  "createClicked": true,
+  "result": {
+    "lead": [
+      "Skip to course content",
+      "COURSEBOOK",
+      "Home",
+      "Default view · Game",
+      "· Child-safe defaults",
+      "· Session · 15 min"
+    ],
+    "receipt": [
+      "Coursecrs_f2105a9c6ee14fbcb1d906bee65f9e1fPlanpln_4c285ff90ddf45e985969c92b2a5312b (draft)Enrolmentenr_f5bbaf65aca149678c06cf1fa9b206bdPlan jobjob_4001d6316ab04e76a1f76ff64bbb84b3 · queued",
+      "Coursecrs_f2105a9c6ee14fbcb1d906bee65f9e1f",
+      "Course",
+      "Course",
+      "Planpln_4c285ff90ddf45e985969c92b2a5312b (draft)",
+      "Plan",
+      "Plan",
+      "Enrolmentenr_f5bbaf65aca149678c06cf1fa9b206bd",
+      "Enrolment",
+      "Enrolment",
+      "Plan jobjob_4001d6316ab04e76a1f76ff64bbb84b3 · queued",
+      "Plan job",
+      "Plan job"
+    ],
+    "error": null
+  }
+}

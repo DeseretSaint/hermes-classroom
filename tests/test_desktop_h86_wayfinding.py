@@ -122,8 +122,10 @@ class LessonStartTest(unittest.TestCase):
         )
         self.assertIn("children: busy ? 'Opening the lesson' : bindingActive ? 'Continue in the lesson chat' : 'Start a fresh run'", self.source)
         self.assertIn("start_lesson: 'Start a fresh run'", self.source)
-        # The detached notice is not hidden behind a runtime read succeeding.
-        self.assertIn("        !bindingActive\n          ? jsx('div', {", self.source)
+        # The detached notice is not hidden behind a runtime read succeeding. H-174 also gates it on
+        # a readable approved page, so a section whose page the lessons job has not written yet is
+        # explained by the readiness panel instead of by a chat sentence.
+        self.assertIn("        !bindingActive && pageReadable\n          ? jsx('div', {", self.source)
 
     def test_learner_copy_has_no_internal_vocabulary(self) -> None:
         # Source comments and diagnostics keep the machine words on purpose; the copy a learner can

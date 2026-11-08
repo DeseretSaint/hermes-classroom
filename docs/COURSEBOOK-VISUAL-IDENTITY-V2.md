@@ -478,11 +478,12 @@ Current, entry: `Learn something specific.` heading, a promise paragraph, three 
 weight (`Start with a goal`, `Use a course someone already made`, `Use my college syllabus`), a hint
 paragraph, a progress paragraph and a support note.
 
-Current, flow: three steps. Step 1, `What do you want to make?`, offers three numbered scope cards
+Current, flow: three steps, goal first (H-170). Step 1, `What do you want to be able to do?`, asks
+for the goal, offers the example gallery, and names the course from the goal (the learner can edit
+the suggested name). Step 2, `How much course do you want?`, offers the three scope cards
 (`A single lesson`, `A short course`, `A full course`) each with a `CHOOSE` label, a disabled
-`Continue` and the helper `Choose one option above to continue`. Step 2, `What should it cover?`,
-asks for the goal, a course name, one of four use modes, shows the parent redirect note, and an
-optional tuning disclosure. Step 3 is the plan review.
+`Continue` until one is picked and the helper `Choose one option above to continue`, then
+`What kind of course is this?` and an optional tuning disclosure. Step 3 is the plan review.
 Capture: `audit/ux/round3/08-new-course-step1-live.png`, `09-new-course-step1-selected-live.png`,
 `10-new-course-step2-live.png`, `11-plan-review-live.png`.
 

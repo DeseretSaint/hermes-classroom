@@ -1,0 +1,28 @@
+{
+  "kind": "readiness/action audit of the shipped SectionPage rendered by scripts/h174-frames.py",
+  "measured_in": "headless Chromium over the frame HTML written by scripts/m2fq-shot.mjs (DOMParser read of each frame document)",
+  "frames": 16,
+  "invariant": {
+    "primary_actions_when_page_absent": 0,
+    "primary_actions_when_job_running": 0,
+    "primary_actions_when_job_failed": 0,
+    "primary_actions_when_page_readable": 1,
+    "false_sentence_present": false,
+    "chat_claim_present_when_page_absent": false
+  },
+  "cases": [
+    {"id": "absent", "readiness": "not_started", "primaries": 0, "primary_labels": [],
+     "actions": ["check:plan:View the plan"], "headline": "The lessons job has not run yet"},
+    {"id": "running", "readiness": "running", "primaries": 0, "primary_labels": [],
+     "actions": ["check:Check again", "plan:View the plan"],
+     "headline": "The lessons job is writing lesson pages"},
+    {"id": "failed", "readiness": "failed", "primaries": 0, "primary_labels": [],
+     "actions": ["retry:Retry the lessons job", "plan:View the plan"],
+     "headline": "The lessons job stopped"},
+    {"id": "present", "readiness": null, "primaries": 1, "primary_labels": ["Start a fresh run"],
+     "actions": [], "headline": null}
+  ],
+  "widths": [1049, 460],
+  "text_scale": ["16px", "32px"],
+  "horizontal_overflow": false
+}

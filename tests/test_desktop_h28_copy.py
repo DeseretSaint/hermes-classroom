@@ -402,24 +402,25 @@ class CreateFlowCompositionTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.out = _run({"kind": "create-step-one"})
 
-    def test_first_step_asks_for_scope(self) -> None:
+    def test_first_step_asks_for_the_goal(self) -> None:
         html = self.out["html"]
-        self.assertIn("What do you want to make?", html)
-        for label in ("A single lesson", "A short course (a few sessions)", "A full course (weeks or months)"):
-            self.assertIn(label, html)
+        self.assertIn("What do you want to be able to do?", html)
+        self.assertIn('for="cb-goal"', html)
+        self.assertIn('for="cb-title"', html)
+        self.assertIn("Name this course (required)", html)
 
     def test_the_flow_states_the_step_and_what_happens_next(self) -> None:
         html = self.out["html"]
         self.assertIn("Step 1 of 3", html)
         self.assertIn("data-cb-create-spine", html)
         self.assertIn('aria-current="step"', html)
-        self.assertIn("Next: name the goal and the course.", html)
+        self.assertIn("Next: choose how much course you want.", html)
         self.assertNotIn("STEP 1 OF 3", html)
 
-    def test_step_one_has_no_goal_fields_and_no_recipe_choice(self) -> None:
+    def test_step_one_has_no_scope_options_and_no_recipe_choice(self) -> None:
         html = self.out["html"]
-        self.assertNotIn("id=\"cb-goal\"", html)
-        self.assertNotIn("id=\"cb-title\"", html)
+        self.assertNotIn("data-cb-scope-option", html)
+        self.assertNotIn("A single lesson", html)
         self.assertNotIn("Recipe", html)
         self.assertNotIn("STEP 2 OF 3", html)
 
@@ -436,11 +437,16 @@ class CreateFlowSourceTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.source = PLUGIN_JS.read_text(encoding="utf-8")
 
-    def test_scope_is_asked_before_the_goal(self) -> None:
+    def test_the_goal_is_asked_before_the_size(self) -> None:
+        """H-170: the first-run promise is "name one goal", so the goal step comes first."""
         source = self.source
-        scope_at = source.index("What do you want to make?")
-        goal_at = source.index("What should it cover?")
-        self.assertLess(scope_at, goal_at)
+        start = source.index("const CREATE_STEP_SPINE")
+        block = source[start : source.index("])", start)]
+        self.assertLess(block.index("name: 'Goal'"), block.index("name: 'Size'"), block)
+        self.assertLess(block.index("name: 'Size'"), block.index("name: 'Review'"), block)
+        # The goal field is authored before the scope options, and the flow opens on it.
+        self.assertLess(source.index("id: 'cb-goal'"), source.index("'data-cb-scope-option'"))
+        self.assertIn("useState(createStartStep(seed))", source)
 
     def test_tuning_fields_are_behind_a_disclosure(self) -> None:
         source = self.source

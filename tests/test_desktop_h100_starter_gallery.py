@@ -127,15 +127,16 @@ class StarterCopySourceTest(unittest.TestCase):
 
     def test_the_gallery_sits_between_the_goal_and_the_course_name(self) -> None:
         goal_at = SOURCE.index("id: 'cb-goal'")
-        gallery_at = SOURCE.index("jsx(GoalGallery, { onChoose: setGoal })")
+        gallery_at = SOURCE.index("jsx(GoalGallery, { onChoose: changeGoal })")
         title_at = SOURCE.index("id: 'cb-title'")
         self.assertLess(goal_at, gallery_at)
         self.assertLess(gallery_at, title_at)
 
     def test_choosing_an_example_only_fills_the_goal(self) -> None:
-        # The gallery receives one callback, and the flow gives it setGoal. No submit is reachable
-        # from an example: the form's own action is still the only writer of a course.
-        self.assertIn("jsx(GoalGallery, { onChoose: setGoal })", SOURCE)
+        # The gallery receives one callback, and the flow gives it changeGoal (which fills the goal
+        # and derives the suggested name). No submit is reachable from an example: the form's own
+        # action is still the only writer of a course.
+        self.assertIn("jsx(GoalGallery, { onChoose: changeGoal })", SOURCE)
         self.assertNotIn("onChoose: submit", SOURCE)
         self.assertNotIn("onChoose: startLearnerPlan", SOURCE)
 
