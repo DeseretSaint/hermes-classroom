@@ -1,0 +1,1542 @@
+{
+  "generated_at": "2026-11-08T18:59:06.670Z",
+  "kind": "shipped desktop/plugin.js mounted in jsdom (real effects, real clicks) against recorded real backend payloads, painted in headless Chromium",
+  "plugin_sha256": null,
+  "chromium": "Chrome/155.0.8059.84",
+  "frames": [
+    {
+      "id": "01-discover-light-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 1938,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Add to library",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "typographic",
+        "typographic",
+        "typographic",
+        "typographic"
+      ],
+      "cover_first_w_px": 541,
+      "cover_first_h_px": 305,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 1938,
+      "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
+    },
+    {
+      "id": "02-discover-dark-1049",
+      "view": "workshop",
+      "mode": "dark",
+      "width": 1049,
+      "height": 1938,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Add to library",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "typographic",
+        "typographic",
+        "typographic",
+        "typographic"
+      ],
+      "cover_first_w_px": 541,
+      "cover_first_h_px": 305,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 1938,
+      "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
+    },
+    {
+      "id": "03-discover-light-900",
+      "view": "workshop",
+      "mode": "light",
+      "width": 900,
+      "height": 1970,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Add to library",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "typographic",
+        "typographic",
+        "typographic",
+        "typographic"
+      ],
+      "cover_first_w_px": 459,
+      "cover_first_h_px": 289,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 900,
+      "client_width": 900,
+      "document_height": 1970,
+      "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
+    },
+    {
+      "id": "04-discover-light-460",
+      "view": "workshop",
+      "mode": "light",
+      "width": 460,
+      "height": 2476,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Add to library",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "typographic",
+        "typographic",
+        "typographic",
+        "typographic"
+      ],
+      "cover_first_w_px": 432,
+      "cover_first_h_px": 244,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 2476,
+      "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
+    },
+    {
+      "id": "05-discover-dark-460",
+      "view": "workshop",
+      "mode": "dark",
+      "width": 460,
+      "height": 2476,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Add to library",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "typographic",
+        "typographic",
+        "typographic",
+        "typographic"
+      ],
+      "cover_first_w_px": 432,
+      "cover_first_h_px": 244,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 2476,
+      "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
+    },
+    {
+      "id": "06-discover-200pct-460",
+      "view": "workshop",
+      "mode": "light",
+      "width": 460,
+      "height": 4710,
+      "font": "32px",
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "32px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Add to library",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "typographic",
+        "typographic",
+        "typographic",
+        "typographic"
+      ],
+      "cover_first_w_px": 407,
+      "cover_first_h_px": 386,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 4710,
+      "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
+    },
+    {
+      "id": "07-discover-reduced-motion-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 1938,
+      "font": null,
+      "motion": "reduced",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "reduced",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Add to library",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "typographic",
+        "typographic",
+        "typographic",
+        "typographic"
+      ],
+      "cover_first_w_px": 541,
+      "cover_first_h_px": 305,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 1938,
+      "text_head": "Discover\nLibrary\nProvenance\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, an"
+    },
+    {
+      "id": "08-discover-installed-light-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 1982,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 2,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": true,
+      "hero_title": "Japanese affection and register — a Sample L0 classroom",
+      "hero_primary": [
+        "Continue",
+        "Read the pack page"
+      ],
+      "cover_count": 4,
+      "cover_kinds": [
+        "artifact",
+        "artifact",
+        "typographic",
+        "typographic"
+      ],
+      "cover_first_w_px": 541,
+      "cover_first_h_px": 329,
+      "images": [
+        {
+          "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1080,
+            470
+          ],
+          "displayed": [
+            539,
+            303
+          ]
+        },
+        {
+          "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1080,
+            470
+          ],
+          "displayed": [
+            228,
+            152
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 3,
+      "card_titles": [
+        "Japanese affection and register — a Sample L0 classroom",
+        "Parent demo: measuring ingredients together",
+        "Technical demo: reading a pack before you install it"
+      ],
+      "shelf_count": [
+        "Languages",
+        "For parents",
+        "Technical"
+      ],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 1982,
+      "text_head": "Discover\nLibrary\nProvenance\nPack visual — the relationship and register map\nFEATURED PACK\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits."
+    },
+    {
+      "id": "09-detail-light-1049",
+      "view": "detail",
+      "mode": "light",
+      "width": 1049,
+      "height": 2359,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "artifact"
+      ],
+      "cover_first_w_px": 1049,
+      "cover_first_h_px": 615,
+      "images": [
+        {
+          "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1080,
+            470
+          ],
+          "displayed": [
+            1047,
+            589
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Japanese affection and register — a Sample L0 classroom",
+      "detail_primary": [
+        "← All packs",
+        "Continue this course",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 6,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance",
+        "Your evidence"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 2359,
+      "text_head": "← All packs\nPack visual — the relationship and register map\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits.\n\nValidated\nLanguages\nCEFR A1 "
+    },
+    {
+      "id": "10-detail-dark-900",
+      "view": "detail",
+      "mode": "dark",
+      "width": 900,
+      "height": 2293,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "artifact"
+      ],
+      "cover_first_w_px": 900,
+      "cover_first_h_px": 531,
+      "images": [
+        {
+          "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1080,
+            470
+          ],
+          "displayed": [
+            898,
+            505
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Japanese affection and register — a Sample L0 classroom",
+      "detail_primary": [
+        "← All packs",
+        "Continue this course",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 6,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance",
+        "Your evidence"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 900,
+      "client_width": 900,
+      "document_height": 2293,
+      "text_head": "← All packs\nPack visual — the relationship and register map\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits.\n\nValidated\nLanguages\nCEFR A1 "
+    },
+    {
+      "id": "11-detail-light-460",
+      "view": "detail",
+      "mode": "light",
+      "width": 460,
+      "height": 2600,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "artifact"
+      ],
+      "cover_first_w_px": 460,
+      "cover_first_h_px": 283,
+      "images": [
+        {
+          "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1080,
+            470
+          ],
+          "displayed": [
+            458,
+            258
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Japanese affection and register — a Sample L0 classroom",
+      "detail_primary": [
+        "← All packs",
+        "Continue this course",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 6,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance",
+        "Your evidence"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 2600,
+      "text_head": "← All packs\nPack visual — the relationship and register map\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and say why it fits.\n\nValidated\nLanguages\nCEFR A1 "
+    },
+    {
+      "id": "12-no-media-fallback-light-1049",
+      "view": "detail",
+      "mode": "light",
+      "width": 1049,
+      "height": 1831,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "typographic"
+      ],
+      "cover_first_w_px": 1049,
+      "cover_first_h_px": 591,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Parent demo: measuring ingredients together",
+      "detail_primary": [
+        "← All packs",
+        "Add to library",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 3,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 1831,
+      "text_head": "← All packs\nFOR PARENTS\nParent demo: measuring ingredients together\nParent demo: measuring ingredients together\n\nRead a measuring jug and double a quantity, with a parent guiding and the answers kept off the learner page.\n\nValidated\nFor par"
+    },
+    {
+      "id": "13-no-media-fallback-light-460",
+      "view": "detail",
+      "mode": "light",
+      "width": 460,
+      "height": 2400,
+      "font": null,
+      "motion": "full",
+      "interactions": [],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": null,
+      "tabs": [],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "typographic"
+      ],
+      "cover_first_w_px": 460,
+      "cover_first_h_px": 260,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Technical demo: reading a pack before you install it",
+      "detail_primary": [
+        "← All packs",
+        "Add to library",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 3,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 2400,
+      "text_head": "← All packs\nTECHNICAL\nTechnical demo: reading a pack before you install it\nTechnical demo: reading a pack before you install it\n\nRead what a pack manifest declares and what its trust labels can and cannot prove.\n\nValidated\nTechnical\nTechnic"
+    },
+    {
+      "id": "14-card-opens-detail-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 2377,
+      "font": null,
+      "motion": "full",
+      "interactions": [
+        "opened the featured card"
+      ],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "typographic"
+      ],
+      "cover_first_w_px": 1049,
+      "cover_first_h_px": 591,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Japanese affection and register — a Sample L0 classroom",
+      "detail_primary": [
+        "← All packs",
+        "Add to library",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 6,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance"
+      ],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 2377,
+      "text_head": "Discover\nLibrary\nProvenance\n← All packs\nLANGUAGES\nJapanese affection and register — a Sample L0 classroom\nJapanese affection and register — a Sample L0 classroom\n\nChoose the Japanese expression that fits the person you are speaking to, and "
+    },
+    {
+      "id": "15-library-light-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 1100,
+      "font": null,
+      "motion": "full",
+      "interactions": [
+        "Library tab"
+      ],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Library",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 1,
+      "library_empty": "Choose a pack to see what we know about itPreview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.",
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 1100,
+      "text_head": "Discover\nLibrary\nProvenance\nUse my college syllabus\nImport pack\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, wh"
+    },
+    {
+      "id": "16-library-dark-460",
+      "view": "workshop",
+      "mode": "dark",
+      "width": 460,
+      "height": 1400,
+      "font": null,
+      "motion": "full",
+      "interactions": [
+        "Library tab"
+      ],
+      "scope_mode": "dark",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#131210",
+        "paper-raised": "#1d1b16",
+        "ink": "#f5efe1",
+        "ink-soft": "#b9ae9a",
+        "rule": "#3d382d",
+        "accent": "#a8c0f2",
+        "accent-soft": "#222a3b",
+        "field": "#9fc69a",
+        "lamp": "#efc06b",
+        "lamp-soft": "#33290f",
+        "coral": "#ea9480"
+      },
+      "paper_painted": "rgb(19, 18, 16)",
+      "ink_painted": "rgb(245, 239, 225)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Library",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 1,
+      "library_empty": "Choose a pack to see what we know about itPreview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.",
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "document_height": 1400,
+      "text_head": "Discover\nLibrary\nProvenance\nUse my college syllabus\nImport pack\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, wh"
+    },
+    {
+      "id": "17-library-empty-light-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 900,
+      "font": null,
+      "motion": "full",
+      "interactions": [
+        "Library tab, nothing installed"
+      ],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Library",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 0,
+      "cover_kinds": [],
+      "cover_first_w_px": null,
+      "cover_first_h_px": null,
+      "images": [],
+      "empty_alt_images": 0,
+      "badges": [],
+      "detail_title": null,
+      "detail_primary": [],
+      "detail_sections": 0,
+      "detail_fact_labels": [],
+      "notice": null,
+      "library_rows": 0,
+      "library_empty": "No packs on this profile yetA pack is a zip file someone else made: lessons, sources and a manifest that lists every file. Bundled packs ship with Coursebook; a pack from someone else is added from the Import flow, where you review it first.",
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 900,
+      "text_head": "Discover\nLibrary\nProvenance\nUse my college syllabus\nImport pack\nPacks on this profile\n\nEvery pack installed on this profile: the ones that ship with Coursebook and the ones added here from someone else. Preview a pack to see who made it, wh"
+    },
+    {
+      "id": "18-add-to-library-result-1049",
+      "view": "workshop",
+      "mode": "light",
+      "width": 1049,
+      "height": 2491,
+      "font": null,
+      "motion": "full",
+      "interactions": [
+        "opened the featured card",
+        "pressed Add to library"
+      ],
+      "scope_mode": "light",
+      "scope_motion": "full",
+      "root_font_px": "16px",
+      "tokens": {
+        "paper": "#f7f1e4",
+        "paper-raised": "#fffcf3",
+        "ink": "#1a1713",
+        "ink-soft": "#5c5347",
+        "rule": "#d7cbb4",
+        "accent": "#2c4a8c",
+        "accent-soft": "#e2e8f7",
+        "field": "#2f6047",
+        "lamp": "#e8a93a",
+        "lamp-soft": "#fbebcb",
+        "coral": "#9c2e1c"
+      },
+      "paper_painted": "rgb(247, 241, 228)",
+      "ink_painted": "rgb(26, 23, 19)",
+      "h1_count": 0,
+      "h2_count": 1,
+      "tab_current": "Discover",
+      "tabs": [
+        "Discover",
+        "Library",
+        "Provenance"
+      ],
+      "hero_present": false,
+      "hero_title": null,
+      "hero_primary": [],
+      "cover_count": 1,
+      "cover_kinds": [
+        "artifact"
+      ],
+      "cover_first_w_px": 1049,
+      "cover_first_h_px": 615,
+      "images": [
+        {
+          "alt": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting.",
+          "src_head": "data:image/png;base64,iV",
+          "loaded": true,
+          "natural": [
+            1080,
+            470
+          ],
+          "displayed": [
+            1047,
+            589
+          ]
+        }
+      ],
+      "empty_alt_images": 0,
+      "badges": [
+        {
+          "word": "Validated",
+          "kind": "validated"
+        }
+      ],
+      "detail_title": "Japanese affection and register — a Sample L0 classroom",
+      "detail_primary": [
+        "← All packs",
+        "Continue this course",
+        "Save for later",
+        "Learning",
+        "Teaching",
+        "Reference",
+        "Later"
+      ],
+      "detail_sections": 6,
+      "detail_fact_labels": [
+        "Content hash",
+        "Integrity",
+        "Automated checks",
+        "Human review",
+        "Model support",
+        "Provenance",
+        "Your evidence"
+      ],
+      "notice": "Added: Japanese affection and register — a Sample L0 classroomAdded to your library. The course is open in Courses and the pack is installed on this profile.Open the courseDismiss",
+      "library_rows": 0,
+      "library_empty": null,
+      "card_count": 0,
+      "card_titles": [],
+      "shelf_count": [],
+      "primary_count": 1,
+      "button_without_a_name": 0,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "document_height": 2491,
+      "text_head": "Discover\nLibrary\nProvenance\n\nAdded: Japanese affection and register — a Sample L0 classroom\n\nAdded to your library. The course is open in Courses and the pack is installed on this profile.\n\nOpen the course\nDismiss\n← All packs\nPack visual — "
+    }
+  ]
+}

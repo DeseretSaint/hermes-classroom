@@ -211,8 +211,8 @@ const navTo = async (destination) => {
   await flush()
 }
 
-await navTo('library')
-surfaces.push(await snapshot('library'))
+await navTo('workshop')
+surfaces.push(await snapshot('workshop'))
 await navTo('studio')
 surfaces.push(await snapshot('studio'))
 await navTo('home')
@@ -445,7 +445,7 @@ class A11yStructureTest(unittest.TestCase):
         self.assertNotEqual(surface["headings"][0]["text"], "Register and affection")
 
     def test_landmarks_are_named(self) -> None:
-        for name in ("home-desk", "library", "studio", "section"):
+        for name in ("home-desk", "workshop", "studio", "section"):
             with self.subTest(surface=name):
                 surface = self.surface(name)
                 navs = [item for item in surface["landmarks"] if item["tag"] == "nav"]
@@ -472,7 +472,7 @@ class A11yStructureTest(unittest.TestCase):
                 self.assertTrue(skip["revealedOnFocus"], f"{name} skip link stays clipped while focused")
 
     def test_skip_link_moves_focus_into_content_never_the_header(self) -> None:
-        for name in ("home-desk", "library", "studio"):
+        for name in ("home-desk", "workshop", "studio"):
             with self.subTest(surface=name):
                 skip = self.surface(name)["skip"]
                 self.assertTrue(skip["focusedIsMain"], f"{name} skip focus landed on {skip['focusedTag']}")
@@ -482,12 +482,14 @@ class A11yStructureTest(unittest.TestCase):
         self.assertFalse(section["focusedIsMain"])
 
     def test_library_and_studio_have_their_own_page_title(self) -> None:
-        self.assertEqual(self.surface("library")["title"], "Library")
+        # H-196: the pack Library is a surface inside the Workshop destination now, so the
+        # destination's own page title is Workshop and the Library tab keeps its own heading.
+        self.assertEqual(self.surface("workshop")["title"], "Workshop")
         self.assertEqual(self.surface("studio")["title"], "Parent Studio")
         self.assertEqual(self.surface("section")["title"], "Course")
 
     def test_each_destination_heading_regions_are_h2(self) -> None:
-        library = [h["level"] for h in self.surface("library")["headings"]]
+        library = [h["level"] for h in self.surface("workshop")["headings"]]
         self.assertIn(2, library, library)
         studio = [h["level"] for h in self.surface("studio")["headings"]]
         self.assertIn(2, studio, studio)
@@ -495,7 +497,7 @@ class A11yStructureTest(unittest.TestCase):
         self.assertTrue(any(h["level"] == 2 for h in desk), desk)
 
     def test_the_header_carries_the_wordmark_not_the_seal(self) -> None:
-        for name in ("home-desk", "library", "studio"):
+        for name in ("home-desk", "workshop", "studio"):
             with self.subTest(surface=name):
                 surface = self.surface(name)
                 self.assertEqual([item["text"] for item in surface["wordmarks"]], ["Coursebook"])
@@ -504,8 +506,8 @@ class A11yStructureTest(unittest.TestCase):
 
     def test_destination_nav_is_home_first_then_the_catalog(self) -> None:
         surface = self.surface("home-desk")
-        self.assertEqual([item["id"] for item in surface["navItems"]], ["home", "courses", "library", "studio"])
-        self.assertEqual([item["text"] for item in surface["navItems"]], ["Home", "Courses", "Library", "Parent Studio"])
+        self.assertEqual([item["id"] for item in surface["navItems"]], ["home", "courses", "workshop", "studio"])
+        self.assertEqual([item["text"] for item in surface["navItems"]], ["Home", "Courses", "Workshop", "Parent Studio"])
         self.assertEqual(surface["navItems"][0]["current"], "page")
 
     def test_the_page_title_uses_the_display_step(self) -> None:

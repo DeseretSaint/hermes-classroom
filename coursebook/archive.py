@@ -558,6 +558,49 @@ class StagingArea:
         }
         return staged_id
 
+    def stage_directory(self, directory: str | Path) -> str:
+        """Stage one bundled/unpacked pack directory and return its ``staged_id``.
+
+        H-196: the bundled installer. The caller names a directory it already resolved; this method
+        takes no path over the wire. The directory is read through :func:`read_directory`, which
+        validates the manifest and re-hashes every declared file, and only the declared files (plus
+        the manifest) are copied into staging — an undeclared file beside the pack is never adopted.
+        The result is cached on this instance exactly like a granted archive, so ``pack.import`` can
+        consume it once.
+        """
+        source = Path(directory)
+        if source.is_symlink():
+            raise PackRejected("a bundled pack directory must not be a symbolic link")
+        manifest, files = read_directory(source)
+        staged_id = "stg-" + secrets.token_hex(16)
+        self.root.mkdir(parents=True, exist_ok=True)
+        envelope = self.root / staged_id
+        staged_directory = envelope / "pack"
+        staged_directory.mkdir(parents=True, exist_ok=True)
+        try:
+            (staged_directory / root_file()).write_bytes((source / root_file()).read_bytes())
+            for relative, payload in files.items():
+                target = staged_directory / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(payload)
+        except OSError as exc:
+            shutil.rmtree(envelope, ignore_errors=True)
+            raise PackRejected(f"bundled pack could not be staged: {exc}") from exc
+        staged = StagedPack(
+            staged_id=staged_id,
+            directory=staged_directory,
+            manifest=manifest,
+            integrity={
+                "hashes_match": True,
+                "file_count": len(manifest["files"]),
+                "expanded_bytes": sum(int(entry["bytes"]) for entry in manifest["files"]),
+            },
+            granted_from=str(source),
+        )
+        self._staged[staged_id] = staged
+        self._write_record(staged)
+        return staged_id
+
     def stage(self, staged_id: str) -> StagedPack:
         """Validate the granted archive and publish a staged record, or reject with no residue."""
         cached = self._staged.get(staged_id)

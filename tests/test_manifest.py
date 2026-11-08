@@ -155,6 +155,10 @@ class PackageLayoutTest(unittest.TestCase):
                 # M3-B1: one bounded take; the recogniser's honest availability probe.
                 "/pronunciation/attempt",
                 "/pronunciation/status",
+                # H-196: the local Workshop — one read of the catalogue and one add-to-library
+                # write. Neither takes a path: the body carries a catalogue pack id.
+                "/workshop/catalog",
+                "/workshop/install",
             },
         )
 
