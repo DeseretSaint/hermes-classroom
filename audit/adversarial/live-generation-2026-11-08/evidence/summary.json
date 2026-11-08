@@ -1,0 +1,263 @@
+{
+  "packet": "h187-live-generation-2026-11-08",
+  "scopes": {
+    "full": {
+      "approve_error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_63f24746e2624712b2bf88384dbda178\"}}",
+      "approve_ok": false,
+      "approve_result": null,
+      "check_plan_count": 0,
+      "error": null,
+      "facts_unverified": null,
+      "generation_state": null,
+      "generator": {
+        "model": null,
+        "provider": null
+      },
+      "goal": "Read a business report statistically: averages, spread, sampling and correlation",
+      "independence": null,
+      "job_terminal_state": "failed",
+      "lesson_count": 0,
+      "lesson_rows": [],
+      "lesson_states": [],
+      "lessons_jobs": [],
+      "objective_count": 0,
+      "plan_elapsed_s": 304.1,
+      "plan_hash": "sha256:854306c8a773876f822b53a0c5b804b1a4ab7ee09d80e72a6dc10990b44e3524",
+      "plan_schema": null,
+      "plan_state": "draft",
+      "plan_state_after_approve": "draft",
+      "recipe": "committed",
+      "rejection_reasons": [],
+      "research_failure_count": null,
+      "research_queries": null,
+      "research_query_count": null,
+      "research_reason": null,
+      "research_source_count": null,
+      "research_sources": null,
+      "research_status": null,
+      "scope": "full",
+      "served_lesson": {},
+      "tag": "full",
+      "time_estimate_weeks": null,
+      "unit_count": 0,
+      "units": [],
+      "usage": {
+        "events": [
+          {
+            "duration_ms": 84522,
+            "job_id": "job_06dfc1031a464904b95d6b477de2d37f",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T17:26:19Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "plan-prompt.v7",
+              "purpose": "coursebook.plan.generate",
+              "unknown_cost": true
+            }
+          }
+        ],
+        "totals": {
+          "by_model": {
+            "nous/deepseek/deepseek-v4.1-flash-1017": {
+              "calls": 1,
+              "total_tokens": "redacted"
+            }
+          },
+          "calls": 1,
+          "input_tokens": "redacted",
+          "output_tokens": "redacted",
+          "total_tokens": "redacted"
+        }
+      },
+      "validation_outcome": null,
+      "validation_verdict": null,
+      "validation_warning": null,
+      "validator": {
+        "model": null,
+        "provider": null
+      },
+      "validator_config": {
+        "configured": true,
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+      },
+      "wire_contract_version": 18
+    },
+    "short": {
+      "approve_error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_af29ef7578cc4018aed1f18ebfdc366f\"}}",
+      "approve_ok": false,
+      "approve_result": null,
+      "check_plan_count": 0,
+      "error": null,
+      "facts_unverified": null,
+      "generation_state": null,
+      "generator": {
+        "model": null,
+        "provider": null
+      },
+      "goal": "Plan and cook a week of high-protein meals without repeating a dish",
+      "independence": null,
+      "job_terminal_state": "failed",
+      "lesson_count": 0,
+      "lesson_rows": [],
+      "lesson_states": [],
+      "lessons_jobs": [],
+      "objective_count": 0,
+      "plan_elapsed_s": 644.3,
+      "plan_hash": "sha256:207a9cc10538dfb3ca4734127af617ba6834042184ace370c38882957cdb20dd",
+      "plan_schema": null,
+      "plan_state": "draft",
+      "plan_state_after_approve": "draft",
+      "recipe": "committed",
+      "rejection_reasons": [],
+      "research_failure_count": null,
+      "research_queries": null,
+      "research_query_count": null,
+      "research_reason": null,
+      "research_source_count": null,
+      "research_sources": null,
+      "research_status": null,
+      "scope": "short",
+      "served_lesson": {},
+      "tag": "short",
+      "time_estimate_weeks": null,
+      "unit_count": 0,
+      "units": [],
+      "usage": {
+        "events": [
+          {
+            "duration_ms": 339802,
+            "job_id": "job_094228a46b424a4c89fe3db1ca473ef8",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T17:39:04Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "plan-prompt.v7",
+              "purpose": "coursebook.plan.generate",
+              "unknown_cost": true
+            }
+          }
+        ],
+        "totals": {
+          "by_model": {
+            "nous/deepseek/deepseek-v4.1-flash-1017": {
+              "calls": 1,
+              "total_tokens": "redacted"
+            }
+          },
+          "calls": 1,
+          "input_tokens": "redacted",
+          "output_tokens": "redacted",
+          "total_tokens": "redacted"
+        }
+      },
+      "validation_outcome": null,
+      "validation_verdict": null,
+      "validation_warning": null,
+      "validator": {
+        "model": null,
+        "provider": null
+      },
+      "validator_config": {
+        "configured": true,
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+      },
+      "wire_contract_version": 18
+    },
+    "single": {
+      "approve_error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_74643aa9b322422f831cf7578311413b\"}}",
+      "approve_ok": false,
+      "approve_result": null,
+      "check_plan_count": 0,
+      "error": null,
+      "facts_unverified": null,
+      "generation_state": null,
+      "generator": {
+        "model": null,
+        "provider": null
+      },
+      "goal": "Sharpen a kitchen knife on a whetstone without rolling the edge",
+      "independence": null,
+      "job_terminal_state": "failed",
+      "lesson_count": 0,
+      "lesson_rows": [],
+      "lesson_states": [],
+      "lessons_jobs": [],
+      "objective_count": 0,
+      "plan_elapsed_s": 236.1,
+      "plan_hash": "sha256:fdfd91f7a291e378377d9a8aaa70e51ae4cfd317683c16a2c684d83116edf726",
+      "plan_schema": null,
+      "plan_state": "draft",
+      "plan_state_after_approve": "draft",
+      "recipe": "one_off",
+      "rejection_reasons": [],
+      "research_failure_count": null,
+      "research_queries": null,
+      "research_query_count": null,
+      "research_reason": null,
+      "research_source_count": null,
+      "research_sources": null,
+      "research_status": null,
+      "scope": "single",
+      "served_lesson": {},
+      "tag": "single",
+      "time_estimate_weeks": null,
+      "unit_count": 0,
+      "units": [],
+      "usage": {
+        "events": [
+          {
+            "duration_ms": 30382,
+            "job_id": "job_57b1b7e547a54e58be434cbe31bb4198",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T17:28:16Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "plan-prompt.v7",
+              "purpose": "coursebook.plan.generate",
+              "unknown_cost": true
+            }
+          }
+        ],
+        "totals": {
+          "by_model": {
+            "nous/deepseek/deepseek-v4.1-flash-1017": {
+              "calls": 1,
+              "total_tokens": "redacted"
+            }
+          },
+          "calls": 1,
+          "input_tokens": "redacted",
+          "output_tokens": "redacted",
+          "total_tokens": "redacted"
+        }
+      },
+      "validation_outcome": null,
+      "validation_verdict": null,
+      "validation_warning": null,
+      "validator": {
+        "model": null,
+        "provider": null
+      },
+      "validator_config": {
+        "configured": true,
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+      },
+      "wire_contract_version": 18
+    }
+  }
+}

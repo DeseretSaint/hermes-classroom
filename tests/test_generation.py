@@ -1914,6 +1914,22 @@ class BoundedRequestInputTest(unittest.TestCase):
         with self.assertRaises(gen.GenerationRejected):
             gen._bounded_input({"big": "x" * 30000})
 
+    def test_the_bound_scales_with_a_full_scope_brief(self) -> None:
+        """H-187: a full-scope deep pass measured 28 kB compact and failed before any model call.
+
+        A full plan legitimately carries more research than a single-sitting one, so the local
+        guard scales with the declared scope — and a single-sitting brief keeps the old bound.
+        """
+        self.assertEqual(gen._request_bound("single"), 24000)
+        self.assertEqual(gen._request_bound("short"), 24000)
+        self.assertEqual(gen._request_bound("full"), 48000)
+        self.assertEqual(gen._request_bound(None), 24000)
+        payload = {"ledger": "x" * 30000}
+        text = gen._bounded_input(payload, limit=gen._request_bound("full"))
+        self.assertEqual(json.loads(text), payload)
+        with self.assertRaises(gen.GenerationRejected):
+            gen._bounded_input(payload, limit=gen._request_bound("single"))
+
 
 if __name__ == "__main__":
     unittest.main()
