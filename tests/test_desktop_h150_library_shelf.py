@@ -38,7 +38,7 @@ const row = {
   enrollment_status: 'active',
   recipe: 'learner',
   provenance: { source: payload.source || 'community', pack_id: 'pack_0123456789ab', pack_version: '1.0.0' },
-  next_step: { kind: payload.kind === 'facts' ? 'start_lesson' : 'resume_lesson', label: 'Continue: Register and affection' },
+  next_step: { kind: payload.kind === 'facts' ? 'start_lesson' : 'resume_lesson', label: payload.nextLabel || 'Continue: Register and affection' },
   evidence_summary: { total_objectives: payload.total === undefined ? 3 : payload.total, independent: 1, review_due: 0 },
   updated_at: '2026-11-01T10:00:00Z'
 }
@@ -76,6 +76,17 @@ process.stdout.write(html)
 
 def _function(name: str, end: str) -> str:
     return SOURCE[SOURCE.index(f"function {name}") : SOURCE.index(f"function {end}")]
+
+
+def _function_body(name: str) -> str:
+    """The body of `name`, up to the next top-level function — order-independent.
+
+    Anchoring on a neighbouring function's name silently yields an empty slice when the two
+    are declared in the other order, which is a false pass waiting to happen.
+    """
+    start = SOURCE.index(f"function {name}")
+    end = SOURCE.find("\nfunction ", start + len(f"function {name}"))
+    return SOURCE[start:] if end == -1 else SOURCE[start:end]
 
 
 class LibraryShelfRenderTest(unittest.TestCase):
@@ -147,6 +158,19 @@ class LibraryShelfRenderTest(unittest.TestCase):
         self.assertNotIn("data-cb-seal", html)
         self.assertNotIn("data-cb-cover-field", html)
         self.assertIn("Nothing to open yet. Preview it to see the manifest.", html)
+
+    # -- the shelf never prints a backend contract placeholder -------------------------------
+    def test_the_row_resolves_the_backend_plural_placeholder(self) -> None:
+        html = self.render({"kind": "row", "nextLabel": "Review 2 objective(s)"})
+        self.assertIn("Review 2 objectives", html)
+        self.assertNotIn("objective(s)", html)
+
+    def test_a_label_outside_the_review_form_is_still_scrubbed(self) -> None:
+        # The backend's placeholder is a contract string, not a template: any sentence that
+        # carries it must read as a plural count on the shelf.
+        html = self.render({"kind": "row", "nextLabel": "2 objective(s) remain in this unit"})
+        self.assertIn("2 objectives remain in this unit", html)
+        self.assertNotIn("objective(s)", html)
 
     # -- the preview is not an inspector -----------------------------------------------------
     def test_pack_preview_moves_identifiers_under_closed_technical_details(self) -> None:
@@ -234,7 +258,7 @@ class LibraryShelfSourceTest(unittest.TestCase):
         self.assertNotIn("file(s)", SOURCE)
 
     def test_backend_plural_placeholder_never_reaches_the_shelf(self) -> None:
-        placeholder = SOURCE[SOURCE.index("function learnerNextLabel") : SOURCE.index("function cbCourseGoalLine")]
+        placeholder = _function_body("learnerNextLabel")
         self.assertIn(r"objective\(s\)", placeholder)
         self.assertIn("plural(Number(match[1]), 'objective', 'objectives')", placeholder)
         self.assertIn("learnerNextLabel(row && row.next_step", SOURCE)
