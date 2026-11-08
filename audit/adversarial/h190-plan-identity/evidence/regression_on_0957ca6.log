@@ -1,0 +1,17 @@
+F
+======================================================================
+FAIL: test_the_plan_stage_runs_against_the_created_course (tests.test_learner_plan_flow.LearnerPlanFlowTest.test_the_plan_stage_runs_against_the_created_course)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/deseretsaint/.hermes/profiles/cinder/cache/scratch/h190-0957ca6/tests/test_learner_plan_flow.py", line 197, in test_the_plan_stage_runs_against_the_created_course
+    self.assertEqual(result["plan_id"], flow["draft_plan_id"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'f568365b70725ff7' != 'pln_21c8df5ce09f47e3b3e7241a942a062f'
+- f568365b70725ff7
++ pln_21c8df5ce09f47e3b3e7241a942a062f
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.466s
+
+FAILED (failures=1)

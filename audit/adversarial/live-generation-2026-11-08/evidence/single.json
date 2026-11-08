@@ -1,0 +1,240 @@
+{
+  "course": {
+    "course_id": "crs_2d59e06767f04e5385781edaed4bde04",
+    "plan_id": "pln_f91cb3ef745b4de49a7d597dc86641a8",
+    "revision": 0
+  },
+  "dial_s": {
+    "assessment": "none",
+    "autonomy": "guided",
+    "depth": "working",
+    "pace": "light"
+  },
+  "enrollment": {
+    "enrollment_id": "enr_240454b454944097bf2b7bd71218b428",
+    "revision": 0
+  },
+  "finished_at": "2026-11-08T17:44:55Z",
+  "goal": "Sharpen a kitchen knife on a whetstone without rolling the edge",
+  "ok": true,
+  "phases": {
+    "approve": {
+      "error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_f91cb3ef745b4de49a7d597dc86641a8\"}}",
+      "ok": false,
+      "plan_state_after": "draft",
+      "started_at": "2026-11-08T17:44:55Z"
+    },
+    "lessons": {
+      "facts": {
+        "rows": [],
+        "servable_objectives": [],
+        "states": []
+      },
+      "jobs": [],
+      "started_at": "2026-11-08T17:44:55Z"
+    },
+    "page": {
+      "served": null,
+      "started_at": "2026-11-08T17:44:55Z"
+    },
+    "plan": {
+      "elapsed_s": 344.2,
+      "facts": {
+        "approved_at": null,
+        "generation": null,
+        "objectives": [],
+        "plan_hash": "sha256:4c38d8bea204c36d1680dd165b7b7d62ff34b5fdd69a00c201ec247301337494",
+        "plan_id": "pln_f91cb3ef745b4de49a7d597dc86641a8",
+        "plan_state": "draft",
+        "units": []
+      },
+      "final_job": {
+        "artifact_ids": [],
+        "attempt_id": "att_ece6952b74334f7ba54883ba5809d479",
+        "brief": {
+          "course_id": "crs_2d59e06767f04e5385781edaed4bde04",
+          "dials": {
+            "assessment": "none",
+            "autonomy": "guided",
+            "depth": "working",
+            "pace": "light"
+          },
+          "enrollment_id": "enr_240454b454944097bf2b7bd71218b428",
+          "goal": "Sharpen a kitchen knife on a whetstone without rolling the edge",
+          "recipe": "one_off",
+          "scope": "single",
+          "stage": "plan",
+          "subject_domain": "technical_procedure"
+        },
+        "cancel_requested_at": null,
+        "checkpoint": {
+          "approval_provenance": {
+            "facts_unverified": false,
+            "independent": true,
+            "needs_review": false,
+            "outcome": "independently_validated",
+            "warning": null
+          },
+          "domain_provenance": {
+            "declared_locale": null,
+            "declared_subject_domain": "technical_procedure",
+            "resolved_domain": "technical_procedure",
+            "source": "declared",
+            "target_language": null
+          },
+          "generation_state": "draft",
+          "last_stage": "plan",
+          "next_unit_ordinal": 1,
+          "objectives": 1,
+          "plan_hash": "sha256:7b5a64712671bf61244b354368a93fee67e3c7ad1f16be898892e1f44e6c2e79",
+          "plan_id": "24edbf47fbf71ba7",
+          "plan_schema": "coursebook.plan.v2",
+          "plan_version": 2,
+          "rejection_reasons": [],
+          "units": 1,
+          "validation": {
+            "cost": {
+              "calls": 1,
+              "cost_usd": null,
+              "unknown_cost": true
+            },
+            "cost_usd": null,
+            "facts_unverified": false,
+            "generator": {
+              "known": true,
+              "model": "deepseek/deepseek-v4.1-flash-1017",
+              "provider": "nous"
+            },
+            "independence": "independent",
+            "independent": true,
+            "outcome": "independently_validated",
+            "research_status": "ok",
+            "validator": {
+              "known": true,
+              "model": "z-ai/glm-5.3-flash",
+              "provider": "nous"
+            },
+            "verdict": "pass",
+            "waived_unknown": [],
+            "warning": null
+          },
+          "validation_verdict": "pass"
+        },
+        "created_at": "2026-11-08T17:39:11Z",
+        "error": null,
+        "job_id": "job_60e81bb8d9b845b8a4b42bd1dd774e48",
+        "kind": "plan",
+        "lease": null,
+        "operation_id": "h187-jobs-create-1794159551147860580",
+        "progress": {
+          "message": "plan authored (draft)",
+          "stage": "plan",
+          "steps_done": 1,
+          "steps_total": 1
+        },
+        "state": "completed",
+        "updated_at": "2026-11-08T17:44:55Z"
+      },
+      "job_id": "job_60e81bb8d9b845b8a4b42bd1dd774e48",
+      "label": "plan",
+      "pump": {
+        "done_at_s": 344.0,
+        "finished": [
+          "job_60e81bb8d9b845b8a4b42bd1dd774e48"
+        ]
+      },
+      "started_at": "2026-11-08T17:39:11Z",
+      "terminal_state": "completed",
+      "thread_alive": false,
+      "timeline": [
+        {
+          "elapsed_s": 0.0,
+          "message": "",
+          "stage": "queued",
+          "state": "queued"
+        },
+        {
+          "elapsed_s": 2.0,
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 344.2,
+          "message": "plan authored (draft)",
+          "stage": "plan",
+          "state": "completed"
+        }
+      ]
+    }
+  },
+  "plan_job": {
+    "job_id": "job_60e81bb8d9b845b8a4b42bd1dd774e48",
+    "state": "queued"
+  },
+  "recipe": "one_off",
+  "schema_version": 11,
+  "scope": "single",
+  "started_at": "2026-11-08T17:39:11Z",
+  "subject_domain": "technical_procedure",
+  "tag": "single-r3",
+  "title": "Sharpen a kitchen knife on a whetstone",
+  "total_elapsed_s": 344.3,
+  "usage": {
+    "events": [
+      {
+        "duration_ms": 53212,
+        "job_id": "job_60e81bb8d9b845b8a4b42bd1dd774e48",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T17:44:55Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 5100,
+          "output_tokens": 7395,
+          "prompt_version": "plan-prompt.v7",
+          "purpose": "coursebook.plan.generate",
+          "unknown_cost": true
+        }
+      },
+      {
+        "duration_ms": 282507,
+        "job_id": "job_60e81bb8d9b845b8a4b42bd1dd774e48",
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T17:44:55Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 3880,
+          "output_tokens": 16188,
+          "prompt_version": "validation-prompt.v3",
+          "purpose": "coursebook.plan.validate",
+          "unknown_cost": true
+        }
+      }
+    ],
+    "totals": {
+      "by_model": {
+        "nous/deepseek/deepseek-v4.1-flash-1017": {
+          "calls": 1,
+          "total_tokens": 0
+        },
+        "nous/z-ai/glm-5.3-flash": {
+          "calls": 1,
+          "total_tokens": 0
+        }
+      },
+      "calls": 2,
+      "input_tokens": 8980,
+      "output_tokens": 23583,
+      "total_tokens": 0
+    }
+  },
+  "validator_config": {
+    "configured": true,
+    "model": "z-ai/glm-5.3-flash",
+    "provider": "nous",
+    "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+  },
+  "wire_contract_version": 18
+}
