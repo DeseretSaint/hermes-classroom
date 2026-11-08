@@ -15701,7 +15701,7 @@ function StudioPlanView({
         : learner
           ? 'This course has no plan job attached. Start a new course to generate one; nothing is invented to fill the gap.'
           : 'No plan job is attached to this course, so there is nothing to review. Start a new brief.',
-      children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled, onRunAgain: onChanged }) : null
+      children: planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onChanged }) : null
     })
   }
 

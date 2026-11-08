@@ -332,5 +332,13 @@ class CreateFlowWiringTest(unittest.TestCase):
         self.assertIn("error.message", job_line + source[source.index("function JobStateText"):source.index("function useStudioJob")])
 
 
+    def test_the_empty_plan_job_line_uses_the_settled_handler(self) -> None:
+        """A bare `onSettled` here threw ReferenceError and replaced the route (H-95/H-143)."""
+        source = _source()
+        plan_view = source[source.index("function StudioPlanView"):source.index("function StudioBlueprintView")]
+        self.assertNotIn("onSettled, onRunAgain", plan_view)
+        self.assertIn("onSettled: onJobSettled", plan_view)
+
+
 if __name__ == "__main__":
     unittest.main()
