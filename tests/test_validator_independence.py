@@ -283,10 +283,13 @@ class SycophanticPassTest(unittest.TestCase):
             budget=gen.CostBudget(max_calls=32),
         )
         self.assertEqual(lessons["lessons"][0]["state"], "model_assessed")
-        self.assertFalse(lessons["lessons"][0]["check_enabled"])
+        # H-185: the model-assessed page is usable (its check is open), but the pass is never
+        # reported as independent.
+        self.assertTrue(lessons["lessons"][0]["check_enabled"])
         page = gen.learner_page(self.connection, lessons["lessons"][0]["lesson_id"])
         self.assertEqual(page["provenance"]["outcome"], "model_assessed")
-        self.assertFalse(page["provenance"]["check_enabled"])
+        self.assertFalse(page["provenance"]["independent"])
+        self.assertTrue(page["provenance"]["check_enabled"])
 
     def test_same_model_validator_cannot_upgrade_support_even_with_a_verbatim_quote(self) -> None:
         source = SourceRecord(
@@ -422,13 +425,16 @@ class NoResearchWaiverTest(unittest.TestCase):
             budget=gen.CostBudget(max_calls=32),
         )
         self.assertEqual(lessons["lessons"][0]["state"], "model_assessed")
-        self.assertFalse(lessons["lessons"][0]["check_enabled"])
+        self.assertTrue(lessons["lessons"][0]["check_enabled"])
         page = gen.learner_page(self.connection, lessons["lessons"][0]["lesson_id"])
         self.assertEqual(page["provenance"]["outcome"], "model_assessed")
-        self.assertFalse(page["provenance"]["check_enabled"])
+        self.assertFalse(page["provenance"]["independent"])
+        self.assertTrue(page["provenance"]["check_enabled"])
         self.assertIn("facts unverified, no sources", page["provenance"]["warning"])
         check_state = self.connection.execute("SELECT state, audit_state FROM checks").fetchone()
-        self.assertEqual((check_state["state"], check_state["audit_state"]), ("closed", "pending"))
+        # Usable check, honest audit: the row is open so the learner can answer it, but the audit
+        # stays `pending` because the author model assessed its own work.
+        self.assertEqual((check_state["state"], check_state["audit_state"]), ("open", "pending"))
 
 
 class RecordedIdentityTest(unittest.TestCase):

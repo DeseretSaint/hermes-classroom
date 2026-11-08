@@ -1306,7 +1306,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 17,
+          "contract_version": 18,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-0000a0",
           "result": {
@@ -1336,7 +1336,7 @@
         },
         "stimulus_format": null,
         "submit": {
-          "contract_version": 17,
+          "contract_version": 18,
           "ok": true,
           "operation_id": "op-h40-attempt-submit-0000a6",
           "result": {
@@ -1437,6 +1437,13 @@
       },
       "enrollment_id": "enr_00000000000000000000000000000005",
       "notebook_entries": [],
+      "provenance": {
+        "check_enabled": true,
+        "facts_unverified": false,
+        "independent": true,
+        "outcome": "independently_validated",
+        "warning": null
+      },
       "revision": 1,
       "runtime": null,
       "section": {
