@@ -37,8 +37,8 @@ through `coursebook/contracts.py`; the Desktop half reads them from the backend
 
 The v1 **to v16** files for `cb.rpc` (including `rpc.v6.json`, `rpc.v9.json`, `rpc.v10.json`,
 `rpc.v12.json`, `rpc.v13.json`, `rpc.v14.json`, `rpc.v15.json` and `rpc.v16.json`), the
-v1 **to v10** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
-`db.v8.json`, `db.v9.json` and `db.v10.json`), and the v1
+v1 **to v11** files for `cb.db` (including `db.v3.json`, `db.v5.json`, `db.v7.json`,
+`db.v8.json`, `db.v9.json`, `db.v10.json` and `db.v11.json`), and the v1
 **to v3** files for `cb.errors` and the v1 to v4 files for `cb.jobs` remain on disk, unmodified,
 as immutable history: the superseded current files are `rpc.v16.json`, `db.v10.json`,
 `errors.v3.json` and `jobs.v4.json`.
