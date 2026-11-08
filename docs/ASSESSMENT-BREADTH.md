@@ -132,13 +132,19 @@ actually is.
 The harness's declared breadth (three check kinds, three stimulus formats, six evidence targets) is
 adequate for text-shaped subjects. The binding limits today are, in order:
 
-1. the open-response lane is unconfigured, so generated checks cannot be graded at all (B-1);
-2. the observation path exists but is unreachable (B-2);
+1. the open-response lane is still unconfigured, so an open answer is **saved, not graded**. This
+   no longer means generated checks are ungradeable: B-1 is closed (`ce6c8c1`, merged `4e709d3`,
+   H-20 `t_673155b0`) — every stored check declares its lane, and every generated quiz grades
+   deterministically on `exact` (correct → `pass`, wrong → `not_yet`). The finding this card
+   governs stands as written: construct breadth is still three input formats, and a pack
+   `production`/`transfer` check or a free-text answer to a checklist is still the open lane;
+2. the observation path was unreachable (B-2); it is reachable now — `observation.record` is
+   declared, dispatched and mounted (merged `bbebd96`, closure note in §11);
 3. therefore no construct that needs a non-text *submission* can be honestly added, because there
    is no working lane to attach it to.
 
-Points 1 and 2 are follow-up cards (§11), not this card's work. The construct decision does not
-depend on them being fixed: even with both fixed, code, performance and artifact each still need
+B-1 and B-2 were follow-up cards (§11); both are closed on master. The construct decision does not
+depend on them being fixed: even with both closed, code, performance and artifact each still need
 §10's gates.
 
 ---
@@ -294,8 +300,9 @@ Anchor: `EvidenceClassText` (`desktop/plugin.js:3732`) and `NEXT_ACTION_COPY`
 (`3709`).
 
 - Closed reference (`kind ∈ exact|numeric|selection`): existing copy, unchanged.
-- Open reference (`rubric_only` or missing kind) — the state of every generated check in this
-  build (B-1):
+- Open reference (`rubric_only` or missing kind) — the state of a generated verification checklist
+  or a pack `production`/`transfer` check. B-1 closed the generated *quiz* path, which now stores
+  `exact`; a missing kind is refused before a check row exists:
 
   > **Saved, not graded.** This build has no grading model for open answers, so no verdict was
   > produced. Your answer is saved, no progress was changed, and Retry grading does not consume an
@@ -344,15 +351,17 @@ answer is narrower than the design intends, and the table must say so:
 | Alternative | Reachable today? | What it yields | What it cannot yield |
 |---|---|---|---|
 | Written answer graded against a **closed** reference (`exact`/`numeric`/`selection`) | **Yes** — imported pack checks whose target is not `production`/`transfer`; any check whose reference carries a closed kind | A real verdict, `cold`/`hinted`/`answer_shown` evidence, an objective transition | Judging an explanation, a program, a design or a performance |
-| Written explanation graded by a model | **No** — the open lane is unconfigured; the attempt persists as `needs_retry` (B-1) | A saved answer and an honest "not graded" | Any verdict, any progress, until the lane is configured and measured (and CB-QA-11 says enabling it as-is is unsafe) |
+| Written explanation graded by a model | **No** — the open lane is unconfigured; the attempt persists as `needs_retry` (B-1, state at `a12176b`) | A saved answer and an honest "not graded" | Any verdict, any progress, until the lane is configured and measured (and CB-QA-11 says enabling it as-is is unsafe) |
 | Checklist / rubric-scored plan | **No** — same lane problem for generated checks; `pack_flow` maps `production`/`transfer` to `rubric_only` | A saved submission | A verdict in this build |
 | Observation (`self_reported` / `parent_reported`) | **No** — `record_observation` has no RPC method, handler or UI (B-2) | Nothing a learner can reach | Any record, until a contract method exists |
 | Pronunciation practice | **Yes** — `pronunciation.attempt`, local recogniser | A `model_assessed` practice measurement | Evidence, progress, or a mastery claim |
 
 So the truthful learner-facing position is: **"the harness checks what it can compare."** For a
 program, a pitch or a birdhouse, 0.1.0 offers teaching, discussion, and closed-form checks about
-the work — and it says so instead of collecting a submission it cannot grade. §11's B-1/B-2 cards
-are what turn the second and fourth rows into real alternatives.
+the work — and it says so instead of collecting a submission it cannot grade. §11's B-1 and B-2 cards
+are closed, but the second row still waits on the aux lane and CB-QA-11, not on B-1: B-1 fixed the
+generated quiz path, not model grading of an explanation. The fourth row is now real
+(`observation.record`, B-2).
 
 ---
 
@@ -458,7 +467,7 @@ generation input.
 
 | ID | Severity | Owner | Summary |
 |---|---|---|---|
-| **B-1** | High | Cinder | Generated lesson checks store no reference `kind`, so `grading.grade` routes every generated check to the unconfigured open lane: the learner's answer is persisted and the verdict is `needs_retry`. Imported `production`/`transfer` checks do the same via `rubric_only`. |
+| **B-1** | High | Cinder | Generated lesson checks store no reference `kind`, so `grading.grade` routes every generated check to the unconfigured open lane: the learner's answer is persisted and the verdict is `needs_retry`. Imported `production`/`transfer` checks do the same via `rubric_only`. **Closed at `4e709d3` (2026-11-07, H-20 `t_673155b0`)** — content `ce6c8c1`: `validators.seal_reference` is the only writer of `checks.reference_json`, `generation._reference_payload` seals `exact` (quiz/selection) or `rubric_only` (verification/observation), `check.open` refuses a spec that declares no lane, and a missing kind is a grader failure rather than a silent fallthrough. See the closure note below the reproduction block; the summary sentence is the state at `a12176b` and is kept as history. |
 | **B-2** | High | Cinder | `domain.record_observation` has no RPC method, handler or UI. `self_reported`/`parent_reported` are declared contract classes that no learner can produce. **Closed at `bbebd96` (2026-11-07, H-58 `t_85135fc7`)** — declared in `cb.rpc` v14 (H-53 `b13890c`, merged `d20a7a6`), dispatched by a registered handler (H-54 `a729e36`, merged `b7ff866`), persisted with its note under `cb.db` v9, and mounted as the Desktop `ParentObservation` control (H-55 `76a59ed`, merged `bbebd96`). See the closure note below the reproduction block; the summary sentence is the state at `a12176b` and is kept as history. |
 | **B-3** | Low | Vellum | `EVIDENCE_CLASS_COPY` (`desktop/plugin.js:3690`) covers 4 of 6 contract evidence classes; `self_reported`/`parent_reported` render as raw enum text once B-2 makes them reachable. |
 
@@ -470,6 +479,26 @@ PROBE_RESULT={"ok": true, "verdict": "needs_retry", "next_action": "retry_gradin
 $ PYTHONPATH=. python3 ~/.hermes/profiles/atlas/cache/scratch/probe_breadth_closed.py
 PROBE_RESULT={"ok": true, "verdict": "pass", "next_action": "complete_objective", "provenance": null}
 ```
+
+**B-1 closure — re-derived at `4e709d3` (2026-11-07, H-20 `t_673155b0`).** The reproduction above is
+the state at `a12176b` and stays as written. The content commit is `ce6c8c1` ("grading: every stored
+check declares its lane; generated checks grade deterministically (H-20)"), carried by the merge
+`4e709d3`; both are ancestors of `5aed108` by `git merge-base --is-ancestor` (exit 0 for each).
+Re-run here, not copied:
+
+| what closes the defect | where |
+|---|---|
+| `validators.seal_reference` is the only sanctioned constructor for `checks.reference_json`; a missing or unknown `kind` raises `ReferenceSpecError` | `coursebook/validators.py` |
+| `generation._reference_payload` seals `{"kind": "exact", "answers": [...]}` for a quiz/selection check and `{"kind": "rubric_only"}` for a `verification` check or an `observation` | `coursebook/generation.py` (`_reference_payload`) |
+| `check.open` / `progression.challenge_out` refuse a spec with no declared lane before any check row is written; `grading.grade` treats a missing kind as a grader failure, never an open-lane fallthrough | `coursebook/domain.py`, `coursebook/grading.py` |
+| 15 cases on a real migrated DB through `check.open` → `attempt.submit`: correct generated answer → `pass` / `complete_objective` / `evidence_class=cold`; wrong → `not_yet`, check stays `open`, objective never reaches `independent_evidence` | `tests/test_grading_lanes.py` (`python3 -m unittest tests.test_grading_lanes` → `OK`, 15 tests, on `5aed108`) |
+
+What this does **not** close: the open lane is still unconfigured, so a pack `production`/`transfer`
+reference (`rubric_only`) and a free-text answer to a checklist still persist `needs_retry` and
+advance nothing; `DEFECTS.md` CB-QA-11 still governs enabling the aux lane. Construct breadth is
+unchanged — still three input formats (`text | selection | verification`). `docs/GRADING-LANES.md`
+is the implementation record, and `docs/AUDIT-INDEX.md` G-02 / P1-5 rows carry the same reading at
+`5aed108`.
 
 B-2 reproduction: `grep -rn "record_observation" --include=*.py .` returns
 `coursebook/domain.py:2998` plus two call sites in `tests/test_kernel_transitions.py`; no
@@ -493,8 +522,9 @@ and the handler registry has 64 of 64 with no gap once `coursebook.domain`, `cou
 `coursebook.pronunciation` and `coursebook.syllabus` have been imported (a bare `import
 coursebook.domain` reports 57, because `pack_flow` registers its seven `pack.*` / `course.export*`
 handlers on import). Full command transcript: `docs/AUDIT-INDEX.md` §14. The §9 authorization
-paragraph and the B-1/B-3 rows are untouched; §10's construct gates still have to be met, so the
-observation path being reachable is not evidence that code, performance or artifact breadth is.
+paragraph and the B-3 row were untouched by the B-2 closure; §10's construct gates still have to be
+met, so the observation path being reachable is not evidence that code, performance or artifact
+breadth is.
 
 Follow-up cards are created by this card's completion (§12). They are not this card's work and do
 not block the construct decision: even with B-1 and B-2 closed, code, performance and artifact
