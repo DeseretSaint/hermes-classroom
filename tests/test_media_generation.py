@@ -126,6 +126,84 @@ class MediaGenerationTest(KernelCase):
         self.assertEqual(host.speeches, [])
         self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 2)
 
+    # ── H-169: a model_assessed page is readable, so its media is content ───────────────
+
+    def set_lesson_state(self, state: str) -> None:
+        self.execute("UPDATE gen_lessons SET state = ? WHERE id = ?", (state, self.lesson_id))
+
+    def test_model_assessed_lesson_generates_visual_and_audio(self) -> None:
+        self.set_lesson_state("model_assessed")
+        host = FakeHost()
+        summary = self.generate(host)
+        self.assertEqual(summary.generated, 2)
+        self.assertEqual(summary.skipped, 0)
+        self.assertEqual(len(host.images), 1)
+        self.assertEqual(len(host.speeches), 1)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 2)
+        stored = self.stored_media()
+        self.assertEqual({item["mime"] for item in stored}, {"image/png", "audio/mpeg"})
+        self.assertTrue(all(item.get("artifact_id") for item in stored))
+        # The page's own provenance travels with each artifact it produced: a model-assessed
+        # page never yields bytes that read as independently validated.
+        for item in stored:
+            provenance = json.loads(
+                str(self.scalar("SELECT provenance_json FROM artifacts WHERE id = ?", (item["artifact_id"],)))
+            )
+            self.assertEqual(provenance["lesson_state"], "model_assessed")
+            self.assertFalse(provenance["independent"])
+            self.assertNotIn("independently validated", str(item["label"]).casefold())
+        # The preview route exposes the same judgement, not just the bytes.
+        visual = next(item for item in stored if item["kind"] == "visual")
+        preview = media.preview_artifact(visual["artifact_id"])
+        self.assertTrue(preview["ok"])
+        self.assertEqual(preview["lesson_state"], "model_assessed")
+        self.assertFalse(preview["independent"])
+
+    def test_model_assessed_lesson_reuses_cached_artifacts(self) -> None:
+        self.set_lesson_state("model_assessed")
+        self.generate(FakeHost())
+        host = FakeHost()
+        summary = self.generate(host)
+        self.assertEqual(summary.reused, 2)
+        self.assertEqual(summary.generated, 0)
+        self.assertEqual(host.images, [])
+        self.assertEqual(host.speeches, [])
+        stored = self.stored_media()
+        self.assertTrue(all(item.get("artifact_id") for item in stored))
+
+    def test_needs_review_lesson_generates_no_media_and_stays_text_complete(self) -> None:
+        self.set_lesson_state("needs_review")
+        host = FakeHost()
+        summary = self.generate(host)
+        self.assertEqual(summary.generated, 0)
+        self.assertEqual(summary.skipped, 1)
+        self.assertEqual(host.images, [])
+        self.assertEqual(host.speeches, [])
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM artifacts"), 0)
+        stored = self.stored_media()
+        self.assertTrue(all(item["text_equivalent"] for item in stored))
+        self.assertTrue(all(not item.get("artifact_id") for item in stored))
+
+    def test_model_assessed_learner_page_carries_artifact_mime_equivalent_and_warning(self) -> None:
+        self.set_lesson_state("model_assessed")
+        self.generate(FakeHost())
+        with db.read() as connection:
+            page = generation.learner_page(connection, self.lesson_id)
+        self.assertEqual(page["provenance"]["outcome"], "model_assessed")
+        self.assertFalse(page["provenance"]["check_enabled"])
+        self.assertIn("not independently validated", page["provenance"]["warning"])
+        media = page["media"]
+        self.assertEqual(len(media), 2)
+        self.assertEqual({item["mime"] for item in media}, {"image/png", "audio/mpeg"})
+        self.assertTrue(all(item.get("artifact_id") for item in media))
+        self.assertTrue(all(item.get("text_equivalent") for item in media))
+        # The projected document attaches the same artifacts to a teaching block.
+        children = [child for block in page["document"]["blocks"] for child in block["media"]]
+        self.assertEqual(
+            {child["artifact_id"] for child in children},
+            {item["artifact_id"] for item in media},
+        )
+
     def test_provider_failure_keeps_text_equivalent_and_marks_degraded(self) -> None:
         summary = self.generate(FakeHost(fail=True))
         self.assertEqual(summary.generated, 0)
@@ -155,6 +233,29 @@ class MediaGenerationTest(KernelCase):
         self.assertEqual([row["kind"] for row in segments], ["media", "media"])
         self.assertTrue(all(row["artifact_id"] for row in segments))
         self.assertIn("こんにちは", [row["text"] for row in segments])
+
+    def test_authored_media_is_projected_into_a_model_assessed_lesson_run(self) -> None:
+        self.set_lesson_state("model_assessed")
+        self.generate(FakeHost())
+        self.execute(
+            "INSERT INTO lesson_runs (id, enrollment_id, objective_id, state, revision, created_at,"
+            " updated_at, last_opened_at) VALUES (?, ?, ?, 'active', 0, ?, ?, ?)",
+            ("run_media_2", self.enrollment_id, self.objective_id, NOW, NOW, NOW),
+        )
+        with db.transaction() as connection:
+            count = media.seed_authored_media(
+                connection,
+                lesson_run_id="run_media_2",
+                objective_id=self.objective_id,
+                now=NOW,
+            )
+        self.assertEqual(count, 2)
+        segments = self.rows(
+            "SELECT kind, text, artifact_id FROM lesson_segments WHERE lesson_run_id = ? ORDER BY ordinal",
+            ("run_media_2",),
+        )
+        self.assertEqual([row["kind"] for row in segments], ["media", "media"])
+        self.assertTrue(all(row["artifact_id"] for row in segments))
 
     def test_preview_returns_a_verified_data_url_and_rejects_unknown(self) -> None:
         self.generate(FakeHost())
