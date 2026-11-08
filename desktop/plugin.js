@@ -2574,6 +2574,22 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
 }
 
 /**
+ * H-150c — is this focus worth a ring?
+ *
+ * `:focus-visible` is the identity's rule (H-146a): a keyboard stop paints, a pointer press on the
+ * row leaves nothing behind. An engine that cannot answer the query keeps the ring, because losing
+ * it for a keyboard user is the failure this card is about.
+ */
+function shelfRingVisible(node) {
+  if (!node || typeof node.matches !== 'function') return true
+  try {
+    return node.matches(':focus-visible')
+  } catch (error) {
+    return true
+  }
+}
+
+/**
  * One pack on the Library shelf: a compact row, not a course cover.
  *
  * A pack is not a course. Reusing `CourseCover` here put a 16:9 decorative field, a 40 px
@@ -2611,14 +2627,27 @@ function PackShelfRow({ row, group, onOpenMember, onPreview, selected }) {
       // H-150: the whole row is the target. One real button paints over the row's empty space
       // and takes the keyboard (Enter/Space); the row content is inert, and the single Preview
       // affordance below sits above the overlay. This mirrors the host's own RowButton pattern.
+      //
+      // H-150c: the ring is drawn *inside* the row. The old `outlineOffset: '2px'` put the left
+      // and right strokes outside a row that sits flush with `MAIN.overflow-auto`, so only the top
+      // and bottom strokes ever painted. A negative offset keeps the same 2px accent ring (the
+      // H-146a identity ring) entirely within the row's own box, where the scroll container cannot
+      // clip it. `data-cb-pack-row-action` is the stable handle the shelf uses to put focus back on
+      // this row after the preview is dismissed.
       onPreview
         ? jsx(sdk.RowButton, {
             'aria-label': `Preview ${title}`,
             'aria-pressed': selected ? 'true' : 'false',
+            'data-cb-pack-row-action': row.enrollment_id,
+            'data-cb-focus-ring': keyboardFocus ? 'visible' : 'none',
             className: 'absolute inset-0 rounded-[2px]',
             onBlur: () => setKeyboardFocus(false),
-            onFocus: () => setKeyboardFocus(true),
-            style: keyboardFocus ? { outline: '2px solid var(--cb-accent)', outlineOffset: '2px' } : undefined,
+            onFocus: (event) => setKeyboardFocus(shelfRingVisible(event && event.currentTarget)),
+            style: {
+              outline: keyboardFocus ? '2px solid var(--cb-accent)' : 'none',
+              outlineOffset: '-2px',
+              borderRadius: '2px'
+            },
             onKeyDown: (event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault()
@@ -4096,7 +4125,14 @@ function PackFacts({ row, implemented, onOpen, onResume, onArchive, onDelete, on
     'data-cb-pack-preview': '',
     children: [
       showBack
-        ? jsx(sdk.Button, { className: 'self-start', onClick: onBack, size: 'sm', variant: 'text', children: 'All packs' })
+        ? jsx(sdk.Button, {
+            'data-cb-pack-back': '',
+            className: 'self-start',
+            onClick: onBack,
+            size: 'sm',
+            variant: 'text',
+            children: 'All packs'
+          })
         : null,
       jsxs('div', {
         className: 'flex flex-col',
@@ -4202,11 +4238,110 @@ const LIBRARY_COPY = {
     'A pack is a zip file someone else made: lessons, sources and a manifest that lists every file. Bundled packs ship with Coursebook; a pack from someone else is added from the Import flow, where you review it first.'
 }
 
+/**
+ * H-150c — the route column below which the shelf shows one pane at a time.
+ *
+ * Measured route columns on the isolated rig: 958 px in a 1600 px window, 407 px in a 1049 px one,
+ * 257 px at 900 and 215 px at 460. A pack row needs roughly 18rem to show its title, its next step
+ * and its one Preview affordance, so below ~25rem the preview and the list cannot both be read;
+ * once a pack is opened there, the preview replaces the list. This is a route width, not a window
+ * width: the host keeps the chat workspace beside the route, so a window breakpoint picks the
+ * wrong pane (a 900 px window leaves Coursebook 257 px).
+ */
+const CB_SHELF_COMPACT_WIDTH = 400
+
+/**
+ * H-150c — the shelf's two panes, and who holds focus after a pack is opened.
+ *
+ * The panes are stacked, not beside each other. The deck emits `.min-[47.5rem]:flex-row`,
+ * `:w-52` and `:gap-5` — but not the `.min-[47.5rem]:flex` or `:w-72` the shelf asked for, so the
+ * list's `hidden min-[47.5rem]:flex` never un-hid and its 18rem width never applied: the intended
+ * two-column split was never drawn, and at 460 px the `hidden` class took the list — and the
+ * focused row button with it — out of layout, which is why `document.activeElement` fell to `body`.
+ *
+ * `compact` is the one rule that both hides the list when a pack is open and picks the focus
+ * target, so the pane the user can still see is the pane that keeps focus. `focus` is the caller's
+ * request object, not a scalar: opening the same pack twice must move focus twice, and equal
+ * scalars would leave the effect asleep on the second press.
+ */
+function PackShelfSplit({ compact, detailOpen, focus, list, detail }) {
+  const rootRef = useRef(null)
+  useEffect(() => {
+    if (!focus || !rootRef.current) return
+    const root = rootRef.current
+    const node =
+      focus.target === 'detail'
+        ? root.querySelector('[data-cb-pack-preview] button')
+        : Array.from(root.querySelectorAll('[data-cb-pack-row-action]')).find(
+            (candidate) => candidate.getAttribute('data-cb-pack-row-action') === String(focus.key || '')
+          )
+    if (!node || typeof node.focus !== 'function') return
+    const moved = typeof document !== 'undefined' && document.activeElement !== node
+    node.focus()
+    // This Electron build moves `activeElement` for a script focus without firing `focusin`
+    // (measured in H-146b), so React's `onFocus` never runs and a retained row would keep its
+    // ring off. Announce the focus we just made, once, and only when we actually moved it.
+    if (moved && typeof FocusEvent === 'function') node.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+  }, [focus])
+  return jsxs('div', {
+    ref: rootRef,
+    'data-cb-pack-split': compact ? 'one-pane' : 'stacked',
+    'data-cb-pack-detail-open': detailOpen ? 'true' : 'false',
+    style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
+    children: [
+      jsx('div', {
+        'data-cb-pack-list-pane': '',
+        style: {
+          display: detailOpen && compact ? 'none' : 'flex',
+          flexDirection: 'column',
+          minWidth: 0
+        },
+        children: list
+      }),
+      detail
+    ]
+  })
+}
+
+/**
+ * H-150c — where focus belongs once a pack is opened.
+ *
+ * In the stacked shelf the row the user pressed is still on screen, so focus stays on it. In the
+ * compact shelf the list is gone, so focus goes to the preview's own `All packs` back control —
+ * the visible way out. One function keeps the two keys, the layout and the focus target aligned.
+ */
+function shelfFocusTarget(compact, detailOpen) {
+  return detailOpen && compact ? 'detail' : 'list'
+}
+
 function LibraryView({ implemented, createOpen, onOpen, onStartSyllabus, onStartImport }) {
   const [view, setView] = useState('all')
   const [selected, setSelected] = useState(null)
   const [packPanel, setPackPanel] = useState(null)
   const [packPanelRow, setPackPanelRow] = useState(null)
+  // H-150c: where focus goes after a pack is opened, decided from the route column the shelf is
+  // actually drawn in — not from the window width.
+  const [focusIntent, setFocusIntent] = useState(null)
+  const routeWidth = useCbViewportWidth()
+  // An unmeasured route (first paint, SSR) is treated as the stacked shelf: the list is visible,
+  // so the row is the honest focus target.
+  const compactShelf = Number.isFinite(routeWidth) && routeWidth > 0 && routeWidth < CB_SHELF_COMPACT_WIDTH
+
+  const openPack = useCallback(
+    (row) => {
+      setSelected(row.enrollment_id)
+      setFocusIntent({ target: shelfFocusTarget(compactShelf, true), key: row.enrollment_id })
+    },
+    [compactShelf]
+  )
+
+  const closePack = useCallback(
+    (row) => {
+      setSelected(null)
+      if (row) setFocusIntent({ target: 'list', key: row.enrollment_id })
+    },
+    []
+  )
 
   const payload = { filter: 'all', limit: 50, sort: 'title' }
   const key = JSON.stringify(payload)
@@ -4301,7 +4436,6 @@ function LibraryView({ implemented, createOpen, onOpen, onStartSyllabus, onStart
   const rows = filteredRows
 
   const detailRow = selected ? allRows.find((row) => row.enrollment_id === selected) || null : null
-  const narrowDetailOnly = Boolean(detailRow)
 
   let listBody
   if (status === 'loading' && !data) {
@@ -4348,8 +4482,8 @@ function LibraryView({ implemented, createOpen, onOpen, onStartSyllabus, onStart
               row,
               group,
               selected: row.enrollment_id === selected,
-              onOpenMember: (member) => setSelected(member.enrollment_id),
-              onPreview: (member) => setSelected(member.enrollment_id)
+              onOpenMember: (member) => openPack(member),
+              onPreview: (member) => openPack(member)
             },
             group.key
           )
@@ -4393,41 +4527,39 @@ function LibraryView({ implemented, createOpen, onOpen, onStartSyllabus, onStart
           value: view
         })
       }),
-      jsxs('div', {
-        className: 'flex flex-col gap-4 min-[47.5rem]:flex-row',
-        children: [
-          jsx('div', {
-            className: `${narrowDetailOnly ? 'hidden min-[47.5rem]:flex' : 'flex'} min-w-0 flex-col min-[47.5rem]:w-72 min-[47.5rem]:shrink-0`,
-            children: listBody
-          }),
-          detailRow
-            ? jsx(PackFacts, {
-                implemented,
-                onArchive,
-                onBack: () => setSelected(null),
-                onDelete,
-                onOpen,
-                onDeletePack: (row) => {
-                  setPackPanelRow(row)
-                  setPackPanel('delete')
-                },
-                onExportPack: (row) => {
-                  setPackPanelRow(row)
-                  setPackPanel('export')
-                },
-                onResume,
-                row: detailRow,
-                showBack: true
+      jsx(PackShelfSplit, {
+        detailOpen: Boolean(detailRow),
+        detail: detailRow
+          ? jsx(PackFacts, {
+              implemented,
+              onArchive,
+              onBack: () => closePack(detailRow),
+              onDelete,
+              onOpen,
+              onDeletePack: (row) => {
+                setPackPanelRow(row)
+                setPackPanel('delete')
+              },
+              onExportPack: (row) => {
+                setPackPanelRow(row)
+                setPackPanel('export')
+              },
+              onResume,
+              row: detailRow,
+              showBack: true
+            })
+          : jsx('div', {
+              'data-cb-pack-placeholder': '',
+              style: { display: compactShelf ? 'none' : 'flex', minWidth: 0, flex: 1, alignItems: 'flex-start' },
+              children: jsx(EmptyState, {
+                className: 'w-full',
+                title: 'Choose a pack to see what we know about it',
+                description: 'Preview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.'
               })
-            : jsx('div', {
-                className: 'hidden min-[47.5rem]:flex min-w-0 flex-1 items-start',
-                children: jsx(EmptyState, {
-                  className: 'w-full',
-                  title: 'Choose a pack to see what we know about it',
-                  description: 'Preview shows who made the pack, where it came from, the progress you have and what has been checked — nothing inferred.'
-                })
-              })
-        ]
+            }),
+        compact: compactShelf,
+        focus: focusIntent,
+        list: listBody
       }),
       // H-150: trust is read after the shelf, not before it. The learner browses packs first;
       // what is and is not checked sits below the list as one closed disclosure.
@@ -19037,6 +19169,8 @@ export {
   cbStableHash,
   CourseCover,
   PackShelfRow,
+  PackShelfSplit,
+  shelfFocusTarget,
   PackFacts,
   CoursePath,
   groupShelfRows,

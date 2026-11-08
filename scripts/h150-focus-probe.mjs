@@ -57,7 +57,10 @@ const key = async (keyName) => {
   const params = keyName === 'Enter'
     ? { key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 }
     : { key: ' ', code: 'Space', windowsVirtualKeyCode: 32, nativeVirtualKeyCode: 32, text: ' ' }
-  await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params })
+  // One physical press is one `keydown` and one `keyup`. Sending `rawKeyDown` *and* `keyDown` made
+  // the page receive two presses: at a compact shelf the first opened the preview and moved focus
+  // to `All packs`, and the second then activated that control and closed it again — a measurement
+  // artifact (H-150c).
   await send('Input.dispatchKeyEvent', { type: 'keyDown', ...params })
   await send('Input.dispatchKeyEvent', { type: 'keyUp', ...params })
   await sleep(500)
@@ -118,14 +121,25 @@ const describeFocus = () => evaluate(`(() => {
   }
 })()`)
 
-const focusRow = (index) => evaluate(`(() => {
+const focusRow = async (index) => {
+  // The ring is the H-146a `:focus-visible` identity, so the sample has to be a keyboard stop: a
+  // script focus straight after the harness's own click on `All packs` inherits that pointer
+  // modality and the engine answers `:focus-visible` false. One Tab establishes the keyboard
+  // modality; the `focusin` is announced because this Electron build moves `activeElement` without
+  // firing it (H-146b), so React's `onFocus` would otherwise never run.
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 })
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9, nativeVirtualKeyCode: 9 })
+  await sleep(120)
+  return evaluate(`(() => {
   const row = document.querySelectorAll('[data-cb-pack-row]')[${index}]
   const overlay = row && row.querySelector('button[aria-pressed]')
   if (!overlay) return false
   overlay.focus()
+  overlay.dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
   overlay.scrollIntoView({ block: 'center' })
   return true
 })()`)
+}
 
 const clearSelection = async () => {
   await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find((n) => (n.textContent || '').trim() === 'All packs'); if (b) b.click() })()`)

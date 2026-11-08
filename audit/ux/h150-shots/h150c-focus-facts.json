@@ -1,0 +1,1426 @@
+{
+  "port": "9362",
+  "target": "http://127.0.0.1:5174/#/coursebook",
+  "steps": [
+    {
+      "width": 1600,
+      "before": {
+        "tag": "body",
+        "label": null,
+        "text": "[data-tree-group] :is(aside, [data-slot=",
+        "isBody": true,
+        "isRowAction": false,
+        "insidePreview": false,
+        "visible": false,
+        "focusVisible": false,
+        "activeRect": {
+          "x": 0,
+          "y": 0,
+          "w": 1601,
+          "h": 1004
+        },
+        "rowRect": {
+          "x": 301,
+          "y": 323,
+          "w": 477,
+          "h": 152
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 958,
+        "innerWidth": 1600,
+        "shelf": "stacked",
+        "ring": {
+          "state": "none",
+          "outline": "rgb(26, 23, 19) none 2.2312px",
+          "color": "rgb(26, 23, 19)",
+          "width": "2.2312px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "keys": {
+        "enter": {
+          "before": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 301,
+              "y": 324,
+              "w": 477,
+              "h": 151
+            },
+            "rowRect": {
+              "x": 301,
+              "y": 323,
+              "w": 477,
+              "h": 152
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": false,
+            "routeWidth": 958,
+            "innerWidth": 1600,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 0,
+            "rootFontSize": "16px"
+          },
+          "afterKeyDown": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 301,
+              "y": 324,
+              "w": 477,
+              "h": 151
+            },
+            "rowRect": {
+              "x": 301,
+              "y": 323,
+              "w": 477,
+              "h": 152
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": true,
+            "routeWidth": 958,
+            "innerWidth": 1600,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          },
+          "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-open-enter-1600.png",
+          "afterRelease": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 301,
+              "y": 324,
+              "w": 477,
+              "h": 151
+            },
+            "rowRect": {
+              "x": 301,
+              "y": 323,
+              "w": 477,
+              "h": 152
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": true,
+            "routeWidth": 958,
+            "innerWidth": 1600,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          }
+        },
+        "space": {
+          "before": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 301,
+              "y": 324,
+              "w": 477,
+              "h": 151
+            },
+            "rowRect": {
+              "x": 301,
+              "y": 323,
+              "w": 477,
+              "h": 152
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": false,
+            "routeWidth": 958,
+            "innerWidth": 1600,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 0,
+            "rootFontSize": "16px"
+          },
+          "afterKeyDown": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 301,
+              "y": 324,
+              "w": 477,
+              "h": 151
+            },
+            "rowRect": {
+              "x": 301,
+              "y": 323,
+              "w": 477,
+              "h": 152
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": true,
+            "routeWidth": 958,
+            "innerWidth": 1600,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          },
+          "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-open-space-1600.png",
+          "afterRelease": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 301,
+              "y": 324,
+              "w": 477,
+              "h": 151
+            },
+            "rowRect": {
+              "x": 301,
+              "y": 323,
+              "w": 477,
+              "h": 152
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": true,
+            "routeWidth": 958,
+            "innerWidth": 1600,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          }
+        }
+      },
+      "focusRing": {
+        "tag": "button",
+        "label": "Preview Parent demo: measuring ingredients together",
+        "text": "",
+        "isBody": false,
+        "isRowAction": true,
+        "insidePreview": false,
+        "visible": true,
+        "focusVisible": true,
+        "activeRect": {
+          "x": 301,
+          "y": 324,
+          "w": 477,
+          "h": 151
+        },
+        "rowRect": {
+          "x": 301,
+          "y": 323,
+          "w": 477,
+          "h": 152
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 958,
+        "innerWidth": 1600,
+        "shelf": "stacked",
+        "ring": {
+          "state": "visible",
+          "outline": "rgb(44, 74, 140) solid 1.1156px",
+          "color": "rgb(44, 74, 140)",
+          "width": "1.1156px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "focusedFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-ring-1600.png",
+      "focusFullFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-ring-1600-full.png",
+      "blurred": {
+        "tag": "body",
+        "label": null,
+        "text": "[data-tree-group] :is(aside, [data-slot=",
+        "isBody": true,
+        "isRowAction": false,
+        "insidePreview": false,
+        "visible": false,
+        "focusVisible": false,
+        "activeRect": {
+          "x": 0,
+          "y": 0,
+          "w": 1601,
+          "h": 1004
+        },
+        "rowRect": {
+          "x": 301,
+          "y": 323,
+          "w": 477,
+          "h": 152
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 958,
+        "innerWidth": 1600,
+        "shelf": "stacked",
+        "ring": {
+          "state": "none",
+          "outline": "rgb(26, 23, 19) none 2.2312px",
+          "color": "rgb(26, 23, 19)",
+          "width": "2.2312px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "blurredFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-blurred-1600.png"
+    },
+    {
+      "width": 1049,
+      "before": {
+        "tag": "button",
+        "label": "Preview Parent demo: measuring ingredients together",
+        "text": "",
+        "isBody": false,
+        "isRowAction": true,
+        "insidePreview": false,
+        "visible": true,
+        "focusVisible": true,
+        "activeRect": {
+          "x": 248,
+          "y": 382,
+          "w": 377,
+          "h": 195
+        },
+        "rowRect": {
+          "x": 248,
+          "y": 381,
+          "w": 377,
+          "h": 196
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 407,
+        "innerWidth": 1049,
+        "shelf": "stacked",
+        "ring": {
+          "state": "visible",
+          "outline": "rgb(44, 74, 140) solid 1.1156px",
+          "color": "rgb(44, 74, 140)",
+          "width": "1.1156px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "keys": {
+        "enter": {
+          "before": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 382,
+              "w": 377,
+              "h": 195
+            },
+            "rowRect": {
+              "x": 248,
+              "y": 381,
+              "w": 377,
+              "h": 196
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": false,
+            "routeWidth": 407,
+            "innerWidth": 1049,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 0,
+            "rootFontSize": "16px"
+          },
+          "afterKeyDown": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 382,
+              "w": 377,
+              "h": 195
+            },
+            "rowRect": {
+              "x": 248,
+              "y": 381,
+              "w": 377,
+              "h": 196
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": true,
+            "routeWidth": 407,
+            "innerWidth": 1049,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          },
+          "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-open-enter-1049.png",
+          "afterRelease": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 382,
+              "w": 377,
+              "h": 195
+            },
+            "rowRect": {
+              "x": 248,
+              "y": 381,
+              "w": 377,
+              "h": 196
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": true,
+            "routeWidth": 407,
+            "innerWidth": 1049,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          }
+        },
+        "space": {
+          "before": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 382,
+              "w": 377,
+              "h": 195
+            },
+            "rowRect": {
+              "x": 248,
+              "y": 381,
+              "w": 377,
+              "h": 196
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": false,
+            "routeWidth": 407,
+            "innerWidth": 1049,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 0,
+            "rootFontSize": "16px"
+          },
+          "afterKeyDown": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 382,
+              "w": 377,
+              "h": 195
+            },
+            "rowRect": {
+              "x": 248,
+              "y": 381,
+              "w": 377,
+              "h": 196
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": true,
+            "routeWidth": 407,
+            "innerWidth": 1049,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          },
+          "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-open-space-1049.png",
+          "afterRelease": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 382,
+              "w": 377,
+              "h": 195
+            },
+            "rowRect": {
+              "x": 248,
+              "y": 381,
+              "w": 377,
+              "h": 196
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": true,
+            "routeWidth": 407,
+            "innerWidth": 1049,
+            "shelf": "stacked",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          }
+        }
+      },
+      "focusRing": {
+        "tag": "button",
+        "label": "Preview Parent demo: measuring ingredients together",
+        "text": "",
+        "isBody": false,
+        "isRowAction": true,
+        "insidePreview": false,
+        "visible": true,
+        "focusVisible": true,
+        "activeRect": {
+          "x": 248,
+          "y": 382,
+          "w": 377,
+          "h": 195
+        },
+        "rowRect": {
+          "x": 248,
+          "y": 381,
+          "w": 377,
+          "h": 196
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 407,
+        "innerWidth": 1049,
+        "shelf": "stacked",
+        "ring": {
+          "state": "visible",
+          "outline": "rgb(44, 74, 140) solid 1.1156px",
+          "color": "rgb(44, 74, 140)",
+          "width": "1.1156px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "focusedFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-ring-1049.png",
+      "focusFullFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-ring-1049-full.png",
+      "blurred": {
+        "tag": "body",
+        "label": null,
+        "text": "[data-tree-group] :is(aside, [data-slot=",
+        "isBody": true,
+        "isRowAction": false,
+        "insidePreview": false,
+        "visible": false,
+        "focusVisible": false,
+        "activeRect": {
+          "x": 0,
+          "y": 0,
+          "w": 1050,
+          "h": 1004
+        },
+        "rowRect": {
+          "x": 248,
+          "y": 381,
+          "w": 377,
+          "h": 196
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 407,
+        "innerWidth": 1049,
+        "shelf": "stacked",
+        "ring": {
+          "state": "none",
+          "outline": "rgb(26, 23, 19) none 2.2312px",
+          "color": "rgb(26, 23, 19)",
+          "width": "2.2312px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "blurredFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-blurred-1049.png"
+    },
+    {
+      "width": 900,
+      "before": {
+        "tag": "body",
+        "label": null,
+        "text": "[data-tree-group] :is(aside, [data-slot=",
+        "isBody": true,
+        "isRowAction": false,
+        "insidePreview": false,
+        "visible": false,
+        "focusVisible": false,
+        "activeRect": {
+          "x": 0,
+          "y": 0,
+          "w": 900,
+          "h": 1004
+        },
+        "rowRect": {
+          "x": 248,
+          "y": 548,
+          "w": 227,
+          "h": 241
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 257,
+        "innerWidth": 900,
+        "shelf": "one-pane",
+        "ring": {
+          "state": "none",
+          "outline": "rgb(26, 23, 19) none 2.2312px",
+          "color": "rgb(26, 23, 19)",
+          "width": "2.2312px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "keys": {
+        "enter": {
+          "before": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 550,
+              "w": 227,
+              "h": 240
+            },
+            "rowRect": {
+              "x": 248,
+              "y": 548,
+              "w": 227,
+              "h": 241
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": false,
+            "routeWidth": 257,
+            "innerWidth": 900,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 0,
+            "rootFontSize": "16px"
+          },
+          "afterKeyDown": {
+            "tag": "button",
+            "label": null,
+            "text": "All packs",
+            "isBody": false,
+            "isRowAction": false,
+            "insidePreview": true,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 548,
+              "w": 68,
+              "h": 24
+            },
+            "rowRect": null,
+            "rowVisible": false,
+            "listPaneDisplay": "none",
+            "previewOpen": true,
+            "routeWidth": 257,
+            "innerWidth": 900,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "none",
+              "outline": "rgb(26, 23, 19) none 2.2312px",
+              "color": "rgb(26, 23, 19)",
+              "width": "2.2312px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          },
+          "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-open-enter-900.png",
+          "afterRelease": {
+            "tag": "button",
+            "label": null,
+            "text": "All packs",
+            "isBody": false,
+            "isRowAction": false,
+            "insidePreview": true,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 548,
+              "w": 68,
+              "h": 24
+            },
+            "rowRect": null,
+            "rowVisible": false,
+            "listPaneDisplay": "none",
+            "previewOpen": true,
+            "routeWidth": 257,
+            "innerWidth": 900,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "none",
+              "outline": "rgb(26, 23, 19) none 2.2312px",
+              "color": "rgb(26, 23, 19)",
+              "width": "2.2312px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          }
+        },
+        "space": {
+          "before": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 550,
+              "w": 227,
+              "h": 240
+            },
+            "rowRect": {
+              "x": 248,
+              "y": 548,
+              "w": 227,
+              "h": 241
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": false,
+            "routeWidth": 257,
+            "innerWidth": 900,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 0,
+            "rootFontSize": "16px"
+          },
+          "afterKeyDown": {
+            "tag": "button",
+            "label": null,
+            "text": "All packs",
+            "isBody": false,
+            "isRowAction": false,
+            "insidePreview": true,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 548,
+              "w": 68,
+              "h": 24
+            },
+            "rowRect": null,
+            "rowVisible": false,
+            "listPaneDisplay": "none",
+            "previewOpen": true,
+            "routeWidth": 257,
+            "innerWidth": 900,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "none",
+              "outline": "rgb(26, 23, 19) none 2.2312px",
+              "color": "rgb(26, 23, 19)",
+              "width": "2.2312px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          },
+          "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-open-space-900.png",
+          "afterRelease": {
+            "tag": "button",
+            "label": null,
+            "text": "All packs",
+            "isBody": false,
+            "isRowAction": false,
+            "insidePreview": true,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 248,
+              "y": 548,
+              "w": 68,
+              "h": 24
+            },
+            "rowRect": null,
+            "rowVisible": false,
+            "listPaneDisplay": "none",
+            "previewOpen": true,
+            "routeWidth": 257,
+            "innerWidth": 900,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "none",
+              "outline": "rgb(26, 23, 19) none 2.2312px",
+              "color": "rgb(26, 23, 19)",
+              "width": "2.2312px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          }
+        }
+      },
+      "focusRing": {
+        "tag": "button",
+        "label": "Preview Parent demo: measuring ingredients together",
+        "text": "",
+        "isBody": false,
+        "isRowAction": true,
+        "insidePreview": false,
+        "visible": true,
+        "focusVisible": true,
+        "activeRect": {
+          "x": 248,
+          "y": 550,
+          "w": 227,
+          "h": 240
+        },
+        "rowRect": {
+          "x": 248,
+          "y": 548,
+          "w": 227,
+          "h": 241
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 257,
+        "innerWidth": 900,
+        "shelf": "one-pane",
+        "ring": {
+          "state": "visible",
+          "outline": "rgb(44, 74, 140) solid 1.1156px",
+          "color": "rgb(44, 74, 140)",
+          "width": "1.1156px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "focusedFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-ring-900.png",
+      "focusFullFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-ring-900-full.png",
+      "blurred": {
+        "tag": "body",
+        "label": null,
+        "text": "[data-tree-group] :is(aside, [data-slot=",
+        "isBody": true,
+        "isRowAction": false,
+        "insidePreview": false,
+        "visible": false,
+        "focusVisible": false,
+        "activeRect": {
+          "x": 0,
+          "y": 0,
+          "w": 900,
+          "h": 1004
+        },
+        "rowRect": {
+          "x": 248,
+          "y": 548,
+          "w": 227,
+          "h": 241
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 257,
+        "innerWidth": 900,
+        "shelf": "one-pane",
+        "ring": {
+          "state": "none",
+          "outline": "rgb(26, 23, 19) none 2.2312px",
+          "color": "rgb(26, 23, 19)",
+          "width": "2.2312px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "blurredFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-blurred-900.png"
+    },
+    {
+      "width": 460,
+      "before": {
+        "tag": "body",
+        "label": null,
+        "text": "[data-tree-group] :is(aside, [data-slot=",
+        "isBody": true,
+        "isRowAction": false,
+        "insidePreview": false,
+        "visible": false,
+        "focusVisible": false,
+        "activeRect": {
+          "x": 0,
+          "y": 0,
+          "w": 461,
+          "h": 1004
+        },
+        "rowRect": {
+          "x": 11,
+          "y": 597,
+          "w": 185,
+          "h": 264
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 215,
+        "innerWidth": 460,
+        "shelf": "one-pane",
+        "ring": {
+          "state": "none",
+          "outline": "rgb(26, 23, 19) none 2.2312px",
+          "color": "rgb(26, 23, 19)",
+          "width": "2.2312px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "keys": {
+        "enter": {
+          "before": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 11,
+              "y": 598,
+              "w": 185,
+              "h": 263
+            },
+            "rowRect": {
+              "x": 11,
+              "y": 597,
+              "w": 185,
+              "h": 264
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": false,
+            "routeWidth": 215,
+            "innerWidth": 460,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 0,
+            "rootFontSize": "16px"
+          },
+          "afterKeyDown": {
+            "tag": "button",
+            "label": null,
+            "text": "All packs",
+            "isBody": false,
+            "isRowAction": false,
+            "insidePreview": true,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 11,
+              "y": 597,
+              "w": 68,
+              "h": 24
+            },
+            "rowRect": null,
+            "rowVisible": false,
+            "listPaneDisplay": "none",
+            "previewOpen": true,
+            "routeWidth": 215,
+            "innerWidth": 460,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "none",
+              "outline": "rgb(26, 23, 19) none 2.2312px",
+              "color": "rgb(26, 23, 19)",
+              "width": "2.2312px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          },
+          "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-open-enter-460.png",
+          "afterRelease": {
+            "tag": "button",
+            "label": null,
+            "text": "All packs",
+            "isBody": false,
+            "isRowAction": false,
+            "insidePreview": true,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 11,
+              "y": 597,
+              "w": 68,
+              "h": 24
+            },
+            "rowRect": null,
+            "rowVisible": false,
+            "listPaneDisplay": "none",
+            "previewOpen": true,
+            "routeWidth": 215,
+            "innerWidth": 460,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "none",
+              "outline": "rgb(26, 23, 19) none 2.2312px",
+              "color": "rgb(26, 23, 19)",
+              "width": "2.2312px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          }
+        },
+        "space": {
+          "before": {
+            "tag": "button",
+            "label": "Preview Parent demo: measuring ingredients together",
+            "text": "",
+            "isBody": false,
+            "isRowAction": true,
+            "insidePreview": false,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 11,
+              "y": 598,
+              "w": 185,
+              "h": 263
+            },
+            "rowRect": {
+              "x": 11,
+              "y": 597,
+              "w": 185,
+              "h": 264
+            },
+            "rowVisible": true,
+            "listPaneDisplay": "flex",
+            "previewOpen": false,
+            "routeWidth": 215,
+            "innerWidth": 460,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "visible",
+              "outline": "rgb(44, 74, 140) solid 1.1156px",
+              "color": "rgb(44, 74, 140)",
+              "width": "1.1156px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 0,
+            "rootFontSize": "16px"
+          },
+          "afterKeyDown": {
+            "tag": "button",
+            "label": null,
+            "text": "All packs",
+            "isBody": false,
+            "isRowAction": false,
+            "insidePreview": true,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 11,
+              "y": 597,
+              "w": 68,
+              "h": 24
+            },
+            "rowRect": null,
+            "rowVisible": false,
+            "listPaneDisplay": "none",
+            "previewOpen": true,
+            "routeWidth": 215,
+            "innerWidth": 460,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "none",
+              "outline": "rgb(26, 23, 19) none 2.2312px",
+              "color": "rgb(26, 23, 19)",
+              "width": "2.2312px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          },
+          "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-open-space-460.png",
+          "afterRelease": {
+            "tag": "button",
+            "label": null,
+            "text": "All packs",
+            "isBody": false,
+            "isRowAction": false,
+            "insidePreview": true,
+            "visible": true,
+            "focusVisible": true,
+            "activeRect": {
+              "x": 11,
+              "y": 597,
+              "w": 68,
+              "h": 24
+            },
+            "rowRect": null,
+            "rowVisible": false,
+            "listPaneDisplay": "none",
+            "previewOpen": true,
+            "routeWidth": 215,
+            "innerWidth": 460,
+            "shelf": "one-pane",
+            "ring": {
+              "state": "none",
+              "outline": "rgb(26, 23, 19) none 2.2312px",
+              "color": "rgb(26, 23, 19)",
+              "width": "2.2312px",
+              "offset": "-1.1156px"
+            },
+            "selectedCount": 1,
+            "rootFontSize": "16px"
+          }
+        }
+      },
+      "focusRing": {
+        "tag": "button",
+        "label": "Preview Parent demo: measuring ingredients together",
+        "text": "",
+        "isBody": false,
+        "isRowAction": true,
+        "insidePreview": false,
+        "visible": true,
+        "focusVisible": true,
+        "activeRect": {
+          "x": 11,
+          "y": 598,
+          "w": 185,
+          "h": 263
+        },
+        "rowRect": {
+          "x": 11,
+          "y": 597,
+          "w": 185,
+          "h": 264
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 215,
+        "innerWidth": 460,
+        "shelf": "one-pane",
+        "ring": {
+          "state": "visible",
+          "outline": "rgb(44, 74, 140) solid 1.1156px",
+          "color": "rgb(44, 74, 140)",
+          "width": "1.1156px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "focusedFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-ring-460.png",
+      "focusFullFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-ring-460-full.png",
+      "blurred": {
+        "tag": "body",
+        "label": null,
+        "text": "[data-tree-group] :is(aside, [data-slot=",
+        "isBody": true,
+        "isRowAction": false,
+        "insidePreview": false,
+        "visible": false,
+        "focusVisible": false,
+        "activeRect": {
+          "x": 0,
+          "y": 0,
+          "w": 461,
+          "h": 1004
+        },
+        "rowRect": {
+          "x": 11,
+          "y": 597,
+          "w": 185,
+          "h": 264
+        },
+        "rowVisible": true,
+        "listPaneDisplay": "flex",
+        "previewOpen": false,
+        "routeWidth": 215,
+        "innerWidth": 460,
+        "shelf": "one-pane",
+        "ring": {
+          "state": "none",
+          "outline": "rgb(26, 23, 19) none 2.2312px",
+          "color": "rgb(26, 23, 19)",
+          "width": "2.2312px",
+          "offset": "-1.1156px"
+        },
+        "selectedCount": 0,
+        "rootFontSize": "16px"
+      },
+      "blurredFrame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-focus-blurred-460.png"
+    }
+  ],
+  "text200": {
+    "focused": {
+      "tag": "button",
+      "label": "Preview Parent demo: measuring ingredients together",
+      "text": "",
+      "isBody": false,
+      "isRowAction": true,
+      "insidePreview": false,
+      "visible": true,
+      "focusVisible": true,
+      "activeRect": {
+        "x": 22,
+        "y": 218,
+        "w": 154,
+        "h": 1126
+      },
+      "rowRect": {
+        "x": 22,
+        "y": 217,
+        "w": 154,
+        "h": 1127
+      },
+      "rowVisible": true,
+      "listPaneDisplay": "flex",
+      "previewOpen": false,
+      "routeWidth": 215,
+      "innerWidth": 460,
+      "shelf": "one-pane",
+      "ring": {
+        "state": "visible",
+        "outline": "rgb(44, 74, 140) solid 1.1156px",
+        "color": "rgb(44, 74, 140)",
+        "width": "1.1156px",
+        "offset": "-1.1156px"
+      },
+      "selectedCount": 0,
+      "rootFontSize": "32px"
+    },
+    "afterEnter": {
+      "tag": "button",
+      "label": null,
+      "text": "All packs",
+      "isBody": false,
+      "isRowAction": false,
+      "insidePreview": true,
+      "visible": true,
+      "focusVisible": true,
+      "activeRect": {
+        "x": 22,
+        "y": 758,
+        "w": 136,
+        "h": 48
+      },
+      "rowRect": null,
+      "rowVisible": false,
+      "listPaneDisplay": "none",
+      "previewOpen": true,
+      "routeWidth": 215,
+      "innerWidth": 460,
+      "shelf": "one-pane",
+      "ring": {
+        "state": "none",
+        "outline": "rgb(26, 23, 19) none 2.2312px",
+        "color": "rgb(26, 23, 19)",
+        "width": "2.2312px",
+        "offset": "-1.1156px"
+      },
+      "selectedCount": 1,
+      "rootFontSize": "32px"
+    },
+    "frame": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c/audit/ux/h150-shots/h150c-text200-open-460.png"
+  }
+}

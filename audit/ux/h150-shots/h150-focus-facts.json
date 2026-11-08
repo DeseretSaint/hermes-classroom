@@ -23,18 +23,18 @@
       "insidePreview": false,
       "visible": true,
       "outline": "solid 1.1156px rgb(44, 74, 140)",
-      "outlineOffset": "1.1156px",
+      "outlineOffset": "-1.1156px",
       "focusVisible": true,
       "rect": {
         "x": 248,
         "y": 382,
-        "w": 384,
+        "w": 377,
         "h": 195
       },
       "rowRect": {
         "x": 248,
         "y": 381,
-        "w": 384,
+        "w": 377,
         "h": 196
       },
       "pageScroll": {
@@ -78,7 +78,7 @@
       "rowRect": {
         "x": 248,
         "y": 381,
-        "w": 384,
+        "w": 377,
         "h": 196
       },
       "pageScroll": {
@@ -110,18 +110,18 @@
       "insidePreview": false,
       "visible": true,
       "outline": "solid 1.1156px rgb(44, 74, 140)",
-      "outlineOffset": "1.1156px",
+      "outlineOffset": "-1.1156px",
       "focusVisible": true,
       "rect": {
         "x": 248,
         "y": 382,
-        "w": 384,
+        "w": 377,
         "h": 195
       },
       "rowRect": {
         "x": 248,
         "y": 381,
-        "w": 384,
+        "w": 377,
         "h": 196
       },
       "pageScroll": {
@@ -144,27 +144,27 @@
       "bodyFontSize": "13px"
     },
     "afterKeyboardEnter": {
-      "tag": "body",
-      "label": null,
-      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-left-width: 0; border",
-      "isBody": true,
-      "isRowOverlay": false,
+      "tag": "button",
+      "label": "Preview Parent demo: measuring ingredients together",
+      "text": "",
+      "isBody": false,
+      "isRowOverlay": true,
       "insidePreview": false,
-      "visible": false,
-      "outline": null,
-      "outlineOffset": null,
-      "focusVisible": false,
+      "visible": true,
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "outlineOffset": "-1.1156px",
+      "focusVisible": true,
       "rect": {
-        "x": 0,
-        "y": 0,
-        "w": 1050,
-        "h": 1004
+        "x": 248,
+        "y": 382,
+        "w": 377,
+        "h": 195
       },
       "rowRect": {
-        "x": 0,
-        "y": 0,
-        "w": 0,
-        "h": 0
+        "x": 248,
+        "y": 381,
+        "w": 377,
+        "h": 196
       },
       "pageScroll": {
         "x": 0,
@@ -177,7 +177,7 @@
         "h": 950
       },
       "documentOverflow": 0,
-      "rowVisible": false,
+      "rowVisible": true,
       "previewPanel": true,
       "selectedCount": 1,
       "innerWidth": 1049,
@@ -195,18 +195,18 @@
       "insidePreview": false,
       "visible": true,
       "outline": "solid 1.1156px rgb(44, 74, 140)",
-      "outlineOffset": "1.1156px",
+      "outlineOffset": "-1.1156px",
       "focusVisible": true,
       "rect": {
         "x": 248,
-        "y": 579,
-        "w": 384,
+        "y": 533,
+        "w": 377,
         "h": 174
       },
       "rowRect": {
         "x": 248,
-        "y": 381,
-        "w": 384,
+        "y": 335,
+        "w": 377,
         "h": 196
       },
       "pageScroll": {
@@ -229,27 +229,27 @@
       "bodyFontSize": "13px"
     },
     "afterKeyboardSpace": {
-      "tag": "body",
-      "label": null,
-      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-left-width: 0; border",
-      "isBody": true,
+      "tag": "button",
+      "label": "Preview Japanese affection and register — an L0 demonstration classroom",
+      "text": "",
+      "isBody": false,
       "isRowOverlay": false,
       "insidePreview": false,
-      "visible": false,
-      "outline": null,
-      "outlineOffset": null,
-      "focusVisible": false,
+      "visible": true,
+      "outline": "solid 1.1156px rgb(44, 74, 140)",
+      "outlineOffset": "-1.1156px",
+      "focusVisible": true,
       "rect": {
-        "x": 0,
-        "y": 0,
-        "w": 1050,
-        "h": 1004
+        "x": 248,
+        "y": 533,
+        "w": 377,
+        "h": 174
       },
       "rowRect": {
-        "x": 0,
-        "y": 0,
-        "w": 0,
-        "h": 0
+        "x": 248,
+        "y": 335,
+        "w": 377,
+        "h": 196
       },
       "pageScroll": {
         "x": 0,
@@ -262,7 +262,7 @@
         "h": 950
       },
       "documentOverflow": 0,
-      "rowVisible": false,
+      "rowVisible": true,
       "previewPanel": true,
       "selectedCount": 1,
       "innerWidth": 1049,
@@ -282,7 +282,7 @@
       "insidePreview": false,
       "visible": true,
       "outline": "solid 1.1156px rgb(44, 74, 140)",
-      "outlineOffset": "1.1156px",
+      "outlineOffset": "-1.1156px",
       "focusVisible": true,
       "rect": {
         "x": 11,
@@ -369,7 +369,7 @@
       "insidePreview": false,
       "visible": true,
       "outline": "solid 1.1156px rgb(44, 74, 140)",
-      "outlineOffset": "1.1156px",
+      "outlineOffset": "-1.1156px",
       "focusVisible": true,
       "rect": {
         "x": 11,
@@ -403,21 +403,21 @@
       "bodyFontSize": "13px"
     },
     "afterKeyboardSpace": {
-      "tag": "body",
+      "tag": "button",
       "label": null,
-      "text": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-left-width: 0; border",
-      "isBody": true,
+      "text": "All packs",
+      "isBody": false,
       "isRowOverlay": false,
-      "insidePreview": false,
-      "visible": false,
-      "outline": null,
-      "outlineOffset": null,
-      "focusVisible": false,
+      "insidePreview": true,
+      "visible": true,
+      "outline": "none 1.1156px rgb(229, 151, 0)",
+      "outlineOffset": "0px",
+      "focusVisible": true,
       "rect": {
-        "x": 0,
-        "y": 0,
-        "w": 461,
-        "h": 1004
+        "x": 11,
+        "y": 479,
+        "w": 68,
+        "h": 24
       },
       "rowRect": {
         "x": 0,

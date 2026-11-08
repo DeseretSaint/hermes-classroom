@@ -118,12 +118,13 @@ export const Button = (props) => {
   return el('button', attrs, textOf(props))
 }
 export const RowButton = (props) => {
-  const attrs = { type: 'button', onClick: props.onClick }
-  if (props.className) attrs.className = props.className
+  // The real RowButton is a bare `<button>` that spreads every prop, so a caller's style, focus
+  // handlers and key handler reach the DOM. A stub that only forwarded aria-/data- made the shelf's
+  // focus ring and its Enter/Space path invisible to a jsdom test.
+  const attrs = { type: 'button' }
   for (const [name, value] of Object.entries(props)) {
-    if ((name.startsWith('data-') || name.startsWith('aria-')) && value !== undefined && !(name in attrs)) {
-      attrs[name] = value
-    }
+    if (name === 'children' || value === undefined) continue
+    attrs[name] = value
   }
   return el('button', attrs, textOf(props))
 }

@@ -58,7 +58,8 @@ const key = async (keyName) => {
   const params = keyName === 'Enter'
     ? { key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 }
     : { key: ' ', code: 'Space', windowsVirtualKeyCode: 32, nativeVirtualKeyCode: 32, text: ' ' }
-  await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...params })
+  // One physical press is one `keydown` and one `keyup`; `rawKeyDown` + `keyDown` delivered two
+  // presses (H-150c: the second activated the control focus had just moved to).
   await send('Input.dispatchKeyEvent', { type: 'keyDown', ...params })
   await send('Input.dispatchKeyEvent', { type: 'keyUp', ...params })
   await sleep(220)

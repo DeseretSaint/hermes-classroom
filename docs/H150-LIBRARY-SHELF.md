@@ -1,7 +1,13 @@
 # H-150 — Library shelf, live rig evidence
 
 Evidence card: `t_618af304` (H-150b). Implementation: `wt/h150-library-shelf` @
-`a52e295` (rebased onto `origin/master` `428e6ab`). **No product code was edited by this card.**
+`a52e295` (rebased onto `origin/master` `428e6ab`). **No product code was edited by that card.**
+
+> **H-150c (`t_35a40588`) fixes both findings below.** The branch tip is now `a9a75bf4…`; the
+> product change, its gates and the re-measured frames are in
+> [H-150c — the fix](#h-150c--the-fix-product) at the end of this document. Everything between
+> "Verdict up front" and that section is the H-150b measurement at `a52e295`, kept as the record of
+> what failed.
 
 ## Verdict up front
 
@@ -14,6 +20,7 @@ Evidence card: `t_618af304` (H-150b). Implementation: `wt/h150-library-shelf` @
   `sha256sum desktop/plugin.js` and
   `sha256sum ~/.hermes/coursebook-test-h150-2345/home/desktop-plugins/coursebook/plugin.js`
   return the same value. The window was restarted after that copy; it was not page-reloaded.
+  (H-150c re-captured the shelf, ring and overlay frames at `a9a75bf4…` — see the last section.)
 - **Overlay focus retention fails as measured.** After Enter or Space opens the preview,
   `document.activeElement` is `body` at both 1049 and 460 px; at 460 the list is hidden and the
   preview is open, so focus is not inside the preview either.
@@ -209,10 +216,130 @@ font assertion and the wrap/clip behaviour, not a full-width 460 layout.
 
 ```bash
 cd /home/deseretsaint/Projects/hermes-classroom/.worktrees/t_b171870c
-sha256sum desktop/plugin.js    # 930c770e…
+sha256sum desktop/plugin.js    # 930c770e… at a52e295, a9a75bf4… at the H-150c tip
 cp desktop/plugin.js ~/.hermes/coursebook-test-h150-2345/home/desktop-plugins/coursebook/plugin.js
 COURSEBOOK_TEST_STATE=~/.hermes/coursebook-test-h150-2345 CB013_CDP_PORT=9362 \
   bash scripts/cb013-live-window.sh --restart
 CB009_CDP_PORT=9362 node scripts/h150-capture.mjs audit/ux/h150-shots
 CB009_CDP_PORT=9362 node scripts/h150-focus-probe.mjs audit/ux/h150-shots
 ```
+
+## H-150c — the fix (product)
+
+Product card `t_35a40588`, on the same branch. Product file `desktop/plugin.js` sha256
+`a9a75bf4b5916ed31d9b7113fd62970198b457990c9f49352ccfc1194d71ecba`, byte-identical to the copy in
+`~/.hermes/coursebook-test-h150-2345/home/desktop-plugins/coursebook/plugin.js`; the isolated window
+was **restarted** after that copy (not reloaded). Every number below is from that window.
+
+### What changed
+
+- **The layout rule is one measured decision, not a window media query.** `PackShelfSplit` stacks the
+  list and the preview at every width and, when the route column is under
+  `CB_SHELF_COMPACT_WIDTH` (400 px), replaces the list with the preview once a pack is open. Route
+  columns measured on this rig: 958 px in a 1600 px window, 407 at 1049, 257 at 900, 215 at 460.
+  Measured in the deck, the emitted `47.5rem` rules are `.min-[47.5rem]:flex-row`, `:w-52` and
+  `:gap-5` — there is no `.min-[47.5rem]:flex` and no `:w-72`, so the shelf's `hidden
+  min-[47.5rem]:flex` list never un-hid and its intended 18rem column never applied. The shelf asked
+  for a split the deck cannot draw.
+- **Focus has one target per state.** `shelfFocusTarget(compact, detailOpen)` returns `'list'` when
+  the row is still on screen and `'detail'` when it is not, so the pane the user can see is the pane
+  that keeps focus. `LibraryView` stores that as a request object (`{target, key}`) and
+  `PackShelfSplit` applies it after render; Enter and Space both go through the one `openPack`, so
+  the two keys cannot diverge. `All packs` (the preview's back control) gained a
+  `data-cb-pack-back` handle and returns focus to the row it came from.
+- **The ring is inset.** `outline: 2px solid var(--cb-accent)` with `outline-offset: -2px` (the
+  H-146a identity ring, unchanged colour and width) draws inside the row, so the `MAIN.overflow-auto`
+  box that clipped the left and right strokes no longer can. Ring state still follows
+  `:focus-visible`; a pointer press paints nothing.
+- **Focus restored by script announces itself.** This Electron build moves `activeElement` without
+  firing `focusin`, so React's `onFocus` does not run for a script focus; the split dispatches one
+  `focusin` when, and only when, it actually moved focus, so a retained row paints its ring.
+
+### Finding 1 — re-measured: passes
+
+Real CDP key events, one press each (`keyDown` + `keyUp`), `document.activeElement` read after the
+key:
+
+| Window | Route | Shelf | Enter | Space | In scrollport | Page overflow |
+| ---: | ---: | --- | --- | --- | --- | ---: |
+| 1600 | 958 | stacked | row `Preview Parent demo…`, `:focus-visible` true | same | yes | 0 |
+| 1049 | 407 | stacked | row `Preview Parent demo…`, `:focus-visible` true | same | yes | 0 |
+| 900 | 257 | one-pane | preview `All packs` | same | yes | 0 |
+| 460 | 215 | one-pane | preview `All packs` | same | yes | 0 |
+
+`h150-focus-facts.json` (the repo probe) reads `wideAfterEnter`/`wideAfterSpace` as the row button
+with `isBody: false`, and `narrowAfterSpace` as `insidePreview: true`, `visible: true`,
+`isBody: false`, `previewPanel: true`. `h150c-focus-facts.json` carries the full per-width table
+(`enter`/`space` → `isBody`, `isRowAction`, `insidePreview`, `listPaneDisplay`, `ring.state`).
+After Enter at 460 the active element sits at `top 597, bottom 621` inside a scrollport of
+`247…984` — visible, not merely present.
+
+**A single Space press does not dismiss the preview it just opened.** The keydown opens it and moves
+focus to `All packs`; the matching keyup does not activate that control (`space-keyup` measurement:
+`afterDown` and `afterUp` both `previewOpen: true`, focus `All packs`).
+
+### Finding 2 — re-measured: passes
+
+Focused and blurred full frames per width are diffed; the changed pixel box is compared with the row
+box measured in the DOM and the changed pixels are binned into the four edge bands of that box.
+
+| Window | Computed outline | Diff box vs row box (device px) | Edge bands (px) | Painted side rows |
+| ---: | --- | --- | --- | --- |
+| 1600 | `solid 1.1156px rgb(44,74,140)`, offset `-1.1156px` | `270,290 427×135` vs `270,290 428×136` | 439 / 439 / 147 / 147 | left 135, right 135 |
+| 1049 | same | `222,343 338×175` vs `222,342 338×176` | 350 / 350 / 187 / 187 | left 175, right 175 |
+| 900 | same | `222,493 204×214` vs `222,491 204×216` | 216 / 216 / 226 / 226 | left 214, right 214 |
+| 460 | same | `10,536 165×236` vs `10,536 166×237` | 177 / 177 / 248 / 248 | left 236, right 236 |
+
+`middle` is 0 at every width: the only thing that changed between the focused and the blurred frame
+is the ring itself. The left and right strokes are painted for the row's full height, so the ring
+encloses the row on all four sides. `h150c-ring-facts.json` holds the numbers;
+`h150c-ring-{1600,1049,900,460}.png` are the diff-box crops and
+`h150c-ring-{focused,blurred}-<width>-full.png` the A/B frames.
+
+### Harness correction (measurement, not product)
+
+`scripts/h150-capture.mjs` and `scripts/h150-focus-probe.mjs` sent `rawKeyDown` **and** `keyDown`
+for one press, which the renderer delivers as two keydowns. That was harmless while focus stayed put;
+with the fix it made the 460 px Space sample read `previewPanel: false`, because the second press
+activated the `All packs` control focus had just moved to. Both scripts now send one `keyDown` +
+one `keyUp`. Re-run under the corrected harness, the same shelf reads `narrowAfterSpace:
+insidePreview: true, previewPanel: true`.
+
+`h150-focus-probe.mjs` also now establishes keyboard modality (one Tab) and announces the script
+focus with one `focusin` before sampling the ring. The ring is the H-146a `:focus-visible` identity,
+so a script focus straight after the harness's own click on `All packs` inherits that pointer
+modality, the engine answers `:focus-visible` false, and the sample reads `outline: none` — a
+measurement artifact, not a missing ring (the product repaints on the next keyboard stop).
+
+### Content checks — unchanged
+
+`h150-facts.json`, re-captured at `a9a75bf4…`: one `h1` (Library) with `plateLabels: 1` and
+`leadCount: 1`; 2 rows, 2 buttons each; Enter and Space both open a preview with exactly one primary
+(`Resume lesson` / `Open course`) and one secondary (`Archive`); the selected cue is the word
+**Selected**; `Technical details` is closed by default and the raw pack id and record revision never
+reach learner text; the Bundled filter is the live empty state; page overflow is 0 at 1049, 900 and
+460.
+
+### Frames re-captured at this sha
+
+`focus-ring-light-1049{,-full,-blurred}.png`, `focus-ring-light-460{,-full,-blurred}.png`,
+`overlay-open-enter-1049.png`, `overlay-open-space-1049.png`, `overlay-open-space-460.png`,
+`text200-measured-light-460{,-full}.png` and the `light-*` / `dark-*` shelf frames now show the fixed
+state; the older rows in the Frames table above describe what those files showed at `a52e295`. New
+`h150c-*` frames:
+
+| Frame | Shows |
+| --- | --- |
+| `h150c-focus-ring-<1600,1049,900,460>.png` (+ `-full`) | the focused row, inset ring |
+| `h150c-focus-blurred-<width>.png` | the same row blurred — the A/B control |
+| `h150c-ring-focused-<width>-full.png` / `h150c-ring-blurred-<width>-full.png` | full-viewport A/B pair |
+| `h150c-ring-<width>.png` | crop at the diff's own box: the enclosing ring |
+| `h150c-open-enter-<width>.png` / `h150c-open-space-<width>.png` | where focus lands after each key |
+| `h150c-text200-open-460.png` | 200 % text (root 32 px), 460 px window, focus inside the preview |
+
+### Layout consequence to review
+
+At a 900 px window the route column is 257 px; the shelf is now one pane there (preview replaces the
+list once a pack is open) instead of stacking both. At 1049 (407 px) and 1600 (958 px) the row stays
+on screen and keeps focus. No other surface or harness behaviour changed.
+
