@@ -196,12 +196,13 @@ class LegacyDocumentHashTest(unittest.TestCase):
     for a stored ``gen_lessons.page_json`` — so this is cross-version evidence rather than a number
     the new code reports about itself. H-173b repaired the ``lesson_ja`` fixture (a taught phrase is
     no longer announced ahead of the check), and H-173d later added the keyed greeting to the model
-    segment (``docs/DECISION-TAUGHT-TARGET.md``), so the pin is re-derived from the repaired fixture;
+    segment (``docs/DECISION-TAUGHT-TARGET.md``) and the H-173d batch merged all its fixture edits, so the
+    pin is the one merged ``lesson_ja.json`` re-derived once (not once per branch);
     the assertion it protects is unchanged: passing a locale must not move the hash or id.
     """
 
-    PINNED_HASH = "sha256:a3a1f4f43a843e0ccb373d0d2cb125f3bd5806bb660a0cead386662bf0fc396c"
-    PINNED_ID = "doc_a3a1f4f43a843e0ccb37"
+    PINNED_HASH = "sha256:3249da755f5ef9b5063dc15582d327a6f9b8c53cf0ae567c563cbe49b65dc174"
+    PINNED_ID = "doc_3249da755f5ef9b5063d"
 
     def test_legacy_document_hash_unchanged_by_locale(self) -> None:
         document = lesson_document.document_from_page(fixture("lesson_ja"))
