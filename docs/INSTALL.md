@@ -302,12 +302,12 @@ once (opening the pane does that), the observed shape is:
 | `plugin_version` | `0.1.0` | The package on disk is the one that answered |
 | `contract_version` | `14` | `cb.rpc` v14 is loaded |
 | `db.ready` | `true` | The store is provisioned and migrated |
-| `db.schema_version` | `10` | Migrations `0001`-`0010` applied |
+| `db.schema_version` | `11` | Migrations `0001`-`0011` applied |
 | `implemented_methods` | 64 names | Every method `cb.rpc` v14 declares has a handler |
 | `contracts` | 7 entries | Each frozen contract with its version and hash |
 
 The pane reports the same health block: backend `cb.rpc v14`, plugin 0.1.0, database ready at schema
-v10, and `Courses: none yet` until you create or import one. With no chat bound to an enrollment it
+v11, and `Courses: none yet` until you create or import one. With no chat bound to an enrollment it
 offers `Open Coursebook` and says no durable chat is bound yet.
 
 Provisioning is deliberate and narrow: `GET /health` (and `health.get` over RPC) creates the store

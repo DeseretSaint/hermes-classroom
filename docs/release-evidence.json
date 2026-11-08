@@ -18,9 +18,9 @@
   },
   "db": {
     "contract": "cb.db",
-    "version": 10,
-    "schema_version": 10,
-    "migrations": "0001-0010"
+    "version": 11,
+    "schema_version": 11,
+    "migrations": "0001-0011"
   },
   "plugin": {
     "path": "desktop/plugin.js",
@@ -30,7 +30,7 @@
     "frames": 62,
     "claims_pass": 15,
     "claims_total": 15,
-    "text_nodes": 2266,
+    "text_nodes": 2282,
     "forced_color_frames": 6,
     "min_authored_ratio": 5.93,
     "ax_controls": 364,
