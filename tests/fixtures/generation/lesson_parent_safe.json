@@ -4,8 +4,8 @@
     {
       "kind": "model",
       "heading": "Warm things",
-      "body": "The kettle, the toaster and the oven make things warm. The fridge and the ice tray make things cold. A grown-up is the only person who fills or switches on the kettle, because hot water can burn.",
-      "short": "Kettle, toaster and oven are warm; fridge and ice are cold. A grown-up works the kettle."
+      "body": "The kettle, the toaster and the oven make things warm. The fridge and the ice tray make things cold. A grown-up is the only person who fills or switches on the kettle, because hot water can burn. That is our house rule for this kitchen, not a general fact we have checked against a source.",
+      "short": "Kettle, toaster and oven are warm; fridge and ice are cold. A grown-up works the kettle - our house rule, not a general fact."
     },
     {
       "kind": "guided",
@@ -24,7 +24,7 @@
     "answer": "kettle and toaster in the warm pile; fridge and ice in the cold pile",
     "short": "Kettle is warm and fridge is cold: put each card in its pile."
   },
-  "learner_explanation": "Warm things get heat from an appliance such as the kettle, toaster or oven. Cold things come from the fridge or freezer. A grown-up always fills and switches on the kettle, and you sort the cards instead.",
+  "learner_explanation": "Warm things get heat from an appliance such as the kettle, toaster or oven. Cold things come from the fridge or freezer. A grown-up always fills and switches on the kettle, and you sort the cards instead. That is our house rule for this kitchen, not a general fact we have checked against a source.",
   "check": {
     "kind": "observation",
     "stimulus": {
@@ -72,10 +72,10 @@
   },
   "sources": [],
   "media": [],
-  "parent_notes": "Keep your child within arm's reach for the whole activity, and keep the kettle unplugged and out of reach. The child sorts cards and names things; the child never fills or switches on the kettle. If the child reaches for the kettle, stop, move it further away and go back to the cards.",
+  "parent_notes": "Keep your child within arm's reach for the whole activity, and keep the kettle unplugged and out of reach. The child sorts cards and names things; the child never fills or switches on the kettle. The kettle rule is our own house rule for this kitchen, not a general safety fact we have checked against a source. If the child reaches for the kettle, stop, move it further away and go back to the cards.",
   "supervision_notes": [
     "Adult stays within arm's reach for the whole activity",
     "Kettle stays unplugged and out of reach"
   ],
-  "learner_explanation_short": "Warm things come from the kettle, toaster or oven; cold things from the fridge. A grown-up works the kettle."
+  "learner_explanation_short": "Warm things come from the kettle, toaster or oven; cold things from the fridge. A grown-up works the kettle - our house rule, not a general fact."
 }

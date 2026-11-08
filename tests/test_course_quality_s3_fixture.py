@@ -190,6 +190,39 @@ class RepairedLessonTest(unittest.TestCase):
         self.assertIn("stop, move it further away and go back to the cards", notes)
         self.assertEqual(self.lesson["check"]["assistance_policy"]["hint"], "available")
 
+    def test_every_reader_facing_place_marks_the_kettle_rule_as_a_house_rule(self) -> None:
+        """H-173d D6: the plan's honesty mark must reach the copy that makes the claim."""
+
+        model = self.lesson["segments"][0]
+        places = {
+            "segments[0].body": model["body"],
+            "segments[0].short": model["short"],
+            "learner_explanation": self.lesson["learner_explanation"],
+            "learner_explanation_short": self.lesson["learner_explanation_short"],
+            "parent_notes": self.lesson["parent_notes"],
+        }
+        for name, text in places.items():
+            lowered = text.lower()
+            self.assertIn("house rule", lowered, f"{name} states the kettle rule unmarked")
+            self.assertIn(
+                "not a general",
+                lowered,
+                f"{name} does not say the rule is not a general fact",
+            )
+        # The mark is a qualifier, not a deletion: the rule still reaches the reader.
+        self.assertIn("hot water can burn", model["body"].lower())
+        self.assertIn("fills or switches on the kettle", model["body"].lower())
+        # The claim is bounded, not newly sourced.
+        self.assertEqual(self.lesson["sources"], [])
+
+    def test_lesson_claims_no_source_it_did_not_fetch(self) -> None:
+        self.assertEqual(self.lesson["sources"], [])
+        self.assertEqual(self.plan["source_ids"], [])
+        for section in self.plan["sections"]:
+            self.assertEqual(section["source_ids"], [])
+        for objective in self.plan["objectives"]:
+            self.assertEqual(objective["support"], "unverified")
+
 
 class RescoreRecordTest(unittest.TestCase):
     """The new record is a valid review and re-scores the five fixed dimensions at 3 or 4."""
@@ -213,6 +246,38 @@ class RescoreRecordTest(unittest.TestCase):
         self.assertIn("not run for the repaired pair", text)
         self.assertIn("no learner has received this fixture", text)
         self.assertIn("H-173d", text)
+
+
+class D6CopyRecordTest(unittest.TestCase):
+    """H-173d's S3 D6 finding: the house-rule mark now reaches the copy that makes the claim."""
+
+    RECORD = ROOT / "docs" / "reviews" / "H173d-S3-D6-house-rule-copy.md"
+
+    def test_record_passes_the_packet_checker(self) -> None:
+        module = load_packet_module()
+        self.assertTrue(self.RECORD.is_file())
+        self.assertEqual(module.check_record(self.RECORD.read_text(encoding="utf-8")), [])
+
+    def test_d6_is_rescored_at_three_from_the_lesson_copy(self) -> None:
+        text = self.RECORD.read_text(encoding="utf-8")
+        match = re.search(
+            r"^### D6 .*?^Score: (\d)$.*?^Evidence: (.*?)^Follow-up:",
+            text,
+            re.MULTILINE | re.DOTALL,
+        )
+        if match is None:
+            self.fail("D6 block is missing from the re-score record")
+        self.assertEqual(int(match.group(1)), 3)
+        evidence = match.group(2).lower()
+        self.assertIn("segments[0].body", evidence)
+        self.assertIn("house rule", evidence)
+        self.assertIn("parent_notes", evidence)
+
+    def test_record_is_author_scored_and_claims_no_live_run(self) -> None:
+        text = self.RECORD.read_text(encoding="utf-8")
+        self.assertIn("not independent", text)
+        self.assertIn("not be cited as one", text.lower())
+        self.assertIn("no provider call was made", text.lower())
 
 
 if __name__ == "__main__":
