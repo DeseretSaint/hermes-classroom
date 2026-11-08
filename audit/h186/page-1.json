@@ -1,0 +1,220 @@
+{
+  "enrollment_id": "enr_dade81dbb14d4968bf76927666147da0",
+  "course": {
+    "course_id": "crs_7a895d5b38b64fe490cd7476f35210f6",
+    "title": "Japanese affection and register — a Sample L0 classroom"
+  },
+  "section": {
+    "objective_id": "obj_a276a5fd7fbb4cda9c0a00656514287b",
+    "title": "Tell everyday affection from a direct romantic declaration",
+    "ordinal": 1,
+    "state": "not_started",
+    "evidence_target": "discrimination",
+    "last_opened_at": "2026-11-08T15:58:35.937168+00:00"
+  },
+  "runtime": {
+    "lesson_run_id": "run_76a02f189151442b9685b088799b1472",
+    "binding_id": null,
+    "binding_status": "detached",
+    "session_state": "missing",
+    "last_active_at": null
+  },
+  "segments": [
+    {
+      "segment_id": "seg_6c6e823ff67b466f9178515eeafcafce",
+      "ordinal": 1,
+      "kind": "teaching",
+      "text": "# Lesson 1 — two ways of saying it\n\nThis is a demonstration lesson for an adult beginner (L0). Every Japanese line is followed by\nromaji and an English meaning. Romaji is a scaffold: it helps you hear the shape of the line, and\nit is not evidence that you can read Japanese.\n\n## Dialogue A — two friends, after a film\n\nMika: たのしかったね。 (tanoshikatta ne.) — \"That was fun, wasn't it?\"\nJun: うん。また行こう。 (un. mata ikou.) — \"Yeah. Let's go again.\"\nMika: うん、好きだよ。 (un, suki da yo.) — \"Yeah, I like you.\"\n\n`好き` (suki) is a na-adjective: it describes the person or thing that is liked, not an action\nthe speaker performs. `好きだよ` (suki da yo) is the casual form, used with friends and people you\nare already close to. The final `よ` (yo) softens the statement and offers it as new information.\n\n## Dialogue B — a confession\n\nAoi: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"\n\nThis is the shape of a **告白** (kokuhaku), a romantic confession. The polite form `好きです`\n(suki desu) carries the seriousness of the moment, and `付き合ってください` (tsukiatte kudasai)\nis the request to start seeing each other.\n\n`です` (desu) is the polite copula; it marks that the addressee is being addressed politely\n(丁寧語, teineigo). It does not by itself make a sentence romantic. The romantic reading comes\nfrom the situation and from the request that follows.\n\n## What changes between A and B?\n\n| | Dialogue A | Dialogue B |\n|---|---|---|\n| Who is speaking | friends | two people not yet a couple |\n| Setting | casual, after an outing | private, deliberate |\n| Form | 好きだよ (suki da yo) | 好きです — polite (suki desu) |\n| What it does | states affection | makes a romantic confession |\n\nThe words are close; the relationship and the setting decide how the line is heard. A literal\ntranslation of English \"I love you\" is not enough to choose between them.\n\n## Note on the sources\n\nThe A1 curriculum reference used here teaches `すきです` (suki desu) as a basic sentence pattern,\nand it presents beginner Japanese with romaji alongside kana. That is a curriculum fact, not a\nclaim that any one phrase is the only natural choice. See `source-notes.md` for every link and\nfor what each source does and does not support.\n",
+      "artifact_id": null,
+      "source_id": null,
+      "created_at": "2026-11-08T15:58:35.937168+00:00"
+    },
+    {
+      "segment_id": "seg_abcad168e97749e5b8f6fa095bcf8e6e",
+      "ordinal": 2,
+      "kind": "media",
+      "text": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+      "artifact_id": "art_f3a8d359a7b2470ab56bff80c6adc524",
+      "source_id": null,
+      "created_at": "2026-11-08T15:58:35.937168+00:00"
+    },
+    {
+      "segment_id": "seg_e51f5f4b809e47e49a976ddb9095924a",
+      "ordinal": 3,
+      "kind": "check_prompt",
+      "text": "Two lines are shown. A: うん、好きだよ。 (un, suki da yo.) said to a friend after an outing. B: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) said privately to someone the speaker is not yet close to. Which line is the romantic confession, and which cue makes it one?",
+      "artifact_id": null,
+      "source_id": null,
+      "created_at": "2026-11-08T15:58:35.937168+00:00"
+    }
+  ],
+  "document": {
+    "schema_version": 1,
+    "document_id": "doc_b0db056b73a93fbfc044",
+    "content_hash": "sha256:b0db056b73a93fbfc04438df103cbbcdf83421a21fc756610f4b4386e37aa12f",
+    "section_title": "Tell everyday affection from a direct romantic declaration",
+    "objective_id": "obj_a276a5fd7fbb4cda9c0a00656514287b",
+    "state": "textbook_only",
+    "view_note": "This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only.",
+    "views": {
+      "textbook": true,
+      "guided": false,
+      "field_quest": false,
+      "field_notes": false
+    },
+    "blocks": [
+      {
+        "id": "blk_530e0ef09d77da403784",
+        "role": "orient",
+        "headline": "Lesson",
+        "short": null,
+        "deep": "# Lesson 1 — two ways of saying it\n\nThis is a demonstration lesson for an adult beginner (L0). Every Japanese line is followed by\nromaji and an English meaning. Romaji is a scaffold: it helps you hear the shape of the line, and\nit is not evidence that you can read Japanese.\n\n## Dialogue A — two friends, after a film\n\nMika: たのしかったね。 (tanoshikatta ne.) — \"That was fun, wasn't it?\"\nJun: うん。また行こう。 (un. mata ikou.) — \"Yeah. Let's go again.\"\nMika: うん、好きだよ。 (un, suki da yo.) — \"Yeah, I like you.\"\n\n`好き` (suki) is a na-adjective: it describes the person or thing that is liked, not an action\nthe speaker performs. `好きだよ` (suki da yo) is the casual form, used with friends and people you\nare already close to. The final `よ` (yo) softens the statement and offers it as new information.\n\n## Dialogue B — a confession\n\nAoi: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"\n\nThis is the shape of a **告白** (kokuhaku), a romantic confession. The polite form `好きです`\n(suki desu) carries the seriousness of the moment, and `付き合ってください` (tsukiatte kudasai)\nis the request to start seeing each other.\n\n`です` (desu) is the polite copula; it marks that the addressee is being addressed politely\n(丁寧語, teineigo). It does not by itself make a sentence romantic. The romantic reading comes\nfrom the situation and from the request that follows.\n\n## What changes between A and B?\n\n| | Dialogue A | Dialogue B |\n|---|---|---|\n| Who is speaking | friends | two people not yet a couple |\n| Setting | casual, after an outing | private, deliberate |\n| Form | 好きだよ (suki da yo) | 好きです — polite (suki desu) |\n| What it does | states affection | makes a romantic confession |\n\nThe words are close; the relationship and the setting decide how the line is heard. A literal\ntranslation of English \"I love you\" is not enough to choose between them.\n\n## Note on the sources\n\nThe A1 curriculum reference used here teaches `すきです` (suki desu) as a basic sentence pattern,\nand it presents beginner Japanese with romaji alongside kana. That is a curriculum fact, not a\nclaim that any one phrase is the only natural choice. See `source-notes.md` for every link and\nfor what each source does and does not support.",
+        "check_id": null,
+        "media": [
+          {
+            "kind": "visual",
+            "role": null,
+            "artifact_id": "art_f3a8d359a7b2470ab56bff80c6adc524",
+            "purpose": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+            "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+            "label": null,
+            "degraded": false,
+            "reason": null
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "id": "blk_62dcfe3dab1bad6821c5",
+        "role": "practice",
+        "headline": "Check",
+        "short": null,
+        "deep": "Two lines are shown. A: うん、好きだよ。 (un, suki da yo.) said to a friend after an outing. B: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) said privately to someone the speaker is not yet close to. Which line is the romantic confession, and which cue makes it one?",
+        "check_id": null,
+        "media": [],
+        "source_ids": []
+      }
+    ],
+    "check_id": null,
+    "source_ids": []
+  },
+  "sources": [
+    {
+      "source_id": "src_f17f224dae1f43a4b685f8b00b523240",
+      "title": "Marugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents",
+      "url": "https://marugoto.jpf.go.jp/en/assets/docs/about/starter_activities_contents_en.pdf",
+      "source_type": "course_material",
+      "support_status": "authoritative_documentation",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_da15bb1527504b9a8959c9d35a12e0d2",
+      "title": "How to teach with Marugoto (teacher FAQ)",
+      "url": "https://marugoto.jpf.go.jp/en/teacher/qateaching/",
+      "source_type": "course_material",
+      "support_status": "authoritative_documentation",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_de26eb7267af44e9a239206a257275a8",
+      "title": "Wiktionary — 好き (suki)",
+      "url": "https://en.wiktionary.org/wiki/%E5%A5%BD%E3%81%8D",
+      "source_type": "reference",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_22dee35066f040b7ba5de14da6f87dbe",
+      "title": "Wiktionary — 愛する (aisuru)",
+      "url": "https://en.wiktionary.org/wiki/%E6%84%9B%E3%81%99%E3%82%8B",
+      "source_type": "reference",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_6b9158f0338d4157a943837c1bb1cc9b",
+      "title": "Learn how to say \"I love you\" in Japanese",
+      "url": "https://www.sng.ac.jp/sng-news/learn-say-love-japanese/",
+      "source_type": "secondary",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_9b8ba0a642754001a2ebefc87f39b3b5",
+      "title": "Honorific speech in Japanese",
+      "url": "https://en.wikipedia.org/wiki/Honorific_speech_in_Japanese",
+      "source_type": "reference",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "art_80c53d937695482e86dc96d44fa498b9",
+      "kind": "audio",
+      "mime": "audio/mpeg",
+      "bytes": 22272,
+      "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349"
+    },
+    {
+      "artifact_id": "art_f3a8d359a7b2470ab56bff80c6adc524",
+      "kind": "visual",
+      "mime": "image/png",
+      "bytes": 6948,
+      "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d"
+    }
+  ],
+  "checks": [],
+  "notebook_entries": [],
+  "attempts": [],
+  "state": "not_started",
+  "revision": 0
+}

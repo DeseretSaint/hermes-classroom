@@ -1,0 +1,220 @@
+{
+  "enrollment_id": "enr_dade81dbb14d4968bf76927666147da0",
+  "course": {
+    "course_id": "crs_7a895d5b38b64fe490cd7476f35210f6",
+    "title": "Japanese affection and register — a Sample L0 classroom"
+  },
+  "section": {
+    "objective_id": "obj_11dc6f41d5eb48f6a069cf600eec040e",
+    "title": "Choose the polite expression for a first confession",
+    "ordinal": 2,
+    "state": "not_started",
+    "evidence_target": "comprehension",
+    "last_opened_at": "2026-11-08T15:58:35.937279+00:00"
+  },
+  "runtime": {
+    "lesson_run_id": "run_f67b9dabbc6741839113e5dff52ece2c",
+    "binding_id": null,
+    "binding_status": "detached",
+    "session_state": "missing",
+    "last_active_at": null
+  },
+  "segments": [
+    {
+      "segment_id": "seg_e9bf644184794bb08b68114803781290",
+      "ordinal": 1,
+      "kind": "teaching",
+      "text": "# Lesson 2 — choosing by addressee, relationship and setting\n\nThere is no single Japanese line that means \"I love you\". The same feeling is carried by\ndifferent lines depending on who is listening, how close you are, and where you are standing.\nThe English word stays fixed; the Japanese line moves.\n\n## The four lines in this lesson\n\n| Relationship | Setting | Line | Romaji | English |\n|---|---|---|---|---|\n| friend | casual, after an outing | 好きだよ | suki da yo | I like you |\n| someone you respect but are not close to | private, first confession | 好きです | suki desu | I like you (polite) |\n| close partner | everyday, warm | 大好き | daisuki | I really like you |\n| long-term partner | private, settled | 愛してる | aishiteru | I love you (intimate) |\n\nEach line is a real option. None of them is a mistranslation; they differ in closeness,\ndirectness and weight.\n\n## What the sources support\n\n- `好き` (suki) is dictionary-defined as liking or fondness, and `好きです` (suki desu) is used\n  idiomatically for \"I love you\" in a romantic context.\n- `愛してる` (aishiteru) is the continuous form of `愛する` (aisuru, \"to love\"). A Japanese\n  language institute's own guidance says it is real but should not be overused; everyday\n  affection in Japan is often shown through actions rather than a spoken declaration.\n- `です` (desu) is polite addressee language (teineigo). Politeness tracks the addressee and the\n  setting. In-group/out-group (内/外, uchi/soto) thinking shapes much of Japanese honorific use;\n  for a private confession the relevant distance is closeness and setting rather than workplace\n  hierarchy.\n\nThese are the claims the pack relies on. They are labelled with a support status in the\nmanifest, and no native-speaker review is recorded for this demo pack.\n\n## Choosing in three steps\n\n1. **Who is listening?** A friend, someone you respect, a partner, a spouse.\n2. **How close are you?** A first confession is not the same moment as a settled partnership.\n3. **Where are you?** Private and deliberate supports a heavier line; casual and public usually\n   supports a lighter one.\n\nThe relationship map (`relationship-map.png`) shows the three paths used in this pack. Its full\ndescription is in the manifest's `text_equivalent` field.\n\n## What this lesson does not do\n\nIt does not rank the lines as \"better\" or \"worse\" Japanese, and it does not claim that every\nspeaker in Japan uses them the same way. Regional, generational and personal variation is real.\n",
+      "artifact_id": null,
+      "source_id": null,
+      "created_at": "2026-11-08T15:58:35.937279+00:00"
+    },
+    {
+      "segment_id": "seg_dc68e99bd7514572acb9e672d7950e3c",
+      "ordinal": 2,
+      "kind": "media",
+      "text": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+      "artifact_id": "art_80c53d937695482e86dc96d44fa498b9",
+      "source_id": null,
+      "created_at": "2026-11-08T15:58:35.937279+00:00"
+    },
+    {
+      "segment_id": "seg_9ada923f939942aebfc0d31ad5cb87d9",
+      "ordinal": 3,
+      "kind": "check_prompt",
+      "text": "Context: an adult speaker, an adult addressee they respect but do not know well, a private setting, a first confession, standard polite register. Which line from this pack fits, and why?",
+      "artifact_id": null,
+      "source_id": null,
+      "created_at": "2026-11-08T15:58:35.937279+00:00"
+    }
+  ],
+  "document": {
+    "schema_version": 1,
+    "document_id": "doc_f0df705cc7997e89b6f3",
+    "content_hash": "sha256:f0df705cc7997e89b6f3204fa372f1ab0d56e53de5783ab6447c2c2cec66bb83",
+    "section_title": "Choose the polite expression for a first confession",
+    "objective_id": "obj_11dc6f41d5eb48f6a069cf600eec040e",
+    "state": "textbook_only",
+    "view_note": "This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only.",
+    "views": {
+      "textbook": true,
+      "guided": false,
+      "field_quest": false,
+      "field_notes": false
+    },
+    "blocks": [
+      {
+        "id": "blk_f36dfe1cee3b6f590096",
+        "role": "orient",
+        "headline": "Lesson",
+        "short": null,
+        "deep": "# Lesson 2 — choosing by addressee, relationship and setting\n\nThere is no single Japanese line that means \"I love you\". The same feeling is carried by\ndifferent lines depending on who is listening, how close you are, and where you are standing.\nThe English word stays fixed; the Japanese line moves.\n\n## The four lines in this lesson\n\n| Relationship | Setting | Line | Romaji | English |\n|---|---|---|---|---|\n| friend | casual, after an outing | 好きだよ | suki da yo | I like you |\n| someone you respect but are not close to | private, first confession | 好きです | suki desu | I like you (polite) |\n| close partner | everyday, warm | 大好き | daisuki | I really like you |\n| long-term partner | private, settled | 愛してる | aishiteru | I love you (intimate) |\n\nEach line is a real option. None of them is a mistranslation; they differ in closeness,\ndirectness and weight.\n\n## What the sources support\n\n- `好き` (suki) is dictionary-defined as liking or fondness, and `好きです` (suki desu) is used\n  idiomatically for \"I love you\" in a romantic context.\n- `愛してる` (aishiteru) is the continuous form of `愛する` (aisuru, \"to love\"). A Japanese\n  language institute's own guidance says it is real but should not be overused; everyday\n  affection in Japan is often shown through actions rather than a spoken declaration.\n- `です` (desu) is polite addressee language (teineigo). Politeness tracks the addressee and the\n  setting. In-group/out-group (内/外, uchi/soto) thinking shapes much of Japanese honorific use;\n  for a private confession the relevant distance is closeness and setting rather than workplace\n  hierarchy.\n\nThese are the claims the pack relies on. They are labelled with a support status in the\nmanifest, and no native-speaker review is recorded for this demo pack.\n\n## Choosing in three steps\n\n1. **Who is listening?** A friend, someone you respect, a partner, a spouse.\n2. **How close are you?** A first confession is not the same moment as a settled partnership.\n3. **Where are you?** Private and deliberate supports a heavier line; casual and public usually\n   supports a lighter one.\n\nThe relationship map (`relationship-map.png`) shows the three paths used in this pack. Its full\ndescription is in the manifest's `text_equivalent` field.\n\n## What this lesson does not do\n\nIt does not rank the lines as \"better\" or \"worse\" Japanese, and it does not claim that every\nspeaker in Japan uses them the same way. Regional, generational and personal variation is real.",
+        "check_id": null,
+        "media": [
+          {
+            "kind": "audio",
+            "role": null,
+            "artifact_id": "art_80c53d937695482e86dc96d44fa498b9",
+            "purpose": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+            "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+            "label": null,
+            "degraded": false,
+            "reason": null
+          }
+        ],
+        "source_ids": []
+      },
+      {
+        "id": "blk_d39fdfbbd9a83b1a56a9",
+        "role": "practice",
+        "headline": "Check",
+        "short": null,
+        "deep": "Context: an adult speaker, an adult addressee they respect but do not know well, a private setting, a first confession, standard polite register. Which line from this pack fits, and why?",
+        "check_id": null,
+        "media": [],
+        "source_ids": []
+      }
+    ],
+    "check_id": null,
+    "source_ids": []
+  },
+  "sources": [
+    {
+      "source_id": "src_f17f224dae1f43a4b685f8b00b523240",
+      "title": "Marugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents",
+      "url": "https://marugoto.jpf.go.jp/en/assets/docs/about/starter_activities_contents_en.pdf",
+      "source_type": "course_material",
+      "support_status": "authoritative_documentation",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_da15bb1527504b9a8959c9d35a12e0d2",
+      "title": "How to teach with Marugoto (teacher FAQ)",
+      "url": "https://marugoto.jpf.go.jp/en/teacher/qateaching/",
+      "source_type": "course_material",
+      "support_status": "authoritative_documentation",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_de26eb7267af44e9a239206a257275a8",
+      "title": "Wiktionary — 好き (suki)",
+      "url": "https://en.wiktionary.org/wiki/%E5%A5%BD%E3%81%8D",
+      "source_type": "reference",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_22dee35066f040b7ba5de14da6f87dbe",
+      "title": "Wiktionary — 愛する (aisuru)",
+      "url": "https://en.wiktionary.org/wiki/%E6%84%9B%E3%81%99%E3%82%8B",
+      "source_type": "reference",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_6b9158f0338d4157a943837c1bb1cc9b",
+      "title": "Learn how to say \"I love you\" in Japanese",
+      "url": "https://www.sng.ac.jp/sng-news/learn-say-love-japanese/",
+      "source_type": "secondary",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_9b8ba0a642754001a2ebefc87f39b3b5",
+      "title": "Honorific speech in Japanese",
+      "url": "https://en.wikipedia.org/wiki/Honorific_speech_in_Japanese",
+      "source_type": "reference",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "art_80c53d937695482e86dc96d44fa498b9",
+      "kind": "audio",
+      "mime": "audio/mpeg",
+      "bytes": 22272,
+      "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349"
+    },
+    {
+      "artifact_id": "art_f3a8d359a7b2470ab56bff80c6adc524",
+      "kind": "visual",
+      "mime": "image/png",
+      "bytes": 6948,
+      "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d"
+    }
+  ],
+  "checks": [],
+  "notebook_entries": [],
+  "attempts": [],
+  "state": "not_started",
+  "revision": 0
+}

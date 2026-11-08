@@ -26,7 +26,13 @@ class BundledManifestTests(unittest.TestCase):
                 packs.validate_minima(manifest)
                 packs.verify_content_hash(manifest)
                 self.assertEqual(manifest["contract"], "cb.pack")
-                self.assertEqual(manifest["contract_version"], 1)
+                # H-186: the Japanese demo is cb.pack v2 so its two real assets can be linked
+                # through media[]; the parent fixture stays v1.
+                self.assertEqual(
+                    manifest["contract_version"], 2 if directory == JAPANESE else 1
+                )
+                if directory == JAPANESE:
+                    self.assertEqual(len(manifest.get("media") or []), 2)
 
     def test_manifest_is_json_only(self) -> None:
         manifest = load(PARENT)

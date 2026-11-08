@@ -1,0 +1,279 @@
+{
+  "generated_at": "2026-11-08T15:58:56.151Z",
+  "kind": "renderer audit of the shipped desktop/plugin.js with the real imported lesson.page document (no live app window)",
+  "chromium": "Chrome/155.0.8059.84",
+  "frames": [
+    {
+      "id": "audio-1049",
+      "page": 2,
+      "width": 1049,
+      "height": 1400,
+      "font": "root",
+      "root_font_px": "16px",
+      "inner_width": 1049,
+      "media_frame_count": 2,
+      "media": [
+        {
+          "kind": "audio",
+          "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "caption",
+          "disclosure_present": false
+        },
+        {
+          "kind": "audio",
+          "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "disclosure",
+          "disclosure_present": true
+        }
+      ],
+      "all_text_equivalents_present": true,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "clipped": [],
+      "text_head": "Choose the polite expression for a first confession\nLesson view\nGame\nGuided\nTextbook\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nAll sections\nSection 2 · Textbook\nNot started\nExplain it\nLast opened just now\n\nThis lesson was authored before the block documen"
+    },
+    {
+      "id": "audio-460",
+      "page": 2,
+      "width": 460,
+      "height": 1800,
+      "font": "root",
+      "root_font_px": "16px",
+      "inner_width": 460,
+      "media_frame_count": 2,
+      "media": [
+        {
+          "kind": "audio",
+          "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "caption",
+          "disclosure_present": false
+        },
+        {
+          "kind": "audio",
+          "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "disclosure",
+          "disclosure_present": true
+        }
+      ],
+      "all_text_equivalents_present": true,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "clipped": [],
+      "text_head": "Choose the polite expression for a first confession\nLesson view\nGame\nGuided\nTextbook\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nAll sections\nSection 2 · Textbook\nNot started\nExplain it\nLast opened just now\n\nThis lesson was authored before the block documen"
+    },
+    {
+      "id": "audio-1049-text200",
+      "page": 2,
+      "width": 1049,
+      "height": 1900,
+      "font": "32px",
+      "root_font_px": "32px",
+      "inner_width": 1049,
+      "media_frame_count": 2,
+      "media": [
+        {
+          "kind": "audio",
+          "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "caption",
+          "disclosure_present": false
+        },
+        {
+          "kind": "audio",
+          "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "disclosure",
+          "disclosure_present": true
+        }
+      ],
+      "all_text_equivalents_present": true,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "clipped": [],
+      "text_head": "Choose the polite expression for a first confession\nLesson view\nGame\nGuided\nTextbook\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nAll sections\nSection 2 · Textbook\nNot started\nExplain it\nLast opened just now\n\nThis lesson was authored before the block documen"
+    },
+    {
+      "id": "audio-460-text200",
+      "page": 2,
+      "width": 460,
+      "height": 2600,
+      "font": "32px",
+      "root_font_px": "32px",
+      "inner_width": 460,
+      "media_frame_count": 2,
+      "media": [
+        {
+          "kind": "audio",
+          "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "caption",
+          "disclosure_present": false
+        },
+        {
+          "kind": "audio",
+          "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "disclosure",
+          "disclosure_present": true
+        }
+      ],
+      "all_text_equivalents_present": true,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "clipped": [],
+      "text_head": "Choose the polite expression for a first confession\nLesson view\nGame\nGuided\nTextbook\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nAll sections\nSection 2 · Textbook\nNot started\nExplain it\nLast opened just now\n\nThis lesson was authored before the block documen"
+    },
+    {
+      "id": "visual-1049",
+      "page": 1,
+      "width": 1049,
+      "height": 1400,
+      "font": "root",
+      "root_font_px": "16px",
+      "inner_width": 1049,
+      "media_frame_count": 2,
+      "media": [
+        {
+          "kind": "visual",
+          "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "caption",
+          "disclosure_present": false
+        },
+        {
+          "kind": "visual",
+          "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "disclosure",
+          "disclosure_present": true
+        }
+      ],
+      "all_text_equivalents_present": true,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "clipped": [],
+      "text_head": "Tell everyday affection from a direct romantic declaration\nLesson view\nGame\nGuided\nTextbook\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nAll sections\nSection 1 · Textbook\nNot started\nTell the difference\nLast opened just now\n\nThis lesson was authored before t"
+    },
+    {
+      "id": "visual-460",
+      "page": 1,
+      "width": 460,
+      "height": 1800,
+      "font": "root",
+      "root_font_px": "16px",
+      "inner_width": 460,
+      "media_frame_count": 2,
+      "media": [
+        {
+          "kind": "visual",
+          "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "caption",
+          "disclosure_present": false
+        },
+        {
+          "kind": "visual",
+          "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "disclosure",
+          "disclosure_present": true
+        }
+      ],
+      "all_text_equivalents_present": true,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "clipped": [],
+      "text_head": "Tell everyday affection from a direct romantic declaration\nLesson view\nGame\nGuided\nTextbook\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nAll sections\nSection 1 · Textbook\nNot started\nTell the difference\nLast opened just now\n\nThis lesson was authored before t"
+    },
+    {
+      "id": "visual-1049-text200",
+      "page": 1,
+      "width": 1049,
+      "height": 1900,
+      "font": "32px",
+      "root_font_px": "32px",
+      "inner_width": 1049,
+      "media_frame_count": 2,
+      "media": [
+        {
+          "kind": "visual",
+          "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "caption",
+          "disclosure_present": false
+        },
+        {
+          "kind": "visual",
+          "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "disclosure",
+          "disclosure_present": true
+        }
+      ],
+      "all_text_equivalents_present": true,
+      "horizontal_overflow": false,
+      "scroll_width": 1049,
+      "client_width": 1049,
+      "clipped": [],
+      "text_head": "Tell everyday affection from a direct romantic declaration\nLesson view\nGame\nGuided\nTextbook\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nAll sections\nSection 1 · Textbook\nNot started\nTell the difference\nLast opened just now\n\nThis lesson was authored before t"
+    },
+    {
+      "id": "visual-460-text200",
+      "page": 1,
+      "width": 460,
+      "height": 2600,
+      "font": "32px",
+      "root_font_px": "32px",
+      "inner_width": 460,
+      "media_frame_count": 2,
+      "media": [
+        {
+          "kind": "visual",
+          "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "caption",
+          "disclosure_present": false
+        },
+        {
+          "kind": "visual",
+          "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+          "text_equivalent_present": true,
+          "text_equivalent_source": "disclosure",
+          "disclosure_present": true
+        }
+      ],
+      "all_text_equivalents_present": true,
+      "horizontal_overflow": false,
+      "scroll_width": 460,
+      "client_width": 460,
+      "clipped": [],
+      "text_head": "Tell everyday affection from a direct romantic declaration\nLesson view\nGame\nGuided\nTextbook\nField Quest\nThis lesson has no guided version. This lesson has no Field Quest version.\nAll sections\nSection 1 · Textbook\nNot started\nTell the difference\nLast opened just now\n\nThis lesson was authored before t"
+    }
+  ]
+}

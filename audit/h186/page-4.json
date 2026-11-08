@@ -1,0 +1,200 @@
+{
+  "enrollment_id": "enr_dade81dbb14d4968bf76927666147da0",
+  "course": {
+    "course_id": "crs_7a895d5b38b64fe490cd7476f35210f6",
+    "title": "Japanese affection and register — a Sample L0 classroom"
+  },
+  "section": {
+    "objective_id": "obj_2022121e14bb40a8a2c5d6af60870076",
+    "title": "Choose the register for a close friend in public",
+    "ordinal": 4,
+    "state": "not_started",
+    "evidence_target": "discrimination",
+    "last_opened_at": "2026-11-08T15:58:35.937345+00:00"
+  },
+  "runtime": {
+    "lesson_run_id": "run_18e55a819df64af0a8c7c9dee55cc0a9",
+    "binding_id": null,
+    "binding_status": "detached",
+    "session_state": "missing",
+    "last_active_at": null
+  },
+  "segments": [
+    {
+      "segment_id": "seg_1d20c59b7db94a3c99759e7fa23aff13",
+      "ordinal": 1,
+      "kind": "teaching",
+      "text": "# Lesson 3 — a new context, then choose and explain\n\nLesson 2 gave you the map. This lesson asks you to use it without the table in front of you.\n\n## Practice 1 — a first confession\n\nYou are at a quiet café. You have known the other person for a few weeks, you respect them, and\nyou are not close yet. You want to say that you like them and ask to see them again.\n\nWrite the line you would use. Then write one sentence in English saying which cue in the\nsituation made you choose it.\n\n## Practice 2 — a settled partnership\n\nYou are at home with your spouse of ten years. It is a private moment, and the feeling is deep\nrather than new.\n\nWrite the line you would use. Then write one sentence saying why this line differs from\nPractice 1 — or why it does not.\n\n## Practice 3 — explain the register\n\nIn English, explain why a first confession to someone you respect calls for a different line from\na settled partnership. Name the addressee, the relationship and the setting in your answer.\n\n## Practice 4 — a line that does not fit\n\nA learner says: \"I will use the strongest line I know, because stronger means more sincere.\"\nIn English, explain what this reasoning misses about addressee, relationship and setting.\n\n## Practice 5 — a close friend in public\n\nYou are with a close friend, in public, after an outing. You want to say something affectionate\nwithout making it a confession and without overstating the relationship.\n\nUsing the map from Lesson 1, decide which register fits. The check asks you to name it with one\nletter; the lesson does not print the answer here, because choosing it is the work.\n\n## After you answer\n\nYour answers are checked as attempts, not as a claim of fluency. A correct answer to one item is\nnot durable mastery, and a repeated near-identical item is not evidence of transfer. If you miss\none, the next step is a new item that targets the same idea in a different situation.\n\nRomaji may be used in an answer as a scaffold. A romaji-only answer is not evidence that you can\nread Japanese script, so read the kana forms in Lesson 2 alongside it.\n",
+      "artifact_id": null,
+      "source_id": null,
+      "created_at": "2026-11-08T15:58:35.937345+00:00"
+    },
+    {
+      "segment_id": "seg_f4d0edeae9a24637bad90b80cb299237",
+      "ordinal": 2,
+      "kind": "check_prompt",
+      "text": "A close friend, in public, after an outing: you want to say something affectionate without making it a confession and without overstating the relationship. Which register fits? Answer A, B or C. A: casual register (suki da yo). B: polite register (suki desu). C: intimate register (aishiteru).",
+      "artifact_id": null,
+      "source_id": null,
+      "created_at": "2026-11-08T15:58:35.937345+00:00"
+    }
+  ],
+  "document": {
+    "schema_version": 1,
+    "document_id": "doc_fe13a6d266883d5c39b1",
+    "content_hash": "sha256:fe13a6d266883d5c39b1eefc59f50692bb12cb13ab3daa3a629ff9a71cafc8f7",
+    "section_title": "Choose the register for a close friend in public",
+    "objective_id": "obj_2022121e14bb40a8a2c5d6af60870076",
+    "state": "textbook_only",
+    "view_note": "This lesson was authored before the block document existed, so it has no short-text or sequenced view. Textbook view only.",
+    "views": {
+      "textbook": true,
+      "guided": false,
+      "field_quest": false,
+      "field_notes": false
+    },
+    "blocks": [
+      {
+        "id": "blk_2e1f8608ccb5bb0454fa",
+        "role": "orient",
+        "headline": "Lesson",
+        "short": null,
+        "deep": "# Lesson 3 — a new context, then choose and explain\n\nLesson 2 gave you the map. This lesson asks you to use it without the table in front of you.\n\n## Practice 1 — a first confession\n\nYou are at a quiet café. You have known the other person for a few weeks, you respect them, and\nyou are not close yet. You want to say that you like them and ask to see them again.\n\nWrite the line you would use. Then write one sentence in English saying which cue in the\nsituation made you choose it.\n\n## Practice 2 — a settled partnership\n\nYou are at home with your spouse of ten years. It is a private moment, and the feeling is deep\nrather than new.\n\nWrite the line you would use. Then write one sentence saying why this line differs from\nPractice 1 — or why it does not.\n\n## Practice 3 — explain the register\n\nIn English, explain why a first confession to someone you respect calls for a different line from\na settled partnership. Name the addressee, the relationship and the setting in your answer.\n\n## Practice 4 — a line that does not fit\n\nA learner says: \"I will use the strongest line I know, because stronger means more sincere.\"\nIn English, explain what this reasoning misses about addressee, relationship and setting.\n\n## Practice 5 — a close friend in public\n\nYou are with a close friend, in public, after an outing. You want to say something affectionate\nwithout making it a confession and without overstating the relationship.\n\nUsing the map from Lesson 1, decide which register fits. The check asks you to name it with one\nletter; the lesson does not print the answer here, because choosing it is the work.\n\n## After you answer\n\nYour answers are checked as attempts, not as a claim of fluency. A correct answer to one item is\nnot durable mastery, and a repeated near-identical item is not evidence of transfer. If you miss\none, the next step is a new item that targets the same idea in a different situation.\n\nRomaji may be used in an answer as a scaffold. A romaji-only answer is not evidence that you can\nread Japanese script, so read the kana forms in Lesson 2 alongside it.",
+        "check_id": null,
+        "media": [],
+        "source_ids": []
+      },
+      {
+        "id": "blk_4eca28e075bec0b21d9c",
+        "role": "practice",
+        "headline": "Check",
+        "short": null,
+        "deep": "A close friend, in public, after an outing: you want to say something affectionate without making it a confession and without overstating the relationship. Which register fits? Answer A, B or C. A: casual register (suki da yo). B: polite register (suki desu). C: intimate register (aishiteru).",
+        "check_id": null,
+        "media": [],
+        "source_ids": []
+      }
+    ],
+    "check_id": null,
+    "source_ids": []
+  },
+  "sources": [
+    {
+      "source_id": "src_f17f224dae1f43a4b685f8b00b523240",
+      "title": "Marugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents",
+      "url": "https://marugoto.jpf.go.jp/en/assets/docs/about/starter_activities_contents_en.pdf",
+      "source_type": "course_material",
+      "support_status": "authoritative_documentation",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_da15bb1527504b9a8959c9d35a12e0d2",
+      "title": "How to teach with Marugoto (teacher FAQ)",
+      "url": "https://marugoto.jpf.go.jp/en/teacher/qateaching/",
+      "source_type": "course_material",
+      "support_status": "authoritative_documentation",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_de26eb7267af44e9a239206a257275a8",
+      "title": "Wiktionary — 好き (suki)",
+      "url": "https://en.wiktionary.org/wiki/%E5%A5%BD%E3%81%8D",
+      "source_type": "reference",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_22dee35066f040b7ba5de14da6f87dbe",
+      "title": "Wiktionary — 愛する (aisuru)",
+      "url": "https://en.wiktionary.org/wiki/%E6%84%9B%E3%81%99%E3%82%8B",
+      "source_type": "reference",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_6b9158f0338d4157a943837c1bb1cc9b",
+      "title": "Learn how to say \"I love you\" in Japanese",
+      "url": "https://www.sng.ac.jp/sng-news/learn-say-love-japanese/",
+      "source_type": "secondary",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    },
+    {
+      "source_id": "src_9b8ba0a642754001a2ebefc87f39b3b5",
+      "title": "Honorific speech in Japanese",
+      "url": "https://en.wikipedia.org/wiki/Honorific_speech_in_Japanese",
+      "source_type": "reference",
+      "support_status": "model_assessed",
+      "published_at": null,
+      "fetched_at": "2026-11-06",
+      "publisher": null,
+      "excerpt": null,
+      "excerpt_state": "missing",
+      "content_hash": null,
+      "modality": null,
+      "licence": null,
+      "support_assessment": null
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "art_80c53d937695482e86dc96d44fa498b9",
+      "kind": "audio",
+      "mime": "audio/mpeg",
+      "bytes": 22272,
+      "content_hash": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349"
+    },
+    {
+      "artifact_id": "art_f3a8d359a7b2470ab56bff80c6adc524",
+      "kind": "visual",
+      "mime": "image/png",
+      "bytes": 6948,
+      "content_hash": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d"
+    }
+  ],
+  "checks": [],
+  "notebook_entries": [],
+  "attempts": [],
+  "state": "not_started",
+  "revision": 0
+}

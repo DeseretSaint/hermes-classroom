@@ -12,7 +12,7 @@ import json
 from typing import Any, Callable
 
 from . import __version__
-from . import api, db
+from . import api, db, domain
 
 STATUS_TOOL_NAME = "coursebook_status"
 STATUS_TOOL_DESCRIPTION = (
@@ -381,22 +381,12 @@ def _section_and_check(
                 (course_id,),
             ).fetchone()
             objective_id = str(found["id"]) if found is not None else None
-    elif kind in ("resume_lesson", "rebind_session"):
-        found = connection.execute(
-            "SELECT objective_id FROM lesson_runs"
-            " WHERE enrollment_id = ? AND state IN ('active', 'paused')"
-            " ORDER BY updated_at DESC, rowid DESC LIMIT 1",
-            (enrollment_id,),
-        ).fetchone()
-        objective_id = str(found["objective_id"]) if found is not None else None
-    elif kind == "start_lesson":
-        found = connection.execute(
-            "SELECT o.id FROM objectives o JOIN plans pl ON pl.id = o.plan_id"
-            f" WHERE pl.course_id = ? AND {_CURRENT_PLAN} AND o.state = 'not_started'"
-            " ORDER BY o.ordinal LIMIT 1",
-            (course_id,),
-        ).fetchone()
-        objective_id = str(found["id"]) if found is not None else None
+    elif kind in ("resume_lesson", "rebind_session", "start_lesson"):
+        # H-186: every kind that opens a section must open the same objective the label names.
+        # Ordering by lesson-run recency returned the last imported run instead of the current
+        # objective, and the ordinal-based answer is shared with `domain._library_next_step`.
+        current = domain._current_objective(connection, course_id)
+        objective_id = str(current["id"]) if current is not None else None
     if objective_id is None:
         return None, None
     row = connection.execute(

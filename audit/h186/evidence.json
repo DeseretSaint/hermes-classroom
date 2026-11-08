@@ -1,0 +1,580 @@
+{
+  "home": "/home/deseretsaint/.hermes/profiles/lattice/cache/scratch/coursebook-h186-probe-mng9lywr",
+  "pack": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_12afccdc/bundled/packs/japanese-affection-context-l0",
+  "steps": {
+    "first_import": {
+      "preview": {
+        "manifest": {
+          "accessibility_notes": [
+            "Every Japanese line carries romaji and an English meaning.",
+            "The relationship schematic has a text equivalent on its file record and a short caption beside it on the lesson page.",
+            "The narration clip carries its Japanese line, romaji and English meaning as its text equivalent and as its lesson caption, and the lesson does not depend on hearing it.",
+            "Content files are UTF-8 without BOM; CJK line breaking and font fallback are renderer responsibilities."
+          ],
+          "attribution": "Original teaching text, schematic and narration: Coursebook demo pack. The narration clip is synthetic speech from Kokoro-82M voice jf_alpha (Apache-2.0), generated offline by the pack maintainer; no human speaker was recorded. Sources are cited by link and are not bundled; see sources[] and content/source-notes.md.",
+          "content_hash": "sha256:ad6f5432ba9873f1cb0e1f0ec2a5e3a87231246c11560937846a73146db51210",
+          "content_notes": [
+            "Fresh verification: every Japanese wording and usage claim was re-read against the linked sources on 2026-11-06. No native-speaker review is recorded, and none is claimed.",
+            "Pack revision note: this pack now declares cb.pack v2 and links its two real assets through media[]. No Japanese wording changed in that revision, so the 2026-11-06 wording check still describes the language taught here. No new language or native-speaker review was performed for it.",
+            "L0 script policy: Japanese script is always paired with romaji and an English meaning. Romaji is a scaffold that fades; a romaji-only answer is not evidence of reading Japanese.",
+            "Register is taught as a function of addressee, relationship and setting, not as one correct translation of the English phrase 'I love you'.",
+            "Culture claims are kept narrow and attributed; regional, generational and personal variation is stated in the lesson rather than smoothed away.",
+            "One narration clip is bundled: content/narration-polite-confession.mp3, the polite first-confession line, synthesized offline on 2026-11-07 with Kokoro-82M voice jf_alpha (Apache-2.0), 24 kHz mono, encoded to 64 kbps MP3 with LAME 4.0. Its text equivalent carries the Japanese line, its romaji and its English meaning. Fading scaffold: the audio is a model of the line, not a substitute for the script or the romaji.",
+            "The fourth objective is a closed choice about a third situation, graded by exact comparison against its accepted registers. It is not a model-assessed explanation, and the pack claims no score for an open-response answer."
+          ],
+          "contract": "cb.pack",
+          "contract_version": 2,
+          "contributors": [
+            {
+              "name": "Coursebook demo pack",
+              "role": "author"
+            },
+            {
+              "name": "Kokoro-82M voice jf_alpha (synthetic; no human speaker)",
+              "role": "narrator"
+            }
+          ],
+          "default_dials": {
+            "assessment": "self_check",
+            "autonomy": "guided",
+            "depth": "survey",
+            "pace": "light"
+          },
+          "files": [
+            {
+              "bytes": 22272,
+              "description": "One synthesized Japanese narration clip of the polite first-confession line. Kokoro-82M voice jf_alpha (Apache-2.0), generated offline on 2026-11-07; no human speaker was recorded.",
+              "mime": "audio/mpeg",
+              "path": "content/narration-polite-confession.mp3",
+              "role": "narration",
+              "sha256": "sha256:dea7f196f147958a536b41c6ee8f2ff51558f56a74e7f4e8ab86f580db971349",
+              "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — polite register: \"I like you. Please go out with me.\" One line, spoken as the first-confession example the pack teaches. Synthetic speech, not a native-speaker pronunciation model."
+            },
+            {
+              "bytes": 6948,
+              "description": "Relationship and register map drawn deterministically for the demo pack.",
+              "mime": "image/png",
+              "path": "content/relationship-map.png",
+              "role": "visual",
+              "sha256": "sha256:8fb84ad3d7797f6b11febd8510b4e2fb5f17be3ed573fd31dcb8fb9468f1093d",
+              "text_equivalent": "Schematic with three paths from speaker to register. You to a friend, affection, casual register (suki da yo). You to someone you respect, first confession, polite register (suki desu). You to a long-term partner, deep affection, intimate register (aishiteru). The schematic states that register is a function of addressee, relationship and setting."
+            },
+            {
+              "bytes": 2382,
+              "mime": "text/markdown",
+              "path": "content/section-01-two-ways.md",
+              "role": "section",
+              "sha256": "sha256:806201f9ca7bbf11e8921eb2486121926aeb8a8a2574ec2d8d9a336eedb5f1e8"
+            },
+            {
+              "bytes": 2523,
+              "mime": "text/markdown",
+              "path": "content/section-02-choosing.md",
+              "role": "section",
+              "sha256": "sha256:2098fe3d56cd888489f7682f6c62dbeb6a7e61ea47d071a4f8597824ecc0e7c0"
+            },
+            {
+              "bytes": 2092,
+              "mime": "text/markdown",
+              "path": "content/section-03-new-context.md",
+              "role": "section",
+              "sha256": "sha256:f0881d0dbdb9d6b521b81b5776e2b72f7e04caa7064802a157aa9cdcb5c3c38d"
+            },
+            {
+              "bytes": 3251,
+              "mime": "text/markdown",
+              "path": "content/source-notes.md",
+              "role": "source_note",
+              "sha256": "sha256:5090c5b0c58635d3889cb819ff2c984ad6ce5ad8a65ca48142b858fa3d0f048e"
+            }
+          ],
+          "level_label": "CEFR A1 · ab initio (L0)",
+          "license": {
+            "id": "unspecified",
+            "note": "Bundled demonstration fixture. The teaching text is original Coursebook-authored material; the operator has not chosen a redistribution license. Linked sources are cited, not bundled.",
+            "per_artifact": [
+              {
+                "attribution": "Deterministic schematic generated by the Coursebook demo pack builder; no third-party imagery.",
+                "license_id": "CC0-1.0",
+                "path": "content/relationship-map.png"
+              },
+              {
+                "attribution": "Synthetic speech generated locally with Kokoro-82M (hexgrad/Kokoro-82M, Apache-2.0), voice jf_alpha, on 2026-11-07. No human speaker was recorded. Not a native-speaker pronunciation reference.",
+                "license_id": "Apache-2.0",
+                "path": "content/narration-polite-confession.mp3"
+              }
+            ],
+            "redistribution": "local_only"
+          },
+          "locale": "ja-JP",
+          "media": [
+            {
+              "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+              "path": "content/narration-polite-confession.mp3",
+              "section_path": "content/section-02-choosing.md"
+            },
+            {
+              "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+              "path": "content/relationship-map.png",
+              "section_path": "content/section-01-two-ways.md"
+            }
+          ],
+          "minimum_coursebook_version": "0.1.0",
+          "objectives": [
+            {
+              "checks": [
+                {
+                  "accepted_alternatives": [
+                    "B",
+                    "b",
+                    "confession",
+                    "the confession"
+                  ],
+                  "audit_state": "unreviewed",
+                  "check_id": "chk-discrimination-1",
+                  "evidence_target": "discrimination",
+                  "locale": "ja-JP",
+                  "reference_answer": "B (romantic confession)",
+                  "rubric": [
+                    "Chooses B as the romantic confession",
+                    "Chooses A as affection between friends",
+                    "Names a cue: the request 付き合ってください (tsukiatte kudasai), the polite です form, or the private setting"
+                  ],
+                  "stimulus": "Two lines are shown. A: うん、好きだよ。 (un, suki da yo.) said to a friend after an outing. B: 好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) said privately to someone the speaker is not yet close to. Which line is the romantic confession, and which cue makes it one?",
+                  "version": 1
+                }
+              ],
+              "estimated_minutes": 8,
+              "evidence_criteria": [
+                "Names which line is the romantic confession",
+                "Names which line is affection between friends",
+                "Points at the cue (form or request) that changes the reading"
+              ],
+              "evidence_target": "discrimination",
+              "objective_id": "obj-context-discrimination",
+              "ordinal": 1,
+              "sections": [
+                {
+                  "path": "content/section-01-two-ways.md",
+                  "section_id": "sec-two-ways",
+                  "title": "Two ways of saying it"
+                }
+              ],
+              "title": "Tell everyday affection from a direct romantic declaration"
+            },
+            {
+              "checks": [
+                {
+                  "accepted_alternatives": [
+                    "好きです",
+                    "すきです",
+                    "suki desu",
+                    "suki desu."
+                  ],
+                  "audit_state": "unreviewed",
+                  "check_id": "chk-polite-selection-1",
+                  "evidence_target": "comprehension",
+                  "locale": "ja-JP",
+                  "reference_answer": "好きです (suki desu)",
+                  "rubric": [
+                    "Selects the polite 好きです line",
+                    "Explains that the addressee is not close and the setting is deliberate",
+                    "Does not select the intimate line for a first confession"
+                  ],
+                  "stimulus": "Context: an adult speaker, an adult addressee they respect but do not know well, a private setting, a first confession, standard polite register. Which line from this pack fits, and why?",
+                  "version": 1
+                }
+              ],
+              "estimated_minutes": 10,
+              "evidence_criteria": [
+                "Selects the polite line for a first confession",
+                "Relates the choice to the addressee and setting"
+              ],
+              "evidence_target": "comprehension",
+              "objective_id": "obj-polite-selection",
+              "ordinal": 2,
+              "sections": [
+                {
+                  "path": "content/section-02-choosing.md",
+                  "section_id": "sec-choosing",
+                  "title": "Choosing by addressee and setting"
+                }
+              ],
+              "title": "Choose the polite expression for a first confession"
+            },
+            {
+              "checks": [
+                {
+                  "accepted_alternatives": [
+                    "愛してる",
+                    "あいしてる",
+                    "aishiteru",
+                    "aishiteru."
+                  ],
+                  "audit_state": "unreviewed",
+                  "check_id": "chk-intimate-recall-1",
+                  "evidence_target": "recall",
+                  "locale": "ja-JP",
+                  "reference_answer": "愛してる (aishiteru)",
+                  "rubric": [
+                    "Produces 愛してる (aishiteru), in script or romaji",
+                    "Does not produce the first-confession request",
+                    "Keeps the setting private and the addressee a long-term partner"
+                  ],
+                  "stimulus": "New context, no answer visible: you are at home with your spouse of ten years, in a private moment, and the feeling is settled and deep rather than new. Write the line you would use.",
+                  "version": 1
+                }
+              ],
+              "estimated_minutes": 8,
+              "evidence_criteria": [
+                "Produces the intimate line in a new, non-identical context",
+                "Does not reuse the first-confession line for a settled partnership"
+              ],
+              "evidence_target": "recall",
+              "objective_id": "obj-intimate-recall",
+              "ordinal": 3,
+              "sections": [
+                {
+                  "path": "content/section-03-new-context.md",
+                  "section_id": "sec-new-context",
+                  "title": "A new context"
+                }
+              ],
+              "title": "Recall the intimate declaration in a new context"
+            },
+            {
+              "checks": [
+                {
+                  "accepted_alternatives": [
+                    "A",
+                    "a",
+                    "casual",
+                    "casual register",
+                    "suki da yo",
+                    "suki dayo"
+                  ],
+                  "audit_state": "unreviewed",
+                  "check_id": "chk-friend-public-choice-1",
+                  "evidence_target": "discrimination",
+                  "locale": "ja-JP",
+                  "reference_answer": "A (casual register)",
+                  "rubric": [
+                    "Chooses the casual register for a close friend in public",
+                    "Does not choose the polite or intimate register for that relationship",
+                    "Keeps the choice tied to the addressee and the public setting"
+                  ],
+                  "stimulus": "A close friend, in public, after an outing: you want to say something affectionate without making it a confession and without overstating the relationship. Which register fits? Answer A, B or C. A: casual register (suki da yo). B: polite register (suki desu). C: intimate register (aishiteru).",
+                  "version": 1
+                }
+              ],
+              "estimated_minutes": 7,
+              "evidence_criteria": [
+                "Picks the casual register for a close friend in public",
+                "Does not apply the intimate line to a friend in public",
+                "Reads the choice from the addressee and the public setting"
+              ],
+              "evidence_target": "discrimination",
+              "objective_id": "obj-register-transfer",
+              "ordinal": 4,
+              "sections": [
+                {
+                  "path": "content/section-03-new-context.md",
+                  "section_id": "sec-new-context-2",
+                  "title": "A close friend in public"
+                }
+              ],
+              "title": "Choose the register for a close friend in public"
+            }
+          ],
+          "pack_id": "japanese-affection-context-l0",
+          "pack_version": "2.0.0",
+          "recipe": "casual",
+          "safety_notes": [
+            "Audio is bundled and is synthetic. It is not a native-speaker pronunciation model, and this pack implements no listening check and no pronunciation score, so no listening evidence is claimed.",
+            "The topic is affection and confession, written for adult self-study; there is no explicit material."
+          ],
+          "sources": [
+            {
+              "bundled": false,
+              "fetched_at": "2026-11-06",
+              "license_note": "Linked, not bundled. © The Japan Foundation; cited as a curriculum reference only.",
+              "publisher": "The Japan Foundation",
+              "source_id": "src-jf-marugoto-a1",
+              "source_type": "course_material",
+              "support_status": "authoritative_documentation",
+              "title": "Marugoto: Japanese Language and Culture, Starter (A1) — Coursebook for Communicative Language Activities, table of contents",
+              "url": "https://marugoto.jpf.go.jp/en/assets/docs/about/starter_activities_contents_en.pdf"
+            },
+            {
+              "bundled": false,
+              "fetched_at": "2026-11-06",
+              "license_note": "Linked, not bundled. © The Japan Foundation; quoted only for the romaji/script policy fact.",
+              "publisher": "The Japan Foundation",
+              "source_id": "src-jf-marugoto-teaching",
+              "source_type": "course_material",
+              "support_status": "authoritative_documentation",
+              "title": "How to teach with Marugoto (teacher FAQ)",
+              "url": "https://marugoto.jpf.go.jp/en/teacher/qateaching/"
+            },
+            {
+              "bundled": false,
+              "fetched_at": "2026-11-06",
+              "license_note": "Linked, not bundled. Wiktionary content is CC BY-SA 4.0; no text is copied.",
+              "publisher": "Wikimedia Foundation",
+              "source_id": "src-wiktionary-suki",
+              "source_type": "reference",
+              "support_status": "model_assessed",
+              "title": "Wiktionary — 好き (suki)",
+              "url": "https://en.wiktionary.org/wiki/%E5%A5%BD%E3%81%8D"
+            },
+            {
+              "bundled": false,
+              "fetched_at": "2026-11-06",
+              "license_note": "Linked, not bundled. Wiktionary content is CC BY-SA 4.0; no text is copied.",
+              "publisher": "Wikimedia Foundation",
+              "source_id": "src-wiktionary-aisuru",
+              "source_type": "reference",
+              "support_status": "model_assessed",
+              "title": "Wiktionary — 愛する (aisuru)",
+              "url": "https://en.wiktionary.org/wiki/%E6%84%9B%E3%81%99%E3%82%8B"
+            },
+            {
+              "bundled": false,
+              "fetched_at": "2026-11-06",
+              "license_note": "Linked, not bundled. Language-school guidance used as a secondary usage source.",
+              "publisher": "Shinjuku Japanese Language Institute (SNG)",
+              "source_id": "src-sng-love",
+              "source_type": "secondary",
+              "support_status": "model_assessed",
+              "title": "Learn how to say \"I love you\" in Japanese",
+              "url": "https://www.sng.ac.jp/sng-news/learn-say-love-japanese/"
+            },
+            {
+              "bundled": false,
+              "fetched_at": "2026-11-06",
+              "license_note": "Linked, not bundled. Wikipedia content is CC BY-SA 4.0; used only for general framing.",
+              "publisher": "Wikimedia Foundation",
+              "source_id": "src-wikipedia-keigo",
+              "source_type": "reference",
+              "support_status": "model_assessed",
+              "title": "Honorific speech in Japanese",
+              "url": "https://en.wikipedia.org/wiki/Honorific_speech_in_Japanese"
+            }
+          ],
+          "subtitle": "Four lines, three addressees, one decision: who is listening, how close, and where.",
+          "title": "Japanese affection and register — a Sample L0 classroom"
+        },
+        "integrity": {
+          "hashes_match": true,
+          "file_count": 6,
+          "expanded_bytes": 39468
+        },
+        "trust": {
+          "labels": [
+            "integrity_verified",
+            "automated_checks_passed",
+            "model_assessed_support"
+          ]
+        }
+      },
+      "import": {
+        "pack_id": "japanese-affection-context-l0",
+        "course_id": "crs_7a895d5b38b64fe490cd7476f35210f6",
+        "enrollment_id": "enr_dade81dbb14d4968bf76927666147da0",
+        "revision": 0
+      }
+    },
+    "runs": [
+      {
+        "objective_id": "obj_a276a5fd7fbb4cda9c0a00656514287b",
+        "state": "active"
+      },
+      {
+        "objective_id": "obj_11dc6f41d5eb48f6a069cf600eec040e",
+        "state": "active"
+      },
+      {
+        "objective_id": "obj_7d3c87a4a2404924bed3d54463da0cbd",
+        "state": "active"
+      },
+      {
+        "objective_id": "obj_2022121e14bb40a8a2c5d6af60870076",
+        "state": "active"
+      }
+    ],
+    "pages": {
+      "1": {
+        "objective_id": "obj_a276a5fd7fbb4cda9c0a00656514287b",
+        "title": "Tell everyday affection from a direct romantic declaration",
+        "artifact_count": 2,
+        "media_count": 1,
+        "media": [
+          {
+            "kind": "visual",
+            "artifact_id": "art_f3a8d359a7b2470ab56bff80c6adc524",
+            "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+            "text_equivalent": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+            "degraded": false
+          }
+        ]
+      },
+      "2": {
+        "objective_id": "obj_11dc6f41d5eb48f6a069cf600eec040e",
+        "title": "Choose the polite expression for a first confession",
+        "artifact_count": 2,
+        "media_count": 1,
+        "media": [
+          {
+            "kind": "audio",
+            "artifact_id": "art_80c53d937695482e86dc96d44fa498b9",
+            "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+            "text_equivalent": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+            "degraded": false
+          }
+        ]
+      },
+      "3": {
+        "objective_id": "obj_7d3c87a4a2404924bed3d54463da0cbd",
+        "title": "Recall the intimate declaration in a new context",
+        "artifact_count": 2,
+        "media_count": 0,
+        "media": []
+      },
+      "4": {
+        "objective_id": "obj_2022121e14bb40a8a2c5d6af60870076",
+        "title": "Choose the register for a close friend in public",
+        "artifact_count": 2,
+        "media_count": 0,
+        "media": []
+      }
+    },
+    "next_step_fresh": {
+      "kind": "start_lesson",
+      "label": "Start Tell everyday affection from a direct romantic declaration"
+    },
+    "next_step_after_touching_last_run": {
+      "kind": "start_lesson",
+      "label": "Start Tell everyday affection from a direct romantic declaration"
+    },
+    "objective4_reference": {
+      "answers": [
+        "A (casual register)",
+        "A",
+        "a",
+        "casual",
+        "casual register",
+        "suki da yo",
+        "suki dayo"
+      ],
+      "kind": "exact"
+    },
+    "objective4_wrong": {
+      "attempt_id": "att_b0bb357ac382411c8214754c1407c6ae",
+      "verdict": "not_yet",
+      "evidence_class": "cold",
+      "criteria": [
+        {
+          "id": "c1",
+          "observed": "does not match an accepted answer",
+          "met": false
+        }
+      ],
+      "next_action": "retry_attempt",
+      "revision": 2
+    },
+    "objective4_correct": {
+      "attempt_id": "att_b9b8cb30ee074cee953878b06a77563c",
+      "verdict": "pass",
+      "evidence_class": "cold",
+      "criteria": [
+        {
+          "id": "c1",
+          "observed": "matches an accepted answer",
+          "met": true
+        }
+      ],
+      "next_action": "complete_objective",
+      "revision": 2
+    },
+    "objective4_state_after_correct": "independent_evidence",
+    "next_step_after_objective4": {
+      "kind": "start_lesson",
+      "label": "Start Tell everyday affection from a direct romantic declaration"
+    }
+  },
+  "manifest": {
+    "contract_version": 2,
+    "pack_version": "2.0.0",
+    "title": "Japanese affection and register — a Sample L0 classroom",
+    "content_hash": "sha256:ad6f5432ba9873f1cb0e1f0ec2a5e3a87231246c11560937846a73146db51210",
+    "media": [
+      {
+        "caption": "好きです。付き合ってください。 (suki desu. tsukiatte kudasai.) — \"I like you. Please go out with me.\"",
+        "path": "content/narration-polite-confession.mp3",
+        "section_path": "content/section-02-choosing.md"
+      },
+      {
+        "caption": "Relationship and register map: friend to casual (suki da yo); respected addressee to polite (suki desu); long-term partner to intimate (aishiteru).",
+        "path": "content/relationship-map.png",
+        "section_path": "content/section-01-two-ways.md"
+      }
+    ],
+    "checks": [
+      {
+        "objective_id": "obj-context-discrimination",
+        "ordinal": 1,
+        "evidence_target": "discrimination",
+        "check_id": "chk-discrimination-1",
+        "reference_answer": "B (romantic confession)",
+        "accepted_alternatives": [
+          "B",
+          "b",
+          "confession",
+          "the confession"
+        ]
+      },
+      {
+        "objective_id": "obj-polite-selection",
+        "ordinal": 2,
+        "evidence_target": "comprehension",
+        "check_id": "chk-polite-selection-1",
+        "reference_answer": "好きです (suki desu)",
+        "accepted_alternatives": [
+          "好きです",
+          "すきです",
+          "suki desu",
+          "suki desu."
+        ]
+      },
+      {
+        "objective_id": "obj-intimate-recall",
+        "ordinal": 3,
+        "evidence_target": "recall",
+        "check_id": "chk-intimate-recall-1",
+        "reference_answer": "愛してる (aishiteru)",
+        "accepted_alternatives": [
+          "愛してる",
+          "あいしてる",
+          "aishiteru",
+          "aishiteru."
+        ]
+      },
+      {
+        "objective_id": "obj-register-transfer",
+        "ordinal": 4,
+        "evidence_target": "discrimination",
+        "check_id": "chk-friend-public-choice-1",
+        "reference_answer": "A (casual register)",
+        "accepted_alternatives": [
+          "A",
+          "a",
+          "casual",
+          "casual register",
+          "suki da yo",
+          "suki dayo"
+        ]
+      }
+    ]
+  },
+  "audit_problems": []
+}

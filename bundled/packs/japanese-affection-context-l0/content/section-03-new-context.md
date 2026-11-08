@@ -1,4 +1,4 @@
-# Lesson 3 — a new context, then explain your choice
+# Lesson 3 — a new context, then choose and explain
 
 Lesson 2 gave you the map. This lesson asks you to use it without the table in front of you.
 
@@ -27,6 +27,14 @@ a settled partnership. Name the addressee, the relationship and the setting in y
 
 A learner says: "I will use the strongest line I know, because stronger means more sincere."
 In English, explain what this reasoning misses about addressee, relationship and setting.
+
+## Practice 5 — a close friend in public
+
+You are with a close friend, in public, after an outing. You want to say something affectionate
+without making it a confession and without overstating the relationship.
+
+Using the map from Lesson 1, decide which register fits. The check asks you to name it with one
+letter; the lesson does not print the answer here, because choosing it is the work.
 
 ## After you answer
 
