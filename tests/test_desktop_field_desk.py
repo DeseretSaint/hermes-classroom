@@ -662,8 +662,10 @@ class FieldDeskRenderTest(unittest.TestCase):
 
     def test_path_summary_counts_real_states_not_vanity(self) -> None:
         html = self.render()
-        self.assertIn("1 of 4 sections have evidence", html)
+        self.assertIn("1 of 4 sections with evidence", html)
         self.assertIn("1 due", html)
+        # One evidence count on the path, not a plate caption plus a tally caption.
+        self.assertEqual(html.count("with evidence"), 1)
 
     def test_path_is_not_a_table(self) -> None:
         html = self.render()
@@ -832,7 +834,7 @@ class FieldDeskRenderTest(unittest.TestCase):
     # -- the module's shape -----------------------------------------------------------------
     def test_path_titles_wrap_without_colliding_with_the_state_label(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        path = source.split("function PathPreview(", 1)[1].split("function SourcesDrawer(", 1)[0]
+        path = source.split("function CheckpointPath(", 1)[1].split("function SourcesDrawer(", 1)[0]
         self.assertIn("whiteSpace: 'normal'", path)
         self.assertIn("flex: '1 1 8rem'", path)
 

@@ -2373,32 +2373,37 @@ const CB_PATH_TONE = {
   empty: 'var(--cb-rule)'
 }
 
-/** The four segments under a cover. Colour never carries the state alone: the caption does. */
+/**
+ * The evidence record under a cover. One segment per objective for courses small enough to draw
+ * honestly; a larger course shows the count only rather than inventing a bucket. Colour never
+ * carries the state alone: the caption does.
+ */
 function CoursePath({ row }) {
   const segments = cbCoursePathSegments(row)
   return jsxs('div', {
     'data-cb-course-path': String(segments.length),
     style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.1rem' },
     children: [
-      jsx('div', {
-        'aria-hidden': 'true',
-        style: { display: 'flex', gap: '0.2rem', height: '0.3rem', alignItems: 'stretch' },
-        children: segments.map((segment) =>
-          jsx(
-            'span',
-            {
-              style: {
-                flex: '1 1 0',
-                minWidth: 0,
-                background: CB_PATH_TONE[segment.state] || CB_PATH_TONE.quiet,
-                opacity: segment.state === 'quiet' || segment.state === 'empty' ? 0.45 : 1,
-                outline: segment.state === 'current' ? '1px solid var(--cb-accent)' : 'none'
-              }
-            },
-            segment.index
-          )
-        )
-      }),
+      segments.length
+        ? jsx('div', {
+            'aria-hidden': 'true',
+            style: { display: 'flex', gap: '0.2rem', height: '0.3rem', alignItems: 'stretch' },
+            children: segments.map((segment) =>
+              jsx(
+                'span',
+                {
+                  style: {
+                    flex: '1 1 0',
+                    minWidth: 0,
+                    background: CB_PATH_TONE[segment.state] || CB_PATH_TONE.quiet,
+                    opacity: segment.state === 'quiet' || segment.state === 'empty' ? 0.45 : 1
+                  }
+                },
+                segment.index
+              )
+            )
+          })
+        : null,
       jsx('div', {
         'data-cb-course-path-caption': '',
         style: { fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
@@ -2846,142 +2851,310 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
 }
 
 /**
- * The path is a route, not a table: ordinal, title and the state word, with the current section
- * marked `aria-current="step"`. Every row is a real button into that section.
+ * The check row's learner word. `check_state` is the backend's highest-version check for the
+ * objective; `none` means no check was ever authored, which is a fact, not a lock.
  */
-function PathPreview({ desk, onOpenSection }) {
-  const objectives = desk.objectives.slice(0, 8)
-  const remaining = Math.max(0, desk.total - objectives.length)
+const CHECK_STATE_WORD = {
+  none: 'No check yet',
+  open: 'Check open',
+  closed: 'Check closed',
+  superseded: 'Check replaced'
+}
+
+function cbCheckStateWord(value) {
+  return CHECK_STATE_WORD[value] || 'Check state not recorded'
+}
+
+/** The objective the route stands on: the desk's current section, else the first without evidence. */
+function cbPathCurrentId(objectives, current) {
+  if (current && current.objective_id) return current.objective_id
+  const list = Array.isArray(objectives) ? objectives : []
+  const fallback = list.find((entry) => !entry.independent)
+  return fallback ? fallback.objective_id : list.length ? list[0].objective_id : null
+}
+
+/** The next node is the next section that still needs evidence; a settled one is not "next". */
+function cbPathNextId(objectives, currentId) {
+  const list = Array.isArray(objectives) ? objectives : []
+  const index = list.findIndex((entry) => entry.objective_id === currentId)
+  if (index < 0) return null
+  for (let cursor = index + 1; cursor < list.length; cursor += 1) {
+    if (!list[cursor].independent) return list[cursor].objective_id
+  }
+  return null
+}
+
+/**
+ * Position on the route is geometry, not evidence: current / next / done / future. A done node is
+ * only a node the backend marks independent; no node is ever locked.
+ */
+function cbPathNodeKind(objective, currentId, nextId) {
+  if (!objective) return 'future'
+  if (currentId && objective.objective_id === currentId) return 'current'
+  if (nextId && objective.objective_id === nextId) return 'next'
+  if (objective.independent) return 'done'
+  return 'future'
+}
+
+/** 56/44 current, 40/32 next, 28/24 for done and future: measured against the route, not the window. */
+function cbPathNodeSize(kind, compact) {
+  if (kind === 'current') return compact ? 44 : 56
+  if (kind === 'next') return compact ? 32 : 40
+  return compact ? 24 : 28
+}
+
+/** The one evidence caption on the path. Zero evidence says so; it never paints a reached segment. */
+function cbPathEvidenceCaption(settled, total, due) {
+  const all = Math.max(0, Number(total) || 0)
+  if (all === 0) return 'No sections yet'
+  const done = Math.max(0, Math.min(all, Number(settled) || 0))
+  const waiting = Math.max(0, Number(due) || 0)
+  if (done === 0) return waiting > 0 ? `No evidence yet · ${waiting} due` : 'No evidence yet'
+  const noun = all === 1 ? 'section' : 'sections'
+  return `${done} of ${all} ${noun} with evidence${waiting > 0 ? ` · ${waiting} due` : ''}`
+}
+
+/** Node paint: fill, ring and number come from the stored state tone; only current adds the ring. */
+function cbPathMarkerStyle(tone, kind, size) {
+  const base = {
+    width: `${size}px`,
+    height: `${size}px`,
+    flex: `0 0 ${size}px`,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    fontFamily: CB_SANS,
+    fontVariantNumeric: 'tabular-nums',
+    fontWeight: 600,
+    fontSize: kind === 'current' ? CB_TYPE.meta : CB_TYPE.caption,
+    lineHeight: 1,
+    position: 'absolute',
+    zIndex: 1
+  }
+  let painted
+  if (tone === 'done') painted = { ...base, background: 'var(--cb-field)', color: 'var(--cb-paper)', border: 'none' }
+  else if (tone === 'due') painted = { ...base, background: 'var(--cb-paper)', color: 'var(--cb-ochre)', border: '2px solid var(--cb-ochre)' }
+  else if (tone === 'attention') painted = { ...base, background: 'var(--cb-paper)', color: 'var(--cb-coral)', border: '2px solid var(--cb-coral)' }
+  else if (tone === 'active') painted = { ...base, background: 'var(--cb-accent-soft)', color: 'var(--cb-accent)', border: '2px solid var(--cb-accent)' }
+  else painted = { ...base, background: 'var(--cb-paper)', color: 'var(--cb-ink-soft)', border: '1.5px solid var(--cb-rule)' }
+  if (kind !== 'current') return painted
+  return { ...painted, border: '2px solid var(--cb-accent)', outline: '1px solid var(--cb-accent)', outlineOffset: '3px' }
+}
+
+function cbPathTone(state) {
+  if (state === 'needs_review') return 'attention'
+  return DESK_STATE_TONE[state] || 'quiet'
+}
+
+function cbPathToneColor(tone) {
+  if (tone === 'done') return 'var(--cb-field)'
+  if (tone === 'due') return 'var(--cb-ochre)'
+  if (tone === 'attention') return 'var(--cb-coral)'
+  if (tone === 'active') return 'var(--cb-accent)'
+  return 'var(--cb-ink-soft)'
+}
+
+/** One honest detail line: label, value. Never a score, a percentage or a gate. */
+function CheckpointDetailRow({ label, value }) {
+  return jsxs('div', {
+    style: { display: 'flex', flexWrap: 'wrap', gap: '0.15rem 0.5rem', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45 }
+  , children: [
+    jsx('span', { style: { color: 'var(--cb-ink-soft)', minWidth: '8.5rem' }, children: label }),
+    jsx('span', { style: { color: 'var(--cb-ink)' }, children: value })
+  ] })
+}
+
+/**
+ * The path is a route, not a table. Every objective is a real node: the current node is the
+ * largest and carries `aria-current="step"`, the next one is smaller, evidence already held is a
+ * filled field, and the rest are quiet. No node is locked and no node is a fake checkpoint: the
+ * marker shows the backend's own `check_state`, and the detail line names the evidence target in
+ * learner words, the committed attempt count and the last opened time.
+ */
+function CheckpointPath({ desk, onOpenSection }) {
+  const width = useCbViewportWidth()
+  const compact = width > 0 && width < 620
+  const objectives = Array.isArray(desk.objectives) ? desk.objectives : []
+  const currentId = cbPathCurrentId(objectives, desk.current)
+  const nextId = cbPathNextId(objectives, currentId)
+  const gutter = compact ? 44 : 56
+  const caption = cbPathEvidenceCaption(desk.settled, desk.total, desk.dueCount)
   return jsxs('section', {
     'data-cb-path': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '100%' },
+    'data-cb-path-layout': compact ? 'compact' : 'full',
+    style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '100%' },
     children: [
       jsx(PlateHead, {
         label: 'The route',
-        title: desk.row && desk.row.title ? desk.row.title : 'Your path',
-        caption: jsx('span', {
-          'data-cb-path-summary': '',
-          style: { fontFamily: CB_SANS, maxWidth: CB_MEASURE, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-          children: objectives.length
-            ? `Course evidence · ${desk.settled} of ${desk.total} sections have evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
-            : 'No path read yet'
-        })
+        title: desk.row && desk.row.title ? desk.row.title : 'Your path'
       }),
-      jsx(EvidenceTally, {
-        objectives: desk.objectives,
-        caption: objectives.length
-          ? `${desk.settled} of ${desk.total} sections with evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
-          : 'No evidence recorded yet'
-      }),
-      jsx('ol', {
-        'aria-label': 'Course route',
-        style: {
-          listStyle: 'none',
-          margin: 0,
-          padding: '0 0 0 0.75rem',
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
-          borderLeft: '1px solid var(--cb-rule)'
-        },
-        children: objectives.map((objective) => {
-          const tone = DESK_STATE_TONE[objective.state] || 'quiet'
-          const isCurrent = Boolean(desk.current && desk.current.objective_id === objective.objective_id)
-          return jsx(
-            'li',
-            {
-              style: {
-                borderTop: '1px solid var(--cb-rule)',
-                background: isCurrent ? 'var(--cb-accent-soft)' : 'transparent'
-              },
-              children: jsx(sdk.Button, {
-                variant: 'text',
-                className: 'w-full justify-start',
-                'aria-current': isCurrent ? 'step' : undefined,
-                onClick: () => onOpenSection(objective.objective_id),
-                children: jsxs('span', {
-                  'data-cb-path-item': objective.objective_id,
-                  'data-cb-path-state': objective.state,
-                  'data-cb-path-current': isCurrent ? 'true' : 'false',
-                  style: {
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '0.7rem',
-                    width: '100%',
-                    padding: '0.45rem 0.1rem',
-                    textAlign: 'left',
-                    color: 'var(--cb-ink)',
-                    fontSize: CB_TYPE.meta,
-                    borderLeft: isCurrent ? '2px solid var(--cb-accent)' : '2px solid transparent',
-                    paddingLeft: '0.55rem'
-                  },
+      objectives.length
+        ? jsx(EvidenceTally, {
+            objectives,
+            phone: compact,
+            caption
+          })
+        : jsx('p', {
+            'data-cb-path-empty': '',
+            style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
+            children: 'This course has no objectives yet, so there is no path to show. Approve its plan to start one.'
+          }),
+      objectives.length
+        ? jsx('ol', {
+            'aria-label': 'Course route',
+            style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', position: 'relative' },
+            children: objectives.map((objective) => {
+              const tone = cbPathTone(objective.state)
+              const kind = cbPathNodeKind(objective, currentId, nextId)
+              const size = cbPathNodeSize(kind, compact)
+              const isCurrent = kind === 'current'
+              const stateWord = DESK_STATE_WORD[objective.state] || 'Not started'
+              const checkWord = cbCheckStateWord(objective.check_state)
+              const attempts = Math.max(0, Number(objective.attempt_count) || 0)
+              const detailOpen = kind === 'current' || kind === 'next'
+              return jsx(
+                'li',
+                {
+                  'data-cb-path-node': objective.objective_id,
+                  style: { display: 'flex', flexDirection: 'column', position: 'relative' },
                   children: [
-                    jsx('span', {
+                  jsx('span', {
+                    'aria-hidden': 'true',
+                    style: {
+                      position: 'absolute',
+                      left: `${Math.round(gutter / 2)}px`,
+                      top: 0,
+                      bottom: 0,
+                      width: '1px',
+                      background: 'var(--cb-rule)'
+                    }
+                  }, 'spine'),
+                  jsx(sdk.Button, {
+                    variant: 'text',
+                    className: 'w-full justify-start',
+                    'aria-current': isCurrent ? 'step' : undefined,
+                    'aria-label': `Checkpoint ${objective.ordinal}: ${objective.title}, ${stateWord}, ${checkWord}`,
+                    onClick: () => onOpenSection(objective.objective_id),
+                    children: jsxs('span', {
+                      'data-cb-path-open': objective.objective_id,
+                      'data-cb-path-item': objective.objective_id,
+                      'data-cb-path-state': objective.state,
+                      'data-cb-path-check': objective.check_state || 'none',
+                      'data-cb-path-kind': kind,
+                      'data-cb-path-current': isCurrent ? 'true' : 'false',
+                      'data-cb-path-node-size': String(size),
                       style: {
-                        flex: '0 0 1.75rem',
-                        width: '1.75rem',
-                        height: '1.75rem',
-                        borderRadius: '50%',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: `1px solid ${deskToneColor(tone)}`,
-                        background: isCurrent ? 'var(--cb-paper-raised)' : 'transparent',
-                        color: deskToneColor(tone),
-                        fontVariantNumeric: 'tabular-nums',
-                        fontSize: CB_TYPE.caption,
-                        lineHeight: 1
-                      },
-                      children: String(objective.ordinal).padStart(2, '0')
-                    }),
-                    jsx('span', {
-                      style: {
-                        flex: '1 1 8rem',
-                        minWidth: 0,
-                        overflowWrap: 'anywhere',
-                        whiteSpace: 'normal',
-                        lineHeight: 1.35
-                      },
-                      children: objective.title
-                    }),
-                    jsx('span', {
-                      style: {
-                        flex: '0 0 auto',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.3rem',
-                        fontSize: CB_TYPE.caption,
-                        color: deskToneColor(tone),
-                        fontWeight: 600
+                        flexDirection: 'column',
+                        gap: '0.25rem',
+                        width: '100%',
+                        padding: `0.55rem 0.1rem 0.55rem ${gutter}px`,
+                        position: 'relative',
+                        boxSizing: 'border-box',
+                        textAlign: 'left',
+                        color: 'var(--cb-ink)',
+                        fontSize: CB_TYPE.meta,
+                        borderTop: '1px solid var(--cb-rule)',
+                        background: isCurrent ? 'var(--cb-accent-soft)' : 'transparent'
                       },
                       children: [
                         jsx('span', {
+                          'data-cb-path-marker': objective.objective_id,
+                          'data-cb-path-marker-check': objective.check_state || 'none',
                           'aria-hidden': 'true',
                           style: {
-                            width: '0.35rem',
-                            height: '0.35rem',
-                            borderRadius: '50%',
-                            background: deskToneColor(tone)
-                          }
+                            ...cbPathMarkerStyle(tone, kind, size),
+                            left: `${Math.round((gutter - size) / 2)}px`,
+                            top: '0.55rem'
+                          },
+                          children: String(objective.ordinal).padStart(2, '0')
                         }),
-                        jsx('span', { children: DESK_STATE_WORD[objective.state] || objective.state })
+                        jsxs('span', {
+                          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.2rem 0.55rem', minWidth: 0 },
+                          children: [
+                            jsx('span', {
+                              style: {
+                                flex: '1 1 8rem',
+                                minWidth: 0,
+                                overflowWrap: 'anywhere',
+                                whiteSpace: 'normal',
+                                fontFamily: CB_SERIF,
+                                fontSize: isCurrent ? CB_TYPE.body : CB_TYPE.meta,
+                                fontWeight: 600,
+                                lineHeight: 1.35
+                              },
+                              children: objective.title
+                            }),
+                            jsx('span', {
+                              'data-cb-path-word': '',
+                              style: {
+                                flex: '0 0 auto',
+                                fontFamily: CB_SANS,
+                                fontSize: CB_TYPE.caption,
+                                fontWeight: 600,
+                                color: cbPathToneColor(tone),
+                                border: `1px solid ${cbPathToneColor(tone)}`,
+                                borderRadius: '999px',
+                                padding: '0.05rem 0.45rem',
+                                whiteSpace: 'nowrap'
+                              },
+                              children: stateWord
+                            }),
+                            jsx('span', {
+                              'data-cb-path-check-word': '',
+                              style: { flex: '0 0 auto', fontFamily: CB_SANS, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+                              children: checkWord
+                            })
+                          ]
+                        })
                       ]
                     })
+                  }),
+                  jsxs('details', {
+                    'data-cb-path-detail': objective.objective_id,
+                    open: detailOpen,
+                    style: { marginLeft: `${gutter}px`, padding: '0 0.1rem 0.55rem 0' },
+                    children: [
+                      jsx('summary', {
+                        'data-cb-path-detail-toggle': '',
+                        style: {
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          minHeight: compact ? '2.75rem' : '2rem',
+                          fontFamily: CB_SANS,
+                          fontSize: CB_TYPE.caption,
+                          color: 'var(--cb-ink-soft)'
+                        },
+                        children: `Details for checkpoint ${objective.ordinal}`
+                      }),
+                      jsxs('div', {
+                        'data-cb-path-detail-body': '',
+                        style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', paddingTop: '0.25rem' },
+                        children: [
+                          jsx(CheckpointDetailRow, {
+                            label: 'Evidence target',
+                            value: objective.evidence_target ? learnerEvidenceTarget(objective.evidence_target) : 'Not recorded'
+                          }),
+                          jsx(CheckpointDetailRow, {
+                            label: 'Committed attempts',
+                            value: attempts === 0 ? 'No committed attempts yet' : `${attempts} committed attempt${attempts === 1 ? '' : 's'}`
+                          }),
+                          jsx(CheckpointDetailRow, {
+                            label: 'Last opened',
+                            value: objective.last_opened_at ? whenLabel(objective.last_opened_at) : 'Not opened yet'
+                          }),
+                          jsx(CheckpointDetailRow, { label: 'Check', value: checkWord })
+                        ]
+                      })
+                    ]
+                  })
                   ]
-                })
-              })
-            },
-            objective.objective_id
-          )
-        })
-      }),
-      remaining > 0
-        ? jsx('div', { style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', paddingTop: '0.2rem' }, children: `${remaining} more section${remaining === 1 ? '' : 's'} in the path` })
-        : null,
-      objectives.length === 0
-        ? jsx('p', {
-            style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
-            children: 'This course has no objectives yet, so there is no path to show. Approve its plan to start one.'
+                }
+              )
+            })
           })
         : null
     ]
@@ -3397,7 +3570,7 @@ function FieldDeskHome({
     onShowNotebook,
     onRetry
   })
-  const pathCard = jsx(PathPreview, { desk, onOpenSection })
+  const pathCard = jsx(CheckpointPath, { desk, onOpenSection })
   const sourcesCard = jsx(SourcesDrawer, {
     open: sourcesOpen,
     onToggle: onToggleSources,
@@ -8962,44 +9135,39 @@ function groupShelfRows(rows) {
   return groups
 }
 
-const CB_COURSE_PATH_PARTS = 4
+/** Small enough to draw one segment per objective without turning the row into a texture. */
+const CB_COURSE_PATH_MAX = 12
 
 /**
- * The four-segment path on a cover. Segments are fractions of the objective list, so the
- * current segment is the quarter the evidence has reached: `done` behind it, `current` (or
- * `due` when a review is waiting) at it, `quiet` ahead. With no objectives recorded there is
- * nothing to fill, and the path says so instead of drawing invented progress.
+ * The evidence record on a cover. Segments are objectives, not quarters: `done` only where the
+ * count of independent evidence actually reaches, `due` only for the objectives due for review,
+ * and `quiet` everywhere else. A zero-evidence course paints nothing: the old `current` segment
+ * made 0 of 4 look 25 % complete. A course too large to draw honestly carries the count only.
  */
 function cbCoursePathSegments(row) {
   const summary = (row && row.evidence_summary) || {}
   const total = Math.max(0, Number(summary.total_objectives || 0))
   const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
-  const due = Math.max(0, Number(summary.review_due || 0))
+  const due = Math.max(0, Math.min(total - independent, Number(summary.review_due || 0)))
+  if (total === 0 || total > CB_COURSE_PATH_MAX) return []
   const segments = []
-  if (total === 0) {
-    for (let index = 0; index < CB_COURSE_PATH_PARTS; index += 1) {
-      segments.push({ index, state: 'empty' })
-    }
-    return segments
-  }
-  const quarter = Math.ceil(total / CB_COURSE_PATH_PARTS)
-  const reached = independent >= total ? CB_COURSE_PATH_PARTS : Math.floor(independent / quarter)
-  for (let index = 0; index < CB_COURSE_PATH_PARTS; index += 1) {
+  for (let index = 0; index < total; index += 1) {
     let state = 'quiet'
-    if (index < reached) state = 'done'
-    else if (index === reached) state = due > 0 ? 'due' : 'current'
+    if (index < independent) state = 'done'
+    else if (index < independent + due) state = 'due'
     segments.push({ index, state })
   }
   return segments
 }
 
-/** The exact counts under the path. Never a percentage, never a score. */
+/** The exact counts under the path. Never a percentage, never a score, never a fake quarter. */
 function cbCoursePathCaption(row) {
   const summary = (row && row.evidence_summary) || {}
   const total = Math.max(0, Number(summary.total_objectives || 0))
   if (total === 0) return 'No sections yet'
   const independent = Math.max(0, Math.min(total, Number(summary.independent || 0)))
   const due = Math.max(0, Number(summary.review_due || 0))
+  if (independent === 0) return due > 0 ? `No evidence yet · ${due} due` : 'No evidence yet'
   const parts = [`${independent} of ${total} with evidence`]
   if (due > 0) parts.push(`${due} due`)
   return parts.join(' · ')
@@ -12671,8 +12839,7 @@ function OverviewView({ row, page, review, quizzes, outline, implemented, onOpen
             style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
             children: [
               jsx(PlateHead, {
-                title: `${objectives.length} ${objectives.length === 1 ? 'section' : 'sections'}`,
-                caption: progress.statement || progressStatement(progress.independent, progress.total)
+                title: `${objectives.length} ${objectives.length === 1 ? 'section' : 'sections'}`
               }),
               jsx(RouteSpine, {
                 objectives,
@@ -18210,12 +18377,12 @@ function CoursebookPage() {
   const pageTitle = ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
 
   return jsxs('div', {
-    className: 'relative flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
+    className: 'relative flex h-full min-h-0 flex-col',
     'data-cb-destination': destination,
     'data-cb-route': ROUTE_PATH,
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion,
-    style: cbScopeStyle(cbMode),
+    style: { ...cbScopeStyle(cbMode), paddingLeft: routePad, paddingRight: routePad },
     children: [
       jsx(SkipToContent, {}),
       jsxs('header', {
@@ -18743,6 +18910,13 @@ export {
   cbCourseMonogram,
   cbCoursePathCaption,
   cbCoursePathSegments,
+  CheckpointPath,
+  cbCheckStateWord,
+  cbPathCurrentId,
+  cbPathNextId,
+  cbPathNodeKind,
+  cbPathNodeSize,
+  cbPathEvidenceCaption,
   cbSealStation,
   cbShelfFingerprint,
   cbShelfGroupKey,
