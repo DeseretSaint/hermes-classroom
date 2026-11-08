@@ -1,0 +1,752 @@
+{
+  "rig": "9381",
+  "generated_at": "2026-11-08T17:35:58.143Z",
+  "steps": [
+    {
+      "step": "wide-1049",
+      "mounted": true,
+      "width": 1049,
+      "routeWidth": 813,
+      "layout": "full",
+      "run": "Review · Section 1 of 4 · ≈ 8 min · Next: Checkpoint 2 · Choose the polite expression for a first confession",
+      "tally": "0 of 4 sections with evidence · 3 due",
+      "places": [
+        "Start",
+        "Course end"
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "current",
+          "current": "true",
+          "size": 56,
+          "markerX": 32,
+          "alignment": {
+            "lineX": 32,
+            "lineY": 44,
+            "markerX": 32,
+            "markerY": 44
+          },
+          "ariaCurrent": "step",
+          "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": true,
+          "focusable": true
+        },
+        {
+          "index": 1,
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "next",
+          "current": "false",
+          "size": 40,
+          "markerX": 96,
+          "alignment": {
+            "lineX": 96,
+            "lineY": 39.1,
+            "markerX": 96,
+            "markerY": 39.1
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": true,
+          "focusable": true
+        },
+        {
+          "index": 2,
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "future",
+          "current": "false",
+          "size": 28,
+          "markerX": 32,
+          "alignment": {
+            "lineX": 32,
+            "lineY": 28,
+            "markerX": 32,
+            "markerY": 28
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 3: Recall the intimate declaration in a new context, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": false,
+          "focusable": true
+        },
+        {
+          "index": 3,
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "state": "overridden",
+          "check": "open",
+          "kind": "future",
+          "current": "false",
+          "size": 28,
+          "markerX": 96,
+          "alignment": {
+            "lineX": 96,
+            "lineY": 28,
+            "markerX": 96,
+            "markerY": 28
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 4: Explain why register changes with the relationship, Overridden, Check open",
+          "stateWord": "Overridden",
+          "checkWord": "Check open",
+          "detail": false,
+          "focusable": true
+        }
+      ],
+      "sizes": [
+        56,
+        40,
+        28,
+        28
+      ],
+      "centres": [
+        32,
+        96,
+        32,
+        96
+      ],
+      "alignmentErrors": [],
+      "segmentCount": 8,
+      "segmentsAriaHidden": true,
+      "strokeWidths": [
+        "1.5px"
+      ],
+      "gates": [
+        "open",
+        "open",
+        "open",
+        "open"
+      ],
+      "halos": 1,
+      "details": 2,
+      "detailsElements": 0,
+      "currentCount": 1,
+      "focusedRow": null,
+      "ariaCurrentCount": 1,
+      "olCount": 1,
+      "listItems": 4,
+      "companion": null,
+      "companionCount": 0,
+      "pathAnimations": 0,
+      "animations": 0,
+      "overflow": 0,
+      "routeOverflow": 0,
+      "pathOverflow": 0,
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "outline": "none 2.2312px",
+        "shadow": "none",
+        "focusVisible": false
+      },
+      "view": {
+        "courseDetail": null,
+        "lesson": null,
+        "heading": "Home",
+        "sectionText": null
+      }
+    },
+    {
+      "step": "mid-900",
+      "mounted": true,
+      "width": 900,
+      "routeWidth": 663,
+      "layout": "full",
+      "run": "Review · Section 1 of 4 · ≈ 8 min · Next: Checkpoint 2 · Choose the polite expression for a first confession",
+      "tally": "0 of 4 sections with evidence · 3 due",
+      "places": [
+        "Start",
+        "Course end"
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "current",
+          "current": "true",
+          "size": 56,
+          "markerX": 32,
+          "alignment": {
+            "lineX": 32,
+            "lineY": 44,
+            "markerX": 32,
+            "markerY": 44
+          },
+          "ariaCurrent": "step",
+          "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": true,
+          "focusable": true
+        },
+        {
+          "index": 1,
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "next",
+          "current": "false",
+          "size": 40,
+          "markerX": 96,
+          "alignment": {
+            "lineX": 96,
+            "lineY": 39.1,
+            "markerX": 96,
+            "markerY": 39.1
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": true,
+          "focusable": true
+        },
+        {
+          "index": 2,
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "future",
+          "current": "false",
+          "size": 28,
+          "markerX": 32,
+          "alignment": {
+            "lineX": 32,
+            "lineY": 28,
+            "markerX": 32,
+            "markerY": 28
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 3: Recall the intimate declaration in a new context, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": false,
+          "focusable": true
+        },
+        {
+          "index": 3,
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "state": "overridden",
+          "check": "open",
+          "kind": "future",
+          "current": "false",
+          "size": 28,
+          "markerX": 96,
+          "alignment": {
+            "lineX": 96,
+            "lineY": 28,
+            "markerX": 96,
+            "markerY": 28
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 4: Explain why register changes with the relationship, Overridden, Check open",
+          "stateWord": "Overridden",
+          "checkWord": "Check open",
+          "detail": false,
+          "focusable": true
+        }
+      ],
+      "sizes": [
+        56,
+        40,
+        28,
+        28
+      ],
+      "centres": [
+        32,
+        96,
+        32,
+        96
+      ],
+      "alignmentErrors": [],
+      "segmentCount": 8,
+      "segmentsAriaHidden": true,
+      "strokeWidths": [
+        "1.5px"
+      ],
+      "gates": [
+        "open",
+        "open",
+        "open",
+        "open"
+      ],
+      "halos": 1,
+      "details": 2,
+      "detailsElements": 0,
+      "currentCount": 1,
+      "focusedRow": null,
+      "ariaCurrentCount": 1,
+      "olCount": 1,
+      "listItems": 4,
+      "companion": null,
+      "companionCount": 0,
+      "pathAnimations": 0,
+      "animations": 0,
+      "overflow": 0,
+      "routeOverflow": 0,
+      "pathOverflow": 0,
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "outline": "none 2.2312px",
+        "shadow": "none",
+        "focusVisible": false
+      },
+      "view": {
+        "courseDetail": null,
+        "lesson": null,
+        "heading": "Home",
+        "sectionText": null
+      }
+    },
+    {
+      "step": "narrow-460",
+      "mounted": true,
+      "width": 459,
+      "routeWidth": 460,
+      "layout": "compact",
+      "run": "Review · Section 1 of 4 · ≈ 8 min · Next: Checkpoint 2 · Choose the polite expression for a first confession",
+      "tally": "0 of 4 sections with evidence · 3 due",
+      "places": [
+        "Start",
+        "Course end"
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "current",
+          "current": "true",
+          "size": 44,
+          "markerX": 22,
+          "alignment": {
+            "lineX": 22,
+            "lineY": 49.9,
+            "markerX": 22,
+            "markerY": 49.9
+          },
+          "ariaCurrent": "step",
+          "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": true,
+          "focusable": true
+        },
+        {
+          "index": 1,
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "next",
+          "current": "false",
+          "size": 32,
+          "markerX": 22,
+          "alignment": {
+            "lineX": 22,
+            "lineY": 49.9,
+            "markerX": 22,
+            "markerY": 49.9
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": true,
+          "focusable": true
+        },
+        {
+          "index": 2,
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "future",
+          "current": "false",
+          "size": 24,
+          "markerX": 22,
+          "alignment": {
+            "lineX": 22,
+            "lineY": 35.5,
+            "markerX": 22,
+            "markerY": 35.5
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 3: Recall the intimate declaration in a new context, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": false,
+          "focusable": true
+        },
+        {
+          "index": 3,
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "state": "overridden",
+          "check": "open",
+          "kind": "future",
+          "current": "false",
+          "size": 24,
+          "markerX": 22,
+          "alignment": {
+            "lineX": 22,
+            "lineY": 28,
+            "markerX": 22,
+            "markerY": 28
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 4: Explain why register changes with the relationship, Overridden, Check open",
+          "stateWord": "Overridden",
+          "checkWord": "Check open",
+          "detail": false,
+          "focusable": true
+        }
+      ],
+      "sizes": [
+        44,
+        32,
+        24,
+        24
+      ],
+      "centres": [
+        22,
+        22,
+        22,
+        22
+      ],
+      "alignmentErrors": [],
+      "segmentCount": 8,
+      "segmentsAriaHidden": true,
+      "strokeWidths": [
+        "1.5px"
+      ],
+      "gates": [
+        "open",
+        "open",
+        "open",
+        "open"
+      ],
+      "halos": 1,
+      "details": 2,
+      "detailsElements": 0,
+      "currentCount": 1,
+      "focusedRow": null,
+      "ariaCurrentCount": 1,
+      "olCount": 1,
+      "listItems": 4,
+      "companion": null,
+      "companionCount": 0,
+      "pathAnimations": 0,
+      "animations": 0,
+      "overflow": 0,
+      "routeOverflow": 0,
+      "pathOverflow": 58,
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "outline": "none 2.2312px",
+        "shadow": "none",
+        "focusVisible": false
+      },
+      "view": {
+        "courseDetail": null,
+        "lesson": null,
+        "heading": "Home",
+        "sectionText": null
+      }
+    },
+    {
+      "step": "keyboard-tabs",
+      "tabs": [
+        {
+          "tag": "A",
+          "label": null,
+          "text": "Skip to course content",
+          "inPath": false,
+          "outline": "auto 1.1156px rgb(238, 238, 238)",
+          "shadow": "none",
+          "focusVisible": true,
+          "rowOutline": null
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Open Coursebook settings",
+          "text": "Settings",
+          "inPath": false,
+          "outline": "none 1.1156px rgba(237, 238, 239, 0.94)",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.638022 -0.0233847 -0.190333 / 0.387982) 0px 0px 0px 2.32789px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+          "focusVisible": true,
+          "rowOutline": null
+        },
+        {
+          "tag": "BUTTON",
+          "label": null,
+          "text": "Home",
+          "inPath": false,
+          "outline": "auto 1.1156px rgb(238, 238, 238)",
+          "shadow": "none",
+          "focusVisible": true,
+          "rowOutline": null
+        },
+        {
+          "tag": "BUTTON",
+          "label": null,
+          "text": "Courses",
+          "inPath": false,
+          "outline": "auto 1.1156px rgb(238, 238, 238)",
+          "shadow": "none",
+          "focusVisible": true,
+          "rowOutline": null
+        },
+        {
+          "tag": "BUTTON",
+          "label": null,
+          "text": "Library",
+          "inPath": false,
+          "outline": "auto 1.1156px rgb(238, 238, 238)",
+          "shadow": "none",
+          "focusVisible": true,
+          "rowOutline": null
+        },
+        {
+          "tag": "BUTTON",
+          "label": null,
+          "text": "Parent Studio",
+          "inPath": false,
+          "outline": "auto 1.1156px rgb(238, 238, 238)",
+          "shadow": "none",
+          "focusVisible": true,
+          "rowOutline": null
+        },
+        {
+          "tag": "BUTTON",
+          "label": null,
+          "text": "Start the review",
+          "inPath": false,
+          "outline": "none 1.1156px rgb(238, 238, 238)",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.638022 -0.0233847 -0.190333 / 0.5) 0px 0px 0px 3px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+          "focusVisible": true,
+          "rowOutline": null
+        },
+        {
+          "tag": "BUTTON",
+          "label": null,
+          "text": "Open section",
+          "inPath": false,
+          "outline": "none 1.1156px rgb(238, 238, 238)",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.638022 -0.0233847 -0.190333 / 0.5) 0px 0px 0px 3px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+          "focusVisible": true,
+          "rowOutline": null
+        },
+        {
+          "tag": "BUTTON",
+          "label": null,
+          "text": "See the plan",
+          "inPath": false,
+          "outline": "none 1.1156px rgb(238, 238, 238)",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.638022 -0.0233847 -0.190333 / 0.5) 0px 0px 0px 3px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+          "focusVisible": true,
+          "rowOutline": null
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+          "text": "Tell everyday affection from a direct romantic declarationNe",
+          "inPath": true,
+          "outline": "none 1.1156px rgb(238, 238, 238)",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.638022 -0.0233847 -0.190333 / 0.5) 0px 0px 0px 3px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+          "focusVisible": true,
+          "rowOutline": "2px solid var(--cb-accent)"
+        },
+        {
+          "tag": "BUTTON",
+          "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+          "text": "Choose the polite expression for a first confessionNeeds rev",
+          "inPath": true,
+          "outline": "none 1.1156px rgb(238, 238, 238)",
+          "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.638022 -0.0233847 -0.190333 / 0.5) 0px 0px 0px 3px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+          "focusVisible": true,
+          "rowOutline": "2px solid var(--cb-accent)"
+        }
+      ]
+    },
+    {
+      "step": "keyboard-enter",
+      "mounted": false,
+      "width": 1049,
+      "view": {
+        "courseDetail": "textbook",
+        "lesson": "textbook",
+        "heading": "Course",
+        "sectionText": "All coursesJapanese affection and register — an L0 demonstration classroomNeeds reviewA little at a timeSource staleSection 2 of 4Choose the polite expression for a first confession·0 of 4With independent evidence·2Due for reviewBack to sec"
+      }
+    },
+    {
+      "step": "reduced-motion-1049",
+      "mounted": true,
+      "width": 1049,
+      "routeWidth": 813,
+      "layout": "full",
+      "run": "Review · Section 1 of 4 · ≈ 8 min · Next: Checkpoint 2 · Choose the polite expression for a first confession",
+      "tally": "0 of 4 sections with evidence · 3 due",
+      "places": [
+        "Start",
+        "Course end"
+      ],
+      "nodes": [
+        {
+          "index": 0,
+          "id": "obj_2ec4b8ec075e459ab158f3f356717b68",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "current",
+          "current": "true",
+          "size": 56,
+          "markerX": 32,
+          "alignment": {
+            "lineX": 32,
+            "lineY": 44,
+            "markerX": 32,
+            "markerY": 44
+          },
+          "ariaCurrent": "step",
+          "label": "Checkpoint 1: Tell everyday affection from a direct romantic declaration, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": true,
+          "focusable": true
+        },
+        {
+          "index": 1,
+          "id": "obj_2d909e4f37014c14bb216f1b35cc3753",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "next",
+          "current": "false",
+          "size": 40,
+          "markerX": 96,
+          "alignment": {
+            "lineX": 96,
+            "lineY": 39.1,
+            "markerX": 96,
+            "markerY": 39.1
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 2: Choose the polite expression for a first confession, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": true,
+          "focusable": true
+        },
+        {
+          "index": 2,
+          "id": "obj_9b59620700274412b8bd27e86e30e231",
+          "state": "needs_review",
+          "check": "open",
+          "kind": "future",
+          "current": "false",
+          "size": 28,
+          "markerX": 32,
+          "alignment": {
+            "lineX": 32,
+            "lineY": 28,
+            "markerX": 32,
+            "markerY": 28
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 3: Recall the intimate declaration in a new context, Needs review, Check open",
+          "stateWord": "Needs review",
+          "checkWord": "Check open",
+          "detail": false,
+          "focusable": true
+        },
+        {
+          "index": 3,
+          "id": "obj_0b5a8c5cf76247bd9487fab45e73b366",
+          "state": "overridden",
+          "check": "open",
+          "kind": "future",
+          "current": "false",
+          "size": 28,
+          "markerX": 96,
+          "alignment": {
+            "lineX": 96,
+            "lineY": 28,
+            "markerX": 96,
+            "markerY": 28
+          },
+          "ariaCurrent": null,
+          "label": "Checkpoint 4: Explain why register changes with the relationship, Overridden, Check open",
+          "stateWord": "Overridden",
+          "checkWord": "Check open",
+          "detail": false,
+          "focusable": true
+        }
+      ],
+      "sizes": [
+        56,
+        40,
+        28,
+        28
+      ],
+      "centres": [
+        32,
+        96,
+        32,
+        96
+      ],
+      "alignmentErrors": [],
+      "segmentCount": 8,
+      "segmentsAriaHidden": true,
+      "strokeWidths": [
+        "1.5px"
+      ],
+      "gates": [
+        "open",
+        "open",
+        "open",
+        "open"
+      ],
+      "halos": 1,
+      "details": 2,
+      "detailsElements": 0,
+      "currentCount": 1,
+      "focusedRow": null,
+      "ariaCurrentCount": 1,
+      "olCount": 1,
+      "listItems": 4,
+      "companion": null,
+      "companionCount": 0,
+      "pathAnimations": 0,
+      "animations": 0,
+      "overflow": 0,
+      "routeOverflow": 0,
+      "pathOverflow": 0,
+      "active": {
+        "tag": "BODY",
+        "label": null,
+        "outline": "none 2.2312px",
+        "shadow": "none",
+        "focusVisible": false
+      },
+      "view": {
+        "courseDetail": null,
+        "lesson": null,
+        "heading": "Home",
+        "sectionText": null
+      }
+    }
+  ]
+}

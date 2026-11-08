@@ -66,7 +66,7 @@ if (payload.kind === 'pure') {
   const desk = buildDeskModel({
     library: payload.library,
     outline: payload.outline,
-    estimate: { status: 'ready', minutes: 20 }
+    estimate: payload.estimate || { status: 'ready', minutes: 20 }
   })
   const html = renderToStaticMarkup(
     React.createElement('div', { 'data-cb-scope': 'light' },
@@ -218,15 +218,16 @@ class PathHarness(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr[-3000:])
         return json.loads(result.stdout)
 
-    def render(self, outline: dict = OUTLINE, width: int = 1280) -> dict:
-        return self.run_harness(
-            {
-                "kind": "render",
-                "library": {"items": [library_row(outline)]},
-                "outline": outline,
-                "width": width,
-            }
-        )
+    def render(self, outline: dict = OUTLINE, width: int = 1280, estimate: dict | None = None) -> dict:
+        payload = {
+            "kind": "render",
+            "library": {"items": [library_row(outline)]},
+            "outline": outline,
+            "width": width,
+        }
+        if estimate is not None:
+            payload["estimate"] = estimate
+        return self.run_harness(payload)
 
     def pure(self, **payload) -> dict:
         payload.setdefault("kind", "pure")
@@ -310,17 +311,52 @@ class CheckpointPathRenderTest(PathHarness):
         for word in ("Evidence", "Review due", "Started", "Not started"):
             self.assertIn(word, html)
 
-    def test_current_and_next_are_expanded_and_show_the_real_detail(self) -> None:
+    def test_current_and_next_carry_one_honest_detail_line_and_future_stays_collapsed(self) -> None:
         html = self.render()["html"]
-        open_details = html.count('open=""')
-        self.assertEqual(open_details, 2, html)
+        # H-177: the repeated <details> disclosure under every row is gone. Only the current and
+        # next stops carry one honest detail line; done and future stops stay collapsed.
+        self.assertNotIn("<details", html)
+        self.assertEqual(html.count('data-cb-path-detail="'), 2, html)
         self.assertIn('data-cb-path-detail="obj_02"', html)
         self.assertIn('data-cb-path-detail="obj_03"', html)
+        self.assertNotIn('data-cb-path-detail="obj_01"', html)
+        self.assertNotIn('data-cb-path-detail="obj_04"', html)
         self.assertIn("Do the steps", html)
-        self.assertIn("2 committed attempts", html)
+        self.assertIn("1 committed attempt", html)
         self.assertIn("No committed attempts yet", html)
-        self.assertIn("Last opened", html)
         self.assertIn("Not opened yet", html)
+
+    def test_the_trail_has_place_labels_one_halo_and_only_real_gates(self) -> None:
+        html = self.render()["html"]
+        self.assertIn('data-cb-path-place="start"', html)
+        self.assertIn(">Start</span>", html)
+        self.assertIn('data-cb-path-place="end"', html)
+        self.assertIn(">Course end</span>", html)
+        # One soft halo, on the current stop only.
+        self.assertEqual(html.count("data-cb-path-halo"), 1, html)
+        # A gate is drawn only from the backend's own check_state: three real gates here.
+        self.assertEqual(html.count("data-cb-path-gate="), 3, html)
+        self.assertIn('data-cb-path-gate="closed"', html)
+        self.assertEqual(html.count('data-cb-path-gate="open"'), 2, html)
+        self.assertNotIn('data-cb-path-gate="none"', html)
+        # The route drawing is decorative; the <ol> is still the structure and reading order.
+        self.assertIn('aria-label="Course route"', html)
+        self.assertGreaterEqual(html.count("<svg"), 8, html)
+        self.assertNotIn('data-cb-path-layout="compact"', html)
+
+    def test_the_run_header_states_the_recorded_position_and_estimate_only(self) -> None:
+        html = self.render()["html"]
+        self.assertIn("data-cb-path-run", html)
+        self.assertIn("Section 2 of 4", html)
+        self.assertIn("≈ 20 min", html)
+        self.assertIn("Next: Checkpoint 3", html)
+        # No recorded estimate means no time claim in the run header at all.
+        none = self.render(estimate={"status": "none", "minutes": None})["html"]
+        run = re.search(r'data-cb-path-run=""[^>]*>(.*?)</p>', none, re.S)
+        self.assertIsNotNone(run, none)
+        run_html = run.group(1) if run is not None else ""
+        self.assertNotIn("min", run_html)
+        self.assertNotIn("≈", run_html)
 
     def test_there_is_exactly_one_evidence_count_on_the_path(self) -> None:
         html = self.render()["html"]

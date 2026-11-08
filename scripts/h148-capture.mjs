@@ -89,7 +89,7 @@ const measure = () => evaluate(`(() => {
   const markers = [...document.querySelectorAll('[data-cb-path-marker]')].map((node) => ({
     id: node.getAttribute('data-cb-path-marker'),
     check: node.getAttribute('data-cb-path-marker-check'),
-    declared: node.closest('[data-cb-path-item]')?.getAttribute('data-cb-path-node-size'),
+    declared: node.parentElement?.querySelector('[data-cb-path-item]')?.getAttribute('data-cb-path-node-size'),
     width: Math.round(node.getBoundingClientRect().width),
     height: Math.round(node.getBoundingClientRect().height)
   }))

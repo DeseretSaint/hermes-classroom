@@ -1,5 +1,9 @@
 # H-148 — Path and checkpoint truth: evidence
 
+> Superseded for geometry and row content by H-177 (`docs/H177-EVIDENCE.md`): the same honest data
+> now renders as a continuous trail (curved route, Start/Course end, gate diamonds, one detail line
+> for current/next) instead of a straight spine with a `<details>` disclosure under every row.
+
 Base: `66ac373` (master). Branch: `wt/h148-path-truth`. Live surface: the isolated Hermes Desktop
 window (`~/.hermes/coursebook-test-h148-000806`) against the isolated backend on `127.0.0.1:44219`
 (cb.rpc v14, plugin `desktop/plugin.js` sha256 `824e02767c7bb376849c9861903752f243c34b6b3e0caf8af95436756912248c`).
