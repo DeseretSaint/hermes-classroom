@@ -34,4 +34,4 @@ echo
 echo "next:"
 echo "  hermes plugins enable coursebook   # backend half (imports plugin_api.py)"
 echo "  restart the gateway, then enable the Desktop half in Capabilities → Plugins"
-echo "  hermes plugins doctor coursebook"
+echo "  bash scripts/check-install.sh --home $HOME_DIR   # both halves on one sha?"

@@ -23,6 +23,7 @@
 #   1. hermes plugins validate <export>          (admission + security scan)
 #   2. node --check desktop/plugin.js            (Desktop half parses as ESM)
 #   3. python3 -m unittest tests.test_desktop_contracts
+#   4. hermes plugins doctor <export>            (runtime discovery, import, registration)
 #
 # Environment overrides: HERMES_BIN, NODE_BIN, COURSEBOOK_PYTHON.
 
@@ -137,7 +138,7 @@ printf '\n'
 # --- checks ------------------------------------------------------------------
 
 FAILED=0
-TOTAL=3
+TOTAL=4
 
 report() { # report <name> <status>
   if [ "$2" -eq 0 ]; then
@@ -169,6 +170,16 @@ printf '== 3/%s desktop contract tests (unittest) ==\n' "$TOTAL"
 )
 STATUS=$?
 report "3/$TOTAL desktop contract tests" "$STATUS"
+
+printf '== 4/%s runtime contracts (hermes plugins doctor, on the export) ==\n' "$TOTAL"
+# Doctor stages a copy of the directory it is given. Never point it at the checkout: the copy
+# walks the gitignored .worktrees/ farm and fails on Chromium Singleton* sockets, which is a
+# host-state error, not a defect of the gated commit.
+(
+  cd "$SCRATCH" && "$HERMES_BIN" plugins doctor "$SCRATCH"
+)
+STATUS=$?
+report "4/$TOTAL runtime contracts" "$STATUS"
 
 # --- verdict -----------------------------------------------------------------
 

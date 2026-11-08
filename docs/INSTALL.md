@@ -93,8 +93,10 @@ defect of this build, not an install failure.
 ## 5. Or: one scripted install into a dedicated home
 
 `scripts/install-local.sh` links the agent half, materializes the Desktop copy with its
-`.hermes-package.json` marker, writes the single-home flag, enables the plugin in that home and runs
-the admission gates. It defaults to `~/.hermes/coursebook-test/home`, never the root profile:
+`.hermes-package.json` marker (recording the Desktop *directory*, the shape Hermes and Electron
+resolve), writes the single-home flag, enables the plugin in that home, runs the admission gates on
+a `git archive` export of the checkout, and finally compares the installed `plugin.js` SHA-256 with
+the package. It defaults to `~/.hermes/coursebook-test/home`, never the root profile:
 
 ```
 bash scripts/install-local.sh --home /tmp/coursebook-home
@@ -103,49 +105,125 @@ bash scripts/install-local.sh --home /tmp/coursebook-home
 Observed output, abbreviated to the lines that carry meaning:
 
 ```
-source : /path/to/hermes-classroom (97fff42)
+source : /path/to/hermes-classroom (48be4af)
 home   : /tmp/coursebook-home
 
-== 1/6 agent half: link the package ==
+== 1/7 agent half: link the package ==
 /path/to/hermes-classroom
 
-== 2/6 desktop half: materialize the app root copy ==
-marker: /tmp/coursebook-home/desktop-plugins/coursebook/.hermes-package.json
+== 2/7 desktop half: materialize the app root copy, SHA-matched ==
+materialized: /tmp/coursebook-home/desktop-plugins/coursebook
 
-== 3/6 single-home flag for an isolated backend ==
+== 3/7 single-home flag for an isolated backend ==
 wrote /tmp/coursebook-home/coursebook-single-home.env
 start the backend with it:  set -a; . /tmp/coursebook-home/coursebook-single-home.env; HERMES_HOME=/tmp/coursebook-home hermes serve --isolated --port 44219
 
-== 4/6 enable the agent half in this home ==
+== 4/7 enable the agent half in this home ==
 ✓ Plugin coursebook enabled.
-Restart the gateway for the plugin to take effect:
-  hermes gateway restart
 
-== 5/6 discover it in this home ==
+== 5/7 discover it in this home ==
 discovered: coursebook
 
-== 6/6 admission gates ==
+== 6/7 admission gates on an export of the checkout ==
 Validation passed.
   manifest: coursebook 0.1.0 (standalone)
   OK: runtime discovery, manifest parsing, import, and registration passed
   registrations: 1 tool(s), 3 hook(s)
 
+== 7/7 installed Desktop copy matches the package ==
+installed copy matches desktop/plugin.js (sha256)
+
 Installed.
 ```
 
 Exit codes: `0` installed and verified, `1` refused (not a checkout, a real directory in the way, a
-gate failed), `2` bad usage.
+gate failed, the copy is stale after install), `2` bad usage, `3` a refresh was refused (a live
+worker, or the machine-level home).
 
-## 6. Verify
+The gates run on an export, not on the checkout root, for the same reason the release gate does:
+the checkout contains the gitignored `.worktrees/` farm. `hermes plugins validate` reports other
+tasks' fixtures as `dangerous`, and `hermes plugins doctor` stages a copy of the directory it is
+given — that copy dies on Chromium `SingletonSocket` files with `[Errno 6] No such device or
+address`. Neither says anything about this package.
+
+## 6. Check the installed Desktop copy
+
+Hermes loads the Desktop half from `<home>/desktop-plugins/coursebook/plugin.js` — a **copy** made
+at install or rescan time, not the checkout. Editing or updating the package changes nothing on
+screen until that copy is refreshed, and `hermes plugins doctor` reports the divergence as one
+warning among many with no repair command. This check makes it actionable:
+
+```
+bash scripts/check-install.sh --home /tmp/coursebook-home
+```
+
+Observed on a home whose copy had been overwritten with a fake stale build:
+
+```
+Coursebook install: /tmp/coursebook-home
+  package : /path/to/hermes-classroom
+  OK  : agent half: /tmp/coursebook-home/plugins/coursebook
+  FAIL: Desktop runs a stale copy of desktop/plugin.js
+    installed: 8876155ada5e…  /tmp/coursebook-home/desktop-plugins/coursebook/plugin.js
+    package  : 416ff74f27ea…  /path/to/hermes-classroom/desktop/plugin.js
+    the window loads the installed copy, so package edits are not on screen
+
+The installed Desktop half does not match this package.
+Fix it with one command:
+  bash /path/to/hermes-classroom/scripts/install-local.sh --home /tmp/coursebook-home --refresh-desktop
+```
+
+That command is `--refresh-desktop`, the same atomic copy the installer uses: it stages the folder,
+writes the marker, renames it into place, and then re-runs the check. Observed:
+
+```
+source : /path/to/hermes-classroom (48be4af)
+home   : /tmp/coursebook-home
+
+refreshed /tmp/coursebook-home/desktop-plugins/coursebook from /path/to/hermes-classroom/desktop
+Coursebook install: /tmp/coursebook-home
+  OK  : agent half: /tmp/coursebook-home/plugins/coursebook
+  OK  : Desktop half matches the package (416ff74f27ea…)
+
+Install is current: both halves match this package.
+```
+
+Measured on this host on 2026-11-07, before the fix: the machine-level home (`~/.hermes`) ran
+`2f806531aa84…` while the checkout's `desktop/plugin.js` was `416ff74f27ea…`. The check names both
+hashes and prints the exact command; it does not copy anything by itself.
+
+Two refusals, both exit `3`, both printing the reason:
+
+- **A live worker.** If a Hermes gateway or Desktop process is using the home, a plain refresh
+  refuses rather than swapping a file under a running window (close it, then refresh). `--force`
+  copies the file anyway and says the old code stays loaded until restart.
+- **The machine-level home.** `--refresh-desktop` refuses `~/.hermes`; installing into the
+  operator's live home is their decision. The check's suggested command there carries `--force` so
+  the operator can run it deliberately; no script does it by default.
+
+The `.hermes-package.json` marker records the Desktop **directory**, not `plugin.js`. An earlier
+`install-local.sh` wrote the file, which Hermes resolves as a directory — the copy could then never
+be paired back to its package, so Doctor could not see it as stale. The check reports that legacy
+marker (`MARKER_NAMES_FILE`) and the refresh rewrites it.
+
+`hermes plugins doctor` on the checkout and on the installed id resolves the same symlink to the
+same checkout; Doctor stages a copy of it. In a development checkout that copy includes the
+gitignored `.worktrees/` farm. Run the gates on an export (`scripts/validate.sh`,
+`scripts/validate-plugin.sh`, `scripts/install-local.sh` all do) so Doctor reads exactly the bytes
+being gated.
+
+## 7. Verify
 
 ```
 bash scripts/validate-plugin.sh
 ```
 
 Observed on `bc4b2f9`: `Release gate passed: 3/3 checks on
-bc4b2f963fda82238d2047cb928b177f9e18c3fb (444 files).` The gate runs `hermes plugins validate`,
-`node --check desktop/plugin.js` and `python3 -m unittest tests.test_desktop_contracts` against a
-`git archive` export of `HEAD`, then removes the export.
+bc4b2f963fda82238d2047cb928b177f9e18c3fb (444 files).` The gate now runs four checks against a
+`git archive` export of `HEAD` — `hermes plugins validate`, `node --check desktop/plugin.js`,
+`python3 -m unittest tests.test_desktop_contracts`, and `hermes plugins doctor` — then removes the
+export. Doctor was added after it was caught failing on `.worktrees/**/.chromium/SingletonSocket`
+(see §11); it runs on the export so it can never read the host's test rigs.
 
 It exports first because the validator reads every directory it is given. Run from the checkout
 root, `hermes plugins validate .` walks `.worktrees/` (one worktree per kanban task, gitignored) and
@@ -189,12 +267,22 @@ Plugin Doctor:
   registrations: 1 tool(s), 3 hook(s)
 ```
 
+```
+bash scripts/check-install.sh --home "$HERMES_HOME"
+bash scripts/clean-test-sockets.sh --dry-run
+```
+
+The first compares the installed Desktop copy with the package and prints one fix command (§6).
+The second lists (and without `--dry-run`, removes) stale Chromium `Singleton*` entries left by the
+frame scripts under `.chromium` profile directories; a profile whose lock names a live PID is kept.
+Neither touches the machine-level home's copy.
+
 `plugins validate` prints one warning rather than an error: `coursebook/db.py` opens SQLite through
 `hermes_cli.sqlite_util.open_db`, and the `probes/scripts/` harnesses import `hermes_bootstrap` and
 `agent.plugin_llm` helpers. Those are private core surfaces, they can break on a Hermes upgrade, and
 they are listed here rather than hidden. Catalog rule 9 treats them as a warning, not a rejection.
 
-## 7. What a correct first run looks like
+## 8. What a correct first run looks like
 
 Ask the agent to run `coursebook_status`. On a home whose backend has served `/health` at least
 once (opening the pane does that), the observed shape is:
@@ -223,7 +311,7 @@ on this host an isolated home cannot start a gateway, and a shell with no gatewa
 session list for every route. See `docs/CB016-RELEASE-VERIFICATION.md` §3 for the two conditions
 that were captured. Nothing above depends on the route rendering.
 
-## 8. Development loop
+## 9. Development loop
 
 Because the package is linked, edits to `desktop/plugin.js` reload in the Desktop app. Python changes
 are picked up by the gateway, which needs a restart to re-import the backend.
@@ -233,9 +321,9 @@ module syntax, catalog admission, runtime registration and the mounted backend t
 step validates an export of the tracked working tree (`scripts/lib/gate-export.sh`), not the
 checkout root, so the gitignored `.worktrees/` tree is never scanned and an uncommitted edit to a
 tracked file still fails that step. `bash scripts/validate-plugin.sh` is the release gate for a
-pinned commit (see section 6).
+pinned commit (see section 7).
 
-## 9. Uninstall and revoke
+## 10. Uninstall and revoke
 
 ```
 bash scripts/uninstall-local.sh --home /tmp/coursebook-home
@@ -276,7 +364,7 @@ either path: it lives at `$HERMES_HOME/plugin-data/coursebook/data.db` and survi
 Delete that directory yourself if you want the courses gone; deleting an enrollment from inside the
 app is the scoped, previewed data deletion (`enrollment.delete`).
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Symptom | Meaning | Fix |
 | --- | --- | --- |
@@ -292,11 +380,16 @@ app is the scoped, previewed data deletion (`enrollment.delete`).
 | `tracked files differ from HEAD; commit them, or run --worktree` | The release gate pins a commit; uncommitted edits are not in the export | Commit, or run `bash scripts/validate-plugin.sh --worktree` to gate the local edits |
 | `scratch dir … is inside the checkout` | `TMPDIR` points into the repository | Point `TMPDIR` outside the checkout, or unset it; the export must not be scanned by itself |
 | `hermes plugins doctor` reports a hook or tool mismatch | `plugin.yaml` declarations drifted from `register()` | Fix the declaration or the registration; admission compares the two |
+| `WARN: Desktop runs a stale copy of desktop/plugin.js` | The window loads `<home>/desktop-plugins/coursebook/plugin.js`, a copy made at install/rescan; the checkout changed since | `bash scripts/check-install.sh --home <home>` names both hashes and prints the one refresh command (§6) |
+| `install-check: a Hermes worker is using <home> (pid …)` | A gateway or Desktop process is live on that home, so a refresh would swap the file under a running window | Close the window and restart the gateway, then refresh; `--force` copies anyway and the old code stays loaded |
+| `install-check: refusing to rewrite the machine-level home …` | `--refresh-desktop` will not install into `~/.hermes` by default; that is an operator decision | The check's suggested command there carries `--force`; run it deliberately, from a closed/restarted gateway |
+| `MARKER_NAMES_FILE` from the check | `.hermes-package.json` names `plugin.js`, the old `install-local.sh` bug; Hermes resolves `source` as a directory and cannot pair the copy | Run the printed refresh command; it rewrites the marker with the Desktop directory |
+| `hermes plugins doctor` dies with `[Errno 6] No such device or address` on `…/.chromium/SingletonSocket` | Doctor stages a copy of the directory it is given; the gitignored `.worktrees/` farm holds Chromium sockets from the frame scripts. Host state, not the package | `bash scripts/clean-test-sockets.sh` removes stale locks (live profiles are kept); the package gates run Doctor on an export and never hit this |
 
 If the pane cannot reach the backend at all, it shows the error code with a Check again button.
 Those codes come from `contracts/errors.v2.json`; they are contract values, not prose.
 
-## 11. What this install does not give you
+## 12. What this install does not give you
 
 A working Desktop page. The backend, pack pipeline and Parent Studio authoring are implemented and
 tested, but the route does not mount (CB-QA-09), image and speech generation and reminders are

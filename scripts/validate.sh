@@ -36,8 +36,12 @@ fi
 )
 
 echo
-echo "== 4/5 runtime contracts (doctor) =="
-hermes plugins doctor .
+echo "== 4/5 runtime contracts (doctor, on the export) =="
+# Doctor stages a copy of the directory it is given. Pointed at the checkout, that copy walks the
+# gitignored .worktrees/ farm and dies on Chromium Singleton* sockets (`[Errno 6]`), reporting a
+# validation ERROR for the host's test rigs rather than for this package. The export (step 3) has
+# no worktrees and no ignored files, so Doctor checks exactly the bytes being gated.
+hermes plugins doctor "$GATE_EXPORT_DIR"
 
 echo
 echo "== 5/5 mounted backend trace (isolated HERMES_HOME) =="
