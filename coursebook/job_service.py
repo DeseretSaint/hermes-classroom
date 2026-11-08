@@ -23,6 +23,7 @@ import contextvars
 import logging
 import os
 import threading
+import time
 import uuid
 from contextlib import closing
 from dataclasses import dataclass, field
@@ -44,6 +45,12 @@ LEASE_SECONDS = 120
 #: Identity of this process's worker. Random per process: never a hostname or pid, which can be
 #: reused and would make two workers look like one.
 WORKER_ID = f"worker-{uuid.uuid4().hex[:12]}"
+
+#: Bounded attempts at reading cancellation state before concluding it cannot be known (H-129).
+#: A transient lock deserves a second look; an unreadable store must never be read as "keep going"
+#: because cancellation is the user's spend control.
+CANCEL_READ_ATTEMPTS = 3
+CANCEL_READ_BACKOFF_S = 0.05
 
 _MAX_ERROR_TEXT = 500
 
@@ -95,6 +102,29 @@ class JobCancelled(ResearchCancelled):
         # Calls that already happened before the boundary are still real spend and must be
         # recorded; the executor takes them from here on the cancellation path.
         self.usage = list(usage or [])
+
+
+class CancelStateUnreadable(RuntimeError):
+    """The job's cancel flag could not be read, so "not cancelled" cannot be concluded (H-129).
+
+    Cancellation is a spend control, which makes this the one read that must fail closed: an
+    unreadable store used to answer ``False`` from the generation probe, so a user-requested
+    cancel became "keep spending" at every provider boundary. Callers stop the job at the
+    boundary and record this typed failure instead.
+    """
+
+    #: Contract-legal code: an unexpected backend failure, retryable once the store answers again.
+    code = "INTERNAL_ERROR"
+
+    def __init__(self, job_id: str, *, attempts: int, cause: BaseException | None = None) -> None:
+        self.job_id = str(job_id)
+        self.attempts = int(attempts)
+        self.cause_type = type(cause).__name__ if cause is not None else None
+        detail = f" after {self.attempts} attempts" if self.attempts > 1 else ""
+        suffix = f" ({self.cause_type})" if self.cause_type else ""
+        super().__init__(f"job {self.job_id} cancel state could not be read{detail}{suffix}")
+        if cause is not None:
+            self.__cause__ = cause
 
 
 @dataclass(frozen=True)
@@ -291,9 +321,49 @@ def renew(lease: Lease, *, now: datetime | None = None, extra_seconds: int | Non
 
 
 def is_cancel_requested(job_id: str) -> bool:
+    """Raw read of the cancel flag. Raises whatever the store raises; never guesses."""
     with db.read() as connection:
         row = connection.execute("SELECT state FROM jobs WHERE id = ?", (job_id,)).fetchone()
     return row is not None and str(row["state"]) in ("cancel_requested", "cancelling")
+
+
+def _job_store_absent() -> bool:
+    """True only when the profile has no job schema at all (so no durable job can exist)."""
+    try:
+        return db.applied_schema_version() is None
+    except Exception:  # noqa: BLE001 - a store we cannot even inspect is not "absent"
+        return False
+
+
+def cancel_requested(job_id: str, *, attempts: int | None = None) -> bool:
+    """Whether this job was asked to stop, retrying a bounded number of times (H-129).
+
+    A store that cannot answer this is **not** evidence that the user did not cancel. After the
+    bounded retries this raises :class:`CancelStateUnreadable` so the caller stops at the
+    boundary instead of spending another provider call on a cancel that may already exist.
+    """
+    tries = max(1, int(attempts if attempts is not None else CANCEL_READ_ATTEMPTS))
+    last: BaseException | None = None
+    for attempt in range(1, tries + 1):
+        try:
+            return is_cancel_requested(job_id)
+        except Exception as exc:  # noqa: BLE001 - retried, then raised as the typed failure
+            if _job_store_absent():
+                # A profile with no schema has never held a durable job, so there is nothing to
+                # cancel. That is a fact about the store, not an unread failure — pure helper
+                # calls (no job engine in the process) keep working instead of stopping wrongly.
+                return False
+            last = exc
+            logger.warning(
+                "coursebook: cancel state unreadable for job %s (attempt %d/%d): %s",
+                job_id,
+                attempt,
+                tries,
+                type(exc).__name__,
+            )
+            if attempt < tries:
+                time.sleep(CANCEL_READ_BACKOFF_S)
+    raise CancelStateUnreadable(job_id, attempts=tries, cause=last) from last
 
 
 def request_cancel(job_id: str, *, now: datetime | None = None) -> dict[str, Any]:
@@ -581,13 +651,24 @@ def execute(
         for index, stage in enumerate(stages, start=1):
             if stage.name in skip:
                 continue
-            if is_cancel_requested(job_id):
+            try:
+                cancelled = cancel_requested(job_id)
+            except CancelStateUnreadable as exc:
+                # H-129: the boundary cannot prove the job is not cancelled, so it spends nothing.
+                return _stop_on_unreadable_cancel(lease, stage.name, exc, now=now)
+            if cancelled:
                 begin_cancelling(lease)
                 finish(lease, state="cancelled", now=now)
                 return _view(job_id)
             renew(lease)
             try:
                 result = _run_with_heartbeat(lease, stage, heartbeat_seconds)
+            except CancelStateUnreadable as exc:
+                # The stage hit a provider/research boundary whose cancel read failed. Stop here,
+                # with the typed reason on the row, instead of answering "continue" (H-129).
+                return _stop_on_unreadable_cancel(
+                    lease, stage.name, exc, checkpoint=_stage_checkpoint(exc), now=now
+                )
             except ResearchCancelled as exc:
                 usage = list(getattr(exc, "usage", []) or [])
                 if usage:
@@ -601,7 +682,13 @@ def execute(
                 return _view(job_id)
             except Exception as exc:  # noqa: BLE001 - a stage failure is durable, not a crash
                 recovery = _stage_checkpoint(exc)
-                if is_cancel_requested(job_id):
+                try:
+                    cancelled = cancel_requested(job_id)
+                except CancelStateUnreadable as read_exc:
+                    return _stop_on_unreadable_cancel(
+                        lease, stage.name, read_exc, checkpoint=recovery, now=now
+                    )
+                if cancelled:
                     # The stage ended because its bounded call hit a deadline; the user had
                     # already asked to stop. The honest outcome is ``cancelled`` with the
                     # recovery record, not a host failure the reader would retry (H-66).
@@ -628,7 +715,13 @@ def execute(
                 artifact_ids=result.artifacts,
                 now=now,
             )
-            if is_cancel_requested(job_id):
+            try:
+                cancelled = cancel_requested(job_id)
+            except CancelStateUnreadable as exc:
+                return _stop_on_unreadable_cancel(
+                    lease, stage.name, exc, checkpoint=result.checkpoint, now=now
+                )
+            if cancelled:
                 # A cancellation that arrived while the stage ran stops here: the finished
                 # stage's work and checkpoint are durable, but the job does not go on to
                 # another provider call and does not report itself completed.
@@ -646,6 +739,68 @@ def execute(
         return _view(job_id)
     except JobLeaseLost:
         return _view(job_id)
+
+
+def _stop_on_unreadable_cancel(
+    lease: Lease,
+    stage_name: str,
+    exc: CancelStateUnreadable,
+    *,
+    checkpoint: dict[str, Any] | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Stop a job at a boundary whose cancel read failed, with a reason on the row (H-129).
+
+    ``interrupted_requires_retry`` is the honest resting state: the brief and checkpoint survive,
+    so the user can run the stage again once the store answers. The one exception is a row that
+    is already ``cancel_requested``/``cancelling`` — that transition is not legal from the frozen
+    state machine, and the user's stop wins anyway, so the job closes ``cancelled``.
+    """
+    error = _stage_error(exc)
+    details = dict(error.get("details") or {})
+    details.update({"reason": "cancel_state_unreadable", "stage": stage_name, "attempts": exc.attempts})
+    error["details"] = details
+    message = (
+        f"stopped before more work at {stage_name}: the job's cancel state could not be read; "
+        "no further provider call was made"
+    )
+    try:
+        finish(
+            lease,
+            state="interrupted_requires_retry",
+            error=error,
+            checkpoint=checkpoint,
+            message=message,
+            now=now,
+        )
+    except RpcError as invalid:
+        if invalid.error.get("code") != "JOB_STATE_INVALID":
+            logger.exception("coursebook: could not record an unreadable cancel state for %s", lease.job_id)
+            return _view(lease.job_id)
+        logger.warning(
+            "coursebook: job %s was already cancelling; closing it cancelled after an unreadable state read",
+            lease.job_id,
+        )
+        try:
+            finish(lease, state="cancelled", error=error, checkpoint=checkpoint, message=message, now=now)
+        except JobLeaseLost:
+            return _view(lease.job_id)
+        except RpcError:
+            logger.exception("coursebook: could not cancel job %s after an unreadable state read", lease.job_id)
+            return _view(lease.job_id)
+        return _view(lease.job_id)
+    except JobLeaseLost:
+        return _view(lease.job_id)
+    except Exception:  # noqa: BLE001 - the store is unreadable; the lease reaper is the backstop
+        logger.exception("coursebook: could not persist the unreadable cancel state for %s", lease.job_id)
+        return _view(lease.job_id)
+    logger.warning(
+        "coursebook: job %s stopped at %s: cancel state unreadable (%s)",
+        lease.job_id,
+        stage_name,
+        exc,
+    )
+    return _view(lease.job_id)
 
 
 #: Stage exceptions that are the *host's* problem, mapped to the contract's capability code.

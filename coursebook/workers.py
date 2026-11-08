@@ -86,7 +86,7 @@ class CountingSeam:
         self.usage: list[UsageRecord] = []
 
     def _guard(self) -> None:
-        if self._lease is not None and job_service.is_cancel_requested(self._lease.job_id):
+        if self._lease is not None and job_service.cancel_requested(self._lease.job_id):
             raise JobCancelled("cancellation reached a provider-call boundary", usage=self.usage)
 
     def search(self, query: str, limit: int) -> list[dict[str, Any]]:

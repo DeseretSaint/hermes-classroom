@@ -179,6 +179,20 @@ harness). No claim in this document rests on "the code looks reasonable".
 * **Risk statement:** the UI shows `cancel_requested`/`cancelling` (*"the job stops before its next
   step"*, `plugin.js:14306`) while the job keeps calling the provider. Unbounded spend on a cancel.
 * Fix card: **H-129**.
+* **FIXED (H-129, `t_d235d606`).** The probe now fails closed. `_job_cancel_probe` calls
+  `job_service.cancel_requested`, which retries the store read at most
+  `CANCEL_READ_ATTEMPTS = 3` times and then raises `CancelStateUnreadable` (contract code
+  `INTERNAL_ERROR`, retryable) instead of answering `False`. The job loop catches it at every
+  boundary it consults — before a stage, around a stage, and after a stage's checkpoint — and
+  stops: nothing further is spent, the row closes `interrupted_requires_retry` with
+  `error.details.reason = "cancel_state_unreadable"`, `error.details.stage` and
+  `error.details.attempts`, and `progress.message` states that the cancel state could not be read
+  and no further provider call was made. A row already `cancel_requested`/`cancelling` closes
+  `cancelled` instead (the frozen state machine does not allow `cancel_requested ->
+  interrupted_requires_retry`, and the user's stop wins). A profile with **no** job schema is not
+  treated as unreadable: there is no durable job to cancel, so pure helper calls still run.
+  Guard: `tests/test_h66_liveness.py::CancelStateUnreadableTest`; the same tests fail on the
+  unfixed modules.
 
 ### F9 — The job pump silently skips a queued job it cannot parse, forever
 * **SILENT FALSEHOOD · severity: medium · [EXECUTED]**

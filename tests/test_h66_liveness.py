@@ -275,6 +275,91 @@ class CancellationTest(KernelCase):
         self.assertEqual(job_service._view(job_id)["state"], "cancelled")
 
 
+class CancelStateUnreadableTest(KernelCase):
+    """H-129: an unreadable cancel flag stops the job; it never answers "keep going"."""
+
+    def new_job(self) -> str:
+        return job_service.create("plan", {"goal": "x"})["job_id"]
+
+    def test_probe_raises_instead_of_reporting_not_cancelled(self) -> None:
+        job_id = self.new_job()
+        probe = generation._job_cancel_probe(job_id)
+        with mock.patch.object(
+            job_service, "is_cancel_requested", side_effect=RuntimeError("store gone")
+        ):
+            with self.assertRaises(job_service.CancelStateUnreadable) as caught:
+                probe()
+        self.assertEqual(caught.exception.attempts, job_service.CANCEL_READ_ATTEMPTS)
+        self.assertEqual(caught.exception.cause_type, "RuntimeError")
+        self.assertIn("cancel state could not be read", str(caught.exception))
+
+    def test_a_transient_read_failure_is_retried_before_failing_closed(self) -> None:
+        job_id = self.new_job()
+        with mock.patch.object(
+            job_service, "is_cancel_requested", side_effect=[RuntimeError("locked"), True]
+        ):
+            self.assertTrue(job_service.cancel_requested(job_id))
+
+    def test_a_profile_with_no_job_store_is_not_an_unreadable_store(self) -> None:
+        """A pure helper call (no schema, so no durable job) may proceed; the store is absent."""
+        empty = tempfile.mkdtemp(prefix="coursebook-empty-")
+        previous = os.environ.get("HERMES_HOME")
+        os.environ["HERMES_HOME"] = empty
+        try:
+            self.assertFalse(job_service.cancel_requested("job-plan-1"))
+            self.assertFalse(job_service.cancel_requested("job-plan-1"))
+        finally:
+            if previous is None:
+                os.environ.pop("HERMES_HOME", None)
+            else:
+                os.environ["HERMES_HOME"] = previous
+            shutil.rmtree(empty, ignore_errors=True)
+
+    def test_job_loop_stops_at_the_boundary_and_records_a_reason(self) -> None:
+        job_id = self.new_job()
+        calls = {"provider": 0, "reads": 0}
+
+        def flaky_read(queried: str) -> bool:
+            calls["reads"] += 1
+            if calls["reads"] == 1:
+                # The loop's own pre-stage boundary still answers: the store is fine there.
+                return False
+            raise RuntimeError("store gone")
+
+        def run(lease: job_service.Lease) -> job_service.StageResult:
+            usage = generation._Usage(
+                generation.default_cost_budget(),
+                cancel_probe=generation._job_cancel_probe(lease.job_id),
+            )
+            usage.before_call(_request())
+            calls["provider"] += 1  # unreachable: before_call must have raised
+            return job_service.StageResult()
+
+        with mock.patch.object(job_service, "is_cancel_requested", side_effect=flaky_read):
+            view = job_service.execute(job_id, [job_service.Stage("plan", run)])
+
+        self.assertEqual(calls["provider"], 0, "no provider call may follow an unreadable cancel state")
+        self.assertEqual(view["state"], "interrupted_requires_retry")
+        self.assertIsNone(view["lease"], "the stopped job must not keep a live lease")
+        self.assertEqual(view["error"]["code"], "INTERNAL_ERROR")
+        self.assertEqual(view["error"]["details"]["reason"], "cancel_state_unreadable")
+        self.assertIn("cancel state could not be read", view["error"]["message"])
+        # The pane reads `progress.message` on the running line and `error.message` once the job
+        # rests; both must carry why it stopped instead of the old silent "keep going".
+        self.assertIn("cancel state could not be read", view["progress"]["message"])
+
+    def test_a_job_already_cancelling_closes_cancelled_not_interrupted(self) -> None:
+        job_id = self.new_job()
+        lease = job_service.claim(job_id)
+        job_service.request_cancel(job_id)  # running -> cancel_requested
+        exc = job_service.CancelStateUnreadable(
+            job_id, attempts=job_service.CANCEL_READ_ATTEMPTS, cause=RuntimeError("store gone")
+        )
+        view = job_service._stop_on_unreadable_cancel(lease, "plan", exc)
+        self.assertEqual(view["state"], "cancelled")
+        self.assertEqual(view["error"]["details"]["reason"], "cancel_state_unreadable")
+
+
 class ReconciliationTest(KernelCase):
     """An expired ownerless lease is resolved live, without a process restart."""
 

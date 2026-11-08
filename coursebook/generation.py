@@ -830,23 +830,25 @@ def preflight_lesson_brief(connection: sqlite3.Connection, brief: dict[str, Any]
 
 
 def _job_cancel_probe(job_id: str | None) -> Any:
-    """A callable that answers whether this durable job was asked to stop (H-66).
+    """A callable that answers whether this durable job was asked to stop (H-66, H-129).
 
-    Resolution is lazy so ``generation`` keeps no import-time dependency on ``job_service``, and
-    a process without a migrated store (a pure helper call) simply reports ``False``. The probe
-    is consulted at every provider-call and research-call boundary: cancellation is honoured at
-    the next boundary, never by killing an in-flight non-idempotent call.
+    Resolution is lazy so ``generation`` keeps no import-time dependency on ``job_service``.
+    The probe is consulted at every provider-call and research-call boundary: cancellation is
+    honoured at the next boundary, never by killing an in-flight non-idempotent call.
+
+    H-129: an unreadable cancel flag is *not* a "no". Cancellation is a spend control, so the
+    probe fails closed — :class:`coursebook.job_service.CancelStateUnreadable` propagates and the
+    job loop stops at this boundary with that reason on the row. Answering ``False`` here made a
+    user-requested cancel look like "keep going" for as long as the store stayed unreadable.
     """
     if not job_id:
         return None
 
     def probe() -> bool:
-        try:
-            from . import job_service
+        from . import job_service
 
-            return job_service.is_cancel_requested(str(job_id))
-        except Exception:  # noqa: BLE001 - an unreadable store fails the job later, not here
-            return False
+        # Bounded retries happen inside the reader; it raises rather than guessing.
+        return job_service.cancel_requested(str(job_id))
 
     return probe
 

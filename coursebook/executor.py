@@ -124,7 +124,7 @@ class _Resolvers:
     def _plan_stage(self, brief: dict[str, Any]) -> Callable[[job_service.Lease], job_service.StageResult]:
         def run(lease: job_service.Lease) -> job_service.StageResult:
             # Cancellation boundary: a job cancelled before the stage starts spends nothing.
-            if job_service.is_cancel_requested(lease.job_id):
+            if job_service.cancel_requested(lease.job_id):
                 raise job_service.JobCancelled("cancelled before the plan stage")
             connection = db.connect()
             try:
@@ -166,7 +166,7 @@ class _Resolvers:
         """One unit's sections. The stage boundary is the unit, never the course."""
 
         def run(lease: job_service.Lease) -> job_service.StageResult:
-            if job_service.is_cancel_requested(lease.job_id):
+            if job_service.cancel_requested(lease.job_id):
                 raise job_service.JobCancelled("cancelled before the unit_sections stage")
             connection = db.connect()
             try:
@@ -204,7 +204,7 @@ class _Resolvers:
 
     def _lessons_stage(self, brief: dict[str, Any]) -> Callable[[job_service.Lease], job_service.StageResult]:
         def run(lease: job_service.Lease) -> job_service.StageResult:
-            if job_service.is_cancel_requested(lease.job_id):
+            if job_service.cancel_requested(lease.job_id):
                 raise job_service.JobCancelled("cancelled before the lessons stage")
             connection = db.connect()
             try:
@@ -294,7 +294,7 @@ class _ImportResolvers:
 
     def _parse_stage(self, brief: dict[str, Any]) -> Callable[[job_service.Lease], job_service.StageResult]:
         def run(lease: job_service.Lease) -> job_service.StageResult:
-            if job_service.is_cancel_requested(lease.job_id):
+            if job_service.cancel_requested(lease.job_id):
                 raise job_service.JobCancelled("cancelled before the syllabus parse stage")
             with db.transaction() as connection:
                 result = syllabus_mod.parse_stored(
@@ -310,7 +310,7 @@ class _ImportResolvers:
 
     def _align_stage(self, brief: dict[str, Any]) -> Callable[[job_service.Lease], job_service.StageResult]:
         def run(lease: job_service.Lease) -> job_service.StageResult:
-            if job_service.is_cancel_requested(lease.job_id):
+            if job_service.cancel_requested(lease.job_id):
                 raise job_service.JobCancelled("cancelled before the syllabus align stage")
             with db.transaction() as connection:
                 alignment_revision = syllabus_mod.align_plan(
