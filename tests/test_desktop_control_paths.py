@@ -350,28 +350,30 @@ class CreateFlowScopeChoiceTest(unittest.TestCase):
         self.assertIn('id="cb-goal"', html)
         self.assertIn('id="cb-title"', html)
         self.assertIn("What do you want to be able to do?", html)
-        self.assertIn("Name this course (required)", html)
+        # H-179: the name is optional and lives behind a disclosure; it never blocks Continue.
+        self.assertIn("Name (optional)", html)
+        self.assertIn("data-cb-title-disclosure", html)
 
     def test_first_step_offers_no_scope_options(self) -> None:
         html = self.step_one
         self.assertNotIn("data-cb-scope-option", html)
-        self.assertNotIn("A single lesson", html)
-        self.assertNotIn("A full course (weeks or months)", html)
-        self.assertNotIn("role=\"listbox\"", html)
-        self.assertNotIn("How much course", html.split("data-cb-create-next")[0])
+        self.assertNotIn("One lesson", html)
+        self.assertNotIn("Full course", html)
+        self.assertNotIn('role="listbox"', html)
+        self.assertNotIn("What shape should this course take?", html.split("data-cb-create-next")[0])
 
     def test_first_step_continue_is_disabled_until_the_goal_is_named(self) -> None:
         html = self.step_one
         self.assertIn('aria-describedby="cb-goal-help"', html)
         self.assertRegex(html, r'<button[^>]*disabled[^>]*>Continue</button>')
-        # The spine names the new order, and the next line points at the size choice.
+        # The spine names the new order, and the next line points at the shape choice.
         self.assertIn('data-cb-create-step="1" aria-current="step"', html)
-        self.assertIn("Next: choose how much course you want.", html)
+        self.assertIn("Next: choose the shape of the course.", html)
 
-    def test_second_step_offers_all_three_scopes(self) -> None:
+    def test_second_step_offers_all_three_shapes(self) -> None:
         html = self.step_two
         self.assertIn("data-cb-create-step=\"2\" aria-current=\"step\"", html)
-        self.assertIn("How much course do you want?", html)
+        self.assertIn("What shape should this course take?", html)
         for scope_id in ("single", "short", "full"):
             self.assertIn(f'data-cb-scope-option="{scope_id}"', html)
 
@@ -385,11 +387,11 @@ class CreateFlowScopeChoiceTest(unittest.TestCase):
         cards = re.findall(r'<button[^>]*role="option"[^>]*>(.*?)</button>', self.html, re.S)
         self.assertEqual(len(cards), 3, self.html[:800])
         expected = {
-            "single": ("A single lesson", "task in front of you today"),
-            "short": ("A short course (a few sessions)", "build on each other"),
-            "full": ("A full course (weeks or months)", "split into units")
+            "single": ("One lesson", "task in front of you today", "1 section"),
+            "short": ("Short course", "build on each other", "3–6 sections"),
+            "full": ("Full course", "split into units", "12–40 sections"),
         }
-        for scope_id, (label, consequence) in expected.items():
+        for scope_id, (label, consequence, band) in expected.items():
             match = re.search(
                 rf'data-cb-scope-option="{scope_id}"[^>]*>(.*?)</button>', self.html, re.S
             )
@@ -398,11 +400,25 @@ class CreateFlowScopeChoiceTest(unittest.TestCase):
             self.assertIn(label, card)
             self.assertIn(consequence, card)
             self.assertIn("Choose", card)
+            # The card states the section band and the research floor the plan will honour.
+            self.assertIn(band, card)
+            self.assertIn("research depth", card)
+            self.assertIn(f'data-cb-scope-trail="{scope_id}"', card)
 
     def test_continue_is_disabled_with_a_described_reason(self) -> None:
         self.assertIn('aria-describedby="cb-scope-time"', self.html)
         self.assertRegex(self.html, r'<button[^>]*disabled[^>]*>Continue</button>')
-        self.assertIn("Choose one option above to continue", self.html)
+        self.assertIn("Choose one shape above to continue", self.html)
+
+    def test_the_use_choice_is_one_segmented_control(self) -> None:
+        # H-179: four uses as one track, with the plain consequence underneath, and no learner
+        # row offering to prepare lessons for a child.
+        self.assertIn("data-cb-use-choice", self.html)
+        self.assertIn("How you will use it", self.html)
+        self.assertIn("One task", self.html)
+        self.assertIn("Alongside study", self.html)
+        self.assertNotIn("Preparing for my child", self.html)
+        self.assertNotIn("Recipe", self.html)
 
     def test_the_selected_state_is_words_not_only_colour(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")

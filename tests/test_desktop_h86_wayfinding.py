@@ -176,8 +176,10 @@ class CreateFlowTest(unittest.TestCase):
         self.assertIn("no lesson is written until you do", self.source)
         self.assertIn("Approve the plan to start the first lesson", self.source)
 
-    def test_course_name_is_marked_required(self) -> None:
-        self.assertIn("children: 'Name this course (required)'", self.source)
+    def test_course_name_is_optional_and_suggested(self) -> None:
+        self.assertIn("children: 'Name (optional)'", self.source)
+        self.assertIn('data-cb-title-disclosure', self.source)
+        self.assertNotIn("Name this course (required)", self.source)
 
 
 if __name__ == "__main__":

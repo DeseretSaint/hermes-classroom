@@ -348,10 +348,8 @@ class LearnerVocabularyTest(unittest.TestCase):
         scopes = self.out["copy"]["scopes"]
         self.assertEqual([scope["id"] for scope in scopes], ["single", "short", "full"])
         labels = [scope["label"] for scope in scopes]
-        self.assertEqual(
-            labels,
-            ["A single lesson", "A short course (a few sessions)", "A full course (weeks or months)"],
-        )
+        # H-179: a shape a learner chooses, not a scope label with a parenthetical.
+        self.assertEqual(labels, ["One lesson", "Short course", "Full course"])
         for scope in scopes:
             self.assertTrue(scope["consequence"].strip(), scope["id"])
             self.assertTrue(scope["consequence"].endswith("."), scope["id"])
@@ -414,20 +412,21 @@ class CreateFlowCompositionTest(unittest.TestCase):
         self.assertIn("What do you want to be able to do?", html)
         self.assertIn('for="cb-goal"', html)
         self.assertIn('for="cb-title"', html)
-        self.assertIn("Name this course (required)", html)
+        # H-179: the name is optional and never blocks the goal step.
+        self.assertIn("Name (optional)", html)
 
     def test_the_flow_states_the_step_and_what_happens_next(self) -> None:
         html = self.out["html"]
         self.assertIn("Step 1 of 3", html)
         self.assertIn("data-cb-create-spine", html)
         self.assertIn('aria-current="step"', html)
-        self.assertIn("Next: choose how much course you want.", html)
+        self.assertIn("Next: choose the shape of the course.", html)
         self.assertNotIn("STEP 1 OF 3", html)
 
     def test_step_one_has_no_scope_options_and_no_recipe_choice(self) -> None:
         html = self.out["html"]
         self.assertNotIn("data-cb-scope-option", html)
-        self.assertNotIn("A single lesson", html)
+        self.assertNotIn("One lesson", html)
         self.assertNotIn("Recipe", html)
         self.assertNotIn("STEP 2 OF 3", html)
 
@@ -449,8 +448,8 @@ class CreateFlowSourceTest(unittest.TestCase):
         source = self.source
         start = source.index("const CREATE_STEP_SPINE")
         block = source[start : source.index("])", start)]
-        self.assertLess(block.index("name: 'Goal'"), block.index("name: 'Size'"), block)
-        self.assertLess(block.index("name: 'Size'"), block.index("name: 'Review'"), block)
+        self.assertLess(block.index("name: 'Goal'"), block.index("name: 'Shape'"), block)
+        self.assertLess(block.index("name: 'Shape'"), block.index("name: 'Review'"), block)
         # The goal field is authored before the scope options, and the flow opens on it.
         self.assertLess(source.index("id: 'cb-goal'"), source.index("'data-cb-scope-option'"))
         self.assertIn("useState(createStartStep(seed))", source)

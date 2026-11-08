@@ -523,7 +523,10 @@ class MotionSourceTest(unittest.TestCase):
 
     def test_the_only_utility_transition_is_colour_only(self) -> None:
         utilities = re.findall(r"transition-(colors|transform|opacity|all)\b", self.source)
-        self.assertEqual(utilities, ["colors"], utilities)
+        # H-179 replaced the create card's colour-only utility with inline token borders, so the
+        # inventory may be empty — but nothing but a colour transition may ever appear.
+        for name in utilities:
+            self.assertEqual(name, "colors", utilities)
 
     def test_no_decorative_beat_survives(self) -> None:
         # Out of scope by card: seal draw, beacon loop, hover lift, parallax, confetti, shake.
