@@ -18,6 +18,18 @@ not need a branch to see this file any more; they need the commit above. `docs/A
 `385ebac` is byte-identical to the file at `1fc0542`
 (`git diff --stat 385ebac 1fc0542 -- docs/AUDIT-INDEX.md` is empty).
 
+Re-derived again by H-163 (`t_d10c4279`) on `wt/h163-audit-index`, based on `master` at `a674356`
+(`a67435647c43c69bbfe3f03bddf5c25d7cfcf376`, 2026-11-08). The brief was every status cell that reads
+"unmerged" or "OPEN — done". The cells that said it as a *current* state are in §11's H-31b record
+(base `f990cad`); §12–§14 carry the phrase in their "previous status" columns and in verbatim quotes
+of the text they correct, and the live ledgers in §4–§7 had already been moved by H-50/H-58/H-59.
+H-163 therefore did three things and no more: it re-ran every hash in
+this file as an ancestor test against `a674356` (§15), it annotated each §11 cell that still read
+"unmerged" with its state at `a674356` **without rewriting the historical verdict of that base**, and
+it corrected the two live sentences that were still stale (§6 D-04's H-30b marker and §7's B-series
+intro). No finding changed state at `a674356`; the three that are genuinely open (P0-7, P1-5, D-04)
+stay open with the evidence measured in §15.
+
 Purpose: make every audit claim reproducible from a **commit hash**, not from a working-tree path.
 A report is evidence only if the file it lives in resolves to a commit, the probes that produced it
 resolve to a commit, and the finding's status names the card that owns the fix.
@@ -31,14 +43,16 @@ Four things are routinely confused. They are not the same:
 
 - **A card being `done` is not a merge.** `done` means the assigned worker finished and reported.
   The branch may still be unmerged. Every ledger row below names a commit *and* says whether that
-  commit is an ancestor of `master` at `54dd2eb`.
+  commit is an ancestor of `master` at `a674356` (re-derived by H-163 for every hash in this file;
+  §15).
 - **A merge is not an independent re-audit.** A merged fix proves the code landed; it does not
   prove the defect is gone. Where a merged implementation has not been re-probed against the
   commit that carries it, the row says **re-audit required** and names the audit card
   (H-30b `t_9b6742f3` for the harness findings; H-36 `t_48645f63` is an integration repair, not
   an audit).
 - **A branch tip is not merged evidence.** A finding flips to FIXED only when its fix is an
-  ancestor of `master` (`git merge-base --is-ancestor <commit> 54dd2eb` exits 0) and the merged
+  ancestor of `master` (`git merge-base --is-ancestor <commit> a674356` exits 0; H-163 re-ran this
+  for every hash named here, §15) and the merged
   tree passed the frozen gate. A branch-only fix stays OPEN, marked "done, unmerged".
 - **A content commit is not a merge commit.** Cite both where they differ: merge `2252231`
   carries content `bcd545e`. A squash, a test commit or a rebase is not a merge, and a card body
@@ -329,13 +343,14 @@ These prove the kernel at cb.rpc v6, not the harness loop.
 
 ## 4. Finding ledger — round 1
 
-Status is the state of the **merged** evidence at `master` = `54dd2eb` (2026-11-07). A `done` card
-means its worker finished; it does **not** mean the branch merged. "FIXED" requires the named merge
-commit to be an ancestor of `54dd2eb`. "FIXED — re-audit required" means the implementation is
-merged but no independent probe has run against that behaviour on the merged line yet. The ancestor
-verdict in the fifth column was re-run for this revision; rows that moved are listed in §13.
+Status is the state of the **merged** evidence at `master` = `54dd2eb` (2026-11-07), re-derived
+unchanged at `a674356` by H-163 (§15). A `done` card means its worker finished; it does **not** mean
+the branch merged. "FIXED" requires the named merge commit to be an ancestor of `a674356`. "FIXED —
+re-audit required" means the implementation is merged but no independent probe has run against that
+behaviour on the merged line yet. The ancestor verdict in the fifth column was re-run for this
+revision; rows that moved are listed in §13.
 
-| finding | severity | status | owning card | evidence commit — ancestor of `54dd2eb`? | card state |
+| finding | severity | status | owning card | evidence commit — ancestor of `a674356`? | card state |
 |---|---|---|---|---|---|
 | P0-1 learner create flow never starts generation | P0 | **FIXED** | H-02 `t_867d3b52` | merge `1bbd502` (content `5b74233`) — **yes** | done, merged |
 | P0-2 plan schema caps at 8 sections / forces 4 objectives; no `scope` | P0 | **FIXED — implementation merged; re-audit required** | H-03 `t_577ed286` (design) + H-21a/b/c (`t_27867486`, `t_fb8b9622`, `t_6576b611`) | design merge `54087de` (content `f465a4d`) — **yes**; implementation merge `2252231` (content `bcd545e`; slices `8eb83d8`, `7f46e17`) — **yes** | done, merged |
@@ -365,9 +380,10 @@ remains UNMAPPED.**
 
 The report proposed its own `H-11`…`H-18` labels. Those labels **collide** with the board keys; the
 board keys are authoritative and are the only ids used here. Status is the merged state at
-`54dd2eb`; the fifth column is the ancestor verdict re-checked for this revision.
+`54dd2eb`, re-derived unchanged at `a674356` by H-163 (§15); the fifth column is the ancestor
+verdict re-checked for this revision.
 
-| finding | severity | status | owning card | evidence commit — ancestor of `54dd2eb`? | card state |
+| finding | severity | status | owning card | evidence commit — ancestor of `a674356`? | card state |
 |---|---|---|---|---|---|
 | P0-1 validator-rejected plan is stored as an approvable `draft` | P0 | **FIXED** | H-12 `t_dba06898` | merge `13480c4` (content `4b5f3b1`) — **yes**; round-2 probe `903a606` — **yes** | done, merged |
 | P0-2 fetched excerpt is raw prompt content; invented prose URLs pass | P0 | **FIXED** | H-14 `t_031e287f` | merge `a12176b` (content `0ba4dc6`) — **yes** | done, merged |
@@ -437,13 +453,13 @@ not a separate audit, but they do carry reproducibility weight, so their status 
 rather than left to prose. Historical D-01…D-06 text is **not** rewritten by this card; only the
 status column moves.
 
-| id | status | owning card | evidence commit — ancestor of `54dd2eb`? | note |
+| id | status | owning card | evidence commit — ancestor of `a674356`? | note |
 |---|---|---|---|---|
 | D-01 plan approval is advisory, not fail-closed | **FIXED** | H-12 `t_dba06898` | merge `13480c4` (content `4b5f3b1`) — **yes** | same defect as round-2 P0-1 |
 | D-02 the green suite encodes the defect | **FIXED** | H-12 | tests changed in `4b5f3b1` — **yes**; audit assertion `903a606` — **yes** | empty-plan approvals now assert refusal |
 | D-02b two plan digests, one approval | **FIXED** | H-12 + H-02 | `13480c4` (durable binding) — **yes** + `1bbd502` (learner path reads kernel digest via `parent.blueprint.read`) — **yes** | the fix is a projection, not a digest comparison |
 | D-03 the plan job drops contract inputs | **FIXED** | H-13 `t_543c0767` | merge `6779030` (content `ee976ea`) — **yes** | level/subject_domain/scope reach prompt, research and fingerprint |
-| D-04 "adaptation" is a state transition | **OPEN — narrowed** | H-03 (design, merged `54087de`), H-20 (contract `516d161`, merged `d079b4c`), H-21c (`bcd545e`, merged `2252231`) | all three — **yes** | prerequisite sequencing now exists; there is still **no** dynamic re-plan, no choice among remediation/examples/next objective and no attempt-driven content change. Do not market it as adaptive teaching. Re-audit required (H-30b, unmerged). |
+| D-04 "adaptation" is a state transition | **OPEN — narrowed** | H-03 (design, merged `54087de`), H-20 (contract `516d161`, merged `d079b4c`), H-21c (`bcd545e`, merged `2252231`) | all three — **yes** | prerequisite sequencing now exists; there is still **no** dynamic re-plan, no choice among remediation/examples/next objective and no attempt-driven content change. Do not market it as adaptive teaching. H-30b is merged (`f92d5f8` via `90e1f0d`) but measured plan shape, grading and the approval gate — not adaptation — so no probe of this finding exists; `docs/COURSE-BLUEPRINT.md` §9 still states the state-transition claim. Re-derived OPEN at `a674356` (§15). |
 | D-05 validation independence is structural only | **FIXED — implementation merged; no independent probe of the verdict exists** | H-15 `t_d519643b`; integration H-36 `t_48645f63` | `833e335` — **yes**; merge `b75d601` — **yes** | same defect as round-2 P1-3/P1-4. The integration landed. H-30b merged too (`f92d5f8` via `90e1f0d`), but it did not re-probe validator identity, so the "independently validated" claim is still implementation-plus-review, not an independent audit. |
 | D-06 stale CB-QA-10 claim survives in README | **FIXED — both README passages rewritten by H-52 `a044fb4`; the reference is withheld on the wire** | H-11 `t_6f41e0b0`; closure H-52 `t_58ae1236` | `b2233ac` via `097c32c` (H-47) — **yes**; `a044fb4` (H-52) | H-52 rewrote `README.md:98-101` ("two backend defects are open") and `:204-205` (the L2 projection returns the reference): the projection now carries `id`, `description`, `check_id` and a `check_spec_withheld` marker from `PUBLIC_CRITERION_FIELDS`, so the `check_spec` holding the reference never leaves the backend, and CB-QA-11 (auxiliary grader, S13 `BLOCKED`) is named as the one open item. Re-derived by H-52 on `40bd4eb`, not copied: `attack_state.py` S07 reads `open_check_reference_leaks=[] post_submit_reference_leaks=[] secret_present=False` and the run ends `SUMMARY total=22 fail=0 pass=22`; `tests/test_review_evidence.py:378,384` assert `check_spec` is absent. `docs/ACCEPTANCE.md` and `docs/REVIEW_CB014.md` stay as historical records of their own commits and are not rewritten. H-50's status cell, kept verbatim: "**PARTIAL — H-11 docs merged and reconcile the live docs; `README.md` still carries the stale claim**". |
 
@@ -463,9 +479,10 @@ rewritten (`docs/HARNESS-STATUS.md` §4).
 `docs/ADVERSARIAL-UX-REVIEW.md` and `docs/GENERIC-HARNESS-REVIEW.md` are merged at `2e57efa`
 (amended by `31b3132`, `6d062e1`, `db5662c`). `docs/GENERIC-ACCEPTANCE-AUDIT.md` (`ddc71fc`) is
 merged at `090e755` but audits `498b1da`, not `1fc0542`. Card bodies are the authority for scope.
-Every "merged" cell below names a commit that is an ancestor of `54dd2eb`. The two packets that were
+Every "merged" cell below names a commit that is an ancestor of `a674356` (H-163 re-ran all of them
+at that base; each was already an ancestor of `54dd2eb`). The two packets that were
 branch-only at the H-41 base — H-30b's `f92d5f8` and H-40's `9f2de53` — are both ancestors at
-`54dd2eb` (merges `90e1f0d` and `be08495`).
+`a674356` (merges `90e1f0d` and `be08495`).
 
 One limit on every H-30b verdict below: H-30b measured `f990cad`, which is an ancestor of
 `54dd2eb` but not the tip. It ran before H-42/H-43/H-44/H-45/H-46, so it cannot confirm those
@@ -474,7 +491,7 @@ own commits, not from H-30b.
 
 ### Generic-harness findings (G-series, `docs/GENERIC-HARNESS-REVIEW.md`)
 
-| finding | summary | owning card | merged state at `54dd2eb` | re-audit |
+| finding | summary | owning card | merged state at `a674356` | re-audit |
 |---|---|---|---|---|
 | G-01 | One-off shape is schema-rejected (`minItems: 4` objectives, 2 sections) | H-21a/b/c (`t_27867486`, `t_fb8b9622`, `t_6576b611`) | **merged** `2252231` — `PLAN_SCHEMA_V2` objectives `minItems: 1`, and `SCOPE_EXPECTATIONS["single"]["blueprint_objectives"] = (1, 1)` (H-43 renamed the v1 key `v1_objectives` so it cannot be read as the v2 band) | **done** — H-30b `f92d5f8` via `90e1f0d`: a 1-objective `single` is ACCEPTED, a padded 4-objective `single` is refused by the rules |
 | G-02 | Generated checks are saved, not graded (no reference `kind`) | B-1 `t_673155b0` (H-16 B-1; the card title carries a stale "H-20" collision label) | **merged** `4e709d3` (content `ce6c8c1`), `docs/GRADING-LANES.md`, `tests/test_grading_lanes.py` | **done** — H-30b `f92d5f8` via `90e1f0d`: every generated quiz check stores `reference.kind = exact`; correct → `pass`, wrong → `not_yet`, neither `needs_retry` |
@@ -518,7 +535,7 @@ did verify is the copy the review demanded: at `1fc0542` `desktop/plugin.js` con
 it" ×1, "Reported by you — not independently verified." ×1 and "Your answer is text, a choice, or a
 checklist" ×1; at `c588e4a` every one of those counts is 0.
 
-| finding | summary | owning card | merged state at `54dd2eb` |
+| finding | summary | owning card | merged state at `a674356` |
 |---|---|---|---|
 | UX-01 | First run explains the system, not the invitation | H-28 `t_271e19e7` | merged — `184640a` via `1fc0542`; copy verified, no re-audit |
 | UX-02 | "Recipe" is the wrong first question; Japanese-only placeholders | H-28 `t_271e19e7` | merged — `184640a` via `1fc0542`; no re-audit |
@@ -533,11 +550,12 @@ checklist" ×1; at `c588e4a` every one of those counts is 0.
 
 ### H-16 B-series (defect register inside `docs/ASSESSMENT-BREADTH.md` §11)
 
-The decision document is on master (`fa316c5`, content `dd43d82`). The three implementation
-defects split: B-1 and B-3 are merged at `54dd2eb`, B-2 is not — and the sha the earlier revisions
-recorded for it is wrong, which is corrected here rather than copied forward.
+The decision document is on master (`fa316c5`, content `dd43d82`). All three implementation defects
+are merged: B-1 at `4e709d3`, B-3 at `1fc0542`, and B-2 at `bbebd96` (H-58, §14) — all ancestors of
+`a674356` (H-163, §15). The sha the earlier revisions recorded for B-2 (`423908f`) is still wrong and
+stays recorded as wrong; the landing shas are `b13890c`, `a729e36` and `76a59ed`.
 
-| finding | summary | owning card | merged state at `54dd2eb` |
+| finding | summary | owning card | merged state at `a674356` |
 |---|---|---|---|
 | B-1 | Generated lesson checks store no reference `kind`; grader falls to the unconfigured open lane | `t_673155b0` (title still says "H-20"; **B-1** is authoritative) | **merged** `4e709d3` (content `ce6c8c1`); `docs/GRADING-LANES.md`, `tests/test_grading_lanes.py` (15 tests) |
 | B-2 | `record_observation` has no RPC method, handler or UI; `self_reported`/`parent_reported` unreachable | `t_74d99ca5` (Atlas's earlier label was "H-21"; **B-2** is authoritative) | **FIXED at `bbebd96` (2026-11-07, H-58 `t_85135fc7`).** The H-50 status cell, quoted: "**OPEN, and the row's sha is wrong.** `423908f` is **not** an ancestor of `54dd2eb` … `observation.record` appears nowhere in `contracts/rpc.v13.json` … `desktop/plugin.js` has zero `observation.record` hits … were never merged". Those sentences are true of `54dd2eb` and stay as history; the full cell is still readable at `54dd2eb` and in §13. At `bbebd96` all three halves exist: `contracts/rpc.v14.json` declares `observation.record` among 64 methods (frozen by H-53 `b13890c`, merged `d20a7a6`); `coursebook/domain.py:3754` registers `@_handler("observation.record")` (H-54 `a729e36`, merged `b7ff866`) and `implemented_methods()` returns 64 of 64 with no gap; `desktop/plugin.js` mounts `ParentObservation` on a parent-recipe `SectionPage` (H-55 `76a59ed`, merged `bbebd96`) and carries six `observation.record` hits. `cb.db` v9's `0009_evidence_note.sql` (also `b13890c`) gives the record a `note` column, so a note round-trips instead of being dropped (`tests/test_kernel_transitions.py:361`). Commands and their output: §14 |
@@ -550,10 +568,10 @@ be re-run. B-1's owner is `t_673155b0`, and B-1's fix is `ce6c8c1`.
 ## 8. Card index — H-21…H-50
 
 Every card created after the second wave, with the findings it owns or audits, its branch, and its
-**merged** state at `54dd2eb`. Cards with no commit and no evidence on that tree (H-48 has neither,
-and the numbering skips it) are not listed.
+**merged** state at `a674356` (re-derived by H-163, §15). Cards with no commit and no evidence on
+that tree (H-48 has neither, and the numbering skips it) are not listed.
 
-| card | id | owner | parents | branch | merged at `54dd2eb` | owns / audits |
+| card | id | owner | parents | branch | merged at `a674356` | owns / audits |
 |---|---|---|---|---|---|---|
 | H-21 (original) | `t_2a2fc90c` | cinder | H-13, H-01 | `wt/t_2a2fc90c` @ `5ba4e4c` | **no — superseded, no merge** | closed and split; the branch tip is history, not evidence |
 | H-21a | `t_27867486` | cinder | H-21 | `wt/h21a-contract-migration` @ `8eb83d8` | **yes** — `2252231` | cb.rpc v11, cb.db v7, migration `0007_plan_units.sql`, legacy-hash invariance |
@@ -597,7 +615,9 @@ and the numbering skips it) are not listed.
 
 ## 9. Provenance checks this index relies on
 
-Run on `master` at `54dd2eb`. Each must stay true or the index is stale.
+Run on `master` at `54dd2eb`. Each must stay true or the index is stale. H-163 re-ran the ancestor
+lines against `a674356` and resolved all 33 file paths at `a674356` as well: every one still exits 0
+(§15).
 
 ```
 git cat-file -e 54dd2eb:docs/ADVERSARIAL-HARNESS-REVIEW.md
@@ -763,42 +783,47 @@ Rules enforced:
 Compared with the H-31 revision (`512c5f6`). "Merged" was checked against `master` = `f990cad` with
 `git merge-base --is-ancestor`. Rows not listed did not change status in this revision.
 
-| row | previous status (H-31) | status now | commit that justifies it | merged |
+**This table is the H-31b record at `f990cad`, not a current status.** Its "status at `f990cad`"
+cells that read "unmerged" were true of that base; H-163 re-derived each one against `a674356` and
+annotated the cell with its state there, keeping the historical verdict intact. Current status is
+§4–§7; the full re-derivation with commands is §15.
+
+| row | previous status (H-31) | status at `f990cad` (this record) | commit that justifies it | ancestor of `f990cad` |
 |---|---|---|---|---|
 | round-1 P0-2 | OPEN — design merged, implementation unmerged (`5ba4e4c`) | **FIXED — implementation merged; re-audit required** | `2252231` (content `bcd545e`; slices `8eb83d8`, `7f46e17`) | yes |
 | round-1 P0-4 | OPEN — done, unmerged (`cee1749`) | **FIXED** | `cee1749` via `ce95836` | yes |
-| round-1 P0-5 | OPEN (H-08 running) | OPEN — done, unmerged | `c9c6cec` | no |
-| round-1 P0-6 | OPEN (H-06 running) | OPEN — done, unmerged | `00b502f` | no |
-| round-1 P0-7 | OPEN (H-09 todo) | OPEN — done, unmerged | `111c7e9` | no |
+| round-1 P0-5 | OPEN (H-08 running) | OPEN — done, unmerged at `f990cad`; **content on `a674356`** — H-08b `18638be` (ancestor) carries the authored export: `contracts/rpc.v16.json` declares `course.export.read` and `tests/test_course_export.py` resolves. `c9c6cec` never landed: content landed as `18638be`; branch abandoned (§15) | `c9c6cec` | no (`c9c6cec` at this base) |
+| round-1 P0-6 | OPEN (H-06 running) | OPEN — done, unmerged at `f990cad`; **merged at `a674356`** — `00b502f` **is** an ancestor and H-06b `acb20f7` merged; `lesson_procedure_problems` resolves (§15) | `00b502f` | no (`00b502f` at this base) |
+| round-1 P0-7 | OPEN (H-09 todo) | OPEN — done, unmerged at `f990cad`; **still OPEN at `a674356`** — `111c7e9` is not an ancestor and no live provider call exists; the merged packet `9f2de53` records `provider_calls = 0` (§15) | `111c7e9` | no |
 | round-1 P1-1 | OPEN — done, unmerged (`8a6bedb`) | **FIXED** | `8a6bedb` via `ce95836`; regression `8d018e4` via `c7461fc` | yes |
 | round-1 P1-2 | OPEN — done, unmerged (`986190f`) | **FIXED** | `986190f` via `ce95836` | yes |
 | round-1 P1-3 | OPEN — mapped to H-21 (`5ba4e4c`) | **FIXED — re-audit required** | `bcd545e` via `2252231` (`CHECK_PLAN_SCHEMA_V2`) | yes |
-| round-1 P1-4 | OPEN (H-18 running) | OPEN — done, unmerged | `2aca201` | no |
-| round-1 P1-5 | OPEN — decision unmerged, B-1/B-2/H-22 running | OPEN — decision merged; B-1 merged; B-2/B-3 unmerged | `fa316c5`; `4e709d3`; `423908f`; `47e152c` | mixed |
+| round-1 P1-4 | OPEN (H-18 running) | OPEN — done, unmerged at `f990cad`; **content on `a674356`** — H-18b `580bbb6` merged and `tests/test_locale_scaffolds.py` resolves. `2aca201` was an M4 frame refresh superseded by later M4 regenerations: content landed as `580bbb6`; branch abandoned (§15) | `2aca201` | no (`2aca201` at this base) |
+| round-1 P1-5 | OPEN — decision unmerged, B-1/B-2/H-22 running | OPEN — decision merged; B-1 merged; B-2/B-3 unmerged at `f990cad`; **at `a674356` B-1, B-2 and B-3 are all merged and P1-5 stays OPEN** on construct breadth (§15) | `fa316c5`; `4e709d3`; `423908f`; `47e152c` | mixed |
 | round-1 P1-6 | OPEN — mapped to H-24, no commits | **FIXED (decision)** | `491443a` via `4f42c3c` | yes |
-| round-1 P2-1 | OPEN (H-09 todo) | OPEN — blocked on H-09 | `111c7e9` | no |
+| round-1 P2-1 | OPEN (H-09 todo) | OPEN — blocked on H-09 at `f990cad`; **packet merged at `a674356`** — `9f2de53` via `be08495`, re-derived by H-49 (§15) | `111c7e9` | no (`111c7e9` at this base) |
 | round-1 P2-2 | OPEN — half mapped | **FIXED** | `cee1749` via `ce95836` + `6779030` | yes |
-| round-1 P2-3 | OPEN (H-09 todo) | OPEN — blocked on H-09 | `111c7e9` | no |
-| round-2 P1-3 | OPEN — done, unmerged | OPEN — done, unmerged; **integration blocked, H-36** | `833e335` | no |
-| round-2 P1-4 | OPEN — done, unmerged | OPEN — done, unmerged; **integration blocked, H-36** | `833e335` | no |
-| round-2 P1-5 | OPEN — decision unmerged; implementations running | OPEN — decision merged; B-1 merged; B-2/B-3 unmerged | `fa316c5`; `4e709d3`; `423908f`; `47e152c` | mixed |
+| round-1 P2-3 | OPEN (H-09 todo) | OPEN — blocked on H-09 at `f990cad`; **PARTIAL at `a674356`** — the merged packet runs the procedure lens end to end; no scenario exercises image or speech media, so the media half is still unproven (§15) | `111c7e9` | no (`111c7e9` at this base) |
+| round-2 P1-3 | OPEN — done, unmerged | OPEN — done, unmerged at `f990cad`; **merged at `a674356`** — `833e335` is an ancestor through H-36 `b75d601`; no independent probe of validator identity exists (§15) | `833e335` | no (`833e335` at this base) |
+| round-2 P1-4 | OPEN — done, unmerged | OPEN — done, unmerged at `f990cad`; **merged at `a674356`** — `833e335` is an ancestor through `b75d601`; the no-research waiver has no independent probe (§15) | `833e335` | no (`833e335` at this base) |
+| round-2 P1-5 | OPEN — decision unmerged; implementations running | OPEN — decision merged; B-1 merged; B-2/B-3 unmerged at `f990cad`; **all three merged and P1-5 still OPEN at `a674356`** on construct breadth (§15) | `fa316c5`; `4e709d3`; `423908f`; `47e152c` | mixed |
 | round-2 P1-6 | OPEN — done, unmerged (`722f00f`) | **FIXED** | `722f00f` via `4dd68cb` → `ce95836` | yes |
-| round-2 P2-7 | OPEN (H-18 running) | OPEN — done, unmerged | `2aca201` | no |
+| round-2 P2-7 | OPEN (H-18 running) | OPEN — done, unmerged at `f990cad`; **FIXED at `a674356`** — H-18's product half is merged as H-18b `580bbb6`. `2aca201` was an M4 frame refresh that later M4 regenerations superseded: content landed as `580bbb6`; branch abandoned, and `2aca201` is not credited (§15) | `2aca201` | no (`2aca201` at this base) |
 | round-2 P2-8 | OPEN — done, unmerged (`516d161`) | **FIXED — re-audit required** | `516d161` via `d079b4c`; impl `bcd545e` via `2252231` | yes |
 | round-2 P2-10 | FIXED — index branch-only | **FIXED** — index now merged | `99da48a` via `ce95836` | yes |
-| D-04 | OPEN — design merged, implementations unmerged | **OPEN — narrowed** (sequencing merged, adaptation claim unchanged) | `516d161`; `bcd545e` | partial |
-| D-05 | OPEN — done, unmerged | OPEN — done, unmerged; **H-36 recovery named** | `833e335` | no |
-| D-06 | OPEN (H-11 running) | OPEN — done, unmerged | `b2233ac` | no |
+| D-04 | OPEN — design merged, implementations unmerged | **OPEN — narrowed** (sequencing merged, adaptation claim unchanged); still OPEN at `a674356`, no attempt-driven re-plan exists (§15) | `516d161`; `bcd545e` | partial |
+| D-05 | OPEN — done, unmerged | OPEN — done, unmerged at `f990cad`; **merged at `a674356`** — `833e335` via `b75d601`; no independent validator-identity probe (§15) | `833e335` | no (`833e335` at this base) |
+| D-06 | OPEN (H-11 running) | OPEN — done, unmerged at `f990cad`; **FIXED at `a674356`** — `b2233ac` via `097c32c`, and H-52 `a044fb4` rewrote both README passages (§15) | `b2233ac` | no (`b2233ac` at this base) |
 | G-01 | ready, `5ba4e4c` unmerged | **merged** `2252231`; re-audit required | `8eb83d8`/`7f46e17`/`bcd545e` | yes |
 | G-02 | running (B-1) | **merged** `4e709d3`; re-audit required | `ce6c8c1` | yes |
 | G-03 | ready, unmerged | **merged** `2252231`; re-audit required | `bcd545e` | yes |
-| G-04 | H-05 done/unmerged + H-06 running | H-05 **merged** `ce95836`; H-06 done/unmerged | `986190f`; `00b502f` | partial |
-| G-05 | H-09/H-30 todo | H-09 done/unmerged; H-30 audit **merged** on `498b1da`; **H-30b re-audit required** | `111c7e9`; `ddc71fc`; `090e755` | partial |
+| G-04 | H-05 done/unmerged + H-06 running | H-05 **merged** `ce95836`; H-06 `00b502f` and H-06b `acb20f7` merged at `a674356`; media half still unproven (§15) | `986190f`; `00b502f` | partial |
+| G-05 | H-09/H-30 todo | H-09 `111c7e9` branch abandoned; H-30 audit **merged** on `498b1da`; H-40 `9f2de53` and H-30b `f92d5f8` **merged** via `be08495`/`90e1f0d` at `a674356` (§15) | `9f2de53`; `ddc71fc`; `090e755` | partial |
 | G-06 | H-25 ready | H-25 design **merged**; H-26 superseded → H-26a running; H-27 running | `3705a7a` via `e978441` | design yes |
 | G-07 | running, no commits | **merged** (decision) | `491443a` via `4f42c3c` | yes |
 | B-1 | running | **merged** `4e709d3` | `ce6c8c1` | yes |
-| B-2 | running (`423908f`) | done, unmerged | `423908f` | no |
-| B-3 | running (`002a82b`) | done, unmerged | `47e152c` — the branch was rebased onto `f17ec54` (`8ef1cc1`); the old tip `002a82b` is history | no |
+| B-2 | running (`423908f`) | done, unmerged at `f990cad`; **FIXED at `a674356`** — `b13890c`, `a729e36` and `76a59ed` are all ancestors; `423908f` is not (§15) | `423908f` | no (`423908f` at this base) |
+| B-3 | running (`002a82b`) | done, unmerged at `f990cad`; **merged at `a674356`** — `47e152c` via `1fc0542`. The branch was rebased onto `f17ec54` (`8ef1cc1`); the old tip `002a82b` is history (§15) | `47e152c` | no (`002a82b` at this base) |
 | §0 note on H-19 | "index is branch-only, ask the integrator" | retired — `99da48a` is merged via `ce95836` | `ce95836` | yes |
 
 New rows added by this revision: the H-30 acceptance report (§1, §7), the H-24/H-25/H-33/H-34/H-35
@@ -815,9 +840,11 @@ have replaced one overstatement with another.
 
 Compared with the H-31b revision (the file at `385ebac`, byte-identical to `f990cad`). "Ancestor"
 was checked against `master` = `1fc0542` with `git merge-base --is-ancestor` for this card; do not
-copy the verdicts, re-run them. Rows not listed did not change status.
+copy the verdicts, re-run them. Rows not listed did not change status. Its "status now" cells are the
+`1fc0542` record: the cells that read "merge pending supervisor" were true of that base, and H-163
+re-derived them at `a674356` (§15). Current status is §4–§7.
 
-| row | previous status (H-31b) | status now | commit that justifies it | ancestor of `1fc0542` |
+| row | previous status (H-31b) | status at `1fc0542` (this record) | commit that justifies it | ancestor of `1fc0542` |
 |---|---|---|---|---|
 | round-1 P0-5 | OPEN — done, unmerged (`c9c6cec`) | **FIXED** | `18638be` (H-08b merge); `contracts/rpc.v13.json` carries 11 `course.export` hits | yes |
 | round-1 P0-6 | OPEN — done, unmerged (`00b502f`) | **FIXED** | `acb20f7` (H-06b merge); `lesson_procedure_problems` resolves | yes |
@@ -869,6 +896,9 @@ Base: `master` = `54dd2eb` (`54dd2eb48f5f3410cb9f591f4a2d9a283e20672c`), the H-4
 That base is the parent of the merge that carried this revision onto `master`: `40bd4eb` merges
 H-50 (`aaa267a`) and H-51 (`2620c95`), and both of those have `54dd2eb` as their parent — so H-50
 verified these rows at `54dd2eb` and `40bd4eb` is the merge that carried them.
+This is the H-50 record at that base. Its quoted "unmerged" cells are the old text it was correcting,
+kept verbatim by that revision's own rule; H-163 re-derived the same cells at `a674356` in §15, and
+the current status is §4–§7.
 Compared with the H-41 revision: commit `7163903`, whose parent is `1fc0542`. `be08495` merged it
 without changing the file (`git diff 7163903 be08495 -- docs/AUDIT-INDEX.md` is empty). Every
 verdict below was re-run against `54dd2eb` for this card; do not copy them, re-run them. Rows not
@@ -1047,7 +1077,9 @@ Base: `master` = `bbebd96` (`bbebd96bd6873c2b22970fd240d0fe410c9ee6b8`), the mer
 (`76a59ed`, "parent-observation control calls observation.record") onto master. This revision moves
 **B-2** from OPEN to FIXED and amends the two P1-5 rows whose B-2 half it closes — but it does
 **not** close P1-5, because P1-5's finding is construct breadth (code, performance, artifact), and
-that is still three text input formats. Rows not listed did not change status. §11/§12/§13 are kept
+that is still three text input formats. This is the H-58 record at `bbebd96`: its "previous status
+(H-50)" cells quote older text by design, and H-163 re-derived the same rows at `a674356` in §15.
+Rows not listed did not change status. §11/§12/§13 are kept
 as the H-31b, H-41 and H-50 records; §9 of `docs/ASSESSMENT-BREADTH.md` (the H-53 authorization
 paragraph) is untouched.
 
@@ -1148,4 +1180,129 @@ disclosure copy; none of them added a construct. The finding's own text — "thr
 unauthorized. H-59 therefore restores both §4/§5 cells and both §14 table cells to **OPEN**, changes
 only status wording, and adds the measured `grep -c` evidence above. No other row moved, no product
 code was touched, and the B-2 closure itself stands unchanged.
+
+## 15. Changes in the H-163 revision — every "unmerged" cell re-derived against `a674356`
+
+Base: `master` = `a674356` (`a67435647c43c69bbfe3f03bddf5c25d7cfcf376`), 2026-11-08, 208 commits
+after `54dd2eb` (the H-50 base); the UI batch union H-145…H-158 is the largest thing in that range.
+This revision is a status re-derivation, not an audit. It ran ancestry, file resolution and three
+targeted greps, and it changed no product code, contract or test.
+
+### The census: where "unmerged" actually lives
+
+`grep -n 'unmerged\|OPEN — done' docs/AUDIT-INDEX.md` does not distinguish a live status from a
+quoted historical one. The matches split into four kinds, and only one kind was a live status:
+
+| where | what it is | what H-163 did |
+|---|---|---|
+| §0, §1, §9 prose | the rules ("a branch-only fix stays OPEN, marked \"done, unmerged\"") and the negative provenance assertions | left unchanged; every §9 assertion re-verified below |
+| **§11** (18 status cells) | the H-31b record's status column, base `f990cad` — the cells the brief quoted | annotated with the `a674356` verdict inside the cell, historical verdict kept verbatim; the header now names the base |
+| §12 / §13 / §14 | "previous status" columns and verbatim quotes of the text those revisions were correcting | left as history; each section now says it is a base-stamped record and points here |
+| §4 / §5 / §6 / §7 | live ledgers | two stale prose sentences corrected (§6 D-04's "H-30b, unmerged"; §7's "B-1 and B-3 are merged, B-2 is not"); base headers re-stated at `a674356`; no other cell moved |
+
+So the live ledgers were **not** reporting merged work as unmerged — H-50/H-58/H-59 had moved
+them — but §11's historical table still read as if it were current, and two live sentences were
+genuinely stale. Both are fixed above; neither by touching a historical verdict.
+
+### Every hash in the file, tested against `a674356`
+
+145 hex tokens appear in this file. 144 resolve to commits; the one that does not is the
+`desktop/plugin.js` sha256 prefix `c206e1c9…`, which is a file hash, not a commit. Of the 144,
+**136 are ancestors of `a674356`** and **8 are not** — exactly the eight this index already called
+branch-only or superseded:
+
+```text
+$ git rev-parse a674356
+a67435647c43c69bbfe3f03bddf5c25d7cfcf376
+
+$ for sha in 833e335 00b502f 18638be 580bbb6 9f2de53 f92d5f8 b2233ac 76a59ed b13890c \
+             a729e36 47e152c 2252231 b75d601 90e1f0d be08495 097c32c a044fb4; do
+    printf '%s ' "$sha"; git merge-base --is-ancestor "$sha" a674356 && echo YES || echo NO; done
+833e335 YES
+00b502f YES
+18638be YES
+580bbb6 YES
+9f2de53 YES
+f92d5f8 YES
+b2233ac YES
+76a59ed YES
+b13890c YES
+a729e36 YES
+47e152c YES
+2252231 YES
+b75d601 YES
+90e1f0d YES
+be08495 YES
+097c32c YES
+a044fb4 YES
+
+$ for sha in 111c7e9 2aca201 c9c6cec 423908f 002a82b 5ba4e4c bc508ce 2bfeb1c; do
+    printf '%s ' "$sha"; git merge-base --is-ancestor "$sha" a674356 && echo YES || echo NO; done
+111c7e9 NO
+2aca201 NO
+c9c6cec NO
+423908f NO
+002a82b NO
+5ba4e4c NO
+bc508ce NO
+2bfeb1c NO
+```
+
+The eight "NO" lines are not a defect in the index; they are the branch tips it explicitly refuses
+to credit: H-09's pre-v2 packet `111c7e9`, H-18's pre-recovery tips `2aca201`/`002a82b`, H-08's
+pre-recovery tip `c9c6cec`, B-2's wrong sha `423908f`, H-21 original `5ba4e4c`, H-32's branch tip
+`bc508ce`, and H-31b's own tip `2bfeb1c`.
+
+### The five rows the brief spot-checked
+
+| row | cell before this revision | verdict on `a674356` |
+|---|---|---|
+| round-2 P1-3 | `OPEN — done, unmerged; integration blocked, H-36` (`833e335`) | **merged** — `833e335` exit 0, carried by H-36 `b75d601`. Still no independent probe of validator identity (§5) |
+| round-2 P1-4 | same | **merged** — same commit; the no-research waiver still has no independent probe (§5) |
+| round-2 P2-7 | `OPEN — done, unmerged` (`2aca201`) | **FIXED product half** — `2aca201` exit 1; H-18b `580bbb6` exit 0. `2aca201` was an M4 frame refresh that later M4 regenerations superseded: content landed as `580bbb6`; branch abandoned. `2aca201` is not credited |
+| round-1 P0-5 | `OPEN — done, unmerged` (`c9c6cec`) | **content landed as `18638be`; branch abandoned** — `c9c6cec` exit 1, `18638be` exit 0. At `a674356` `contracts/rpc.v16.json` declares `course.export.read` and `tests/test_course_export.py` resolves |
+| round-1 P0-6 / P1-4 / P2-1 / P2-3 | `OPEN — done, unmerged` | P0-6: `00b502f` **is** an ancestor (exit 0), and H-06b `acb20f7` too. P1-4: `2aca201` is not; content landed as `580bbb6`; branch abandoned. P2-1: `111c7e9` is not; the packet that replaced it, `9f2de53` (H-40), is. P2-3: PARTIAL — the procedure lane is merged and exercised; no media scenario exists |
+
+Files on the base, checked with `git cat-file -e a674356:<path>`: `contracts/rpc.v16.json`,
+`coursebook/generation.py`, `tests/test_course_export.py`, `tests/test_locale_scaffolds.py`,
+`audit/adversarial/harness-e2e/STATUS.md` — all exit 0.
+
+### The rows that stay open, with today's evidence
+
+**P0-7 — no live arbitrary-topic provider call. OPEN.** At `a674356`
+`audit/adversarial/harness-e2e/STATUS.md` still records `labels.provider_calls = 0` and
+`provider_spend_usd = 0.0`, marks validator identity as a **RECORDED TRANSCRIPT**
+(`recorded-validator-h40`), and contains no line naming a live provider. The merged packet
+`9f2de53` proves the pipeline on recorded inputs; it does not prove a provider call. Being merged
+is not the claim.
+
+**P1-5 — construct breadth is still three input formats. OPEN.** At `a674356` the three construct
+methods are absent from every surface, counted on the base itself:
+
+| file at `a674356` | `code.run` | `performance.submit` | `artifact.submit` |
+|---|---|---|---|
+| `contracts/rpc.v16.json` | 0 | 0 | 0 |
+| `coursebook/domain.py` | 0 | 0 | 0 |
+| `desktop/plugin.js` | 0 | 0 | 0 |
+
+`contracts/rpc.v16.json` declares 68 methods; none is a construct method, and `plan.replan` is a
+whole-plan regeneration, not an assessment construct. B-2's closure made an existing evidence class
+reachable; it did not add a construct.
+
+**D-04 — no attempt-driven re-plan. OPEN — narrowed.** `plan.replan` exists
+(`coursebook/domain.py:1033`) and is a manual whole-plan regeneration: "the new version is approved
+— a replan is never silently effective." No handler chooses a remediation, an example or a next
+objective from an attempt. `docs/COURSE-BLUEPRINT.md` §9 ("Adaptation, honestly") still says the
+current claim is a state transition, and its exclusions list still names "dynamic re-planning from
+an attempt, a learner model, style inference or any claim of adaptive teaching". H-30b is merged
+(`f92d5f8` via `90e1f0d`) but measured shape, grading and the approval gate — not adaptation — so
+this finding has no re-audit either.
+
+### What this revision is, and is not
+
+It is a status re-derivation at `a674356`, run on `wt/h163-audit-index`. It is not a new audit: it
+ran no probe, no gate module and no live call; every status it asserts is either an ancestry exit
+code, a file that resolves on the base, or a `grep -c` quoted above. It did not change a status
+because a card is `done`, it did not rewrite the historical verdicts in §11–§14, and it touched
+nothing that `scripts/check-docs-truth.py` asserts — that gate passes on this tree.
 
