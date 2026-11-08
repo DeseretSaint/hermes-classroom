@@ -121,7 +121,13 @@ const FILTERS = [
   { id: 'review_due', label: 'Review due' },
   { id: 'archived', label: 'Archived' }
 ]
+/**
+ * H-145 — Home is the launcher (the selected classroom's Continue plate); Courses is the
+ * all-courses catalog. Home is first because it is the only destination that answers "what do I do
+ * now?" without a choice.
+ */
 const DESTINATIONS = [
+  { id: 'home', label: 'Home' },
   { id: 'courses', label: 'Courses' },
   { id: 'library', label: 'Library' },
   { id: 'studio', label: 'Parent Studio' }
@@ -277,7 +283,7 @@ function useRouteIntent(handler) {
 }
 
 /** The destination survives leaving the route; it is a view preference, not navigation state. */
-let rememberedDestination = 'courses'
+let rememberedDestination = 'home'
 
 function requireContext() {
   if (!pluginContext) throw new Error('Coursebook is not registered')
@@ -1137,7 +1143,6 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
       jsxs('div', {
         style: { display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' },
         children: [
-          jsx(SurveyMark, { courseId: 'first-run', size: compact ? 40 : 56 }),
           jsx('h2', {
             'data-cb-first-run-title': '',
             style: {
@@ -2352,14 +2357,23 @@ function courseStampText(title) {
   return cbCourseMonogram(title)
 }
 
-/** The course cover: the Atlas Lamp seal, deterministic per course, with the title adjacent. */
+/** The course cover: deterministic monogram as type, with the title adjacent. */
 function CourseStamp({ title, large, courseId, identity }) {
   return jsx('div', {
     'data-cb-course-stamp': '',
     title: title || 'Course',
     'aria-hidden': 'true',
     style: { flex: '0 0 auto', display: 'flex', alignItems: 'center' },
-    children: jsx(SurveyMark, { courseId: courseId || title || 'Coursebook', identity, size: large ? 64 : 28 })
+    children: jsx('span', {
+      style: {
+        fontFamily: CB_SERIF,
+        fontSize: large ? CB_TYPE.heading : CB_TYPE.meta,
+        fontWeight: 600,
+        letterSpacing: '0.04em',
+        color: 'var(--cb-ink-soft)'
+      },
+      children: courseStampText(title || 'Course')
+    })
   })
 }
 
@@ -2521,7 +2535,6 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
           overflow: 'hidden'
         },
         children: [
-          jsx(SurveyMark, { courseId: row.course_id || row.title || 'Coursebook', identity, size: 40 }),
           jsx('div', {
             'aria-hidden': 'true',
             style: {
@@ -2804,16 +2817,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
               jsx(DeskProgress, { objectives: desk.objectives }),
               jsx(DeskFacts, { desk })
             ]
-          }),
-          compact ? null : jsx(CourseStamp, { title: courseTitle || title, large: true, courseId: desk.row ? desk.row.course_id : null })
-        ]
-      }),
-      jsxs('p', {
-        'data-cb-continue-next': '',
-        style: { margin: 0, maxWidth: CB_MEASURE, fontSize: CB_TYPE.body, lineHeight: 1.55, color: 'var(--cb-ink)' },
-        children: [
-          jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: 'Next · ' }),
-          desk.nextLabel
+          })
         ]
       }),
       jsxs('div', {
@@ -2858,19 +2862,12 @@ function PathPreview({ desk, onOpenSection }) {
     children: [
       jsx(PlateHead, {
         label: 'The route',
-        title: desk.row && desk.row.title ? desk.row.title : 'Your path',
-        caption: jsx('span', {
-          'data-cb-path-summary': '',
-          style: { fontFamily: CB_SANS, maxWidth: CB_MEASURE, fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-          children: objectives.length
-            ? `Course evidence · ${desk.settled} of ${desk.total} sections have evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
-            : 'No path read yet'
-        })
+        title: desk.row && desk.row.title ? desk.row.title : 'Your path'
       }),
       jsx(EvidenceTally, {
         objectives: desk.objectives,
         caption: objectives.length
-          ? `${desk.settled} of ${desk.total} sections with evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
+          ? `${desk.settled} of ${plural(desk.total, 'section', 'sections')} with evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
           : 'No evidence recorded yet'
       }),
       jsx('ol', {
@@ -8661,6 +8658,11 @@ const CB_TYPE_SCALE_JSON =
 const CB_TYPE = JSON.parse(CB_TYPE_SCALE_JSON)
 const CB_TYPE_STEPS = Object.freeze(['caption', 'meta', 'body', 'lead', 'heading', 'display'])
 
+/** One plural rule for every count the learner reads: `plural(1,'section','sections')`. */
+function plural(count, one, many) {
+  return `${count} ${Number(count) === 1 ? one : many}`
+}
+
 /** The host cannot ship a font file, so the voices are OS-resident stacks only. */
 const CB_SERIF = 'ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", "Noto Serif", serif'
 const CB_SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif'
@@ -9021,46 +9023,10 @@ function cbCourseGoalLine(row) {
 }
 
 /**
- * The course seal: a surveyed square, an identity arc, meridians and one station mark. It is
- * decorative (`aria-hidden`); the course title is always adjacent as text.
+ * H-145 — the course seal was retired from every surface it appeared on. The owner asked twice
+ * what it meant; a mark that needs an explanation is not identity. `cbSealStation` stays exported
+ * because the visual-identity probes address it, but nothing in the route renders an SVG seal.
  */
-function SurveyMark({ courseId, identity, size }) {
-  const station = cbSealStation(courseId)
-  const hue = identity === 'plum' ? 'var(--cb-plum)' : 'var(--cb-accent)'
-  const points = [
-    [26, 26],
-    [70, 26],
-    [26, 70],
-    [70, 70]
-  ]
-  const [cx, cy] = points[station]
-  const ticks = [
-    ['M4 18 H4 V4 H18', 'tl'],
-    ['M78 4 H92 V18', 'tr'],
-    ['M92 78 V92 H78', 'br'],
-    ['M18 92 H4 V78', 'bl']
-  ]
-  const tick = station <= 1 ? ticks[3] : ticks[0]
-  return jsxs('svg', {
-    'data-cb-seal': String(station),
-    'data-cb-seal-identity': identity === 'plum' ? 'plum' : 'accent',
-    viewBox: '0 0 96 96',
-    width: size || 96,
-    height: size || 96,
-    'aria-hidden': 'true',
-    focusable: 'false',
-    style: { display: 'block', flex: '0 0 auto' },
-    children: [
-      jsx('rect', { x: 4, y: 4, width: 88, height: 88, fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1.6 }, 'frame'),
-      jsx('path', { d: 'M4 92 A64 64 0 0 1 68 28', fill: 'none', stroke: hue, strokeWidth: 7 }, 'arc'),
-      jsx('path', { d: 'M4 36.5 H92', stroke: 'var(--cb-rule)', strokeWidth: 1 }, 'meridian-h'),
-      jsx('path', { d: 'M59.5 4 V92', stroke: 'var(--cb-rule)', strokeWidth: 1 }, 'meridian-v'),
-      jsx('circle', { cx, cy, r: 13, fill: 'none', stroke: hue, strokeWidth: 1.6 }, 'ring'),
-      jsx('circle', { cx, cy, r: 7, fill: hue }, 'station'),
-      jsx('path', { d: tick[0], fill: 'none', stroke: 'var(--cb-ink)', strokeWidth: 1 }, 'tick')
-    ]
-  })
-}
 
 /** Segment kinds are internal enums; the learner sees a plain word. */
 const CB_SEGMENT_WORD = {
@@ -14710,7 +14676,6 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
             gap: phone ? '0.75rem' : '1.75rem'
           },
           children: [
-            jsx(SurveyMark, { courseId: row.course_id, identity: parentIdentity, size: phone ? 40 : 64 }),
             jsxs('div', {
               style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, flex: compactHero ? '1 1 100%' : '1 1 16rem' },
               children: [
@@ -17921,6 +17886,27 @@ function FocusReturningDialog({ open, ...props }) {
   return jsx(sdk.ConfirmDialog, dialogProps)
 }
 
+/**
+ * H-145 — the product wordmark. It is type, not an ornament: the seal read as an avatar or a
+ * refresh glyph and needed an explanation, so the route header carries the name instead. It is a
+ * plain div, never a heading, so the page `h1` stays the only page label.
+ */
+function CoursebookWordmark() {
+  return jsx('div', {
+    'data-cb-wordmark': '',
+    style: {
+      fontFamily: CB_SERIF,
+      fontSize: CB_TYPE.meta,
+      fontWeight: 600,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+      lineHeight: 1.2,
+      color: 'var(--cb-ink-soft)'
+    },
+    children: 'Coursebook'
+  })
+}
+
 function CoursebookPage() {
   const { state: health, reload: reloadHealth } = useHealth()
   const implemented = useRuntime(health.status)
@@ -17929,7 +17915,6 @@ function CoursebookPage() {
   const cbMode = useCbMode()
   const cbMotion = useCbMotion()
   const [destination, setDestination] = useState(rememberedDestination)
-  const [coursesMode, setCoursesMode] = useState('desk')
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
   const [syllabusFlow, setSyllabusFlow] = useState(false)
@@ -17958,7 +17943,6 @@ function CoursebookPage() {
     setCreating(false)
     setImporting(false)
     setSyllabusFlow(false)
-    setCoursesMode('desk')
     setOpenCourse(null)
     setStudioCourse(null)
     setStudioSeed(null)
@@ -18178,7 +18162,7 @@ function CoursebookPage() {
       },
       onNewSyllabus: openNewSyllabusRevision
     })
-  } else if (coursesMode === 'list') {
+  } else if (destination === 'courses') {
     body = jsx(CoursesView, {
       createOpen: creating,
       implemented,
@@ -18186,16 +18170,18 @@ function CoursebookPage() {
       onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
       onOpen: (row) => setOpenCourse({ row, objectiveId: null }),
-      onShowDesk: () => setCoursesMode('desk')
+      onShowDesk: () => changeDestination('home')
     })
   } else {
+    // H-145: Home is the launcher. It carries exactly one Continue surface for the selected
+    // classroom; the all-courses catalog lives behind the Courses destination, not here.
     body = jsx(FieldDesk, {
       implemented,
       profile: currentScope().profile,
       onEmptyChange: setCoursesEmpty,
       onOpen: (row, objectiveId, blockId, view) =>
         setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null }),
-      onShowAll: () => setCoursesMode('list'),
+      onShowAll: () => changeDestination('courses'),
       onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null
     })
@@ -18204,18 +18190,21 @@ function CoursebookPage() {
   const statusCopy = backendCopy(health.status)
   const online = useOnline()
   const showDestinationNav = health.status === 'ready' && !creating && !importing && !syllabusFlow
-  // One stable page title per destination. It is the route's only `h1` in every health and flow
+  // One stable page title per surface. It is the route's only `h1` in every health and flow
   // state, so the first heading is the page title and never a card's objective; every surface
-  // below it is an `h2` region.
-  const pageTitle = ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
+  // below it is an `h2` region. An open course is its own page ("Course"), not a second "Home"
+  // or a second course title (CourseDetail already prints the course name at h2).
+  const pageTitle = openCourse
+    ? 'Course'
+    : ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
 
   return jsxs('div', {
-    className: 'relative flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
+    className: 'relative flex h-full min-h-0 flex-col',
     'data-cb-destination': destination,
     'data-cb-route': ROUTE_PATH,
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion,
-    style: cbScopeStyle(cbMode),
+    style: { ...cbScopeStyle(cbMode), paddingLeft: routePad, paddingRight: routePad },
     children: [
       jsx(SkipToContent, {}),
       jsxs('header', {
@@ -18225,13 +18214,20 @@ function CoursebookPage() {
             className: 'flex flex-wrap items-start justify-between gap-3',
             children: [
               jsxs('div', {
-                className: 'flex min-w-0 items-center gap-2',
+                className: 'flex min-w-0 flex-col gap-1',
                 children: [
-                  jsx(SurveyMark, { courseId: 'coursebook', size: 24 }),
+                  jsx(CoursebookWordmark, {}),
                   jsx('h1', {
                     'data-cb-page-title': '',
-                    className: 'text-base font-semibold',
-                    style: { margin: 0 },
+                    style: {
+                      margin: 0,
+                      fontFamily: CB_SERIF,
+                      fontSize: CB_TYPE.display,
+                      fontWeight: 600,
+                      lineHeight: 1.05,
+                      letterSpacing: '-0.02em',
+                      color: 'var(--cb-ink)'
+                    },
                     children: pageTitle
                   })
                 ]
