@@ -16,13 +16,13 @@ No tag, catalog pull request or announcement was made.
 
 | Fact | Value | Command |
 | --- | --- | --- |
-| Suite | `Ran 1968 tests in 328.553s`, `OK (skipped=1)` | `python3 -m unittest discover -s tests -t .` |
+| Suite | `Ran 1984 tests in 310.621s`, `OK (skipped=1)` | `python3 -m unittest discover -s tests -t .` |
 | `cb.rpc` | v16, 68 declared methods | `contracts/rpc.v16.json` (`$defs.method.enum` length) |
 | Handlers | 68, asserted by the registry test inside the suite | registry test in the suite |
 | `cb.db` | v11, `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011` | `coursebook/db.py`, `contracts/db.v11.json` |
-| Shipped module | `desktop/plugin.js` sha256 `035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d` | `sha256sum desktop/plugin.js` |
+| Shipped module | `desktop/plugin.js` sha256 `9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547` | `sha256sum desktop/plugin.js` |
 | M4 audit | 62 frames, 15/15 claims PASS, 2,282 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 364 AX controls, 0 px overflow | `audit/visual/m4-visual/audit.json` |
-| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 0355970…` | `python3 scripts/m4v-repro-check.py` |
+| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 9735300e…` | `python3 scripts/m4v-repro-check.py` |
 | Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `python3 tests/adversarial/attack_state.py` |
 | Catalog validity | `OK: 1 file(s) valid` | `python3 ~/.hermes/hermes-agent/scripts/validate_plugin_catalog.py catalog/coursebook.yaml` |
 
@@ -52,7 +52,7 @@ evidence and do not cite their numbers as current.
   not run here (it needs a mounted backend and an isolated home).
 - `bash scripts/validate-plugin.sh` (the export admission gate) and `hermes plugins doctor` were not
   re-run in this docs pass. Rows that cite them cite the `29bede7` record or mark the gap.
-- `scripts/m4v-repro-check.py` was run here: two independent runs at `0355970` produced identical
+- `scripts/m4v-repro-check.py` was run here: two independent runs at `9735300e` produced identical
   `audit.json` (modulo `generated_at`) and 62 identical screenshots; the verbatim output is in
   `docs/M4-VISUAL-MEDIA-AUDIT.md`.
 - No provider-spend generation, no demo capture, no recording.

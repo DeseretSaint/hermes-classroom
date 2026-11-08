@@ -16,7 +16,7 @@ the H-120a contract amendment `wt/h120a-contracts` @ `28b5346` merged onto `orig
 
 The tree carries `cb.rpc` v16 (68 declared methods, 68 handlers) and `cb.db` v11 (schema v11,
 migrations `0001`-`0011`): the conversation-practice amendment behind the existing check seam. The
-suite is `Ran 1968 tests … OK (skipped=1)` at that commit, measured independently of the branch.
+suite is `Ran 1984 tests … OK (skipped=1)` at that commit, measured independently of the branch.
 
 **The tree is not shippable today.** The pane crash and library clipping that blocked H-85 are fixed
 here (H-91, merged as `670de1b`), and the suite is green, but the demo gate is still not met, no
@@ -47,7 +47,7 @@ invalidates the earlier evidence.
 | --- | --- | --- | --- | --- |
 | 1 | Contracts frozen | Atlas | `contracts/rpc.v16.json` (68 declared methods), `contracts/db.v11.json`, `docs/REVIEW_CB001.md` | [x] |
 | 2 | Platform skeleton passes admission | Sable | `bash scripts/validate-plugin.sh --ref b33a42f`: admission PASS, `node --check` PASS, desktop contract tests PASS; not re-run in this docs pass | [x] |
-| 3 | Backend kernel with migrations | Cinder | `cb.db` v11 / `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011`; suite `Ran 1968 tests … OK (skipped=1)` | [x] |
+| 3 | Backend kernel with migrations | Cinder | `cb.db` v11 / `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011`; suite `Ran 1984 tests … OK (skipped=1)` | [x] |
 | 4 | Packs import and export | Lattice | Pack round-trip and export hash were last driven live at `29bede7`; the pack tests pass inside the 1,968-test suite on this tree, but no pack round-trip was re-driven here | [~] |
 | 5 | Desktop shell with real views | Vellum | The H-85 blockers are fixed here: `670de1b` removes the null-runtime section crash and the Library clipping that failed the gate at `7d0f9cf`. No live Desktop window has driven this exact commit; the chat composer still needs the gateway-owning profile (CB-QA-09, P3-operational) | [~] |
 | 6 | Probes answer the three open questions | Sentinel | `PROBES.md`: 7 probes run, `pre_llm_call` replay FAIL, compression and Desktop render segments BLOCKED; not re-run in this pass | [~] |
@@ -76,7 +76,7 @@ against.
 Run on the exact commit that will be pinned. Nothing else counts as evidence.
 
 ```
-python3 -m unittest discover -s tests -t .   # Ran 1968 tests, OK (skipped=1)
+python3 -m unittest discover -s tests -t .   # Ran 1984 tests, OK (skipped=1)
 bash scripts/validate-plugin.sh --ref <sha>  # the release gate: a clean export of the commit
 bash scripts/validate.sh                     # pre-merge gate: tests, syntax, admission, doctor, probe
 python3 scripts/check-docs-truth.py          # docs quote the measured values
@@ -85,7 +85,7 @@ python3 scripts/check-docs-truth.py          # docs quote the measured values
 Observed by this pass on `c6b658ea923f1fe14f1e342e9fb816097e3727ea`:
 
 ```
-Ran 1968 tests in 328.553s
+Ran 1984 tests in 310.621s
 
 OK (skipped=1)
 ```
@@ -270,7 +270,7 @@ resolved for the recording.
 | Repository | `https://github.com/DeseretSaint/hermes-classroom` (private; source backup only) |
 | Release branch | `master` (pushed to `origin/master`; tags, catalog PR and publication remain operator-gated) |
 | Release candidate commit | `c6b658ea923f1fe14f1e342e9fb816097e3727ea` — merged master: H-120a `cb.rpc` v16 / `cb.db` v11 amendment (`wt/h120a-contracts` @ `28b5346`) onto `origin/master` `14a6443` (`b33a42f` was the previous candidate) |
-| Measured on that commit | suite `Ran 1968 tests … OK (skipped=1)`; `cb.rpc` v16 / 68 methods / 68 handlers; `cb.db` v11; `desktop/plugin.js` sha256 `0355970…c5d6977dd8d6b97b5d`; M4 62 frames, 15/15 claims PASS |
+| Measured on that commit | suite `Ran 1984 tests … OK (skipped=1)`; `cb.rpc` v16 / 68 methods / 68 handlers; `cb.db` v11; `desktop/plugin.js` sha256 `9735300e…b9e2ba49f25547`; M4 62 frames, 15/15 claims PASS |
 | Tag | none. Publication gate closed; a tag is forbidden until sign-off |
 | Demo | none. `docs/DEMO.md` is the script; gate 7 unmet |
 | Verification evidence | `docs/RELEASE-EVIDENCE.md`, `docs/CB017-RELEASE-VERIFICATION.md`, `docs/REVIEW_CB017-FINAL.md` (§2, §10), `docs/REVIEW_CB017-row9-ui.json`, `docs/cb017-shots/` |

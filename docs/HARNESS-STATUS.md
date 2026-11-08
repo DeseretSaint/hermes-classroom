@@ -6,8 +6,8 @@ Owner: quill (H-11, board card `t_6f41e0b0`). Branch `wt/harness-docs`.
 `c6b658ea923f1fe14f1e342e9fb816097e3727ea` (H-120a `wt/h120a-contracts` @ `28b5346` merged onto
 `origin/master` `14a6443`). On that commit `cb.rpc` is
 v16 with 68 declared methods and 68 handlers, `cb.db` is v11 (`contracts/db.v11.json`, migrations
-`0001`-`0011`), the suite is `Ran 1968 tests … OK (skipped=1)`, and `desktop/plugin.js` is sha256
-`035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d`. The row-by-row body below is
+`0001`-`0011`), the suite is `Ran 1984 tests … OK (skipped=1)`, and `desktop/plugin.js` is sha256
+`9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547`. The row-by-row body below is
 the older `498b1da` snapshot it was written against; where a row says "on `master`" or quotes a
 contract version, read it as `498b1da`, not as the current tree.
 
