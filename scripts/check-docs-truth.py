@@ -12,9 +12,11 @@ without rendering a browser:
   3. the recorded schema version matches coursebook/db.py and contracts/db.<v>.json;
   4. every document quotes the recorded values (tests, text nodes, pin, versions);
   5. no document still carries a known stale string;
-  6. every historical plugin pin in release-evidence.json is the real hash at the
+  6. docs/GENERATION.md quotes the prompt labels coursebook/generation.py emits, read from
+     the module rather than copied from the doc;
+  7. every historical plugin pin in release-evidence.json is the real hash at the
      commit the record attributes it to;
-  7. optionally (default on) the suite still reports the recorded test count.
+  8. optionally (default on) the suite still reports the recorded test count.
 
 Usage:
   python3 scripts/check-docs-truth.py              # full check, re-runs the suite
@@ -43,6 +45,20 @@ DOCS = {
     "docs/INSTALL.md": REPO / "docs" / "INSTALL.md",
     "docs/M4-VISUAL-MEDIA-AUDIT.md": REPO / "docs" / "M4-VISUAL-MEDIA-AUDIT.md",
 }
+
+# Prompt labels are runtime constants, not prose. The doc must name the labels the module
+# actually emits, and no label the module has retired may survive as a current claim.
+PROMPT_DOC = REPO / "docs" / "GENERATION.md"
+PROMPT_CONSTANTS = (
+    "PLAN_PROMPT_VERSION",
+    "PLAN_PROMPT_VERSION_V2",
+    "UNIT_SECTIONS_PROMPT_VERSION",
+    "LESSON_PROMPT_VERSION",
+    "VALIDATION_PROMPT_VERSION",
+)
+PROMPT_LABEL_RE = re.compile(
+    r"\b(?:plan|lesson|validation|unit-sections)-prompt\.v[0-9]+\b"
+)
 
 # Strings that were true on an earlier commit and must not survive in the docs that
 # describe the current tree. Historical rows that deliberately describe 29bede7 may
@@ -249,6 +265,46 @@ def check_docs(ev: dict) -> None:
     notes.append("documents quote the recorded values and no stale string")
 
 
+def check_prompt_versions() -> None:
+    """docs/GENERATION.md must quote the prompt labels coursebook/generation.py emits.
+
+    The constants are read from the module, never copied from the doc, so a prompt bump
+    cannot pass the gate with a stale table or a stale prose reference.
+    """
+    source = (REPO / "coursebook" / "generation.py").read_text()
+    current: dict[str, str] = {}
+    for name in PROMPT_CONSTANTS:
+        match = re.search(rf"^{name}\s*=\s*\"([^\"]+)\"", source, re.MULTILINE)
+        if not match:
+            fail(f"coursebook/generation.py has no {name} assignment")
+            continue
+        current[name] = match.group(1)
+
+    if not PROMPT_DOC.exists():
+        fail(f"missing {PROMPT_DOC.relative_to(REPO)}")
+        return
+    text = PROMPT_DOC.read_text()
+    for name, label in current.items():
+        if label not in text:
+            fail(
+                f"docs/GENERATION.md does not quote {name} ({label!r}) from "
+                "coursebook/generation.py"
+            )
+
+    documented = set(PROMPT_LABEL_RE.findall(text))
+    retired = documented - set(current.values())
+    for label in sorted(retired):
+        fail(
+            f"docs/GENERATION.md names {label!r}, which no prompt constant emits; "
+            f"the current labels are {sorted(set(current.values()))}"
+        )
+    if current and not retired:
+        notes.append(
+            "GENERATION.md prompt labels match the generation constants "
+            f"({', '.join(sorted(set(current.values())))})"
+        )
+
+
 def check_historical_pins(ev: dict) -> None:
     for entry in ev.get("historical_plugin_pins", []):
         commit = entry["commit"]
@@ -309,6 +365,7 @@ def main() -> int:
     check_measured_commit(ev)
     check_contracts(ev)
     check_docs(ev)
+    check_prompt_versions()
     check_historical_pins(ev)
     if not args.skip_tests:
         run_suite(ev)
