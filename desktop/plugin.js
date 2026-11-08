@@ -2382,7 +2382,7 @@ function CourseMenu({ row, supports, onArchive, onDelete }) {
   })
 }
 
-function CourseRow({ row, group, implemented, onResume, onArchive, onDelete, onOpen }) {
+function CourseRow({ row, group, implemented, onResume, onArchive, onDelete, onOpen, onOpenMember, onOpenLibrary }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const next = row.next_step || {}
   const canResume = next.kind === 'resume_lesson' && supports('binding.get')
@@ -2392,7 +2392,12 @@ function CourseRow({ row, group, implemented, onResume, onArchive, onDelete, onO
   return jsx(CourseCover, {
     row,
     group,
-    onOpenMember: onOpen,
+    // H-201: the Courses shelf used to hand only `onOpen` down, and the disclosure under a
+    // shared pack painted no controls at all. The member opener is now an explicit seam: the
+    // caller passes the shelf's own handler, so a member row opens the member enrollment through
+    // the same path as the primary row — no second navigation route.
+    onOpenMember: onOpenMember || onOpen,
+    onOpenLibrary,
     detail: jsxs('span', {
       className: 'flex min-w-0 flex-wrap items-center gap-2',
       children: [
@@ -2788,10 +2793,44 @@ function CoursePath({ row }) {
 }
 
 /**
+ * One openable record inside a shelf disclosure.
+ *
+ * H-201: this control must say what it opens. A bare "Open" beside two course names gave the
+ * learner no way to tell which enrollment a click would land on, so the visible label carries the
+ * member's own title. The ring is the identity ring (H-146a/H-150c): a Tab stop paints it, a
+ * pointer press does not, and it is drawn inside the row so a scroll container cannot clip it.
+ */
+function ShelfMemberOpen({ member, onOpen }) {
+  const [keyboardFocus, setKeyboardFocus] = useState(false)
+  const title = member.title || 'Untitled course'
+  return jsx(CbAction, {
+    variant: 'tertiary',
+    'data-cb-shelf-member-open': member.enrollment_id,
+    'data-cb-focus-ring': keyboardFocus ? 'visible' : 'none',
+    'aria-label': `Open ${title}, updated ${whenLabel(member.updated_at)}`,
+    onFocus: (event) => setKeyboardFocus(focusRingVisible(event && event.currentTarget)),
+    onBlur: () => setKeyboardFocus(false),
+    onClick: () => onOpen(member),
+    style: {
+      outline: keyboardFocus ? CB_FOCUS_RING : 'none',
+      outlineOffset: '2px',
+      borderRadius: '2px'
+    },
+    children: `Open “${title}”`
+  })
+}
+
+/**
  * The disclosure under a grouped cover. It is the only place the other records for a shared
  * course are named, so grouping never hides a plan or an enrollment: each line is openable.
+ *
+ * H-201: the member rows used to be built as `jsxs('li', props, children, key)`. React's
+ * jsx-runtime takes children inside `props` and its third argument is the key, so the children
+ * array became a key and every row painted an empty `<li>` — zero controls, measured in the live
+ * window. Children now travel in `props` like every other node in this file. A shelf that has no
+ * open handler says so in plain language and offers the Library instead of rendering nothing.
  */
-function ShelfDisclosure({ group, onOpen, label }) {
+function ShelfDisclosure({ group, onOpen, onOpenLibrary, label }) {
   if (!group || !group.label) return null
   return jsxs('details', {
     'data-cb-shelf-versions': group.key,
@@ -2838,22 +2877,34 @@ function ShelfDisclosure({ group, onOpen, label }) {
                 fontSize: CB_TYPE.caption,
                 lineHeight: 1.45,
                 color: 'var(--cb-ink-soft)'
-              }
+              },
+              children: [
+                jsxs('span', { style: { minWidth: 0, overflowWrap: 'anywhere' }, children: [
+                  jsx('span', { children: member.title || 'Untitled' }),
+                  jsx('span', { children: ` · ${whenLabel(member.updated_at)}` })
+                ] }),
+                onOpen
+                  ? jsx(ShelfMemberOpen, { member, onOpen })
+                  : jsxs('span', {
+                      style: {
+                        display: 'inline-flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        gap: '0.25rem 0.5rem'
+                      },
+                      children: [
+                        jsx('span', { children: `Can’t open “${member.title || 'this record'}” from here.` }),
+                        onOpenLibrary
+                          ? jsx(CbAction, {
+                              variant: 'tertiary',
+                              onClick: onOpenLibrary,
+                              children: 'Open the Library shelf'
+                            })
+                          : jsx('span', { children: 'Open it from the Library shelf.' })
+                      ]
+                    })
+              ]
             },
-            [
-              jsxs('span', { style: { minWidth: 0, overflowWrap: 'anywhere' }, children: [
-                jsx('span', { children: member.title || 'Untitled' }),
-                jsx('span', { children: ` · ${whenLabel(member.updated_at)}` })
-              ] }),
-              onOpen
-                ? jsx(CbAction, {
-                    variant: 'tertiary',
-                    'aria-label': `Open ${member.title || 'record'} from ${whenLabel(member.updated_at)}`,
-                    onClick: () => onOpen(member),
-                    children: 'Open'
-                  })
-                : null
-            ],
             member.enrollment_id
           )
         )
@@ -2868,7 +2919,7 @@ function ShelfDisclosure({ group, onOpen, label }) {
  * deterministic (`cbSealStation(course_id)` and the monogram from the title), so reloading the
  * route paints the same object, and `data-cb-course-cover` carries the content fingerprint.
  */
-function CourseCover({ row, identity, detail, action, group, onOpenMember, testId }) {
+function CourseCover({ row, identity, detail, action, group, onOpenMember, onOpenLibrary, testId }) {
   return jsxs('article', {
     'data-cb-course-cover': cbShelfFingerprint(row),
     'data-cb-course-id': row.course_id || '',
@@ -2931,7 +2982,7 @@ function CourseCover({ row, identity, detail, action, group, onOpenMember, testI
       }),
       jsx(CoursePath, { row }),
       detail ? jsx('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem 0.6rem' }, children: detail }) : null,
-      group && group.label ? jsx(ShelfDisclosure, { group, onOpen: onOpenMember }) : null,
+      group && group.label ? jsx(ShelfDisclosure, { group, onOpen: onOpenMember, onOpenLibrary }) : null,
       action ? jsx('div', { style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }, children: action }) : null
     ]
   })
@@ -5974,7 +6025,12 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, onBrowseLibr
               onResume,
               onArchive,
               onDelete,
-              onOpen
+              onOpen,
+              // H-201: the disclosure under this cover lists the other enrollments of a shared
+              // pack. Hand it the shelf's own open path so a member row is reachable, and the
+              // Library destination as the working next action if a row cannot be opened here.
+              onOpenMember: onOpen,
+              onOpenLibrary: onBrowseLibrary
             },
             group.key
           )
