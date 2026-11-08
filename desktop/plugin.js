@@ -1067,102 +1067,126 @@ function DegradedBody({ result, reload }) {
 }
 
 /**
- * The one plain sentence under the welcome (H-28).
+ * H-153 — the start plate: one headline, one short "what happens" line, one primary action and at
+ * most one secondary door.
  *
- * Replaces the three "governed learning workspace / real evidence / nothing advances on its own"
- * orientation lines. It says the same thing in a learner's words, and it stays true: progress is
- * profile-local and an objective only advances on a check the learner can see.
+ * What this replaces, and why: the plate used to carry a three-step explainer, a progress
+ * paragraph and a capability inventory ("Not in this backend build yet: pack preview, ..."). Read
+ * cold, that was a policy page: four blocks of explanation before a learner could press anything.
+ * The question, one sentence about what pressing does, and one button are enough. The seal is gone
+ * (H-145), and so is the support note: an absent command is *absent*, never announced as inventory.
+ *
+ * Every entry is still gated on the command that serves it, never rendered disabled:
+ *   create    `course.create` — the plate's primary.
+ *   import    `pack.import` — one of the Library's two doors, behind the one secondary.
+ *   syllabus  `syllabus.intake.create` — the Library's other door, behind the same secondary.
+ * The secondary opens the Library only when at least one of its doors is actually mounted; with
+ * neither, the secondary is absent rather than dead. If this build cannot create a course, the
+ * same line says so instead of listing missing methods.
+ *
+ * Offline is a state, not an empty profile: the plate keeps its headline, says what is paused and
+ * offers one retry. A failed or in-flight read never reaches this component at all — the surfaces
+ * above it show the error or the loader — so nothing here can claim a profile is empty.
  */
 const FIRST_RUN_COPY = {
   title: 'What do you want to be able to do?',
-  promise:
-    'Name one goal, review the plan, then learn. Nothing is created until you approve the plan.',
-  progress:
-    'Your progress stays on this profile. Nothing is marked complete without a check you can see.',
+  promise: 'Name one goal, review the plan, then learn. Nothing is created until you approve the plan.',
   primary: 'Start with a goal',
-  primaryNext: 'Next you choose how big the course is.',
-  path: [
-    { n: 1, title: 'Name a goal', line: 'Say what you want to be able to do.' },
-    { n: 2, title: 'Review the plan', line: 'Check the sections and their sources. No lesson is written yet.' },
-    { n: 3, title: 'Learn and adapt', line: 'Lessons follow the plan you approved.' }
-  ],
   secondary: 'Use a course I already have',
-  secondaryHint:
-    'You will see who made it, where it came from and what is checked before anything is added.',
-  syllabus: 'Use my college syllabus',
-  syllabusHint:
-    'Your syllabus sets the scope. Coursebook writes its own lessons alongside it and stores your file on this profile.'
+  unavailable: 'This version of Coursebook cannot create a course yet.',
+  noEntries: 'This version of Coursebook cannot create or add a course yet.',
+  offline: 'A new course is paused while this profile is offline. Nothing you already saved is lost.',
+  retry: 'Try again'
 }
 
-function supportNote(implemented) {
-  if (!implemented) return null
-  const missing = []
-  if (!implemented || !implemented.has('pack.preview')) missing.push('pack preview')
-  if (!implemented || !implemented.has('pack.import')) missing.push('pack import')
-  if (!implemented || !implemented.has('jobs.create')) missing.push('plan generation jobs')
-  if (missing.length === 0) return null
-  return jsx('div', {
-    className: 'mt-4 text-xs text-(--ui-text-secondary)',
-    children: `Not in this backend build yet: ${missing.join(', ')}. Nothing here is sample data, so those actions are absent rather than faked.`
-  })
-}
-
-/**
- * The honest welcome (H-28, UX-01). One promise, one primary action, one secondary path, one plain
- * progress sentence. No "governed learning workspace", no marketing hero, no fake sample progress.
- *
- * "Use my college syllabus" is gated on the same capability it is served by (H-27 ships the flow as
- * `syllabus.intake.create`), just as the import action is gated on `pack.import`: the button appears
- * only when the backend can honour it, and never as a disabled-forever or faked control.
- */
-function FirstRun({ implemented, onCreate, onSyllabus }) {
-  const canCreate = Boolean(implemented && implemented.has('course.create')) && typeof onCreate === 'function'
-  const canImport = Boolean(IMPORT_FLOW_WIRED && implemented && implemented.has('pack.import'))
-  const canSyllabus = typeof onSyllabus === 'function' && Boolean(implemented && implemented.has('syllabus.intake.create'))
+function FirstRun({ implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry }) {
+  const online = useOnline()
+  const connected = online !== false
+  const canCreate = Boolean(connected && implemented && implemented.has('course.create')) && typeof onCreate === 'function'
+  // The Library owns import and college-syllabus intake; its row is offered only when one of those
+  // doors is mounted, so the secondary always opens a shelf that can actually do something.
+  const libraryHasEntry = Boolean(
+    implemented &&
+      (implemented.has('syllabus.intake.create') || (IMPORT_FLOW_WIRED && implemented.has('pack.import')))
+  )
+  const canBrowse = Boolean(connected && libraryHasEntry) && typeof onBrowseLibrary === 'function'
+  const canRetry = !connected && typeof onRetry === 'function'
+  const line = !connected
+    ? FIRST_RUN_COPY.offline
+    : canCreate
+      ? FIRST_RUN_COPY.promise
+      : canBrowse
+        ? FIRST_RUN_COPY.unavailable
+        : FIRST_RUN_COPY.noEntries
+  const actionLabel = connected ? FIRST_RUN_COPY.primary : FIRST_RUN_COPY.retry
+  const action = connected ? onCreate : onRetry
+  const showAction = connected ? canCreate : canRetry
   const width = useCbViewportWidth()
   const compact = width > 0 && width < 520
-  const hintStyle = { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' }
-  // One start plate: what Coursebook is for, one filled action, then the path in three short rows.
-  // The numbers carry the sequence, so step one is never marked current until a course exists.
+  // At 460 px the route column is ~215 px; at 200% text that is the width a phone browser gives a
+  // 320 px layout, so the headline steps down and the plate's own inset stops eating the measure.
+  // (The column width is the host shell's; the plate must not make it worse.)
+  const veryNarrow = width > 0 && width < 300
+  const headingSize = veryNarrow ? CB_TYPE.lead : compact ? CB_TYPE.heading : CB_TYPE.display
+  // A host Button keeps its label on one line (`whitespace-nowrap`). At a 460 px window the route
+  // column is ~215 px, so "Use a course I already have" was clipped inside its own box. Let the
+  // label wrap and keep the 44 px target: narrow is a width, not a reason to truncate an action.
+  const buttonStyle = {
+    flex: '1 1 auto',
+    borderRadius: '2px',
+    minHeight: '44px',
+    height: 'auto',
+    whiteSpace: 'normal',
+    textAlign: 'center',
+    lineHeight: 1.3,
+    fontSize: CB_TYPE.body
+  }
+  // One secondary at most: a real destination, never a disabled control. It is the same door
+  // whether or not the plate has a primary, because "use a course I already have" does not depend
+  // on this build being able to create one.
+  const secondary = canBrowse
+    ? jsx(sdk.Button, {
+        'data-cb-first-run-secondary': '',
+        variant: 'secondary',
+        onClick: onBrowseLibrary,
+        style: buttonStyle,
+        children: FIRST_RUN_COPY.secondary
+      })
+    : null
   return jsxs('div', {
     'data-cb-first-run': '',
+    'data-cb-first-run-state': !connected ? 'offline' : canCreate ? 'start' : 'unavailable',
     style: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '1rem',
+      gap: compact ? '0.8rem' : '1rem',
       width: '100%',
       maxWidth: '42rem',
       margin: '0 auto',
-      padding: compact ? '1rem 0.9rem 1.1rem' : '1.4rem 1.5rem 1.5rem',
+      padding: veryNarrow ? '0.7rem 0.45rem 0.8rem' : compact ? '0.9rem 0.7rem 1rem' : '1.4rem 1.5rem 1.5rem',
       background: 'var(--cb-lamp-soft)',
       border: '1px solid var(--cb-rule)',
       borderTop: '1px solid var(--cb-lamp)',
       boxSizing: 'border-box'
     },
     children: [
-      jsxs('div', {
-        style: { display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' },
-        children: [
-          jsx('h2', {
-            'data-cb-first-run-title': '',
-            style: {
-              margin: 0,
-              flex: '1 1 12rem',
-              minWidth: 0,
-              fontFamily: CB_SERIF,
-              fontSize: compact ? CB_TYPE.heading : CB_TYPE.display,
-              fontWeight: 600,
-              lineHeight: 1.08,
-              letterSpacing: '-0.015em',
-              color: 'var(--cb-ink)',
-              maxWidth: '22ch',
-              overflowWrap: 'break-word'
-            },
-            children: FIRST_RUN_COPY.title
-          })
-        ]
+      jsx('h2', {
+        'data-cb-first-run-title': '',
+        style: {
+          margin: 0,
+          fontFamily: CB_SERIF,
+          fontSize: headingSize,
+          fontWeight: 600,
+          lineHeight: 1.08,
+          letterSpacing: '-0.015em',
+          color: 'var(--cb-ink)',
+          maxWidth: '22ch',
+          overflowWrap: 'break-word'
+        },
+        children: FIRST_RUN_COPY.title
       }),
       jsx('p', {
+        'data-cb-first-run-line': '',
         style: {
           margin: 0,
           maxWidth: '54ch',
@@ -1171,125 +1195,31 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
           lineHeight: 1.55,
           color: 'var(--cb-ink)'
         },
-        children: FIRST_RUN_COPY.promise
+        children: line
       }),
-      canCreate
+      showAction || secondary
         ? jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', gap: '0.35rem', alignItems: 'flex-start' },
+            'data-cb-first-run-actions': '',
+            style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.6rem' },
             children: [
-              jsx(sdk.Button, {
-                'data-cb-first-run-primary': '',
-                variant: 'default',
-                onClick: onCreate,
-                style: {
-                  background: 'var(--cb-lamp)',
-                  color: 'var(--cb-on-lamp)',
-                  border: '1px solid var(--cb-on-lamp)',
-                  borderRadius: '2px',
-                  minHeight: '44px',
-                  fontSize: CB_TYPE.body
-                },
-                children: FIRST_RUN_COPY.primary
-              }),
-              jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.primaryNext })
-            ]
-          })
-        : null,
-      jsx('ol', {
-        'data-cb-first-run-path': '',
-        'aria-label': 'How a course is made',
-        style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' },
-        children: FIRST_RUN_COPY.path.map((step) =>
-          jsxs(
-            'li',
-            {
-              'data-cb-first-run-step': String(step.n),
-              style: { display: 'flex', alignItems: 'baseline', gap: '0.7rem', padding: '0.5rem 0', borderTop: '1px solid var(--cb-rule)' },
-              children: [
-                jsx('span', {
-                  style: {
-                    flex: '0 0 1.3rem',
-                    fontFamily: CB_SERIF,
-                    fontSize: CB_TYPE.body,
-                    fontWeight: 600,
-                    fontVariantNumeric: 'tabular-nums',
-                    color: 'var(--cb-ink-soft)'
-                  },
-                  children: String(step.n)
-                }),
-                jsxs('span', {
-                  style: { display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 },
-                  children: [
-                    jsx('span', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.body, fontWeight: 600, color: 'var(--cb-ink)' },
-                      children: step.title
-                    }),
-                    jsx('span', {
-                      style: { fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.45, color: 'var(--cb-ink-soft)' },
-                      children: step.line
-                    })
-                  ]
-                })
-              ]
-            },
-            step.n
-          )
-        )
-      }),
-      canImport || canSyllabus
-        ? jsxs('div', {
-            style: { display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--cb-rule)' },
-            children: [
-              canImport
-                ? jsxs('div', {
-                    style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', alignItems: 'flex-start', padding: '0.65rem 0' },
-                    children: [
-                      jsx(sdk.Button, {
-                        variant: 'secondary',
-                        onClick: onImportPlaceholder,
-                        children: FIRST_RUN_COPY.secondary
-                      }),
-                      jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.secondaryHint })
-                    ]
+              showAction
+                ? jsx(sdk.Button, {
+                    'data-cb-first-run-primary': '',
+                    variant: 'default',
+                    onClick: action,
+                    style: {
+                      ...buttonStyle,
+                      background: 'var(--cb-lamp)',
+                      color: 'var(--cb-on-lamp)',
+                      border: '1px solid var(--cb-on-lamp)'
+                    },
+                    children: actionLabel
                   })
                 : null,
-              canSyllabus
-                ? jsxs('div', {
-                    style: {
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.2rem',
-                      alignItems: 'flex-start',
-                      padding: '0.65rem 0',
-                      borderTop: '1px solid var(--cb-rule)'
-                    },
-                    children: [
-                      jsx(sdk.Button, {
-                        variant: 'secondary',
-                        onClick: onSyllabus,
-                        children: FIRST_RUN_COPY.syllabus
-                      }),
-                      jsx('p', { style: hintStyle, children: FIRST_RUN_COPY.syllabusHint })
-                    ]
-                  })
-                : null
+              secondary
             ]
           })
-        : null,
-      jsx('p', {
-        style: {
-          margin: 0,
-          paddingTop: '0.6rem',
-          borderTop: '1px solid var(--cb-rule)',
-          maxWidth: '56ch',
-          fontFamily: CB_SANS,
-          fontSize: CB_TYPE.meta,
-          lineHeight: 1.5,
-          color: 'var(--cb-ink-soft)'
-        },
-        children: FIRST_RUN_COPY.progress
-      }),
-      supportNote(implemented)
+        : null
     ]
   })
 }
@@ -3344,6 +3274,7 @@ function FieldDeskHome({
   sources,
   onRetrySources,
   implemented,
+  onBrowseLibrary,
   onEmptyChange
 }) {
   const width = useCbViewportWidth()
@@ -3357,7 +3288,27 @@ function FieldDeskHome({
   }, [emptyFirstRun, onEmptyChange])
 
   if (libraryStatus === 'loading' && !desk.row) {
-    return jsx('div', { 'data-cb-desk': 'loading', className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading your courses' }) })
+    // A spinner alone says nothing a cold learner can name; the visible line says what is being
+    // read and that nothing is lost while it is read (H-153, Q7/Q10).
+    return jsxs('div', {
+      'data-cb-desk': 'loading',
+      className: 'flex flex-col items-center gap-3 py-10',
+      children: [
+        jsx(sdk.Loader, { label: 'Reading your courses' }),
+        jsx('p', {
+          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+          children: 'Reading your courses.'
+        })
+      ]
+    })
+  }
+  if (libraryStatus === 'idle' && !desk.row) {
+    // The backend cannot serve `library.list` at all: the start plate says what it can do instead
+    // of the route going blank (UX_SPEC §13 unsupported backend, H-153).
+    return jsx('div', {
+      'data-cb-desk': 'unavailable',
+      children: jsx(FirstRun, { implemented, onCreate, onSyllabus, onBrowseLibrary, onRetry })
+    })
   }
   if (libraryStatus === 'error' && !desk.row) {
     return jsx('div', {
@@ -3377,9 +3328,17 @@ function FieldDeskHome({
     })
   }
   if (!desk.row) {
+    // A read this build cannot perform at all (`idle`) is the unsupported-backend state, not an
+    // empty profile; the plate says what it can do instead of the route going blank (H-153).
     return jsx('div', {
-      'data-cb-desk': 'empty',
-      children: jsx(FirstRun, { implemented, onCreate, onSyllabus })
+      'data-cb-desk': libraryStatus === 'idle' ? 'unavailable' : 'empty',
+      children: jsx(FirstRun, {
+        implemented,
+        onCreate,
+        onSyllabus,
+        onBrowseLibrary,
+        onRetry
+      })
     })
   }
 
@@ -3536,7 +3495,7 @@ function useSessionEstimate({ row, current, enabled, retryToken = 0 }) {
  * recently written row), `course.outline` supplies the path, and the section's sources are read
  * only when the drawer opens. A failure in any of those is shown, never papered over.
  */
-function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSyllabus, profile, onEmptyChange }) {
+function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSyllabus, onBrowseLibrary, profile, onEmptyChange }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const payload = { filter: 'all', limit: 50, sort: 'recent' }
   const key = JSON.stringify(payload)
@@ -3642,6 +3601,7 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     sources: page.data && page.data.sources,
     onRetrySources: page.reload,
     implemented,
+    onBrowseLibrary,
     onEmptyChange
   })
 }
@@ -3656,7 +3616,7 @@ function courseToolsVisible(data) {
   return Number(data.total || 0) > 0
 }
 
-function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, onOpen, onShowDesk, onEmptyChange }) {
+function CoursesView({ implemented, onStartCreate, onStartSyllabus, onBrowseLibrary, createOpen, onOpen, onShowDesk, onEmptyChange }) {
   const [filter, setFilter] = useState('all')
   const [searchInput, setSearchInput] = useState('')
   const [query, setQuery] = useState('')
@@ -3780,9 +3740,26 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
 
   let body
   if (status === 'idle') {
-    body = null
+    // The backend cannot serve `library.list` at all: the same start plate, with its honest
+    // "cannot create or add" line, instead of a blank route (H-153, UX_SPEC §13 unsupported backend).
+    body = jsx(FirstRun, {
+      implemented,
+      onCreate: onStartCreate,
+      onSyllabus: onStartSyllabus,
+      onBrowseLibrary,
+      onRetry: reload
+    })
   } else if (status === 'loading' && !data) {
-    body = jsx('div', { className: 'py-10', children: jsx(sdk.Loader, { label: 'Reading your courses' }) })
+    body = jsxs('div', {
+      className: 'flex flex-col items-center gap-3 py-10',
+      children: [
+        jsx(sdk.Loader, { label: 'Reading your courses' }),
+        jsx('p', {
+          style: { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.meta, lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+          children: 'Reading your courses.'
+        })
+      ]
+    })
   } else if (status === 'error' && !data) {
     body = jsx('div', {
       className: 'mx-auto w-full max-w-xl py-6',
@@ -3822,7 +3799,13 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
             ]
           })
         })
-      : jsx(FirstRun, { implemented, onCreate: onStartCreate, onSyllabus: onStartSyllabus })
+      : jsx(FirstRun, {
+          implemented,
+          onCreate: onStartCreate,
+          onSyllabus: onStartSyllabus,
+          onBrowseLibrary,
+          onRetry: reload
+        })
   } else {
     body = jsxs('div', {
       className: 'flex flex-col',
@@ -18169,6 +18152,7 @@ function CoursebookPage() {
       onEmptyChange: setCoursesEmpty,
       onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
+      onBrowseLibrary: () => changeDestination('library'),
       onOpen: (row) => setOpenCourse({ row, objectiveId: null }),
       onShowDesk: () => changeDestination('home')
     })
@@ -18183,7 +18167,8 @@ function CoursebookPage() {
         setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null }),
       onShowAll: () => changeDestination('courses'),
       onStartCreate: () => beginCreate(),
-      onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null
+      onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
+      onBrowseLibrary: () => changeDestination('library')
     })
   }
 
