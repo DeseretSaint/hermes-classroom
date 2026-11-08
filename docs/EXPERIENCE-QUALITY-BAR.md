@@ -338,6 +338,15 @@ A UI/product card is done only when it includes:
 A card that only changes CSS, adds a badge, or replaces one box with another box is not a quality
 card. It needs a product reason and evidence.
 
+Generated course content has a separate lens. A card that changes what the generator writes (plan,
+objectives, units, lesson prose, worked examples, checks, reference answers or media need) must
+also attach a completed eight-dimension record from `docs/COURSE-QUALITY-RUBRIC.md` (H-173) with a
+named reviewer and the validator's recorded verdict, and must turn every dimension below 3 into a
+follow-up card. This file judges the product surface; that rubric judges the course. The rubric is
+not a mastery score, an engagement metric or a public badge, it does not replace the validator's
+structural pass, and it does not block a course a human has approved. The first record is
+`docs/H173-COURSE-QUALITY-REVIEW.md`.
+
 ## 9. Worker rules
 
 1. Read this file and `docs/UX-RESEARCH-STANDARDS.md` before starting any UI card.
