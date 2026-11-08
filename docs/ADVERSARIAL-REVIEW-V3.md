@@ -101,6 +101,45 @@ what happened and what to do next.
 30. **Export/share.** H-121: approved-course export with a hash and privacy preview; import gives
     Resume vs fresh.
 
+## Impact / effort
+
+Impact is 1–10 for a judge or learner; effort is a rough engineer-hours estimate, not a promise.
+"Ship" means before a release candidate; "defer" means after the P0/P1 set is green, on the
+product track; "cut" is not used because the owner has asked to preserve the requested scope.
+
+| Card | Impact | Effort | Verdict |
+|---|---:|---:|---|
+| H-92 h1/landmarks | 7 | 4 | ship |
+| H-93 type scale | 6 | 4 | ship |
+| H-94 one primary | 6 | 2 | ship |
+| H-95 cold states | 9 | 5 | ship — no demo without it |
+| H-96 view switcher | 7 | 3 | ship |
+| H-97 check stimulus | 9 | 4 | ship |
+| H-98 460 controls | 7 | 4 | ship |
+| H-99 course shelf | 8 | 5 | ship |
+| H-100 starter copy | 4 | 1 | ship |
+| H-101 land H-89 | 8 | 6 | ship |
+| H-102 S08/S09 | 9 | 2 | ship — current acceptance is red |
+| H-103 rejection UX | 8 | 4 | ship |
+| H-104 research unavailable | 7 | 4 | ship |
+| H-105 validator truth | 6 | 2 | ship |
+| H-106 provenance panel | 7 | 4 | ship |
+| H-107 pack media | 7 | 8 | ship if the demo claims speech; otherwise defer with fallback |
+| H-108 pronunciation | 6 | 6 | defer until a narration path exists |
+| H-109 demo data | 8 | 3 | ship |
+| H-110 install/doctor | 5 | 2 | ship |
+| H-111 release truth | 8 | 3 | ship |
+| H-112 single scope | 8 | 4 | ship |
+| H-113 tutor skills | 6 | 2 | ship |
+| H-114 silent-failure sweep | 8 | 4 | ship |
+| H-115 security/privacy | 8 | 4 | ship |
+| H-116 release/marketplace | 7 | 3 | ship |
+| H-117 progress/cost | 6 | 4 | defer |
+| H-118 spaced review | 7 | 5 | defer |
+| H-119 placement | 6 | 4 | defer |
+| H-120 conversation | 8 | 8 | defer until the release candidate is frozen |
+| H-121 export/share | 7 | 5 | defer until H-101 lands |
+
 ## Card set (30 cards)
 
 | Card | Owner | Depends | Purpose |
