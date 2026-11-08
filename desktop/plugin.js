@@ -4548,19 +4548,25 @@ const CREATE_STEP_SPINE = Object.freeze([
 ])
 
 /** A compact staged create flow; every step is editable before the one mutation. */
-function CreateCourseFlow({ onCancel, onCreated }) {
-  const [step, setStep] = useState(1)
-  const [goal, setGoal] = useState('')
-  const [title, setTitle] = useState('')
-  const [recipe, setRecipe] = useState('casual')
+function CreateCourseFlow({ onCancel, onCreated, seed }) {
+  // H-103: a rejected plan can hand its goal and choices back here. The seed is a starting point,
+  // never a silent submission: the learner still reviews and presses Create. Opening from the plan
+  // rejection lands on the Goal step, because size and recipe were already answered last time.
+  const start = seed || {}
+  const [step, setStep] = useState(seed ? 2 : 1)
+  const [goal, setGoal] = useState(start.goal || '')
+  const [title, setTitle] = useState(start.title || '')
+  const [recipe, setRecipe] = useState(start.recipe || 'casual')
   // No scope is preselected: the first screen asks for intent, so "Continue" is only enabled once
   // the learner has said whether this is one lesson, a short course or a full course (UX-09).
-  const [scope, setScope] = useState('')
-  const [recipeTouched, setRecipeTouched] = useState(false)
-  const [level, setLevel] = useState('')
-  const [subjectDomain, setSubjectDomain] = useState('')
-  const [locale, setLocale] = useState('')
-  const [dials, setDials] = useState({ pace: 'light', depth: 'survey', assessment: 'self_check', autonomy: 'guided' })
+  const [scope, setScope] = useState(start.scope || '')
+  const [recipeTouched, setRecipeTouched] = useState(Boolean(seed))
+  const [level, setLevel] = useState(start.level || '')
+  const [subjectDomain, setSubjectDomain] = useState(start.subjectDomain || '')
+  const [locale, setLocale] = useState(start.locale || '')
+  const [dials, setDials] = useState(
+    start.dials || { pace: 'light', depth: 'survey', assessment: 'self_check', autonomy: 'guided' }
+  )
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
   // The course/enrolment can already exist when the plan job fails. Those ids stay on screen so the
@@ -14348,7 +14354,7 @@ function CourseExportView({ row, implemented }) {
  * Local tabs, not more sidebar destinations. At wide widths the view switcher is a segmented
  * control; below ~47.5rem it collapses into one labelled picker so the strip can never clip.
  */
-function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, reloadSignal, onNewSyllabus }) {
+function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjectiveId, focusBlockId, focusView, reloadSignal, onChangeGoal, onNewSyllabus }) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   // A route in from the Field Desk names the section to open; otherwise the course opens on its
   // overview with the backend's own current objective already selected.
@@ -14548,7 +14554,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
     })
   } else if (view === 'plan') {
     body = jsx(LearnerPlanView, {
-      course: { course_id: row.course_id, enrollment_id: row.enrollment_id },
+      course: { course_id: row.course_id, enrollment_id: row.enrollment_id, title: row.title },
       revision,
       onRevision: setRevision,
       implemented,
@@ -14556,6 +14562,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
       onStartLesson: (objectiveId) => startLesson('fresh', objectiveId),
       onChanged: refresh,
       reloadSignal,
+      onChangeGoal,
       onNewSyllabus
     })
   } else if (view === 'evidence') {
@@ -15391,8 +15398,11 @@ function useStudioJob(jobId, onSettled) {
   return job
 }
 
-function StudioJobLine({ jobId, onSettled, onRunAgain }) {
-  const job = useStudioJob(jobId, onSettled)
+function StudioJobLine({ jobId, job: providedJob, onSettled, onRunAgain }) {
+  // A caller that already reads the job (plan review needs it for the rejection model) passes it
+  // in; the line then shares that read instead of polling the same id a second time.
+  const polledJob = useStudioJob(providedJob ? null : jobId, onSettled)
+  const job = providedJob || polledJob
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   if (!jobId) return null
@@ -15412,14 +15422,15 @@ function StudioJobLine({ jobId, onSettled, onRunAgain }) {
   }
 
   // Re-queue the same stage from the brief the job itself stored. The parent re-reads, so the line
-  // shows the new job id rather than pretending the cancelled one resumed.
+  // shows the new job id rather than pretending the cancelled one resumed. The key is derived from
+  // the job being retried, so a double click replays one job instead of queueing a second spend.
   const runAgain = async () => {
     setBusy(true)
     setError(null)
     const response = await rpc(
       'jobs.create',
       { kind: job.kind || 'plan', brief: job.brief },
-      { idempotencyKey: newOperationId('stage-again') }
+      { idempotencyKey: `cb-stage-again-${jobId}` }
     )
     setBusy(false)
     if (!response.ok) {
@@ -15999,6 +16010,235 @@ function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplic
 }
 
 /**
+ * H-103: a rejected plan is explained, not printed.
+ *
+ * The backend records the validator's reasons, but a reason is written for a machine: an item id,
+ * a contract criterion, a sentence about ordinals. Plan review owes the learner one literal
+ * explanation, the unit or check that failed, and one action that can actually be taken. The raw
+ * record stays available behind a disclosure; the visible copy never contains a bare `reject`,
+ * `model_assessed` or a contract enum.
+ */
+const PLAN_CHECK_LABELS = Object.freeze({
+  alignment: 'whether each objective matches the goal',
+  sources: 'whether each claim has a source that was actually read',
+  structure: 'whether the units, objectives and checks fit together',
+  schedule: 'whether the schedule and time estimates add up',
+  policy: 'whether the plan follows the recipe and its limits'
+})
+
+/** Map an internal check to a sentence a learner can use. Unknown wording is never a bare token. */
+function planCheckLabel(text) {
+  const value = String(text || '').toLowerCase()
+  if (/source|ledger|citation|provenance|grounded|unsourced|support/.test(value)) return PLAN_CHECK_LABELS.sources
+  if (/ordinal|unit|section|prerequisite|contiguous|check plan|coverage|scope|recipe|schedule|parent|structure/.test(value)) return PLAN_CHECK_LABELS.structure
+  if (/hour|week|time|duration|estimate|confidence|benchmark/.test(value)) return PLAN_CHECK_LABELS.schedule
+  if (/policy|dial|autonomy|assessment|delivery|budget|ceiling/.test(value)) return PLAN_CHECK_LABELS.policy
+  return PLAN_CHECK_LABELS.alignment
+}
+
+/** Replace snake_case contract tokens with words, so a disclosure cannot leak a bare enum. */
+function plainPlanReason(text) {
+  return String(text || '')
+    .replace(/[A-Za-z]+(?:_[A-Za-z]+)+/g, (token) => token.replace(/_/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function splitPlanReason(reason) {
+  const text = plainPlanReason(reason)
+  const match = /^([^:]{1,48}):\s*(.+)$/.exec(text)
+  if (match) return { place: match[1].trim(), why: match[2].trim() }
+  return { place: null, why: text }
+}
+
+const PLAN_RUN_TERMINAL_FAILURE = new Set(['failed', 'cancelled', 'interrupted_requires_retry'])
+
+const VALIDATION_OUTCOME_COPY = {
+  rejected: 'The validator did not pass this draft.',
+  model_assessed: 'The author model checked its own work; no independent check was recorded.',
+  independently_validated: 'A different model checked this draft and passed it.',
+  not_validated: 'No validator record was written for this draft.'
+}
+
+const VALIDATION_INDEPENDENCE_COPY = {
+  independent: 'The writing model and the checking model were different.',
+  same_model: 'The same model wrote and checked the plan.',
+  unidentified: 'The checking model could not be identified.'
+}
+
+const RESEARCH_STATUS_COPY = {
+  available: 'Research fetched its sources.',
+  degraded: 'Research returned only part of its sources.',
+  unavailable: 'Research was unavailable, so no source could be checked.'
+}
+
+/**
+ * The rejection review model. `null` means there is nothing to repair: the job is still running,
+ * it finished with a usable draft, or it failed in a way a fresh job cannot repeat.
+ */
+function planRejectView({ job, plan, objectiveCount, surface, goal, title }) {
+  if (!job || !job.state) return null
+  const checkpoint = job.checkpoint || {}
+  const validation = checkpoint.validation || {}
+  const reasons = Array.isArray(checkpoint.rejection_reasons) ? checkpoint.rejection_reasons : []
+  const failedRun = PLAN_RUN_TERMINAL_FAILURE.has(job.state)
+  const validatorRejected =
+    checkpoint.validation_verdict === 'reject' ||
+    validation.outcome === 'rejected' ||
+    (checkpoint.generation_state === 'needs_review' && checkpoint.validation_verdict === 'reject')
+  if (!failedRun && !validatorRejected) return null
+
+  const learner = surface === 'learner'
+  const goalText = String(goal || (job.brief && job.brief.goal) || '').trim()
+  const titleText = String(title || '').trim()
+  const spoken = goalText ? `“${goalText}”` : titleText ? `“${titleText}”` : 'this course'
+
+  if (failedRun) {
+    const cancelled = job.state === 'cancelled'
+    const interrupted = job.state === 'interrupted_requires_retry'
+    const errorCode = String((job.error && job.error.code) || '')
+    const provider = /provider|timeout|llm|research|media|unavailable|deadline/i.test(errorCode)
+    const draftKept = Boolean(plan)
+    return {
+      kind: cancelled ? 'cancelled' : interrupted ? 'interrupted' : provider ? 'provider' : 'failed',
+      title: cancelled
+        ? 'You stopped this run'
+        : interrupted
+          ? 'The run lost its worker'
+          : provider
+            ? 'The planning service did not answer'
+            : 'Planning stopped before a plan was written',
+      body: cancelled
+        ? draftKept
+          ? `You stopped this run for ${spoken}. A draft plan had already been written, so it stays here, unapproved; nothing was deleted.`
+          : `No plan was written for ${spoken}. Your goal and every choice you made are saved on this job, so running it again repeats the same brief rather than starting over.`
+        : draftKept
+          ? `The run stopped before it finished, but a draft plan for ${spoken} had already been written. It stays here, unapproved; running the brief again does not create a second course.`
+          : `No plan was written for ${spoken}. The brief is saved on the job; running it again sends the same brief and does not create a second course.`,
+      where: cancelled ? 'The run, before the plan was approved' : 'The plan job, before the plan was approved',
+      detail: [
+        errorCode ? `Run error: ${plainPlanReason(errorCode)}` : 'No plan record was written for this run.',
+        job.state === 'interrupted_requires_retry'
+          ? 'The worker lease expired; the job is safe to start again.'
+          : draftKept
+            ? 'A draft plan exists and is readable; it is not approved.'
+            : 'Nothing was approved, and no lesson pages exist.'
+      ],
+      action: { id: 'try_again', label: 'Try again' },
+      draftKept
+    }
+  }
+
+  const parsed = reasons.map(splitPlanReason)
+  const joined = reasons.join(' ')
+  const emptyPlan =
+    Number(objectiveCount || 0) === 0 ||
+    /no objectives|objective list|empty plan|at least one objective|nothing to teach/i.test(joined)
+  const unsourced = /source|ledger|citation|provenance|grounded|unsourced|support/i.test(joined)
+  const first = parsed[0] || { place: null, why: '' }
+  const kind = emptyPlan ? 'empty' : unsourced ? 'unsourced' : 'structural'
+  const count = reasons.length
+
+  const models = {
+    empty: {
+      title: 'The plan came back with nothing to teach',
+      body: `The draft for ${spoken} arrived without any objectives, so there is nothing to approve. The course, its brief and this draft are still saved; nothing was deleted.`,
+      where: 'The whole plan: no objective was written',
+      action: learner
+        ? { id: 'change_goal', label: 'Change the goal' }
+        : { id: 'try_again', label: 'Try again' }
+    },
+    unsourced: {
+      title: 'The plan could not show where its facts came from',
+      body: `${count === 1 ? 'One part' : `${count} parts`} of the draft could not be tied to a source the research pass actually read. The draft is saved, so nothing is lost; running the same brief gives research another pass, and no lesson is written until this check clears.`,
+      where: first.place ? `${first.place}: ${planCheckLabel(first.why)}` : planCheckLabel(first.why),
+      action: { id: 'try_again', label: 'Try again' }
+    },
+    structural: {
+      title: 'The outline does not fit together yet',
+      body: `The plan was written but failed an outline check${first.why ? `: ${first.why}` : ''}. The draft is saved, so you can repair the outline instead of starting over.`,
+      where: first.place ? `${first.place}: ${planCheckLabel(first.why)}` : planCheckLabel(first.why),
+      action: learner
+        ? { id: 'try_again', label: 'Try again' }
+        : { id: 'edit_plan', label: 'Edit the plan' }
+    }
+  }
+  const copy = models[kind]
+
+  const detail = []
+  if (reasons.length > 0) detail.push(`Checks that did not clear: ${reasons.map(plainPlanReason).join(' · ')}`)
+  if (validation.outcome) detail.push(VALIDATION_OUTCOME_COPY[validation.outcome] || 'The validator did not pass this draft.')
+  if (validation.independence) detail.push(VALIDATION_INDEPENDENCE_COPY[validation.independence] || VALIDATION_INDEPENDENCE_COPY.unidentified)
+  if (validation.research_status) detail.push(RESEARCH_STATUS_COPY[validation.research_status] || `Research status: ${plainPlanReason(validation.research_status)}`)
+  if (detail.length === 0) detail.push('The plan job recorded no detailed reason for this refusal.')
+
+  return {
+    kind,
+    title: copy.title,
+    body: copy.body,
+    where: copy.where,
+    detail,
+    action: copy.action,
+    draftKept: Boolean(plan),
+    reasons: reasons.map(plainPlanReason)
+  }
+}
+
+/**
+ * One panel, one action. The panel is a status region, not a dialog: the draft stays on screen
+ * underneath it and nothing is auto-navigated.
+ */
+function PlanRejectPanel({ model, busy, error, onAction }) {
+  if (!model) return null
+  return jsxs('div', {
+    role: 'status',
+    'data-cb-plan-reject': model.kind,
+    'data-cb-plan-reject-action': model.action.id,
+    className: 'flex max-w-prose flex-col gap-2 text-xs leading-relaxed text-(--ui-text-secondary)',
+    style: {
+      padding: '0.6rem 0.75rem',
+      borderLeft: '2px solid var(--cb-accent)',
+      background: 'var(--cb-accent-soft)'
+    },
+    children: [
+      jsx('div', {
+        style: { fontSize: '0.875rem', fontWeight: 600, color: 'var(--cb-ink)' },
+        children: model.title
+      }),
+      jsx('p', { className: 'max-w-prose', children: model.body }),
+      jsx('div', { 'data-cb-plan-reject-where': '', children: `Where: ${model.where}` }),
+      jsx('div', {
+        'data-cb-plan-reject-draft': model.draftKept ? 'kept' : 'none',
+        children: model.draftKept
+          ? 'Your draft is still here. It is not approved, and no lesson will be written from it.'
+          : 'No draft was written, so there is nothing to lose by running the brief again.'
+      }),
+      jsx('div', {
+        className: 'flex flex-wrap items-center gap-2',
+        children: jsx(sdk.Button, {
+          size: 'sm',
+          variant: 'default',
+          disabled: busy,
+          onClick: onAction,
+          children: busy ? 'Starting' : model.action.label
+        })
+      }),
+      error ? jsx('div', { children: error }) : null,
+      jsxs('details', {
+        'data-cb-plan-reject-details': '',
+        children: [
+          jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }),
+          jsx('div', {
+            className: 'mt-1 flex flex-col gap-1',
+            children: model.detail.map((line, index) => jsx('div', { key: `detail-${index}`, children: line }))
+          })
+        ]
+      })
+    ]
+  })
+}
+
+/**
  * The plan working view: outline and activities on the left, sources and review notes on the
  * right. The parent can edit every meaningful field of a **draft** plan; an approved plan is only
  * changed by starting a new plan version, so approval always binds exact bytes.
@@ -16011,6 +16251,7 @@ function StudioPlanView({
   book,
   brief,
   planJobId,
+  onChangeGoal,
   onJobSettled,
   onChanged,
   supported,
@@ -16041,6 +16282,31 @@ function StudioPlanView({
   const [error, setError] = useState(null)
   const [notice, setNotice] = useState(null)
   const [lessonJobId, setLessonJobId] = useState(null)
+  // H-103: the plan job is read here, once, so the review can explain a rejection. The old job
+  // line polled this same id separately; StudioJobStatus now shares this read instead of minting a
+  // second poller.
+  const [retryPlanJobId, setRetryPlanJobId] = useState(null)
+  const retryPlanKey = useRef(null)
+  const activePlanJobId = retryPlanJobId || planJobId
+  const planRun = useStudioJob(activePlanJobId, onJobSettled)
+  const [rejectBusy, setRejectBusy] = useState(false)
+  const [rejectError, setRejectError] = useState(null)
+  // Editing changes the draft the refusal was about. Once an edit is saved the panel steps away:
+  // approval is then a deliberate human decision on a different outline, not a silent retry.
+  const [rejectionHandled, setRejectionHandled] = useState(false)
+  const rejection = planRejectView({
+    job: planRun,
+    plan,
+    objectiveCount: objectives.length,
+    surface,
+    goal:
+      (planRun && planRun.brief && planRun.brief.goal) ||
+      (brief && brief.brief && brief.brief.goal) ||
+      (plan && plan.goal) ||
+      null,
+    title: (course && course.title) || (brief && brief.brief && brief.brief.title) || null
+  })
+  const shownRejection = rejectionHandled ? null : rejection
 
   // A plan version carries its authored document (sections and research) in `gen_plan_documents`,
   // keyed by plan_id. `plan.replan` now carries that document onto a content-preserving new version
@@ -16160,6 +16426,7 @@ function StudioPlanView({
     }
     onRevision(response.result.revision)
     setEditing(false)
+    setRejectionHandled(true)
     setNotice('Plan saved. The edit marks the lesson set as needing review until it is approved again.')
     onChanged()
   }, [outline.data, plan, objectives, drafts, removed, added, course.enrollment_id, revision, onRevision, onChanged])
@@ -16253,9 +16520,73 @@ function StudioPlanView({
     startEditing()
   }, [plan, objectives, course.enrollment_id, revision, onRevision, onChanged, startEditing])
 
+  // H-103: the one repair action on a rejected plan.
+  //
+  // `edit_plan` opens the existing editor on this draft. `change_goal` hands the same choices back
+  // to the create form so a new goal is a new course, not a silent overwrite. `try_again` re-queues
+  // the brief the job itself stored under a key derived from that job, so a double click replays the
+  // same run and the rejected draft is never deleted.
+  const runPlanRepair = useCallback(async () => {
+    if (!shownRejection || rejectBusy) return
+    const action = shownRejection.action.id
+    if (action === 'edit_plan') {
+      startEditing()
+      return
+    }
+    if (action === 'change_goal') {
+      if (typeof onChangeGoal !== 'function') {
+        setRejectError('The create form is not reachable from this surface. Open Courses and start a new course with this goal.')
+        return
+      }
+      const source = (planRun && planRun.brief) || {}
+      onChangeGoal({
+        goal: source.goal || '',
+        title: (course && course.title) || '',
+        recipe: source.recipe || null,
+        dials: source.dials || null,
+        locale: source.locale || null,
+        level: source.level || null,
+        subjectDomain: source.subject_domain || null,
+        scope: source.scope || null
+      })
+      return
+    }
+    const source = planRun
+    if (!source || !source.brief || !source.job_id) {
+      setRejectError('The saved brief could not be read yet, so this run cannot be repeated. Try again once the job line finishes reading.')
+      return
+    }
+    setRejectBusy(true)
+    setRejectError(null)
+    if (!retryPlanKey.current || retryPlanKey.current.jobId !== source.job_id || !retryPlanKey.current.key) {
+      retryPlanKey.current = { jobId: source.job_id, key: `cb-plan-retry-${source.job_id}` }
+    }
+    const response = await rpc(
+      'jobs.create',
+      { kind: source.kind || 'plan', brief: source.brief },
+      { idempotencyKey: retryPlanKey.current.key }
+    )
+    setRejectBusy(false)
+    if (!response.ok) {
+      setRejectError(
+        `${response.error && response.error.code ? response.error.code + ': ' : ''}${describeError(response.error)} The saved draft is unchanged.`
+      )
+      return
+    }
+    // A new job id is a new attempt: the next click gets its own key instead of replaying this one.
+    retryPlanKey.current = { jobId: response.result.job_id, key: null }
+    setRetryPlanJobId(response.result.job_id)
+    setNotice('A fresh planning run started from the same brief. The rejected draft stays readable until a new plan replaces it.')
+    if (onChanged) onChanged()
+  }, [shownRejection, rejectBusy, startEditing, onChangeGoal, planRun, course, onChanged])
+
   // Clear the gap when the screen moves to another plan version (a replan or a fresh authoring job
   // that completed and reloaded the outline).
   useEffect(() => setLessonDocumentGap(null), [planIdOnScreen])
+  useEffect(() => {
+    setRejectionHandled(false)
+    setRejectError(null)
+  }, [planIdOnScreen])
 
   const settled = useCallback(
     (job) => {
@@ -16288,6 +16619,29 @@ function StudioPlanView({
     })
   }
   if (!plan || objectives.length === 0) {
+    // A rejected draft is never replaced by a blank "no plan yet" screen. The panel names what
+    // failed and the one repair; the draft (or the saved brief, when nothing was written) is the
+    // page, so a reload cannot turn a refusal into an empty course.
+    if (shownRejection) {
+      return jsxs('div', {
+        className: 'flex flex-col gap-4',
+        'data-cb-plan-draft': shownRejection.draftKept ? 'kept' : 'none',
+        children: [
+          jsx(PlanRejectPanel, {
+            model: shownRejection,
+            busy: rejectBusy,
+            error: rejectError,
+            onAction: runPlanRepair
+          }),
+          plan && plan.plan_id
+            ? jsx('div', {
+                className: 'text-xs text-(--ui-text-secondary)',
+                children: `Draft plan ${String(plan.plan_id)} · version ${plan.version || 1} is still stored.`
+              })
+            : null
+        ]
+      })
+    }
     return jsx(EmptyState, {
       title: planJobId ? 'The plan is being written' : 'No plan yet',
       description: planJobId
@@ -16319,7 +16673,9 @@ function StudioPlanView({
           }),
           jsxs('div', {
             className: 'flex flex-wrap items-center gap-2',
-            children: [
+            children: shownRejection && !editing
+              ? null
+              : [
               isDraft && !editing && !learner
                 ? jsx(sdk.Button, { size: 'sm', variant: 'secondary', onClick: startEditing, children: 'Edit plan' })
                 : null,
@@ -16359,10 +16715,17 @@ function StudioPlanView({
         ]
       }),
 
-      jsx(QuietNote, {
-        children:
-          'Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.'
-      }),
+      shownRejection
+        ? jsx(PlanRejectPanel, {
+            model: shownRejection,
+            busy: rejectBusy,
+            error: rejectError,
+            onAction: runPlanRepair
+          })
+        : jsx(QuietNote, {
+            children:
+              'Approving the plan approves this outline and these activities. It does not approve a single generated page: the lesson set is approved later, by its own hash.'
+          }),
       syllabusGate && syllabusGate.required && !syllabusGate.ready
         ? jsx('div', {
             className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -16381,7 +16744,14 @@ function StudioPlanView({
         : null,
       notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
       error ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: error }) : null,
-      planJobId ? jsx(StudioJobLine, { jobId: planJobId, onSettled: onJobSettled, onRunAgain: onChanged }) : null,
+      activePlanJobId && !shownRejection
+        ? jsx(StudioJobLine, {
+            jobId: activePlanJobId,
+            job: planRun,
+            onSettled: onJobSettled,
+            onRunAgain: onChanged
+          })
+        : null,
       lessonJobId ? jsx(StudioJobLine, { jobId: lessonJobId, onSettled: settled }) : null,
 
       !isDraft && contentReady
@@ -16661,6 +17031,7 @@ function LearnerPlanView({
   jobHint,
   scopeHint,
   reloadSignal,
+  onChangeGoal,
   onNewSyllabus
 }) {
   const supports = (method) => (implemented ? implemented.has(method) : backendSupports(method))
@@ -16697,7 +17068,16 @@ function LearnerPlanView({
   const scope = (planJob && planJob.brief && planJob.brief.scope) || scopeHint || null
   const jobId = retryJobId || jobHint || (planJob && planJob.job_id) || null
   // A plan that is already readable does not need its finished job line repeated on every visit.
-  const showJob = Boolean(jobId && (objectives.length === 0 || !planJob || !JOB_TERMINAL_STATES.has(planJob.state)))
+  // H-103: a rejected or stopped plan is the exception — plan review must read that job to explain
+  // the refusal, so its id travels even when objectives already exist.
+  const planRunStopped = Boolean(
+    planJob &&
+      (['failed', 'cancelled', 'interrupted_requires_retry'].includes(planJob.state) ||
+        (planJob.checkpoint && planJob.checkpoint.validation_verdict === 'reject'))
+  )
+  const showJob = Boolean(
+    jobId && (objectives.length === 0 || !planJob || !JOB_TERMINAL_STATES.has(planJob.state) || planRunStopped)
+  )
 
   const reloadAll = useCallback(() => {
     outline.reload()
@@ -16789,6 +17169,7 @@ function LearnerPlanView({
         book,
         brief: null,
         planJobId: showJob ? jobId : null,
+        onChangeGoal,
         onJobSettled: reloadAll,
         onChanged: reloadAll,
         supported: supports,
@@ -17493,6 +17874,14 @@ function CoursebookPage() {
   // then drops its duplicate "New course" button: one screen, one primary action (UX-01).
   const [coursesEmpty, setCoursesEmpty] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
+  // H-103: "Change the goal" carries the rejected plan's own choices into the create form instead
+  // of asking the learner to retype them. It is a seed, not an automatic submit.
+  const [createSeed, setCreateSeed] = useState(null)
+  // Every door into the create form clears the previous seed; only the plan-rejection action seeds.
+  const beginCreate = useCallback((seed = null) => {
+    setCreateSeed(seed)
+    setCreating(true)
+  }, [])
   const [studioCourse, setStudioCourse] = useState(null)
   const [studioSeed, setStudioSeed] = useState(null)
   const [studioRevision, setStudioRevision] = useState(0)
@@ -17551,6 +17940,7 @@ function CoursebookPage() {
       if (intent.kind === 'create') {
         rememberedDestination = 'courses'
         setDestination('courses')
+        setCreateSeed(null)
         setCreating(true)
         setSyllabusFlow(false)
         setImporting(false)
@@ -17618,8 +18008,15 @@ function CoursebookPage() {
     body = jsx(DegradedBody, { reload: reloadHealth, result: health.result })
   } else if (creating) {
     body = jsx(CreateCourseFlow, {
-      onCancel: () => setCreating(false),
-      onCreated: () => reloadHealth()
+      seed: createSeed,
+      onCancel: () => {
+        setCreating(false)
+        setCreateSeed(null)
+      },
+      onCreated: () => {
+        setCreateSeed(null)
+        reloadHealth()
+      }
     })
   } else if (importing) {
     body = jsx(PackImportFlow, {
@@ -17707,6 +18104,12 @@ function CoursebookPage() {
       onBack: () => setOpenCourse(null),
       onChanged: () => reloadHealth(),
       reloadSignal: courseReloadTick,
+      onChangeGoal: (seed) => {
+        setOpenCourse(null)
+        rememberedDestination = 'courses'
+        setDestination('courses')
+        beginCreate(seed || null)
+      },
       onNewSyllabus: openNewSyllabusRevision
     })
   } else if (coursesMode === 'list') {
@@ -17714,7 +18117,7 @@ function CoursebookPage() {
       createOpen: creating,
       implemented,
       onEmptyChange: setCoursesEmpty,
-      onStartCreate: () => setCreating(true),
+      onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
       onOpen: (row) => setOpenCourse({ row, objectiveId: null }),
       onShowDesk: () => setCoursesMode('desk')
@@ -17727,7 +18130,7 @@ function CoursebookPage() {
       onOpen: (row, objectiveId, blockId, view) =>
         setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null }),
       onShowAll: () => setCoursesMode('list'),
-      onStartCreate: () => setCreating(true),
+      onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null
     })
   }
@@ -17776,7 +18179,7 @@ function CoursebookPage() {
                   online ? null : jsx(sdk.Badge, { variant: 'warn', children: 'Offline' }),
                   statusCopy ? jsx(sdk.Badge, { variant: health.status === 'unavailable' ? 'warn' : 'muted', children: statusCopy }) : null,
                   health.status === 'ready' && online && !creating && !importing && destination === 'courses' && canCreate && !coursesEmpty && !openCourse
-                    ? jsx(sdk.Button, { onClick: () => setCreating(true), size: 'sm', variant: 'secondary', children: 'New course' })
+                    ? jsx(sdk.Button, { onClick: () => beginCreate(), size: 'sm', variant: 'secondary', children: 'New course' })
                     : null,
                   health.status === 'ready' && !creating && !importing && !syllabusFlow && destination === 'library' && canSyllabus
                     ? jsx(sdk.Button, { onClick: () => setSyllabusFlow(true), size: 'sm', variant: 'secondary', children: SYLLABUS_COPY.action })
@@ -18304,6 +18707,8 @@ export {
   pronunciationAvailabilityCopy,
   questMissions,
   planJobBrief,
+  planRejectView,
+  PlanRejectPanel,
   planTimingCopy,
   startLearnerPlan,
   courseCreatePayload,

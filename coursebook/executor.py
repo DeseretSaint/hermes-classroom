@@ -151,6 +151,15 @@ class _Resolvers:
                     # The next unit is offered to the client as an action. This executor never
                     # enqueues it: a silent chain would hide cost and failure (§7).
                     "next_unit_ordinal": result.get("next_unit_ordinal"),
+                    # H-103: a rejected draft is a review state, not a dead end. The reasons the
+                    # generator recorded and the validator's own provenance travel on the
+                    # checkpoint so plan review can explain the refusal without guessing from a
+                    # free-text job message. These are reads of the result already persisted in
+                    # gen_plan_documents; nothing here decides the state.
+                    "rejection_reasons": list(result.get("rejection_reasons") or []),
+                    "validation_verdict": result.get("validation_verdict"),
+                    "validation": result.get("validation"),
+                    "approval_provenance": result.get("approval_provenance"),
                     # H-44: how the domain was chosen travels with the job, so a `general`
                     # fallback is visible on the run record rather than only in a log line.
                     "domain_provenance": result.get("domain_provenance"),
