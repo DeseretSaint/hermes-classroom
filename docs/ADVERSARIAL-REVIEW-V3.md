@@ -4,6 +4,11 @@ Status: read-only review plus the card set it produced. Review base: `origin/mas
 (H-86 on H-84), with H-91 in flight on the two H-85 gate blockers. Nothing here is a release
 claim, and no publication gate moved.
 
+Landed after this review: H-90's determinism fix, rebased onto `7d0f9cf` and merged as `5d510dd`
+(M4 evidence regenerated at plugin `2f80653…`, two consecutive `m4v-repro-check.py` runs 62/62).
+The "unmerged capability work" row below is therefore stale for H-90; H-89 and H-85 are still
+stranded on their branches.
+
 ## Verdict
 
 **Functionally promising; not yet a professional build.** The v2 visual work is a real
@@ -139,8 +144,9 @@ product track; "cut" is not used because the owner has asked to preserve the req
 | H-119 placement | 6 | 4 | defer |
 | H-120 conversation | 8 | 8 | defer until the release candidate is frozen |
 | H-121 export/share | 7 | 5 | defer until H-101 lands |
+| H-122 final re-grade | 9 | 3 | ship — independent gate |
 
-## Card set (30 cards)
+## Card set (31 cards)
 
 | Card | Owner | Depends | Purpose |
 |---|---|---|---|
@@ -174,6 +180,7 @@ product track; "cut" is not used because the owner has asked to preserve the req
 | H-119 `t_657ef10d` | vellum | H-118 | placement |
 | H-120 `t_5eadfbca` | vellum | H-119 | conversation |
 | H-121 `t_04d37587` | vellum | H-120 | export/share |
+| H-122 `t_da6cefec` | sentinel | H-91/H-111 | independent final re-grade (P0/P1 fixed) |
 
 The first wave is deliberately read-only or file-disjoint: H-102 (tests), H-109 (seed/data),
 H-110 (install scripts), H-111 (docs), H-113 (skills), H-114/115/116 (audits). UI cards are
