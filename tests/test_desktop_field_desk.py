@@ -434,7 +434,7 @@ class FieldDeskRenderTest(unittest.TestCase):
 
     def test_empty_sources_say_the_backend_recorded_none(self) -> None:
         html = self.render(sourcesOpen=True, sourcesStatus="ready", sources=[])
-        self.assertIn("The backend recorded no sources for this section.", html)
+        self.assertIn("No sources are recorded for this section yet.", html)
 
     # -- course selection -------------------------------------------------------------------
     def test_model_continues_the_due_review_when_the_next_step_says_so(self) -> None:

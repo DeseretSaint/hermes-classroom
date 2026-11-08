@@ -478,10 +478,10 @@ function revealCoursebookPane() {
  */
 async function resumeBoundSession(binding) {
   if (!binding || !binding.stored_session_id) {
-    return { ok: false, reason: 'no-durable-chat', message: 'This lesson has no durable chat to resume yet.' }
+    return { ok: false, reason: 'no-durable-chat', message: 'This lesson has no chat to return to yet.' }
   }
   if (binding.status !== 'active') {
-    return { ok: false, reason: 'binding-not-active', message: `This lesson's chat binding is ${binding.status}.` }
+    return { ok: false, reason: 'binding-not-active', message: 'This lesson is not connected to a chat right now.' }
   }
   if (typeof host.openSession !== 'function') {
     return { ok: false, reason: 'unsupported', message: 'Update Hermes Desktop to resume a bound lesson.' }
@@ -645,7 +645,7 @@ async function beginLessonFor({ row, objectiveId, objectiveTitle, mode, profile 
     started: false,
     lessonRunId: outcome.lesson_run_id,
     objectiveId: target,
-    message: `Lesson run ready. The section is open below; the lesson chat binds to the first message you send in it.`
+    message: `The lesson is ready. Your section is open below. The chat becomes this lesson’s chat when you send your first message.`
   }
 }
 
@@ -844,7 +844,7 @@ function StatusRow({ label, value, detail }) {
 const WARNING_COPY = {
   detached_chat: {
     label: 'Detached chat',
-    detail: 'This lesson’s chat binding is detached. Submitting is disabled until it is rebound.'
+    detail: 'This lesson is no longer connected to its chat, so Submit is off. Open a new lesson run to connect a new chat.'
   },
   pack_frozen: {
     label: 'Pack frozen',
@@ -909,7 +909,7 @@ function BackendUnavailable({ error, reload }) {
       jsx(sdk.ErrorState, {
         title: 'Coursebook needs its agent plugin',
         description:
-          'The Desktop half is enabled but its Python backend is not answering for this profile. ' +
+          'Coursebook is turned on in Desktop, but its backend is not answering for this profile. ' +
           'Enable Coursebook under Capabilities → Plugins, then restart the gateway. ' +
           'Desktop and backend halves are enabled separately.',
         children: jsxs('div', {
@@ -1023,7 +1023,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
       margin: '0 auto',
       padding: '1.25rem 1.25rem 1.35rem',
       background: 'var(--cb-lamp-soft)',
-      borderTop: '3px solid var(--cb-lamp)',
+      borderTop: '1px solid var(--cb-lamp)',
       boxSizing: 'border-box'
     },
     children: [
@@ -1243,7 +1243,7 @@ function PackPreview({ preview, existing }) {
             : null
         ]
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'AUTHOR AND RIGHTS' }),
+      jsx(CbLabel, { children: 'Author and rights' }),
       jsxs('div', {
         className: 'flex flex-col',
         children: [
@@ -1261,7 +1261,7 @@ function PackPreview({ preview, existing }) {
           })
         ]
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'INTEGRITY AND SIZE' }),
+      jsx(CbLabel, { children: 'Integrity and size' }),
       jsxs('div', {
         className: 'flex flex-col',
         children: [
@@ -1279,7 +1279,7 @@ function PackPreview({ preview, existing }) {
           })
         ]
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'TRUST, KEPT SEPARATE' }),
+      jsx(CbLabel, { children: 'Trust, kept separate' }),
       jsxs('div', {
         className: 'flex flex-col gap-1.5',
         children: labels.length
@@ -1309,7 +1309,7 @@ function PackPreview({ preview, existing }) {
         ? jsxs('div', {
             className: 'flex flex-col',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: 'CONTENT NOTES' }),
+              jsx(CbLabel, { children: 'Content notes' }),
               ...manifest.content_notes.map((note, index) =>
                 jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: note }, `note-${index}`)
               )
@@ -1320,7 +1320,7 @@ function PackPreview({ preview, existing }) {
         ? jsxs('div', {
             className: 'flex flex-col',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: 'SAFETY NOTES' }),
+              jsx(CbLabel, { children: 'Safety notes' }),
               ...manifest.safety_notes.map((note, index) =>
                 jsx('div', { className: 'text-xs leading-relaxed text-(--ui-text-secondary)', children: note }, `safety-${index}`)
               )
@@ -1332,7 +1332,7 @@ function PackPreview({ preview, existing }) {
         'data-cb-breadth': 'pack-plan',
         children: PLAN_BREADTH_DISCLOSURE
       }),
-      jsx(sdk.PanelSectionLabel, { children: `OUTCOMES (${objectives.length})` }),
+      jsx(CbLabel, { children: `OUTCOMES (${objectives.length})` }),
       jsx('div', {
         className: 'flex flex-col',
         children: objectives.map((objective) =>
@@ -1364,7 +1364,7 @@ function PackPreview({ preview, existing }) {
         ? jsxs('div', {
             className: 'flex flex-col',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: `SOURCES AND SUPPORT (${sources.length})` }),
+              jsx(CbLabel, { children: `SOURCES AND SUPPORT (${sources.length})` }),
               ...sources.map((source) =>
                 jsxs(
                   'div',
@@ -1389,7 +1389,7 @@ function PackPreview({ preview, existing }) {
             ]
           })
         : null,
-      jsx(sdk.PanelSectionLabel, { children: `FILES (${files.length})` }),
+      jsx(CbLabel, { children: `FILES (${files.length})` }),
       jsxs('div', {
         className: 'flex flex-col',
         children: files.map((file) =>
@@ -1793,7 +1793,7 @@ function PackExportPanel({ row, onClose }) {
         ? jsxs('div', {
             className: 'flex flex-col',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: 'EXPORTED' }),
+              jsx(CbLabel, { children: 'Exported' }),
               jsx(PackReviewLine, { label: 'Content hash', value: jsx('code', { className: 'text-xs', children: exported.content_hash }) }),
               jsx(PackReviewLine, { label: 'Matches the reviewed hash', value: 'yes' }),
               jsx(PackReviewLine, { label: 'Files', value: String(exported.file_count) }),
@@ -1827,7 +1827,7 @@ function PackExportPanel({ row, onClose }) {
                       jsx('div', {
                         className: 'mt-1 text-xs leading-relaxed text-(--ui-text-secondary)',
                         children:
-                          'The link is the host route the backend named: the session is checked there, the handle ' +
+                          'The link points at the session the backend named. The handle ' +
                           'expires in five minutes, and a filesystem path never leaves the backend. The file you ' +
                           'receive is byte-identical to the reviewed hash above.'
                       })
@@ -2154,10 +2154,9 @@ function DeskLabel({ children }) {
   return jsx('div', {
     style: {
       fontFamily: CB_SANS,
-      fontSize: '0.6875rem',
+      fontSize: '0.75rem',
       fontWeight: 600,
-      letterSpacing: '0.14em',
-      textTransform: 'uppercase',
+      letterSpacing: '0.01em',
       color: 'var(--cb-ink-soft)'
     },
     children
@@ -2251,7 +2250,7 @@ function DeskStats({ desk }) {
               children: String(stat.value)
             }),
             jsx('span', {
-              style: { fontSize: '0.66rem', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--cb-ink-soft)' },
+              style: { fontSize: '0.75rem', letterSpacing: '0.01em', color: 'var(--cb-ink-soft)' },
               children: stat.label
             })
           ]
@@ -2281,7 +2280,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
       padding: compact ? '0.9rem 0.95rem' : '1.1rem 1.2rem 1.15rem',
       background: 'var(--cb-lamp-soft)',
       border: 'none',
-      borderTop: '3px solid var(--cb-lamp)',
+      borderTop: '1px solid var(--cb-lamp)',
       maxWidth: '100%',
       boxSizing: 'border-box'
     },
@@ -2471,7 +2470,7 @@ function PathPreview({ desk, onOpenSection }) {
                         background: isCurrent ? 'var(--cb-paper-raised)' : 'transparent',
                         color: deskToneColor(tone),
                         fontVariantNumeric: 'tabular-nums',
-                        fontSize: '0.7rem',
+                        fontSize: '0.75rem',
                         lineHeight: 1
                       },
                       children: String(objective.ordinal).padStart(2, '0')
@@ -2492,7 +2491,7 @@ function PathPreview({ desk, onOpenSection }) {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '0.3rem',
-                        fontSize: '0.72rem',
+                        fontSize: '0.75rem',
                         color: deskToneColor(tone),
                         fontWeight: 600
                       },
@@ -2518,12 +2517,12 @@ function PathPreview({ desk, onOpenSection }) {
         })
       }),
       remaining > 0
-        ? jsx('div', { style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)', paddingTop: '0.2rem' }, children: `${remaining} more section${remaining === 1 ? '' : 's'} in the path` })
+        ? jsx('div', { style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)', paddingTop: '0.2rem' }, children: `${remaining} more section${remaining === 1 ? '' : 's'} in the path` })
         : null,
       objectives.length === 0
         ? jsx('p', {
             style: { margin: 0, fontSize: '0.8rem', lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
-            children: 'The backend returned no objectives for this course, so there is no path to show yet.'
+            children: 'This course has no objectives yet, so there is no path to show. Approve its plan to start one.'
           })
         : null
     ]
@@ -2550,7 +2549,7 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
         children: open ? 'Hide sources' : 'Show sources'
       }),
       jsx('div', {
-        style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+        style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
         children: sectionTitle ? `Sources for “${sectionTitle}”` : 'Sources'
       }),
       open
@@ -2573,7 +2572,7 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
                       ]
                     })
                   : items.length === 0
-                    ? jsx('p', { style: { margin: 0, fontSize: '0.8rem', color: 'var(--cb-ink-soft)' }, children: 'The backend recorded no sources for this section.' })
+                    ? jsx('p', { style: { margin: 0, fontSize: '0.8rem', color: 'var(--cb-ink-soft)' }, children: 'No sources are recorded for this section yet.' })
                     : jsx('ul', {
                         style: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' },
                         children: items.map((source) =>
@@ -2584,7 +2583,7 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
                               style: { borderLeft: '2px solid var(--cb-rule)', paddingLeft: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.05rem' },
                               children: [
                                 jsx('span', { style: { fontSize: '0.85rem', color: 'var(--cb-ink)' }, children: source.title || 'Untitled source' }),
-                                jsx('span', { style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
+                                jsx('span', { style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
                               ]
                             },
                             source.source_id || source.title
@@ -2662,14 +2661,14 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
                       ]
                     }),
                     jsx('div', {
-                      style: { minHeight: '2rem', fontSize: '0.72rem', lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
+                      style: { minHeight: '2rem', fontSize: '0.75rem', lineHeight: 1.4, color: 'var(--cb-ink-soft)' },
                       children: (row.next_step && row.next_step.label) || 'No next step recorded'
                     }),
                     jsxs('div', {
                       style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' },
                       children: [
                         jsx('span', {
-                          style: { fontSize: '0.68rem', color: 'var(--cb-ink-soft)', fontVariantNumeric: 'tabular-nums' },
+                          style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)', fontVariantNumeric: 'tabular-nums' },
                           children: `${Number(summary.independent || 0)} of ${Number(summary.total_objectives || 0)} with evidence`
                         }),
                         jsx(sdk.Button, {
@@ -2689,7 +2688,7 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
       hidden > 0
         ? jsx('div', {
             'data-cb-all-courses-more': String(hidden),
-            style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)', paddingTop: '0.1rem' },
+            style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)', paddingTop: '0.1rem' },
             children: `+${hidden} more course${hidden === 1 ? '' : 's'} on this profile`
           })
         : null
@@ -2776,7 +2775,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
               jsx(DeskLabel, { children: 'Field Notes' }),
               entries.length > 0
                 ? jsx('span', {
-                    style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+                    style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
                     children: `${entries.length} saved${entries.length > recent.length ? ` · showing the last ${recent.length}` : ''}`
                   })
                 : null
@@ -2792,7 +2791,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
       }),
       stale
         ? jsx('p', {
-            style: { ...quietText, fontSize: '0.72rem' },
+            style: { ...quietText, fontSize: '0.75rem' },
             children: 'These are the notes last read. A save or an edit is paused until the desk reconnects.'
           })
         : null,
@@ -2859,7 +2858,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
                             flexWrap: 'wrap',
                             alignItems: 'baseline',
                             gap: '0.25rem 0.8rem',
-                            fontSize: '0.72rem',
+                            fontSize: '0.75rem',
                             color: 'var(--cb-ink-soft)'
                           },
                           children: [
@@ -2871,7 +2870,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
                                   style: {
                                     border: '1px solid var(--cb-rule)',
                                     padding: '0 0.3rem',
-                                    fontSize: '0.68rem',
+                                    fontSize: '0.75rem',
                                     color: 'var(--cb-ink-soft)'
                                   },
                                   children: item
@@ -3239,7 +3238,7 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
     if (!response || !response.ok) {
       host.notify({
         kind: 'warning',
-        message: response && response.error ? `${response.error.code}: ${describeError(response.error)}` : 'Could not read this course’s binding.'
+        message: response && response.error ? `${response.error.code}: ${describeError(response.error)}` : 'Could not read which chat belongs to this course.'
       })
       return
     }
@@ -3391,7 +3390,7 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
           ? jsxs('div', {
               className: 'mb-2 flex flex-col gap-1 border-b border-(--ui-stroke-tertiary) pb-2',
               children: [
-                jsx(sdk.PanelSectionLabel, { children: 'REVIEW DUE' }),
+                jsx(CbLabel, { children: 'Review due' }),
                 rows
                   .filter((row) => Number((row.evidence_summary || {}).review_due || 0) > 0)
                   .map((row) =>
@@ -3558,7 +3557,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
           })
         ]
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'WHAT THE RECORD SHOWS' }),
+      jsx(CbLabel, { children: 'What the record shows' }),
       jsxs('div', {
         className: 'flex flex-col',
         children: [
@@ -3674,7 +3673,7 @@ function LibraryView({ implemented, createOpen, onStartSyllabus, onStartImport }
   const onResume = useCallback(async (row) => {
     const response = await loadBinding({ enrollmentId: row.enrollment_id })
     if (!response || !response.ok) {
-      host.notify({ kind: 'warning', message: 'Could not read this pack’s lesson binding.' })
+      host.notify({ kind: 'warning', message: 'Could not read which chat belongs to this lesson.' })
       return
     }
     const outcome = await resumeBoundSession(response.result.binding)
@@ -4274,7 +4273,7 @@ function CreateCourseFlow({ onCancel, onCreated }) {
           jsxs('div', {
             className: 'min-w-0',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: `STEP ${step} OF 3` }),
+              jsx(CbLabel, { children: `STEP ${step} OF 3` }),
               jsx('h2', { className: 'mt-1 text-sm font-semibold', children: stepTitle })
             ]
           }),
@@ -5453,7 +5452,7 @@ function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, bu
         ]
       }),
       anchor ? jsx(SyllabusAnchorPanel, { open: true, anchors: anchor.anchors, blocks, label: anchor.label, onClose: () => setAnchor(null) }) : null,
-      jsx(sdk.PanelSectionLabel, { children: 'LEARNING OUTCOMES IN YOUR FILE' }),
+      jsx(CbLabel, { children: 'Learning outcomes in your file' }),
       outcomes.length
         ? jsxs('div', { className: 'flex flex-col', children: outcomes.map((outcome, index) =>
             jsxs('div', { className: 'flex flex-col gap-0.5 border-b border-(--ui-stroke-tertiary) py-1.5 last:border-b-0', children: [
@@ -5462,11 +5461,11 @@ function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, bu
                 jsx(sdk.Button, { size: 'sm', variant: 'text', onClick: () => setAnchor({ anchors: [outcome.anchors[position]], label: 'an outcome' }), children: label }, `o-${index}-${position}`)) })
             ] }, `outcome-${index}`)) })
         : jsx(sdk.PanelEmpty, { children: 'Your file does not list learning outcomes.' }),
-      jsx(sdk.PanelSectionLabel, { children: 'WEEKS' }),
+      jsx(CbLabel, { children: 'Weeks' }),
       weeks.length
         ? jsx('div', { className: 'flex flex-col', children: weeks.map((week, index) => jsx(SyllabusWeekRow, { week, onAnchor: setAnchor }, `week-${index}`)) })
         : jsx(sdk.PanelEmpty, { children: 'Your file does not list weeks.' }),
-      jsx(sdk.PanelSectionLabel, { children: 'ASSESSMENTS AND WEIGHTS' }),
+      jsx(CbLabel, { children: 'Assessments and weights' }),
       assessments.length
         ? jsx('div', {
             className: 'flex flex-col',
@@ -5487,12 +5486,12 @@ function SyllabusParseReview({ parsed, blocks, onContinue, onBack, onReparse, bu
             )
           })
         : jsx(sdk.PanelEmpty, { children: 'Your file does not list assessments.' }),
-      jsx(sdk.PanelSectionLabel, { children: 'POLICIES YOUR FILE STATES' }),
+      jsx(CbLabel, { children: 'Policies your file states' }),
       policies.length
         ? jsx('div', { className: 'flex flex-col', children: policies.map((policy, index) =>
             jsx('div', { className: 'max-w-prose border-b border-(--ui-stroke-tertiary) py-1.5 text-sm last:border-b-0', children: policy.text }, `policy-${index}`)) })
         : jsx(sdk.PanelEmpty, { children: 'Your file does not state study policies Coursebook can quote.' }),
-      jsx(sdk.PanelSectionLabel, { children: 'WHAT YOUR FILE DOES NOT STATE' }),
+      jsx(CbLabel, { children: 'What your file does not state' }),
       unknowns.length
         ? jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: unknowns.join(' · ') })
         : jsx('div', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: 'Nothing was left out by this parse.' }),
@@ -5781,7 +5780,7 @@ function SyllabusAlignmentPanel({ course, planId, planState, reloadSignal, onGat
     return jsx('div', {
       className: 'max-w-prose text-xs text-(--ui-text-secondary)',
       'data-cb-align-panel': 'waiting',
-      children: 'Your syllabus is bound to this course. The mapping appears once the draft plan is written; nothing is mapped against a template.'
+      children: 'Your syllabus is attached to this course. The matching appears once the draft plan is written; nothing is matched against a template.'
     })
   }
 
@@ -6530,7 +6529,7 @@ const REVIEW_ACTION_COPY = {
 
 const WARNING_COPY_LEARNING = {
   stale_source: 'A source behind this course changed. Old evidence is kept; the source needs review.',
-  detached_chat: 'This lesson’s chat binding is detached. Submitting is disabled until it is reconciled.',
+  detached_chat: 'This lesson is no longer connected to its chat, so Submit is off. Open a new lesson run to connect a new chat.',
   plan_update: 'A newer plan draft is waiting for review.',
   provider_unavailable: 'A provider needed by this course is unavailable. Nothing is being generated.',
   pending_migration: 'This database needs a migration before every control can run.',
@@ -6745,7 +6744,7 @@ function AttemptVerdict({ result, criteria, checklist, onResumeChecklist, onNewE
             className: 'flex flex-col gap-1',
             'data-cb-check-criteria': String(confirmed.length),
             children: [
-              jsx(sdk.PanelSectionLabel, { children: 'STEPS YOU CONFIRMED' }),
+              jsx(CbLabel, { children: 'Steps you confirmed' }),
               jsx('ul', {
                 className: 'flex flex-col gap-1.5',
                 children: confirmed.map((item, index) =>
@@ -7014,7 +7013,7 @@ function ParentObservation({ enrollmentId, objectiveId, onRecorded }) {
     className: 'flex flex-col gap-2',
     'data-cb-parent-observation': objectiveId || 'objective',
     children: [
-      jsx(sdk.PanelSectionLabel, { children: 'PARENT OBSERVATION' }),
+      jsx(CbLabel, { children: 'Parent observation' }),
       jsx('p', {
         className: 'max-w-prose text-xs leading-relaxed text-(--ui-text-secondary)',
         children:
@@ -7330,7 +7329,7 @@ function AttemptControls({
                     'data-cb-check-items': String(checklist.length),
                     'data-cb-check-items-mode': 'selection',
                     children: [
-                      jsx(sdk.PanelSectionLabel, { children: 'CHECKLIST' }),
+                      jsx(CbLabel, { children: 'Checklist' }),
                       // One row per declared item: the served id is the submitted value, the label
                       // is the question. Ticking is the answer; nothing is typed here.
                       jsx('ul', {
@@ -7370,7 +7369,7 @@ function AttemptControls({
                       'data-cb-check-items': String(readOnlyItems.length),
                       'data-cb-check-items-mode': 'read_only',
                       children: [
-                        jsx(sdk.PanelSectionLabel, { children: 'CHECKLIST' }),
+                        jsx(CbLabel, { children: 'Checklist' }),
                         // One label per item, printed here and nowhere else in the lesson.
                         jsx('ul', {
                           className: 'flex flex-col gap-1',
@@ -7430,7 +7429,7 @@ function AttemptControls({
                   }),
               detached
                 ? jsx(QuietNote, {
-                    children: 'This lesson’s chat binding is detached, so Submit is disabled until it is reconciled.'
+                    children: 'This lesson is no longer connected to its chat, so Submit is off. Open a new lesson run to connect a new chat.'
                   })
                 : null,
               jsxs('div', {
@@ -8115,6 +8114,41 @@ function SurveyMark({ courseId, identity, size }) {
   })
 }
 
+/** Segment kinds are internal enums; the learner sees a plain word. */
+const CB_SEGMENT_WORD = {
+  teaching: 'Teaching',
+  practice: 'Practice',
+  example: 'Worked example',
+  recap: 'Recap',
+  orientation: 'Getting started',
+  check_prompt: 'Check',
+  media: 'Media',
+  audio: 'Audio',
+  visual: 'Image'
+}
+
+function cbSegmentWord(kind) {
+  if (!kind) return ''
+  const known = CB_SEGMENT_WORD[kind]
+  if (known) return known
+  const text = String(kind).replaceAll('_', ' ')
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+/** A section label in sentence case: no eyebrow, no all-caps, 0.75rem floor. */
+function CbLabel({ children }) {
+  return jsx('div', {
+    style: {
+      fontFamily: CB_SANS,
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      letterSpacing: '0.01em',
+      color: 'var(--cb-ink-soft)'
+    },
+    children
+  })
+}
+
 /** One plate head: a display title, an optional label and one honest caption. */
 function PlateHead({ id, label, title, caption, actions, level }) {
   const heading = level === 3 ? 'h3' : 'h2'
@@ -8137,10 +8171,9 @@ function PlateHead({ id, label, title, caption, actions, level }) {
             ? jsx('div', {
                 style: {
                   fontFamily: CB_SANS,
-                  fontSize: '0.6875rem',
+                  fontSize: '0.75rem',
                   fontWeight: 600,
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '0.01em',
                   color: 'var(--cb-ink-soft)'
                 },
                 children: label
@@ -8194,7 +8227,7 @@ function cbSpineNodeStyle(tone, isCurrent, phone) {
     justifyContent: 'center',
     fontFamily: CB_SANS,
     fontVariantNumeric: 'tabular-nums',
-    fontSize: phone ? '0.625rem' : '0.7rem',
+    fontSize: '0.75rem',
     fontWeight: 600,
     lineHeight: 1,
     boxSizing: 'border-box'
@@ -8291,7 +8324,7 @@ function RouteSpine({ objectives, currentId, onSelect, phone, ariaLabel }) {
                     display: 'inline-flex',
                     alignItems: 'center',
                     fontFamily: CB_SANS,
-                    fontSize: '0.72rem',
+                    fontSize: '0.75rem',
                     fontWeight: 600,
                     color: deskToneColor(tone),
                     border: `1px solid ${deskToneColor(tone)}`,
@@ -8607,10 +8640,9 @@ function CbRailSection({ label, children }) {
     children: [
       jsx('div', {
         style: {
-          fontSize: '0.65rem',
+          fontSize: '0.75rem',
           fontWeight: 600,
-          letterSpacing: '0.09em',
-          textTransform: 'uppercase',
+          letterSpacing: '0.01em',
           color: 'var(--cb-ink-soft)'
         },
         children: label
@@ -8662,11 +8694,11 @@ function FieldRail({ next, facts, sources, notes }) {
                 style: { display: 'flex', flexDirection: 'column', gap: '0.05rem', borderLeft: '2px solid var(--cb-rule)', paddingLeft: '0.45rem' },
                 children: [
                   jsx('span', { style: { color: 'var(--cb-ink)' }, children: source.title || 'Untitled source' }),
-                  jsx('span', { style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
+                  jsx('span', { style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' }, children: source.support_status || 'status unrecorded' })
                 ]
               }, source.source_id || source.title)
             ) })
-          : jsx('div', { style: { color: 'var(--cb-ink-soft)' }, children: 'The backend recorded no sources for this course.' })
+          : jsx('div', { style: { color: 'var(--cb-ink-soft)' }, children: 'No sources are recorded for this course yet.' })
       }),
       jsx(CbRailSection, {
         label: 'Saved notes',
@@ -8708,19 +8740,6 @@ function WorkspaceShell({ eyebrow, title, subtitle, meta, actions, rail, childre
           jsxs('div', {
             style: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.15rem' },
             children: [
-              eyebrow
-                ? jsx('div', {
-                    style: {
-                      fontFamily: CB_SANS,
-                      fontSize: '0.6875rem',
-                      fontWeight: 600,
-                      letterSpacing: '0.14em',
-                      textTransform: 'uppercase',
-                      color: 'var(--cb-ink-soft)'
-                    },
-                    children: eyebrow
-                  })
-                : null,
               jsx('h2', {
                 'data-cb-workspace-title': '',
                 style: {
@@ -8808,7 +8827,7 @@ function MediaFrame({ artifactId, kind, label, caption, provenance, textEquivale
           })
         : null,
       jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', color: 'var(--cb-ink-soft)' },
+        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
         children: [
           label
             ? jsx('span', {
@@ -9057,13 +9076,13 @@ function PronunciationWords({ words, unit }) {
             word.match
               ? null
               : jsx('span', {
-                  style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' },
+                  style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
                   children: word.heard ? `heard “${word.heard}”` : 'not heard'
                 }),
             word.match && pronPercent(word.confidence)
               ? jsx('span', {
                   'data-cb-word-confidence': pronPercent(word.confidence),
-                  style: { fontSize: '0.65rem', color: 'var(--cb-ink-soft)' },
+                  style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
                   children: pronPercent(word.confidence)
                 })
               : null
@@ -9196,7 +9215,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
         setError(
           (response && response.error) || {
             code: 'INTERNAL_ERROR',
-            message: 'The backend answered with something that is not a contract envelope.'
+            message: 'Coursebook answered with data it could not read.'
           }
         )
         return
@@ -9312,7 +9331,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
       note:
         `Pronunciation practice (${assessment.provider}). ${matched} of ${total} ` +
         `${pronUnitLabel(assessment.unit)} matched; ${PRONUNCIATION_VERDICT_COPY[assessment.verdict] || assessment.verdict}. ` +
-        'model_assessed — a practice measurement, not a graded score.',
+        'Assessed by a model — a practice measurement, not a graded score.',
       tags: ['pronunciation_practice'],
       source_ref: notebookSourceRef({
         block_id: block && block.id,
@@ -9466,7 +9485,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
             style: { display: 'flex', flexDirection: 'column', gap: '0.25rem' },
             children: [
               jsx('span', { style: { fontSize: '0.8rem', fontWeight: 600 }, children: `${error.code}: ${describeError(error)}` }),
-              jsx('span', { style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' }, children: 'No evidence was recorded.' })
+              jsx('span', { style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' }, children: 'No evidence was recorded.' })
             ]
           })
         : null,
@@ -9482,7 +9501,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
                   jsx(sdk.Badge, {
                     size: 'xs',
                     variant: 'outline',
-                    children: `model_assessed`
+                    children: 'Practice measurement'
                   }),
                   jsx('span', {
                     'data-cb-pronunciation-verdict': assessment.verdict,
@@ -9512,7 +9531,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
               jsx(PronunciationWords, { words: assessment.words, unit: assessment.unit }),
               jsx('p', {
                 'data-cb-pronunciation-provenance': assessment.provider,
-                style: { margin: 0, fontSize: '0.7rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
+                style: { margin: 0, fontSize: '0.75rem', lineHeight: 1.5, color: 'var(--cb-ink-soft)' },
                 children:
                   `Practice measurement by ${assessment.provider}` +
                   `${assessment.model ? ` (${assessment.model})` : ''} — not verified pronunciation and not a graded score.` +
@@ -9533,7 +9552,7 @@ function PronunciationStudio({ enrollmentId, objectiveId, revision, locale, bloc
                   saved
                     ? jsx('span', {
                         role: 'status',
-                        style: { fontSize: '0.7rem', color: 'var(--cb-ink-soft)' },
+                        style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
                         children: 'The result is in the notebook; the audio was never stored.'
                       })
                     : null
@@ -9642,7 +9661,7 @@ function BlockSourceChips({ ids, index }) {
             borderRadius: '2px',
             padding: '0.1rem 0.45rem',
             fontFamily: CB_SANS,
-            fontSize: '0.6875rem',
+            fontSize: '0.75rem',
             fontWeight: 600,
             lineHeight: 1.3,
             color: 'var(--cb-ink-soft)',
@@ -9912,7 +9931,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
                   color: 'var(--cb-field)',
                   fontFamily: CB_SANS,
                   fontVariantNumeric: 'tabular-nums',
-                  fontSize: '0.7rem',
+                  fontSize: '0.75rem',
                   fontWeight: 600
                 },
                 children: String(index + 1).padStart(2, '0')
@@ -10135,7 +10154,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
               border: checkpoint ? 'none' : '1.5px solid var(--cb-rule)',
               fontFamily: CB_SANS,
               fontVariantNumeric: 'tabular-nums',
-              fontSize: '0.7rem',
+              fontSize: '0.75rem',
               fontWeight: 600
             },
             children: String(mission.index + 1).padStart(2, '0')
@@ -10294,8 +10313,8 @@ function FieldQuestView({ document, sources, checkSlot, checkLabels, progress, u
               jsx('p', {
                 style: { margin: '0.3rem 0 0', lineHeight: 1.5, maxWidth: '52ch' },
                 children: hasRecord
-                  ? `Counts describe evidence the backend already recorded — ${independent} independent, ${due} due. They are not a score, nothing here is locked, and the checkpoint is the section’s existing check.`
-                  : 'Counts describe evidence the backend already recorded. They are not a score, nothing here is locked, and the checkpoint is the section’s existing check.'
+                  ? `Counts describe evidence already recorded — ${independent} independent, ${due} due. They are not a score, nothing here is locked, and the checkpoint is the section’s existing check.`
+                  : 'Counts describe evidence already recorded. They are not a score, nothing here is locked, and the checkpoint is the section’s own check.'
               })
             ]
           })
@@ -10358,7 +10377,7 @@ const PROCEDURE_PERMISSION_COPY = {
 
 const PROCEDURE_MEDIA_NOTE = {
   illustration: 'Context illustration — not a specification, measurement, sequence or safety authority.',
-  schematic: 'Deterministic schematic drawn from the structured facts below.',
+  schematic: 'Drawing made from the steps below.',
   sourced_technical: 'Sourced reference — check the cited source and its permission status.',
   narration: 'Narration — the transcript is the authoritative text.'
 }
@@ -10451,20 +10470,19 @@ function ProcedureHazardCallout({ hazards, stopCondition }) {
       gap: '0.35rem',
       margin: '0 0 0.25rem',
       padding: '0.7rem 0.85rem 0.75rem 0.9rem',
-      borderLeft: '3px solid var(--cb-coral)',
+      borderLeft: '1px solid var(--cb-coral)',
       background: 'var(--cb-paper-raised)',
       maxWidth: '48rem'
     },
     children: [
       jsx('div', {
         style: {
-          fontSize: '0.7rem',
+          fontSize: '0.75rem',
           fontWeight: 700,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
+          letterSpacing: '0.01em',
           color: 'var(--cb-coral)'
         },
-        children: 'Do not proceed'
+        children: 'Do not continue'
       }),
       list.length > 0
         ? jsx('ul', {
@@ -10514,8 +10532,8 @@ function ProcedureSchematic({ schematic, sources, blockId }) {
         children: schematic.title
       }),
       jsx('div', {
-        style: { fontSize: '0.7rem', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--cb-ink-soft)' },
-        children: 'Deterministic schematic · structured facts'
+        style: { fontSize: '0.75rem', letterSpacing: '0.01em', color: 'var(--cb-ink-soft)' },
+        children: 'Drawing from the steps below'
       }),
       jsx('table', {
         'data-cb-procedure-rows': String(rows.length),
@@ -10559,7 +10577,7 @@ function ProcedureSchematic({ schematic, sources, blockId }) {
             media: {
               artifact_id: schematic.artifact_id,
               role: 'schematic',
-              label: 'Deterministic schematic rendered from structured facts.',
+              label: 'Drawing made from these steps.',
               text_equivalent: schematic.text_equivalent,
               purpose: schematic.title
             },
@@ -10829,7 +10847,7 @@ function LessonDocumentView({ document, view, sources, checkSlot, checkLabels, p
   const unattached = attached < 0 && checkSlot
     ? jsxs('div', {
         className: 'flex flex-col gap-2',
-        children: [jsx(sdk.PanelSectionLabel, { children: 'CHECK' }), checkSlot]
+        children: [jsx(CbLabel, { children: 'Check' }), checkSlot]
       })
     : null
 
@@ -10972,7 +10990,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
       : jsxs('div', {
           className: 'flex flex-col gap-2',
           children: [
-            jsx(sdk.PanelSectionLabel, { children: 'PARENT OBSERVATION' }),
+            jsx(CbLabel, { children: 'Parent observation' }),
             jsx(QuietNote, {
               children:
                 'This Desktop build cannot record a parent observation: the backend does not implement observation.record (cb.rpc v14). The section stays readable; nothing can be recorded here yet.'
@@ -11027,7 +11045,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         const opened = openArmedLessonChat(row.profile || currentScope().profile)
         setNotice(
           opened
-            ? { text: 'A new lesson chat is open. Send its first message to bind it to this run.' }
+            ? { text: 'A new lesson chat is open. Send the first message to connect it to this lesson.' }
             : {
                 text: outcome.message,
                 action: {
@@ -11242,7 +11260,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
               },
               objectiveId
             )
-          : jsx(sdk.PanelSectionLabel, { children: 'TEACHING SEGMENTS' }),
+          : jsx(CbLabel, { children: 'Teaching segments' }),
         document ? null : page.segments && page.segments.length > 0
           ? jsx('div', {
               className: 'flex flex-col',
@@ -11255,7 +11273,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                       jsxs('div', {
                         className: 'flex items-center justify-between gap-2',
                         children: [
-                          jsx('span', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: segment.kind }),
+                          jsx('span', { className: 'text-xs font-medium text-(--ui-text-secondary)', children: cbSegmentWord(segment.kind) }),
                           jsxs('div', {
                             className: 'flex items-center gap-1',
                             children: [
@@ -11310,7 +11328,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
         // A parent-recipe page records an observation; it never mounts the graded check node.
         parentLed ? observationNode : null,
 
-        document || parentLed ? null : jsx(sdk.PanelSectionLabel, { children: 'CURRENT CHECK' }),
+        document || parentLed ? null : jsx(CbLabel, { children: 'Current check' }),
         document || parentLed ? null : checkNode,
 
         // Repeated identical attempt rows are collapsed into one summary plus a disclosure: the
@@ -11355,7 +11373,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
           ? jsxs('div', {
               className: 'flex flex-col gap-1',
               children: [
-                jsx(sdk.PanelSectionLabel, { children: 'SAVED FROM THIS SECTION' }),
+                jsx(CbLabel, { children: 'Saved from this section' }),
                 page.notebook_entries.map((entry) =>
                   jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: entry.excerpt || entry.note || entry.kind }, entry.entry_id)
                 )
@@ -11956,10 +11974,9 @@ function UnitHeading({ unit, entries }) {
             children: [
               jsx('span', {
                 style: {
-                  fontSize: '0.63rem',
+                  fontSize: '0.75rem',
                   fontWeight: 600,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
+                  letterSpacing: '0.01em',
                   color: 'var(--cb-ink-soft)'
                 },
                 children: `Unit ${unit.ordinal}`
@@ -11972,14 +11989,14 @@ function UnitHeading({ unit, entries }) {
           }),
           jsx('span', {
             'data-cb-unit-progress': '',
-            style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+            style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
             children: progress.statement
           })
         ]
       }),
       blocked
         ? jsx('div', {
-            style: { fontSize: '0.72rem', color: 'var(--cb-ink-soft)' },
+            style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
             children: `This unit starts after Unit ${unit.prereq_unit_ordinals.join(', ')}. You can still open it.`
           })
         : null
@@ -12018,7 +12035,7 @@ function TextbookIndexDetails({ rows }) {
               jsxs(
                 'div',
                 {
-                  style: { display: 'flex', alignItems: 'baseline', gap: '0.4rem', fontSize: '0.72rem' },
+                  style: { display: 'flex', alignItems: 'baseline', gap: '0.4rem', fontSize: '0.75rem' },
                   children: [
                     jsx('span', { style: { color: sectionToneColor(entry.semantic.key) }, children: entry.semantic.label }),
                     jsx('span', { style: { color: 'var(--cb-ink-soft)' }, children: `— ${entry.meaning}` })
@@ -12031,7 +12048,7 @@ function TextbookIndexDetails({ rows }) {
           targets.length > 0
             ? jsxs('div', {
                 'data-cb-check-types': '',
-                style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.72rem' },
+                style: { display: 'flex', flexDirection: 'column', gap: '0.15rem', fontSize: '0.75rem' },
                 children: [
                   jsx('div', {
                     style: { fontWeight: 600, color: 'var(--cb-ink-soft)' },
@@ -12195,7 +12212,7 @@ function TextbookView({ row, page, pageState, review, notebooks, outline, implem
                       children: [
                         jsx('div', {
                           style: {
-                            fontSize: '0.72rem',
+                            fontSize: '0.75rem',
                             color: 'var(--cb-ink-soft)',
                             paddingTop: '0.55rem',
                             borderBottom: '1px solid var(--cb-rule)',
@@ -12747,7 +12764,7 @@ function QuizzesView({ row, quizzes, implemented, onOpenSection, onChanged }) {
                               ? jsxs('div', {
                                   className: 'flex flex-col gap-1',
                                   children: [
-                                    jsx(sdk.PanelSectionLabel, { children: 'DISPUTE HISTORY' }),
+                                    jsx(CbLabel, { children: 'Dispute history' }),
                                     attempt.disputes.map((item) =>
                                       jsx(
                                         'div',
@@ -12923,7 +12940,7 @@ function PlanView({ row, review, notebooks, outline, page, implemented, onOpenSe
           }),
       jsx(QuietNote, {
         children:
-          'Evidence criteria, attempt counts and dial edits need the objective read/write commands that this build does not publish yet; nothing is invented to fill the gap.'
+          'This build cannot edit evidence criteria, attempt counts or settings yet. Nothing is filled in to hide that.'
       })
     ]
   })
@@ -12944,7 +12961,7 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx(sdk.PanelSectionLabel, { children: 'L3 · CURRENT RECOMMENDATION' }),
+          jsx(CbLabel, { children: 'L3 · current recommendation' }),
           (l3.recommendations || []).length === 0
             ? jsx(QuietNote, { children: 'No recommendation was derived from the recorded evidence.' })
             : (l3.recommendations || []).map((item, index) =>
@@ -12967,7 +12984,7 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx(sdk.PanelSectionLabel, { children: 'L2 · OBJECTIVE EVIDENCE' }),
+          jsx(CbLabel, { children: 'L2 · objective evidence' }),
           (l2.objectives || []).length === 0
             ? jsx(QuietNote, { children: 'No approved-plan objective has evidence yet.' })
             : jsx('div', {
@@ -13003,7 +13020,7 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx(sdk.PanelSectionLabel, { children: 'L1 · ATTEMPTS AND EVENTS' }),
+          jsx(CbLabel, { children: 'L1 · attempts and events' }),
           jsxs('div', {
             className: 'flex flex-col',
             children: [
@@ -13045,7 +13062,7 @@ function EvidenceView({ evidence, implemented, onOpenSection }) {
             ? jsxs('div', {
                 className: 'flex flex-col',
                 children: [
-                  jsx(sdk.PanelSectionLabel, { children: 'DISPUTES' }),
+                  jsx(CbLabel, { children: 'Disputes' }),
                   disputes.slice(0, 8).map((item) =>
                     jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `${item.state} · ${whenLabel(item.created_at)} · ${item.note}` }, item.id)
                   )
@@ -13065,7 +13082,7 @@ function SourcesView({ page }) {
   if (sources.length === 0) {
     return jsx(EmptyState, {
       title: 'No sources recorded',
-      description: 'The backend recorded no source rows for this course. Nothing is being presented as cited.'
+      description: 'No sources are recorded for this course. Nothing here is presented as cited.'
     })
   }
   return jsx('div', {
@@ -13321,7 +13338,7 @@ function CourseExportView({ row, implemented }) {
         ? jsxs('div', {
             className: 'flex flex-col',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: 'EXPORTED' }),
+              jsx(CbLabel, { children: 'Exported' }),
               jsx(PackReviewLine, {
                 label: 'Content hash',
                 value: jsx('code', { className: 'text-xs', children: exported.content_hash })
@@ -13476,7 +13493,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
         openSection(target)
         setNotice(
           opened
-            ? { text: 'A new lesson chat is open. Send its first message to bind it to this run.' }
+            ? { text: 'A new lesson chat is open. Send the first message to connect it to this lesson.' }
             : {
                 text: outcome.message,
                 action: {
@@ -13879,7 +13896,7 @@ function LessonPaneBody({ binding, storedId }) {
     const started = startLessonChat(profile)
     setNotice(
       started
-        ? 'A fresh governed run is ready. Its chat binds after your first message.'
+        ? 'A new lesson run is ready. Its chat connects when you send your first message.'
         : 'This Desktop build cannot open a new chat; start one from the sidebar.'
     )
     page.reload()
@@ -13913,7 +13930,7 @@ function LessonPaneBody({ binding, storedId }) {
       icon: 'book',
       title: 'Bound, but not listed',
       description:
-        'This chat is bound to an enrollment the library did not return. Nothing is guessed from that: reopen Coursebook to reconcile.',
+        'This chat is connected to a course the library did not return. Nothing is guessed: reopen Coursebook to check it.',
       action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: () => host.navigate(ROUTE_PATH), children: 'Open Coursebook' })
     })
   }
@@ -13945,7 +13962,7 @@ function LessonPaneBody({ binding, storedId }) {
               jsx('div', {
                 className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                 children:
-                  'This chat is not attached to a lesson yet. Open Coursebook and start a run; the first message in its new chat binds the lesson.'
+                  'This chat is not part of a lesson yet. Open Coursebook and start a lesson; the first message in its new chat connects it.'
               }),
               jsx(sdk.Button, {
                 variant: 'secondary',
@@ -13960,7 +13977,7 @@ function LessonPaneBody({ binding, storedId }) {
 
       notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
 
-      jsx(sdk.PanelSectionLabel, { children: 'CURRENT CHECK' }),
+      jsx(CbLabel, { children: 'Current check' }),
       page.status === 'error'
         ? jsx('div', {
             className: 'text-xs text-(--ui-text-secondary)',
@@ -14032,7 +14049,7 @@ function LessonPaneBody({ binding, storedId }) {
  */
 async function continueLesson(binding) {
   if (!binding || !binding.stored_session_id) return 'This lesson has no durable chat to continue yet.'
-  if (binding.status !== 'active') return `This lesson’s chat binding is ${binding.status}; reconcile it first.`
+  if (binding.status !== 'active') return 'This lesson is not connected to its chat right now. Open it from the course page first.'
   if (typeof host.openSession === 'function') {
     try {
       await host.openSession(binding.stored_session_id, { profile: binding.profile || undefined })
@@ -14485,7 +14502,7 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
       gap: '0.75rem',
       padding: '1rem 1rem 1.1rem',
       background: 'var(--cb-plum-soft)',
-      borderTop: '3px solid var(--cb-plum)',
+      borderTop: '1px solid var(--cb-plum)',
       boxSizing: 'border-box'
     },
     children: [
@@ -14591,7 +14608,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
         ]
       }),
 
-      jsx(sdk.PanelSectionLabel, { children: 'WHAT AND WHO' }),
+      jsx(CbLabel, { children: 'What and who' }),
       jsx(StudioField, {
         id: 'cb-brief-title',
         label: 'Title',
@@ -14653,7 +14670,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
         ]
       }),
 
-      jsx(sdk.PanelSectionLabel, { children: 'WHERE, HOW LONG, WITH WHAT' }),
+      jsx(CbLabel, { children: 'Where, how long, with what' }),
       jsxs('div', {
         className: 'grid gap-3 sm:grid-cols-3',
         children: [
@@ -14718,7 +14735,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
         hint: 'A narration script is text you read aloud; it is not an audio file.'
       }),
 
-      jsx(sdk.PanelSectionLabel, { children: 'EXCLUSIONS AND SUPERVISION' }),
+      jsx(CbLabel, { children: 'Exclusions and supervision' }),
       jsx(StudioField, {
         id: 'cb-brief-exclusions',
         label: 'Leave these out',
@@ -14744,7 +14761,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
         })
       }),
 
-      jsx(sdk.PanelSectionLabel, { children: 'BEFORE YOU PASTE: PROVIDER AND EGRESS' }),
+      jsx(CbLabel, { children: 'Before you paste: provider and egress' }),
       jsxs('div', {
         className: 'flex flex-col gap-2 border-l border-(--ui-stroke-secondary) pl-3',
         children: [
@@ -14772,7 +14789,7 @@ function StudioBriefForm({ initial, note, supported, onCancel, onCreated }) {
         ? jsxs('div', {
             className: 'flex flex-col gap-1',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: 'BEFORE SUBMITTING' }),
+              jsx(CbLabel, { children: 'Before submitting' }),
               ...problems.map((problem) => jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: problem }, problem))
             ]
           })
@@ -14910,12 +14927,12 @@ function StudioBriefView({ briefQuery, course, planJobId, onJobSettled, onDuplic
         children:
           'You are the operator of this course. Coursebook drafted material for you to teach; the child never chats with it. A brief is immutable once stored — changing the teaching comes from editing the plan, and copying this brief makes a new course.'
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'THE BRIEF' }),
+      jsx(CbLabel, { children: 'The brief' }),
       jsxs('div', {
         className: 'flex flex-col',
         children: rows.map((row) => jsx(PackReviewLine, { label: row.label, value: row.value }, row.label))
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'PLAN JOB' }),
+      jsx(CbLabel, { children: 'Plan job' }),
       jsxs('div', {
         className: 'flex flex-col gap-1',
         children: [
@@ -15361,7 +15378,7 @@ function StudioPlanView({
                 'data-cb-breadth': 'plan',
                 children: PLAN_BREADTH_DISCLOSURE
               }),
-              jsx(sdk.PanelSectionLabel, { children: `OUTLINE AND ACTIVITIES (${objectives.length})` }),
+              jsx(CbLabel, { children: `OUTLINE AND ACTIVITIES (${objectives.length})` }),
               ...displayObjectives.map((objective, index) => {
                 const draft = drafts[objective.objective_id] || {}
                 const isRemoved = removed.includes(objective.objective_id)
@@ -15480,7 +15497,7 @@ function StudioPlanView({
                 ? jsxs('div', {
                     className: 'flex flex-col gap-2 border-t border-(--ui-stroke-tertiary) pt-2',
                     children: [
-                      jsx(sdk.PanelSectionLabel, { children: 'ADD AN OBJECTIVE' }),
+                      jsx(CbLabel, { children: 'Add an objective' }),
                       added.map((item, index) =>
                         jsxs(
                           'div',
@@ -15550,7 +15567,7 @@ function StudioPlanView({
           jsxs('div', {
             className: 'flex w-full shrink-0 flex-col gap-2 min-[60rem]:w-[20rem]',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: 'SOURCES AND REVIEW NOTES' }),
+              jsx(CbLabel, { children: 'Sources and review notes' }),
               jsx(QuietNote, {
                 children:
                   'Sources come from the research run the plan job recorded. If research was unavailable the plan says so; no citation is invented here.'
@@ -15952,7 +15969,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
   return jsxs('div', {
     className: 'flex max-w-2xl flex-col gap-4',
     children: [
-      jsx(sdk.PanelSectionLabel, { children: 'EXPORT GATE' }),
+      jsx(CbLabel, { children: 'Export gate' }),
       jsxs('div', {
         className: 'flex flex-col',
         children: [
@@ -15968,7 +15985,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
           })
         ]
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'FINAL APPROVAL' }),
+      jsx(CbLabel, { children: 'Final approval' }),
       jsx('div', {
         className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
         children:
@@ -16015,7 +16032,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
             children: EXPORT_BLOCKED_COPY[status.blocked_reason] || `Export is blocked (${status.blocked_reason}).`
           }),
 
-      jsx(sdk.PanelSectionLabel, { children: 'FORMATS' }),
+      jsx(CbLabel, { children: 'Formats' }),
       jsx(StudioCheck, {
         id: 'cb-export-pack',
         checked: formats.pack,
@@ -16059,7 +16076,7 @@ function StudioExportPanel({ course, book, revision, onRevision, supported, onCh
         ? jsxs('div', {
             className: 'flex flex-col gap-3',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: 'EXPORTED FILES' }),
+              jsx(CbLabel, { children: 'Exported files' }),
               jsx('div', {
                 className: 'text-xs text-(--ui-text-secondary)',
                 children: `Export ${exported.export_id} · ${whenLabel(exported.exported_at)} · content hash ${exported.content_hash}`
@@ -16182,7 +16199,7 @@ function StudioReflectionView({ course, reflections, supported, onDuplicate, onS
         children:
           'A reflection is parent-reported. It is not evidence of learning, it is never graded, and it is excluded from every exported pack. Its only job is to seed your next brief.'
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'HOW DID IT GO?' }),
+      jsx(CbLabel, { children: 'How did it go?' }),
       jsx(StudioViewPicker, {
         id: 'cb-studio-difficulty',
         label: 'Difficulty',
@@ -16231,14 +16248,14 @@ function StudioReflectionView({ course, reflections, supported, onDuplicate, onS
         ? jsxs('div', {
             className: 'flex flex-col',
             children: [
-              jsx(sdk.PanelSectionLabel, { children: 'RECORDED' }),
+              jsx(CbLabel, { children: 'Recorded' }),
               jsx(PackReviewLine, { label: 'Difficulty', value: (STUDIO_DIFFICULTIES.find((item) => item.id === saved.difficulty) || {}).label || saved.difficulty }),
               jsx(PackReviewLine, { label: 'When', value: whenLabel(saved.created_at) }),
               jsx(PackReviewLine, { label: 'Plan hash', value: jsx('code', { className: 'text-xs break-all', children: saved.plan_hash || '—' }) })
             ]
           })
         : null,
-      jsx(sdk.PanelSectionLabel, { children: `REFLECTIONS (${list.length})` }),
+      jsx(CbLabel, { children: `REFLECTIONS (${list.length})` }),
       list.length === 0
         ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: 'No reflections recorded for this course yet.' })
         : jsx('div', {
@@ -16856,7 +16873,7 @@ function CoursebookPane() {
       icon: 'book',
       title: armedRun.objectiveTitle ? `Lesson run ready: ${armedRun.objectiveTitle}` : 'Lesson run ready',
       description:
-        'This chat is the lesson chat for that run. Send the first message and Coursebook binds it to the run; ' +
+        'This chat belongs to that lesson. Send the first message and Coursebook connects it to the run; ' +
         'the section stays open beside it with the teaching, the sources and the check.',
       action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open the section' })
     })
@@ -16895,7 +16912,7 @@ function CoursebookPane() {
     body = jsx(sdk.PanelEmpty, {
       icon: 'book',
       title: 'Not a Coursebook lesson',
-      description: 'This chat has no lesson binding. A bound chat shows its current objective and check here.',
+      description: 'This chat is not part of a lesson yet. A lesson chat shows its current objective and check here.',
       action: jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: openCoursebook, children: 'Open Coursebook' })
     })
   } else {
@@ -16910,7 +16927,7 @@ function CoursebookPane() {
     'data-cb-motion': cbMotion,
     style: cbScopeStyle(cbMode),
     children: [
-      jsx(sdk.PanelSectionLabel, { children: 'COURSEBOOK' }),
+      jsx(CbLabel, { children: 'Coursebook' }),
       bindNote ? jsx('div', { className: 'pb-2 text-xs text-(--ui-text-secondary)', children: bindNote }) : null,
       skillNote
         ? jsx('div', {
@@ -17086,9 +17103,9 @@ function CoursebookSettings() {
           'Preferences appear here only when the code that reads them ships. The inventory below is ' +
           'read-only and shows the exact contracts this backend speaks.'
       }),
-      jsx(sdk.PanelSectionLabel, { children: 'SESSION BINDING' }),
+      jsx(CbLabel, { children: 'Session binding' }),
       jsx(SessionDiagnostics, {}),
-      jsx(sdk.PanelSectionLabel, { children: 'CONTRACTS' }),
+      jsx(CbLabel, { children: 'Contracts' }),
       jsx(ContractList, {})
     ]
   })

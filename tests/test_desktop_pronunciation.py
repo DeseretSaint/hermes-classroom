@@ -465,7 +465,7 @@ class PronunciationStudioTest(unittest.TestCase):
         self.assertEqual(steps["compared"]["verdictNode"], "close")
         self.assertEqual(steps["compared"]["confidenceNode"], "75%")
         self.assertEqual(steps["compared"]["matchedNode"], "2/3")
-        self.assertIn("model_assessed", steps["compared"]["html"])
+        self.assertIn("Practice measurement", steps["compared"]["html"])
         self.assertIn("not verified pronunciation and not a graded score", steps["compared"]["provenanceNode"])
 
         calls = data["observed"]["calls"]
@@ -488,7 +488,7 @@ class PronunciationStudioTest(unittest.TestCase):
         saved = rpc_calls[0]["body"]["payload"]
         self.assertEqual(saved["kind"], "personal_note")
         self.assertEqual(saved["tags"], ["pronunciation_practice"])
-        self.assertIn("model_assessed", saved["note"])
+        self.assertIn("Assessed by a model", saved["note"])
         self.assertEqual(saved["source_ref"], '{"block":"blk_practice01","artifact":"art_0123456789abcdef","sources":["src_affection01"]}')
         self.assertEqual(steps["deleted"]["phase"], "idle")
         self.assertNotIn("data-cb-pronunciation-result", steps["deleted"]["html"])
