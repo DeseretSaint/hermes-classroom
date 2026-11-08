@@ -1,0 +1,479 @@
+{
+  "theme": "light",
+  "widths": [
+    1049,
+    900,
+    460
+  ],
+  "failures": [],
+  "results": [
+    {
+      "surface": "courses-desk",
+      "width": 1048,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Courses"
+        },
+        {
+          "level": 2,
+          "name": "Parent demo: measuring ingredients together"
+        },
+        {
+          "level": 2,
+          "name": "Parent demo: measuring ingredients together"
+        },
+        {
+          "level": 2,
+          "name": "2 sections"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Courses content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        }
+      ]
+    },
+    {
+      "surface": "library",
+      "width": 1048,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Library"
+        },
+        {
+          "level": 2,
+          "name": "Packs on this profile"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Library content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        }
+      ]
+    },
+    {
+      "surface": "studio",
+      "width": 1048,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Parent Studio"
+        },
+        {
+          "level": 2,
+          "name": "Plans for your child"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Parent Studio content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        }
+      ]
+    },
+    {
+      "surface": "section",
+      "width": 1048,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Courses"
+        },
+        {
+          "level": 2,
+          "name": "Parent demo: measuring ingredients together"
+        },
+        {
+          "level": 2,
+          "name": "Read the marks on a measuring jug"
+        },
+        {
+          "level": 3,
+          "name": "Lesson"
+        },
+        {
+          "level": 2,
+          "name": "Measuring ingredients"
+        },
+        {
+          "level": 2,
+          "name": "Task 1 — read the jug"
+        },
+        {
+          "level": 2,
+          "name": "Task 2 — double the recipe"
+        },
+        {
+          "level": 2,
+          "name": "Task 3 — check your answer"
+        },
+        {
+          "level": 3,
+          "name": "Check"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Courses content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        },
+        {
+          "role": "complementary",
+          "name": "Section details"
+        }
+      ]
+    },
+    {
+      "surface": "courses-desk",
+      "width": 899,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Courses"
+        },
+        {
+          "level": 2,
+          "name": "Parent demo: measuring ingredients together"
+        },
+        {
+          "level": 2,
+          "name": "Parent demo: measuring ingredients together"
+        },
+        {
+          "level": 2,
+          "name": "2 sections"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Courses content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        }
+      ]
+    },
+    {
+      "surface": "library",
+      "width": 899,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Library"
+        },
+        {
+          "level": 2,
+          "name": "Packs on this profile"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Library content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        }
+      ]
+    },
+    {
+      "surface": "studio",
+      "width": 899,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Parent Studio"
+        },
+        {
+          "level": 2,
+          "name": "Plans for your child"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Parent Studio content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        }
+      ]
+    },
+    {
+      "surface": "section",
+      "width": 899,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Courses"
+        },
+        {
+          "level": 2,
+          "name": "Parent demo: measuring ingredients together"
+        },
+        {
+          "level": 2,
+          "name": "Read the marks on a measuring jug"
+        },
+        {
+          "level": 3,
+          "name": "Lesson"
+        },
+        {
+          "level": 2,
+          "name": "Measuring ingredients"
+        },
+        {
+          "level": 2,
+          "name": "Task 1 — read the jug"
+        },
+        {
+          "level": 2,
+          "name": "Task 2 — double the recipe"
+        },
+        {
+          "level": 2,
+          "name": "Task 3 — check your answer"
+        },
+        {
+          "level": 3,
+          "name": "Check"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Courses content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        },
+        {
+          "role": "complementary",
+          "name": "Section details"
+        }
+      ]
+    },
+    {
+      "surface": "courses-desk",
+      "width": 459,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Courses"
+        },
+        {
+          "level": 2,
+          "name": "Parent demo: measuring ingredients together"
+        },
+        {
+          "level": 2,
+          "name": "Parent demo: measuring ingredients together"
+        },
+        {
+          "level": 2,
+          "name": "2 sections"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Courses content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        }
+      ]
+    },
+    {
+      "surface": "library",
+      "width": 459,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Library"
+        },
+        {
+          "level": 2,
+          "name": "Packs on this profile"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Library content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        }
+      ]
+    },
+    {
+      "surface": "studio",
+      "width": 459,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Parent Studio"
+        },
+        {
+          "level": 2,
+          "name": "Plans for your child"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Parent Studio content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        }
+      ]
+    },
+    {
+      "surface": "section",
+      "width": 459,
+      "problems": [],
+      "headings": [
+        {
+          "level": 1,
+          "name": "Courses"
+        },
+        {
+          "level": 2,
+          "name": "Parent demo: measuring ingredients together"
+        },
+        {
+          "level": 2,
+          "name": "Read the marks on a measuring jug"
+        },
+        {
+          "level": 3,
+          "name": "Lesson"
+        },
+        {
+          "level": 2,
+          "name": "Measuring ingredients"
+        },
+        {
+          "level": 2,
+          "name": "Task 1 — read the jug"
+        },
+        {
+          "level": 2,
+          "name": "Task 2 — double the recipe"
+        },
+        {
+          "level": 2,
+          "name": "Task 3 — check your answer"
+        },
+        {
+          "level": 3,
+          "name": "Check"
+        }
+      ],
+      "landmarks": [
+        {
+          "role": "banner",
+          "name": ""
+        },
+        {
+          "role": "main",
+          "name": "Courses content"
+        },
+        {
+          "role": "navigation",
+          "name": "Coursebook sections"
+        },
+        {
+          "role": "complementary",
+          "name": "Section details"
+        }
+      ]
+    }
+  ]
+}

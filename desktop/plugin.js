@@ -891,9 +891,76 @@ function ErrorLine({ error }) {
   })
 }
 
-/** Shared page chrome: a destination body never re-implements its own header. */
-function PageBody({ children }) {
-  return jsx('div', { className: 'min-h-0 flex-1 overflow-auto pb-6', children })
+/** Shared page chrome: the route's one `main` landmark, named for the surface it holds. */
+function PageBody({ children, label }) {
+  return jsx('main', {
+    id: 'cb-main-content',
+    'data-cb-main': '',
+    tabIndex: -1,
+    'aria-label': label || 'Coursebook content',
+    className: 'min-h-0 flex-1 overflow-auto pb-6',
+    children
+  })
+}
+
+/**
+ * The skip path. It is the first focus stop on the route and is clipped until it is focused, so a
+ * keyboard or screen-reader user can jump the route header and the destination nav. It lands on the
+ * reading column when the surface has one (a section or textbook page), and on the `main` region
+ * otherwise — never on the header.
+ */
+function SkipToContent({ label }) {
+  const [revealed, setRevealed] = useState(false)
+  const hidden = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '1px',
+    height: '1px',
+    padding: 0,
+    margin: '-1px',
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+    border: '1px solid transparent',
+    fontFamily: CB_SANS,
+    fontSize: '0.8125rem',
+    lineHeight: 1.4
+  }
+  const shown = {
+    ...hidden,
+    width: 'auto',
+    height: 'auto',
+    margin: 0,
+    padding: '0.35rem 0.7rem',
+    overflow: 'visible',
+    clip: 'auto',
+    zIndex: 40,
+    color: 'var(--cb-on-lamp)',
+    background: 'var(--cb-lamp)',
+    border: '1px solid var(--cb-ink)',
+    borderRadius: '2px',
+    textDecoration: 'none'
+  }
+  return jsx('a', {
+    href: '#cb-main-content',
+    'data-cb-skip': '',
+    onFocus: () => setRevealed(true),
+    onBlur: () => setRevealed(false),
+    onClick: (event) => {
+      const root = document.querySelector('[data-cb-route]')
+      const reading = root ? root.querySelector('[data-cb-reading-column]') : null
+      const main = document.getElementById('cb-main-content')
+      const target = reading || main
+      if (!target) return
+      event.preventDefault()
+      target.setAttribute('tabindex', '-1')
+      if (typeof target.focus === 'function') target.focus({ preventScroll: true })
+      if (typeof target.scrollIntoView === 'function') target.scrollIntoView({ block: 'start' })
+    },
+    style: revealed ? shown : hidden,
+    children: label || 'Skip to course content'
+  })
 }
 
 function backendCopy(status) {
@@ -1047,7 +1114,7 @@ function FirstRun({ implemented, onCreate, onSyllabus }) {
         style: { display: 'flex', alignItems: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' },
         children: [
           jsx(SurveyMark, { courseId: 'first-run', size: compact ? 40 : 56 }),
-          jsx('h1', {
+          jsx('h2', {
             'data-cb-first-run-title': '',
             style: {
               margin: 0,
@@ -1296,7 +1363,7 @@ function PackPreview({ preview, existing }) {
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx('h3', { className: 'text-sm font-semibold', children: manifest.title }),
+          jsx('h2', { className: 'text-sm font-semibold', children: manifest.title }),
           manifest.subtitle
             ? jsx('div', { className: 'mt-0.5 text-xs text-(--ui-text-secondary)', children: manifest.subtitle })
             : null,
@@ -2232,14 +2299,16 @@ function buildDeskModel({ library, outline, estimate }) {
   }
 }
 
-function DeskLabel({ children }) {
-  return jsx('div', {
+function DeskLabel({ children, as }) {
+  const tag = as || 'div'
+  return jsx(tag, {
     style: {
       fontFamily: CB_SANS,
       fontSize: '0.75rem',
       fontWeight: 600,
       letterSpacing: '0.01em',
-      color: 'var(--cb-ink-soft)'
+      color: 'var(--cb-ink-soft)',
+      margin: 0
     },
     children
   })
@@ -2389,7 +2458,7 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection }) {
                     children: courseTitle
                   })
                 : null,
-              jsx('h3', {
+              jsx('h2', {
                 'data-cb-continue-section': '',
                 style: {
                   margin: 0,
@@ -2691,7 +2760,7 @@ function AllCoursesList({ rows, onOpen, onShowAll }) {
       jsxs('div', {
         style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
         children: [
-          jsx(DeskLabel, { children: `All courses · ${rows.length}` }),
+          jsx(DeskLabel, { as: 'h2', children: `All courses · ${rows.length}` }),
           jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'Search and manage courses' })
         ]
       }),
@@ -2854,7 +2923,7 @@ function FieldNotesStrip({ notes, courseTitle, current, sections, stale, onOpenS
           jsxs('div', {
             style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '0.5rem' },
             children: [
-              jsx(DeskLabel, { children: 'Field Notes' }),
+              jsx(DeskLabel, { as: 'h2', children: 'Field Notes' }),
               entries.length > 0
                 ? jsx('span', {
                     style: { fontSize: '0.75rem', color: 'var(--cb-ink-soft)' },
@@ -3074,6 +3143,7 @@ function FieldDeskHome({
     children: [continueCard, pathCard, sourcesCard]
   })
   const sideColumn = jsxs('aside', {
+    'aria-label': 'Field notes and all courses',
     style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
     children: [notesCard, coursesCard]
   })
@@ -3536,6 +3606,12 @@ function CoursesView({ implemented, onStartCreate, onStartSyllabus, createOpen, 
             children: 'Back to the Field Desk'
           })
         : null,
+      jsx(PlateHead, {
+        title: 'All courses',
+        caption: data
+          ? `${Number(data.total || 0)} ${Number(data.total || 0) === 1 ? 'course' : 'courses'} on this profile`
+          : 'Reading the courses on this profile'
+      }),
       jsxs('div', {
         className: 'mb-2 flex flex-wrap items-center justify-between gap-2',
         children: [
@@ -3623,7 +3699,7 @@ function PackFacts({ row, implemented, onResume, onArchive, onDelete, onExportPa
       jsxs('div', {
         className: 'flex flex-col',
         children: [
-          jsx('h3', { className: 'text-sm font-semibold', children: row.title }),
+          jsx('h2', { className: 'text-sm font-semibold', children: row.title }),
           jsxs('div', {
             className: 'mt-1 flex flex-wrap items-center gap-2',
             children: [
@@ -7428,10 +7504,7 @@ function AttemptControls({
             className: 'flex flex-col gap-2',
             'data-cb-check-stimulus': check.check_id,
             children: [
-              jsx('div', {
-                className: 'max-w-prose',
-                children: jsx(sdk.MessageTextContent, { text: stimulus.prompt })
-              }),
+              jsx(ProseText, { className: 'max-w-prose', text: stimulus.prompt }),
               stimulus.learner_instructions
                 ? jsx('p', {
                     className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
@@ -8785,6 +8858,7 @@ function FieldRail({ next, facts, sources, notes }) {
   const noteRows = (notes || []).slice(0, 3)
   return jsxs('aside', {
     'data-cb-field-rail': '',
+    'aria-label': 'Section details',
     style: { display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.8rem', lineHeight: 1.5 },
     children: [
       jsx(CbRailSection, {
@@ -9909,6 +9983,39 @@ function BlockSaveActions({ block, checkLabels, onSaveBlock, className }) {
   })
 }
 
+/**
+ * Authored lesson prose is content underneath the page's one `h1`. A markdown document may carry
+ * its own `#` title, so an `h1` inside a reading body is given ARIA heading level 2: the page keeps
+ * exactly one `h1`, the prose keeps its own heading, and no level is skipped. The text, its order
+ * and the host's markdown renderer are untouched — only the announced level changes.
+ */
+function useProseHeadingTier() {
+  const ref = useRef(null)
+  useEffect(() => {
+    const root = ref.current
+    if (!root) return undefined
+    const apply = () => {
+      for (const heading of root.querySelectorAll('h1')) {
+        if (heading.getAttribute('role') === 'heading' && heading.getAttribute('aria-level') === '2') continue
+        heading.setAttribute('role', 'heading')
+        heading.setAttribute('aria-level', '2')
+      }
+    }
+    apply()
+    if (typeof MutationObserver !== 'function') return undefined
+    const observer = new MutationObserver(apply)
+    observer.observe(root, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [])
+  return ref
+}
+
+/** The host's markdown renderer inside a reading body, with the one-`h1` prose tier applied. */
+function ProseText({ text, ...wrapper }) {
+  const ref = useProseHeadingTier()
+  return jsx('div', { ...wrapper, ref, children: jsx(sdk.MessageTextContent, { text }) })
+}
+
 /** The excerpt a save will carry: the block's own prose, never a re-summarised one. */
 function blockSaveExcerpt(block, checkLabels, media) {
   if (media) return media.text_equivalent || media.purpose || block.headline || ''
@@ -9926,7 +10033,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronun
     className: 'flex flex-col gap-2',
     children: [
       body
-        ? jsx('div', {
+        ? jsx(ProseText, {
             'data-cb-reading-body': lede ? 'lede' : 'body',
             style: {
               maxWidth: CB_MEASURE,
@@ -9937,7 +10044,7 @@ function BlockBody({ block, sources, checkSlot, checkLabels, onSaveBlock, pronun
               borderLeft: lede ? '1px solid var(--cb-accent)' : 'none',
               paddingLeft: lede ? '0.9rem' : 0
             },
-            children: jsx(sdk.MessageTextContent, { text: body })
+            text: body
           })
         : null,
       (block.media || []).map((media, index) =>
@@ -10104,7 +10211,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
         ]
       }),
       body
-        ? jsx('div', {
+        ? jsx(ProseText, {
             style: {
               maxWidth: CB_MEASURE,
               fontFamily: CB_SERIF,
@@ -10112,7 +10219,7 @@ function GuidedBlock({ block, index, total, sources, checkSlot, checkLabels, onB
               lineHeight: 1.6,
               color: 'var(--cb-ink)'
             },
-            children: jsx(sdk.MessageTextContent, { text: body })
+            text: body
           })
         : null,
       (block.media || []).map((media, ordinal) =>
@@ -10318,7 +10425,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
         ]
       }),
       body
-        ? jsx('div', {
+        ? jsx(ProseText, {
             style: {
               maxWidth: CB_MEASURE,
               paddingTop: '0.3rem',
@@ -10327,7 +10434,7 @@ function QuestMission({ mission, sources, checkSlot, checkLabels, onReadInTextbo
               lineHeight: 1.6,
               color: 'var(--cb-ink)'
             },
-            children: jsx(sdk.MessageTextContent, { text: body })
+            text: body
           })
         : null,
       (block.media || []).map((media, ordinal) =>
@@ -10816,7 +10923,7 @@ function ProcedureStepCard({ step, index, block, sources, checkSlot, checkLabels
             ]
           }),
           body
-            ? jsx('div', { style: { maxWidth: '44rem' }, children: jsx(sdk.MessageTextContent, { text: body }) })
+            ? jsx(ProseText, { style: { maxWidth: '44rem' }, text: body })
             : null,
           step.check
             ? jsxs('p', {
@@ -11423,10 +11530,7 @@ function SectionPage({ row, objectiveId, page, pageStatus, pageError, onRetryPag
                       }),
                       segment.kind === 'media'
                         ? jsx(MediaSegment, { segment })
-                        : jsx('div', {
-                            className: 'max-w-3xl',
-                            children: jsx(sdk.MessageTextContent, { text: segment.text })
-                          }),
+                        : jsx(ProseText, { className: 'max-w-3xl', text: segment.text }),
                       segment.source_id
                         ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: `Source ${segment.source_id}` })
                         : null
@@ -12557,7 +12661,7 @@ function NotebookView({ row, notebooks, implemented, onOpenSection, onChanged, s
                   children: [
                     jsx('div', {
                       className: 'max-w-3xl',
-                      children: jsx(sdk.MessageTextContent, { text: entry.excerpt || entry.note || entry.kind })
+                      children: jsx(ProseText, { text: entry.excerpt || entry.note || entry.kind })
                     }),
                     entry.note && entry.excerpt
                       ? jsx('p', { className: 'max-w-prose text-xs text-(--ui-text-secondary)', children: entry.note })
@@ -13795,7 +13899,7 @@ function CourseDetail({ row, implemented, profile, onBack, onChanged, focusObjec
             jsxs('div', {
               style: { display: 'flex', flexDirection: 'column', gap: '0.45rem', minWidth: 0, flex: compactHero ? '1 1 100%' : '1 1 16rem' },
               children: [
-                jsx('h1', {
+                jsx('h2', {
                   'data-cb-course-title': '',
                   style: {
                     margin: 0,
@@ -15985,10 +16089,7 @@ function StudioBlueprintView({ book }) {
                           })
                         ]
                       }),
-                      jsx('div', {
-                        className: 'max-w-3xl',
-                        children: jsx(sdk.MessageTextContent, { text: file.text })
-                      }),
+                      jsx(ProseText, { className: 'max-w-3xl', text: file.text }),
                       jsxs('div', {
                         className: 'text-xs break-all text-(--ui-text-secondary)',
                         children: [`sha256 ${file.sha256}`, file.truncated ? ' · the served text was clipped at the tab limit' : '']
@@ -16828,15 +16929,20 @@ function CoursebookPage() {
   const statusCopy = backendCopy(health.status)
   const online = useOnline()
   const showDestinationNav = health.status === 'ready' && !creating && !importing && !syllabusFlow
+  // One stable page title per destination. It is the route's only `h1` in every health and flow
+  // state, so the first heading is the page title and never a card's objective; every surface
+  // below it is an `h2` region.
+  const pageTitle = ((DESTINATIONS.find((item) => item.id === destination) || {}).label) || ROUTE_TITLE
 
   return jsxs('div', {
-    className: 'flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
+    className: 'relative flex h-full min-h-0 flex-col px-[clamp(1.25rem,4vw,4rem)]',
     'data-cb-destination': destination,
     'data-cb-route': ROUTE_PATH,
     'data-cb-scope': cbMode,
     'data-cb-motion': cbMotion,
     style: cbScopeStyle(cbMode),
     children: [
+      jsx(SkipToContent, {}),
       jsxs('header', {
         className: 'flex shrink-0 flex-col gap-2 pt-3',
         children: [
@@ -16847,7 +16953,12 @@ function CoursebookPage() {
                 className: 'flex min-w-0 items-center gap-2',
                 children: [
                   jsx(SurveyMark, { courseId: 'coursebook', size: 24 }),
-                  jsx('div', { className: 'text-base font-semibold', children: ROUTE_TITLE })
+                  jsx('h1', {
+                    'data-cb-page-title': '',
+                    className: 'text-base font-semibold',
+                    style: { margin: 0 },
+                    children: pageTitle
+                  })
                 ]
               }),
               jsxs('div', {
@@ -16887,7 +16998,7 @@ function CoursebookPage() {
             : null
         ]
       }),
-      jsx(PageBody, { children: body })
+      jsx(PageBody, { label: `${pageTitle} content`, children: body })
     ]
   })
 }
