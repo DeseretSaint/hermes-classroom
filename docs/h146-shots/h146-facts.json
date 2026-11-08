@@ -1,0 +1,568 @@
+{
+  "port": "9364",
+  "target": "http://127.0.0.1:5174/#/coursebook",
+  "frames": [
+    {
+      "mode": "dark",
+      "width": 1049,
+      "state": "initial",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_007fb434/docs/h146-shots/dark-1049-initial.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "state": "switched",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_007fb434/docs/h146-shots/dark-1049.png"
+    },
+    {
+      "mode": "dark",
+      "width": 900,
+      "state": "initial",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_007fb434/docs/h146-shots/dark-900-initial.png"
+    },
+    {
+      "mode": "dark",
+      "width": 900,
+      "state": "switched",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_007fb434/docs/h146-shots/dark-900.png"
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "state": "initial",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_007fb434/docs/h146-shots/dark-460-initial.png"
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "state": "switched",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_007fb434/docs/h146-shots/dark-460.png"
+    },
+    {
+      "mode": "dark",
+      "width": 1049,
+      "text": "200%",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_007fb434/docs/h146-shots/text200-dark-1049.png"
+    },
+    {
+      "mode": "dark",
+      "width": 460,
+      "text": "200%",
+      "file": "/home/deseretsaint/Projects/hermes-classroom/.worktrees/t_007fb434/docs/h146-shots/text200-dark-460.png"
+    }
+  ],
+  "facts": {
+    "dark-1049-initial": {
+      "innerWidth": 1049,
+      "mode": "dark",
+      "destination": "home",
+      "rail": "tabs",
+      "tabs": [
+        {
+          "name": "H103 live failure check",
+          "state": "current",
+          "current": "true",
+          "height": 44,
+          "fontWeight": "600",
+          "underline": "1.1156px rgb(239, 192, 107)",
+          "focusOutline": null
+        },
+        {
+          "name": "Japanese affection and register — an L0 demonstration classroom",
+          "state": "available",
+          "current": null,
+          "height": 53,
+          "fontWeight": "400",
+          "underline": "1.1156px rgba(0, 0, 0, 0)",
+          "focusOutline": null
+        }
+      ],
+      "currentLine": "Showing H103 live failure check",
+      "disclosure": "",
+      "select": false,
+      "selectOptions": [],
+      "continueCards": 1,
+      "continueCourse": "H103 live failure check",
+      "continueSection": "Review and approve the plan",
+      "continuePrimary": {
+        "text": "Review the plan",
+        "disabled": false
+      },
+      "pathNodes": [],
+      "pathError": "",
+      "parentLeak": false,
+      "allCourses": 0,
+      "covers": 0,
+      "avatars": 0,
+      "overflow": 0,
+      "h1": 1,
+      "emptyOrError": "ready",
+      "activeDesk": {
+        "tag": "body",
+        "label": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-l",
+        "outline": "none 2.2312px color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+        "height": 1004
+      }
+    },
+    "dark-1049": {
+      "innerWidth": 1049,
+      "mode": "dark",
+      "destination": "home",
+      "rail": "tabs",
+      "tabs": [
+        {
+          "name": "H103 live failure check",
+          "state": "available",
+          "current": null,
+          "height": 44,
+          "fontWeight": "400",
+          "underline": "1.1156px rgba(0, 0, 0, 0)",
+          "focusOutline": null
+        },
+        {
+          "name": "Japanese affection and register — an L0 demonstration classroom",
+          "state": "current",
+          "current": "true",
+          "height": 53,
+          "fontWeight": "600",
+          "underline": "1.1156px rgb(239, 192, 107)",
+          "focusOutline": null
+        }
+      ],
+      "currentLine": "Showing Japanese affection and register — an L0 demonstration classroom",
+      "disclosure": "",
+      "select": false,
+      "selectOptions": [],
+      "continueCards": 1,
+      "continueCourse": "Japanese affection and register — an L0 demonstration classroom",
+      "continueSection": "Tell everyday affection from a direct romantic declaration",
+      "continuePrimary": {
+        "text": "Start the review",
+        "disabled": false
+      },
+      "pathNodes": [
+        {
+          "state": "needs_review",
+          "current": "true"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "overridden",
+          "current": "false"
+        }
+      ],
+      "pathError": "",
+      "parentLeak": false,
+      "allCourses": 0,
+      "covers": 0,
+      "avatars": 0,
+      "overflow": 0,
+      "h1": 1,
+      "emptyOrError": "ready",
+      "activeDesk": {
+        "tag": "body",
+        "label": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-l",
+        "outline": "none 2.2312px color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+        "height": 1004
+      }
+    },
+    "dark-900-initial": {
+      "innerWidth": 900,
+      "mode": "dark",
+      "destination": "home",
+      "rail": "tabs",
+      "tabs": [
+        {
+          "name": "H103 live failure check",
+          "state": "current",
+          "current": "true",
+          "height": 44,
+          "fontWeight": "600",
+          "underline": "1.1156px rgb(239, 192, 107)",
+          "focusOutline": null
+        },
+        {
+          "name": "Japanese affection and register — an L0 demonstration classroom",
+          "state": "available",
+          "current": null,
+          "height": 74,
+          "fontWeight": "400",
+          "underline": "1.1156px rgba(0, 0, 0, 0)",
+          "focusOutline": null
+        }
+      ],
+      "currentLine": "Showing H103 live failure check",
+      "disclosure": "",
+      "select": false,
+      "selectOptions": [],
+      "continueCards": 1,
+      "continueCourse": "H103 live failure check",
+      "continueSection": "Review and approve the plan",
+      "continuePrimary": {
+        "text": "Review the plan",
+        "disabled": false
+      },
+      "pathNodes": [],
+      "pathError": "",
+      "parentLeak": false,
+      "allCourses": 0,
+      "covers": 0,
+      "avatars": 0,
+      "overflow": 0,
+      "h1": 1,
+      "emptyOrError": "ready",
+      "activeDesk": {
+        "tag": "body",
+        "label": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-l",
+        "outline": "none 2.2312px color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+        "height": 1004
+      }
+    },
+    "dark-900": {
+      "innerWidth": 900,
+      "mode": "dark",
+      "destination": "home",
+      "rail": "tabs",
+      "tabs": [
+        {
+          "name": "H103 live failure check",
+          "state": "available",
+          "current": null,
+          "height": 44,
+          "fontWeight": "400",
+          "underline": "1.1156px rgba(0, 0, 0, 0)",
+          "focusOutline": null
+        },
+        {
+          "name": "Japanese affection and register — an L0 demonstration classroom",
+          "state": "current",
+          "current": "true",
+          "height": 74,
+          "fontWeight": "600",
+          "underline": "1.1156px rgb(239, 192, 107)",
+          "focusOutline": null
+        }
+      ],
+      "currentLine": "Showing Japanese affection and register — an L0 demonstration classroom",
+      "disclosure": "",
+      "select": false,
+      "selectOptions": [],
+      "continueCards": 1,
+      "continueCourse": "Japanese affection and register — an L0 demonstration classroom",
+      "continueSection": "Tell everyday affection from a direct romantic declaration",
+      "continuePrimary": {
+        "text": "Start the review",
+        "disabled": false
+      },
+      "pathNodes": [
+        {
+          "state": "needs_review",
+          "current": "true"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "overridden",
+          "current": "false"
+        }
+      ],
+      "pathError": "",
+      "parentLeak": false,
+      "allCourses": 0,
+      "covers": 0,
+      "avatars": 0,
+      "overflow": 0,
+      "h1": 1,
+      "emptyOrError": "ready",
+      "activeDesk": {
+        "tag": "body",
+        "label": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-l",
+        "outline": "none 2.2312px color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+        "height": 1004
+      }
+    },
+    "dark-460-initial": {
+      "innerWidth": 460,
+      "mode": "dark",
+      "destination": "home",
+      "rail": "tabs",
+      "tabs": [
+        {
+          "name": "H103 live failure check",
+          "state": "current",
+          "current": "true",
+          "height": 44,
+          "fontWeight": "600",
+          "underline": "1.1156px rgb(239, 192, 107)",
+          "focusOutline": null
+        },
+        {
+          "name": "Japanese affection and register — an L0 demonstration classroom",
+          "state": "available",
+          "current": null,
+          "height": 74,
+          "fontWeight": "400",
+          "underline": "1.1156px rgba(0, 0, 0, 0)",
+          "focusOutline": null
+        }
+      ],
+      "currentLine": "Showing H103 live failure check",
+      "disclosure": "",
+      "select": false,
+      "selectOptions": [],
+      "continueCards": 1,
+      "continueCourse": "H103 live failure check",
+      "continueSection": "Review and approve the plan",
+      "continuePrimary": {
+        "text": "Review the plan",
+        "disabled": false
+      },
+      "pathNodes": [],
+      "pathError": "",
+      "parentLeak": false,
+      "allCourses": 0,
+      "covers": 0,
+      "avatars": 0,
+      "overflow": 0,
+      "h1": 1,
+      "emptyOrError": "ready",
+      "activeDesk": {
+        "tag": "body",
+        "label": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-l",
+        "outline": "none 2.2312px color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+        "height": 1004
+      }
+    },
+    "dark-460": {
+      "innerWidth": 460,
+      "mode": "dark",
+      "destination": "home",
+      "rail": "tabs",
+      "tabs": [
+        {
+          "name": "H103 live failure check",
+          "state": "available",
+          "current": null,
+          "height": 44,
+          "fontWeight": "400",
+          "underline": "1.1156px rgba(0, 0, 0, 0)",
+          "focusOutline": null
+        },
+        {
+          "name": "Japanese affection and register — an L0 demonstration classroom",
+          "state": "current",
+          "current": "true",
+          "height": 74,
+          "fontWeight": "600",
+          "underline": "1.1156px rgb(239, 192, 107)",
+          "focusOutline": null
+        }
+      ],
+      "currentLine": "Showing Japanese affection and register — an L0 demonstration classroom",
+      "disclosure": "",
+      "select": false,
+      "selectOptions": [],
+      "continueCards": 1,
+      "continueCourse": "Japanese affection and register — an L0 demonstration classroom",
+      "continueSection": "Tell everyday affection from a direct romantic declaration",
+      "continuePrimary": {
+        "text": "Start the review",
+        "disabled": false
+      },
+      "pathNodes": [
+        {
+          "state": "needs_review",
+          "current": "true"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "overridden",
+          "current": "false"
+        }
+      ],
+      "pathError": "",
+      "parentLeak": false,
+      "allCourses": 0,
+      "covers": 0,
+      "avatars": 0,
+      "overflow": 0,
+      "h1": 1,
+      "emptyOrError": "ready",
+      "activeDesk": {
+        "tag": "body",
+        "label": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-l",
+        "outline": "none 2.2312px color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+        "height": 1004
+      }
+    },
+    "text200-dark-1049": {
+      "innerWidth": 1049,
+      "mode": "dark",
+      "destination": "home",
+      "rail": "tabs",
+      "tabs": [
+        {
+          "name": "H103 live failure check",
+          "state": "available",
+          "current": null,
+          "height": 62,
+          "fontWeight": "400",
+          "underline": "1.1156px rgba(0, 0, 0, 0)",
+          "focusOutline": null
+        },
+        {
+          "name": "Japanese affection and register — an L0 demonstration classroom",
+          "state": "current",
+          "current": "true",
+          "height": 188,
+          "fontWeight": "600",
+          "underline": "1.1156px rgb(239, 192, 107)",
+          "focusOutline": null
+        }
+      ],
+      "currentLine": "Showing Japanese affection and register — an L0 demonstration classroom",
+      "disclosure": "",
+      "select": false,
+      "selectOptions": [],
+      "continueCards": 1,
+      "continueCourse": "Japanese affection and register — an L0 demonstration classroom",
+      "continueSection": "Tell everyday affection from a direct romantic declaration",
+      "continuePrimary": {
+        "text": "Start the review",
+        "disabled": false
+      },
+      "pathNodes": [
+        {
+          "state": "needs_review",
+          "current": "true"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "overridden",
+          "current": "false"
+        }
+      ],
+      "pathError": "",
+      "parentLeak": false,
+      "allCourses": 0,
+      "covers": 0,
+      "avatars": 0,
+      "overflow": 0,
+      "h1": 1,
+      "emptyOrError": "ready",
+      "activeDesk": {
+        "tag": "body",
+        "label": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-l",
+        "outline": "none 2.2312px color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+        "height": 1004
+      }
+    },
+    "text200-dark-460": {
+      "innerWidth": 460,
+      "mode": "dark",
+      "destination": "home",
+      "rail": "tabs",
+      "tabs": [
+        {
+          "name": "H103 live failure check",
+          "state": "available",
+          "current": null,
+          "height": 146,
+          "fontWeight": "400",
+          "underline": "1.1156px rgba(0, 0, 0, 0)",
+          "focusOutline": null
+        },
+        {
+          "name": "Japanese affection and register — an L0 demonstration classroom",
+          "state": "current",
+          "current": "true",
+          "height": 356,
+          "fontWeight": "600",
+          "underline": "1.1156px rgb(239, 192, 107)",
+          "focusOutline": null
+        }
+      ],
+      "currentLine": "Showing Japanese affection and register — an L0 demonstration classroom",
+      "disclosure": "",
+      "select": false,
+      "selectOptions": [],
+      "continueCards": 1,
+      "continueCourse": "Japanese affection and register — an L0 demonstration classroom",
+      "continueSection": "Tell everyday affection from a direct romantic declaration",
+      "continuePrimary": {
+        "text": "Start the review",
+        "disabled": false
+      },
+      "pathNodes": [
+        {
+          "state": "needs_review",
+          "current": "true"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "needs_review",
+          "current": "false"
+        },
+        {
+          "state": "overridden",
+          "current": "false"
+        }
+      ],
+      "pathError": "",
+      "parentLeak": false,
+      "allCourses": 0,
+      "covers": 0,
+      "avatars": 0,
+      "overflow": 0,
+      "h1": 1,
+      "emptyOrError": "ready",
+      "activeDesk": {
+        "tag": "body",
+        "label": "[data-tree-group] :is(aside, [data-slot=sidebar]) { border-l",
+        "outline": "none 2.2312px color(srgb 0.901961 0.929412 0.952941 / 0.94)",
+        "height": 1004
+      }
+    }
+  },
+  "keyboard": {
+    "dark": {
+      "firstStop": "a",
+      "firstLabel": "Skip to course content",
+      "skipRevealed": true,
+      "tabLabel": "H103 live failure check",
+      "tabHeight": 44,
+      "tabOutline": "none 2.2312px rgb(185, 174, 154)",
+      "focusRingVisible": false
+    }
+  }
+}

@@ -2261,6 +2261,109 @@ function mainlineObjective(row, objectives) {
   return list.find((entry) => !entry.independent) || list[list.length - 1]
 }
 
+const HUB_SLOT_LIMIT = 4
+
+/** Numeric clock for `updated_at`; an unparseable stamp sorts last, never first. */
+function hubTime(value) {
+  const time = Date.parse(String(value || ''))
+  return Number.isFinite(time) ? time : 0
+}
+
+/**
+ * The name of a classroom, from the row and nothing else: the enrollment's own `learner_label`
+ * when it has one, otherwise the course title. "Learner 1" is never generated; a pack import has
+ * no label, and a course switcher is the honest thing to show until rename exists.
+ */
+function hubSlotName(row) {
+  const label = row && typeof row.learner_label === 'string' ? row.learner_label.trim() : ''
+  if (label) return label
+  const title = row && typeof row.title === 'string' ? row.title.trim() : ''
+  return title || 'Untitled course'
+}
+
+function hubSlotFrom(entry) {
+  const row = entry.row
+  return {
+    course_id: row.course_id,
+    enrollment_id: row.enrollment_id,
+    name: hubSlotName(row),
+    learner_label: row.learner_label || null,
+    title: row.title || null,
+    updated_at: row.updated_at || null,
+    // How many non-archived progress records this course carries in the rows the hub read.
+    // Objective state is course-scoped, so this is a disclosure, not a second classroom.
+    recordCount: entry.records,
+    row
+  }
+}
+
+/**
+ * H-146 — the hub's read model. A classroom is the pair Coursebook already stores: a course plus
+ * its newest enrollment (`library.list` rows are exactly that pair). Parent-authored rows are a
+ * different destination and never become learner classrooms. Two enrollments on one course are
+ * one classroom with two progress records, because objective state in the kernel is course-scoped:
+ * splitting them would show two identical progress readings dressed as two learners.
+ *
+ * Pure and exported: it takes the contract's own rows and returns the rail, its visible cap and
+ * the counts. It never reads the DOM, the clock or a host atom.
+ */
+function hubSlots(rows) {
+  const list = Array.isArray(rows) ? rows : []
+  const byCourse = new Map()
+  list.forEach((row) => {
+    if (!row || !row.course_id) return
+    if (row.recipe === 'parent') return
+    const held = byCourse.get(row.course_id)
+    if (!held) {
+      byCourse.set(row.course_id, { row, records: 1 })
+      return
+    }
+    held.records += 1
+    if (hubTime(row.updated_at) > hubTime(held.row.updated_at)) held.row = row
+  })
+  const classrooms = [...byCourse.values()]
+    .map(hubSlotFrom)
+    .sort((a, b) => {
+      const delta = hubTime(b.updated_at) - hubTime(a.updated_at)
+      if (delta !== 0) return delta
+      return a.name.localeCompare(b.name)
+    })
+  const slots = classrooms.slice(0, HUB_SLOT_LIMIT)
+  return {
+    slots,
+    // The full list is what the select above four needs; the cap is what the rail may show.
+    all: classrooms,
+    hidden: Math.max(0, classrooms.length - slots.length),
+    total: classrooms.length,
+    rowTotal: list.length
+  }
+}
+
+/** The selected classroom, or the newest one when nothing is selected (or it just vanished). */
+function selectedHubSlot(hub, selectedCourseId) {
+  const all = hub && Array.isArray(hub.all) ? hub.all : []
+  const wanted = selectedCourseId ? all.find((slot) => slot.course_id === selectedCourseId) : null
+  return wanted || (hub && hub.slots && hub.slots[0]) || null
+}
+
+/**
+ * When `course.outline` could not be read, the row still carries the section the enrollment is on.
+ * This is only a pointer, never a fabricated objective: it has an id and no title or ordinal, so
+ * the plate says the backend's own next-step label until the outline answers.
+ */
+function rowFallbackCurrent(row) {
+  const summary = row && row.evidence_summary ? row.evidence_summary : {}
+  if (!summary.current_objective_id) return null
+  return {
+    objective_id: summary.current_objective_id,
+    title: null,
+    ordinal: null,
+    state: null,
+    independent: false,
+    last_opened_at: null
+  }
+}
+
 /**
  * The estimate state, normalized for rendering. `error` means the read itself failed: the desk
  * has no answer, so it must not say the author recorded none. `none` means the backend answered
@@ -2283,14 +2386,29 @@ function deskEstimateLabel(estimate) {
   return 'Session length not recorded'
 }
 
-/** Pure projection of the three reads into what the desk renders. Tested without a DOM. */
-function buildDeskModel({ library, outline, estimate }) {
+/**
+ * Pure projection of the three reads into what the desk renders. Tested without a DOM.
+ *
+ * H-146: `selectedCourseId` picks the classroom; every read above it is keyed to that slot's
+ * enrollment. `outlineState` tells the model whether `course.outline` answered, failed, or is
+ * still in flight, so a failed route read falls back to the row's own current objective instead
+ * of inventing one or disabling Continue.
+ */
+function buildDeskModel({ library, outline, estimate, selectedCourseId = null, outlineState = null }) {
   const rows = library && Array.isArray(library.items) ? library.items : []
-  const row = rows[0] || null
+  const hub = hubSlots(rows)
+  const selected = selectedHubSlot(hub, selectedCourseId)
+  // A selected course that is no longer in the rows is not silently replaced as if it still
+  // existed; the fallback is named in `selectionLost` so the surface can say what happened.
+  const selectionLost = Boolean(selectedCourseId) && Boolean(selected) && selected.course_id !== selectedCourseId
+  const row = selected ? selected.row : null
   if (!row) {
     return {
       rows: [],
       row: null,
+      hub,
+      selected: null,
+      selectionLost: false,
       current: null,
       objectives: [],
       total: 0,
@@ -2307,8 +2425,11 @@ function buildDeskModel({ library, outline, estimate }) {
       touchedSource: null
     }
   }
+  const readState = outlineState || (outline ? 'ready' : 'idle')
   const objectives = outline && Array.isArray(outline.objectives) ? outline.objectives : []
-  const current = mainlineObjective(row, objectives)
+  // Only an unanswered outline (failed or in flight) uses the row's current-objective pointer.
+  // A ready outline with zero objectives is a real answer: this course has no path yet.
+  const current = mainlineObjective(row, objectives) || (readState !== 'ready' ? rowFallbackCurrent(row) : null)
   const total = outline && Number(outline.total) ? Number(outline.total) : objectives.length
   const settled = objectives.filter((entry) => entry.independent).length
   const dueCount = objectives.filter(
@@ -2318,12 +2439,15 @@ function buildDeskModel({ library, outline, estimate }) {
   return {
     rows,
     row,
+    hub,
+    selected,
+    selectionLost,
     current,
     objectives,
     total,
     settled,
     dueCount,
-    sectionLabel: current ? `Section ${current.ordinal} of ${total}` : null,
+    sectionLabel: current && current.ordinal ? `Section ${current.ordinal} of ${total}` : null,
     nextLabel: next.label || 'The backend did not record a next step for this course.',
     primaryLabel: DESK_PRIMARY_LABEL[next.kind] || 'Open the lesson',
     primaryKind: next.kind || 'start_lesson',
@@ -2715,6 +2839,175 @@ function DeskFacts({ desk }) {
   })
 }
 
+/**
+ * H-146 — the classroom rail. It is navigation, not a dashboard: up to four text tabs, one
+ * `aria-current`, and the active classroom named in words underneath. Above four, the rail becomes
+ * one labelled select rather than a wrapping card grid. A switch changes only shell state:
+ * `onSelect(course_id)` is a local selection, never `?profile=`, a host route read, or a backend
+ * write. There are no avatars, covers or per-slot cards.
+ */
+function SlotRail({ hub, selected, onSelect, onShowAll }) {
+  const all = hub && Array.isArray(hub.all) ? hub.all : []
+  if (all.length === 0) return null
+  const active = selected || all[0]
+  const useSelect = all.length > HUB_SLOT_LIMIT
+  const nameCount = {}
+  all.forEach((slot) => {
+    nameCount[slot.name] = (nameCount[slot.name] || 0) + 1
+  })
+  // Two classrooms can share a learner label; the course title disambiguates in the select only,
+  // where there is room for it. Tabs keep the short identity.
+  const optionLabel = (slot) =>
+    nameCount[slot.name] > 1 && slot.title && slot.title !== slot.name ? `${slot.name} · ${slot.title}` : slot.name
+  const quiet = { margin: 0, fontFamily: CB_SANS, fontSize: CB_TYPE.caption, lineHeight: 1.45, color: 'var(--cb-ink-soft)' }
+  const heading = (key) => jsxs('div', {
+    style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
+    children: [
+      jsx(DeskLabel, { children: 'Classroom' }, 'label'),
+      onShowAll
+        ? jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'All courses' }, 'all')
+        : null
+    ]
+  }, key)
+  const current = (key) => jsx('p', {
+    'data-cb-slot-current': active.course_id,
+    'id': 'cb-hub-slot-current',
+    style: { ...quiet, color: 'var(--cb-ink)' },
+    children: `Showing ${active.name}`
+  }, key)
+  const disclosure = (key) =>
+    active.recordCount > 1
+      ? jsx('p', {
+          'data-cb-slot-disclosure': String(active.recordCount),
+          style: quiet,
+          children: `This course has ${active.recordCount} progress records; showing the most recent.`
+        }, key)
+      : null
+
+  let control
+  if (all.length === 1) {
+    // One classroom is named, not turned into a control that can only select itself.
+    control = jsxs('div', {
+      'data-cb-slot-rail': 'single',
+      'data-cb-slot-single': active.course_id,
+      style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+      children: [
+        heading('heading'),
+        jsx('span', {
+          style: {
+            fontFamily: CB_SANS,
+            fontSize: CB_TYPE.body,
+            fontWeight: 600,
+            color: 'var(--cb-ink)',
+            overflowWrap: 'break-word'
+          },
+          children: active.name
+        }, 'name'),
+        current('current'),
+        disclosure('disclosure')
+      ]
+    })
+  } else if (useSelect) {
+    control = jsxs('div', {
+      'data-cb-slot-rail': 'select',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', minWidth: 0 },
+      children: [
+        heading('heading'),
+        jsxs('div', {
+          style: { display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 },
+          children: [
+            jsx('label', {
+              htmlFor: 'cb-hub-classroom',
+              style: { ...quiet, fontWeight: 600 },
+              children: 'Choose a classroom'
+            }, 'label'),
+            jsx('select', {
+              id: 'cb-hub-classroom',
+              'data-cb-classroom-select': '',
+              'aria-describedby': 'cb-hub-slot-current',
+              value: active.course_id,
+              onChange: (event) => onSelect(event.target.value),
+              style: {
+                width: '100%',
+                maxWidth: '22rem',
+                minHeight: '44px',
+                padding: '0.35rem 0.5rem',
+                fontFamily: CB_SANS,
+                fontSize: CB_TYPE.meta,
+                color: 'var(--cb-ink)',
+                background: 'var(--cb-paper-raised)',
+                border: '1px solid var(--cb-ink)',
+                borderRadius: '2px',
+                boxSizing: 'border-box'
+              },
+              children: all.map((slot) =>
+                jsx('option', { value: slot.course_id, children: optionLabel(slot) }, slot.course_id)
+              )
+            }, 'select')
+          ]
+        }, 'field'),
+        current('current'),
+        disclosure('disclosure')
+      ]
+    })
+  } else {
+    control = jsxs('div', {
+      'data-cb-slot-rail': 'tabs',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: 0 },
+      children: [
+        heading('heading'),
+        jsx('nav', {
+          'data-cb-classroom-tabs': '',
+          'aria-label': 'Classrooms',
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: '0.1rem 1.1rem', minWidth: 0 },
+          children: all.map((slot) => {
+            const isCurrent = slot.course_id === active.course_id
+            return jsx(
+              'button',
+              {
+                type: 'button',
+                'data-cb-slot-tab': slot.course_id,
+                'data-cb-slot-state': isCurrent ? 'current' : 'available',
+                'aria-current': isCurrent ? 'true' : undefined,
+                onClick: () => {
+                  if (!isCurrent) onSelect(slot.course_id)
+                },
+                style: {
+                  minHeight: '44px',
+                  maxWidth: '100%',
+                  padding: '0.3rem 0.1rem',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: `2px solid ${isCurrent ? 'var(--cb-lamp)' : 'transparent'}`,
+                  borderRadius: 0,
+                  cursor: isCurrent ? 'default' : 'pointer',
+                  fontFamily: CB_SANS,
+                  fontSize: CB_TYPE.meta,
+                  fontWeight: isCurrent ? 600 : 400,
+                  color: isCurrent ? 'var(--cb-ink)' : 'var(--cb-ink-soft)',
+                  textAlign: 'left',
+                  overflowWrap: 'anywhere'
+                },
+                children: slot.name
+              },
+              slot.course_id
+            )
+          })
+        }, 'tabs'),
+        current('current'),
+        disclosure('disclosure')
+      ]
+    })
+  }
+
+  return jsx('section', {
+    'data-cb-slot-rail-section': '',
+    'aria-label': 'Classroom selection',
+    style: { maxWidth: CB_MEASURE, minWidth: 0 },
+    children: control
+  })
+}
+
 /** One raised frame, not a card in a card: the Continue card is the only surface on the desk. */
 function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate }) {
   const current = desk.current
@@ -2724,6 +3017,10 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
   // Keep it on the wide desk, where it reads as a course cover; drop it when the text must lead.
   const viewportWidth = useCbViewportWidth()
   const compact = viewportWidth > 0 && viewportWidth < 620
+  // A lesson start needs a section id. Plan/review/pack next steps open Course Detail and do not,
+  // so a failed outline read never disables the one primary action.
+  const needsSection = desk.primaryKind === 'start_lesson' || desk.primaryKind === 'resume_lesson'
+  const canPrimary = Boolean(desk.row) && (Boolean(current) || !needsSection)
   return jsxs('section', {
     'data-cb-continue': '',
     'data-cb-continue-compact': compact ? 'true' : 'false',
@@ -2825,12 +3122,12 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
         children: [
           jsx(sdk.Button, {
             variant: 'default',
-            disabled: Boolean(busy) || !current,
+            disabled: Boolean(busy) || !canPrimary,
             onClick: onPrimary,
             style: {
-              background: busy || !current ? 'var(--cb-paper)' : 'var(--cb-lamp)',
-              color: busy || !current ? 'var(--cb-ink-soft)' : 'var(--cb-on-lamp)',
-              border: `1px solid ${busy || !current ? 'var(--cb-rule)' : 'var(--cb-on-lamp)'}`,
+              background: busy || !canPrimary ? 'var(--cb-paper)' : 'var(--cb-lamp)',
+              color: busy || !canPrimary ? 'var(--cb-ink-soft)' : 'var(--cb-on-lamp)',
+              border: `1px solid ${busy || !canPrimary ? 'var(--cb-rule)' : 'var(--cb-on-lamp)'}`,
               borderRadius: '2px',
               minHeight: '36px'
             },
@@ -2853,9 +3150,33 @@ function ContinueCard({ desk, busy, onPrimary, onOpenSection, onRetryEstimate })
  * The path is a route, not a table: ordinal, title and the state word, with the current section
  * marked `aria-current="step"`. Every row is a real button into that section.
  */
-function PathPreview({ desk, onOpenSection }) {
+function PathPreview({ desk, onOpenSection, outlineStatus, outlineError, onRetryOutline }) {
   const objectives = desk.objectives.slice(0, 8)
   const remaining = Math.max(0, desk.total - objectives.length)
+  // A failed route read is its own state. Continue still works from the row's next step; the path
+  // says what it could not read and offers the retry, rather than claiming the course is empty.
+  if (outlineStatus === 'error' && objectives.length === 0) {
+    return jsxs('section', {
+      'data-cb-path': 'error',
+      style: { display: 'flex', flexDirection: 'column', gap: '0.3rem', maxWidth: '100%' },
+      children: [
+        jsx(PlateHead, {
+          label: 'The route',
+          title: desk.row && desk.row.title ? desk.row.title : 'Your path'
+        }, 'head'),
+        jsxs('div', {
+          style: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', fontSize: CB_TYPE.meta, color: 'var(--cb-ink-soft)' },
+          children: [
+            jsx('p', {
+              style: { margin: 0, lineHeight: 1.55 },
+              children: `${outlineError && outlineError.code ? outlineError.code + ': ' : ''}${describeError(outlineError)} The route was not read. Continue still uses the next step this course recorded.`
+            }, 'copy'),
+            jsx(sdk.Button, { variant: 'secondary', size: 'sm', onClick: onRetryOutline, children: 'Try again' }, 'retry')
+          ]
+        }, 'body')
+      ]
+    })
+  }
   return jsxs('section', {
     'data-cb-path': '',
     style: { display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '100%' },
@@ -2863,13 +3184,13 @@ function PathPreview({ desk, onOpenSection }) {
       jsx(PlateHead, {
         label: 'The route',
         title: desk.row && desk.row.title ? desk.row.title : 'Your path'
-      }),
+      }, 'head'),
       jsx(EvidenceTally, {
         objectives: desk.objectives,
         caption: objectives.length
           ? `${desk.settled} of ${plural(desk.total, 'section', 'sections')} with evidence${desk.dueCount ? ` · ${desk.dueCount} due` : ''}`
           : 'No evidence recorded yet'
-      }),
+      }, 'tally'),
       jsx('ol', {
         'aria-label': 'Course route',
         style: {
@@ -2971,15 +3292,15 @@ function PathPreview({ desk, onOpenSection }) {
             objective.objective_id
           )
         })
-      }),
+      }, 'route'),
       remaining > 0
-        ? jsx('div', { style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', paddingTop: '0.2rem' }, children: `${remaining} more section${remaining === 1 ? '' : 's'} in the path` })
+        ? jsx('div', { style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', paddingTop: '0.2rem' }, children: `${remaining} more section${remaining === 1 ? '' : 's'} in the path` }, 'more')
         : null,
       objectives.length === 0
         ? jsx('p', {
             style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
             children: 'This course has no objectives yet, so there is no path to show. Approve its plan to start one.'
-          })
+          }, 'none')
         : null
     ]
   })
@@ -3046,67 +3367,6 @@ function SourcesDrawer({ open, onToggle, sectionTitle, status, error, sources, o
                           )
                         )
                       })
-          })
-        : null
-    ]
-  })
-}
-
-/** The secondary list: the other courses on this profile, by their own next step. */
-function AllCoursesList({ rows, onOpen, onShowAll }) {
-  // H-99: the shelf is one object per course. Repeated enrollments of the same course no longer
-  // become three identical tiles; the group keeps its count for the full list.
-  const groups = groupShelfRows(rows)
-  const others = groups.slice(1)
-  // The desk stays one glance: three more courses, then the honest count and the full list.
-  const shown = others.slice(0, 3)
-  const hidden = others.length - shown.length
-  return jsxs('section', {
-    'data-cb-all-courses': '',
-    style: { display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: '100%' },
-    children: [
-      jsxs('div', {
-        style: { display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.25rem 0.75rem' },
-        children: [
-          jsx(DeskLabel, { as: 'h2', children: `All courses · ${groups.length}` }),
-          jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onShowAll, children: 'Search and manage courses' })
-        ]
-      }),
-      others.length === 0
-        ? jsx('p', {
-            style: { margin: 0, fontSize: CB_TYPE.meta, lineHeight: 1.55, color: 'var(--cb-ink-soft)' },
-            children: 'This is the only course on this profile.'
-          })
-        : jsx('div', {
-            style: {
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(13rem, 1fr))',
-              gap: '0.55rem'
-            },
-            children: shown.map((group) =>
-              jsx(
-                CourseCover,
-                {
-                  row: group.primary,
-                  group,
-                  testId: group.primary.enrollment_id,
-                  onOpenMember: onOpen,
-                  action: jsx(sdk.Button, {
-                    variant: 'secondary',
-                    size: 'sm',
-                    onClick: () => onOpen(group.primary),
-                    children: 'Open'
-                  })
-                },
-                `all-${group.key}`
-              )
-            )
-          }),
-      hidden > 0
-        ? jsx('div', {
-            'data-cb-all-courses-more': String(hidden),
-            style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)', paddingTop: '0.1rem' },
-            children: `+${hidden} more course${hidden === 1 ? '' : 's'} on this profile`
           })
         : null
     ]
@@ -3326,15 +3586,19 @@ function FieldDeskHome({
   onShowNotebook,
   libraryStatus,
   libraryError,
+  libraryEmptyReason,
   stale,
   busy,
   notice,
+  online,
   onRetry,
   onCreate,
   onSyllabus,
   onPrimary,
   onOpenSection,
   onRetryEstimate,
+  onSelectCourse,
+  onOpenStudio,
   onOpen,
   onShowAll,
   sourcesOpen,
@@ -3343,6 +3607,9 @@ function FieldDeskHome({
   sourcesError,
   sources,
   onRetrySources,
+  outlineStatus,
+  outlineError,
+  onRetryOutline,
   implemented,
   onEmptyChange
 }) {
@@ -3377,13 +3644,50 @@ function FieldDeskHome({
     })
   }
   if (!desk.row) {
+    // H-146: a profile can have rows and still no learner classroom. Parent-authored plans are a
+    // different destination, and an all-archived profile has an answer of its own; neither is
+    // "first run", and neither may silently borrow the first-run plate.
+    if (desk.hub.rowTotal > 0) {
+      return jsx('div', {
+        'data-cb-desk': 'parent-only',
+        className: 'py-6',
+        children: jsxs(EmptyState, {
+          title: 'Parent Studio holds your lesson plans.',
+          description:
+            'This profile has parent-led lesson plans, not a learner classroom. Continue belongs to a learner classroom.',
+          children: jsx(sdk.Button, {
+            variant: 'default',
+            onClick: onOpenStudio,
+            style: { background: 'var(--cb-lamp)', color: 'var(--cb-on-lamp)', border: '1px solid var(--cb-on-lamp)', borderRadius: '2px', minHeight: '44px' },
+            children: 'Open Parent Studio'
+          })
+        })
+      })
+    }
+    if (libraryEmptyReason === 'all_archived') {
+      return jsx('div', {
+        'data-cb-desk': 'archived',
+        className: 'py-6',
+        children: jsxs(EmptyState, {
+          title: 'Every classroom here is archived.',
+          description: 'Archived courses keep their evidence. Unarchive one in Courses to continue it.',
+          children: jsx(sdk.Button, { variant: 'secondary', onClick: onShowAll, children: 'Open courses' })
+        })
+      })
+    }
     return jsx('div', {
       'data-cb-desk': 'empty',
       children: jsx(FirstRun, { implemented, onCreate, onSyllabus })
     })
   }
 
-  const continueCard = jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection, onRetryEstimate })
+  const railCard = jsx(SlotRail, {
+    hub: desk.hub,
+    selected: desk.selected,
+    onSelect: onSelectCourse,
+    onShowAll
+  }, 'rail')
+  const continueCard = jsx(ContinueCard, { desk, busy, onPrimary, onOpenSection, onRetryEstimate }, 'continue')
   const notesCard = jsx(FieldNotesStrip, {
     notes,
     courseTitle: desk.row && desk.row.title ? desk.row.title : null,
@@ -3393,8 +3697,14 @@ function FieldDeskHome({
     onOpenSection,
     onShowNotebook,
     onRetry
+  }, 'notes')
+  const pathCard = jsx(PathPreview, {
+    desk,
+    onOpenSection,
+    outlineStatus,
+    outlineError,
+    onRetryOutline
   })
-  const pathCard = jsx(PathPreview, { desk, onOpenSection })
   const sourcesCard = jsx(SourcesDrawer, {
     open: sourcesOpen,
     onToggle: onToggleSources,
@@ -3403,17 +3713,16 @@ function FieldDeskHome({
     error: sourcesError,
     sources,
     onRetry: onRetrySources
-  })
-  const coursesCard = jsx(AllCoursesList, { rows: desk.rows, onOpen, onShowAll })
+  }, 'sources')
   const mainColumn = jsxs('div', {
     style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, maxWidth: CB_MEASURE },
-    children: [continueCard, pathCard, sourcesCard]
-  })
+    children: [railCard, continueCard, pathCard, sourcesCard]
+  }, 'main')
   const sideColumn = jsxs('aside', {
-    'aria-label': 'Field notes and all courses',
+    'aria-label': 'Field notes',
     style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, maxWidth: CB_MEASURE },
-    children: [notesCard, coursesCard]
-  })
+    children: [notesCard]
+  }, 'side')
 
   return jsxs('div', {
     'data-cb-desk': 'ready',
@@ -3430,9 +3739,23 @@ function FieldDeskHome({
               }),
               jsx(sdk.Button, { variant: 'text', size: 'sm', onClick: onRetry, children: 'Retry now' })
             ]
-          })
+          }, 'stale')
         : null,
-      notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }) : null,
+      online === false
+        ? jsx('div', {
+            'data-cb-desk-offline': '',
+            className: 'text-xs text-(--ui-text-secondary)',
+            children: 'Offline. Showing the classrooms that were last read; starting a lesson is paused until the connection returns.'
+          }, 'offline')
+        : null,
+      desk.selectionLost && desk.selected
+        ? jsx('div', {
+            'data-cb-desk-selection-lost': desk.selected.course_id,
+            className: 'text-xs text-(--ui-text-secondary)',
+            children: `That classroom is no longer on this profile. Showing ${desk.selected.name}.`
+          }, 'selection')
+        : null,
+      notice ? jsx('div', { className: 'text-xs text-(--ui-text-secondary)', children: notice }, 'notice') : null,
       wide
         ? jsxs('div', {
             style: {
@@ -3442,11 +3765,11 @@ function FieldDeskHome({
               alignItems: 'start'
             },
             children: [mainColumn, sideColumn]
-          })
+          }, 'layout')
         : jsxs('div', {
             style: { display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 },
-            children: [continueCard, notesCard, pathCard, sourcesCard, coursesCard]
-          })
+            children: [railCard, continueCard, notesCard, pathCard, sourcesCard]
+          }, 'layout')
     ]
   })
 }
@@ -3532,17 +3855,35 @@ function useSessionEstimate({ row, current, enabled, retryToken = 0 }) {
 }
 
 /**
- * The Field Desk container. One `library.list` read picks the course to continue (the most
- * recently written row), `course.outline` supplies the path, and the section's sources are read
- * only when the drawer opens. A failure in any of those is shown, never papered over.
+ * The Field Desk container. One `library.list` read feeds the hub projection; the selected
+ * classroom's enrollment keys `course.outline`, `lesson.page`, `notebook.list` and Continue.
+ * `selectedCourseId` is shell state owned by the page, so opening Course Detail and coming back
+ * restores the same classroom. Every failed read is shown, never papered over.
  */
-function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSyllabus, profile, onEmptyChange }) {
+function FieldDesk({
+  implemented,
+  onOpen,
+  onShowAll,
+  onStartCreate,
+  onStartSyllabus,
+  profile,
+  onEmptyChange,
+  selectedCourseId,
+  onSelectCourse,
+  onOpenStudio,
+  online
+}) {
   const supports = (method) => Boolean(implemented && implemented.has(method))
   const payload = { filter: 'all', limit: 50, sort: 'recent' }
   const key = JSON.stringify(payload)
   const library = useRpcQuery('library.list', payload, key, backendSupports('library.list'))
 
-  const provisional = buildDeskModel({ library: library.data, outline: null, estimate: null })
+  const provisional = buildDeskModel({
+    library: library.data,
+    outline: null,
+    estimate: null,
+    selectedCourseId: selectedCourseId || null
+  })
   const row = provisional.row
   const outline = useRpcQuery(
     'course.outline',
@@ -3550,7 +3891,13 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     `desk-outline-${row ? row.enrollment_id : 'none'}`,
     Boolean(row) && supports('course.outline')
   )
-  const withOutline = buildDeskModel({ library: library.data, outline: outline.data, estimate: null })
+  const withOutline = buildDeskModel({
+    library: library.data,
+    outline: outline.data,
+    estimate: null,
+    selectedCourseId: selectedCourseId || null,
+    outlineState: outline.status
+  })
   const current = withOutline.current
   const [estimateTicket, setEstimateTicket] = useState(0)
   const estimate = useSessionEstimate({
@@ -3560,13 +3907,27 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     retryToken: estimateTicket
   })
   const onRetryEstimate = useCallback(() => setEstimateTicket((value) => value + 1), [])
-  const desk = buildDeskModel({ library: library.data, outline: outline.data, estimate })
+  const desk = buildDeskModel({
+    library: library.data,
+    outline: outline.data,
+    estimate,
+    selectedCourseId: selectedCourseId || null,
+    outlineState: outline.status
+  })
+
+  // A selected classroom that disappeared between reads is replaced by the newest slot and named
+  // in the surface. The shell value is synced to the row that is actually shown, but no route or
+  // focus changes: a background archive must not navigate the learner.
+  const selectedCourseKey = desk.selected ? desk.selected.course_id : null
+  useEffect(() => {
+    if (desk.selectionLost && selectedCourseKey && onSelectCourse) onSelectCourse(selectedCourseKey)
+  }, [desk.selectionLost, selectedCourseKey, onSelectCourse])
 
   const [sourcesOpen, setSourcesOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
 
-  // A different continued course must not inherit the previous course's open drawer.
+  // A different classroom must not inherit the previous one's open drawer.
   useEffect(() => {
     setSourcesOpen(false)
   }, [row ? row.enrollment_id : 'none'])
@@ -3589,9 +3950,10 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
   )
 
   const onPrimary = useCallback(async () => {
-    if (!desk.row || !desk.current) return
+    if (!desk.row) return
     const kind = desk.primaryKind
     if (kind === 'start_lesson' || kind === 'resume_lesson') {
+      if (!desk.current) return
       setBusy(true)
       setNotice(null)
       const outcome = await beginLessonFor({
@@ -3622,15 +3984,19 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     desk,
     libraryStatus: library.status,
     libraryError: library.error,
+    libraryEmptyReason: library.data ? library.data.empty_reason : null,
     stale: Boolean(library.stale),
     busy,
     notice,
+    online,
     onRetry: library.reload,
     onCreate: onStartCreate,
     onSyllabus: onStartSyllabus,
     onPrimary,
     onOpenSection: (objectiveId, blockId) => onOpen(desk.row, objectiveId, blockId),
     onRetryEstimate,
+    onSelectCourse,
+    onOpenStudio,
     notes,
     onShowNotebook: () => onOpen(desk.row, null, null, 'notebook'),
     onOpen,
@@ -3641,6 +4007,9 @@ function FieldDesk({ implemented, onOpen, onShowAll, onStartCreate, onStartSylla
     sourcesError: page.error,
     sources: page.data && page.data.sources,
     onRetrySources: page.reload,
+    outlineStatus: outline.status,
+    outlineError: outline.error,
+    onRetryOutline: outline.reload,
     implemented,
     onEmptyChange
   })
@@ -17914,6 +18283,7 @@ function CoursebookPage() {
   // layer stops at this root, so Hermes chrome keeps its own theme untouched.
   const cbMode = useCbMode()
   const cbMotion = useCbMotion()
+  const online = useOnline()
   const [destination, setDestination] = useState(rememberedDestination)
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -17925,6 +18295,10 @@ function CoursebookPage() {
   // then drops its duplicate "New course" button: one screen, one primary action (UX-01).
   const [coursesEmpty, setCoursesEmpty] = useState(false)
   const [openCourse, setOpenCourse] = useState(null)
+  // H-146: the selected classroom is shell state, not a backend field and not localStorage. It
+  // survives Course Detail because it lives here, beside `openCourse`, and it is never written to
+  // progress. A slot switch changes this value only.
+  const [selectedCourseId, setSelectedCourseId] = useState(null)
   // H-103: "Change the goal" carries the rejected plan's own choices into the create form instead
   // of asking the learner to retype them. It is a seed, not an automatic submit.
   const [createSeed, setCreateSeed] = useState(null)
@@ -17965,6 +18339,7 @@ function CoursebookPage() {
       if (row) {
         rememberedDestination = 'courses'
         setDestination('courses')
+        setSelectedCourseId(row.course_id)
         setOpenCourse({ row, objectiveId: null, view: 'plan' })
         setCompanionTarget(null)
         return
@@ -18169,18 +18544,27 @@ function CoursebookPage() {
       onEmptyChange: setCoursesEmpty,
       onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null,
-      onOpen: (row) => setOpenCourse({ row, objectiveId: null }),
+      onOpen: (row) => {
+        if (row && row.recipe !== 'parent') setSelectedCourseId(row.course_id)
+        setOpenCourse({ row, objectiveId: null })
+      },
       onShowDesk: () => changeDestination('home')
     })
   } else {
-    // H-145: Home is the launcher. It carries exactly one Continue surface for the selected
-    // classroom; the all-courses catalog lives behind the Courses destination, not here.
+    // H-145/H-146: Home is the launcher. It carries the classroom rail and exactly one Continue
+    // surface for the selected classroom; the all-courses catalog lives behind Courses, not here.
     body = jsx(FieldDesk, {
       implemented,
       profile: currentScope().profile,
+      online,
+      selectedCourseId,
+      onSelectCourse: setSelectedCourseId,
+      onOpenStudio: () => changeDestination('studio'),
       onEmptyChange: setCoursesEmpty,
-      onOpen: (row, objectiveId, blockId, view) =>
-        setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null }),
+      onOpen: (row, objectiveId, blockId, view) => {
+        if (row && row.recipe !== 'parent') setSelectedCourseId(row.course_id)
+        setOpenCourse({ row, objectiveId: objectiveId || null, blockId: blockId || null, view: view || null })
+      },
       onShowAll: () => changeDestination('courses'),
       onStartCreate: () => beginCreate(),
       onStartSyllabus: canSyllabus ? () => setSyllabusFlow(true) : null
@@ -18188,7 +18572,6 @@ function CoursebookPage() {
   }
 
   const statusCopy = backendCopy(health.status)
-  const online = useOnline()
   const showDestinationNav = health.status === 'ready' && !creating && !importing && !syllabusFlow
   // One stable page title per surface. It is the route's only `h1` in every health and flow
   // state, so the first heading is the page title and never a card's objective; every surface
@@ -18735,6 +19118,10 @@ export {
   WorkspaceShell,
   blockSaveExcerpt,
   buildDeskModel,
+  hubSlots,
+  hubSlotName,
+  selectedHubSlot,
+  SlotRail,
   cbCourseGoalLine,
   cbCourseMonogram,
   cbCoursePathCaption,

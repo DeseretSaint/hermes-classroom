@@ -793,24 +793,32 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertIn("Reconnecting", html)
         self.assertIn("Retry now", html)
 
-    def test_all_courses_is_secondary_and_lists_the_other_rows(self) -> None:
+    def test_the_home_names_the_other_classroom_without_a_card_grid(self) -> None:
         second = library_row(
             enrollment_id="enr_ffffffffffffffff",
             course_id="crs_ffffffffffffffff",
             title="Japanese greetings",
+            learner_label="Ada",
             next_step={"kind": "start_lesson", "label": "Start あいさつ"},
         )
         html = self.render(library=library(library_row(), second))
-        self.assertIn("All courses · 2", html)
-        self.assertIn("Japanese greetings", html)
-        self.assertIn("Start あいさつ", html)
-        self.assertIn("Search and manage courses", html)
+        # H-146: the rail is navigation. The other classroom is one text tab with a real
+        # `aria-current`, and the all-courses catalog stays behind the Courses destination.
+        self.assertIn('data-cb-slot-rail="tabs"', html)
+        self.assertIn('data-cb-slot-tab="crs_ffffffffffffffff"', html)
+        self.assertIn(">Ada<", html)
+        self.assertIn("All courses", html)
+        self.assertNotIn("data-cb-all-courses", html)
+        self.assertNotIn("data-cb-course-cover", html)
 
-    def test_a_single_course_says_so_rather_than_padding_the_list(self) -> None:
+    def test_a_single_classroom_names_itself_without_a_switcher(self) -> None:
         html = self.render()
-        self.assertIn("This is the only course on this profile.", html)
+        self.assertIn('data-cb-slot-rail="single"', html)
+        self.assertIn("Showing Small-engine maintenance", html)
+        self.assertNotIn("data-cb-slot-tab", html)
+        self.assertNotIn("data-cb-classroom-select", html)
 
-    def test_the_secondary_list_stays_compact_and_counts_the_rest(self) -> None:
+    def test_above_four_classrooms_becomes_one_labelled_select(self) -> None:
         rows = [library_row()]
         for index in range(5):
             rows.append(
@@ -818,12 +826,15 @@ class FieldDeskRenderTest(unittest.TestCase):
                     enrollment_id=f"enr_{index:016d}",
                     course_id=f"crs_{index:016d}",
                     title=f"Other course {index}",
+                    updated_at=f"2026-10-{index + 1:02d}T10:00:00.000000+00:00",
                 )
             )
         html = self.render(library=library(*rows))
-        self.assertIn("All courses · 6", html)
-        self.assertEqual(html.count("data-cb-all-courses-row"), 3)
-        self.assertIn("+2 more courses on this profile", html)
+        self.assertIn('data-cb-slot-rail="select"', html)
+        self.assertIn("data-cb-classroom-select", html)
+        self.assertIn("Choose a classroom", html)
+        self.assertEqual(html.count("<option"), 6)
+        self.assertNotIn("data-cb-slot-tab", html)
 
     def test_the_wide_desk_is_a_two_column_reading_surface(self) -> None:
         html = self.render()
@@ -834,7 +845,9 @@ class FieldDeskRenderTest(unittest.TestCase):
         self.assertNotIn('data-cb-desk-stats', html)
         self.assertNotIn('data-cb-desk-stat=', html)
         self.assertNotIn('data-cb-course-stamp', html)
-        self.assertLess(html.index('data-cb-continue'), html.index('data-cb-all-courses'))
+        # H-146: the classroom rail sits above Continue; the course grid does not exist on Home.
+        self.assertLess(html.index('data-cb-slot-rail-section'), html.index('data-cb-continue'))
+        self.assertNotIn('data-cb-all-courses', html)
 
     def test_resume_without_a_binding_opens_the_section_instead_of_a_blank_chat(self) -> None:
         source = PLUGIN_JS.read_text(encoding="utf-8")
