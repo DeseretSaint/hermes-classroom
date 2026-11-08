@@ -388,9 +388,14 @@ class ActionRenderTest(unittest.TestCase):
     def test_the_route_h1_is_the_only_display_heading(self) -> None:
         # jsdom drops the `clamp()` display value, so the byte-level claim is made here and the
         # rendered half only has to prove there is one h1 and no other large heading.
+        #
+        # Merge reconciliation (H-148/H-149 over H-151): the player's close plate is a real
+        # completion moment and H-149 gives it the display step, so the byte-level count is two —
+        # the route h1 and that one close heading — and never more.
         source = PLUGIN_JS.read_text(encoding="utf-8")
-        self.assertEqual(source.count("fontSize: CB_TYPE.display"), 1)
+        self.assertEqual(source.count("fontSize: CB_TYPE.display"), 2)
         self.assertIn("'data-cb-page-title': '',", source)
+        self.assertIn("'data-cb-player-close': '',", source)
         for item in self.surfaces():
             with self.subTest(surface=item["name"]):
                 h1s = [h for h in item["headings"] if h["tag"] == "h1"]
