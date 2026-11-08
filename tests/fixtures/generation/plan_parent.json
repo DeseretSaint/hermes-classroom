@@ -62,7 +62,7 @@
         1
       ],
       "context_needs": [
-        "picture cards",
+        "four picture cards: a kettle, a toaster, a fridge and an ice tray (parent-supplied props, not lesson media)",
         "kitchen tour"
       ],
       "source_ids": []
@@ -70,13 +70,13 @@
     {
       "ordinal": 2,
       "title": "Cold things at home",
-      "lesson_intent": "Parent names cold objects, then sorts four picture cards into warm and cold together.",
+      "lesson_intent": "Parent names cold objects, then sorts four picture cards - a kettle, a toaster, a fridge and an ice tray - into warm and cold together; the cards are parent-supplied props, so the lesson declares no media artifact of its own.",
       "media_need": {"construct": "", "image": {"level": "none", "role": "none"}, "audio": {"level": "none", "role": "none"}},
       "objective_refs": [
         2
       ],
       "context_needs": [
-        "picture cards",
+        "four picture cards: a kettle, a toaster, a fridge and an ice tray (parent-supplied props, not lesson media)",
         "kitchen tour"
       ],
       "source_ids": []
@@ -139,7 +139,7 @@
     }
   ],
   "context_needs": [
-    "picture cards",
+    "four picture cards: a kettle, a toaster, a fridge and an ice tray (parent-supplied props, not lesson media)",
     "large print",
     "parent script"
   ],
@@ -165,7 +165,7 @@
     ],
     "setting_materials": [
       "kitchen table",
-      "four picture cards",
+      "four picture cards (kettle, toaster, fridge, ice tray)",
       "crayons"
     ],
     "parent_facing_summary": "Two 15-minute kitchen sessions where you name warm and cold things and explain one grown-up job."
