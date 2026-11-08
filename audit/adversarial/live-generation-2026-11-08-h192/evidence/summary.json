@@ -1,0 +1,238 @@
+{
+  "packet": "h192-live-acceptance-2026-11-08",
+  "scopes": {
+    "full": {
+      "acceptance": {
+        "approve_ok": false,
+        "full_has_prerequisite_edge": false,
+        "full_has_two_units": false,
+        "lesson_served": false,
+        "lesson_validated": false,
+        "no_rejection": true,
+        "objectives_in_band": false,
+        "plan_authored": false,
+        "plan_job_completed": false,
+        "provider_and_model_recorded": true,
+        "research_real": false,
+        "units_in_band": false,
+        "validation_independent": false,
+        "validation_outcome_acceptable": false
+      },
+      "acceptance_pass": false,
+      "approve_error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_5494f2ee75e74d41b680552922bfa158\"}}",
+      "approve_ok": false,
+      "approve_result": null,
+      "check_plan_count": 0,
+      "error": null,
+      "facts_unverified": null,
+      "generation_state": null,
+      "generator": {
+        "model": null,
+        "provider": null
+      },
+      "goal": "Read a business report statistically: averages, spread, sampling and correlation",
+      "independence": null,
+      "job_terminal_state": "failed",
+      "lesson_count": 0,
+      "lesson_rows": [],
+      "lesson_states": [],
+      "lessons_jobs": [],
+      "objective_count": 0,
+      "plan_elapsed_s": 598.3,
+      "plan_hash": "sha256:558ac74cf133144ed0401948667950b900ccb18123a7f50170f9d2f149a690a1",
+      "plan_schema": null,
+      "plan_state": "draft",
+      "plan_state_after_approve": "draft",
+      "recipe": "committed",
+      "rejection_reasons": [],
+      "research_failure_count": null,
+      "research_queries": null,
+      "research_query_count": null,
+      "research_reason": null,
+      "research_source_count": null,
+      "research_sources": null,
+      "research_status": null,
+      "scope": "full",
+      "served_lesson": {},
+      "shape_violations": null,
+      "tag": "full",
+      "time_estimate_weeks": null,
+      "unit_count": 0,
+      "units": [],
+      "units_in_document": [],
+      "usage": {
+        "events": [
+          {
+            "duration_ms": 131245,
+            "job_id": "job_90289cf06f314932a9a9c4fb9d0d989d",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T20:51:59Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "plan-prompt.v9",
+              "purpose": "coursebook.plan.generate",
+              "unknown_cost": true
+            }
+          },
+          {
+            "duration_ms": 376896,
+            "job_id": "job_90289cf06f314932a9a9c4fb9d0d989d",
+            "model": "z-ai/glm-5.3-flash",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T20:51:59Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "validation-prompt.v4",
+              "purpose": "coursebook.plan.validate",
+              "unknown_cost": true
+            }
+          }
+        ],
+        "totals": {
+          "by_model": {
+            "nous/deepseek/deepseek-v4.1-flash-1017": {
+              "calls": 1,
+              "total_tokens": "redacted"
+            },
+            "nous/z-ai/glm-5.3-flash": {
+              "calls": 1,
+              "total_tokens": "redacted"
+            }
+          },
+          "calls": 2,
+          "input_tokens": "redacted",
+          "output_tokens": "redacted",
+          "total_tokens": "redacted"
+        }
+      },
+      "validation_outcome": null,
+      "validation_verdict": null,
+      "validation_warning": null,
+      "validator": {
+        "model": null,
+        "provider": null
+      },
+      "validator_config": {
+        "configured": true,
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+      },
+      "wire_contract_version": 18,
+      "worker_ok": true
+    },
+    "short": {
+      "missing": true,
+      "tag": "short"
+    },
+    "single": {
+      "acceptance": {
+        "approve_ok": false,
+        "lesson_served": false,
+        "lesson_validated": false,
+        "no_rejection": true,
+        "objectives_in_band": false,
+        "plan_authored": false,
+        "plan_job_completed": false,
+        "provider_and_model_recorded": true,
+        "research_real": false,
+        "units_in_band": false,
+        "validation_independent": false,
+        "validation_outcome_acceptable": false
+      },
+      "acceptance_pass": false,
+      "approve_error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_6e0dc7a0ab364b9289832c02d93d40eb\"}}",
+      "approve_ok": false,
+      "approve_result": null,
+      "check_plan_count": 0,
+      "error": null,
+      "facts_unverified": null,
+      "generation_state": null,
+      "generator": {
+        "model": null,
+        "provider": null
+      },
+      "goal": "Brew a pour-over coffee whose strength stays consistent from cup to cup",
+      "independence": null,
+      "job_terminal_state": "failed",
+      "lesson_count": 0,
+      "lesson_rows": [],
+      "lesson_states": [],
+      "lessons_jobs": [],
+      "objective_count": 0,
+      "plan_elapsed_s": 648.3,
+      "plan_hash": "sha256:1b002d87e62bcb72f3a6583e7dae4b035878bec073a1afdb9a6e74af9e85eb6c",
+      "plan_schema": null,
+      "plan_state": "draft",
+      "plan_state_after_approve": "draft",
+      "recipe": "one_off",
+      "rejection_reasons": [],
+      "research_failure_count": null,
+      "research_queries": null,
+      "research_query_count": null,
+      "research_reason": null,
+      "research_source_count": null,
+      "research_sources": null,
+      "research_status": null,
+      "scope": "single",
+      "served_lesson": {},
+      "shape_violations": null,
+      "tag": "single",
+      "time_estimate_weeks": null,
+      "unit_count": 0,
+      "units": [],
+      "units_in_document": [],
+      "usage": {
+        "events": [
+          {
+            "duration_ms": 40454,
+            "job_id": "job_b3e1fc210c7b4ce5b024050b09b1b0b2",
+            "model": "deepseek/deepseek-v4.1-flash-1017",
+            "provider": "nous",
+            "recorded_at": "2026-11-08T21:03:19Z",
+            "tokens": {
+              "cost_usd": null,
+              "input_tokens": "redacted",
+              "output_tokens": "redacted",
+              "prompt_version": "plan-prompt.v9",
+              "purpose": "coursebook.plan.generate",
+              "unknown_cost": true
+            }
+          }
+        ],
+        "totals": {
+          "by_model": {
+            "nous/deepseek/deepseek-v4.1-flash-1017": {
+              "calls": 1,
+              "total_tokens": "redacted"
+            }
+          },
+          "calls": 1,
+          "input_tokens": "redacted",
+          "output_tokens": "redacted",
+          "total_tokens": "redacted"
+        }
+      },
+      "validation_outcome": null,
+      "validation_verdict": null,
+      "validation_warning": null,
+      "validator": {
+        "model": null,
+        "provider": null
+      },
+      "validator_config": {
+        "configured": true,
+        "model": "z-ai/glm-5.3-flash",
+        "provider": "nous",
+        "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+      },
+      "wire_contract_version": 18,
+      "worker_ok": true
+    }
+  }
+}

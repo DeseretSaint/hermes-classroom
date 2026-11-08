@@ -1,0 +1,181 @@
+{
+  "course": {
+    "course_id": "crs_77e6419ff61f4534b1cedf2559676d9d",
+    "plan_id": "pln_6e0dc7a0ab364b9289832c02d93d40eb",
+    "revision": 0
+  },
+  "dial_s": {
+    "assessment": "none",
+    "autonomy": "guided",
+    "depth": "working",
+    "pace": "light"
+  },
+  "enrollment": {
+    "enrollment_id": "enr_5350d415dc1342feb86cf8ab91ce0ee9",
+    "revision": 0
+  },
+  "finished_at": "2026-11-08T21:03:20Z",
+  "goal": "Brew a pour-over coffee whose strength stays consistent from cup to cup",
+  "ok": true,
+  "phases": {
+    "approve": {
+      "error": "plan.approve refused: {\"code\": \"VALIDATION_FAILED\", \"category\": \"validation\", \"message\": \"an empty plan cannot be approved; it has no objectives.\", \"retryable\": false, \"details\": {\"reason\": \"plan_empty\", \"plan_id\": \"pln_6e0dc7a0ab364b9289832c02d93d40eb\"}}",
+      "generation_digest": "sha256:1b002d87e62bcb72f3a6583e7dae4b035878bec073a1afdb9a6e74af9e85eb6c",
+      "kernel_digest": "sha256:1b002d87e62bcb72f3a6583e7dae4b035878bec073a1afdb9a6e74af9e85eb6c",
+      "kernel_digest_source": "parent.blueprint.read",
+      "ok": false,
+      "plan_state_after": "draft",
+      "started_at": "2026-11-08T21:03:20Z"
+    },
+    "lessons": {
+      "facts": {
+        "rows": [],
+        "servable_objectives": [],
+        "states": []
+      },
+      "jobs": [],
+      "started_at": "2026-11-08T21:03:20Z"
+    },
+    "page": {
+      "served": null,
+      "started_at": "2026-11-08T21:03:20Z"
+    },
+    "plan": {
+      "elapsed_s": 648.3,
+      "facts": {
+        "approved_at": null,
+        "generation": null,
+        "objectives": [],
+        "plan_hash": "sha256:1b002d87e62bcb72f3a6583e7dae4b035878bec073a1afdb9a6e74af9e85eb6c",
+        "plan_id": "pln_6e0dc7a0ab364b9289832c02d93d40eb",
+        "plan_state": "draft",
+        "units": []
+      },
+      "final_job": {
+        "artifact_ids": [],
+        "attempt_id": "att_19e9d5433c2c47cf88c1258da6d96c98",
+        "brief": {
+          "course_id": "crs_77e6419ff61f4534b1cedf2559676d9d",
+          "dials": {
+            "assessment": "none",
+            "autonomy": "guided",
+            "depth": "working",
+            "pace": "light"
+          },
+          "enrollment_id": "enr_5350d415dc1342feb86cf8ab91ce0ee9",
+          "goal": "Brew a pour-over coffee whose strength stays consistent from cup to cup",
+          "recipe": "one_off",
+          "scope": "single",
+          "stage": "plan",
+          "subject_domain": "technical_procedure"
+        },
+        "cancel_requested_at": null,
+        "checkpoint": {},
+        "created_at": "2026-11-08T20:52:32Z",
+        "error": {
+          "category": "capability",
+          "code": "HOST_UNAVAILABLE",
+          "details": {
+            "deadline_s": 600.0,
+            "purpose": "coursebook.plan.validate"
+          },
+          "message": "coursebook.plan.validate exceeded its 600s deadline",
+          "retryable": true
+        },
+        "job_id": "job_b3e1fc210c7b4ce5b024050b09b1b0b2",
+        "kind": "plan",
+        "lease": null,
+        "operation_id": "h187-jobs-create-1794171152084291845",
+        "progress": {
+          "message": "",
+          "stage": "queued",
+          "steps_done": 0,
+          "steps_total": null
+        },
+        "state": "failed",
+        "updated_at": "2026-11-08T21:03:19Z"
+      },
+      "job_id": "job_b3e1fc210c7b4ce5b024050b09b1b0b2",
+      "label": "plan",
+      "pump": {
+        "done_at_s": 647.8,
+        "finished": [
+          "job_b3e1fc210c7b4ce5b024050b09b1b0b2"
+        ]
+      },
+      "started_at": "2026-11-08T20:52:32Z",
+      "terminal_state": "failed",
+      "thread_alive": false,
+      "timeline": [
+        {
+          "elapsed_s": 0.0,
+          "message": "",
+          "stage": "queued",
+          "state": "queued"
+        },
+        {
+          "elapsed_s": 2.0,
+          "message": "",
+          "stage": "queued",
+          "state": "running"
+        },
+        {
+          "elapsed_s": 648.3,
+          "message": "",
+          "stage": "queued",
+          "state": "failed"
+        }
+      ]
+    }
+  },
+  "plan_job": {
+    "job_id": "job_b3e1fc210c7b4ce5b024050b09b1b0b2",
+    "state": "queued"
+  },
+  "recipe": "one_off",
+  "schema_version": 11,
+  "scope": "single",
+  "started_at": "2026-11-08T20:52:31Z",
+  "subject_domain": "technical_procedure",
+  "tag": "single",
+  "title": "Brew a pour-over coffee consistently",
+  "total_elapsed_s": 648.7,
+  "usage": {
+    "events": [
+      {
+        "duration_ms": 40454,
+        "job_id": "job_b3e1fc210c7b4ce5b024050b09b1b0b2",
+        "model": "deepseek/deepseek-v4.1-flash-1017",
+        "provider": "nous",
+        "recorded_at": "2026-11-08T21:03:19Z",
+        "tokens": {
+          "cost_usd": null,
+          "input_tokens": 5397,
+          "output_tokens": 6226,
+          "prompt_version": "plan-prompt.v9",
+          "purpose": "coursebook.plan.generate",
+          "unknown_cost": true
+        }
+      }
+    ],
+    "totals": {
+      "by_model": {
+        "nous/deepseek/deepseek-v4.1-flash-1017": {
+          "calls": 1,
+          "total_tokens": 0
+        }
+      },
+      "calls": 1,
+      "input_tokens": 5397,
+      "output_tokens": 6226,
+      "total_tokens": 0
+    }
+  },
+  "validator_config": {
+    "configured": true,
+    "model": "z-ai/glm-5.3-flash",
+    "provider": "nous",
+    "reason": "A validator route is configured from plugins.entries.coursebook.settings.validator_model / plugins.entries.coursebook.settings.validator_provider (provider: nous, model: z-ai/glm-5.3-flash). This reports the declared route, not that it answered and not that the host trust gate will allow it: the override needs plugins.entries.coursebook.llm.allow_model_override / allow_provider_override (with allowed_models / allowed_providers). A refused override fails the job loudly instead of reusing the author model."
+  },
+  "wire_contract_version": 18
+}

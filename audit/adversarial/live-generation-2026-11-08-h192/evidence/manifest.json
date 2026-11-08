@@ -1,0 +1,16 @@
+{
+  "files": {
+    "full.json": {
+      "bytes": 6775,
+      "sha256": "c3a43f311cebdd567f8d156205f73cc0e20ea2e10632701bb19395a28b20bd6e"
+    },
+    "single.json": {
+      "bytes": 5871,
+      "sha256": "bb96aa483df2e001648525407ed6a547106d3b6f2f86744de401e00058363ad5"
+    },
+    "summary.json": {
+      "bytes": 8775,
+      "sha256": "fbb509b58d944e13139b355ad6ae03c1348de238baaa3ee8779cc3d16ed1b21e"
+    }
+  }
+}
