@@ -4,6 +4,15 @@
   "supersedes": "cb.tokens.v1.json (kept on disk as history; never mutated)",
   "scope": "[data-cb-scope] on the Coursebook route and pane roots",
   "note": "Atlas Lamp. 15 tokens, one identity fill (lamp) and one parent identity (plum). lamp is a fill and never text on paper; coral is attention only and never a mode hue. No raw colour is allowed outside this contract, and there are no gradients or shadows.",
+  "type_scale": {
+    "caption": "0.75rem",
+    "meta": "0.875rem",
+    "body": "1rem",
+    "lead": "1.125rem",
+    "heading": "1.5rem",
+    "display": "clamp(2.25rem, 1.9rem + 0.7vw, 2.5rem)"
+  },
+  "type_scale_note": "Six steps, and no seventh. Every font size Coursebook authors for its own text is one of these. Host-owned chrome (badges, buttons, tab strips, pickers) keeps the host's sizes and is out of this claim. Body is 1rem so a 16px root paints 16px body copy; a 200% root scales every step. Display is a clamp whose floor and ceiling are both inside the 2.25-2.5rem band.",
   "tokens": [
     "paper",
     "paper-raised",
