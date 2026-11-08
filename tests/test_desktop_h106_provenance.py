@@ -363,6 +363,19 @@ class ProvenanceRenderTest(unittest.TestCase):
         self.assertIn("Rights: not recorded", html)
         self.assertIn("A title and a URL are not a licence.", html)
 
+    def test_the_technical_disclosure_can_break_a_long_id(self) -> None:
+        """A source id is one unbreakable token; at 152 px of content width it must wrap, not spill."""
+        html = self.render(
+            {
+                "kind": "panel",
+                "sources": [self.source(source_id="src_94cb15500ae941eaa7ea09ab16fd37ac")],
+                "status": "ready",
+            }
+        )
+        technical = html.split("data-cb-source-detail", 1)[1]
+        self.assertIn("overflow-wrap:anywhere", technical.replace(" ", ""))
+        self.assertIn("min-width:0", technical.replace(" ", ""))
+
     def test_an_inventory_prints_source_licence_band_and_hash(self) -> None:
         vocabulary = {
             "status": "inventory",

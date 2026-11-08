@@ -14341,7 +14341,7 @@ function SourceProvenanceCard({ source, dense = false }) {
         children: [
           jsx('summary', { className: 'cursor-pointer', style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: 'Technical detail' }),
           jsxs('div', {
-            style: { marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
+            style: { marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0, overflowWrap: 'anywhere', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
             children: detail.map((line, index) => jsx('div', { key: `source-detail-${index}`, children: line }))
           })
         ]
@@ -14475,7 +14475,7 @@ function ProvenanceInventoryRow({ vocabulary }) {
         children: [
           jsx('summary', { className: 'cursor-pointer', children: 'Technical detail' }),
           jsx('div', {
-            style: { marginTop: '0.25rem' },
+            style: { marginTop: '0.25rem', minWidth: 0, overflowWrap: 'anywhere' },
             children: [
               `Inventory id: ${record.inventory_id || 'not recorded'}. Rows hash: ${record.content_hash || 'not recorded'}. ` +
               `Licence URL: ${record.licence_url || 'not recorded'}.`
@@ -15945,6 +15945,9 @@ function StudioList({ implemented, onCreate, onOpen, reloadSignal }) {
  * surface (H-94 V2-4; H-91 P2-4 removed the duplicate header button).
  */
 function StudioLanding({ rows, onCreate, onOpen }) {
+  // `groups` is computed here, not inherited from StudioList: the shelf grouping is a property of
+  // the rows this component renders. Without it the whole Parent Studio route throws
+  // `groups is not defined` as soon as one prepared plan exists.
   const groups = groupShelfRows(rows)
   return jsxs('div', {
     'data-cb-studio-landing': '',
