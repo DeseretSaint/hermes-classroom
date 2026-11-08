@@ -1,12 +1,12 @@
 {
-  "measured_commit": "d54c12417a2eb61c9cc5739ec8447246e117a923",
-  "measured_commit_short": "d54c124",
+  "measured_commit": "eed7dc717f6503d4172b6b0ebf4cec2fa663fc37",
+  "measured_commit_short": "eed7dc7",
   "measured_at": "2026-11-08",
-  "branch": "master",
-  "merge_commit": "d54c12417a2eb61c9cc5739ec8447246e117a923",
+  "branch": "wt/h162b-ui-rest",
+  "merge_commit": "eed7dc717f6503d4172b6b0ebf4cec2fa663fc37",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "ran": 2196,
+    "ran": 2242,
     "skipped": 1,
     "verdict": "OK (skipped=1)"
   },
@@ -24,7 +24,7 @@
   },
   "plugin": {
     "path": "desktop/plugin.js",
-    "sha256": "0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710"
+    "sha256": "179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163"
   },
   "m4": {
     "frames": 62,
@@ -36,13 +36,13 @@
     "ax_controls": 298,
     "ax_unnamed": 0,
     "overflow_px": 0,
-    "source": "audit/visual/m4-visual/audit.json regenerated on the cb.rpc v17 + provenance integration slice merged as d54c124 (plugin 0fceeb64); the provenance pane is not mounted by any M4 frame, so text_nodes (the sum over the 56 non-forced-colour frames) and ax_controls (the sum over the 32 frames where the accessibility tree was measured) are unchanged from the b7c53e4 record; the other frames have no AX tree, as on every prior record",
-    "repro": "PASS at 0fceeb64"
+    "source": "audit/visual/m4-visual/audit.json regenerated on the UI integration slice that lands H-151/H-160 (one CbAction primitive and type hierarchy, Courses primary, section route wrap), H-120c (graded practice revision fence), H-152 (motion ladder) and H-121 (export/share) on the cb.rpc v17 + provenance tree, final code commit eed7dc7 (plugin 179db275). The 56 non-forced frames still measure 2416 text nodes and the 32 frames with an accessibility tree still measure 298 AX controls; the new motion contract is visible in C-08 (0 animated nodes in the 4 reduced-motion frames, 40 in full motion). Minimum authored contrast 5.93:1, 0 clipped text, 0 px horizontal overflow",
+    "repro": "PASS at 179db275"
   },
   "m4_repro": {
     "command": "python3 scripts/m4v-repro-check.py",
     "result": "PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots",
-    "plugin_sha256": "0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710"
+    "plugin_sha256": "179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163"
   },
   "adversarial_state": {
     "command": "python3 tests/adversarial/attack_state.py",
@@ -104,6 +104,11 @@
     {
       "sha256": "8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d",
       "commit": "b7c53e4",
+      "path": "desktop/plugin.js"
+    },
+    {
+      "sha256": "0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710",
+      "commit": "d54c124",
       "path": "desktop/plugin.js"
     }
   ],

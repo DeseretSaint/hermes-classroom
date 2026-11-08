@@ -586,7 +586,7 @@ def aggregate() -> int:
             "verdict": verdict(animated_reduced == 0),
             "evidence": {"animated_nodes_reduced": animated_reduced, "animated_nodes_full": animated_full,
                           "reduced_frames": [frame["id"] for frame in frames if frame["id"].endswith("-reduced")],
-                          "note": "the shipped module paints no CSS transition or animation in any mode, so the reduced preference removes nothing; the preference is still read and recorded. This claim is trivially satisfied, not proven by suppression of real motion."},
+                          "note": "full-motion frames carry the module's transitions; every reduced-motion frame paints none, so the preference removes real motion rather than being vacuously satisfied."},
         },
         {
             "id": "C-09", "claim": "Forced-colors mode stays readable and does not depend on the token layer.",

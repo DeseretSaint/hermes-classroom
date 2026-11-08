@@ -36,6 +36,12 @@ globalThis.MutationObserver = win.MutationObserver
 globalThis.getComputedStyle = win.getComputedStyle.bind(win)
 globalThis.requestAnimationFrame = (cb) => win.setTimeout(() => cb(Date.now()), 0)
 globalThis.cancelAnimationFrame = (id) => win.clearTimeout(id)
+// The plugin reads `window.requestAnimationFrame`, not the global: jsdom's own implementation
+// fires on a ~16 ms clock, so a one-frame motion beat could land before or after the serializer
+// and `animated_nodes` varied between two audits of the same module. Pin the same macrotask
+// implementation on the window so the settle is deterministic.
+win.requestAnimationFrame = globalThis.requestAnimationFrame
+win.cancelAnimationFrame = globalThis.cancelAnimationFrame
 // jsdom keeps `navigator` read-only on window; React only reads userAgent/language.
 win.matchMedia = (query) => ({
   media: query,
@@ -214,12 +220,20 @@ for (const frame of payload.frames) {
   await act(async () => {
     root.render(tree)
   })
-  // Let the media loader's promise chain settle (two ticks + a macrotask).
-  await act(async () => {
-    await new Promise((done) => setTimeout(done, 0))
-    await new Promise((done) => setTimeout(done, 0))
-    await new Promise((done) => setTimeout(done, 10))
-  })
+  // Let the media loader's promise chain settle and every one-frame motion beat commit before the
+  // frame is serialized. A `requestAnimationFrame` callback that calls `setState` runs outside
+  // `act`, so a fixed wait raced the commit: whichever beats React had flushed by the fixed tick
+  // were baked into the HTML, which made `animated_nodes` differ between two audits of the same
+  // module. Wait until two consecutive serializer reads are identical instead of trusting a clock.
+  let previousMarkup = ''
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    await act(async () => {
+      await new Promise((done) => setTimeout(done, 5))
+    })
+    const snapshot = container.innerHTML
+    if (snapshot === previousMarkup) break
+    previousMarkup = snapshot
+  }
   const markup = container.innerHTML
   const file = resolve(outDir, `${frame.id}.html`)
   writeFileSync(file, shellHtml(markup, mode))

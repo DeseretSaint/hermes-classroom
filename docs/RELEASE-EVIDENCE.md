@@ -1,9 +1,9 @@
 # Release evidence — what is measured, on which commit, and what is branch-only
 
 Status: the H-116 truth pass, re-derived on the merged release candidate `master`
-`d54c12417a2eb61c9cc5739ec8447246e117a923` (the integration slice that lands `cb.rpc` v17 —
+`eed7dc717f6503d4172b6b0ebf4cec2fa663fc37` (the integration slice that lands `cb.rpc` v17 —
 H-159a's six source-provenance fields on `lesson.page` — and the H-106/H-159b provenance pane that
-reads them, merged onto the H-158 UI batch union —
+reads them, then the UI/behaviour slice B — H-151/H-160, H-120c, H-152, H-121 — merged onto the H-158 UI batch union —
 H-145/146/147/148/149/150/153/154/156/157 — which sits on the H-120b conversation-practice surface
 `625c939`, the H-105 + `cb.rpc` v16 union `39659b7` and H-155 `ac301a1`). Every
 number below was produced by a command in this pass on that commit unless a row names another
@@ -15,17 +15,17 @@ blocked H-85 are fixed here, but no demo is recorded, no license exists, no live
 driven this exact commit, and the operator publication gate in `docs/SUBMISSION.md` §0 is closed.
 No tag, catalog pull request or announcement was made.
 
-## Measured on `d54c124`
+## Measured on `eed7dc7`
 
 | Fact | Value | Command |
 | --- | --- | --- |
-| Suite | `Ran 2196 tests in 283.340s`, `OK (skipped=1)` | `python3 -m unittest discover -s tests -t .` |
+| Suite | `Ran 2242 tests in 290.870s`, `OK (skipped=1)` | `python3 -m unittest discover -s tests -t .` |
 | `cb.rpc` | v17, 68 declared methods | `contracts/rpc.v17.json` (`$defs.method.enum` length) |
 | Handlers | 68, asserted by the registry test inside the suite | registry test in the suite |
 | `cb.db` | v11, `DB_SCHEMA_VERSION = 11`, migrations `0001`-`0011` | `coursebook/db.py`, `contracts/db.v11.json` |
-| Shipped module | `desktop/plugin.js` sha256 `0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710` | `sha256sum desktop/plugin.js` |
+| Shipped module | `desktop/plugin.js` sha256 `179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163` | `sha256sum desktop/plugin.js` |
 | M4 audit | 62 frames, 15/15 claims PASS, 2,416 measured text nodes over 56 non-forced frames, worst authored contrast 5.93:1, 0 unnamed of 298 AX controls, 0 px overflow | `audit/visual/m4-visual/audit.json` |
-| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 0fceeb64…` | `python3 scripts/m4v-repro-check.py` |
+| M4 reproducibility | `PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots`, `plugin_sha256: 179db27…` | `python3 scripts/m4v-repro-check.py` |
 | Adversarial state matrix | `SUMMARY total=23 fail=0 pass=23`; S13 BLOCKED because the auxiliary grader lane is disabled in this release | `python3 tests/adversarial/attack_state.py` |
 | Catalog validity | `OK: 1 file(s) valid` | `python3 ~/.hermes/hermes-agent/scripts/validate_plugin_catalog.py catalog/coursebook.yaml` |
 
@@ -34,11 +34,16 @@ M4 row a claim about this commit rather than a stale pin. The 2,416 text-node co
 the 56 non-forced-colour frames; the six forced-colours frames repeat the same content and are
 counted in `C-09` instead. The value is re-derived from the regenerated file, not carried forward.
 
-The provenance slice moves **no** M4 measurement, and that was checked rather than assumed: the
-`audit.json` from `b7c53e4` and the one regenerated here were compared frame by frame, and apart from
-`generated_at` and the recorded branch name every frame row, every claim and every media-fixture hash
-is identical. The pane H-106 adds is not mounted by any M4 scenario, so the 2,416 nodes and 298 AX
-controls above are the same surface the UI batch union produced.
+Slice B moves the module but **no** layout, contrast or media measurement, and that was checked rather
+than assumed: the regenerated `audit.json` still measures 2,416 text nodes over the 56 non-forced
+frames, 298 AX controls over the 32 frames with an accessibility tree, 5.93:1 worst authored
+contrast, 0 clipped text and 0 px overflow. The one claim whose evidence changed is `C-08`: H-152
+ships the motion ladder, so the four reduced-motion frames paint 0 animated nodes while full-motion
+frames paint 40 — the reduced preference now removes real transitions instead of being vacuously
+satisfied. The audit's render harness was made deterministic in the same pass: it pins
+`window.requestAnimationFrame` and waits for two identical serializations, because React commits a
+one-frame motion beat outside `act` and a fixed timer raced it (`animated_nodes_full` varied between
+two runs of the same module before this fix).
 
 ## Branch-only evidence (not release evidence)
 
@@ -54,13 +59,13 @@ evidence and do not cite their numbers as current.
 
 ## What this pass did not measure
 
-- No live Desktop window and no mounted backend trace on `d54c124`; `scripts/validate.sh` step 5 was
+- No live Desktop window and no mounted backend trace on `eed7dc7`; `scripts/validate.sh` step 5 was
   not run here (it needs a mounted backend and an isolated home).
 - `bash scripts/validate-plugin.sh` (the export admission gate) **was** re-run here on the merged
   commit: 4/4 checks PASS on a `git archive` export (admission and security scan, `node --check`,
   26 desktop contract tests, `hermes plugins doctor`). `hermes plugins doctor` passed inside that
   same export.
-- `scripts/m4v-repro-check.py` was run here: two independent runs at `0fceeb64` produced identical
+- `scripts/m4v-repro-check.py` was run here: two independent runs at `179db275` produced identical
   `audit.json` (modulo `generated_at`) and 62 identical screenshots; the verbatim output is in
   `docs/M4-VISUAL-MEDIA-AUDIT.md`.
 - No provider-spend generation, no demo capture, no recording.

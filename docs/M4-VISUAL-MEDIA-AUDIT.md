@@ -4,21 +4,25 @@ Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
 regenerated on the integration slice that lands `cb.rpc` v17 (H-159a) and the H-106/H-159b provenance
-pane on the H-158 UI batch union (H-145/146/147/148/149/150/153/154/156/157), merged as `d54c124`,
-and is pinned to the module that merge produces: `desktop/plugin.js` sha256
-`0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710`.
+pane, then slice B (H-151/H-160's action primitive and two measured fixes, H-120c's practice revision
+fence, H-152's motion ladder and H-121's export/share), on the H-158 UI batch union
+(H-145/146/147/148/149/150/153/154/156/157), final code commit `eed7dc7`,
+and is pinned to the module that slice produces: `desktop/plugin.js` sha256
+`179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163`.
 
-That module is the one that ships from the merge commit `d54c124`, the commit this audit was
+That module is the one that ships from the merge `eed7dc7`, the commit this audit was
 regenerated for, so this is the audit of the shipping module, not of a branch. The previous
 pin, `desktop/plugin.js` sha256
-`8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d` (`c41ee83`, merged as `b7c53e4`),
-is history for the UI batch union, as is
+`0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710` (`d54c124`, the `cb.rpc` v17 +
+provenance slice), is history for that slice, as is
+`8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d` (`c41ee83`, merged as `b7c53e4`)
+for the UI batch union,
 `0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543` (`625c939`) for the H-120b tree
 and `71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5` for the H-91 tree;
 those `audit.json` files differ only in `generated_at`, the recorded branch name and the plugin pin.
 
 This is **not** publication evidence. Nothing here was published, tagged or opened as a catalog PR;
-the slice it measures is merged to `master` (`d54c124`) and the audit makes no claim that Coursebook
+the slice it measures is merged to `master` (`eed7dc7`) and the audit makes no claim that Coursebook
 is installable.
 
 One command regenerates every number and every screenshot; a second proves the result is not a
@@ -40,26 +44,33 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 ### Reproducibility
 
-**Re-pin at `0fceeb64` (provenance integration slice, merge commit `d54c124`).** `desktop/plugin.js`
-moved again with the H-106/H-159b provenance pane, so the audit was regenerated on the merged tree:
+**Re-pin at `179db275` (UI/behaviour slice B, final code commit `eed7dc7`).** `desktop/plugin.js`
+moved again with H-151/H-160 (one `CbAction` primitive, one type hierarchy, Courses' primary and the
+section-route wrap), H-120c's graded-practice fence, H-152's motion ladder and H-121's export/share,
+so the audit was regenerated on the merged tree:
 `python3 scripts/m4v-audit.py` → 15 PASS, 0 not PASS, 62 frames,
-`plugin_sha256: 0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710`. The 56
+`plugin_sha256: 179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163`. The 56
 non-forced frames still measure **2,416** text nodes and the 32 frames with an accessibility tree
-still measure **298** AX controls: the provenance pane is not mounted by any M4 frame, so the
-measured surface is unchanged even though the module hash moved. Minimum authored contrast is
-unchanged at 5.93:1 with 0 plugin-authored failures, 0 clipped text and 0 px horizontal overflow. The
-reproducibility pair quoted below was re-run at this pin as part of the same pass.
+still measure **298** AX controls: the new controls are inside the same surfaces those frames mount,
+so the counts hold. Minimum authored contrast is unchanged at 5.93:1 with 0 plugin-authored failures,
+0 clipped text and 0 px horizontal overflow. The one changed claim is **C-08**: the four
+reduced-motion frames paint 0 animated nodes and the full-motion frames paint 40, because H-152 ships
+real transitions and the reduced preference now suppresses them. The render harness was made
+deterministic in the same pass (it pins `window.requestAnimationFrame` and waits for two identical
+serializations); without that, a one-frame motion beat committed outside `act` raced the serializer
+and `animated_nodes_full` differed between two runs of the same module. The reproducibility pair
+quoted below was re-run at this pin as part of the same pass.
 
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
-Run back to back on this pin (`0fceeb64…`), verbatim (scratch roots elided):
+Run back to back on this pin (`179db275…`), verbatim (scratch roots elided):
 
 ```
 $ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-kt_5q9k1/run-a
-run B → …/cb-m4v-repro-kt_5q9k1/run-b
+run A → …/cb-m4v-repro-bi1tf7ew/run-a
+run B → …/cb-m4v-repro-bi1tf7ew/run-b
 PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 0fceeb64fc3caf563f7b47c7f714a17789d2e38c1d773295b77c92710d672710
+  plugin_sha256: 179db27537150397ce9e88ec645a7f115e3826cca0cbd0100da77f5c41ccb163
   reference_time: 2026-11-07T10:00:00.000Z
 ```
 
