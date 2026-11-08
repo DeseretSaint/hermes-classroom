@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-08T17:30:14.958Z",
+  "generated_at": "2026-11-08T21:17:46.956Z",
   "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
@@ -15078,12 +15078,12 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
-          "weight": 400,
+          "weight": 600,
           "large": false,
           "ratio": 7.35,
           "required": 4.5,
@@ -15093,12 +15093,12 @@
         {
           "tag": "div",
           "text": "Four-row torque table: bolts 1 and 2 at 20 Nm, b",
-          "fg": "rgb(92, 83, 71)",
+          "fg": "rgb(26, 23, 19)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
           "weight": 400,
           "large": false,
-          "ratio": 7.35,
+          "ratio": 17.41,
           "required": 4.5,
           "pass": true,
           "host_primitive": false
@@ -15161,7 +15161,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2666,
+      "content_height": 2715,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -15179,7 +15179,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -15190,7 +15190,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -15222,7 +15222,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -15310,7 +15310,7 @@
           "name": "Save Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1266
+          "scroll_y": 1315
         },
         {
           "kind": "authored",
@@ -15320,7 +15320,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1266
+          "scroll_y": 1315
         },
         {
           "kind": "authored",
@@ -15330,7 +15330,7 @@
           "name": "Save Verify before the first start to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1266
+          "scroll_y": 1315
         },
         {
           "kind": "authored",
@@ -15340,12 +15340,12 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1266
+          "scroll_y": 1315
         }
       ],
       "keyboard_count": 11,
-      "keyboard_presses": 13,
-      "keyboard_shadow_stops": 2,
+      "keyboard_presses": 11,
+      "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -16085,12 +16085,12 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
-          "weight": 400,
+          "weight": 600,
           "large": true,
           "ratio": 7.35,
           "required": 3,
@@ -16100,12 +16100,12 @@
         {
           "tag": "div",
           "text": "Four-row torque table: bolts 1 and 2 at 20 Nm, b",
-          "fg": "rgb(92, 83, 71)",
+          "fg": "rgb(26, 23, 19)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
           "weight": 400,
           "large": true,
-          "ratio": 7.35,
+          "ratio": 17.41,
           "required": 3,
           "pass": true,
           "host_primitive": false
@@ -16168,7 +16168,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 5022,
+      "content_height": 5191,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -16186,7 +16186,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -16197,7 +16197,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -16229,7 +16229,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -16307,7 +16307,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3458
+          "scroll_y": 3543
         },
         {
           "kind": "authored",
@@ -16317,7 +16317,7 @@
           "name": "Save Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3458
+          "scroll_y": 3543
         },
         {
           "kind": "authored",
@@ -16327,7 +16327,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3458
+          "scroll_y": 3543
         },
         {
           "kind": "authored",
@@ -16337,7 +16337,7 @@
           "name": "Save Verify before the first start to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3458
+          "scroll_y": 3543
         },
         {
           "kind": "authored",
@@ -16347,12 +16347,12 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3473
+          "scroll_y": 3791
         }
       ],
       "keyboard_count": 11,
-      "keyboard_presses": 13,
-      "keyboard_shadow_stops": 2,
+      "keyboard_presses": 11,
+      "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -17092,12 +17092,12 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
-          "weight": 400,
+          "weight": 600,
           "large": false,
           "ratio": 7.35,
           "required": 4.5,
@@ -17107,12 +17107,12 @@
         {
           "tag": "div",
           "text": "Four-row torque table: bolts 1 and 2 at 20 Nm, b",
-          "fg": "rgb(92, 83, 71)",
+          "fg": "rgb(26, 23, 19)",
           "bg": "rgb(255, 252, 243)",
           "size": 12,
           "weight": 400,
           "large": false,
-          "ratio": 7.35,
+          "ratio": 17.41,
           "required": 4.5,
           "pass": true,
           "host_primitive": false
@@ -17175,7 +17175,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2780,
+      "content_height": 2864,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -17193,7 +17193,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -17204,7 +17204,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -17236,7 +17236,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -17988,12 +17988,12 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
-          "weight": 400,
+          "weight": 600,
           "large": false,
           "ratio": 7.85,
           "required": 4.5,
@@ -18003,12 +18003,12 @@
         {
           "tag": "div",
           "text": "Four-row torque table: bolts 1 and 2 at 20 Nm, b",
-          "fg": "rgb(185, 174, 154)",
+          "fg": "rgb(245, 239, 225)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
           "weight": 400,
           "large": false,
-          "ratio": 7.85,
+          "ratio": 15.01,
           "required": 4.5,
           "pass": true,
           "host_primitive": false
@@ -18071,7 +18071,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2666,
+      "content_height": 2715,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -18089,7 +18089,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -18100,7 +18100,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -18132,7 +18132,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -18220,7 +18220,7 @@
           "name": "Save Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1266
+          "scroll_y": 1315
         },
         {
           "kind": "authored",
@@ -18230,7 +18230,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1266
+          "scroll_y": 1315
         },
         {
           "kind": "authored",
@@ -18240,7 +18240,7 @@
           "name": "Save Verify before the first start to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1266
+          "scroll_y": 1315
         },
         {
           "kind": "authored",
@@ -18250,12 +18250,12 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 1266
+          "scroll_y": 1315
         }
       ],
       "keyboard_count": 11,
-      "keyboard_presses": 13,
-      "keyboard_shadow_stops": 2,
+      "keyboard_presses": 11,
+      "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -18995,12 +18995,12 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
-          "weight": 400,
+          "weight": 600,
           "large": true,
           "ratio": 7.85,
           "required": 3,
@@ -19010,12 +19010,12 @@
         {
           "tag": "div",
           "text": "Four-row torque table: bolts 1 and 2 at 20 Nm, b",
-          "fg": "rgb(185, 174, 154)",
+          "fg": "rgb(245, 239, 225)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
           "weight": 400,
           "large": true,
-          "ratio": 7.85,
+          "ratio": 15.01,
           "required": 3,
           "pass": true,
           "host_primitive": false
@@ -19078,7 +19078,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 5022,
+      "content_height": 5191,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -19096,7 +19096,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -19107,7 +19107,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -19139,7 +19139,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -19217,7 +19217,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3458
+          "scroll_y": 3543
         },
         {
           "kind": "authored",
@@ -19227,7 +19227,7 @@
           "name": "Save Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3458
+          "scroll_y": 3543
         },
         {
           "kind": "authored",
@@ -19237,7 +19237,7 @@
           "name": "Save Deterministic schematic rendered from structured facts. from Torque the head bolts to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3458
+          "scroll_y": 3543
         },
         {
           "kind": "authored",
@@ -19247,7 +19247,7 @@
           "name": "Save Verify before the first start to the notebook",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3458
+          "scroll_y": 3543
         },
         {
           "kind": "authored",
@@ -19257,12 +19257,12 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 3473
+          "scroll_y": 3791
         }
       ],
       "keyboard_count": 11,
-      "keyboard_presses": 13,
-      "keyboard_shadow_stops": 2,
+      "keyboard_presses": 11,
+      "keyboard_shadow_stops": 0,
       "keyboard_unreachable": [],
       "keyboard_unnamed": 0,
       "keyboard_ring_missing": 0,
@@ -20002,12 +20002,12 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
-          "weight": 400,
+          "weight": 600,
           "large": false,
           "ratio": 7.85,
           "required": 4.5,
@@ -20017,12 +20017,12 @@
         {
           "tag": "div",
           "text": "Four-row torque table: bolts 1 and 2 at 20 Nm, b",
-          "fg": "rgb(185, 174, 154)",
+          "fg": "rgb(245, 239, 225)",
           "bg": "rgb(29, 27, 22)",
           "size": 12,
           "weight": 400,
           "large": false,
-          "ratio": 7.85,
+          "ratio": 15.01,
           "required": 4.5,
           "pass": true,
           "host_primitive": false
@@ -20085,7 +20085,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2780,
+      "content_height": 2864,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -20103,7 +20103,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -20114,7 +20114,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -20146,7 +20146,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -28549,12 +28549,12 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
           "fg": "rgb(92, 83, 71)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
-          "weight": 400,
+          "weight": 600,
           "large": true,
           "ratio": 7.35,
           "required": 3,
@@ -28564,12 +28564,12 @@
         {
           "tag": "div",
           "text": "Four-row torque table: bolts 1 and 2 at 20 Nm, b",
-          "fg": "rgb(92, 83, 71)",
+          "fg": "rgb(26, 23, 19)",
           "bg": "rgb(255, 252, 243)",
           "size": 24,
           "weight": 400,
           "large": true,
-          "ratio": 7.35,
+          "ratio": 17.41,
           "required": 3,
           "pass": true,
           "host_primitive": false
@@ -28632,7 +28632,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 8164,
+      "content_height": 8622,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -28650,7 +28650,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -28661,7 +28661,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -28693,7 +28693,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -29445,12 +29445,12 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
           "fg": "rgb(185, 174, 154)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
-          "weight": 400,
+          "weight": 600,
           "large": true,
           "ratio": 7.85,
           "required": 3,
@@ -29460,12 +29460,12 @@
         {
           "tag": "div",
           "text": "Four-row torque table: bolts 1 and 2 at 20 Nm, b",
-          "fg": "rgb(185, 174, 154)",
+          "fg": "rgb(245, 239, 225)",
           "bg": "rgb(29, 27, 22)",
           "size": 24,
           "weight": 400,
           "large": true,
-          "ratio": 7.85,
+          "ratio": 15.01,
           "required": 3,
           "pass": true,
           "host_primitive": false
@@ -29528,7 +29528,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 8164,
+      "content_height": 8622,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -29546,7 +29546,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -29557,7 +29557,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -29589,7 +29589,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -32914,14 +32914,14 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
-          "fg": "rgb(0, 0, 159)",
+          "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 12,
-          "weight": 400,
+          "weight": 600,
           "large": false,
-          "ratio": 13.99,
+          "ratio": 21,
           "required": 4.5,
           "pass": true,
           "host_primitive": false
@@ -32997,7 +32997,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2666,
+      "content_height": 2715,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -33015,7 +33015,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -33026,7 +33026,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -33058,7 +33058,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -33810,14 +33810,14 @@
           "host_primitive": false
         },
         {
-          "tag": "summary",
+          "tag": "div",
           "text": "Text equivalent",
-          "fg": "rgb(0, 0, 159)",
+          "fg": "rgb(0, 0, 0)",
           "bg": "rgb(255, 255, 255)",
           "size": 12,
-          "weight": 400,
+          "weight": 600,
           "large": false,
-          "ratio": 13.99,
+          "ratio": 21,
           "required": 4.5,
           "pass": true,
           "host_primitive": false
@@ -33893,7 +33893,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 2666,
+      "content_height": 2715,
       "media_frames": [
         {
           "artifact": "art_torque_seq_001",
@@ -33911,7 +33911,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -33922,7 +33922,7 @@
           "kind": "visual",
           "label": "Deterministic schematic",
           "caption": "Bolt 1 20 Nm, bolt 2 20 Nm, bolt 3 40 Nm, bolt 4 40 Nm",
-          "text_equivalent": "",
+          "text_equivalent": "Four-row torque table: bolts 1 and 2 at 20 Nm, bolts 3 and 4 at 40 Nm, in the order the manual prints.",
           "has_text_equivalent": true,
           "caption_is_text_equivalent": true,
           "has_audio": false,
@@ -33954,7 +33954,7 @@
       "animated_sample": [],
       "interactive_count": 11,
       "positive_tabindex": 0,
-      "body_text_len": 2940,
+      "body_text_len": 3146,
       "media_fallback_text": [
         "Text equivalent",
         "Text equivalent"
@@ -37885,7 +37885,7 @@
         "keyboard_stops": 272,
         "keyboard_unreachable": 0,
         "keyboard_ring_missing": 0,
-        "keyboard_host_widget_stops": 44,
+        "keyboard_host_widget_stops": 36,
         "positive_tabindex": 0,
         "keyboard_frames": 32,
         "note": "the walk presses Tab until every control the DOM declares has been visited once and focus wraps, then counts distinct authored stops; the audio player's UA shadow parts are host-widget stops and are counted separately, never as Coursebook controls."
@@ -38172,8 +38172,8 @@
         "source": "committed fixture"
       }
     },
-    "plugin_sha256": "6aeca2214aed058aec08688fdd12eeb73003c18fa0bc8f9b122564ec1fbf6d4f",
-    "branch": "wt/h177-trail",
+    "plugin_sha256": "a19a344bfe1c02230cf9e9e1927a9b6eb282890c5f19dcfc0603562cf514c042",
+    "branch": "wt/h178-field-stop",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }
