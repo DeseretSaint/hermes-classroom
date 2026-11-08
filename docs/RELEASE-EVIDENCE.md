@@ -45,6 +45,23 @@ satisfied. The audit's render harness was made deterministic in the same pass: i
 one-frame motion beat outside `act` and a fixed timer raced it (`animated_nodes_full` varied between
 two runs of the same module before this fix).
 
+## On this branch (`wt/h194b-fix`, not merged)
+
+The rows above are the `eed7dc7` measurement and are unchanged. The H-194 fine-tune work moves the
+current-tree baselines that `scripts/check-docs-truth.py` compares against the contract files and
+`coursebook/db.py`:
+
+| Fact | Value | Command |
+| --- | --- | --- |
+| `cb.rpc` | v20, 73 declared methods, 73 handlers (`rpc.v20.json` is additive over v19: `parent.blueprint.read` returns `sections[]`, no method added) | `contracts/rpc.v20.json`, registry test in the suite |
+| `cb.db` | v12, `DB_SCHEMA_VERSION = 12`, migrations `0001`-`0012` (migration `0012_fine_tune_revisions` adds `plan_revisions` and `lesson_revisions`) | `coursebook/db.py`, `contracts/db.v12.json` |
+| Suite | `Ran 2511 tests`, `OK` — measured on the H-194 tree; not yet folded into the packet above | `python3 -m unittest discover -s tests -t .` |
+
+The plugin pin and every M4 number stay attributed to `eed7dc7` / module `179db275`: this branch does
+not touch `desktop/plugin.js`, and the M4 audit has not been re-run on it, so re-pinning those rows
+here would claim a measurement nobody made. A full release re-derive has to re-run the M4 audit
+first.
+
 ## Branch-only evidence (not release evidence)
 
 | Work | Commit | What it proves | Relationship to this candidate |
