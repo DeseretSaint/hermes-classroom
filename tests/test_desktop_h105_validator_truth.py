@@ -37,7 +37,7 @@ def _source() -> str:
 HARNESS = """
 const React = (await import('react')).default
 const { renderToStaticMarkup } = await import('react-dom/server')
-const { planValidationView, PlanValidationLine } = await import('./plugin.js')
+const { planValidationView, PlanValidationLine, PLAN_VALIDATION_LINES } = await import('./plugin.js')
 
 const fs = await import('node:fs')
 const payload = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
@@ -46,10 +46,11 @@ const model = planValidationView({
   job: payload.job || null,
   jobHint: payload.jobHint || null,
   plan: payload.plan || null,
-  reading: Boolean(payload.reading)
+  reading: Boolean(payload.reading),
+  learner: Boolean(payload.learner)
 })
 
-let output = { model }
+let output = { model, lines: PLAN_VALIDATION_LINES }
 if (payload.kind === 'render') {
   output.html = renderToStaticMarkup(
     React.createElement(PlanValidationLine, {
@@ -320,6 +321,90 @@ class PlanValidationModelTest(unittest.TestCase):
         )
         self.assertIn("Checked by the same model", out["html"])
         self.assertNotIn("docs/GENERATION.md", out["html"])
+
+    # ── H-167: every recorded state has one exact line, and same-model has no fresh-eyes copy ──
+
+    def test_each_recorded_state_maps_to_its_exact_line(self) -> None:
+        out = self.run_case({"kind": "render", "plan": None, "job": None})
+        self.assertEqual(
+            out["lines"],
+            {
+                "independent": "Checked by a second model",
+                "same_model": "Checked by the same model",
+                "unidentified": "Checked by a model that could not be identified",
+                "unrecorded": "No validator record is stored for this version",
+            },
+        )
+
+    def test_a_missing_record_maps_to_the_unrecorded_line(self) -> None:
+        out = self.run_case(
+            {
+                "kind": "render",
+                "plan": {"plan_id": "plan_1", "version": 1, "state": "approved"},
+                "job": None,
+            }
+        )
+        self.assertEqual(out["model"]["line"], "No validator record is stored for this version")
+        self.assertFalse(out["model"]["configure"])
+
+    def test_same_model_review_names_the_setting_that_would_change_it(self) -> None:
+        out = self.run_case(
+            {
+                "kind": "render",
+                "plan": {"plan_id": "plan_1", "version": 1, "state": "draft"},
+                "job": plan_job(same_model_validation()),
+            }
+        )
+        self.assertEqual(out["model"]["line"], "Checked by the same model")
+        self.assertTrue(out["model"]["configure"])
+        html = out["html"]
+        self.assertIn("plugins.entries.coursebook.settings.validator_model", html)
+        self.assertIn("validator_provider", html)
+        self.assertIn("plugins.entries.coursebook.llm.allow_model_override", html)
+        self.assertIn("allow_provider_override", html)
+        self.assertIn("coursebook_status", html)
+        for banned in ("fresh eyes", "subagent", "independently validated", "second model"):
+            self.assertNotIn(banned, html.lower())
+
+    def test_an_unidentified_pass_also_names_the_setting(self) -> None:
+        validation = same_model_validation()
+        validation["independence"] = "unidentified"
+        validation["validator"] = {"provider": "nous", "model": None, "known": False}
+        out = self.run_case(
+            {
+                "kind": "render",
+                "plan": {"plan_id": "plan_1", "version": 1, "state": "draft"},
+                "job": plan_job(validation),
+            }
+        )
+        self.assertTrue(out["model"]["configure"])
+        self.assertIn("plugins.entries.coursebook.settings.validator_model", out["html"])
+
+    def test_an_independent_pass_has_no_configure_hint(self) -> None:
+        out = self.run_case(
+            {
+                "kind": "render",
+                "plan": {"plan_id": "plan_1", "version": 1, "state": "draft"},
+                "job": plan_job(second_model_validation()),
+            }
+        )
+        self.assertFalse(out["model"]["configure"])
+        self.assertNotIn("coursebook_status", out["html"])
+        self.assertNotIn("validator_model", out["html"])
+
+    def test_a_learner_surface_never_shows_the_host_setting(self) -> None:
+        out = self.run_case(
+            {
+                "kind": "render",
+                "plan": {"plan_id": "plan_1", "version": 1, "state": "draft"},
+                "job": plan_job(same_model_validation()),
+                "learner": True,
+            }
+        )
+        self.assertIn("Checked by the same model", out["html"])
+        self.assertFalse(out["model"]["configure"])
+        self.assertNotIn("validator_model", out["html"])
+        self.assertNotIn("allow_model_override", out["html"])
 
 
 class PlanValidationWiringTest(unittest.TestCase):

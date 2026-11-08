@@ -19818,6 +19818,24 @@ const PLAN_VALIDATION_LINES = Object.freeze({
   unrecorded: 'No validator record is stored for this version'
 })
 
+/**
+ * H-167: the one instruction that turns a same-model pass into a real cross-model one.
+ *
+ * It names the two settings that create the route and the host trust gate that must permit the
+ * override, and it points at `coursebook_status`, whose `validator` block is the read-only
+ * answer to "is a different checking model configured here?". It deliberately never says
+ * "second model", "checked" or "fresh eyes": this copy appears *because* no such check happened.
+ */
+const PLAN_VALIDATION_SETTINGS_HINT =
+  'To have a different model review plans, set ' +
+  'plugins.entries.coursebook.settings.validator_model (and optionally validator_provider) and ' +
+  'allow it with plugins.entries.coursebook.llm.allow_model_override / allow_provider_override ' +
+  '(with allowed_models / allowed_providers), then read coursebook_status to confirm a ' +
+  'validator route is configured.'
+
+const PLAN_VALIDATION_CONFIGURE_LINE =
+  'No different checking model is configured here; coursebook_status reports the setting to change.'
+
 /** Read the recorded independence, or derive it exactly as the backend does. Never upgrade. */
 function planValidationIndependence(validation) {
   const declared = validation && validation.independence
@@ -19845,7 +19863,7 @@ function planValidationModelName(identity) {
  * the record is, so a pending read can never look like "no check". A record whose `plan_id` names
  * another version is discarded, because a carried plan is a copy, not a re-validation.
  */
-function planValidationView({ job, jobHint, plan, reading }) {
+function planValidationView({ job, jobHint, plan, reading, learner }) {
   const planId = plan && plan.plan_id ? String(plan.plan_id) : null
   const sources = [job, jobHint].filter(Boolean)
   let checkpoint = null
@@ -19871,6 +19889,7 @@ function planValidationView({ job, jobHint, plan, reading }) {
       factsUnverified: false,
       warning: null,
       note: null,
+      configure: null,
       detail: [
         'No validation record is bound to this exact plan version, so nothing here claims a second model.',
         mismatched
@@ -19896,6 +19915,11 @@ function planValidationView({ job, jobHint, plan, reading }) {
   )
   if (factsUnverified) detail.push('The sources were not checked, so a pass is not factual verification.')
   if (validation.warning) detail.push(String(validation.warning))
+  // H-167: a same-model or unidentified pass is exactly where the operator needs the setting that
+  // would create a real cross-model route. A genuinely independent pass gets no such hint, and a
+  // learner surface never shows host settings.
+  const configure = !learner && (independence === 'same_model' || independence === 'unidentified')
+  if (configure) detail.push(PLAN_VALIDATION_SETTINGS_HINT)
   return {
     // `state` carries the rejection for the screen; the line itself only ever names who checked.
     state: outcome === 'rejected' ? 'rejected' : independence,
@@ -19905,6 +19929,7 @@ function planValidationView({ job, jobHint, plan, reading }) {
     validatorModel,
     generatorModel,
     factsUnverified,
+    configure,
     warning: validation.warning || null,
     note: factsUnverified
       ? 'The facts were not checked against sources, so this is not factual verification.'
@@ -19918,7 +19943,7 @@ function planValidationView({ job, jobHint, plan, reading }) {
  * same-model pass; the model/provider names appear only when the runtime reported them.
  */
 function PlanValidationLine({ job, jobHint, plan, reading, learner }) {
-  const model = planValidationView({ job, jobHint, plan, reading })
+  const model = planValidationView({ job, jobHint, plan, reading, learner })
   if (!model) return null
   return jsxs('div', {
     'data-cb-plan-validation': model.state,
@@ -19937,6 +19962,12 @@ function PlanValidationLine({ job, jobHint, plan, reading, learner }) {
         : null,
       model.note
         ? jsx('div', { 'data-cb-plan-validation-facts': 'unverified', children: model.note })
+        : null,
+      model.configure && !learner
+        ? jsx('div', {
+            'data-cb-plan-validation-configure': '',
+            children: PLAN_VALIDATION_CONFIGURE_LINE
+          })
         : null,
       jsxs('details', {
         'data-cb-plan-validation-detail': '',
@@ -22783,6 +22814,8 @@ export {
   planRejectView,
   PlanRejectPanel,
   PLAN_VALIDATION_LINES,
+  PLAN_VALIDATION_SETTINGS_HINT,
+  PLAN_VALIDATION_CONFIGURE_LINE,
   planValidationView,
   PlanValidationLine,
   planTimingCopy,

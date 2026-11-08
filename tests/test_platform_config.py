@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import types
 import unittest
 from pathlib import Path
 
@@ -120,6 +121,76 @@ class StatusToolDispatchTest(unittest.TestCase):
     def test_handler_accepts_forwarded_context_kwargs(self) -> None:
         payload = json.loads(tools.status_handler({}, task_id="t-1", session_id="s-1"))
         self.assertIn("db", payload)
+
+
+class ValidatorStatusTest(unittest.TestCase):
+    """H-167: the status block is the honest answer to "is a different model configured?"."""
+
+    def setUp(self) -> None:
+        from coursebook import generation
+
+        self.generation = generation
+        self.addCleanup(tools.configure, None)
+        self.addCleanup(generation.bind_validator_llm, None, provider="", model="")
+        generation.bind_validator_llm(None, provider="", model="")
+
+    def _block(self) -> dict:
+        return json.loads(tools.status_handler({}))["validator"]
+
+    def test_an_empty_install_reports_no_validator_route(self) -> None:
+        block = self._block()
+        self.assertEqual(set(block), {"configured", "provider", "model", "reason"})
+        self.assertIs(block["configured"], False)
+        self.assertIsNone(block["provider"])
+        self.assertIsNone(block["model"])
+        reason = block["reason"]
+        self.assertIn("plugins.entries.coursebook.settings.validator_model", reason)
+        self.assertIn("plugins.entries.coursebook.settings.validator_provider", reason)
+        self.assertIn("plugins.entries.coursebook.llm.allow_model_override", reason)
+        self.assertIn("allow_provider_override", reason)
+        self.assertIn("model_assessed", reason)
+        # It reports configuration; it never claims a check ran.
+        self.assertIn("never independent", reason)
+
+    def test_a_bound_route_reports_provider_and_model_without_any_secret(self) -> None:
+        self.generation.bind_validator_llm(
+            types.SimpleNamespace(complete_structured=lambda **kwargs: None),
+            provider="anthropic",
+            model="claude-sonnet-4",
+        )
+        raw = tools.status_handler({})
+        block = json.loads(raw)["validator"]
+        self.assertEqual(
+            block,
+            {
+                "configured": True,
+                "provider": "anthropic",
+                "model": "claude-sonnet-4",
+                "reason": block["reason"],
+            },
+        )
+        self.assertIn("not that it answered", block["reason"])
+        for forbidden in ("api_key", "apikey", "token", "secret", "credential", "password"):
+            self.assertNotIn(forbidden, raw.lower())
+
+    def test_settings_without_a_bound_host_route_stay_unconfigured(self) -> None:
+        self.generation.bind_validator_llm(None, provider="anthropic", model="claude-sonnet-4")
+        block = self._block()
+        self.assertIs(block["configured"], False)
+        self.assertEqual(block["provider"], "anthropic")
+        self.assertEqual(block["model"], "claude-sonnet-4")
+        self.assertIn("no host LLM route is bound", block["reason"])
+
+    def test_a_broken_config_read_is_unconfigured_not_a_crash(self) -> None:
+        def broken():
+            raise RuntimeError("settings unreadable")
+
+        original = self.generation.validator_config
+        self.generation.validator_config = broken
+        self.addCleanup(setattr, self.generation, "validator_config", original)
+        block = self._block()
+        self.assertIs(block["configured"], False)
+        self.assertIn("could not be read", block["reason"])
 
 
 if __name__ == "__main__":
