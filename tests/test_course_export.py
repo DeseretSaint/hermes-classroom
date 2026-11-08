@@ -14,6 +14,7 @@ the only content under test is content this test authored.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import tempfile
 import unittest
@@ -650,6 +651,116 @@ class CourseExportWriteTest(AuthoredCourseCase):
         self.assertEqual(error["code"], "DELETE_SCOPE_STALE")
         self.assertEqual(self.artifacts(), 0)
         self.assertEqual(self.export_files(), [])
+
+
+class CourseExportCrossProfileImportTest(AuthoredCourseCase):
+    """H-121: the archive a learner exports is importable on a *different* profile.
+
+    Profile A authors the course and exports it; profile B is a second, empty ``HERMES_HOME``. The
+    only thing that travels is the zip. Nothing else is copied: no database file, no packs directory,
+    no learner rows. That makes the assertions here the real cross-profile claim rather than a
+    same-database round trip.
+    """
+
+    def _fresh_profile(self) -> str:
+        other = tempfile.mkdtemp(prefix="coursebook-kernel-profile-b-")
+        self.addCleanup(shutil.rmtree, other, True)
+        os.environ["HERMES_HOME"] = other
+        db.migrate()
+        return other
+
+    def test_exported_course_imports_into_a_fresh_profile_with_resume_and_fresh(self) -> None:
+        seeded = self.seed_course()
+        self.seed_validated_lessons(seeded)
+        self.seed_learning_history(seeded)
+        reviewed = self.ok(
+            "course.export.read", {"enrollment_id": seeded["enrollment_id"]}
+        )["result"]
+        exported = self.export(seeded["enrollment_id"], reviewed["content_hash"], key="key-cross-profile")
+        archive = self.archive_path(exported)
+        self.assertTrue(archive.is_file())
+        origin_attempts = self.artifacts("export")
+
+        # ── a genuinely different profile: new home, new database, none of A's rows ──
+        profile_b = self._fresh_profile()
+        self.assertTrue(str(profile_b) in str(pack_flow.data_root()))
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM courses"), 0)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM packs"), 0)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM notebook_entries"), 0)
+
+        staged = pack_flow.grant_local_file(archive)
+        preview = self.ok("pack.preview", {"staged_id": staged})["result"]
+        # The pack identity is the reviewed manifest hash, byte-for-byte what A exported.
+        self.assertEqual(preview["manifest"]["content_hash"], exported["pack"]["manifest_hash"])
+        self.assertEqual(preview["manifest"]["pack_id"], exported["pack"]["pack_id"])
+
+        first = self.ok(
+            "pack.import",
+            {"staged_id": staged, "mode": "fresh"},
+            idempotency_key="key-b-fresh",
+        )["result"]
+        self.assertEqual(first["pack_id"], exported["pack"]["pack_id"])
+        self.assertNotEqual(first["enrollment_id"], seeded["enrollment_id"])
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM courses"), 1)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM packs"), 1)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM enrollments"), 1)
+
+        # Resume names the *existing* classroom and writes no second course for the same pack.
+        resume_stage = pack_flow.grant_local_file(archive)
+        resumed = self.ok(
+            "pack.import",
+            {"staged_id": resume_stage, "mode": "resume"},
+            idempotency_key="key-b-resume",
+        )["result"]
+        self.assertEqual(resumed["course_id"], first["course_id"])
+        self.assertEqual(resumed["enrollment_id"], first["enrollment_id"])
+        self.assertEqual(int(resumed["revision"]), int(first["revision"]))
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM courses"), 1)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM enrollments"), 1)
+
+        # A fresh run is a distinct enrollment on the same immutable content: one pack row, two
+        # enrollments, and each course id is its own — pack identity is never the enrollment id.
+        fresh_stage = pack_flow.grant_local_file(archive)
+        second = self.ok(
+            "pack.import",
+            {"staged_id": fresh_stage, "mode": "fresh"},
+            idempotency_key="key-b-fresh-2",
+        )["result"]
+        self.assertNotEqual(second["enrollment_id"], first["enrollment_id"])
+        self.assertNotEqual(second["course_id"], first["course_id"])
+        self.assertEqual(second["pack_id"], first["pack_id"])
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM packs"), 1)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM courses"), 2)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM enrollments"), 2)
+
+        # No learner history travelled: the fresh profile starts with empty personal tables, even
+        # though profile A had a notebook note and an observation for the same course text.
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM attempts"), 0)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM notebook_entries"), 0)
+        self.assertEqual(self.scalar("SELECT COUNT(*) FROM evidence"), 0)
+
+        # The imported course serves real lesson pages in profile B and re-exports through
+        # pack.export (not course.export: the imported course is pack-backed).
+        page = self.ok(
+            "lesson.page",
+            {
+                "enrollment_id": first["enrollment_id"],
+                "objective_id": str(self.scalar(
+                    "SELECT o.id FROM objectives o JOIN plans p ON p.id = o.plan_id"
+                    " WHERE p.course_id = ? ORDER BY o.ordinal", (first["course_id"],)
+                )),
+            },
+        )["result"]
+        self.assertTrue(page["section"]["title"])
+        repack = self.ok(
+            "pack.export",
+            {"enrollment_id": first["enrollment_id"]},
+            idempotency_key="key-b-repack",
+        )["result"]
+        self.assertEqual(repack["content_hash"], exported["pack"]["manifest_hash"])
+
+        # A's export artifact still exists on A; nothing from here was uploaded or published.
+        self.assertEqual(origin_attempts, 1)
 
 
 if __name__ == "__main__":
