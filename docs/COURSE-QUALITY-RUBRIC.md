@@ -179,7 +179,15 @@ Question: can a learner finish the session, in the stated order, without a jump 
 prerequisite?
 
 Where to look: the number and kind of segments, the session length, the one-concept-per-step
-shape, and the transition from model to guided work to the check.
+shape, and the transition from model to guided work to the check. A taught target must be
+*presented*, not merely named: the `kind: model` segment is where the form, its reading and its
+function appear together. A lesson that describes the target only as "the standard daytime
+greeting" and never prints it has not modelled it, and the check that keys that form rests on an
+unstated prerequisite. A model segment that does print it is modelling, not answer leakage:
+`generation.assert_no_answer_leak` permits exactly that surface, together with the narration that
+reads it, and refuses the key on every other learner surface it scans — explain, guided and
+retrieval segments, the worked example, the learner explanation, parent notes and non-narration
+media.
 
 - 1: the lesson requires a step the lesson never models, or the session cannot fit its own
   authored content.
