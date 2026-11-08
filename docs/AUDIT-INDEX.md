@@ -358,7 +358,7 @@ revision; rows that moved are listed in §13.
 | P0-4 deep research is a no-op; demo-sized budget | P0 | **FIXED** | H-04 `t_161d467f` | content `cee1749`, merged at `341cc18` into `ce95836` — **yes** | done, merged |
 | P0-5 a normal course cannot export itself | P0 | **FIXED** | H-08 `t_901c8310`; recovery H-08b `t_092cc689` | pre-recovery tip `c9c6cec` — **no** (branch history, superseded); recovery merge `18638be` — **yes**. On `1fc0542` `contracts/rpc.v13.json` carries 11 `course.export` hits and `tests/test_course_export.py` resolves | recovered, merged |
 | P0-6 a technical procedure lesson cannot carry the procedure lens | P0 | **FIXED** | H-06 `t_7a320d2f`; recovery H-06b `t_6cd9e57c` | original tip `00b502f` — **yes** (landed through the H-06b line); recovery merge `acb20f7` — **yes**. `lesson_procedure_problems` resolves in `coursebook/generation.py` at `1fc0542` | recovered, merged |
-| P0-7 no live arbitrary-topic generation | P0 | **OPEN — packet merged, but no live provider call exists** | H-09 `t_ebc196db`; re-run H-40 | H-09 `111c7e9` — **no** (deliberately unmerged, superseded by H-40); H-40 `9f2de53` via merge `be08495` — **yes**; re-derived by H-49 at `54dd2eb`. The packet reports 3/3 PASS with **recorded** transcripts and `provider_calls = 0` | H-09 done, branch abandoned; H-40 merged |
+| P0-7 no live arbitrary-topic generation | P0 | **OPEN — the merged packet is recorded-input only (`provider_calls = 0`); a live RPC-path call is proven separately by H-68, but with no validation record and no approved plan** (before H-166 this cell read `OPEN — packet merged, but no live provider call exists`) | H-09 `t_ebc196db`; re-run H-40; live re-run H-68 `t_f178ba3d` | H-09 `111c7e9` — **no** (deliberately unmerged, superseded by H-40); H-40 `9f2de53` via merge `be08495` — **yes**; re-derived by H-49 at `54dd2eb`. The packet reports 3/3 PASS with **recorded** transcripts and `provider_calls = 0` — a statement about the H-40 packet run (`audit/adversarial/harness-e2e/STATUS.md:31,33`), not about the product. The live half is H-68 (2026-11-07): under a real `hermes serve --isolated` on the H-63F RPC path, job `job_18e2916bd1684036b1ee0df26c8e950c` reached `completed` in 165 s with research `ok` (2 queries, 4 sources, `failures: []`), persisting plan `752bb7935176cbdc` at `draft` / `needs_review`; it required host commit `c02e6e0180` on `~/.hermes/hermes-agent` branch `wt/h68-serve-secret-scope`, a **source backup, not on any pushed line**. Copies of the four evidence files: `audit/adversarial/h63-live-generation/h68-host-scope/`. Still OPEN — no validation record was produced, so nothing was approved or taught (§15) | H-09 done, branch abandoned; H-40 merged; H-68 done (host fix source-backup only) |
 | P1-1 parent brief stored but mostly ignored by the planner | P1 | **FIXED** | H-07 `t_2f3cc647` (+ H-32b regression) | content `8a6bedb` merged at `afac32c` into `ce95836` — **yes**; conflict regression `8d018e4` via `c7461fc` — **yes** | done, merged |
 | P1-2 planner does not plan media; policy guesses from prose | P1 | **FIXED** | H-05 `t_7baa29e2` | content `986190f` merged at `a30487e` into `ce95836` — **yes** | done, merged |
 | P1-3 check `count` / `independent_evidence` are decorative | P1 | **FIXED — re-audit required** | H-21c `t_6576b611` | merge `2252231` (content `bcd545e`) — **yes**; `CHECK_PLAN_SCHEMA_V2` drops both fields | done, merged |
@@ -794,7 +794,7 @@ annotated the cell with its state there, keeping the historical verdict intact. 
 | round-1 P0-4 | OPEN — done, unmerged (`cee1749`) | **FIXED** | `cee1749` via `ce95836` | yes |
 | round-1 P0-5 | OPEN (H-08 running) | OPEN — done, unmerged at `f990cad`; **content on `a674356`** — H-08b `18638be` (ancestor) carries the authored export: `contracts/rpc.v16.json` declares `course.export.read` and `tests/test_course_export.py` resolves. `c9c6cec` never landed: content landed as `18638be`; branch abandoned (§15) | `c9c6cec` | no (`c9c6cec` at this base) |
 | round-1 P0-6 | OPEN (H-06 running) | OPEN — done, unmerged at `f990cad`; **merged at `a674356`** — `00b502f` **is** an ancestor and H-06b `acb20f7` merged; `lesson_procedure_problems` resolves (§15) | `00b502f` | no (`00b502f` at this base) |
-| round-1 P0-7 | OPEN (H-09 todo) | OPEN — done, unmerged at `f990cad`; **still OPEN at `a674356`** — `111c7e9` is not an ancestor and no live provider call exists; the merged packet `9f2de53` records `provider_calls = 0` (§15) | `111c7e9` | no |
+| round-1 P0-7 | OPEN (H-09 todo) | OPEN — done, unmerged at `f990cad`; **still OPEN at `a674356`** — `111c7e9` is not an ancestor and no live provider call is recorded in the tree (H-68's live RPC-path run is off-tree — §4, §15); the merged packet `9f2de53` records `provider_calls = 0` (§15) | `111c7e9` | no |
 | round-1 P1-1 | OPEN — done, unmerged (`8a6bedb`) | **FIXED** | `8a6bedb` via `ce95836`; regression `8d018e4` via `c7461fc` | yes |
 | round-1 P1-2 | OPEN — done, unmerged (`986190f`) | **FIXED** | `986190f` via `ce95836` | yes |
 | round-1 P1-3 | OPEN — mapped to H-21 (`5ba4e4c`) | **FIXED — re-audit required** | `bcd545e` via `2252231` (`CHECK_PLAN_SCHEMA_V2`) | yes |
@@ -1269,12 +1269,51 @@ Files on the base, checked with `git cat-file -e a674356:<path>`: `contracts/rpc
 
 ### The rows that stay open, with today's evidence
 
-**P0-7 — no live arbitrary-topic provider call. OPEN.** At `a674356`
-`audit/adversarial/harness-e2e/STATUS.md` still records `labels.provider_calls = 0` and
-`provider_spend_usd = 0.0`, marks validator identity as a **RECORDED TRANSCRIPT**
-(`recorded-validator-h40`), and contains no line naming a live provider. The merged packet
-`9f2de53` proves the pipeline on recorded inputs; it does not prove a provider call. Being merged
-is not the claim.
+**P0-7 — no live arbitrary-topic provider call in the shipped tree. OPEN.** *(Rewritten by H-166
+`t_cd419083`; the previous sentence here read "no live arbitrary-topic provider call exists" and
+drew the wrong conclusion from `harness-e2e/STATUS.md`. The correction record is at the end of this
+section.)* The basis has two halves, and they are different strengths of evidence.
+
+*Recorded half.* At `a674356` `audit/adversarial/harness-e2e/STATUS.md:31,33` records
+`labels.provider_calls = 0`, `provider_spend_usd = 0.0` and validator identity `recorded-validator-h40`,
+a **RECORDED TRANSCRIPT**. Those lines describe the **H-40 packet run** (`9f2de53`, merged via
+`be08495`), not the product, and they stay true of it. The merged packet proves the pipeline on
+recorded inputs; it does not prove a provider call. Being merged is not the claim.
+
+*Live half.* A live arbitrary-topic provider call is proven separately, off this tree, by H-68
+(`t_f178ba3d`, 2026-11-07 14:25). Under a real `hermes serve --isolated` on the H-63F RPC path —
+`course.create` → `enrollment.create` → `jobs.create` — plan job
+`job_18e2916bd1684036b1ee0df26c8e950c` reached `completed` in **165 s** (created `21:15:37Z`,
+updated `21:18:22Z`) with research ledger `114a08e40b09c49a` at `status: "ok"`, **2 queries**,
+**4 fetched sources**, `failures: []`, persisting plan `752bb7935176cbdc` at `draft` /
+`generation_state: needs_review`, `approved_at: null`. The probe from the same run made a real
+`web_search` (3 results) and `web_extract` (1 document, 4523 chars) through `ctx.dispatch_tool`
+inside the serve process. It required a host-side launch-scope fix, `c02e6e0180` on
+`~/.hermes/hermes-agent` branch `wt/h68-serve-secret-scope` — a **source backup: not merged, not
+pushed, and contained by no remote ref in that host repo** (verified 2026-11-08: 0 of 2842
+`refs/remotes` entries contain it). H-166 copied the four evidence files to
+`audit/adversarial/h63-live-generation/h68-host-scope/`; they are transcripts, not a reproduction.
+
+**It stays OPEN, for three separate reasons, and all three have to be named.** (a) The live plan
+ended `draft` / `needs_review` and **no validation record was produced** — `gen_validation_records`
+had no row for the run — so no arbitrary-topic plan has been approved, and none taught. (b) The
+proof depends on host commit `c02e6e0180`, which is in no repository branch this project can cite:
+not in this tree, not on `master`, not on any pushable line. (c) Until H-166 the evidence lived only
+in kanban attachments, not in `audit/` on `master`; the copies are committed transcripts of the
+card's attachments with their sha256s recorded in a README, and nothing here re-runs them.
+
+**What the shipped tree does and does not contain.** `audit/adversarial/h63-live-generation/STATUS.md`
+(base `ea5f15d`) is an in-tree record of live provider calls: three in-process runs with a live
+`nous` provider and a live `web_search`/`web_extract` seam — two **rejected** by independent
+cross-model validation, one cancelled before it produced an approvable artifact — plus a fourth run
+over the live HTTP `cb.rpc` path that recorded research `unavailable`, no validation call and a
+deterministic-rule rejection (D-H63-1, the defect H-68's host fix later unblocked). So the tree has
+never lacked a record of live calls; what it has never contained is a committed record of a live
+arbitrary-topic plan that passed independent validation and was approved. That is the claim P0-7
+makes, and it stays unproven.
+
+*Not claimed:* the host fix is not merged, shipped, on `master`, or on any pushed branch; P0-7 is
+not closed.
 
 **P1-5 — construct breadth is still three input formats. OPEN.** At `a674356` the three construct
 methods are absent from every surface, counted on the base itself:
@@ -1305,4 +1344,50 @@ ran no probe, no gate module and no live call; every status it asserts is either
 code, a file that resolves on the base, or a `grep -c` quoted above. It did not change a status
 because a card is `done`, it did not rewrite the historical verdicts in §11–§14, and it touched
 nothing that `scripts/check-docs-truth.py` asserts — that gate passes on this tree.
+
+### H-166 correction — P0-7's basis, not its verdict (`wt/h166-p0-7-basis`, docs only)
+
+The H-163 revision above concluded P0-7 from `harness-e2e/STATUS.md` alone and wrote "no live
+arbitrary-topic provider call exists". That was a present-tense claim about the product drawn from a
+file that describes one **recorded** packet run. H-166 changes the basis and leaves the verdict
+alone: P0-7 is still OPEN, as of the same three reasons stated in "The rows that stay open".
+
+Wording moved, exactly:
+
+| where | before | after |
+|---|---|---|
+| §4 ledger cell, status column | `OPEN — packet merged, but no live provider call exists` | `OPEN — the merged packet is recorded-input only (`provider_calls = 0`); a live RPC-path call is proven separately by H-68, but with no validation record and no approved plan` |
+| §4 ledger, evidence column | ended at "…`provider_calls = 0`" | adds the H-40-scoping sentence, the H-68 run (`job_18e2916b…`, research `ok`, 2 queries, 4 sources, 165 s, plan `752bb7935176cbdc` at `draft`/`needs_review`), host commit `c02e6e0180` as a **source backup, not on any pushed line**, and the copied evidence directory |
+| §4 ledger, card-state column | `H-09 done, branch abandoned; H-40 merged` | `H-09 done, branch abandoned; H-40 merged; H-68 done (host fix source-backup only)` |
+| §11 H-31b record, round-1 P0-7 cell | `… and no live provider call exists; the merged packet …` | `… and no live provider call is recorded in the tree (H-68's live RPC-path run is off-tree — §4, §15); the merged packet …` — historical verdict otherwise untouched |
+| §15, this section | `**P0-7 — no live arbitrary-topic provider call. OPEN.** … contains no line naming a live provider.` | the two-half basis, the three reasons it stays OPEN, and what the shipped tree does and does not contain |
+
+What was verified, and how (this revision ran no probe and no live call):
+
+```text
+$ date -u -d "2026-11-07T21:18:22Z" +%s   # 1794086302  (plan-job.json updated_at)
+$ date -u -d "2026-11-07T21:15:37Z" +%s   # 1794086137  (plan-job.json created_at)
+$ echo $((1794086302 - 1794086137))       # 165
+$ git merge-base --is-ancestor 9f2de53 HEAD && echo yes   # yes
+$ git cat-file -t 9f2de53                  # commit
+$ git -C ~/.hermes/hermes-agent for-each-ref --contains c02e6e0180 --format='%(refname)' refs/remotes | wc -l   # 0
+$ git -C ~/.hermes/hermes-agent log -1 --format='%h %ad %s' --date=iso c02e6e0180
+  c02e6e0180 2026-11-07 14:24:24 -0700 fix(gateway): serve-owned plugin workers resolve the launch profile's secrets (H-68)
+$ grep -n "provider_calls\|provider_spend\|recorded-validator" audit/adversarial/harness-e2e/STATUS.md
+  31:| validator identity | **RECORDED TRANSCRIPT**, a distinct recorded identity (`recorded-validator-h40`) | …
+  33:| provider calls / spend | **none** | `labels.provider_calls = 0`, `provider_spend_usd = 0.0` |
+$ sha256sum audit/adversarial/h63-live-generation/h68-host-scope/*   # equal to the four t_f178ba3d attachments
+```
+
+The research and plan numbers come from `research-run.json` and `plan-job.json` copied into
+`audit/adversarial/h63-live-generation/h68-host-scope/`; the copy's `README.md` records their
+sha256s, states that they are transcripts rather than a reproduction, and notes that
+`EVIDENCE.md`'s `audit/h68/create-h68.json` and `validation-records.json` were never attached to the
+card — which is itself the "no validation record" evidence, not a gap in the copy.
+
+Not done here: no probe was run, no host source was copied, `audit/adversarial/harness-e2e/STATUS.md`
+was not edited (its `provider_calls = 0` line describes the H-40 packet and stays true), the host
+repository was not pushed and no gateway was restarted, and no other row was re-derived. The §13 and
+§14 tables still quote "packet merged, but no live provider call exists" as the **status at those
+base-stamped revisions**; that is history, and those cells were not moved.
 

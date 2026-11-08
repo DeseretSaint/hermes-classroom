@@ -1,0 +1,141 @@
+== gen_research_runs (1)
+[
+ {
+  "course_id": "crs_9c779940e55e4f2d8ff3e94080662a81",
+  "created_at": "2026-11-07T21:18:22Z",
+  "failures_json": [],
+  "id": "114a08e40b09c49a",
+  "job_id": "job_18e2916bd1684036b1ee0df26c8e950c",
+  "queries_json": [
+   {
+    "error": null,
+    "query": "How do I season a cast-iron skillet so it stays non-stick?",
+    "result_count": 5
+   },
+   {
+    "error": null,
+    "query": "How do I season a cast-iron skillet so it stays non-stick? official procedure steps safety limits",
+    "result_count": 5
+   }
+  ],
+  "reason": null,
+  "sources_json": [
+   {
+    "claim_links": [],
+    "content_hash": "sha256:1a5fbfaceea4197fb4cdaf2ab428ef671d7dbaf7d10f5a314cf8bbc4800f8a58",
+    "excerpt": "[Skip to main navigation](https://extension.umaine.edu/food-health/2024/03/28/cast-iron/#menu-primary-navigation) [Skip to site navigation](https://extension.umaine.edu/food-health/2024/03/28/cast-iron/#internal-header-menu) [Skip to content](https://extension.umaine.edu/food-health/2024/03/28/cast-iron/#content) # Cooperative Extension: Food & Health MENU ![Top View of Omelette on Iron Cast Pans.](https://extension.umaine.edu/food-health/wp-content/uploads/sites/9/2024/03/6.-Photo-by-Steve-House.png) ## Cast Iron Basics: How to Clean, Season, and Maintain Your Cast Iron Pan March 28, 2024[Foo",
+    "fetched_at": "2026-11-07T21:15:39Z",
+    "published_at": null,
+    "publisher": "extension.umaine.edu",
+    "query": "How do I season a cast-iron skillet so it stays non-stick? official procedure steps safety limits",
+    "source_id": "1f0857ae81e92316",
+    "source_type": "academic",
+    "support_status": "unverified",
+    "title": "Cast Iron Basics: How to Clean, Season, and Maintain Your Cast Iron Pan - Cooperative Extension: Food & Health - University of Maine Cooperative Extension",
+    "truncated": true,
+    "url": "https://extension.umaine.edu/food-health/2024/03/28/cast-iron/"
+   },
+   {
+    "claim_links": [],
+    "content_hash": "sha256:fb783e61865b53bb8b13eeb6ca0f9aa9159913057606e126ffb7ec2593cb64d1",
+    "excerpt": "We use cookies to improve your experience. Please read our [Privacy Policy](https://www.msstate.edu/privacy) or click Accept. I Accept There is currently no page content. [Skip to main content](https://extension.msstate.edu/blogs/extension-for-real-life/how-season-cast-iron-skillet#main-content) [Skip to main menu](https://extension.msstate.edu/blogs/extension-for-real-life/how-season-cast-iron-skillet#block-msuext-main-menu) [Skip to footer](https://extension.msstate.edu/blogs/extension-for-real-life/how-season-cast-iron-skillet#msu-footer) [**Join the Magnolia Moves Activity Challenge!**](ht",
+    "fetched_at": "2026-11-07T21:15:39Z",
+    "published_at": null,
+    "publisher": "extension.msstate.edu",
+    "query": "How do I season a cast-iron skillet so it stays non-stick? official procedure steps safety limits",
+    "source_id": "37e483ee38e56049",
+    "source_type": "academic",
+    "support_status": "unverified",
+    "title": "How to Season a Cast Iron Skillet | Mississippi State University Extension Service",
+    "truncated": false,
+    "url": "https://extension.msstate.edu/blogs/extension-for-real-life/how-season-cast-iron-skillet"
+   },
+   {
+    "claim_links": [],
+    "content_hash": "sha256:8aabf5b018ef894868ba44e797bf6f03bf53bb034f0c6fbcf2432ce7cd28dc8c",
+    "excerpt": "## How to Season and Maintain a Cast Iron Pan \u2014 Written by [Christa Snyder](https://polk.ces.ncsu.edu/profile/christa-snyder/) \u2014 Contributors: [Avery Ashley](https://polk.ces.ncsu.edu/profile/avery-ashley/) \\| February 17, 2023 (Updated: Aug. 8, 2024, 7:13 a.m.) Cast iron makes for a wonderful cooking surface. It's safe to use, lasts forever, holds heat like nothing else, and is naturally non-stick if it's properly seasoned. The only downside to cast iron is that it does require a little special maintenance for it to work well, and that can be intimidating to those of us who are used to materi",
+    "fetched_at": "2026-11-07T21:15:39Z",
+    "published_at": null,
+    "publisher": "polk.ces.ncsu.edu",
+    "query": "How do I season a cast-iron skillet so it stays non-stick? official procedure steps safety limits",
+    "source_id": "39ad955958a4f675",
+    "source_type": "academic",
+    "support_status": "unverified",
+    "title": "How to Season and Maintain a Cast Iron Pan - Polk County Center | N.C. Cooperative Extension",
+    "truncated": true,
+    "url": "https://polk.ces.ncsu.edu/news/how-to-season-and-maintain-a-cast-iron-pan/"
+   },
+   {
+    "claim_links": [],
+    "content_hash": "sha256:d23a848609e74baf1b4cbe068dcd794823f93dcc1a1c56dfdc5e3e3906091269",
+    "excerpt": "[Skip to content](https://www.lodgecastiron.com/pages/how-to-season#MainContent) - [Facebook](https://www.facebook.com/LodgeCastIron \"Lodge Cast Iron on Facebook\") - [Instagram](https://www.instagram.com/lodgecastiron/ \"Lodge Cast Iron on Instagram\") - [YouTube](https://www.youtube.com/user/LodgeCastIron \"Lodge Cast Iron on YouTube\") - [TikTok](https://www.tiktok.com/@lodgecastiron \"Lodge Cast Iron on TikTok\") - [Pinterest](https://www.pinterest.com/LodgeCastIron/ \"Lodge Cast Iron on Pinterest\") [_The Holiday Sale is on! Get 20% off orders $100+! Shop now\u2192_\\\\ \\\\ _The Holiday Sale is on! Get 20",
+    "fetched_at": "2026-11-07T21:15:39Z",
+    "published_at": null,
+    "publisher": "lodgecastiron.com",
+    "query": "How do I season a cast-iron skillet so it stays non-stick?",
+    "source_id": "a7d28a4abd27a0ec",
+    "source_type": "web_page",
+    "support_status": "unverified",
+    "title": "How to Season \u2013 Lodge Cast Iron",
+    "truncated": true,
+    "url": "https://www.lodgecastiron.com/pages/how-to-season"
+   }
+  ],
+  "status": "ok"
+ }
+]
+== sources (4)
+[
+ {
+  "claim_count": 0,
+  "content_hash": null,
+  "course_id": "crs_9c779940e55e4f2d8ff3e94080662a81",
+  "created_at": "2026-11-07T21:18:22Z",
+  "fetched_at": "2026-11-07T21:15:39Z",
+  "id": "a7d28a4abd27a0ec",
+  "published_at": null,
+  "source_type": "web_page",
+  "support_status": "unassessed",
+  "title": "How to Season \u2013 Lodge Cast Iron",
+  "url": "https://www.lodgecastiron.com/pages/how-to-season"
+ },
+ {
+  "claim_count": 0,
+  "content_hash": null,
+  "course_id": "crs_9c779940e55e4f2d8ff3e94080662a81",
+  "created_at": "2026-11-07T21:18:22Z",
+  "fetched_at": "2026-11-07T21:15:39Z",
+  "id": "39ad955958a4f675",
+  "published_at": null,
+  "source_type": "academic",
+  "support_status": "unassessed",
+  "title": "How to Season and Maintain a Cast Iron Pan - Polk County Center | N.C. Cooperative Extension",
+  "url": "https://polk.ces.ncsu.edu/news/how-to-season-and-maintain-a-cast-iron-pan/"
+ },
+ {
+  "claim_count": 0,
+  "content_hash": null,
+  "course_id": "crs_9c779940e55e4f2d8ff3e94080662a81",
+  "created_at": "2026-11-07T21:18:22Z",
+  "fetched_at": "2026-11-07T21:15:39Z",
+  "id": "37e483ee38e56049",
+  "published_at": null,
+  "source_type": "academic",
+  "support_status": "unassessed",
+  "title": "How to Season a Cast Iron Skillet | Mississippi State University Extension Service",
+  "url": "https://extension.msstate.edu/blogs/extension-for-real-life/how-season-cast-iron-skillet"
+ },
+ {
+  "claim_count": 0,
+  "content_hash": null,
+  "course_id": "crs_9c779940e55e4f2d8ff3e94080662a81",
+  "created_at": "2026-11-07T21:18:22Z",
+  "fetched_at": "2026-11-07T21:15:39Z",
+  "id": "1f0857ae81e92316",
+  "published_at": null,
+  "source_type": "academic",
+  "support_status": "unassessed",
+  "title": "Cast Iron Basics: How to Clean, Season, and Maintain Your Cast Iron Pan - Cooperative Extension: Food & Health - University of Maine Cooperative Extension",
+  "url": "https://extension.umaine.edu/food-health/2024/03/28/cast-iron/"
+ }
+]

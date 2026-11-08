@@ -1,0 +1,39 @@
+{
+ "job": {
+  "attempt_id": "att_9545e13b5e2440d4b4cabf679a69fb70",
+  "brief_json": "{\"course_id\": \"crs_9c779940e55e4f2d8ff3e94080662a81\", \"dials\": {\"assessment\": \"none\", \"autonomy\": \"guided\", \"depth\": \"working\", \"pace\": \"light\"}, \"enrollment_id\": \"enr_77a6ca1fe58742a3a13270c4c9cbb262\", \"goal\": \"How do I season a cast-iron skillet so it stays non-stick?\", \"recipe\": \"one_off\", \"scope\": \"single\", \"stage\": \"plan\", \"subject_domain\": \"repair\"}",
+  "checkpoint_json": "{\"domain_provenance\": {\"declared_locale\": null, \"declared_subject_domain\": \"repair\", \"resolved_domain\": \"technical_procedure\", \"source\": \"declared\", \"target_language\": null}, \"generation_state\": \"needs_review\", \"last_stage\": \"plan\", \"next_unit_ordinal\": 1, \"objectives\": 1, \"plan_hash\": \"sha256:0b95e38b80753abca022636cb7d6bd3ae6b068f4edc3caaa92432bf2963cd0b4\", \"plan_id\": \"752bb7935176cbdc\", \"plan_schema\": \"coursebook.plan.v2\", \"plan_version\": 2, \"units\": 1}",
+  "created_at": "2026-11-07T21:15:37Z",
+  "error_json": "{}",
+  "id": "job_18e2916bd1684036b1ee0df26c8e950c",
+  "kind": "plan",
+  "lease_expires_at": null,
+  "lease_owner": null,
+  "operation_id": "h63-http-jobs-create-1794086137331952693",
+  "progress_json": "{\"message\": \"plan authored (needs_review)\", \"stage\": \"plan\", \"stages\": [{\"artifact_ids\": [], \"at\": \"2026-11-07T21:18:22Z\", \"stage\": \"plan\", \"steps_done\": 1, \"steps_total\": 1}], \"steps_done\": 1, \"steps_total\": 1}",
+  "state": "completed",
+  "updated_at": "2026-11-07T21:18:22Z"
+ },
+ "plans": [
+  {
+   "approved_at": null,
+   "course_id": "crs_9c779940e55e4f2d8ff3e94080662a81",
+   "created_at": "2026-11-07T21:18:22Z",
+   "id": "752bb7935176cbdc",
+   "plan_hash": "sha256:0b95e38b80753abca022636cb7d6bd3ae6b068f4edc3caaa92432bf2963cd0b4",
+   "schedule_json": "{\"check_plan\": [{\"evidence_target\": \"procedure\", \"kind\": \"verification\", \"notes\": \"The supervising adult runs this as a checklist during the single session, ticking each criterion as it is observed. No quiz and no written test; the stop-rule item is confirmed by the learner saying it back before any heat is applied.\", \"objective_ref\": 1}], \"context_needs\": [\"A kitchen with a stovetop or oven, a working extractor fan or openable window, and a heatproof surface\", \"An adult supervisor present for the whole session, including the heating and cooling steps\", \"A cast-iron skillet, a mild dish soap, a cloth or sponge, a dry towel and a small amount of cooking oil\", \"Oven mitts or heatproof gloves and a trivet or heatproof rest for the hot pan\"], \"delivery\": \"parent_led\", \"exclusions\": [\"Does not cover stripping a pan back to bare metal, removing rust, or restoring a badly damaged skillet.\", \"Does not compare brands, specific oils or commercial seasoning sprays, and makes no product recommendation.\", \"Does not cover other cookware materials such as carbon steel, stainless steel or non-stick coatings.\", \"Does not certify food safety, kitchen competence or fire-safety training; the supervising adult remains responsible for heat, smoke and flame.\", \"Does not claim any cited authority for the steps, because the supplied sources did not carry usable procedure text.\"], \"recipe\": \"one_off\", \"spaced_review\": false, \"time_estimate\": {\"attainment_hours\": null, \"basis\": \"model\", \"confidence\": \"low\", \"minutes_per_session\": 45, \"rationale\": \"A single 45-minute sitting covers one wash-dry-oil-heat-cool-wipe cycle with time for the supervisor to talk through the stop rule first. This is a planning estimate only, not a measured attainment figure; actual time depends on the pan, the heat source and how long the pan takes to cool.\", \"sessions_per_week\": 1, \"weeks\": 1}}",
+   "state": "draft",
+   "version": 2
+  },
+  {
+   "approved_at": null,
+   "course_id": "crs_9c779940e55e4f2d8ff3e94080662a81",
+   "created_at": "2026-11-07T21:15:37.245159+00:00",
+   "id": "pln_890b4a30cf5b4f07814efc5123ab5a47",
+   "plan_hash": "sha256:e8f8ef12035dc08ab5320426824d7bece09bced1c80868640ff59b7f04d7fb28",
+   "schedule_json": "{}",
+   "state": "draft",
+   "version": 1
+  }
+ ]
+}
