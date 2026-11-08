@@ -28,7 +28,7 @@ class StartPlateTest(unittest.TestCase):
         self.assertNotIn("DeskLabel", body)
         self.assertIn("'data-cb-first-run-title'", body)
         self.assertIn("children: FIRST_RUN_COPY.title", body)
-        self.assertEqual(body.count("variant: 'default'"), 1, body)
+        self.assertEqual(body.count("variant: 'primary'"), 1, body)
 
     def test_plate_is_a_flat_field_not_a_thick_bar(self) -> None:
         start = self.source.index("function FirstRun({")
@@ -100,7 +100,7 @@ class LessonStartTest(unittest.TestCase):
 
     def test_section_has_exactly_one_start_button(self) -> None:
         block = self._section_actions()
-        self.assertEqual(block.count("sdk.Button"), 1, block)
+        self.assertEqual(block.count("jsx(CbAction"), 1, block)
         self.assertNotIn("Start a fresh run instead", self.source)
 
     def test_no_chat_sentence_and_action_agree_with_the_desk(self) -> None:

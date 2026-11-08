@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-08T05:42:28.878Z",
+  "generated_at": "2026-11-08T06:59:45.377Z",
   "reference_time": "2026-11-07T10:00:00.000Z",
   "kind": "painted audit of the shipped Desktop module rendered in jsdom, painted and measured in headless Chromium",
   "chromium": "Chrome/155.0.8059.84",
@@ -21993,7 +21993,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 6.33,
       "contrast_min_authored": 6.41,
       "contrast_failures": 0,
@@ -22184,32 +22184,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 15.18,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(0, 0, 0)",
@@ -22258,19 +22232,6 @@
           "large": true,
           "ratio": 15.87,
           "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(247, 241, 228)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.7,
-          "required": 4.5,
           "pass": true,
           "host_primitive": false
         },
@@ -22574,7 +22535,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -22713,7 +22674,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 6.33,
       "contrast_min_authored": 6.41,
       "contrast_failures": 0,
@@ -22904,32 +22865,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 15.18,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(0, 0, 0)",
@@ -22977,19 +22912,6 @@
           "weight": 600,
           "large": true,
           "ratio": 15.87,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(247, 241, 228)",
-          "size": 24,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.7,
           "required": 3,
           "pass": true,
           "host_primitive": false
@@ -23286,7 +23208,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 1816,
+      "content_height": 1552,
       "media_frames": [],
       "images": [],
       "audios": [],
@@ -23294,7 +23216,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -23339,7 +23261,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 15
+          "scroll_y": 0
         },
         {
           "kind": "authored",
@@ -23349,7 +23271,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 416
+          "scroll_y": 0
         },
         {
           "kind": "authored",
@@ -23359,7 +23281,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 416
+          "scroll_y": 12
         },
         {
           "kind": "authored",
@@ -23369,7 +23291,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 416
+          "scroll_y": 152
         },
         {
           "kind": "authored",
@@ -23433,7 +23355,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 6.33,
       "contrast_min_authored": 6.41,
       "contrast_failures": 0,
@@ -23624,32 +23546,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.41,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 15.18,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(0, 0, 0)",
@@ -23750,19 +23646,6 @@
           "large": true,
           "ratio": 15.87,
           "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(247, 241, 228)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.7,
-          "required": 4.5,
           "pass": true,
           "host_primitive": false
         },
@@ -24014,7 +23897,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -24052,7 +23935,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 2.43,
       "contrast_min_authored": 6.54,
       "contrast_failures": 0,
@@ -24296,32 +24179,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 12.5,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(255, 255, 255)",
@@ -24370,19 +24227,6 @@
           "large": true,
           "ratio": 16.33,
           "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(19, 18, 16)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 8.54,
-          "required": 4.5,
           "pass": true,
           "host_primitive": false
         },
@@ -24686,7 +24530,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -24825,7 +24669,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 2.43,
       "contrast_min_authored": 6.54,
       "contrast_failures": 0,
@@ -25069,32 +24913,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 12.5,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(255, 255, 255)",
@@ -25142,19 +24960,6 @@
           "weight": 600,
           "large": true,
           "ratio": 16.33,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(19, 18, 16)",
-          "size": 24,
-          "weight": 400,
-          "large": true,
-          "ratio": 8.54,
           "required": 3,
           "pass": true,
           "host_primitive": false
@@ -25451,7 +25256,7 @@
       "horizontal_overflow": false,
       "scroll_width": 1280,
       "client_width": 1280,
-      "content_height": 1816,
+      "content_height": 1552,
       "media_frames": [],
       "images": [],
       "audios": [],
@@ -25459,7 +25264,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": 10,
       "ax_unnamed": 0,
@@ -25504,7 +25309,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 15
+          "scroll_y": 0
         },
         {
           "kind": "authored",
@@ -25514,7 +25319,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 416
+          "scroll_y": 0
         },
         {
           "kind": "authored",
@@ -25524,7 +25329,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 416
+          "scroll_y": 12
         },
         {
           "kind": "authored",
@@ -25534,7 +25339,7 @@
           "name": "",
           "ring": true,
           "in_viewport": true,
-          "scroll_y": 416
+          "scroll_y": 152
         },
         {
           "kind": "authored",
@@ -25598,7 +25403,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 2.43,
       "contrast_min_authored": 6.54,
       "contrast_failures": 0,
@@ -25842,32 +25647,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 6.54,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 12.5,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(255, 255, 255)",
@@ -25968,19 +25747,6 @@
           "large": true,
           "ratio": 16.33,
           "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(19, 18, 16)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 8.54,
-          "required": 4.5,
           "pass": true,
           "host_primitive": false
         },
@@ -26232,7 +25998,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -31012,7 +30778,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 6.33,
       "contrast_min_authored": 6.41,
       "contrast_failures": 0,
@@ -31203,32 +30969,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.41,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(26, 23, 19)",
-          "bg": "rgb(251, 235, 203)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 15.18,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(0, 0, 0)",
@@ -31328,19 +31068,6 @@
           "weight": 600,
           "large": true,
           "ratio": 15.87,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(92, 83, 71)",
-          "bg": "rgb(247, 241, 228)",
-          "size": 24,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.7,
           "required": 3,
           "pass": true,
           "host_primitive": false
@@ -31585,7 +31312,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2555,
+      "content_height": 2329,
       "media_frames": [],
       "images": [],
       "audios": [],
@@ -31593,7 +31320,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -31631,7 +31358,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 2.43,
       "contrast_min_authored": 6.54,
       "contrast_failures": 0,
@@ -31875,32 +31602,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 6.54,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(245, 239, 225)",
-          "bg": "rgb(51, 41, 15)",
-          "size": 32,
-          "weight": 400,
-          "large": true,
-          "ratio": 12.5,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(255, 255, 255)",
@@ -32000,19 +31701,6 @@
           "weight": 600,
           "large": true,
           "ratio": 16.33,
-          "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(185, 174, 154)",
-          "bg": "rgb(19, 18, 16)",
-          "size": 24,
-          "weight": 400,
-          "large": true,
-          "ratio": 8.54,
           "required": 3,
           "pass": true,
           "host_primitive": false
@@ -32257,7 +31945,7 @@
       "horizontal_overflow": false,
       "scroll_width": 460,
       "client_width": 460,
-      "content_height": 2555,
+      "content_height": 2329,
       "media_frames": [],
       "images": [],
       "audios": [],
@@ -32265,7 +31953,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -35075,7 +34763,7 @@
         "coral": "#9c2e1c"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 21,
       "contrast_min_authored": 21,
       "contrast_failures": 0,
@@ -35266,32 +34954,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(0, 0, 0)",
@@ -35340,19 +35002,6 @@
           "large": true,
           "ratio": 21,
           "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
           "pass": true,
           "host_primitive": false
         },
@@ -35656,7 +35305,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -35694,7 +35343,7 @@
         "coral": "#ea9480"
       },
       "inline_colour_literals": [],
-      "text_nodes": 43,
+      "text_nodes": 40,
       "contrast_min": 21,
       "contrast_min_authored": 21,
       "contrast_failures": 0,
@@ -35885,32 +35534,6 @@
           "host_primitive": false
         },
         {
-          "tag": "span",
-          "text": "Next \u00b7",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "p",
-          "text": "Review 1 objective(s)",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 16,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
           "tag": "button",
           "text": "Start the review",
           "fg": "rgb(0, 0, 0)",
@@ -35959,19 +35582,6 @@
           "large": true,
           "ratio": 21,
           "required": 3,
-          "pass": true,
-          "host_primitive": false
-        },
-        {
-          "tag": "span",
-          "text": "Course evidence \u00b7 1 of 4 sections have evidence ",
-          "fg": "rgb(0, 0, 0)",
-          "bg": "rgb(255, 255, 255)",
-          "size": 12,
-          "weight": 400,
-          "large": false,
-          "ratio": 21,
-          "required": 4.5,
           "pass": true,
           "host_primitive": false
         },
@@ -36275,7 +35885,7 @@
       "animated_sample": [],
       "interactive_count": 10,
       "positive_tabindex": 0,
-      "body_text_len": 788,
+      "body_text_len": 700,
       "media_fallback_text": [],
       "ax_controls": null,
       "ax_unnamed": null,
@@ -39277,7 +38887,7 @@
       "evidence": {
         "authored_failures": 0,
         "authored_min_ratio": 5.93,
-        "measured_text_nodes": 2282,
+        "measured_text_nodes": 2258,
         "frames": 56,
         "excluded_host_primitive_failures": 28,
         "note": "host-primitive rows are the SDK stub's UA surface, not product paint; they are reported separately and excluded."
@@ -39592,8 +39202,8 @@
         "source": "committed fixture"
       }
     },
-    "plugin_sha256": "035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d",
-    "branch": "wt/h120a-contracts",
+    "plugin_sha256": "ee7010ebef8498b157e8405cf1864faf8b21ffb7e042b5a5f5acc0eb6642590d",
+    "branch": "wt/h151-action-type",
     "note": "the evidence is pinned by plugin_sha256; find the generating commit in the branch history that carries audit/visual/m4-visual/audit.json"
   }
 }
