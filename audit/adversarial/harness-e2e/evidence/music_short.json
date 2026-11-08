@@ -692,11 +692,17 @@
       "segments": [],
       "sources": [
         {
+          "content_hash": "sha256:4cdbbb0df0cc369cdcc17dfd2d708d2687865f747ad99ea7306db12392b8b377",
+          "excerpt": "A recorded page used only so the research seam returns a source. It names the semitone counts of the common intervals and the major/minor triad recipes.",
+          "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
+          "licence": null,
+          "modality": null,
           "published_at": null,
-          "publisher": null,
+          "publisher": "Recorded publisher",
           "source_id": "0000000000000008",
           "source_type": "web_page",
+          "support_assessment": "unverified",
           "support_status": "unassessed",
           "title": "Recorded page: intervals and triads",
           "url": "https://example.invalid/recorded/music-intervals"

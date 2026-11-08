@@ -424,11 +424,17 @@
       "segments": [],
       "sources": [
         {
+          "content_hash": "sha256:b6bd37ba9f9824b0333d07a7fc434f1fb11aa2f2dd1c71320fbeeaded31365b8",
+          "excerpt": "A recorded page used only so the research seam returns a source. It states that the tyre must be fully deflated, the bead seated by hand, and the brake quick-release closed before riding.",
+          "excerpt_state": "recorded",
           "fetched_at": "2026-11-07T12:00:00Z",
+          "licence": null,
+          "modality": null,
           "published_at": null,
-          "publisher": null,
+          "publisher": "Recorded publisher",
           "source_id": "0000000000000008",
           "source_type": "web_page",
+          "support_assessment": "unverified",
           "support_status": "unassessed",
           "title": "Recorded page: replacing a clincher inner tube",
           "url": "https://example.invalid/recorded/bicycle-inner-tube"

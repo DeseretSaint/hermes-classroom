@@ -14342,7 +14342,7 @@ function SourceProvenanceCard({ source, dense = false }) {
           jsx('summary', { className: 'cursor-pointer', style: { fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' }, children: 'Technical detail' }),
           jsxs('div', {
             style: { marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0, overflowWrap: 'anywhere', fontSize: CB_TYPE.caption, color: 'var(--cb-ink-soft)' },
-            children: detail.map((line, index) => jsx('div', { key: `source-detail-${index}`, children: line }))
+            children: detail.map((line, index) => jsx('div', { children: line }, `source-detail-${index}`))
           })
         ]
       })

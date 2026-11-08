@@ -138,32 +138,6 @@ def _without_v17_source_fields(payload: dict, method: str) -> dict:
     return carried
 
 
-#: Fields cb.rpc v15 (H-106) appended *inside* ``sources[]`` on the two reads that feed the
-#: Sources panel. They are optional and absent from every earlier snapshot, so the carried-over
-#: comparisons remove exactly these before comparing.
-H106_ADDED_SOURCE_FIELDS: tuple[str, ...] = (
-    "excerpt",
-    "excerpt_state",
-    "content_hash",
-    "modality",
-    "licence",
-    "support_assessment",
-)
-
-
-def _strip_h106_source_fields(payload: dict, method: str) -> dict:
-    if method not in ("lesson.page", "parent.blueprint.read"):
-        return payload
-    sources = ((payload.get("response") or {}).get("properties") or {}).get("sources")
-    if not isinstance(sources, dict):
-        return payload
-    properties = (sources.get("items") or {}).get("properties")
-    if isinstance(properties, dict):
-        for field in H106_ADDED_SOURCE_FIELDS:
-            properties.pop(field, None)
-    return payload
-
-
 def _normalise_refresh_refs(payload: dict) -> dict:
     """Undo a pure cross-document reference refresh for a carried-over comparison.
 
@@ -2842,10 +2816,7 @@ class V11AmendmentTest(unittest.TestCase):
                     carried["response"]["properties"]["contract_version"] = (
                         original["response"]["properties"]["contract_version"]
                     )
-                self.assertEqual(
-                    original,
-                    _normalise_refresh_refs(_strip_h106_source_fields(carried, method)),
-                )
+                self.assertEqual(original, _normalise_refresh_refs(carried))
 
     def test_plan_brief_takes_one_ordinal_and_the_unit_section_stage(self) -> None:
         brief = contracts.contract("cb.rpc")["$defs"]["plan_brief"]
@@ -3145,9 +3116,8 @@ class V14AmendmentTest(unittest.TestCase):
         v13 = _document("rpc.v13.json")
         current = contracts.contract("cb.rpc")
 
-        def normalise(payload: dict, method: str) -> dict:
+        def normalise(payload: dict) -> dict:
             payload = _normalise_refresh_refs(json.loads(json.dumps(payload)))
-            payload = _strip_h106_source_fields(payload, method)
 
             # The version echoes are the one thing a bump is allowed to move.
             def walk(node: object) -> None:
@@ -3469,9 +3439,8 @@ class V15AmendmentTest(unittest.TestCase):
             "a later amendment is append-only over v15",
         )
 
-        def normalise(payload: dict, method: str) -> dict:
+        def normalise(payload: dict) -> dict:
             payload = _normalise_refresh_refs(json.loads(json.dumps(payload)))
-            payload = _strip_h106_source_fields(payload, method)
 
             # The wire-version echo is the one thing a bump is allowed to move, so neutralise it
             # rather than pinning this check to whichever version is current.
