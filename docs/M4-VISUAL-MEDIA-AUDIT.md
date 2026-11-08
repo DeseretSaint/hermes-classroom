@@ -44,8 +44,10 @@ moved again with the UI batch union, so the audit was regenerated on the union t
 `python3 scripts/m4v-audit.py` → 15 PASS, 0 not PASS, 62 frames,
 `plugin_sha256: 8347331f969d1dc39661d2cdbb6e8b90fe9fbbaa7c96c78f019976a8f096711d`. The 56
 non-forced frames now measure **2,416** text nodes and the 32 frames with an accessibility tree
-measure **298** AX controls — fewer controls than the `625c939` record's 364, a difference this pass
-measured but did **not** attribute to a specific module change; minimum authored contrast is
+measure **298** AX controls — fewer controls than the `625c939` record's 364. That difference, and
+the Field Quest and Field Desk movement that carries the text total, is now attributed per frame and
+per hunk in [Per-frame delta attribution (H-161)](#per-frame-delta-attribution-h-161) below;
+minimum authored contrast is
 unchanged at 5.93:1 with 0 plugin-authored failures, 0 clipped text and 0 px horizontal overflow. The
 reproducibility pair quoted below was re-run at this pin as part of the same pass.
 
@@ -132,7 +134,7 @@ audio players, text-only, media-unavailable.
 | C-01 Paint only from the `--cb-*` token layer | **PASS** | 62/62 frames carry all ten measured tokens; 0 colour literals in authored inline paint; 0 colour literals in `desktop/plugin.js` outside the embedded table; table equals `contracts/cb.tokens.v2.json` |
 | C-02 Contrast at least the F-01 floor (4.5:1 / 3:1 large) | **PASS** | 0 plugin-authored failures over 56 non-forced frames and 2,416 measured text nodes; worst authored ratio **5.93:1** (procedure, dark), up to 21:1 |
 | C-03 No clipped text, no horizontal overflow | **PASS** | 0 clipped nodes in 62 frames; 0 frames overflow; includes 460 px at 200 % text |
-| C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 298 AX controls across the 32 measured frames; 268 distinct Tab stops, 0 unreachable, 0 without a visible focus ring; 60 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex`. The `625c939` record measured 364 AX controls and 304 Tab stops; the per-frame comparison puts the whole delta on two surfaces — Quest (`images`/`audio` 1→0, text 49→32, AX 21→10) and Field Desk (text 43→81) — and which change inside the union caused it was not measured (`t_0a2720c3`, H-161) |
+| C-04 Every control named and keyboard reachable | **PASS** | 0 unnamed of 298 AX controls across the 32 measured frames; 268 distinct Tab stops, 0 unreachable, 0 without a visible focus ring; 60 audio UA shadow-part stops recorded separately, never counted as Coursebook controls; 0 positive `tabindex`. The `625c939` record measured 364 AX controls and 304 Tab stops; the per-frame comparison puts the whole delta on two surfaces — Quest (`images`/`audio` 1→0, text 49→32, AX 21→10) and Field Desk (text 43→81) — and each of those deltas is now attributed to a commit and hunk inside the union in [Per-frame delta attribution (H-161)](#per-frame-delta-attribution-h-161); both verdicts are *intended*, and no control moved from named/reachable to unnamed/unreachable |
 | C-05 No autoplay | **PASS** | 0 of 12 painted `<audio>` elements autoplay or play on load |
 | C-06 Every instructional image has a text equivalent | **PASS** | 50 images, 0 without `alt`, 0 of 86 media frames without a caption/text equivalent |
 | C-07 Every audio has a transcript | **PASS** | 12 audio elements, 0 without an accessible transcript/`aria-label` |
@@ -144,6 +146,73 @@ audio players, text-only, media-unavailable.
 | C-13 Audio player is explicit, not autoplay | **PASS** | `controls`, `preload=metadata`, `data:` source, no autoplay attribute |
 | C-14 Illustration fixture is context, not procedure authority | **PASS** | label/alt carry "generated for context only" on every image media frame; independent review below |
 | C-15 Every media item has a label and provenance line | **PASS** | 106 media frames, 0 without a label; provenance line present in the frame |
+
+## Per-frame delta attribution (H-161)
+
+The `8347331f` record is smaller than the `625c939` one on three measures and larger on one. This
+section names, for each of them, the change inside the UI batch union that produced it, so a reader
+looking at the Quest surface does not assume it is unchanged. Nothing here re-verdicts a claim and
+nothing here rewrites the committed evidence: the fifteen verdicts, `audit.json` and the 62 frames in
+`audit/visual/m4-visual/` are untouched by this card (H-161, `t_0a2720c3`).
+
+### The record chain
+
+Only records that pin a module and were regenerated on that module can locate a delta. The union's
+intermediate merges carried a stale `audit.json` from the branch they merged, so each row below
+either quotes a committed record (`625c939`, `03ce785`, `c41ee83`) or an attribution run made by this
+card — `python3 scripts/m4v-audit.py` into a scratch output tree with that commit's `desktop/plugin.js`
+in place, the committed tree left alone. Per-frame values are the `light 1280 px / 16 px` frame of
+each surface (`text` / `AX` / `images` / `audio`).
+
+| module sha256 (12) | tree | Quest text/AX/img/audio | Field Desk text |
+|---|---|---|---|
+| `0312a9ea6535` | `master` @ `625c939` (previous record) | 49 / 21 / 1 / 1 | 43 |
+| `687613abde8d` | H-146/H-146b rail @ `03ce785` (committed record) | 49 / 21 / 1 / 1 | **41** |
+| `867d241a1ed7` | H-157 branch `6d96263` = base + H-148, **no** rail | 49 / 21 / 1 / 1 | **82** |
+| `b12322f1ff27` | union `434ddc3` = rail + H-148 | 49 / 21 / 1 / 1 | **81** |
+| `8347331f969d` | union @ `c41ee83` (this record) | **32 / 10 / 0 / 0** | 81 |
+
+Two readings follow from the chain and are the whole attribution:
+
+- Quest moves **once**, between `867d241a` and the H-157 commit `38adb99` (module `1c46d6df`), i.e.
+  inside H-157's own diff and in no other union card.
+- Field Desk moves **twice**: `43 → 41` with the H-146 rail, then `41 → 82` with H-148's checkpoint
+  path. The union's `81` is not a third change — it is those two on one tree (the branch row at `82`
+  is the same path with the old all-courses side card still on the page).
+
+### Attribution, per delta
+
+Frame multiplication closes each measure exactly, which is why no unaccounted frame is hiding here:
+Quest has 10 painted frames and 6 AX-measured frames; Field Desk has 10 painted frames, 8 of them
+non-forced.
+
+| Measure | Delta | Attribution | Hunk |
+|---|---|---|---|
+| Quest `images` 1→0 (60→50 overall) | −1 × 10 frames | H-157 `38adb99` | `@@ -11336,85 +11407,92 @@ function QuestMission` — the per-block media map that rendered `BlockMedia` is removed |
+| Quest `audio` 1→0 (22→12 overall) | −1 × 10 frames | H-157 `38adb99` | same hunk — `BlockMedia` was the only media painter on this surface, so the `<audio controls>` goes with it |
+| Quest text 49→32 (490→320, −170) | −17 × 10 frames | H-157 `38adb99` | `@@ -11462,34 +11546,20 @@ function FieldQuestView` (the `HeroFacts` fact row, the "What these counts mean" `<details>` and the "Missions are the reading path" paragraph are replaced by a count caption and one evidence line under the section title) and `@@ -11246,53 +11330,41 @@` / `@@ -11336,85 +11407,92 @@ function QuestMission` (full `ProseText` prose → `missionBriefLine`, one sentence) |
+| Quest AX 21→10 (364→298) | −11 × 6 frames | H-157 `38adb99` | `@@ -11246,53 +11330,41 @@` drops `tabIndex: 0`, `role: 'link'`, the `aria-label` and the click/key handlers from the mission `<li>` (4 controls); the media hunks drop the two `Artifact details` buttons (2); the other 5 are the UA parts of the removed `<audio controls>` — the old frame records 21 AX controls against 16 authored Tab stops, and its 7 audio shadow stops are already carried separately |
+| Quest Tab stops 16→10 (304→268) | −6 × 6 frames | H-157 `38adb99` | same two hunks: 4 mission `<li>` links + 2 media `Artifact details` buttons |
+| Field Desk text 43→41 | −2 × 10 frames | H-146 (`da1d94c`, landed in the union at `03ce785`) | `FieldDeskHome`: `SlotRail` (the classroom rail) replaces `AllCoursesList` as the desk's course list, one card instead of two |
+| Field Desk text 41→81 (430→810, +380) | +38 × 10 frames (+304 over the 8 non-forced frames) | H-148 `a27231d`, merged into the union at `434ddc3` | `CheckpointPath` replaces `PathPreview`: each checkpoint gains a state word, a check-state word, a `<summary>` "Details for checkpoint N" disclosure, and — for the current and next checkpoint — four label/value rows (evidence target, committed attempts, last opened, check) |
+
+Sum check: `−170` (Quest) `+380` (Field Desk) = the `+210` the two records differ by across all 62
+frames; over the 56 non-forced frames the claim counts, `+304 − 170 = +134`, which is `2,282 → 2,416`.
+AX `−11 × 6 = −66` is `364 → 298`; Tab stops `−6 × 6 = −36` is `304 → 268`; images `−1 × 10` and
+audio `−1 × 10` are `60 → 50` and `22 → 12`. No other frame moves any of the four measures.
+
+### Verdicts
+
+| Surface | Delta | Verdict | Why |
+|---|---|---|---|
+| Field Quest | image 1→0, audio 1→0 | **intended** | No media file is unlinked or absent. The Quest frame renders the same document and the same `artifact_id`s as Textbook; both artifacts are served by the same media answers and painted there (Textbook frame: 1 image, 1 audio; C-06/C-07/C-12/C-13 all PASS on those paints). H-157 scoped the surface: the section is the heading, the counts are a caption, each mission is one line, and the full prose, media and audio studio stay in Textbook — stated in `docs/H157-EVIDENCE.md` and reachable by the row's own "Read in Textbook" action. |
+| Field Quest | AX 21→10, Tab 16→10 | **intended (a fix)** | 6 of the old 16 authored controls are gone. 4 were a `role="link"` wrapper on each mission row that opened exactly the block that row's visible "Read in Textbook" button opens — a duplicate tab stop per mission; the other 2 were the `Artifact details` buttons of media widgets the surface no longer paints; the 5 AX-only nodes were the UA parts of the audio widget that went with it. 0 unnamed, 0 unreachable and 0 missing focus rings in the new record: no capability was lost, a second way to the same place was. |
+| Field Quest | text 49→32 | **intended** | Counts stopped being the hero: three `HeroFacts` values and labels, a disclosure paragraph and a slogan sentence became one caption and one evidence line, and four full-prose blocks became four one-sentence briefs. The prose is not deleted from the product — Textbook renders it for the same document (C-02 measures 30 text nodes there, unchanged). |
+| Field Desk | text 43→81 | **intended** | The route now prints checkpoint truth per objective instead of a title-and-state row: state word, check word, and per-checkpoint detail rows for the current and next checkpoint. AX controls stay at 10 and no media is painted, so the growth is information the desk was previously withholding, not new chrome. |
+
+No delta is a defect, so no follow-up card is opened against a surface and the union stays closed.
+Had the Quest image been an *unlinked* asset the verdict would be the opposite; the check is that the
+same artifact is still painted somewhere in the record, and it is.
 
 ## Independent illustration review
 
@@ -210,4 +279,9 @@ its caption in all six media-unavailable frames — unchanged from before except
   text-only variant exercised here is the no-artifact fallback path the plan describes.
 - No screen-reader run on a real AT: names come from the Chromium accessibility tree, not NVDA or
   VoiceOver.
+- The delta attribution above is measurement, not a new verdict: the intermediate-module runs
+  were regenerated into scratch output trees by `scripts/m4v-audit.py` with that commit's module in
+  place, and the committed `audit/visual/m4-visual/` was not rewritten by H-161. A reader who wants
+  to repeat them checks out the commit named in the table and runs the same command with
+  `M4V_OUT` pointing anywhere but the committed tree.
 - Not merged, not pushed, no tag, no publish, no catalog PR, no video recorded.
