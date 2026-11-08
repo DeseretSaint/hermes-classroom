@@ -3,9 +3,10 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on `master` at `48be4af` (after H-83's Atlas Lamp composition) and is pinned to the
-module that ships from that tree: `desktop/plugin.js` sha256
-`635b7061e6a6a3d130701614fdc43829bc2c5fa8eb9f45ee4d067bb51f68d90a`.
+regenerated on `master` at `7d0f9cf` (after H-83's Atlas Lamp composition, H-84's plain-language
+pass and H-86's wayfinding pass) and is pinned to the module that ships from that tree:
+`desktop/plugin.js` sha256
+`2f806531aa840e53ecd0418ea13906d88e39909e4c858ed6f1b5e6f9af6b8240`.
 
 This is **not** release evidence. Nothing here was published, tagged, pushed or merged, and the
 audit makes no claim that Coursebook is installable.
@@ -27,15 +28,60 @@ Output: `audit/visual/m4-visual/audit.json` (62 frames, per-frame measurements, 
 records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00:00.000Z`), so
 "Last touched 17 hr ago" is a property of the fixture, not of the day the audit ran.
 
-### Reproducibility debt (open)
+### Reproducibility
 
-`scripts/m4v-repro-check.py` was run twice on this pin (plugin `635b7061…`,
-`reference_time 2026-11-07T10:00:00.000Z`). `audit.json` matched between the two independent runs
-modulo `generated_at`, and **61 of 62 screenshots were byte-identical**; the Field Quest light
-1280 px / 16 px frame (`quest-light-1280-16.png`) differed. Every number the tests assert comes from
-the measurements, which matched, so the gate's verdicts are unaffected — but the painted pixels of
-that one frame are not yet proven deterministic. Tracked as card H-90; the earlier pin `09c1dacd`
-reproduced 62/62, so the drift arrived with H-83's Field Quest composition.
+The check is part of the evidence, not a convenience: two independent audit runs (separate render
+pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
+Run twice back to back on this pin (`2f80653…`), verbatim:
+
+```
+$ python3 scripts/m4v-repro-check.py
+run A → …/cb-m4v-repro-5jddotsa/run-a
+run B → …/cb-m4v-repro-5jddotsa/run-b
+PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
+  plugin_sha256: 2f806531aa840e53ecd0418ea13906d88e39909e4c858ed6f1b5e6f9af6b8240
+  reference_time: 2026-11-07T10:00:00.000Z
+
+$ python3 scripts/m4v-repro-check.py
+run A → …/cb-m4v-repro-n54o0bid/run-a
+run B → …/cb-m4v-repro-n54o0bid/run-b
+PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
+  plugin_sha256: 2f806531aa840e53ecd0418ea13906d88e39909e4c858ed6f1b5e6f9af6b8240
+  reference_time: 2026-11-07T10:00:00.000Z
+```
+
+#### The one frame that used to drift (H-90)
+
+At the previous pin (`635b7061…`) this check failed on exactly one frame,
+`quest-light-1280-16.png`: `audit.json` matched modulo `generated_at` and 61 of 62 screenshots were
+byte-identical. Every number the claims assert comes from the measurements, so the verdicts were
+unaffected — but one painted frame was not deterministic, which is not acceptable for evidence.
+
+The cause was in the audit's paint stage, not in the module. `scripts/m4v-audit.mjs` walks each
+1280 px frame with real `Tab` key events before it screenshots. That walk necessarily ends inside
+the last control it reaches, and Field Quest's last control is the native `<audio controls>`; its
+UA shadow parts all report the host as `document.activeElement`. Chromium paints a focused media
+control's volume/timeline widget differently from an unfocused one, and which internal part holds
+focus depends on the media element's own internal readiness — so the captured pixels depended on
+the walk's last press rather than on the artifact. The difference was a 9×4 px segment at
+(670, 1078) inside the control bar, with identical layout, tokens and text everywhere else. A
+second race of the same family sat next to it: Chromium grows the control bar as audio metadata
+arrives, so a screenshot taken before metadata lands captures a half-built widget.
+
+Both are fixed at the render/audit layer, with no product change:
+
+- `settle()` now waits for `readyState >= HAVE_METADATA` (or a definitive error) on every
+  `audio`/`video` element and for image decode, on top of `document.fonts.ready`.
+- a new `rest()` blurs the active element back to the body-focus baseline the keyboard walk starts
+  from and settles again, and it runs immediately before every `Page.captureScreenshot`. Keyboard
+  claims are read from the walk's per-stop records, not from the screenshot, so nothing is weakened.
+
+Evidence that the fix holds, not just that it passed once: before it, a six-frame probe of the
+Field Quest 1280 px renders produced two distinct `quest-light-1280-16.png` hashes in 2 of 8 runs
+(and drift in 4 of the 6 frames); after it, 10 repetitions produced one hash per frame, two full
+62-frame paint passes compared with **0 drifting frames**, and the two repro-check runs above are
+62/62 each. Eight committed frames changed as a result — they had been captured with a focused
+media control — and were regenerated by `python3 scripts/m4v-audit.py`, never hand-edited.
 
 ## Method
 
