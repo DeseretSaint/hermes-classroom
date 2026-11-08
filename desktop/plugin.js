@@ -21849,10 +21849,14 @@ const FINE_TUNE_CHIP_COPY = {
 }
 
 const FINE_TUNE_SECTION_ACTIONS_GAP =
-  'This build cannot edit a section’s authored page or regenerate one section: rpc v19 keys ' +
-  '`lesson.revise` and `lesson.regenerate` on a `section_id` plus a `page_hash`, and no read on ' +
-  'this contract serves either for a section that has not been revised yet. Run a section edit ' +
-  'once the wire serves that digest — nothing here guesses a hash.'
+  'This course serves no authored section identity, so one section cannot be revised or ' +
+  'regenerated from here. `lesson.revise` and `lesson.regenerate` are keyed on the `section_id` ' +
+  'and `page_hash` that `parent.blueprint.read` reports in `sections[]`; a pack-backed course is ' +
+  'composed from its pack and reports none. Nothing here invents a section id or a digest.'
+
+const FINE_TUNE_EVIDENCE_CONSEQUENCE =
+  'Editing this page keeps every stored attempt and the previous page version; the new page is ' +
+  'stored as a revision that nobody has approved, so its check stays closed and export waits.'
 
 /** One criterion, said in plain words: the row may be a string or the rubric object. */
 function fineTuneCriteriaText(item) {
@@ -22070,6 +22074,7 @@ function StudioFineTunePanel({
   onRevision,
   plan,
   objectives,
+  sections,
   planHash,
   supported,
   onChanged,
@@ -22084,6 +22089,7 @@ function StudioFineTunePanel({
   const [editingId, setEditingId] = useState(null)
   const [draft, setDraft] = useState(null)
   const [discardPrompt, setDiscardPrompt] = useState(null)
+  const [evidencePrompt, setEvidencePrompt] = useState(null)
   const [regenFor, setRegenFor] = useState(null)
   const [regenBusy, setRegenBusy] = useState(false)
   const [regenError, setRegenError] = useState(null)
@@ -22130,11 +22136,33 @@ function StudioFineTunePanel({
     ? order.map((id) => objectives.find((objective) => objective.objective_id === id)).filter(Boolean)
     : objectives
 
-  // `section_id` + the page digest only ever come from the wire. The newest lesson revision for an
-  // objective is the only row that serves them today, so an unrevised section is honestly unknown.
+  // `section_id` and the page digest only ever come from the wire. `parent.blueprint.read` serves
+  // one identity per composed section (cb.rpc v20), including a section that has never been
+  // revised; that `page_hash` is the exact fence `lesson.revise` compares, so the value read here
+  // is sent back unchanged and never recomputed in this file. A lesson revision row is only a
+  // fallback for a section the blueprint no longer lists.
   const sectionRefs = {}
+  for (const row of sections || []) {
+    if (!row || !row.objective_id || !row.section_id) continue
+    sectionRefs[row.objective_id] = {
+      section_id: String(row.section_id),
+      page_hash: row.page_hash || null,
+      title: row.title || null,
+      lesson_state: row.lesson_state || null,
+      lesson_version: row.lesson_version == null ? null : Number(row.lesson_version),
+      source: 'blueprint'
+    }
+  }
   for (const row of lessonRevisions) {
-    if (!sectionRefs[row.objective_id]) sectionRefs[row.objective_id] = row
+    if (sectionRefs[row.objective_id]) continue
+    sectionRefs[row.objective_id] = {
+      section_id: row.section_id,
+      page_hash: row.page_hash_after || null,
+      title: null,
+      lesson_state: null,
+      lesson_version: null,
+      source: 'revision'
+    }
   }
 
   // A one-section cost band derived from the last lessons job's recorded preflight — arithmetic on
@@ -22330,8 +22358,11 @@ function StudioFineTunePanel({
         known && Array.isArray(known.criteria)
           ? known.criteria.map(fineTuneCriteriaText).filter(Boolean).join('\n')
           : ''
+      const ref = sectionRefs[objective.objective_id] || null
+      const pageTitle = ref && ref.title ? String(ref.title) : String(objective.title || '')
       setEditingId(objective.objective_id)
       setDiscardPrompt(null)
+      setEvidencePrompt(null)
       setError(null)
       setDraft({
         objectiveId: objective.objective_id,
@@ -22340,16 +22371,19 @@ function StudioFineTunePanel({
         criteriaText,
         originalCriteriaText: criteriaText,
         criteriaKnown: Boolean(known && Array.isArray(known.criteria)),
+        sectionTitle: pageTitle,
+        originalSectionTitle: pageTitle,
         dirty: false
       })
     },
-    [knownSnapshot]
+    [knownSnapshot, sectionRefs]
   )
 
   const closeEditor = useCallback(() => {
     setEditingId(null)
     setDraft(null)
     setDiscardPrompt(null)
+    setEvidencePrompt(null)
     if (typeof onDirtyChange === 'function') onDirtyChange(false)
   }, [onDirtyChange])
 
@@ -22380,62 +22414,138 @@ function StudioFineTunePanel({
     setDraft((previous) => (previous ? { ...previous, ...patch, dirty: true } : previous))
   }, [])
 
-  const saveSection = useCallback(async () => {
-    if (!draft) return
-    const objective = objectives.find((item) => item.objective_id === draft.objectiveId)
-    if (!objective) return
-    const edits = { objective_id: draft.objectiveId }
-    const title = String(draft.title || '').trim()
-    if (title && title !== objective.title) edits.title = title.slice(0, 300)
-    if (draft.evidence_target && draft.evidence_target !== objective.evidence_target) {
-      edits.evidence_target = draft.evidence_target
-    }
-    if (
-      String(draft.criteriaText || '').trim() !== String(draft.originalCriteriaText || '').trim() &&
-      (String(draft.criteriaText || '').trim() || draft.criteriaKnown)
-    ) {
-      edits.criteria = linesToList(draft.criteriaText, 12, 500)
-    }
-    if (!edits.title && !edits.evidence_target && edits.criteria === undefined) {
-      setError('Nothing changed yet.')
-      return
-    }
-    setBusy(true)
-    setError(null)
-    setNotice(null)
-    const response = await rpc(
-      'plan.edit',
-      {
-        enrollment_id: course.enrollment_id,
-        plan_id: plan.plan_id,
-        expected_plan_hash: planHash,
-        objective_edits: [edits]
-      },
-      { expectedRevision: revision, idempotencyKey: newOperationId('plan-objective-edit') }
-    )
-    setBusy(false)
-    if (!response.ok) {
-      setError(refusalText(response))
-      if (review && review.reload) review.reload()
-      return
-    }
-    setNotice(
-      'Section metadata saved. The edited objective is recorded as a revision that needs review before export.'
-    )
-    closeEditor()
-    refreshAfterMutation(response.result)
-  }, [
-    draft,
-    objectives,
-    course.enrollment_id,
-    plan,
-    planHash,
-    revision,
-    review,
-    refusalText,
-    closeEditor,
-    refreshAfterMutation
-  ])
+  const saveSection = useCallback(
+    async (options) => {
+      if (!draft) return
+      const confirmEvidence = Boolean(options && options.confirmEvidence)
+      const objective = objectives.find((item) => item.objective_id === draft.objectiveId)
+      if (!objective) return
+      const ref = sectionRefs[draft.objectiveId] || null
+      const edits = { objective_id: draft.objectiveId }
+      const title = String(draft.title || '').trim()
+      if (title && title !== objective.title) edits.title = title.slice(0, 300)
+      if (draft.evidence_target && draft.evidence_target !== objective.evidence_target) {
+        edits.evidence_target = draft.evidence_target
+      }
+      if (
+        String(draft.criteriaText || '').trim() !== String(draft.originalCriteriaText || '').trim() &&
+        (String(draft.criteriaText || '').trim() || draft.criteriaKnown)
+      ) {
+        edits.criteria = linesToList(draft.criteriaText, 12, 500)
+      }
+      const planChanged = Boolean(edits.title || edits.evidence_target || edits.criteria !== undefined)
+      const pageTitle = String(draft.sectionTitle || '').trim()
+      const pageTitleChanged = Boolean(pageTitle) && pageTitle !== String(draft.originalSectionTitle || '').trim()
+      if (!planChanged && !pageTitleChanged) {
+        setError('Nothing changed yet.')
+        return
+      }
+      if (pageTitleChanged && (!ref || !ref.section_id)) {
+        setError(FINE_TUNE_SECTION_ACTIONS_GAP)
+        return
+      }
+      if (pageTitleChanged && !ref.page_hash) {
+        setError(
+          'This section has no authored page yet, so there is no page digest to revise. ' +
+            'Use “Regenerate this section” to author it first.'
+        )
+        return
+      }
+      setBusy(true)
+      setError(null)
+      setNotice(null)
+      let nextRevision = revision
+      if (planChanged) {
+        const response = await rpc(
+          'plan.edit',
+          {
+            enrollment_id: course.enrollment_id,
+            plan_id: plan.plan_id,
+            expected_plan_hash: planHash,
+            objective_edits: [edits]
+          },
+          { expectedRevision: revision, idempotencyKey: newOperationId('plan-objective-edit') }
+        )
+        if (!response.ok) {
+          setBusy(false)
+          setError(refusalText(response))
+          if (review && review.reload) review.reload()
+          return
+        }
+        const result = response.result || {}
+        if (typeof result.revision === 'number') {
+          nextRevision = result.revision
+          onRevision(result.revision)
+        }
+      }
+      if (pageTitleChanged) {
+        const payload = {
+          enrollment_id: course.enrollment_id,
+          plan_id: plan.plan_id,
+          section_id: ref.section_id,
+          expected_page_hash: ref.page_hash,
+          title: pageTitle.slice(0, 300),
+          page: { section_title: pageTitle.slice(0, 300) }
+        }
+        if (confirmEvidence) payload.confirm_evidence_consequence = true
+        const response = await rpc('lesson.revise', payload, {
+          expectedRevision: nextRevision,
+          idempotencyKey: newOperationId('lesson-revise')
+        })
+        if (!response.ok) {
+          setBusy(false)
+          const details = (response.error && response.error.details) || {}
+          if (details.reason === 'evidence_consequence_confirmation_required') {
+            const attempts = Number(details.evidence_attempts || 0)
+            setEvidencePrompt({ objectiveId: draft.objectiveId, attempts })
+            setError(
+              `${attempts} learner attempt(s) already reference this section. ` +
+                `${FINE_TUNE_EVIDENCE_CONSEQUENCE} Confirm to store the edit.`
+            )
+            return
+          }
+          setError(refusalText(response))
+          if (review && review.reload) review.reload()
+          return
+        }
+        const result = response.result || {}
+        if (typeof result.revision === 'number') {
+          nextRevision = result.revision
+          onRevision(result.revision)
+        }
+        setEvidencePrompt(null)
+        setNotice(
+          'Section page saved as a new revision that needs review before export. ' +
+            'Every stored attempt and the previous page version are untouched.'
+        )
+      } else {
+        setNotice(
+          'Section metadata saved. The edited objective is recorded as a revision that needs review before export.'
+        )
+      }
+      setBusy(false)
+      closeEditor()
+      refreshAfterMutation({ revision: nextRevision })
+    },
+    [
+      draft,
+      objectives,
+      sectionRefs,
+      course.enrollment_id,
+      plan,
+      planHash,
+      revision,
+      review,
+      refusalText,
+      closeEditor,
+      refreshAfterMutation,
+      onRevision
+    ]
+  )
+
+  const confirmEvidenceAndSave = useCallback(() => {
+    return saveSection({ confirmEvidence: true })
+  }, [saveSection])
 
   const queueRegenerate = useCallback(
     async (objective) => {
@@ -22542,12 +22652,13 @@ function StudioFineTunePanel({
         'data-cb-finetune-order': display.map((objective) => objective.objective_id).join(','),
         className: 'flex flex-col gap-2',
         children: display.map((objective, index) => {
+          const ref = sectionRefs[objective.objective_id]
           const chip = fineTuneChip({
             planRevisions,
             lessonRevisions,
-            objectiveId: objective.objective_id
+            objectiveId: objective.objective_id,
+            provenanceOutcome: ref ? ref.lesson_state : null
           })
-          const ref = sectionRefs[objective.objective_id]
           const isEditing = editingId === objective.objective_id && draft
           return jsxs(
             'div',
@@ -22580,12 +22691,19 @@ function StudioFineTunePanel({
                           }, 'title'),
                           jsx(FineTuneChip, { chip }, 'chip'),
                           ref
-                            ? null
+                            ? jsx('span', {
+                                className: 'text-xs text-(--ui-text-secondary)',
+                                'data-cb-finetune-section': 'known',
+                                children:
+                                  ref.lesson_version == null
+                                    ? 'no page yet'
+                                    : `page v${ref.lesson_version}`
+                              }, 'section-known')
                             : jsx('span', {
                                 className: 'text-xs text-(--ui-text-secondary)',
                                 'data-cb-finetune-section': 'unknown',
                                 title: FINE_TUNE_SECTION_ACTIONS_GAP,
-                                children: 'no section digest'
+                                children: 'no authored section'
                               }, 'section-unknown')
                         ]
                       }, 'label'),
@@ -22647,6 +22765,22 @@ function StudioFineTunePanel({
                             id: `cb-finetune-title-${objective.objective_id}`,
                             value: draft.title,
                             onChange: (event) => patchDraft({ title: event.target.value }),
+                            className: 'w-full'
+                          })
+                        }),
+                        jsx(StudioField, {
+                          id: `cb-finetune-page-title-${objective.objective_id}`,
+                          label: 'Section page title',
+                          hint: ref
+                            ? ref.page_hash
+                              ? `Stored on the authored page through lesson.revise, fenced on the page digest this read served (${String(ref.page_hash).slice(0, 16)}…). The result is a new page revision that needs review.`
+                              : 'This section has no authored page yet, so there is no digest to revise. Regenerate this section to author one.'
+                            : FINE_TUNE_SECTION_ACTIONS_GAP,
+                          children: jsx(sdk.Input, {
+                            id: `cb-finetune-page-title-${objective.objective_id}`,
+                            value: draft.sectionTitle,
+                            disabled: !ref || !ref.section_id || !ref.page_hash,
+                            onChange: (event) => patchDraft({ sectionTitle: event.target.value }),
                             className: 'w-full'
                           })
                         }),
@@ -22723,9 +22857,38 @@ function StudioFineTunePanel({
                           className: 'text-xs leading-relaxed text-(--ui-text-secondary)',
                           'data-cb-finetune-section-gap': ref ? 'known' : 'unavailable',
                           children: ref
-                            ? 'The authored page text stays read-only here; retitle and metadata are the fields this contract fences.'
+                            ? 'The section’s segment bodies are authored by the lessons job; this editor changes the page title and the objective metadata, and lesson.revise stores a new page revision that needs review before export.'
                             : FINE_TUNE_SECTION_ACTIONS_GAP
-                        })
+                        }),
+                        evidencePrompt && evidencePrompt.objectiveId === objective.objective_id
+                          ? jsxs('div', {
+                              role: 'alertdialog',
+                              'aria-label': 'Confirm the evidence consequence',
+                              'data-cb-finetune-evidence': String(evidencePrompt.attempts),
+                              className: 'flex flex-wrap items-center gap-2 border-t border-(--ui-stroke-tertiary) pt-2',
+                              children: [
+                                jsx('span', {
+                                  className: 'max-w-prose text-xs text-(--ui-text-secondary)',
+                                  children: `${evidencePrompt.attempts} stored attempt(s) reference this section. ${FINE_TUNE_EVIDENCE_CONSEQUENCE}`
+                                }, 'copy'),
+                                jsx(CbAction, {
+                                  size: 'sm',
+                                  variant: 'primary',
+                                  disabled: busy,
+                                  'data-cb-finetune-evidence-confirm': objective.objective_id,
+                                  onClick: confirmEvidenceAndSave,
+                                  children: busy ? 'Saving' : 'Confirm and save'
+                                }, 'confirm-evidence'),
+                                jsx(sdk.Button, {
+                                  size: 'sm',
+                                  variant: 'text',
+                                  'data-cb-finetune-evidence-cancel': '',
+                                  onClick: () => setEvidencePrompt(null),
+                                  children: 'Keep editing'
+                                }, 'dismiss-evidence')
+                              ]
+                            }, 'evidence-prompt')
+                          : null
                       ]
                     }, 'editor')
                   : null,
@@ -23393,6 +23556,7 @@ function StudioPlanView({
             onRevision,
             plan,
             objectives,
+            sections: (book && book.data && book.data.sections) || [],
             planHash,
             supported,
             onChanged,

@@ -10,14 +10,21 @@ What this proves, against the shipped module:
 * `Undo last structural change` calls `plan.undo` with the stored revision id and refreshes the
   persisted order from the response;
 * an inline section edit is a real draft: Cancel and navigation ask first, a window close is
-  guarded, and Save sends `plan.edit` `objective_edits` (never a local-only change);
+  guarded, and Save sends `plan.edit` `objective_edits` for objective metadata and/or
+  `lesson.revise` for the authored page title, fenced on the `page_hash` the blueprint served
+  (never a digest computed in the Desktop half), with `confirm_evidence_consequence` only after
+  the refusal named the stored attempts;
+* `Regenerate this section` prints `1 section: <title>` and the cost before the click, then sends
+  `lesson.regenerate` with that section id and surfaces the queued job, its scope and its preflight;
+* the provenance chip reads the lesson state the blueprint serves (`needs_review` /
+  `parent_approved`) and the revision rows, and never upgrades an edit to an approval;
 * the review diff is read from `parent.review.read`, prints the backend's `blocked_reason`
   verbatim, and the export gate stays closed until `parent.final.approve` covers the bytes it was
   served — a stale approval is refused and the export button stays disabled.
 
-What this does NOT prove: that a live backend serves these payloads today. `parent.review.read`
-does not yet serve a section id/page digest, so the authored-page and one-section regenerate
-actions are withheld by the panel and covered by the card's escalation rather than by a fixture.
+The section identity (`section_id` + `page_hash`) comes from `parent.blueprint.read` `sections[]`,
+the cb.rpc v20 amendment built for this card. A course whose blueprint serves no section identity
+(a pack-backed course) withholds the one-section actions and says so on screen.
 """
 
 from __future__ import annotations
@@ -151,6 +158,13 @@ const objectives = [
   { objective_id: 'obj_c', ordinal: 3, title: 'Gamma', evidence_target: 'production', state: 'new', check_state: 'none' }
 ]
 const plan = { plan_id: 'pln_1', state: 'approved', version: 2, plan_hash: 'sha256:plan' }
+// The v20 `parent.blueprint.read` section identity: one row per composed section, carrying the
+// exact `page_hash` fence `lesson.revise` compares and the lesson state the provenance chip reads.
+const sectionRows = [
+  { section_id: 'sec_a', objective_id: 'obj_a', ordinal: 1, title: 'Alpha', lesson_state: 'validated', lesson_version: 1, page_hash: 'sha256:page-a' },
+  { section_id: 'sec_b', objective_id: 'obj_b', ordinal: 2, title: 'Beta', lesson_state: 'needs_review', lesson_version: 2, page_hash: 'sha256:page-b' },
+  { section_id: 'sec_c', objective_id: 'obj_c', ordinal: 3, title: 'Gamma', lesson_state: null, lesson_version: null, page_hash: null }
+]
 const reviewData = {
   course_id: 'crs_1',
   plan: plan,
@@ -184,6 +198,7 @@ const renderPanel = async (overrides = {}) => {
         onRevision: () => {},
         plan,
         objectives,
+        sections: overrides.sections === undefined ? sectionRows : overrides.sections,
         planHash: 'sha256:plan',
         supported: () => true,
         onChanged: () => {},
@@ -197,6 +212,13 @@ const renderPanel = async (overrides = {}) => {
 }
 
 const facts = {}
+// The panel's `jobs.list` read mounts once with the first render, so the recorded lessons preflight
+// is seeded here rather than just before the regenerate scenario.
+responses['jobs.list'] = {
+  jobs: [
+    { job_id: 'job_lessons_last', kind: 'plan', state: 'completed', brief: { stage: 'lessons' }, checkpoint: { preflight: { section_count: 2, cost_per_call_usd: 0.02, minimum_calls: 1, maximum_calls: 4, budget_source: 'course' } } }
+  ]
+}
 
 // 1 — keyboard reorder sends the full list and adopts the returned order.
 queues['plan.edit'] = [
@@ -281,6 +303,101 @@ facts.guard = {
   saveCall: calls.filter((c) => c.method === 'plan.edit').at(-1) || null,
   notice: text(document.querySelector('[data-cb-finetune-notice]')),
   editorClosedAfterSave: !document.querySelector('[data-cb-finetune-editor="obj_a"]')
+}
+
+// 4b — the authored page title is saved through lesson.revise on the digest the blueprint served.
+queues['lesson.revise'] = [
+  {
+    ok: true, contract_version: 20, operation_id: 't',
+    result: { section_id: 'sec_a', objective_id: 'obj_a', lesson_id: 'lsn_a2', lesson_version: 2, lesson_state: 'needs_review', page_hash: 'sha256:page-a2', changes_need_review: true, review: {}, revision: 8 }
+  }
+]
+await renderPanel()
+await click(byText(row('obj_a'), 'Edit section'))
+const pageTitleInput = document.querySelector('#cb-finetune-page-title-obj_a')
+const pageTitleDisabled = Boolean(pageTitleInput.disabled)
+const pageTitleValue = pageTitleInput.value
+await setInput(pageTitleInput, 'Alpha revised page')
+await click(byText(document.querySelector('[data-cb-finetune-editor="obj_a"]'), 'Save section'))
+facts.pageTitle = {
+  disabled: pageTitleDisabled,
+  initialValue: pageTitleValue,
+  call: calls.filter((c) => c.method === 'lesson.revise').at(-1) || null,
+  notice: text(document.querySelector('[data-cb-finetune-notice]')),
+  editorClosed: !document.querySelector('[data-cb-finetune-editor="obj_a"]')
+}
+
+// 4c — an edit after stored attempts is refused; the consequence is shown and the retry confirms.
+queues['lesson.revise'] = [
+  {
+    ok: false, contract_version: 20, operation_id: 't',
+    error: {
+      code: 'POLICY_VIOLATION', category: 'policy', retryable: false,
+      message: '2 learner attempt(s) already reference this section; confirm the evidence consequence before editing.',
+      details: { reason: 'evidence_consequence_confirmation_required', section_id: 'sec_b', evidence_attempts: 2 }
+    }
+  },
+  {
+    ok: true, contract_version: 20, operation_id: 't',
+    result: { section_id: 'sec_b', objective_id: 'obj_b', lesson_id: 'lsn_b3', lesson_version: 3, lesson_state: 'needs_review', page_hash: 'sha256:page-b3', changes_need_review: true, review: {}, revision: 9 }
+  }
+]
+await renderPanel()
+await click(byText(row('obj_b'), 'Edit section'))
+await setInput(document.querySelector('#cb-finetune-page-title-obj_b'), 'Beta revised page')
+await click(byText(document.querySelector('[data-cb-finetune-editor="obj_b"]'), 'Save section'))
+const evidencePrompt = document.querySelector('[data-cb-finetune-evidence]')
+facts.evidence = {
+  prompt: evidencePrompt ? evidencePrompt.getAttribute('data-cb-finetune-evidence') : null,
+  promptText: text(evidencePrompt),
+  error: text(document.querySelector('[data-cb-finetune-error]')),
+  refusedCall: calls.filter((c) => c.method === 'lesson.revise').at(-1) || null
+}
+await click(byText(evidencePrompt, 'Confirm and save'))
+facts.evidence.retryCall = calls.filter((c) => c.method === 'lesson.revise').at(-1) || null
+facts.evidence.notice = text(document.querySelector('[data-cb-finetune-notice]'))
+facts.evidence.editorClosed = !document.querySelector('[data-cb-finetune-editor="obj_b"]')
+facts.chips = [...document.querySelectorAll('[data-cb-finetune-chip]')].map((n) => n.getAttribute('data-cb-finetune-chip'))
+
+// 4d — Regenerate this section shows the scope and the cost before queueing, then surfaces the job.
+responses['jobs.get'] = { job: { job_id: 'job_regen', kind: 'plan', state: 'queued', brief: { stage: 'lessons', section_id: 'sec_a' } } }
+queues['lesson.regenerate'] = [
+  {
+    ok: true, contract_version: 20, operation_id: 't',
+    result: {
+      job_id: 'job_regen', kind: 'plan', state: 'queued',
+      scope: { section_id: 'sec_a', objective_id: 'obj_a', section_count: 1 },
+      preflight: {
+        section_count: 1, minimum_calls: 1, maximum_calls: 2, cost_per_call_usd: 0.02,
+        minimum_cost_usd: 0.02, maximum_cost_usd: 0.04, max_calls: 2, max_cost_usd: 0.5,
+        budget_source: 'course', fits_minimum: true, fits_maximum: true
+      },
+      revision: 10
+    }
+  }
+]
+await renderPanel()
+const regenButton = document.querySelector('[data-cb-finetune-regenerate]')
+await click(byText(row('obj_a'), 'Regenerate this section'))
+const scopeLine = text(document.querySelector('[data-cb-regenerate-scope]'))
+const costBeforeClick = text(document.querySelector('[data-cb-regenerate-cost]'))
+await click(document.querySelector('[data-cb-regenerate-queue]'))
+facts.regenerate = {
+  button: regenButton ? regenButton.getAttribute('data-cb-finetune-regenerate') : null,
+  buttonDisabled: Boolean(regenButton && regenButton.disabled),
+  scopeLine,
+  costBeforeClick,
+  call: calls.filter((c) => c.method === 'lesson.regenerate').at(-1) || null,
+  result: text(document.querySelector('[data-cb-regenerate-result]'))
+}
+
+// 4e — a course whose blueprint serves no section identity withholds the actions and says why.
+await renderPanel({ sections: [] })
+const missingButton = document.querySelector('[data-cb-finetune-regenerate]')
+facts.noSection = {
+  regenerate: missingButton ? missingButton.getAttribute('data-cb-finetune-regenerate') : null,
+  disabled: Boolean(missingButton && missingButton.disabled),
+  marker: text(document.querySelector('[data-cb-finetune-section="unknown"]'))
 }
 
 // 5 — the review diff prints the backend's blocked reason verbatim.
@@ -417,8 +534,36 @@ class FineTuneSourceContractTest(unittest.TestCase):
 
     def test_the_section_id_gap_is_stated_on_screen_not_in_the_console(self) -> None:
         self.assertIn("'data-cb-finetune-section': 'unknown'", self.source)
-        self.assertIn("no read on ' +", self.source)
-        self.assertIn("nothing here guesses a hash", self.source)
+        self.assertIn("'no authored section'", self.source)
+        self.assertIn("`sections[]`", self.source)
+        self.assertIn("Nothing here invents a section id or a digest.", self.source)
+
+    def test_the_panel_reads_the_section_identity_from_the_blueprint(self) -> None:
+        self.assertIn("sections: (book && book.data && book.data.sections) || [],", self.source)
+        self.assertIn("for (const row of sections || [])", self.source)
+        self.assertIn("page_hash: row.page_hash || null", self.source)
+
+    def test_the_page_title_is_fenced_on_the_served_digest(self) -> None:
+        panel = self.source[self.source.index("function StudioFineTunePanel("): self.source.index("function StudioPlanView(")]
+        self.assertIn("expected_page_hash: ref.page_hash", panel)
+        self.assertIn("page: { section_title: pageTitle.slice(0, 300) }", panel)
+        # The digest is never recomputed in the Desktop half.
+        self.assertNotIn("createHash", panel)
+        self.assertNotIn("sha256(", panel)
+
+    def test_an_edit_after_attempts_asks_for_the_evidence_confirmation(self) -> None:
+        panel = self.source[self.source.index("function StudioFineTunePanel("): self.source.index("function StudioPlanView(")]
+        self.assertIn("details.reason === 'evidence_consequence_confirmation_required'", panel)
+        self.assertIn("confirm_evidence_consequence = true", panel)
+        self.assertIn("'data-cb-finetune-evidence'", panel)
+
+    def test_regenerate_shows_the_scope_and_cost_and_is_not_gated_on_the_digest(self) -> None:
+        panel = self.source[self.source.index("function StudioFineTunePanel("): self.source.index("function StudioPlanView(")]
+        self.assertIn("'data-cb-regenerate-scope'", panel)
+        self.assertIn("'data-cb-regenerate-cost'", panel)
+        self.assertIn("fineTuneScopeLine(objective.title)", panel)
+        # A section with no page yet is exactly what a one-section regenerate is for.
+        self.assertIn("disabled: !ref || !ref.section_id,", panel)
 
 
 @unittest.skipIf(shutil.which("node") is None, "node is required to render the runtime desktop plugin")
@@ -512,6 +657,56 @@ class FineTuneRenderTest(unittest.TestCase):
         self.assertIn("changes_need_review", diff["body"])
         self.assertIn("needs_review", diff["chips"])
         self.assertIn("order", diff["changedFields"][0])
+
+    def test_the_authored_page_title_is_saved_through_lesson_revise(self) -> None:
+        page = self.facts["pageTitle"]
+        self.assertFalse(page["disabled"], "a section with a served digest must be editable")
+        self.assertEqual(page["initialValue"], "Alpha")
+        call = page["call"]
+        self.assertEqual(call["method"], "lesson.revise")
+        self.assertEqual(call["payload"]["section_id"], "sec_a")
+        self.assertEqual(call["payload"]["expected_page_hash"], "sha256:page-a")
+        self.assertEqual(call["payload"]["title"], "Alpha revised page")
+        self.assertEqual(call["payload"]["page"], {"section_title": "Alpha revised page"})
+        self.assertEqual(call["expected_revision"], 3)
+        self.assertTrue(call["idempotency_key"])
+        self.assertNotIn("confirm_evidence_consequence", call["payload"])
+        self.assertIn("needs review before export", page["notice"])
+        self.assertTrue(page["editorClosed"])
+
+    def test_an_edit_after_attempts_shows_the_consequence_and_confirms_it(self) -> None:
+        evidence = self.facts["evidence"]
+        self.assertEqual(evidence["prompt"], "2")
+        self.assertIn("2 stored attempt(s)", evidence["promptText"])
+        self.assertIn("keeps every stored attempt", evidence["promptText"])
+        self.assertIn("2 learner attempt(s) already reference this section", evidence["error"])
+        refused = evidence["refusedCall"]["payload"]
+        self.assertNotIn("confirm_evidence_consequence", refused)
+        retry = evidence["retryCall"]["payload"]
+        self.assertTrue(retry["confirm_evidence_consequence"])
+        self.assertEqual(retry["expected_page_hash"], "sha256:page-b")
+        self.assertIn("needs review before export", evidence["notice"])
+        # The chip for the edited section is `needs_review`, never an approval.
+        self.assertIn("needs_review", self.facts["chips"])
+
+    def test_regenerate_shows_scope_and_cost_before_queueing(self) -> None:
+        regen = self.facts["regenerate"]
+        self.assertEqual(regen["button"], "sec_a")
+        self.assertFalse(regen["buttonDisabled"])
+        self.assertEqual(regen["scopeLine"], "1 section: Alpha")
+        self.assertIn("Estimated", regen["costBeforeClick"])
+        call = regen["call"]
+        self.assertEqual(call["method"], "lesson.regenerate")
+        self.assertEqual(call["payload"]["section_id"], "sec_a")
+        self.assertEqual(call["payload"]["plan_id"], "pln_1")
+        self.assertIn("job_regen", regen["result"])
+        self.assertIn("1 section: Alpha", regen["result"])
+
+    def test_a_course_without_section_identity_withholds_the_actions(self) -> None:
+        missing = self.facts["noSection"]
+        self.assertEqual(missing["regenerate"], "unavailable")
+        self.assertTrue(missing["disabled"])
+        self.assertEqual(missing["marker"], "no authored section")
 
     def test_a_stale_approval_keeps_export_closed(self) -> None:
         stale = self.facts["staleExport"]
