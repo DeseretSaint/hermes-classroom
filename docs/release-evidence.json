@@ -1,12 +1,12 @@
 {
-  "measured_commit": "39659b7609375d791f3f251d3d0fb0041864d0a9",
-  "measured_commit_short": "39659b7",
+  "measured_commit": "33e75395b8cd7443f09b4ac8500942b5d12fc043",
+  "measured_commit_short": "33e7539",
   "measured_at": "2026-11-08",
   "branch": "master",
-  "merge_commit": "39659b7609375d791f3f251d3d0fb0041864d0a9",
+  "merge_commit": "33e75395b8cd7443f09b4ac8500942b5d12fc043",
   "tests": {
     "command": "python3 -m unittest discover -s tests -t .",
-    "ran": 1984,
+    "ran": 1998,
     "skipped": 1,
     "verdict": "OK (skipped=1)"
   },
@@ -24,7 +24,7 @@
   },
   "plugin": {
     "path": "desktop/plugin.js",
-    "sha256": "9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547"
+    "sha256": "0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543"
   },
   "m4": {
     "frames": 62,
@@ -41,7 +41,7 @@
   "m4_repro": {
     "command": "python3 scripts/m4v-repro-check.py",
     "result": "PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots",
-    "plugin_sha256": "9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547"
+    "plugin_sha256": "0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543"
   },
   "adversarial_state": {
     "command": "python3 tests/adversarial/attack_state.py",
@@ -55,6 +55,11 @@
     "note": "S13 is BLOCKED because the auxiliary grader lane is disabled in this release"
   },
   "historical_plugin_pins": [
+    {
+      "sha256": "9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547",
+      "commit": "39659b7",
+      "path": "desktop/plugin.js"
+    },
     {
       "sha256": "035597017a19b77cae14f65eb37fd90c6868ba6f94dd0fc5d6977dd8d6b97b5d",
       "commit": "c6b658e",

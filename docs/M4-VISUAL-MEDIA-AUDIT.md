@@ -3,17 +3,16 @@
 Status: independent gate for the product-line claims in `docs/VISUAL_MEDIA_PLAN.md` §3, §6.4 and
 §11 ("M4 — visual identity and polish"). The audit was first written on `wt/m4v-landing` (base
 `1fc0542`, post-H-38 UX union) and is regenerated on every module change since; this revision was
-regenerated on the `cb.rpc` v16 tree — `origin/master` `14a6443` (H-83's Atlas Lamp composition,
-H-84's plain-language pass, H-86's wayfinding pass, H-91's section-crash / Library-clipping fixes,
-the P0 react-key sweep `80b39b8` and H-144 `14a6443`) plus the H-120a amendment — and is pinned to
-the module that ships from that tree: `desktop/plugin.js` sha256
-`9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547`.
+regenerated on merged `master` `33e7539` — the H-105 + `cb.rpc` v16 union merge `39659b7` plus the
+H-120b conversation-practice surface (`wt/h120b-practice-ui` @ `9aa2e6a`) — and is pinned to the
+module that ships from that commit: `desktop/plugin.js` sha256
+`0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543`.
 
-That module is byte-identical at the merged commit `c6b658e` (H-120a does not touch
-`desktop/plugin.js`), so this is the audit of the shipping module, not of a branch. The previous
+That module is the one that ships from `33e7539`, the commit this audit was regenerated on, so this
+is the audit of the shipping module, not of a branch. The previous
 pin, `desktop/plugin.js` sha256
 `71fc4c3f57c8b296dbe7d50694151055f6ca7fc00ae4b01b0e90b91f2c5981a5`, is history for the H-91 tree;
-the two `audit.json` files differ only in `generated_at` and the recorded branch name.
+the two `audit.json` files differ only in `generated_at`, the recorded branch name and the plugin pin.
 
 This is **not** release evidence. Nothing here was published, tagged, pushed or merged, and the
 audit makes no claim that Coursebook is installable.
@@ -39,14 +38,14 @@ records the fixture clock it rendered against (`reference_time: 2026-11-07T10:00
 
 The check is part of the evidence, not a convenience: two independent audit runs (separate render
 pass, separate browser, separate output tree) must agree on every measurement and every screenshot.
-Run back to back on this pin (`9735300e…`), verbatim (scratch roots elided):
+Run back to back on this pin (`0312a9ea…`), verbatim (scratch roots elided):
 
 ```
 $ python3 scripts/m4v-repro-check.py
-run A → …/cb-m4v-repro-gm1ry1tt/run-a
-run B → …/cb-m4v-repro-gm1ry1tt/run-b
+run A → …/cb-m4v-repro-k205uyh8/run-a
+run B → …/cb-m4v-repro-k205uyh8/run-b
 PASS: two independent runs produced identical audit.json (62 frames, modulo generated_at) and 62 identical screenshots
-  plugin_sha256: 9735300e197a0c6a1fb85ba7f15ec40b156283394a795399b9b9e2ba49f25547
+  plugin_sha256: 0312a9ea6535debd9d649e2ccc467274168e8420fd42870f3a959df62b3f8543
   reference_time: 2026-11-07T10:00:00.000Z
 ```
 
