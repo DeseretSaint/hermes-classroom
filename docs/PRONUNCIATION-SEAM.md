@@ -338,6 +338,51 @@ operator's independent run on the same path returned `こんにちは、今日�
 the suite needs no model, network or ffmpeg; one regression test pins `initial_prompt` so the
 keyword cannot drift back to `prompt`.
 
+## 10. Availability contract (H-138, backend half of H-108)
+
+`GET /pronunciation/status` answers one of four stable states, each with a bounded `reason` and
+exactly one `next_action`. Query context is optional: `objective_id` (+ optional `enrollment_id`)
+or `media_artifact_id` makes the probe also answer whether this block has usable narration audio.
+
+| `status` | Meaning | Record enabled |
+|---|---|---|
+| `available` | Narration exists (or no block context was asked) and the recogniser can run. First use may download the model weights once. | Yes |
+| `practice_only` | Narration exists but this process cannot recognise speech (dependency, ffmpeg, model, decode/inference). | No |
+| `no_audio` | The named block/objective/artifact has no usable narration audio child (`narration_missing`, `narration_degraded`, `no_authored_media`). | No |
+| `unavailable` | The named context could not be established (`objective_not_in_approved_plan`, `availability_unreadable`); no guess. | No |
+
+Precedence: `no_audio` → `unavailable` → `practice_only` → `available`, so the pane names the
+earliest prerequisite that is actually absent. `available` (boolean) is kept for the pre-H-108
+pane; `status` is the stable field. `retention` reports `audio_retained: false` and the staged-take
+TTL (`MAX_TAKE_AGE_SECONDS`), and `recognizer.last_failure` carries the bounded exception class.
+
+The attempt route enforces the same honesty: it preflights the recogniser after validating the
+payload and stages no audio when it already knows speech cannot be recognised; a missing model or
+an exception inside `transcribe` returns `status: unavailable`, `recorded: false`, `verdict:
+unavailable`, `word_accuracy: null`, `phoneme_accuracy: null` and no `pronunciation_attempts` row.
+
+Tests (backend only; no model, network or ffmpeg):
+
+- `tests/test_pronunciation_availability.py`:
+  `test_the_probe_answers_one_of_four_states_with_a_reason_and_one_next_action`,
+  `test_a_missing_recogniser_is_practice_only_never_unavailable_or_a_score`,
+  `test_a_missing_ffmpeg_is_practice_only_with_an_install_action`,
+  `test_the_probe_never_loads_or_downloads_a_model`,
+  `test_a_missing_artifact_is_no_audio_not_a_practice_only_dead_end`,
+  `test_a_non_audio_artifact_is_not_a_narration_reference`,
+  `test_an_objective_without_generated_media_is_no_audio`,
+  `test_authored_narration_without_an_artifact_is_no_audio_degraded`,
+  `test_a_store_read_failure_is_unavailable_never_an_exception`,
+  `test_a_stale_orphaned_take_is_swept_and_a_fresh_one_is_kept`,
+  `test_a_missing_model_is_unavailable_with_no_score_and_replays`,
+  `test_a_recogniser_exception_is_unavailable_with_no_score`,
+  `test_a_take_longer_than_the_bound_is_refused_before_inference`,
+  `test_a_known_missing_recogniser_writes_no_audio_at_all`,
+  `test_the_status_route_returns_state_reason_and_one_next_action`,
+  `test_the_status_route_answers_no_audio_for_a_missing_narration`,
+  `test_described_reports_the_bounded_failure_class_not_a_message`.
+
 **Still true.** This is a practice measurement, not "verified pronunciation", not mastery and not
 a graded pass. The host `ctx.transcribe_audio` seam remains the preferred future path; nothing in
 this card reads or writes the host's configured STT.
+
